@@ -1,0 +1,3 @@
+plugin_info:
+  plugin_name: gui
+  path: gui{sep}__init__.py
