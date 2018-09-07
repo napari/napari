@@ -34,7 +34,7 @@ def open_2Dsc():
     array[-30:] = np.linspace(0, 1, w)
     image = NImage(array, '2D1C', type=ImageType.Mono)
     imgwin = ImageWindow(image, window_width=512, window_height=512)
-    imgwin.set_cmap("viridis")
+    imgwin.cmap = 'viridis'
     return imgwin
 
 
@@ -49,7 +49,7 @@ def open_3Dsc():
     # image[-30:] = np.linspace(0, 1, w)
     image = NImage(array, '3D1C', type=ImageType.Mono)
     imgwin = ImageWindow(image, window_width=512, window_height=512)
-    imgwin.set_cmap("blues")
+    imgwin.cmap = 'blues'
     return imgwin
 
 
@@ -65,7 +65,7 @@ def open_4dsc():
     # image[-30:] = np.linspace(0, 1, w)
     image = NImage(array, '4D1C', type=ImageType.Mono)
     imgwin = ImageWindow(image)
-    imgwin.set_cmap("blues")
+    imgwin.cmap = 'blues'
     return imgwin
 
 

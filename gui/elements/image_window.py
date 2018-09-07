@@ -5,14 +5,24 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QAction, qApp, QMenuBar
 
 from .image_widget import ImageWidget
-from ..image.napari_image import NImage
 
 
 class ImageWindow(QMainWindow):
+    """Image-based PyQt5 window.
 
-    def __init__(self, image:NImage, window_width=800, window_height=800, parent=None):
-
-        super(ImageWindow, self).__init__(parent)
+    Parameters
+    ----------
+    image : NImage
+        Image to display.
+    window_width : int, optional
+        Width of the window.
+    window_height : int, optional
+        Height of the window.
+    parent : PyQt5.QWidget, optional
+        Parent widget.
+    """
+    def __init__(self, image, window_width=800, window_height=800, parent=None):
+        super().__init__(parent)
 
         self.widget = ImageWidget(image, window_width, window_height, containing_window=self)
 
@@ -28,6 +38,8 @@ class ImageWindow(QMainWindow):
         self.installEventFilter(self)
 
     def add_toolbar(self):
+        """Adds a toolbar.
+        """
         self.denoise_toolbar = self.addToolBar('Denoise')
         gaussianAction = QAction('Gaussian', self)
         gaussianAction.setShortcut('Ctrl+G')
@@ -43,6 +55,8 @@ class ImageWindow(QMainWindow):
         self.toolbar = self.addToolBar('FFTs')
 
     def add_menu(self):
+        """Adds a menu bar.
+        """
         menubar = self.menuBar() # parentless menu bar for Mac OS
         menubar.setNativeMenuBar(False)
         fileMenu = menubar.addMenu('&File')
@@ -72,7 +86,16 @@ class ImageWindow(QMainWindow):
 
 
     def update_image(self):
+        """Updates the contained image.
+        """
         self.widget.update_image()
 
-    def set_cmap(self, cmap):
-        self.widget.set_cmap(cmap)
+    @property
+    def cmap(self):
+        """string: Color map.
+        """
+        return self.widget.cmap
+
+    @cmap.setter
+    def cmap(self, cmap):
+        self.widget.cmap = cmap
