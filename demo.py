@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # starting
     application = NapariApplication(sys.argv)
 
-    imgwin1 = open_2Drgb()
+    # imgwin1 = open_2Drgb()
 
     imgwin2 = open_2Dsc()
 
