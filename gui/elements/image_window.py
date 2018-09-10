@@ -2,7 +2,8 @@ import platform
 
 from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QAction, qApp, QMenuBar
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout,
+                             QAction, qApp, QMenuBar)
 
 from .image_widget import ImageWidget
 
@@ -12,30 +13,41 @@ class ImageWindow(QMainWindow):
 
     Parameters
     ----------
-    image : NImage
-        Image to display.
-    window_width : int, optional
-        Width of the window.
-    window_height : int, optional
-        Height of the window.
     parent : PyQt5.QWidget, optional
         Parent widget.
     """
-    def __init__(self, image, window_width=800, window_height=800, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.widget = ImageWidget(image, window_width, window_height, containing_window=self)
-
+        self.widget = QWidget()
         self.setCentralWidget(self.widget)
+
+        layout = QHBoxLayout()
+        self.widget.setLayout(layout)
 
         self.statusBar().showMessage('Ready')
 
         self.add_menu()
         self.add_toolbar()
-        self.show()
-        self.raise_()
 
         self.installEventFilter(self)
+
+    def add_image(self, image):
+        """Adds an image to the containing layout.
+
+        Parameters
+        ----------
+        image : NImage
+            Image to display.
+
+        Returns
+        -------
+        widget : ImageWidget
+            Widget containing the image.
+        """
+        widget = ImageWidget(image)
+        self.widget.layout().addWidget(widget)
+        return widget
 
     def add_toolbar(self):
         """Adds a toolbar.
@@ -83,19 +95,3 @@ class ImageWindow(QMainWindow):
     #             self.showNormal()
     #
     #     return QWidget.eventFilter(self, object, event)
-
-
-    def update_image(self):
-        """Updates the contained image.
-        """
-        self.widget.update_image()
-
-    @property
-    def cmap(self):
-        """string: Color map.
-        """
-        return self.widget.cmap
-
-    @cmap.setter
-    def cmap(self, cmap):
-        self.widget.cmap = cmap

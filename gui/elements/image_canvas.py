@@ -36,15 +36,9 @@ class ImageCanvas(SceneCanvas):
     ----------
     parent_widget : QWidget
         Parent widget.
-    window_width : int
-        Width of the window.
-    window_height : int
-        Height of the window.
     """
-    def __init__(self, parent_widget, window_width, window_height):
+    def __init__(self, parent_widget):
         super().__init__(keys=None, vsync=True)
-
-        self.size = window_width, window_height
 
         self.unfreeze()
 

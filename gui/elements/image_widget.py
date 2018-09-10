@@ -12,25 +12,18 @@ class ImageWidget(QWidget):
     ----------
     image : NImage
         Image contained by the widget.
-    window_width : int, optional
-        Width of the window.
-    window_height : int, optional
-        Height of the window.
     containing_window : PyQt5.QWindow, optional
         Window that contains the widget.
     """
-    def __init__(self, image, window_width=800, window_height=800, containing_window=None):
-        super().__init__(parent=None)
+    def __init__(self, image, parent=None):
+        super().__init__(parent=parent)
 
-        self.containing_window = containing_window
         self.image = image
         self.nbdim = image.array.ndim
         self.point = [0] * self.nbdim
         self.axis0 = self.nbdim - 2 - self.image.is_rgb()
         self.axis1 = self.nbdim - 1 - self.image.is_rgb()
         self.slider_index_map = {}
-
-        self.resize(window_width, window_height)
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -39,7 +32,7 @@ class ImageWidget(QWidget):
 
         row = 0
 
-        self.image_canvas = ImageCanvas(self, window_width, window_height)
+        self.image_canvas = ImageCanvas(self)
         layout.addWidget(self.image_canvas.native, row, 0)
         layout.setRowStretch(row, 1)
         row += 1
@@ -52,7 +45,6 @@ class ImageWidget(QWidget):
                 row += 1
 
         self.update_image()
-        self.update_title()
 
     def add_slider(self, grid, row,  axis, length):
         """Adds a slider to the given grid.
