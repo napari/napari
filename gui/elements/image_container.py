@@ -1,20 +1,4 @@
-from OpenGL import GL
-from OpenGL.raw.GL.VERSION.GL_1_0 import glMatrixMode, glLoadIdentity
-from OpenGL.raw.GL.VERSION.GL_1_1 import GL_PROJECTION
-from PyQt5 import QtWidgets, QtCore, QtGui, QtOpenGL
-from OpenGL.GL.ARB.texture_rg import GL_R32F
-
-import numpy as np
-import ctypes
-import time
-
 from vispy import scene
-from vispy.app import Canvas
-from vispy.io import read_png
-from vispy.scene import SceneCanvas
-from vispy.util import load_data_file
-
-from .panzoom import PanZoomCamera
 from ..visuals.napari_image import NapariImage
 
 
@@ -29,37 +13,23 @@ index_to_name = interpolation_method_names.__getitem__
 name_to_index = interpolation_method_names.index
 
 
-class ImageCanvas(SceneCanvas):
-    """Canvas to draw images on.
+class ImageContainer:
+    """
 
     Parameters
     ----------
-    parent_widget : QWidget
-        Parent widget.
+    view : vispy.scene.widgets.ViewBox
     """
-    def __init__(self, parent_widget):
-        super().__init__(keys=None, vsync=True)
+    def __init__(self, image, view, update_func):
+        self.image = image
+        self.view = view
+        self.update = update_func
 
-        self.unfreeze()
+        self.image_visual = NapariImage(image, parent=view.scene,
+                                        method='auto')
 
-        self.parent_widget = parent_widget
-        # Set up a viewbox to display the image with interactive pan/zoom
-        self.view = self.central_widget.add_view()
-
-        # Set 2D camera (the camera will scale to the contents in the scene)
-        self.view.camera = PanZoomCamera(aspect=1)
-        # flip y-axis to have correct aligment
-        self.view.camera.flip = (0, 1, 0)
-        self.view.camera.set_range()
-        # view.camera.zoom(0.1, (250, 200))
-
-        self.image_visual = NapariImage(None,  parent=self.view.scene, method='auto')
-
-        self.image = None
         self._brightness = 1
         self._interpolation_index = 0
-
-        self.freeze()
 
         self.interpolation = 'nearest'
 
@@ -132,7 +102,3 @@ class ImageCanvas(SceneCanvas):
     def cmap(self, cmap):
         self.image_visual.cmap = cmap
         self.update()
-
-    def on_key_press(self, event):
-        # print("Sending to QT parent: %s " % event.key)
-        self.parent_widget.on_key_press(event)
