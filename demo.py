@@ -16,15 +16,14 @@ from gui.utils.example_data_utils import load_bluemarble_image
 app.use_app('pyqt5')
 
 
-def open_2Drgb():
+def open_2Drgb(win):
     # opening a 2D RGB image:
     bma = load_bluemarble_image(large=False)
     image = NImage(bma, 'BlueMarble', type=ImageType.RGB)
-    imgwin = ImageWindow(image, window_width=512, window_height=512)
-    return imgwin
+    win.add_image(image)
 
 
-def open_2Dsc():
+def open_2Dsc(win):
     # opening a 2D single channel image:
     h = 5120
     w = 5120
@@ -33,12 +32,11 @@ def open_2Dsc():
     array[:] = np.random.rand(h, w)
     array[-30:] = np.linspace(0, 1, w)
     image = NImage(array, '2D1C', type=ImageType.Mono)
-    imgwin = ImageWindow(image, window_width=512, window_height=512)
-    imgwin.cmap = 'viridis'
-    return imgwin
+    widget = win.add_image(image)
+    widget.cmap = 'viridis'
 
 
-def open_3Dsc():
+def open_3Dsc(win):
     # opening a 3D single channel image:
     h = 512
     w = 512
@@ -48,12 +46,11 @@ def open_3Dsc():
     array[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
     # image[-30:] = np.linspace(0, 1, w)
     image = NImage(array, '3D1C', type=ImageType.Mono)
-    imgwin = ImageWindow(image, window_width=512, window_height=512)
-    imgwin.cmap = 'blues'
-    return imgwin
+    widget = win.add_image(image)
+    widget.cmap = 'blues'
 
 
-def open_4dsc():
+def open_4dsc(win):
     # opening a 4D single channel image:
     h = 32
     w = 32
@@ -64,23 +61,23 @@ def open_4dsc():
     array[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2 - C ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
     # image[-30:] = np.linspace(0, 1, w)
     image = NImage(array, '4D1C', type=ImageType.Mono)
-    imgwin = ImageWindow(image)
-    imgwin.cmap = 'blues'
-    return imgwin
+    widget = win.add_image(image)
+    widget.cmap = 'blues'
 
 
 if __name__ == '__main__':
-
     # starting
     application = NapariApplication(sys.argv)
 
-    # imgwin1 = open_2Drgb()
+    win = ImageWindow()
 
-    imgwin2 = open_2Dsc()
+    open_2Drgb(win)
+    open_2Dsc(win)
+    open_3Dsc(win)
+    open_4dsc(win)
 
-    imgwin3 = open_3Dsc()
-
-    imgwin4 = open_4dsc()
-
+    win.resize(win.layout().sizeHint())
+    win.show()
+    win.raise_()
 
     sys.exit(application.exec_())
