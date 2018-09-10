@@ -2,7 +2,10 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGridLayout, QWidget, QSlider, QMenuBar
 
-from .image_canvas import ImageCanvas
+from vispy.scene import SceneCanvas
+
+from .image_container import ImageContainer
+from .panzoom import PanZoomCamera
 
 
 class ImageWidget(QWidget):
@@ -32,8 +35,20 @@ class ImageWidget(QWidget):
 
         row = 0
 
-        self.image_canvas = ImageCanvas(self)
-        layout.addWidget(self.image_canvas.native, row, 0)
+        self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.view = self.canvas.central_widget.add_view()
+        self.image_container = ImageContainer(image.array, self.view,
+                                              self.canvas.update)
+
+        # Set 2D camera (the camera will scale to the contents in the scene)
+        self.view.camera = PanZoomCamera(aspect=1)
+        # flip y-axis to have correct aligment
+        self.view.camera.flip = (0, 1, 0)
+        self.view.camera.set_range()
+        # view.camera.zoom(0.1, (250, 200))
+
+
+        layout.addWidget(self.canvas.native, row, 0)
         layout.setRowStretch(row, 1)
         row += 1
 
@@ -89,7 +104,7 @@ class ImageWidget(QWidget):
 
         sliced_image = self.image.array[tuple(index)]
 
-        self.image_canvas.set_image(sliced_image)
+        self.image_container.set_image(sliced_image)
 
     def update_title(self):
         """Updates the widget title."""
@@ -99,7 +114,7 @@ class ImageWidget(QWidget):
             name = ''
 
         title = 'Image {} {} {}'.format(name, self.image.array.shape,
-                                        self.image_canvas.interpolation)
+                                        self.image_container.interpolation)
 
         self.setWindowTitle(title)
 
@@ -107,11 +122,11 @@ class ImageWidget(QWidget):
     def cmap(self):
         """string: Color map.
         """
-        return self.image_canvas.cmap
+        return self.image_container.cmap
 
     @cmap.setter
     def cmap(self, cmap):
-        self.image_canvas.cmap = cmap
+        self.image_container.cmap = cmap
 
     def on_key_press(self, event):
         """Callback for when a key is pressed.
