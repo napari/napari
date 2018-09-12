@@ -4,14 +4,9 @@ import vispy
 from PyQt5.QtWidgets import QApplication, QAction
 import numpy as np
 
-from gui.elements.image_widget import ImageWidget
-from vispy import app, gloo, visuals, scene
-
 from gui.elements.image_window import ImageWindow
 from gui.napari_application import NapariApplication
 from gui.utils.example_data_utils import load_bluemarble_image
-
-app.use_app('pyqt5')
 
 
 def open_2Drgb(win):

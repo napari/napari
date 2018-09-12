@@ -5,7 +5,7 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout,
                              QAction, qApp, QMenuBar)
 
-from .image_widget import ImageWidget
+from .image_widget import ImageViewerWidget
 
 
 class ImageWindow(QMainWindow):
@@ -47,7 +47,7 @@ class ImageWindow(QMainWindow):
         widget : ImageWidget
             Widget containing the image.
         """
-        widget = ImageWidget(image, meta)
+        widget = ImageViewerWidget(image, meta)
         self.widget.layout().addWidget(widget)
         return widget
 
@@ -81,7 +81,6 @@ class ImageWindow(QMainWindow):
         toolsMenu = menubar.addMenu('&Plugins')
         toolsMenu = menubar.addMenu('&Windows')
         helpMenu = menubar.addMenu('&About')
-
 
     # def eventFilter(self, object, event):
     #     #print(event)

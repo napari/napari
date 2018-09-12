@@ -14,11 +14,19 @@ name_to_index = interpolation_method_names.index
 
 
 class ImageContainer:
-    """
+    """Image container.
 
     Parameters
     ----------
+    image : np.ndarray
+        Image data.
+    meta : dict
+        Image metadata.
     view : vispy.scene.widgets.ViewBox
+        View on which to draw.
+    update_func : callable
+        Function to call when the image needs to be redrawn.
+        Takes no arguments.
     """
     def __init__(self, image, meta, view, update_func):
         self.image = image
@@ -33,6 +41,20 @@ class ImageContainer:
         self._interpolation_index = 0
 
         self.interpolation = 'nearest'
+
+    def __str__(self):
+        """Gets the image title."""
+        info = ['image']
+
+        try:
+            info.append(self.meta['name'])
+        except KeyError:
+            pass
+
+        info.append(self.image.shape)
+        info.append(self.interpolation)
+
+        return ' '.join(str(x) for x in info)
 
     def set_image(self, image, meta, dimx=0, dimy=1):
         """Sets the image given the data.
