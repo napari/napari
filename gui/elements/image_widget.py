@@ -7,25 +7,30 @@ from vispy.scene import SceneCanvas
 from .image_container import ImageContainer
 from .panzoom import PanZoomCamera
 
+from ..util import is_rgb
+
 
 class ImageWidget(QWidget):
     """Image-based PyQt5 widget.
 
     Parameters
     ----------
-    image : NImage
+    image : np.ndarray
         Image contained by the widget.
+    meta : dict
+        Image metadata.
     containing_window : PyQt5.QWindow, optional
         Window that contains the widget.
     """
-    def __init__(self, image, parent=None):
+    def __init__(self, image, meta, parent=None):
         super().__init__(parent=parent)
 
         self.image = image
-        self.nbdim = image.array.ndim
-        self.point = [0] * self.nbdim
-        self.axis0 = self.nbdim - 2 - self.image.is_rgb()
-        self.axis1 = self.nbdim - 1 - self.image.is_rgb()
+        self.meta = meta
+
+        self.point = [0] * image.ndim
+        self.axis0 = image.ndim - 2 - is_rgb(meta)
+        self.axis1 = image.ndim - 1 - is_rgb(meta)
         self.slider_index_map = {}
 
         layout = QGridLayout()
@@ -37,8 +42,6 @@ class ImageWidget(QWidget):
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.view = self.canvas.central_widget.add_view()
-        self.image_container = ImageContainer(image.array, self.view,
-                                              self.canvas.update)
 
         # Set 2D camera (the camera will scale to the contents in the scene)
         self.view.camera = PanZoomCamera(aspect=1)
@@ -47,14 +50,16 @@ class ImageWidget(QWidget):
         self.view.camera.set_range()
         # view.camera.zoom(0.1, (250, 200))
 
+        self.image_container = ImageContainer(image, meta, self.view,
+                                              self.canvas.update)
 
         layout.addWidget(self.canvas.native, row, 0)
         layout.setRowStretch(row, 1)
         row += 1
 
-        for axis in range(self.nbdim - self.image.is_rgb()):
+        for axis in range(image.ndim - is_rgb(meta)):
             if axis != self.axis0 and axis != self.axis1:
-                self.add_slider(layout, row, axis, self.image.array.shape[axis])
+                self.add_slider(layout, row, axis, image.shape[axis])
 
                 layout.setRowStretch(row, 4)
                 row += 1
@@ -99,21 +104,21 @@ class ImageWidget(QWidget):
         index[self.axis0] = slice(None)
         index[self.axis1] = slice(None)
 
-        if self.image.is_rgb():
-            index[self.nbdim-1] = slice(None)
+        if is_rgb(self.meta):
+            index[-1] = slice(None)
 
-        sliced_image = self.image.array[tuple(index)]
+        sliced_image = self.image[tuple(index)]
 
-        self.image_container.set_image(sliced_image)
+        self.image_container.set_image(sliced_image, self.meta)
 
     def update_title(self):
         """Updates the widget title."""
-        name = self.image.name
+        name = self.meta.get('name')
 
         if name is None:
             name = ''
 
-        title = 'Image {} {} {}'.format(name, self.image.array.shape,
+        title = 'Image {} {} {}'.format(name, self.image.shape,
                                         self.image_container.interpolation)
 
         self.setWindowTitle(title)

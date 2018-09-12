@@ -32,20 +32,22 @@ class ImageWindow(QMainWindow):
 
         self.installEventFilter(self)
 
-    def add_image(self, image):
+    def add_image(self, image, meta):
         """Adds an image to the containing layout.
 
         Parameters
         ----------
-        image : NImage
+        image : np.ndarray
             Image to display.
+        meta : dict
+            Image metadata.
 
         Returns
         -------
         widget : ImageWidget
             Widget containing the image.
         """
-        widget = ImageWidget(image)
+        widget = ImageWidget(image, meta)
         self.widget.layout().addWidget(widget)
         return widget
 
