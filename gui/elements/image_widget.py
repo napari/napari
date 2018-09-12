@@ -10,7 +10,7 @@ from .panzoom import PanZoomCamera
 from ..util import is_rgb
 
 
-class ImageWidget(QWidget):
+class ImageViewerWidget(QWidget):
     """Image-based PyQt5 widget.
 
     Parameters
@@ -111,18 +111,6 @@ class ImageWidget(QWidget):
 
         self.image_container.set_image(sliced_image, self.meta)
 
-    def update_title(self):
-        """Updates the widget title."""
-        name = self.meta.get('name')
-
-        if name is None:
-            name = ''
-
-        title = 'Image {} {} {}'.format(name, self.image.shape,
-                                        self.image_container.interpolation)
-
-        self.setWindowTitle(title)
-
     @property
     def cmap(self):
         """string: Color map.
@@ -132,67 +120,3 @@ class ImageWidget(QWidget):
     @cmap.setter
     def cmap(self, cmap):
         self.image_container.cmap = cmap
-
-    def on_key_press(self, event):
-        """Callback for when a key is pressed.
-
-        * F or Enter/Escape: toggle full screen
-        * I: increase interpolation index
-
-        Parameters
-        ----------
-        event : QEvent
-            Event which triggered this callback.
-        """
-        # print(event.key)
-        if (event.key == 'F' or event.key == 'Enter') and not self.isFullScreen():
-            # print("showFullScreen!")
-            self.showFullScreen()
-        elif (event.key == 'F' or event.key == 'Escape') and self.isFullScreen():
-            # print("showNormal!)
-            self.showNormal()
-        elif event.key == 'I':
-            self.image_canvas.interpolation_index += 1
-            self.update_title()
-
-    def isFullScreen(self):
-        """Whether the widget is full-screen.
-
-        Returns
-        -------
-        full_screen : bool
-            If the widget is full-screen.
-        """
-        if self.containing_window == None:
-            return super().isFullScreen()
-        else:
-            return self.containing_window.isFullScreen()
-
-    def showFullScreen(self):
-        """Enters full-screen.
-        """
-        if self.containing_window == None:
-            super().showFullScreen()
-        else:
-            self.containing_window.showFullScreen()
-
-    def showNormal(self):
-        """Exits full-screen.
-        """
-        if self.containing_window == None:
-            super().showNormal()
-        else:
-            self.containing_window.showNormal()
-
-    def setWindowTitle(self, title):
-        """Sets the window title.
-        """
-        if self.containing_window == None:
-            super().setWindowTitle(title)
-        else:
-            self.containing_window.setWindowTitle(title)
-
-    def raise_to_top(self):
-        """Makes this the topmost widget.
-        """
-        super().raise_()
