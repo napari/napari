@@ -20,8 +20,9 @@ class ImageContainer:
     ----------
     view : vispy.scene.widgets.ViewBox
     """
-    def __init__(self, image, view, update_func):
+    def __init__(self, image, meta, view, update_func):
         self.image = image
+        self.meta = meta
         self.view = view
         self.update = update_func
 
@@ -33,7 +34,7 @@ class ImageContainer:
 
         self.interpolation = 'nearest'
 
-    def set_image(self, image, dimx=0, dimy=1):
+    def set_image(self, image, meta, dimx=0, dimy=1):
         """Sets the image given the data.
 
         Parameters
@@ -47,7 +48,7 @@ class ImageContainer:
         """
         # TODO: use dimx, dimy for something
         self.image = image
-
+        self.meta = meta
         self.image_visual.set_data(image)
         self.view.camera.set_range()
 
