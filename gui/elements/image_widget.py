@@ -1,4 +1,3 @@
-# pythonprogramminglanguage.com
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGridLayout, QWidget, QSlider, QMenuBar
 
@@ -50,8 +49,8 @@ class ImageViewerWidget(QWidget):
         self.view.camera.set_range()
         # view.camera.zoom(0.1, (250, 200))
 
-        self.image_container = ImageContainer(image, meta, self.view,
-                                              self.canvas.update)
+        self.containers = [ImageContainer(image, meta, self.view,
+                                          self.canvas.update)]
 
         layout.addWidget(self.canvas.native, row, 0)
         layout.setRowStretch(row, 1)
@@ -64,7 +63,36 @@ class ImageViewerWidget(QWidget):
                 layout.setRowStretch(row, 4)
                 row += 1
 
-        self.update_image()
+        self.update_images()
+
+    @property
+    def max_dims(self):
+        """int: Maximum tunable dimensions for contained images.
+        """
+        max_dims = 0
+
+        for container in self.containers:
+            dims = container.image.ndim - is_rgb(container.meta)
+            max_dims = max(max_dims, dims)
+
+        return max_dims
+
+    @property
+    def max_shape(self):
+        """tuple: Maximum shape for contained images.
+        """
+        max_shape = tuple()
+
+        for dim in range(self.max_dims):
+            max_dim_len = 0
+
+            for container in self.containers:
+                dim_len = container.image.shape[dim]
+                max_dim_len = max(max_dim_len, dim_len)
+
+            max_shape += (max_dim_len,)
+
+        return max_shape
 
     def add_slider(self, grid, row,  axis, length):
         """Adds a slider to the given grid.
@@ -94,29 +122,26 @@ class ImageViewerWidget(QWidget):
 
         def value_changed():
             self.point[axis] = slider.value()
-            self.update_image()
+            self.update_images()
 
         slider.valueChanged.connect(value_changed)
 
-    def update_image(self):
-        """Updates the contained image."""
-        index = list(self.point)
-        index[self.axis0] = slice(None)
-        index[self.axis1] = slice(None)
+    def update_images(self):
+        """Updates the contained images.
+        """
+        indices = list(self.point)
+        indices[self.axis0] = slice(None)
+        indices[self.axis1] = slice(None)
 
-        if is_rgb(self.meta):
-            index[-1] = slice(None)
-
-        sliced_image = self.image[tuple(index)]
-
-        self.image_container.set_image(sliced_image, self.meta)
+        for container in self.containers:
+            container.set_view(indices)
 
     @property
     def cmap(self):
         """string: Color map.
         """
-        return self.image_container.cmap
+        return self.containers[0].cmap
 
     @cmap.setter
     def cmap(self, cmap):
-        self.image_container.cmap = cmap
+        self.containers[0].cmap = cmap

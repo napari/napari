@@ -1,6 +1,8 @@
 from vispy import scene
 from ..visuals.napari_image import NapariImage
 
+from ..util import is_rgb
+
 
 # get available interpolation methods
 interpolation_method_names = scene.visuals.Image(None).interpolation_functions
@@ -41,14 +43,18 @@ class ImageContainer:
         self._interpolation_index = 0
 
         self.interpolation = 'nearest'
+        for k, v in self.meta.__dict__.items():
+            self.update_from_metadata(k, v)
+
+        self.meta.update_hooks.append(self.update_from_metadata)
 
     def __str__(self):
         """Gets the image title."""
         info = ['image']
 
         try:
-            info.append(self.meta['name'])
-        except KeyError:
+            info.append(self.meta.name)
+        except AttributeError:
             pass
 
         info.append(self.image.shape)
@@ -56,22 +62,35 @@ class ImageContainer:
 
         return ' '.join(str(x) for x in info)
 
-    def set_image(self, image, meta, dimx=0, dimy=1):
-        """Sets the image given the data.
+    def update_from_metadata(self, name, value):
+        try:
+            setattr(self, name, value)
+        except AttributeError:
+            pass
+
+    def set_view(self, indices):
+        """Sets the view given the indices to slice.
 
         Parameters
         ----------
-        image : array
-            Image data to update with.
-        dimx : int, optional
-            Ordinal axis considered as the x-axis.
-        dimy : int, optional
-            Ordinal axis considered as the y-axis.
+        indices : list
+            Indices to slice with.
         """
-        # TODO: use dimx, dimy for something
-        self.image = image
-        self.meta = meta
-        self.image_visual.set_data(image)
+        ndim = self.image.ndim - is_rgb(self.meta)
+        indices = indices[:ndim]
+
+        for dim in range(len(indices)):
+            dim_len = self.image.shape[dim]
+
+            try:
+                if indices[dim] > dim_len:
+                    indices[dim] = dim_len
+            except TypeError:
+                pass
+
+        sliced_image = self.image[tuple(indices)]
+
+        self.image_visual.set_data(sliced_image)
         self.view.camera.set_range()
 
     @property
