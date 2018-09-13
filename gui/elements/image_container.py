@@ -1,7 +1,7 @@
 from vispy import scene
 from ..visuals.napari_image import NapariImage
 
-from ..util import is_rgb
+from ..util import is_multichannel
 
 
 # get available interpolation methods
@@ -76,7 +76,7 @@ class ImageContainer:
         indices : list
             Indices to slice with.
         """
-        ndim = self.image.ndim - is_rgb(self.meta)
+        ndim = self.image.ndim - is_multichannel(self.meta)
         indices = indices[:ndim]
 
         for dim in range(len(indices)):

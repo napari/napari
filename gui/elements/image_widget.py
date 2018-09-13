@@ -6,7 +6,7 @@ from vispy.scene import SceneCanvas
 from .image_container import ImageContainer
 from .panzoom import PanZoomCamera
 
-from ..util import is_rgb
+from ..util import is_multichannel
 
 
 class ImageViewerWidget(QWidget):
@@ -28,8 +28,8 @@ class ImageViewerWidget(QWidget):
         self.meta = meta
 
         self.point = [0] * image.ndim
-        self.axis0 = image.ndim - 2 - is_rgb(meta)
-        self.axis1 = image.ndim - 1 - is_rgb(meta)
+        self.axis0 = 0
+        self.axis1 = 1
         self.slider_index_map = {}
 
         layout = QGridLayout()
@@ -56,7 +56,7 @@ class ImageViewerWidget(QWidget):
         layout.setRowStretch(row, 1)
         row += 1
 
-        for axis in range(image.ndim - is_rgb(meta)):
+        for axis in range(image.ndim - is_multichannel(meta)):
             if axis != self.axis0 and axis != self.axis1:
                 self.add_slider(layout, row, axis, image.shape[axis])
 
@@ -72,7 +72,7 @@ class ImageViewerWidget(QWidget):
         max_dims = 0
 
         for container in self.containers:
-            dims = container.image.ndim - is_rgb(container.meta)
+            dims = container.image.ndim - is_multichannel(container.meta)
             max_dims = max(max_dims, dims)
 
         return max_dims
@@ -135,13 +135,3 @@ class ImageViewerWidget(QWidget):
 
         for container in self.containers:
             container.set_view(indices)
-
-    @property
-    def cmap(self):
-        """string: Color map.
-        """
-        return self.containers[0].cmap
-
-    @cmap.setter
-    def cmap(self, cmap):
-        self.containers[0].cmap = cmap
