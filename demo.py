@@ -14,7 +14,7 @@ from gui.util import metadata
 def open_2Drgb(win):
     # opening a 2D RGB image:
     image = load_bluemarble_image(large=False)
-    meta = metadata(name='BlueMarble', itype='rgb')
+    meta = metadata(name='BlueMarble', itype='multi')
     win.add_image(image, meta)
 
 
@@ -43,7 +43,7 @@ def open_3Dsc(win):
     win.add_image(image, meta)
 
 
-def open_4dsc(win):
+def open_4Dsc(win):
     # opening a 4D single channel image:
     h = 32
     w = 32
@@ -55,6 +55,7 @@ def open_4dsc(win):
     # image[-30:] = np.linspace(0, 1, w)
     meta = metadata(name='4D1C', itype='mono', cmap='blues')
     win.add_image(image, meta)
+    meta.interpolation = 'spline36'
 
 
 if __name__ == '__main__':
@@ -66,7 +67,7 @@ if __name__ == '__main__':
     open_2Drgb(win)
     open_2Dsc(win)
     open_3Dsc(win)
-    open_4dsc(win)
+    open_4Dsc(win)
 
     win.resize(win.layout().sizeHint())
     win.show()
