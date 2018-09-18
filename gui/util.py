@@ -1,37 +1,24 @@
 """Miscellaneous utility functions.
 """
+from vispy import scene as _scene
 
 
-class metadata:
-    """Stores metadata as attributes and provides hooks for when
-    fields are updated.
+# get available interpolation methods
+interpolation_names = _scene.visuals.Image(None).interpolation_functions
+interpolation_names = list(interpolation_names)
+interpolation_names.sort()
+# interpolation_names.remove('sinc')  # does not work well on my machine
 
-    Initializes the same way a dict does.
-
-    Attributes
-    ----------
-    update_hooks : list of callables (string, any) -> None
-        Hooks called when a field is updated with the name
-        and value it was set to.
-    """
-    def __init__(self, *dictp, **data):
-        self.__dict__.update(*dictp, **data)
-        self.update_hooks = []
-
-    def __setattr__(self, name, value):
-        """Calls hooks after the attribute is set.
-        """
-        super().__setattr__(name, value)
-        for hook in self.update_hooks:
-            hook(name, value)
+interpolation_index_to_name = interpolation_names.__getitem__
+interpolation_name_to_index = interpolation_names.index
 
 
 def is_multichannel(meta):
     """Determines if an image is RGB after checking its metadata.
     """
     try:
-        return meta.itype in ('rgb', 'multi', 'multichannel')
-    except AttributeError:
+        return meta['itype'] in ('rgb', 'rgba' 'multi', 'multichannel')
+    except KeyError:
         return False
 
 
@@ -56,51 +43,96 @@ def guess_multichannel(shape):
     return diff > last_dim * 100
 
 
+def compute_max_shape(shapes, max_dims=None):
+    """Computes the maximum shape combination from the given shapes.
+
+    Parameters
+    ----------
+    shapes : iterable of tuple
+        Shapes to coombine.
+    max_dims : int, optional
+        Pre-computed maximum dimensions of the final shape.
+        If None, is computed on the fly.
+
+    Returns
+    -------
+    max_shape : tuple
+        Maximum shape combination.
+    """
+    shapes = tuple(shapes)
+
+    if max_dims is None:
+        max_dims = max(len(shape) for shape in shapes)
+
+    max_shape = [0,] * max_dims
+
+    for dim in range(max_dims):
+        for shape in shapes:
+            try:
+                dim_len = shape[dim]
+            except IndexError:
+                pass
+            else:
+                if dim_len > max_shape[dim]:
+                    max_shape[dim] = dim_len
+
+    return tuple(max_shape)
+
+
 _app = None
+_windows = []
 _GUESS = object()
 
 
-def imshow(image, meta=None, multichannel=_GUESS, **kwargs):
+def imshow(image, meta=None, multichannel=_GUESS,
+           new_window=True, **kwargs):
     """Displays an image.
 
     Parameters
     ----------
     image : np.ndarray
         Image data.
-    meta : metadata, optional
+    meta : dict, optional
         Image metadata.
     multichannel : bool, optional
         Whether the image is multichannel.
+    new_window : bool, optional
+        Whether the image will open in a new window.
     **kwargs : dict
         Parameters that will be translated to metadata.
 
     Returns
     -------
-    window : ImageWindow
-        Image window. Will auto-delete if out of scope.
+    container : ImageContainer
+        Image container.
     """
     from PyQt5.QtWidgets import QApplication
     from .elements.image_window import ImageWindow
 
-    if meta is None:
-        meta = metadata(**kwargs)
-
     if isinstance(meta, dict):
-        meta = metadata(meta, **kwargs)
+        meta = dict(meta, **kwargs)
+
+    if meta is None:
+        meta = kwargs
 
     if multichannel is _GUESS:
         multichannel = guess_multichannel(image.shape)
 
     if multichannel:
-        meta.itype = 'multi'
+        meta['itype'] = 'multi'
 
     global _app
     _app = QApplication.instance() or QApplication([])
 
-    win = ImageWindow()
-    win.add_image(image, meta)
+    if not _windows or new_window:
+        window = ImageWindow()
+        _windows.append(window)
+    else:
+        window = _windows[-1]
 
-    win.raise_()
-    win.show()
+    container = window.add_viewer().add_image(image, meta)
 
-    return win
+    window.show()
+    window.raise_()
+
+    return container

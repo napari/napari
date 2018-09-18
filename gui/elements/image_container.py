@@ -1,18 +1,9 @@
-from vispy import scene
 from ..visuals.napari_image import NapariImage
 
-from ..util import is_multichannel
-
-
-# get available interpolation methods
-interpolation_method_names = scene.visuals.Image(None).interpolation_functions
-interpolation_method_names = list(interpolation_method_names)
-interpolation_method_names.sort()
-interpolation_method_names.remove('sinc')  # does not work well on my machine
-
-# print(interpolation_method_names)
-index_to_name = interpolation_method_names.__getitem__
-name_to_index = interpolation_method_names.index
+from ..util import (is_multichannel,
+                    interpolation_names,
+                    interpolation_index_to_name as _index_to_name,
+                    interpolation_name_to_index as _name_to_index)
 
 
 class ImageContainer:
@@ -31,8 +22,8 @@ class ImageContainer:
         Takes no arguments.
     """
     def __init__(self, image, meta, view, update_func):
-        self.image = image
-        self.meta = meta
+        self._image = image
+        self._meta = meta
         self.view = view
         self.update = update_func
 
@@ -43,10 +34,6 @@ class ImageContainer:
         self._interpolation_index = 0
 
         self.interpolation = 'nearest'
-        for k, v in self.meta.__dict__.items():
-            self.update_from_metadata(k, v)
-
-        self.meta.update_hooks.append(self.update_from_metadata)
 
     def __str__(self):
         """Gets the image title."""
@@ -62,11 +49,10 @@ class ImageContainer:
 
         return ' '.join(str(x) for x in info)
 
-    def update_from_metadata(self, name, value):
-        try:
-            setattr(self, name, value)
-        except AttributeError:
-            pass
+    def __repr__(self):
+        """Equivalent to str(obj).
+        """
+        return str(self)
 
     def set_view(self, indices):
         """Sets the view given the indices to slice.
@@ -94,6 +80,28 @@ class ImageContainer:
         self.view.camera.set_range()
 
     @property
+    def image(self):
+        """np.ndarray: Image data.
+        """
+        return self._image
+
+    @image.setter
+    def image(self, image):
+        self._image = image
+        self.update()
+
+    @property
+    def meta(self):
+        """dict: Image metadata.
+        """
+        return self._meta
+
+    @meta.setter
+    def meta(self, meta):
+        self._meta = meta
+        self.update()
+
+    @property
     def interpolation(self):
         """string: Equipped interpolation method's name.
         """
@@ -101,7 +109,7 @@ class ImageContainer:
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        self.interpolation_index = name_to_index(interpolation)
+        self.interpolation_index = _name_to_index(interpolation)
 
     @property
     def interpolation_index(self):
@@ -111,10 +119,9 @@ class ImageContainer:
 
     @interpolation_index.setter
     def interpolation_index(self, interpolation_index):
-        intp_index = interpolation_index % len(interpolation_method_names)
+        intp_index = interpolation_index % len(interpolation_names)
         self._interpolation_index = intp_index
-        self.image_visual.interpolation = index_to_name(intp_index)
-        # print(self.image_visual.interpolation)
+        self.image_visual.interpolation = _index_to_name(intp_index)
         self.update()
 
     @property
