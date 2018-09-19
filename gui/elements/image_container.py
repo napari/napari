@@ -23,11 +23,11 @@ class ImageContainer:
         View on which to draw.
     """
     def __init__(self, image, meta, view):
-        self.image = image
-        self.meta = meta
+        self._image = image
+        self._meta = meta
         self.view = view
 
-        self.visual = Image(image, parent=view.scene,
+        self.visual = Image(None, parent=view.scene,
                             method='auto')
 
         self._alpha = Alpha(1.0)
@@ -37,7 +37,8 @@ class ImageContainer:
         self.interpolation = 'nearest'
 
     def __str__(self):
-        """Gets the image title."""
+        """Gets the image title.
+        """
         info = ['image']
 
         try:
@@ -68,21 +69,21 @@ class ImageContainer:
         indices = indices[:ndim]
 
         for dim in range(len(indices)):
-            dim_len = self.image.shape[dim]
+            max_dim_index = self.image.shape[dim] - 1
 
             try:
-                if indices[dim] > dim_len:
-                    indices[dim] = dim_len
+                if indices[dim] > max_dim_index:
+                    indices[dim] = max_dim_index
             except TypeError:
                 pass
 
         sliced_image = self.image[tuple(indices)]
 
         self.visual.set_data(sliced_image)
-        self.view.camera.set_range()
+        self.update()
 
-    def change_image(self, image, meta=None, multichannel=None):
-        """Changes the underlying image and metadata.
+    def set_image(self, image, meta=None, multichannel=None):
+        """Sets the underlying image and metadata.
 
         Parameters
         ----------
@@ -93,10 +94,10 @@ class ImageContainer:
         multichannel : bool, optional
             Whether the image is multichannel. Guesses if None.
         """
-        self.image = image
+        self._image = image
 
         if meta is not None:
-            self.meta = meta
+            self._meta = meta
 
         if multichannel is None:
             multichannel = guess_multichannel(image.shape)
@@ -104,19 +105,42 @@ class ImageContainer:
         if multichannel:
             self.meta['itype'] = 'multi'
 
+        self.refresh()
+
+    def update(self):
+        """Updates the underlying visual.
+        """
+        return self.visual.update()
+
+    def refresh(self):
+        """Fully refreshes the visual.
+        """
         self.visual._need_colortransform_update = True
         self.set_view_slice(self.indices)
-        self.visual.update()
+        self.update()
 
     @property
-    def interpolation(self):
-        """string: Equipped interpolation method's name.
+    def image(self):
+        """np.ndarray: Image data.
         """
-        return _index_to_name(self.interpolation_index)
+        return self._image
 
-    @interpolation.setter
-    def interpolation(self, interpolation):
-        self.interpolation_index = _name_to_index(interpolation)
+    @image.setter
+    def image(self, image):
+        self._image = image
+        self.refresh()
+
+    @property
+    def meta(self):
+        """dict: Image metadata.
+        """
+        # TODO: somehow listen for when metadata updates
+        return self._meta
+
+    @meta.setter
+    def meta(self, meta):
+        self._meta = meta
+        self.refresh()
 
     @property
     def interpolation_index(self):
@@ -139,21 +163,78 @@ class ImageContainer:
     @transparency.setter
     def transparency(self, transparency):
         if not 0.0 <= transparency <= 1.0:
-            raise ValueError('transparency must be between 0-1, '
-                             f'not {transparency}')
+            raise ValueError('transparency must be between 0.0 and 1.0; '
+                             f'got {transparency}')
 
         self._alpha.alpha = transparency
-        self.visual.update()
+        self.update()
+
+    ###
+    ###  wrap visual properties
+    ###
+
+    @property
+    def clim(self):
+        """string or tuple of float: Limits to use for the colormap.
+        Can be 'auto' to auto-set bounds to the min and max of the data.
+        """
+        return self.visual.clim
+
+    @clim.setter
+    def clim(self):
+        self.visual.clim = clim
 
     @property
     def cmap(self):
-        """string: Color map.
+        """string or ColorMap: Colormap to use for luminance images.
         """
         return self.visual.cmap
 
     @cmap.setter
     def cmap(self, cmap):
         self.visual.cmap = cmap
+
+    @property
+    def method(self):
+        """string: Selects method of rendering image in case of non-linear
+        transforms. Each method produces similar results, but may trade
+        efficiency and accuracy. If the transform is linear, this parameter
+        is ignored and a single quad is drawn around the area of the image.
+
+            * 'auto': Automatically select 'impostor' if the image is drawn
+              with a nonlinear transform; otherwise select 'subdivide'.
+            * 'subdivide': ImageVisual is represented as a grid of triangles
+              with texture coordinates linearly mapped.
+            * 'impostor': ImageVisual is represented as a quad covering the
+              entire view, with texture coordinates determined by the
+              transform. This produces the best transformation results, but may
+              be slow.
+        """
+        return self.visual.method
+
+    @method.setter
+    def method(self):
+        self.visual.method = method
+
+    @property
+    def size(self):
+        """Size of the displayed image.
+        """
+        return self.visual.size
+
+    @property
+    def interpolation(self):
+        """string: Equipped interpolation method's name.
+        """
+        return _index_to_name(self.interpolation_index)
+
+    @interpolation.setter
+    def interpolation(self, interpolation):
+        self.interpolation_index = _name_to_index(interpolation)
+
+    @property
+    def interpolation_functions(self):
+        return interpolation_names
 
     @property
     def transform(self):

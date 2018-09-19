@@ -159,6 +159,8 @@ class ImageViewerWidget(QWidget):
 
             grid.addWidget(slider, row, 0)
             self.sliders.append(slider)
+        else:
+            slider = slider.widget()
 
         slider.setMaximum(max_axis_length - 1)
         return slider
