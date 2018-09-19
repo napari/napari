@@ -6,12 +6,13 @@ import numpy as np
 
 from gui.elements.image_window import ImageWindow
 from gui.napari_application import NapariApplication
-from gui.utils.example_data_utils import load_bluemarble_image
+
+from skimage import data
 
 
 def open_2Drgb(win):
     # opening a 2D RGB image:
-    image = load_bluemarble_image(large=False)
+    image = data.astronaut()
     meta = dict(name='BlueMarble', itype='rgb')
     viewer = win.add_viewer().add_image(image, meta)
 
