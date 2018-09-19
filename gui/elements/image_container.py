@@ -1,6 +1,10 @@
-from ..visuals.napari_image import NapariImage
+from vispy.visuals.transforms import STTransform
+from vispy.visuals.filters import Alpha
+
+from ..visuals.napari_image import NapariImage as Image
 
 from ..util import (is_multichannel,
+                    guess_multichannel,
                     interpolation_names,
                     interpolation_index_to_name as _index_to_name,
                     interpolation_name_to_index as _name_to_index)
@@ -17,20 +21,17 @@ class ImageContainer:
         Image metadata.
     view : vispy.scene.widgets.ViewBox
         View on which to draw.
-    update_func : callable
-        Function to call when the image needs to be redrawn.
-        Takes no arguments.
     """
-    def __init__(self, image, meta, view, update_func):
-        self._image = image
-        self._meta = meta
+    def __init__(self, image, meta, view):
+        self.image = image
+        self.meta = meta
         self.view = view
-        self.update = update_func
 
-        self.image_visual = NapariImage(image, parent=view.scene,
-                                        method='auto')
+        self.visual = Image(image, parent=view.scene,
+                            method='auto')
 
-        self._brightness = 1
+        self._alpha = Alpha(1.0)
+        self.visual.attach(self._alpha)
         self._interpolation_index = 0
 
         self.interpolation = 'nearest'
@@ -40,8 +41,8 @@ class ImageContainer:
         info = ['image']
 
         try:
-            info.append(self.meta.name)
-        except AttributeError:
+            info.append(self.meta['name'])
+        except KeyError:
             pass
 
         info.append(self.image.shape)
@@ -52,9 +53,9 @@ class ImageContainer:
     def __repr__(self):
         """Equivalent to str(obj).
         """
-        return str(self)
+        return 'ImageContainer: ' + str(self)
 
-    def set_view(self, indices):
+    def set_view_slice(self, indices):
         """Sets the view given the indices to slice.
 
         Parameters
@@ -62,6 +63,7 @@ class ImageContainer:
         indices : list
             Indices to slice with.
         """
+        self.indices = indices
         ndim = self.image.ndim - is_multichannel(self.meta)
         indices = indices[:ndim]
 
@@ -76,36 +78,41 @@ class ImageContainer:
 
         sliced_image = self.image[tuple(indices)]
 
-        self.image_visual.set_data(sliced_image)
+        self.visual.set_data(sliced_image)
         self.view.camera.set_range()
 
-    @property
-    def image(self):
-        """np.ndarray: Image data.
+    def change_image(self, image, meta=None, multichannel=None):
+        """Changes the underlying image and metadata.
+
+        Parameters
+        ----------
+        image : np.ndarray
+            Image data.
+        meta : dict, optional
+            Image metadata. If None, reuses previous metadata.
+        multichannel : bool, optional
+            Whether the image is multichannel. Guesses if None.
         """
-        return self._image
+        self.image = image
 
-    @image.setter
-    def image(self, image):
-        self._image = image
-        self.update()
+        if meta is not None:
+            self.meta = meta
 
-    @property
-    def meta(self):
-        """dict: Image metadata.
-        """
-        return self._meta
+        if multichannel is None:
+            multichannel = guess_multichannel(image.shape)
 
-    @meta.setter
-    def meta(self, meta):
-        self._meta = meta
-        self.update()
+        if multichannel:
+            self.meta['itype'] = 'multi'
+
+        self.visual._need_colortransform_update = True
+        self.set_view_slice(self.indices)
+        self.visual.update()
 
     @property
     def interpolation(self):
         """string: Equipped interpolation method's name.
         """
-        return index_to_name(self.interpolation_index)
+        return _index_to_name(self.interpolation_index)
 
     @interpolation.setter
     def interpolation(self, interpolation):
@@ -121,33 +128,39 @@ class ImageContainer:
     def interpolation_index(self, interpolation_index):
         intp_index = interpolation_index % len(interpolation_names)
         self._interpolation_index = intp_index
-        self.image_visual.interpolation = _index_to_name(intp_index)
-        self.update()
+        self.visual.interpolation = _index_to_name(intp_index)
 
     @property
-    def brightness(self):
-        """float: Image brightness.
+    def transparency(self):
+        """float: Image transparency.
         """
-        return self._brightness
+        return self._alpha.alpha
 
-    @brightness.setter
-    def brightness(self, brightness):
-        # TODO: actually implement this
-        print("brightess = %f" % brightness)
-        if not 0.0 < brightness < 1.0:
-            raise ValueError('brightness must be between 0-1, not '
-                             + brightness)
+    @transparency.setter
+    def transparency(self, transparency):
+        if not 0.0 <= transparency <= 1.0:
+            raise ValueError('transparency must be between 0-1, '
+                             f'not {transparency}')
 
-        self.brightness = brightness
-        self.update()
+        self._alpha.alpha = transparency
+        self.visual.update()
 
     @property
     def cmap(self):
         """string: Color map.
         """
-        return self.image_visual.cmap
+        return self.visual.cmap
 
     @cmap.setter
     def cmap(self, cmap):
-        self.image_visual.cmap = cmap
-        self.update()
+        self.visual.cmap = cmap
+
+    @property
+    def transform(self):
+        """vispy.visuals.transform.BaseTransform: Transformation.
+        """
+        return self.visual.transform
+
+    @transform.setter
+    def transform(self, transform):
+        self.visual.transform = transform

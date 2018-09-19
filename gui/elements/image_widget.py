@@ -20,8 +20,9 @@ class ImageViewerWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-        self.y_axis = 0  # typically the y-axis
-        self.x_axis = 1  # typically the x-axis
+        # TODO: allow arbitrary display axis setting
+        # self.y_axis = 0  # typically the y-axis
+        # self.x_axis = 1  # typically the x-axis
         self.point = []
         self.containers = []
         self.sliders = []
@@ -77,7 +78,8 @@ class ImageViewerWidget(QWidget):
         container : ImageContainer
             Container for the image.
         """
-        container = ImageContainer(image, meta, self.view, self.canvas.update)
+
+        container = ImageContainer(image, meta, self.view)
         self.containers.append(container)
 
         self.update_sliders()
@@ -169,7 +171,7 @@ class ImageViewerWidget(QWidget):
         indices[1] = slice(None)  # x-axis
 
         for container in self.containers:
-            container.set_view(indices)
+            container.set_view_slice(indices)
 
     @property
     def max_dims(self):

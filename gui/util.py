@@ -17,7 +17,7 @@ def is_multichannel(meta):
     """Determines if an image is RGB after checking its metadata.
     """
     try:
-        return meta['itype'] in ('rgb', 'rgba' 'multi', 'multichannel')
+        return meta['itype'] in ('rgb', 'rgba', 'multi', 'multichannel')
     except KeyError:
         return False
 
@@ -81,10 +81,9 @@ def compute_max_shape(shapes, max_dims=None):
 
 _app = None
 _windows = []
-_GUESS = object()
 
 
-def imshow(image, meta=None, multichannel=_GUESS,
+def imshow(image, meta=None, multichannel=None,
            new_window=True, **kwargs):
     """Displays an image.
 
@@ -95,7 +94,7 @@ def imshow(image, meta=None, multichannel=_GUESS,
     meta : dict, optional
         Image metadata.
     multichannel : bool, optional
-        Whether the image is multichannel.
+        Whether the image is multichannel. Guesses if None.
     new_window : bool, optional
         Whether the image will open in a new window.
     **kwargs : dict
@@ -115,7 +114,7 @@ def imshow(image, meta=None, multichannel=_GUESS,
     if meta is None:
         meta = kwargs
 
-    if multichannel is _GUESS:
+    if multichannel is None:
         multichannel = guess_multichannel(image.shape)
 
     if multichannel:
@@ -130,7 +129,8 @@ def imshow(image, meta=None, multichannel=_GUESS,
     else:
         window = _windows[-1]
 
-    container = window.add_viewer().add_image(image, meta)
+    viewer = window.add_viewer()
+    container = viewer.add_image(image, meta)
 
     window.show()
     window.raise_()
