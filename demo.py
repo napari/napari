@@ -7,6 +7,8 @@ import numpy as np
 from gui.elements.image_window import ImageWindow
 from gui.napari_application import NapariApplication
 
+from vispy.visuals.transforms import STTransform
+
 from skimage import data
 
 
@@ -15,6 +17,8 @@ def open_2Drgb(win):
     image = data.astronaut()
     meta = dict(name='BlueMarble', itype='rgb')
     viewer = win.add_viewer().add_image(image, meta)
+
+    viewer.view.camera.set_range()
 
 
 def open_2Dsc(win):
@@ -30,6 +34,8 @@ def open_2Dsc(win):
     container = viewer.add_image(image, meta)
     container.cmap = 'viridis'
 
+    viewer.view.camera.set_range()
+
 
 def open_3Dsc(win):
     # opening a 3D single channel image:
@@ -44,6 +50,8 @@ def open_3Dsc(win):
     viewer = win.add_viewer()
     container = viewer.add_image(image, meta)
     container.cmap = 'blues'
+
+    viewer.view.camera.set_range()
 
 
 def open_4Dsc(win):
@@ -62,11 +70,55 @@ def open_4Dsc(win):
     container.cmap = 'blues'
     container.interpolation = 'spline36'
 
+    viewer.view.camera.set_range()
+
+
+def open_multi():
+    # opening a 3D and 4D single-channel images in the same viewer
+    win = ImageWindow()
+    viewer = win.add_viewer()
+
+    h = 64
+    w = 64
+    d = 64
+    Z, Y, X = np.ogrid[-2.5:2.5:h * 1j, -2.5:2.5:w * 1j, -2.5:2.5:d * 1j]
+    image3D = np.empty((h, w, d), dtype=np.float32)
+    image3D[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
+    # image[-30:] = np.linspace(0, 1, w)
+    meta = dict(name='3D1C', itype='mono')
+    container = viewer.add_image(image3D, meta)
+    container.cmap = 'blues'
+    container.interpolation = 'spline36'
+
+    h = 64
+    w = 64
+    d = 64
+    b = 64
+    C, Z, Y, X = np.ogrid[-2.5:2.5:h * 1j, -2.5:2.5:w * 1j, -2.5:2.5:d * 1j, -2.5:2.5:b * 1j]
+    image4D = np.empty((h, w, d, b), dtype=np.float32)
+    image4D[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2 - C ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
+    # image[-30:] = np.linspace(0, 1, w)
+    meta = dict(name='4D1C', itype='mono')
+    container = viewer.add_image(image4D, meta)
+    container.cmap = 'blues'
+    container.interpolation = 'spline36'
+
+    scale = image3D.shape[0] / image4D.shape[0]
+
+    container.transform = STTransform(translate=[image3D.shape[0]],
+                                      scale=[scale] * 2)
+
+    viewer.view.camera.set_range()
+    win.show()
+    win.raise_()
+    return win
+
 
 if __name__ == '__main__':
     # starting
     application = NapariApplication(sys.argv)
 
+    """
     win = ImageWindow()
 
     open_2Drgb(win)
@@ -77,5 +129,8 @@ if __name__ == '__main__':
     win.resize(win.layout().sizeHint())
     win.show()
     win.raise_()
+    """
+
+    multi_win = open_multi()
 
     sys.exit(application.exec_())
