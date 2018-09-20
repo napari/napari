@@ -79,7 +79,7 @@ class ImageViewerWidget(QWidget):
             Container for the image.
         """
 
-        container = ImageContainer(image, meta, self.view)
+        container = ImageContainer(image, meta, self)
         self.containers.append(container)
 
         self.update_sliders()
