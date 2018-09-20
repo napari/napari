@@ -6,7 +6,9 @@ from vispy.scene import SceneCanvas
 from .image_container import ImageContainer
 from .panzoom import PanZoomCamera
 
-from ..util import is_multichannel, compute_max_shape as _compute_max_shape
+from ..util import is_multichannel
+from ..util.misc import (compute_max_shape as _compute_max_shape,
+                         guess_metadata)
 
 
 class ImageViewerWidget(QWidget):
@@ -63,21 +65,27 @@ class ImageViewerWidget(QWidget):
 
         return axis - 1
 
-    def add_image(self, image, meta):
+    def add_image(self, image, meta=None,
+                  multichannel=None, **kwargs):
         """Adds an image to the viewer.
 
         Parameters
         ----------
         image : np.ndarray
             Image data.
-        meta : dict
+        meta : dict, optional
             Image metadata.
+        multichannel : bool, optional
+            Whether the image is multichannel. Guesses if None.
+        new_window : bool, optional
+            Whether the image will open in a new window.
 
         Returns
         -------
         container : ImageContainer
             Container for the image.
         """
+        meta = guess_metadata(image, meta, multichannel, kwargs)
 
         container = ImageContainer(image, meta, self)
         self.containers.append(container)

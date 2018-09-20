@@ -3,11 +3,11 @@ from vispy.visuals.filters import Alpha
 
 from ..visuals.napari_image import NapariImage as Image
 
-from ..util import (is_multichannel,
-                    guess_multichannel,
-                    interpolation_names,
-                    interpolation_index_to_name as _index_to_name,
-                    interpolation_name_to_index as _name_to_index)
+from ..util import is_multichannel
+from ..util.misc import guess_metadata
+from ..util.interpolation import (interpolation_names,
+                                  interpolation_index_to_name as _index_to_name,
+                                  interpolation_name_to_index as _name_to_index)  # noqa
 
 
 class ImageContainer:
@@ -35,6 +35,7 @@ class ImageContainer:
         self._interpolation_index = 0
 
         self.interpolation = 'nearest'
+        self.cmap = 'grays'
 
         # TODO: implement and use STRTransform
         self.transform = STTransform()
@@ -104,13 +105,8 @@ class ImageContainer:
         self._image = image
 
         if meta is not None:
+            meta = guess_metadata(image, meta, multichannel, dict())
             self._meta = meta
-
-        if multichannel is None:
-            multichannel = guess_multichannel(image.shape)
-
-        if multichannel:
-            self.meta['itype'] = 'multi'
 
         self.refresh()
 
@@ -187,6 +183,16 @@ class ImageContainer:
 
         self._alpha.alpha = transparency
         self.update()
+
+    @property
+    def visible(self):
+        """bool: Whether the visual is currently being displayed.
+        """
+        return self.visual.visible
+
+    @visible.setter
+    def visible(self, visibility):
+        self.visual.visible = visibility
 
     ###
     ###  wrap visual properties

@@ -1,16 +1,5 @@
 """Miscellaneous utility functions.
 """
-from vispy import scene as _scene
-
-
-# get available interpolation methods
-interpolation_names = _scene.visuals.Image(None).interpolation_functions
-interpolation_names = list(interpolation_names)
-interpolation_names.sort()
-# interpolation_names.remove('sinc')  # does not work well on my machine
-
-interpolation_index_to_name = interpolation_names.__getitem__
-interpolation_name_to_index = interpolation_names.index
 
 
 def is_multichannel(meta):
@@ -41,6 +30,40 @@ def guess_multichannel(shape):
     diff = average - last_dim
 
     return diff > last_dim * 100
+
+
+def guess_metadata(image, meta, multichannel, kwargs):
+    """Guesses an image's metadata.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        Image data.
+    meta : dict or None
+        Image metadata.
+    multichannel : bool or None
+        Whether the image is multichannel. Guesses if None.
+    kwargs : dict
+        Parameters that will be translated to metadata.
+
+    Returns
+    -------
+    meta : dict
+        Guessed image metadata.
+    """
+    if isinstance(meta, dict):
+        meta = dict(meta, **kwargs)
+
+    if meta is None:
+        meta = kwargs
+
+    if multichannel is None:
+        multichannel = guess_multichannel(image.shape)
+
+    if multichannel:
+        meta['itype'] = 'multi'
+
+    return meta
 
 
 def compute_max_shape(shapes, max_dims=None):
@@ -106,19 +129,9 @@ def imshow(image, meta=None, multichannel=None,
         Image container.
     """
     from PyQt5.QtWidgets import QApplication
-    from .elements.image_window import ImageWindow
+    from ..elements.image_window import ImageWindow
 
-    if isinstance(meta, dict):
-        meta = dict(meta, **kwargs)
-
-    if meta is None:
-        meta = kwargs
-
-    if multichannel is None:
-        multichannel = guess_multichannel(image.shape)
-
-    if multichannel:
-        meta['itype'] = 'multi'
+    meta = guess_metadata(image, meta, multichannel, kwargs)
 
     global _app
     _app = QApplication.instance() or QApplication([])
@@ -131,7 +144,9 @@ def imshow(image, meta=None, multichannel=None,
 
     viewer = window.add_viewer()
     container = viewer.add_image(image, meta)
+    viewer.view.camera.set_range()
 
+    window.resize(window.layout().sizeHint())
     window.show()
     window.raise_()
 
