@@ -6,7 +6,6 @@ from vispy.scene import SceneCanvas
 from .image_container import ImageContainer
 from .panzoom import PanZoomCamera
 
-from ..util import is_multichannel
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 
@@ -65,9 +64,30 @@ class ImageViewerWidget(QWidget):
 
         return axis - 1
 
-    def add_image(self, image, meta=None,
-                  multichannel=None, **kwargs):
+    def add_image(self, image, meta):
         """Adds an image to the viewer.
+
+        Parameters
+        ----------
+        image : np.ndarray
+            Image data.
+        meta : dict, optional
+            Image metadata.
+
+        Returns
+        -------
+        container : ImageContainer
+            Container for the image.
+        """
+        container = ImageContainer(image, meta, self)
+        self.containers.append(container)
+
+        self.update_sliders()
+
+        return container
+
+    def imshow(self, image, meta=None, multichannel=None, **kwargs):
+        """Shows an image in the viewer.
 
         Parameters
         ----------
@@ -77,8 +97,8 @@ class ImageViewerWidget(QWidget):
             Image metadata.
         multichannel : bool, optional
             Whether the image is multichannel. Guesses if None.
-        new_window : bool, optional
-            Whether the image will open in a new window.
+        **kwargs : dict
+            Parameters that will be translated to metadata.
 
         Returns
         -------
@@ -87,13 +107,7 @@ class ImageViewerWidget(QWidget):
         """
         meta = guess_metadata(image, meta, multichannel, kwargs)
 
-        container = ImageContainer(image, meta, self)
-        self.containers.append(container)
-
-        self.update_sliders()
-        self.update_images()
-
-        return container
+        return self.add_image(image, meta)
 
     def update_sliders(self):
         """Updates the sliders according to the contained images.
@@ -176,12 +190,8 @@ class ImageViewerWidget(QWidget):
     def update_images(self):
         """Updates the contained images.
         """
-        indices = list(self.point)
-        indices[0] = slice(None)  # y-axis
-        indices[1] = slice(None)  # x-axis
-
         for container in self.containers:
-            container.set_view_slice(indices)
+            container.set_view_slice(self.point)
 
     @property
     def max_dims(self):
@@ -190,8 +200,9 @@ class ImageViewerWidget(QWidget):
         max_dims = 0
 
         for container in self.containers:
-            dims = container.image.ndim - is_multichannel(container.meta)
-            max_dims = max(max_dims, dims)
+            dims = container.effective_ndim
+            if dims > max_dims:
+                max_dims = dims
 
         return max_dims
 
