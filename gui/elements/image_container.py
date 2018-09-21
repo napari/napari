@@ -35,7 +35,6 @@ class ImageContainer:
         self._interpolation_index = 0
 
         self.interpolation = 'nearest'
-        self.cmap = 'grays'
 
         # TODO: implement and use STRTransform
         self.transform = STTransform()
