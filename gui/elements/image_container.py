@@ -3,7 +3,7 @@ from vispy.visuals.filters import Alpha
 
 from ..visuals.napari_image import NapariImage as Image
 
-from ..util import is_multichannel
+from ..util import is_multichannel as _multichannel
 from ..util.misc import guess_metadata
 from ..util.interpolation import (interpolation_names,
                                   interpolation_index_to_name as _index_to_name,
@@ -36,8 +36,16 @@ class ImageContainer:
 
         self.interpolation = 'nearest'
 
+        self.indices = ...
+
         # TODO: implement and use STRTransform
         self.transform = STTransform()
+
+        # update flags
+        self._need_display_update = True
+        self._need_visual_update = False
+
+        self.update()
 
     def __str__(self):
         """Gets the image title.
@@ -68,11 +76,12 @@ class ImageContainer:
             Indices to slice with.
         """
         self.indices = indices
-        ndim = self.image_ndim
+        ndim = self.effective_ndim
 
         if indices is Ellipsis:
-            sliced_image = self.image
+            indices = [0] * ndim
         else:
+            indices = list(indices)
             indices = indices[:ndim]
 
             for dim in range(len(indices)):
@@ -84,42 +93,66 @@ class ImageContainer:
                 except TypeError:
                     pass
 
-            sliced_image = self.image[tuple(indices)]
+        indices[0] = slice(None)  # y-axis
+        indices[1] = slice(None)  # x-axis
+        sliced_image = self.image[tuple(indices)]
 
         self.visual.set_data(sliced_image)
+
+        self._need_visual_update = True
         self.update()
 
-    def set_image_and_metadata(self, image, meta=None, multichannel=None):
+    def set_image_and_metadata(self, image, meta):
         """Sets the underlying image and metadata.
 
         Parameters
         ----------
         image : np.ndarray
             Image data.
-        meta : dict, optional
-            Image metadata. If None, reuses previous metadata.
-        multichannel : bool, optional
-            Whether the image is multichannel. Guesses if None.
+        meta : dict
+            Image metadata.
         """
         self._image = image
+        self._meta = meta
 
-        if meta is not None:
-            meta = guess_metadata(image, meta, multichannel, dict())
-            self._meta = meta
+        self._need_display_update = True
+        self.update()
 
-        self.viewer.update_sliders()
-        self.refresh()
+    def imshow(self, image, meta=None, multichannel=None, **kwargs):
+        """Replaces the current image with another.
+
+        Parameters
+        ----------
+        image : np.ndarray
+            Image data.
+        meta : dict, optional
+            Image metadata.
+        multichannel : bool, optional
+            Whether the image is multichannel. Guesses if None.
+        **kwargs : dict
+            Parameters that will be translated to metadata.
+
+        Returns
+        -------
+        self : ImageContainer
+            Container for the image.
+        """
+        meta = guess_metadata(image, meta, multichannel, kwargs)
+        self.set_image_and_metadata(image, meta)
+        return self
 
     def update(self):
         """Updates the underlying visual.
         """
-        return self.visual.update()
+        if self._need_display_update:
+            self._need_display_update = False
+            self.viewer.update_sliders()
+            self.visual._need_colortransform_update = True
+            self.set_view_slice(self.indices)
 
-    def refresh(self):
-        """Fully refreshes the visual.
-        """
-        self.visual._need_colortransform_update = True
-        self.set_view_slice(self.indices)  # also performs self.update()
+        if self._need_visual_update:
+            self._need_visual_update = False
+            self.visual.update()
 
     @property
     def image(self):
@@ -131,7 +164,9 @@ class ImageContainer:
     def image(self, image):
         self._image = image
         self.viewer.update_sliders()
-        self.refresh()
+
+        self._need_display_update = True
+        self.update()
 
     @property
     def meta(self):
@@ -143,7 +178,9 @@ class ImageContainer:
     @meta.setter
     def meta(self, meta):
         self._meta = meta
-        self.refresh()
+
+        self._need_display_update = True
+        self.update()
 
     @property
     def data_ndim(self):
@@ -153,10 +190,22 @@ class ImageContainer:
         return self.image.ndim
 
     @property
-    def image_ndim(self):
+    def effective_ndim(self):
         """int: Number of dimensions of the contained image.
         """
-        return self.data_ndim - is_multichannel(self.meta)
+        return self.data_ndim - self.multichannel
+
+    @property
+    def display_ndim(self):
+        """int: Number of dimensions being displayed in the visual.
+        """
+        return 2 + self.multichannel
+
+    @property
+    def extra_ndim(self):
+        """int: Number of dimensions not displayed in the visual.
+        """
+        return self.data_ndim - self.display_ndim
 
     @property
     def interpolation_index(self):
@@ -169,6 +218,22 @@ class ImageContainer:
         intp_index = interpolation_index % len(interpolation_names)
         self._interpolation_index = intp_index
         self.visual.interpolation = _index_to_name(intp_index)
+
+    @property
+    def multichannel(self):
+        """bool: Whether the image is multichannel.
+        """
+        return _multichannel(self.meta)
+
+    @multichannel.setter
+    def multichannel(self, val):
+        if val == self.multichannel:
+            return
+
+        self.meta['itype'] = 'multi'
+
+        self._need_display_update = True
+        self.update()
 
     @property
     def transparency(self):
