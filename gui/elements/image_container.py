@@ -90,7 +90,7 @@ class ImageContainer:
         self.visual.set_data(sliced_image)
         self.update()
 
-    def set_image(self, image, meta=None, multichannel=None):
+    def set_image_and_metadata(self, image, meta=None, multichannel=None):
         """Sets the underlying image and metadata.
 
         Parameters
@@ -108,6 +108,7 @@ class ImageContainer:
             meta = guess_metadata(image, meta, multichannel, dict())
             self._meta = meta
 
+        self.viewer.update_sliders()
         self.refresh()
 
     def update(self):
@@ -130,6 +131,7 @@ class ImageContainer:
     @image.setter
     def image(self, image):
         self._image = image
+        self.viewer.update_sliders()
         self.refresh()
 
     @property
