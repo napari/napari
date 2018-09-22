@@ -68,11 +68,11 @@ class ImageContainer:
         return 'ImageContainer: ' + str(self)
 
     def set_view_slice(self, indices):
-        """Sets the view given the indices to slice.
+        """Sets the view given the indices to slice with.
 
         Parameters
         ----------
-        indices : sequence
+        indices : sequence or ellipsis
             Indices to slice with.
         """
         self.indices = indices
@@ -146,7 +146,10 @@ class ImageContainer:
         """
         if self._need_display_update:
             self._need_display_update = False
-            self.viewer.update_sliders()
+
+            self.viewer._child_image_changed = True
+            self.viewer.update()
+
             self.visual._need_colortransform_update = True
             self.set_view_slice(self.indices)
 
