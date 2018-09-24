@@ -9,7 +9,10 @@ DISTNAME = 'napari-gui'
 DESCRIPTION = 'GUI component of Napari.'
 LONG_DESCRIPTION = __doc__
 LICENSE = 'BSD 3-Clause'
-PACKAGES = ['napari_gui']
+PACKAGES = ['napari_gui',
+            'napari_gui.elements',
+            'napari_gui.util',
+            'napari_gui.visuals']
 DOWNLOAD_URL = 'https://github.com/Napari/napari-gui'
 
 CLASSIFIERS = [
