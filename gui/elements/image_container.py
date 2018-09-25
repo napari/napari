@@ -1,7 +1,7 @@
 from vispy.visuals.transforms import STTransform
 from vispy.visuals.filters import Alpha
 
-from ..visuals.napari_image import NapariImage as Image
+from ..scene.visuals import Image
 
 from ..util import is_multichannel as _multichannel
 from ..util.misc import guess_metadata
@@ -30,8 +30,6 @@ class ImageContainer:
         self.visual = Image(None, parent=viewer.view.scene,
                             method='auto')
 
-        self._alpha = Alpha(1.0)
-        self.visual.attach(self._alpha)
         self._interpolation_index = 0
 
         self.interpolation = 'nearest'
@@ -239,19 +237,30 @@ class ImageContainer:
         self.update()
 
     @property
+    def opacity(self):
+        """float: Image opacity.
+        """
+        return self.visual.opacity
+
+    @opacity.setter
+    def opacity(self, opacity):
+        if not 0.0 <= opacity <= 1.0:
+            raise ValueError('opacity must be between 0.0 and 1.0; '
+                             f'got {opacity}')
+
+        self.visual.opacity = opacity
+
+    @property
     def transparency(self):
         """float: Image transparency.
+
+        Alias for opacity.
         """
-        return self._alpha.alpha
+        return self.opacity
 
     @transparency.setter
     def transparency(self, transparency):
-        if not 0.0 <= transparency <= 1.0:
-            raise ValueError('transparency must be between 0.0 and 1.0; '
-                             f'got {transparency}')
-
-        self._alpha.alpha = transparency
-        self.update()
+        self.opacity = transparency
 
     @property
     def visible(self):

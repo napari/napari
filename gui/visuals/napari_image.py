@@ -97,7 +97,7 @@ def _build_color_transform(data, cmap):
     return fun
 
 
-class NapariImageVisual(Visual):
+class ImageVisual(Visual):
     """Visual subclass displaying an image.
 
     Parameters
@@ -211,7 +211,7 @@ class NapariImageVisual(Visual):
         self._null_tr = NullTransform()
 
         self._init_view(self)
-        super(NapariImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
@@ -450,7 +450,3 @@ class NapariImageVisual(Visual):
 
         if view._need_method_update:
             self._update_method(view)
-
-
-
-NapariImage = scene.visuals.create_visual_node(NapariImageVisual)

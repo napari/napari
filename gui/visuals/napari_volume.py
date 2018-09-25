@@ -115,7 +115,7 @@ float colorToVal(vec4 color1)
 }}
 
 vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
-{{   
+{{
     // Calculate color by incorporating lighting
     vec4 color1;
     vec4 color2;
@@ -156,11 +156,11 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     vec4 final_color;
 
     // todo: allow multiple light, define lights on viewvox or subscene
-    int nlights = 1; 
+    int nlights = 1;
     for (int i=0; i<nlights; i++)
-    {{ 
+    {{
         // Get light direction (make sure to prevent zero devision)
-        vec3 L = normalize(view_ray);  //lightDirs[i]; 
+        vec3 L = normalize(view_ray);  //lightDirs[i];
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));
 
@@ -294,8 +294,8 @@ TRANSLUCENT_SNIPPETS = dict(
             float alpha = max(a1 + a2, 0.001);
 
             // Doesn't work.. GLSL optimizer bug?
-            //integrated_color = (integrated_color * a1 / alpha) + 
-            //                   (color * a2 / alpha); 
+            //integrated_color = (integrated_color * a1 / alpha) +
+            //                   (color * a2 / alpha);
             // This should be identical but does work correctly:
             integrated_color *= a1 / alpha;
             integrated_color += color * a2 / alpha;
@@ -365,7 +365,7 @@ frag_dict = {
 }
 
 
-class NapariVolumeVisual(Visual):
+class VolumeVisual(Visual):
     """ Displays a 3D Volume
 
     Parameters
@@ -424,7 +424,7 @@ class NapariVolumeVisual(Visual):
                             wrapping='clamp_to_edge')
 
         # Create program
-        Visual.__init__(self, vcode=VERT_SHADER, fcode="")
+        super(VolumeVisual, self).__init__(self, vcode=VERT_SHADER, fcode="")
         self.shared_program['u_volumetex'] = self._tex
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
@@ -637,7 +637,3 @@ class NapariVolumeVisual(Visual):
     def _prepare_draw(self, view):
         if self._need_vertex_update:
             self._create_vertex_data()
-
-
-
-NapariVolume = scene.visuals.create_visual_node(NapariVolumeVisual)
