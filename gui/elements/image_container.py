@@ -1,3 +1,5 @@
+import numpy as np
+
 from vispy.visuals.transforms import STTransform
 from vispy.visuals.filters import Alpha
 
@@ -251,18 +253,6 @@ class ImageContainer:
         self.visual.opacity = opacity
 
     @property
-    def transparency(self):
-        """float: Image transparency.
-
-        Alias for opacity.
-        """
-        return self.opacity
-
-    @transparency.setter
-    def transparency(self, transparency):
-        self.opacity = transparency
-
-    @property
     def visible(self):
         """bool: Whether the visual is currently being displayed.
         """
@@ -360,6 +350,11 @@ class ImageContainer:
         if not isinstance(tf, STTransform):
             raise TypeError('underlying transform expected to '
                             f'be STTransform; got {type(tf)}') from None
+
+    @property
+    def display_shape(self):
+        return tuple(np.rint(self.scale[:2] * self.image.shape[:2],)
+                     .astype(np.int))
 
     @property
     def scale(self):

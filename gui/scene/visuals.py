@@ -17,7 +17,7 @@ import weakref
 
 from vispy import visuals
 from vispy.scene.node import Node
-from vispy.visuals.filters import Alpha, PickingFilter
+from ..visuals.filters import Alpha, PickingFilter
 
 from .. import visuals as napari_visuals
 
