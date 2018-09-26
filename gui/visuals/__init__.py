@@ -1,2 +1,2 @@
-from .napari_image import ImageVisual
-from .napari_volume import VolumeVisual
+from .image import ImageVisual
+from .volume import VolumeVisual
