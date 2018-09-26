@@ -91,6 +91,17 @@ class ImageViewerWidget(QWidget):
             Container for the image.
         """
         container = ImageContainer(image, meta, self)
+
+        if self.containers:
+            offset = 0
+
+            for c in self.containers:
+                offset += c.display_shape[0]
+
+            container.translate = offset
+            container.scale = [self.containers[0].image.shape[0]
+                               / container.image.shape[0]] * 2
+
         self.containers.append(container)
 
         self._child_image_changed = True
