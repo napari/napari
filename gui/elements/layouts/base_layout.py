@@ -25,6 +25,10 @@ class BaseLayout:
     def horizontal_axis(self):
         return 0  # y-axis
 
+    @property
+    def view_range(self):
+        return self._view_range
+
     def add_container(self, container):
         raise NotImplementedError()
 
