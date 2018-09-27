@@ -183,8 +183,6 @@ class ImageContainer:
 
     @property
     def _layout(self):
-        """BaseLayout: Parent container layout.
-        """
         return self.viewer.containerlayout
 
     @property
@@ -195,10 +193,15 @@ class ImageContainer:
 
     @in_layout.setter
     def in_layout(self, in_layout):
+        if in_layout == self.in_layout:
+            return
+
         if self.in_layout:
             self._layout.remove_container(self)
         else:
             self._layout.add_container(self)
+
+        self.viewer.reset_view()
 
     @property
     def image(self):

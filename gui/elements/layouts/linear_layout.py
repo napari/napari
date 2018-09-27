@@ -63,7 +63,7 @@ class LinearLayout(BaseLayout):
         view_range = ((0, target_height), (0, offset))
         if self.horizontal:
             view_range = view_range[::-1]
-        self.viewer.view.camera.set_range(*view_range)
+        self._view_range = view_range
 
     @classmethod
     def from_layout(cls, layout):
@@ -73,7 +73,12 @@ class LinearLayout(BaseLayout):
         return super().from_layout(layout)
 
 
-class HorizontalLayout(LinearLayout):
+class HMeta(type):
+    def __instancecheck__(cls, instance):
+        return isinstance(instance, LinearLayout) and instance.horizontal
+
+
+class HorizontalLayout(LinearLayout, metaclass=HMeta):
     def __new__(cls, viewer):
         if cls is not HorizontalLayout:
             raise TypeError('Cannot be subclassed.')
@@ -87,11 +92,13 @@ class HorizontalLayout(LinearLayout):
 
         return LinearLayout.from_layout(layout)
 
+
+class VMeta(type):
     def __instancecheck__(cls, instance):
-        return isistance(instance, LinearLayout) and instance.horizontal
+        return isinstance(instance, LinearLayout) and not instance.horizontal
 
 
-class VerticalLayout(LinearLayout):
+class VerticalLayout(LinearLayout, metaclass=VMeta):
     def __new__(cls, viewer):
         if cls is not VerticalLayout:
             raise TypeError('Cannot be subclassed.')
@@ -104,6 +111,3 @@ class VerticalLayout(LinearLayout):
             return layout
 
         return LinearLayout.from_layout(layout)
-
-    def __instancecheck__(cls, instance):
-        return isistance(instance, LinearLayout) and not instance.horizontal

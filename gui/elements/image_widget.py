@@ -24,7 +24,6 @@ class ImageViewerWidget(QWidget):
         'horizontal': HorizontalLayout,
         'vertical': VerticalLayout
     }
-    layout_map_inverse = { v: k for k, v in layout_map.items() }
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -73,12 +72,19 @@ class ImageViewerWidget(QWidget):
     def layout_type(self):
         """str: Layout display type.
         """
-        return self.layout_map_inverse[self.containerlayout]
+        for name, layout in self.layout_map.items():
+            if isinstance(self.containerlayout, layout):
+                return name
+        raise Exception()
 
     @layout_type.setter
     def layout_type(self, layout):
+        if layout == self.layout_type:
+            return
+
         layout = self.layout_map[layout].from_layout(self.containerlayout)
         self.containerlayout = layout
+        self.reset_view()
 
     def _axis_to_row(self, axis):
         dims = len(self.point)
@@ -143,6 +149,14 @@ class ImageViewerWidget(QWidget):
         meta = guess_metadata(image, meta, multichannel, kwargs)
 
         return self.add_image(image, meta)
+
+    def reset_view(self):
+        """Resets the camera's view.
+        """
+        try:
+            self.view.camera.set_range(*self.containerlayout.view_range)
+        except AttributeError:
+            pass
 
     def _update_slider(self, axis, max_axis_length):
         """Updates a slider for the given axis or creates
@@ -255,7 +269,9 @@ class ImageViewerWidget(QWidget):
             self._recalc_max_dims = True
             self._recalc_max_shape = True
             self._need_slider_update = True
+
             self.containerlayout.update()
+            self.reset_view()
 
         if self._need_redraw:
             self._need_redraw = False
