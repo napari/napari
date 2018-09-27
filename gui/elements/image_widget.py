@@ -6,6 +6,8 @@ from vispy.scene import SceneCanvas
 from .image_container import ImageContainer
 from .panzoom import PanZoomCamera
 
+from .layouts import HorizontalLayout, VerticalLayout
+
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 
@@ -18,6 +20,12 @@ class ImageViewerWidget(QWidget):
     parent : PyQt5.QWidget, optional
         Parent window.
     """
+    layout_map = {
+        'horizontal': HorizontalLayout,
+        'vertical': VerticalLayout
+    }
+    layout_map_inverse = { v: k for k, v in layout_map.items() }
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -26,6 +34,8 @@ class ImageViewerWidget(QWidget):
         # self.x_axis = 1  # typically the x-axis
         self.point = []
         self.containers = []
+        self.containerlayout = HorizontalLayout(self)
+
         self.sliders = []
 
         layout = QGridLayout()
@@ -58,6 +68,17 @@ class ImageViewerWidget(QWidget):
 
         self._recalc_max_dims = False
         self._recalc_max_shape = False
+
+    @property
+    def layout_type(self):
+        """str: Layout display type.
+        """
+        return self.layout_map_inverse[self.containerlayout]
+
+    @layout_type.setter
+    def layout_type(self, layout):
+        layout = self.layout_map[layout].from_layout(self.containerlayout)
+        self.containerlayout = layout
 
     def _axis_to_row(self, axis):
         dims = len(self.point)
@@ -92,17 +113,8 @@ class ImageViewerWidget(QWidget):
         """
         container = ImageContainer(image, meta, self)
 
-        if self.containers:
-            offset = 0
-
-            for c in self.containers:
-                offset += c.display_shape[0]
-
-            container.translate = offset
-            container.scale = [self.containers[0].image.shape[0]
-                               / container.image.shape[0]] * 2
-
         self.containers.append(container)
+        self.containerlayout.add_container(container)
 
         self._child_image_changed = True
         self.update()
@@ -243,6 +255,7 @@ class ImageViewerWidget(QWidget):
             self._recalc_max_dims = True
             self._recalc_max_shape = True
             self._need_slider_update = True
+            self.containerlayout.update()
 
         if self._need_redraw:
             self._need_redraw = False

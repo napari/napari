@@ -8,6 +8,14 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout,
 from .image_widget import ImageViewerWidget
 
 
+try:
+    import napari
+except ImportError:
+    has_napari = False
+else:
+    has_napari = True
+
+
 class ImageWindow(QMainWindow):
     """Image-based PyQt5 window.
 
@@ -27,8 +35,9 @@ class ImageWindow(QMainWindow):
 
         self.statusBar().showMessage('Ready')
 
-        self.add_menu()
-        self.add_toolbar()
+        if has_napari:
+            self.add_menu()
+            self.add_toolbar()
 
         self.installEventFilter(self)
 

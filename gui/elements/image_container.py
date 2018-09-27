@@ -1,3 +1,5 @@
+import weakref
+
 import numpy as np
 
 from vispy.visuals.transforms import STTransform
@@ -156,6 +158,47 @@ class ImageContainer:
         if self._need_visual_update:
             self._need_visual_update = False
             self.visual.update()
+
+    @property
+    def viewer(self):
+        viewer = self._viewer()
+        if viewer is None:
+            raise ValueError('Lost reference to viewer '
+                             '(was garbage collected).')
+        return viewer
+
+    @viewer.setter
+    def viewer(self, viewer):
+        self._viewer = weakref.ref(viewer)
+
+    @property
+    def layout_type(self):
+        """str: Layout type.
+        """
+        return self.viewer.layout_type
+
+    @layout_type.setter
+    def layout_type(self, layout_type):
+        self.viewer.layout_type = layout_type
+
+    @property
+    def _layout(self):
+        """BaseLayout: Parent container layout.
+        """
+        return self.viewer.containerlayout
+
+    @property
+    def in_layout(self):
+        """bool: If the container is in a layout.
+        """
+        return self in self._layout
+
+    @in_layout.setter
+    def in_layout(self, in_layout):
+        if self.in_layout:
+            self._layout.remove_container(self)
+        else:
+            self._layout.add_container(self)
 
     @property
     def image(self):
