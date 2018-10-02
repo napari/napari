@@ -66,9 +66,21 @@ class LinearLayout(BaseLayout):
         self._view_range = view_range
 
     @classmethod
-    def from_layout(cls, layout):
+    def from_layout(cls, layout, horizontal=None):
         if isinstance(layout, cls):
+            if horizontal is not None:
+                layout.horizontal = horizontal
             return layout
+
+        if horizontal is None:
+            horizontal = False
+
+        from .stacked_layout import StackedLayout
+        if isinstance(layout, StackedLayout):
+            obj = cls(layout.viewer, horizontal=horizontal)
+            obj.tracked_containers = layout.tracked_containers
+            obj.update()
+            return obj
 
         return super().from_layout(layout)
 
@@ -86,11 +98,7 @@ class HorizontalLayout(LinearLayout, metaclass=HMeta):
 
     @classmethod
     def from_layout(cls, layout):
-        if isinstance(layout, (LinearLayout, VerticalLayout)):
-            layout.horizontal = True
-            return layout
-
-        return LinearLayout.from_layout(layout)
+        return LinearLayout.from_layout(layout, horizontal=True)
 
 
 class VMeta(type):
@@ -106,8 +114,4 @@ class VerticalLayout(LinearLayout, metaclass=VMeta):
 
     @classmethod
     def from_layout(cls, layout):
-        if isinstance(layout, (LinearLayout, HorizontalLayout)):
-            layout.horizontal = False
-            return layout
-
-        return LinearLayout.from_layout(layout)
+        return LinearLayout.from_layout(layout, horizontal=False)

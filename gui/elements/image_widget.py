@@ -6,7 +6,7 @@ from vispy.scene import SceneCanvas
 from .image_container import ImageContainer
 from .panzoom import PanZoomCamera
 
-from .layouts import HorizontalLayout, VerticalLayout
+from .layouts import HorizontalLayout, VerticalLayout, StackedLayout
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
@@ -22,7 +22,8 @@ class ImageViewerWidget(QWidget):
     """
     layout_map = {
         'horizontal': HorizontalLayout,
-        'vertical': VerticalLayout
+        'vertical': VerticalLayout,
+        'stacked': StackedLayout
     }
 
     def __init__(self, parent=None):
