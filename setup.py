@@ -9,10 +9,6 @@ DISTNAME = 'napari-gui'
 DESCRIPTION = 'GUI component of Napari.'
 LONG_DESCRIPTION = __doc__
 LICENSE = 'BSD 3-Clause'
-PACKAGES = ['napari_gui',
-            'napari_gui.elements',
-            'napari_gui.util',
-            'napari_gui.visuals']
 DOWNLOAD_URL = 'https://github.com/Napari/napari-gui'
 
 CLASSIFIERS = [
@@ -40,7 +36,7 @@ CLASSIFIERS = [
 
 import os
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 import versioneer
 
 if sys.version_info < (3, 6):
@@ -50,6 +46,11 @@ if sys.version_info < (3, 6):
                      + 'Please install Python 3.6 using:\n'
                      + '  $ pip install python==3.6\n\n')
     sys.exit(1)
+
+
+PACKAGES = [package for package in find_packages()
+            if not package.startswith('gui')]
+
 
 with open('requirements.txt') as f:
     requirements = [l.strip() for l in f.readlines() if l]
