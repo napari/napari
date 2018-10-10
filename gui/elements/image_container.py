@@ -5,7 +5,7 @@ import numpy as np
 from vispy.visuals.transforms import STTransform
 from vispy.visuals.filters import Alpha
 
-from ..scene.visuals import Image
+from .._vispy.scene.visuals import Image
 
 from ..util import is_multichannel as _multichannel
 from ..util.misc import guess_metadata

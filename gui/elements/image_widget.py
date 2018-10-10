@@ -1,10 +1,9 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QGridLayout, QWidget, QSlider, QMenuBar
 
-from vispy.scene import SceneCanvas
+from vispy.scene import SceneCanvas, PanZoomCamera
 
 from .image_container import ImageContainer
-from .panzoom import PanZoomCamera
 
 from .layouts import HorizontalLayout, VerticalLayout, StackedLayout
 
