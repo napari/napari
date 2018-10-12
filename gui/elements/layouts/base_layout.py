@@ -29,10 +29,10 @@ class BaseLayout:
     def view_range(self):
         return self._view_range
 
-    def add_container(self, container):
+    def add_layer(self, layer):
         raise NotImplementedError()
 
-    def remove_container(self, container):
+    def remove_layer(self, layer):
         raise NotImplementedError()
 
     def __iter__(self):
