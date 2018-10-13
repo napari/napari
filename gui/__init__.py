@@ -1,4 +1,3 @@
-from .elements import ImageWindow, ImageViewerWidget, ImageContainer
 from .util.misc import imshow
 
 from ._version import get_versions

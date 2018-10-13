@@ -103,11 +103,9 @@ def compute_max_shape(shapes, max_dims=None):
 
 
 _app = None
-_windows = []
 
 
-def imshow(image, meta=None, multichannel=None,
-           new_window=True, **kwargs):
+def imshow(image, meta=None, multichannel=None, **kwargs):
     """Displays an image.
 
     Parameters
@@ -118,36 +116,27 @@ def imshow(image, meta=None, multichannel=None,
         Image metadata.
     multichannel : bool, optional
         Whether the image is multichannel. Guesses if None.
-    new_window : bool, optional
-        Whether the image will open in a new window.
     **kwargs : dict
         Parameters that will be translated to metadata.
 
     Returns
     -------
-    container : ImageContainer
-        Image container.
+    viewer: Viewer
+        Viewer object.
     """
-    from PyQt5.QtWidgets import QApplication
-    from ..elements.image_window import ImageWindow
+    from ..elements import Window
+    from ..elements.qt import QtApplication
 
     meta = guess_metadata(image, meta, multichannel, kwargs)
 
     global _app
-    _app = QApplication.instance() or QApplication([])
+    _app = _app or QtApplication.instance() or QtApplication([])
 
-    if not _windows or new_window:
-        window = ImageWindow()
-        _windows.append(window)
-    else:
-        window = _windows[-1]
+    window = Window()
 
     viewer = window.add_viewer()
-    container = viewer.add_image(image, meta)
-    viewer.view.camera.set_range()
+    layer = viewer.add_image(image, meta)
 
-    window.resize(window.layout().sizeHint())
     window.show()
-    window.raise_()
 
-    return container
+    return viewer

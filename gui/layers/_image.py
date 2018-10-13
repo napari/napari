@@ -14,8 +14,8 @@ from ..util.interpolation import (interpolation_names,
                                   interpolation_name_to_index as _name_to_index)  # noqa
 
 
-class ImageContainer:
-    """Image container.
+class ImageLayer:
+    """Image layer.
 
     Parameters
     ----------
@@ -23,7 +23,7 @@ class ImageContainer:
         Image data.
     meta : dict
         Image metadata.
-    viewer : ImageViewerWidget
+    viewer : Viewer
         Parent viewer widget.
     """
     def __init__(self, image, meta, viewer):
@@ -31,7 +31,7 @@ class ImageContainer:
         self._meta = meta
         self.viewer = viewer
 
-        self.visual = Image(None, parent=viewer.view.scene,
+        self.visual = Image(None, parent=viewer._qt.view.scene,
                             method='auto')
 
         self._interpolation_index = 0
@@ -67,7 +67,7 @@ class ImageContainer:
     def __repr__(self):
         """Equivalent to str(obj).
         """
-        return 'ImageContainer: ' + str(self)
+        return f'ImageLayer: {self} at {hex(id(self))}'
 
     def set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -136,8 +136,8 @@ class ImageContainer:
 
         Returns
         -------
-        self : ImageContainer
-            Container for the image.
+        self : ImageLayer
+            Layer for the image.
         """
         meta = guess_metadata(image, meta, multichannel, kwargs)
         self.set_image_and_metadata(image, meta)
@@ -172,22 +172,22 @@ class ImageContainer:
         self._viewer = weakref.ref(viewer)
 
     @property
-    def layout_type(self):
+    def layout(self):
         """str: Layout type.
         """
-        return self.viewer.layout_type
+        return self.viewer.layout
 
-    @layout_type.setter
-    def layout_type(self, layout_type):
-        self.viewer.layout_type = layout_type
+    @layout.setter
+    def layout(self, layout):
+        self.viewer.layout = layout
 
     @property
     def _layout(self):
-        return self.viewer.containerlayout
+        return self.viewer._layout
 
     @property
     def in_layout(self):
-        """bool: If the container is in a layout.
+        """bool: If the layer is in a layout.
         """
         return self in self._layout
 
@@ -197,9 +197,9 @@ class ImageContainer:
             return
 
         if self.in_layout:
-            self._layout.remove_container(self)
+            self._layout.remove_layer(self)
         else:
-            self._layout.add_container(self)
+            self._layout.add_layer(self)
 
         self.viewer.reset_view()
 
