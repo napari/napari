@@ -2,7 +2,7 @@ import weakref
 
 import numpy as np
 
-from .base_layer import Layer
+from ._base import Layer
 from .._vispy.scene.visuals import Image as ImageNode
 
 from ..util import is_multichannel
@@ -10,6 +10,8 @@ from ..util.misc import guess_metadata
 from ..util.interpolation import (interpolation_names,
                                   interpolation_index_to_name as _index_to_name,  # noqa
                                   interpolation_name_to_index as _name_to_index)  # noqa
+
+from vispy.color.colormap import get_colormaps
 
 
 class Image(Layer):
@@ -22,7 +24,9 @@ class Image(Layer):
     meta : dict
         Image metadata.
     """
-    default_cmap = 'viridis'
+    _colormaps = get_colormaps()
+
+    default_cmap = 'hot'
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta):
@@ -87,7 +91,7 @@ class Image(Layer):
             self.viewer._child_layer_changed = True
             self.viewer._update()
 
-            self.visual._need_colortransform_update = True
+            self._node._need_colortransform_update = True
             self._set_view_slice(self.viewer.point)
 
         if self._need_visual_update:
@@ -159,6 +163,22 @@ class Image(Layer):
         self._interpolation_index = intp_index
         self._node.interpolation = _index_to_name(intp_index)
 
+    @property
+    def colormap(self):
+        """string or ColorMap: Colormap to use for luminance images.
+        """
+        return self.cmap
+
+    @colormap.setter
+    def colormap(self, colormap):
+        self.cmap = colormap
+
+    @property
+    def colormaps(self):
+        """tuple of str: Colormap names.
+        """
+        return tuple(self._colormaps.keys())
+
     # wrap visual properties:
 
     @property
@@ -178,8 +198,19 @@ class Image(Layer):
         """
         return self._node.cmap
 
+        for name, obj in Image._colormaps.items():
+            if obj == cmap:
+                return name
+        else:
+            return cmap
+
     @cmap.setter
     def cmap(self, cmap):
+        try:
+            cmap = Image._colormaps[cmap]
+        except KeyError:
+            pass
+
         self._node.cmap = cmap
 
     @property
@@ -216,4 +247,4 @@ class Image(Layer):
 
     @property
     def interpolation_functions(self):
-        return interpolation_names
+        return tuple(interpolation_names)

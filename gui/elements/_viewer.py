@@ -1,7 +1,7 @@
 from .qt import QtViewer
 from .layouts import HorizontalLayout, VerticalLayout, StackedLayout
 
-from ..layers import ImageLayer
+from ..layers import Image
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 
@@ -20,7 +20,7 @@ class Viewer:
         'stacked': StackedLayout
     }
 
-    default_layout 'stacked'
+    default_layout = 'stacked'
 
     def __init__(self, window):
         self._window = window
@@ -103,12 +103,13 @@ class Viewer:
 
         Returns
         -------
-        layer : ImageLayer
+        layer : Image
             Layer for the image.
         """
-        layer = ImageLayer(image, meta, self)
-
+        layer = Image(image, meta)
         self.layers.append(layer)
+        layer.viewer = self
+
         self._layout.add_layer(layer)
 
         self._child_layer_changed = True
@@ -132,7 +133,7 @@ class Viewer:
 
         Returns
         -------
-        layer : ImageLayer
+        layer : Image
             Layer for the image.
         """
         meta = guess_metadata(image, meta, multichannel, kwargs)
@@ -174,7 +175,7 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer.set_view_slice(self.point)
+            layer._set_view_slice(self.point)
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
@@ -187,6 +188,9 @@ class Viewer:
                 max_dims = dims
 
         self._max_dims = max_dims
+
+        self._need_slider_update = True
+        self._update()
 
     def _calc_max_shape(self):
         """Calculates the maximum shape of the contained images.

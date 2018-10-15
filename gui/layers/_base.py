@@ -79,10 +79,14 @@ class Layer(VisualWrapper, ABC):
             self._viewer = weakref.ref(viewer)
             parent = viewer._qt.view.scene
 
+
+        vt = self._node.transforms.visual_transform
+        trs = vt.transforms
         self._set_parent(parent)
+        vt.transforms = trs
         self._after_set_viewer(viewer)
 
-    def _after_set_viewer(viewer):
+    def _after_set_viewer(self, viewer):
         """Triggered after a new viewer is set.
 
         Parameters

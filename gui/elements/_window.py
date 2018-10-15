@@ -29,8 +29,8 @@ class Window:
         self._qt.add_viewer(viewer)
         return viewer
 
-    def resize(self, width, height):
-        self._qt.resize(width, height)
+    def resize(self, *args):
+        self._qt.resize(*args)
 
     def show(self):
         self.resize(self._qt.layout().sizeHint())

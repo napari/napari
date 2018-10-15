@@ -6,23 +6,24 @@ class VisualWrapper:
         self._node = central_node
 
         # TODO: create & use our own transformation classes
-        self._node.transform = [STTransform(),
-                                ChainTransform[NullTransform()]]
+        vt = self._node.transforms.visual_transform
+        vt.transforms = [STTransform(),
+                         ChainTransform(NullTransform())]
 
     @property
     def _master_transform(self):
-        """vispy.scene.transforms.MatrixTransform:
+        """vispy.visuals.transforms.STTransform:
         Central node's firstmost transform.
         """
         return self._node.transforms.visual_transform.transforms[0]
 
     @property
     def _transforms(self):
-        """tuple of vispy.scene.transforms.BaseTransform:
+        """tuple of vispy.visuals.transforms.BaseTransform:
         Transforms to apply to the central node.
         """
         tr = self._node.transforms.visual_transform.transforms[1]
-        tuple(tr.transforms)
+        return tuple(tr.transforms)
 
     @_transforms.setter
     def _transforms(self, transforms):
@@ -49,11 +50,11 @@ class VisualWrapper:
     def visible(self):
         """bool: Whether the visual is currently being displayed.
         """
-        return self.visual.visible
+        return self._node.visible
 
     @visible.setter
     def visible(self, visibility):
-        self.visual.visible = visibility
+        self._node.visible = visibility
 
     @property
     def scale(self):
@@ -82,8 +83,7 @@ class VisualWrapper:
     @z_index.setter
     def z_index(self, index):
         tr = self._master_transform
-        tl = tr._translate
+        tl = tr.translate
         tl[2] = -index
 
-        tr._update_shaders()
-        tr.update()
+        tr.translate = tl
