@@ -23,7 +23,7 @@ class StackedLayout(BaseLayout):
         except IndexError:
             return
 
-        target_size = leading_layer.image.shape
+        target_size = leading_layer.shape
         # TODO: account for this when 3D
 
         h = self.horizontal_axis
@@ -31,27 +31,13 @@ class StackedLayout(BaseLayout):
 
         offset = 0
         for layer in self.tracked_layers:
-            layer_size = layer.image.shape
+            layer.z_index = offset
 
-            scale = layer.scale
-            # these differ because the actual visual swaps its axes
-            # you can see this via `visual.size` vs `visual._data.shape`
-            # yes, it's incredibly confusing
-            # TODO: create our own transformation system
-            scale[v] = target_size[h] / layer_size[h]
-            scale[h] = target_size[v] / layer_size[v]
-            layer.scale = scale
+            offset += 1
 
-            translate = layer.translate
-            translate[h] = 0
-            translate[v] = 0
-            translate[2] = offset
-            layer.translate = translate
-
-            offset -= 1
-
-        self._view_range = ((0, target_size[v]),
-                            (0, target_size[h]))
+        size = self.viewer.max_shape
+        self._view_range = ((0, size[v]),
+                            (0, size[h]))
 
     @classmethod
     def from_layout(cls, layout):

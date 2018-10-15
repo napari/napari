@@ -42,11 +42,11 @@ class LinearLayout(BaseLayout):
         except IndexError:
             return
 
-        target_height = leading_layer.image.shape[self.primary_dim]
+        target_height = leading_layer.shape[self.primary_dim]
 
         offset = 0
         for layer in self.tracked_layers:
-            layer_height = layer.image.shape[self.primary_dim]
+            layer_height = layer.shape[self.primary_dim]
             scale = layer.scale
             scale_val = target_height / layer_height
             scale[self.primary_dim] = scale_val

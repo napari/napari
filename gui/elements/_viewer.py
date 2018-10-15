@@ -20,6 +20,8 @@ class Viewer:
         'stacked': StackedLayout
     }
 
+    default_layout 'stacked'
+
     def __init__(self, window):
         self._window = window
 
@@ -30,13 +32,13 @@ class Viewer:
         # self.x_axis = 1  # typically the x-axis
         self.point = []
         self.layers = []
-        self._layout = StackedLayout(self)
+        self._layout = Viewer._layout_map[Viewer.default_layout](self)
 
         self._max_dims = 0
         self._max_shape = tuple()
 
         # update flags
-        self._child_image_changed = False
+        self._child_layer_changed = False
         self._need_redraw = False
         self._need_slider_update = False
 
@@ -109,8 +111,8 @@ class Viewer:
         self.layers.append(layer)
         self._layout.add_layer(layer)
 
-        self._child_image_changed = True
-        self.update()
+        self._child_layer_changed = True
+        self._update()
 
         return layer
 
@@ -180,7 +182,7 @@ class Viewer:
         max_dims = 0
 
         for layer in self.layers:
-            dims = layer.effective_ndim
+            dims = layer.ndim
             if dims > max_dims:
                 max_dims = dims
 
@@ -189,14 +191,14 @@ class Viewer:
     def _calc_max_shape(self):
         """Calculates the maximum shape of the contained images.
         """
-        shapes = (layer.image.shape for layer in self.layers)
+        shapes = (layer.shape for layer in self.layers)
         self._max_shape = _compute_max_shape(shapes, self.max_dims)
 
-    def update(self):
+    def _update(self):
         """Updates the viewer.
         """
-        if self._child_image_changed:
-            self._child_image_changed = False
+        if self._child_layer_changed:
+            self._child_layer_changed = False
             self._recalc_max_dims = True
             self._recalc_max_shape = True
             self._need_slider_update = True
