@@ -94,7 +94,8 @@ class Layer(VisualWrapper, ABC):
         viewer : Viewer
             Parent viewer.
         """
-        self.refresh()
+        if viewer is not None:
+            self.refresh()
 
     def _set_parent(self, parent):
         """Set the parent node.

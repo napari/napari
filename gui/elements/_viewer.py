@@ -1,7 +1,6 @@
 from .qt import QtViewer
-from .layouts import HorizontalLayout, VerticalLayout, StackedLayout
 
-from ..layers import Image
+from ..layers import LayerList, Image
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 
@@ -14,13 +13,6 @@ class Viewer:
     parent : Window
         Parent window.
     """
-    _layout_map = {
-        'horizontal': HorizontalLayout,
-        'vertical': VerticalLayout,
-        'stacked': StackedLayout
-    }
-
-    default_layout = 'stacked'
 
     def __init__(self, window):
         self._window = window
@@ -31,8 +23,7 @@ class Viewer:
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
         self.point = []
-        self.layers = []
-        self._layout = Viewer._layout_map[Viewer.default_layout](self)
+        self.layers = LayerList(self)
 
         self._max_dims = 0
         self._max_shape = tuple()
@@ -56,24 +47,6 @@ class Viewer:
         """vispy.scene.Camera: Viewer camera.
         """
         return self._qt.view.camera
-
-    @property
-    def layout(self):
-        """str: Layout display type.
-        """
-        for name, layout in self._layout_map.items():
-            if isinstance(self._layout, layout):
-                return name
-        raise Exception()
-
-    @layout.setter
-    def layout(self, layout):
-        if layout == self.layout:
-            return
-
-        layout = self._layout_map[layout].from_layout(self._layout)
-        self._layout = layout
-        self.reset_view()
 
     def _axis_to_row(self, axis):
         dims = len(self.point)
@@ -108,9 +81,6 @@ class Viewer:
         """
         layer = Image(image, meta)
         self.layers.append(layer)
-        layer.viewer = self
-
-        self._layout.add_layer(layer)
 
         self._child_layer_changed = True
         self._update()
@@ -144,7 +114,7 @@ class Viewer:
         """Resets the camera's view.
         """
         try:
-            self.camera.set_range(*self._layout.view_range)
+            self.camera.set_range()
         except AttributeError:
             pass
 
@@ -207,7 +177,6 @@ class Viewer:
             self._recalc_max_shape = True
             self._need_slider_update = True
 
-            self._layout.update()
             self.reset_view()
 
         if self._need_redraw:
@@ -226,7 +195,7 @@ class Viewer:
             self._need_slider_update = False
             self._update_sliders()
 
-    def screenshot(self):
+    def screenshot(self, *args, **kwargs):
         """Renders the current canvas.
 
         Returns
@@ -234,7 +203,7 @@ class Viewer:
         screenshot : np.ndarray
             View of the current canvas.
         """
-        return self._qt.canvas.render()
+        return self._qt.canvas.render(*args, **kwargs)
 
     @property
     def max_dims(self):
