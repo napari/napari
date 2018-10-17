@@ -1,14 +1,10 @@
-"""
-TODO: fix this demo and create new examples separately.
-"""
 import sys
 
 import vispy
 from PyQt5.QtWidgets import QApplication, QAction
 import numpy as np
 
-from gui.elements.image_window import ImageWindow
-from gui.napari_application import NapariApplication
+from napari_gui.elements import Window
 
 from vispy.visuals.transforms import STTransform
 
@@ -21,8 +17,6 @@ def open_2Drgb(win):
     meta = dict(name='BlueMarble', itype='rgb')
     viewer = win.add_viewer().add_image(image, meta)
 
-    viewer.view.camera.set_range()
-
 
 def open_2Dsc(win):
     # opening a 2D single channel image:
@@ -34,10 +28,8 @@ def open_2Dsc(win):
     image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='2D1C', itype='mono')
     viewer = win.add_viewer()
-    container = viewer.add_image(image, meta)
-    container.cmap = 'viridis'
-
-    viewer.view.camera.set_range()
+    layer = viewer.add_image(image, meta)
+    layer.cmap = 'viridis'
 
 
 def open_3Dsc(win):
@@ -51,10 +43,8 @@ def open_3Dsc(win):
     # image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='3D1C', itype='mono')
     viewer = win.add_viewer()
-    container = viewer.add_image(image, meta)
-    container.cmap = 'blues'
-
-    viewer.view.camera.set_range()
+    layer = viewer.add_image(image, meta)
+    layer.cmap = 'blues'
 
 
 def open_4Dsc(win):
@@ -69,16 +59,14 @@ def open_4Dsc(win):
     # image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='4D1C', itype='mono')
     viewer = win.add_viewer()
-    container = viewer.add_image(image, meta)
-    container.cmap = 'blues'
-    container.interpolation = 'spline36'
-
-    viewer.view.camera.set_range()
+    layer = viewer.add_image(image, meta)
+    layer.cmap = 'blues'
+    layer.interpolation = 'spline36'
 
 
 def open_multi():
     # opening a 3D and 4D single-channel images in the same viewer
-    win = ImageWindow()
+    win = Window()
     viewer = win.add_viewer()
 
     h = 64
@@ -89,9 +77,9 @@ def open_multi():
     image3D[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
     # image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='3D1C', itype='mono')
-    container = viewer.add_image(image3D, meta)
-    container.cmap = 'blues'
-    container.interpolation = 'spline36'
+    layer = viewer.add_image(image3D, meta)
+    layer.cmap = 'blues'
+    layer.interpolation = 'spline36'
 
     h = 64
     w = 64
@@ -102,37 +90,33 @@ def open_multi():
     image4D[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2 - C ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
     # image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='4D1C', itype='mono')
-    container = viewer.add_image(image4D, meta)
-    container.cmap = 'blues'
-    container.interpolation = 'spline36'
+    layer = viewer.add_image(image4D, meta)
+    layer.cmap = 'blues'
+    layer.interpolation = 'spline36'
 
-    scale = image3D.shape[0] / image4D.shape[0]
+    scale = image3D.shape[1] / image4D.shape[1]
 
-    container.transform = STTransform(translate=[image3D.shape[0]],
-                                      scale=[scale] * 2)
+    layer.translate = [image3D.shape[1]]
+    layer.scale = [scale] * 2
 
-    viewer.view.camera.set_range()
+    viewer.camera.set_range((0, w * 2), (0, h))
     win.show()
-    win.raise_()
+
     return win
 
 
 if __name__ == '__main__':
     # starting
-    application = NapariApplication(sys.argv)
+    application = QApplication(sys.argv)
 
-    """
-    win = ImageWindow()
+    win = Window()
 
     open_2Drgb(win)
     open_2Dsc(win)
     open_3Dsc(win)
     open_4Dsc(win)
 
-    win.resize(win.layout().sizeHint())
     win.show()
-    win.raise_()
-    """
 
     multi_win = open_multi()
 
