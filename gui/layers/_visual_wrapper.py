@@ -1,36 +1,22 @@
-from vispy.visuals.transforms import ChainTransform, NullTransform, STTransform
+# TODO: create & use our own transform class
+from vispy.visuals.transforms import STTransform
 
 
 class VisualWrapper:
     def __init__(self, central_node):
         self._node = central_node
 
-        # TODO: create & use our own transformation classes
-        vt = self._node.transforms.visual_transform
-        vt.transforms = [STTransform(),
-                         ChainTransform(NullTransform())]
-
     @property
     def _master_transform(self):
         """vispy.visuals.transforms.STTransform:
         Central node's firstmost transform.
         """
-        return self._node.transforms.visual_transform.transforms[0]
+        # whenever a new parent is set, the transform is reset
+        # to a NullTransform so we reset it here
+        if not isinstance(self._node.transform, STTransform):
+            self._node.transform = STTransform()
 
-    @property
-    def _transforms(self):
-        """tuple of vispy.visuals.transforms.BaseTransform:
-        Transforms to apply to the central node.
-        """
-        tr = self._node.transforms.visual_transform.transforms[1]
-        return tuple(tr.transforms)
-
-    @_transforms.setter
-    def _transforms(self, transforms):
-        if tuple(transforms) == self._transforms:
-            return
-        tr = self._node.transforms.visual_transform.transforms[1]
-        tr.transforms = list(transforms)
+        return self._node.transform
 
     @property
     def _order(self):
@@ -51,10 +37,7 @@ class VisualWrapper:
 
     @_parent.setter
     def _parent(self, parent):
-        vt = self._node.transforms.visual_transform
-        trs = vt.transforms
         self._node.parent = parent
-        vt.transforms = trs
 
     @property
     def opacity(self):
