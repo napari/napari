@@ -61,6 +61,7 @@ class Layer(VisualWrapper, ABC):
         """PyQt5.QWidget or None: Widget, if any, inserted when
         solely this layer is selected.
         """
+        # TODO: actually insert said widget
         return None
 
     @property
@@ -72,40 +73,30 @@ class Layer(VisualWrapper, ABC):
 
     @viewer.setter
     def viewer(self, viewer):
+        prev = self.viewer
+        if viewer == prev:
+            return
+
         if viewer is None:
             self._viewer = None
             parent = None
         else:
             self._viewer = weakref.ref(viewer)
-            parent = viewer._qt.view.scene
+            parent = viewer._view.scene
 
+        self._parent = parent
+        self._after_set_viewer(prev)
 
-        vt = self._node.transforms.visual_transform
-        trs = vt.transforms
-        self._set_parent(parent)
-        vt.transforms = trs
-        self._after_set_viewer(viewer)
-
-    def _after_set_viewer(self, viewer):
+    def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.
 
         Parameters
         ----------
-        viewer : Viewer
-            Parent viewer.
+        prev : Viewer
+            Previous viewer.
         """
-        if viewer is not None:
+        if self.viewer is not None:
             self.refresh()
-
-    def _set_parent(self, parent):
-        """Set the parent node.
-
-        Parameters
-        ----------
-        parent : vispy.scene.Node
-            Parent node.
-        """
-        self._node.parent = parent
 
     def _set_view_slice(self, indices):
         """Called whenever the sliders change. Sets the

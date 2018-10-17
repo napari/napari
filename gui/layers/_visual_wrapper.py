@@ -33,6 +33,29 @@ class VisualWrapper:
         tr.transforms = list(transforms)
 
     @property
+    def _order(self):
+        """int: Order in which the visual is drawn in the scenegraph.
+        Lower values are closer to the viewer.
+        """
+        return self._node.order
+
+    @_order.setter
+    def _order(self, order):
+        self._node.order = order
+
+    @property
+    def _parent(self):
+        """vispy.scene.Node: Parent node.
+        """
+        return self._node.parent
+
+    @_parent.setter
+    def _parent(self, parent):
+        vt = self._node.transforms.visual_transform
+        trs = vt.transforms
+        self._node.parent = parent
+
+    @property
     def opacity(self):
         """float: Opacity value between 0.0 and 1.0.
         """

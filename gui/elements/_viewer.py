@@ -13,7 +13,6 @@ class Viewer:
     parent : Window
         Parent window.
     """
-
     def __init__(self, window):
         self._window = window
 
@@ -37,16 +36,36 @@ class Viewer:
         self._recalc_max_shape = False
 
     @property
+    def _canvas(self):
+        return self._qt.canvas
+
+    @property
+    def _view(self):
+        return self._qt.view
+
+    @property
+    def camera(self):
+        """vispy.scene.Camera: Viewer camera.
+        """
+        return self._view.camera
+
+    @property
     def window(self):
         """Window: Parent window.
         """
         return self._window
 
     @property
-    def camera(self):
-        """vispy.scene.Camera: Viewer camera.
+    def max_dims(self):
+        """int: Maximum tunable dimensions for contained images.
         """
-        return self._qt.view.camera
+        return self._max_dims
+
+    @property
+    def max_shape(self):
+        """tuple: Maximum shape for contained images.
+        """
+        return self._max_shape
 
     def _axis_to_row(self, axis):
         dims = len(self.point)
@@ -204,15 +223,3 @@ class Viewer:
             View of the current canvas.
         """
         return self._qt.canvas.render(*args, **kwargs)
-
-    @property
-    def max_dims(self):
-        """int: Maximum tunable dimensions for contained images.
-        """
-        return self._max_dims
-
-    @property
-    def max_shape(self):
-        """tuple: Maximum shape for contained images.
-        """
-        return self._max_shape
