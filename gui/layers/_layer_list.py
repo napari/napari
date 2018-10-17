@@ -44,24 +44,27 @@ class LayerList:
     __slots__ = ('__weakref__', '_list', '_viewer', 'events')
 
     def __init__(self, viewer=None):
-        self._list = []  # called when setting self.viewer
+        self._list = []
         self._viewer = lambda: None
-        self.viewer = viewer
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    add_item=ItemEvent,
                                    remove_item=ItemEvent,
                                    reorder=Event)
+
         self.events.add_item.connect(self._add)
         self.events.remove_item.connect(self._remove)
         self.events.reorder.connect(self._reorder)
 
-    def __str__(self): return str(self._list)
-    def __repr__(self): return repr(self._list)
-    def __iter__(self): return iter(self._list)
-    def __contains__(self, item): return item in self._list
-    def __len__(self): return len(self._list)
-    def __getitem__(self, i): return self._list[i]
+        # property setting - happens last
+        self.viewer = viewer
+
+    def __str__(self): return str(self._list)  # noqa
+    def __repr__(self): return repr(self._list)  # noqa
+    def __iter__(self): return iter(self._list)  # noqa
+    def __contains__(self, item): return item in self._list  # noqa
+    def __len__(self): return len(self._list)  # noqa
+    def __getitem__(self, i): return self._list[i]  # noqa
 
     @property
     def viewer(self):
@@ -74,13 +77,22 @@ class LayerList:
 
     @viewer.setter
     def viewer(self, viewer):
-        if viewer == self.viewer:
+        prev = self.viewer
+        if viewer == prev:
             return
+
+        if prev is not None:
+            self.events.add_item.disconnect(prev._on_layers_change)
+            self.events.remove_item.disconnect(prev._on_layers_change)
+
         for layer in self:
             layer.viewer = viewer
 
         if viewer is not None:
+            self.events.add_item.connect(viewer._on_layers_change)
+            self.events.remove_item.connect(viewer._on_layers_change)
             viewer = weakref.ref(viewer)
+
         self._viewer = viewer
 
     def _to_index(self, obj):

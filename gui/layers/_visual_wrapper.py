@@ -54,6 +54,7 @@ class VisualWrapper:
         vt = self._node.transforms.visual_transform
         trs = vt.transforms
         self._node.parent = parent
+        vt.transforms = trs
 
     @property
     def opacity(self):

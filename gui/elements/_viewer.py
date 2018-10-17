@@ -83,6 +83,18 @@ class Viewer:
 
         return axis - 1
 
+    def add_layer(self, layer):
+        """Adds a layer to the viewer.
+
+        Parameters
+        ----------
+        layer : Layer
+            Layer to add.
+        """
+        self.layers.append(layer)
+        if len(self.layers) == 1:
+            self.reset_view()
+
     def add_image(self, image, meta):
         """Adds an image to the viewer.
 
@@ -99,10 +111,7 @@ class Viewer:
             Layer for the image.
         """
         layer = Image(image, meta)
-        self.layers.append(layer)
-
-        self._child_layer_changed = True
-        self._update()
+        self.add_layer(layer)
 
         return layer
 
@@ -136,6 +145,16 @@ class Viewer:
             self.camera.set_range()
         except AttributeError:
             pass
+
+    def screenshot(self, *args, **kwargs):
+        """Renders the current canvas.
+
+        Returns
+        -------
+        screenshot : np.ndarray
+            View of the current canvas.
+        """
+        return self._canvas.render(*args, **kwargs)
 
     def _update_sliders(self):
         """Updates the sliders according to the contained images.
@@ -196,8 +215,6 @@ class Viewer:
             self._recalc_max_shape = True
             self._need_slider_update = True
 
-            self.reset_view()
-
         if self._need_redraw:
             self._need_redraw = False
             self._update_layers()
@@ -214,12 +231,6 @@ class Viewer:
             self._need_slider_update = False
             self._update_sliders()
 
-    def screenshot(self, *args, **kwargs):
-        """Renders the current canvas.
-
-        Returns
-        -------
-        screenshot : np.ndarray
-            View of the current canvas.
-        """
-        return self._qt.canvas.render(*args, **kwargs)
+    def _on_layers_change(self, event):
+        self._child_layer_changed = True
+        self._update()
