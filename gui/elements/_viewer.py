@@ -1,6 +1,5 @@
 from .qt import QtViewer
 
-from ..layers import LayerList, Image
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 
@@ -14,6 +13,8 @@ class Viewer:
         Parent window.
     """
     def __init__(self, window):
+        from ..layers import LayerList
+
         self._window = window
 
         self._qt = QtViewer(self)
@@ -94,26 +95,6 @@ class Viewer:
         self.layers.append(layer)
         if len(self.layers) == 1:
             self.reset_view()
-
-    def add_image(self, image, meta):
-        """Adds an image to the viewer.
-
-        Parameters
-        ----------
-        image : np.ndarray
-            Image data.
-        meta : dict, optional
-            Image metadata.
-
-        Returns
-        -------
-        layer : Image
-            Layer for the image.
-        """
-        layer = Image(image, meta)
-        self.add_layer(layer)
-
-        return layer
 
     def imshow(self, image, meta=None, multichannel=None, **kwargs):
         """Shows an image in the viewer.

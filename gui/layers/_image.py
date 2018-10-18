@@ -13,7 +13,10 @@ from ..util.interpolation import (interpolation_names,
 
 from vispy.color.colormap import get_colormaps
 
+from ._register import add_to_viewer
 
+
+@add_to_viewer
 class Image(Layer):
     """Image layer.
 
@@ -177,6 +180,7 @@ class Image(Layer):
     def colormaps(self):
         """tuple of str: Colormap names.
         """
+        # TODO: achieve this by wrapping DictKeys
         return tuple(self._colormaps.keys())
 
     # wrap visual properties:
