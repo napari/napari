@@ -308,6 +308,6 @@ class LayerList:
         """
         for i in range(len(self)):
             self[i]._order = -i
-        canvas = self.viewer._qt.canvas
+        canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()

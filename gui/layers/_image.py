@@ -193,7 +193,7 @@ class Image(Layer):
         return self._node.clim
 
     @clim.setter
-    def clim(self):
+    def clim(self, clim):
         self._node.clim = clim
 
     @property

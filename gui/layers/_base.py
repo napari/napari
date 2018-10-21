@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import weakref
 
+from vispy.util.event import EmitterGroup, Event
+
 from ._visual_wrapper import VisualWrapper
 
 
@@ -9,7 +11,10 @@ class Layer(VisualWrapper, ABC):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
-        self._on_select_hook = []
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   select=Event,
+                                   deselect=Event)
 
     @property
     @abstractmethod
@@ -44,7 +49,7 @@ class Layer(VisualWrapper, ABC):
 
     @property
     def selected(self):
-        """boolean: Wether this layer is selected or not.
+        """boolean: Whether this layer is selected or not.
         """
         return self._selected
 
@@ -53,8 +58,11 @@ class Layer(VisualWrapper, ABC):
         if selected == self.selected:
             return
         self._selected = selected
-        for callback in self._on_select_hook:
-            callback(selected)
+
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()
 
     @property
     def _qt(self):
