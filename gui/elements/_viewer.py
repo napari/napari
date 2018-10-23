@@ -22,7 +22,10 @@ class Viewer:
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
-        self.point = []
+
+        # TODO: wrap indices in custom data structure
+        self.indices = [slice(None), slice(None)]
+
         self.layers = LayerList(self)
 
         self._max_dims = 0
@@ -69,7 +72,7 @@ class Viewer:
         return self._max_shape
 
     def _axis_to_row(self, axis):
-        dims = len(self.point)
+        dims = len(self.indices)
         message = f'axis {axis} out of bounds for {dims} dims'
 
         if axis < 0:
@@ -143,14 +146,14 @@ class Viewer:
         max_dims = self.max_dims
         max_shape = self.max_shape
 
-        curr_dims = len(self.point)
+        curr_dims = len(self.indices)
 
         if curr_dims > max_dims:
-            self.point = self.point[:max_dims]
+            self.indices = self.indices[:max_dims]
             dims = curr_dims
         else:
             dims = max_dims
-            self.point.extend([0] * (max_dims - curr_dims))
+            self.indices.extend([0] * (max_dims - curr_dims))
 
         for dim in range(2, dims):  # do not create sliders for y/x-axes
             try:
@@ -164,7 +167,7 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer._set_view_slice(self.point)
+            layer._set_view_slice(self.indices)
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.

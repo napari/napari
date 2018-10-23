@@ -45,7 +45,7 @@ class LayerList:
 
     def __init__(self, viewer=None):
         self._list = []
-        self._viewer = lambda: None
+        self._viewer = None
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    add_item=ItemEvent,
@@ -59,12 +59,12 @@ class LayerList:
         # property setting - happens last
         self.viewer = viewer
 
-    def __str__(self): return str(self._list)  # noqa
-    def __repr__(self): return repr(self._list)  # noqa
-    def __iter__(self): return iter(self._list)  # noqa
-    def __contains__(self, item): return item in self._list  # noqa
-    def __len__(self): return len(self._list)  # noqa
-    def __getitem__(self, i): return self._list[i]  # noqa
+    def __str__(self): return str(self._list)
+    def __repr__(self): return repr(self._list)
+    def __iter__(self): return iter(self._list)
+    def __contains__(self, item): return item in self._list
+    def __len__(self): return len(self._list)
+    def __getitem__(self, i): return self._list[i]
 
     @property
     def viewer(self):

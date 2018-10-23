@@ -95,7 +95,7 @@ class Image(Layer):
             self.viewer._update()
 
             self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.point)
+            self._set_view_slice(self.viewer.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -129,8 +129,6 @@ class Image(Layer):
             except TypeError:
                 pass
 
-        indices[0] = slice(None)  # y-axis
-        indices[1] = slice(None)  # x-axis
         sliced_image = self.image[tuple(indices)]
 
         self._node.set_data(sliced_image)
