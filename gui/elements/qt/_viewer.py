@@ -75,7 +75,7 @@ class QtViewer(QWidget):
             slider.setSingleStep(1)
 
             def value_changed():
-                self.viewer.point[axis] = slider.value()
+                self.viewer.indices[axis] = slider.value()
                 self.viewer._need_redraw = True
                 self.viewer._update()
 

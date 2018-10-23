@@ -1,7 +1,5 @@
 from .qt import QtViewer
-from .layouts import HorizontalLayout, VerticalLayout, StackedLayout
 
-from ..layers import ImageLayer
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 
@@ -14,13 +12,9 @@ class Viewer:
     parent : Window
         Parent window.
     """
-    _layout_map = {
-        'horizontal': HorizontalLayout,
-        'vertical': VerticalLayout,
-        'stacked': StackedLayout
-    }
-
     def __init__(self, window):
+        from ..layers import LayerList
+
         self._window = window
 
         self._qt = QtViewer(self)
@@ -28,20 +22,36 @@ class Viewer:
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
-        self.point = []
-        self.layers = []
-        self._layout = StackedLayout(self)
+
+        # TODO: wrap indices in custom data structure
+        self.indices = [slice(None), slice(None)]
+
+        self.layers = LayerList(self)
 
         self._max_dims = 0
         self._max_shape = tuple()
 
         # update flags
-        self._child_image_changed = False
+        self._child_layer_changed = False
         self._need_redraw = False
         self._need_slider_update = False
 
         self._recalc_max_dims = False
         self._recalc_max_shape = False
+
+    @property
+    def _canvas(self):
+        return self._qt.canvas
+
+    @property
+    def _view(self):
+        return self._qt.view
+
+    @property
+    def camera(self):
+        """vispy.scene.Camera: Viewer camera.
+        """
+        return self._view.camera
 
     @property
     def window(self):
@@ -50,31 +60,19 @@ class Viewer:
         return self._window
 
     @property
-    def camera(self):
-        """vispy.scene.Camera: Viewer camera.
+    def max_dims(self):
+        """int: Maximum tunable dimensions for contained images.
         """
-        return self._qt.view.camera
+        return self._max_dims
 
     @property
-    def layout(self):
-        """str: Layout display type.
+    def max_shape(self):
+        """tuple: Maximum shape for contained images.
         """
-        for name, layout in self._layout_map.items():
-            if isinstance(self._layout, layout):
-                return name
-        raise Exception()
-
-    @layout.setter
-    def layout(self, layout):
-        if layout == self.layout:
-            return
-
-        layout = self._layout_map[layout].from_layout(self._layout)
-        self._layout = layout
-        self.reset_view()
+        return self._max_shape
 
     def _axis_to_row(self, axis):
-        dims = len(self.point)
+        dims = len(self.indices)
         message = f'axis {axis} out of bounds for {dims} dims'
 
         if axis < 0:
@@ -89,30 +87,17 @@ class Viewer:
 
         return axis - 1
 
-    def add_image(self, image, meta):
-        """Adds an image to the viewer.
+    def add_layer(self, layer):
+        """Adds a layer to the viewer.
 
         Parameters
         ----------
-        image : np.ndarray
-            Image data.
-        meta : dict, optional
-            Image metadata.
-
-        Returns
-        -------
-        layer : ImageLayer
-            Layer for the image.
+        layer : Layer
+            Layer to add.
         """
-        layer = ImageLayer(image, meta, self)
-
         self.layers.append(layer)
-        self._layout.add_layer(layer)
-
-        self._child_image_changed = True
-        self.update()
-
-        return layer
+        if len(self.layers) == 1:
+            self.reset_view()
 
     def imshow(self, image, meta=None, multichannel=None, **kwargs):
         """Shows an image in the viewer.
@@ -130,7 +115,7 @@ class Viewer:
 
         Returns
         -------
-        layer : ImageLayer
+        layer : Image
             Layer for the image.
         """
         meta = guess_metadata(image, meta, multichannel, kwargs)
@@ -141,9 +126,19 @@ class Viewer:
         """Resets the camera's view.
         """
         try:
-            self.camera.set_range(*self._layout.view_range)
+            self.camera.set_range()
         except AttributeError:
             pass
+
+    def screenshot(self, *args, **kwargs):
+        """Renders the current canvas.
+
+        Returns
+        -------
+        screenshot : np.ndarray
+            View of the current canvas.
+        """
+        return self._canvas.render(*args, **kwargs)
 
     def _update_sliders(self):
         """Updates the sliders according to the contained images.
@@ -151,14 +146,14 @@ class Viewer:
         max_dims = self.max_dims
         max_shape = self.max_shape
 
-        curr_dims = len(self.point)
+        curr_dims = len(self.indices)
 
         if curr_dims > max_dims:
-            self.point = self.point[:max_dims]
+            self.indices = self.indices[:max_dims]
             dims = curr_dims
         else:
             dims = max_dims
-            self.point.extend([0] * (max_dims - curr_dims))
+            self.indices.extend([0] * (max_dims - curr_dims))
 
         for dim in range(2, dims):  # do not create sliders for y/x-axes
             try:
@@ -172,7 +167,7 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer.set_view_slice(self.point)
+            layer._set_view_slice(self.indices)
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
@@ -180,29 +175,29 @@ class Viewer:
         max_dims = 0
 
         for layer in self.layers:
-            dims = layer.effective_ndim
+            dims = layer.ndim
             if dims > max_dims:
                 max_dims = dims
 
         self._max_dims = max_dims
 
+        self._need_slider_update = True
+        self._update()
+
     def _calc_max_shape(self):
         """Calculates the maximum shape of the contained images.
         """
-        shapes = (layer.image.shape for layer in self.layers)
+        shapes = (layer.shape for layer in self.layers)
         self._max_shape = _compute_max_shape(shapes, self.max_dims)
 
-    def update(self):
+    def _update(self):
         """Updates the viewer.
         """
-        if self._child_image_changed:
-            self._child_image_changed = False
+        if self._child_layer_changed:
+            self._child_layer_changed = False
             self._recalc_max_dims = True
             self._recalc_max_shape = True
             self._need_slider_update = True
-
-            self._layout.update()
-            self.reset_view()
 
         if self._need_redraw:
             self._need_redraw = False
@@ -220,24 +215,6 @@ class Viewer:
             self._need_slider_update = False
             self._update_sliders()
 
-    def screenshot(self):
-        """Renders the current canvas.
-
-        Returns
-        -------
-        screenshot : np.ndarray
-            View of the current canvas.
-        """
-        return self._qt.canvas.render()
-
-    @property
-    def max_dims(self):
-        """int: Maximum tunable dimensions for contained images.
-        """
-        return self._max_dims
-
-    @property
-    def max_shape(self):
-        """tuple: Maximum shape for contained images.
-        """
-        return self._max_shape
+    def _on_layers_change(self, event):
+        self._child_layer_changed = True
+        self._update()
