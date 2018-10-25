@@ -2,6 +2,7 @@ from .qt import QtViewer
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
+from ._indices import Indices
 
 
 class Viewer:
@@ -24,8 +25,7 @@ class Viewer:
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
 
-        # TODO: wrap indices in custom data structure
-        self.indices = [slice(None), slice(None)]
+        self.indices = Indices(self)
 
         self.layers = LayerList(self)
 
@@ -146,21 +146,11 @@ class Viewer:
     def _update_sliders(self):
         """Updates the sliders according to the contained images.
         """
-        max_dims = self.max_dims
-        max_shape = self.max_shape
+        self.indices.refresh()
 
-        curr_dims = len(self.indices)
-
-        if curr_dims > max_dims:
-            self.indices = self.indices[:max_dims]
-            dims = curr_dims
-        else:
-            dims = max_dims
-            self.indices.extend([0] * (max_dims - curr_dims))
-
-        for dim in range(2, dims):  # do not create sliders for y/x-axes
+        for dim in range(2, self.max_dims):  # do not create sliders for y/x-axes
             try:
-                dim_len = max_shape[dim]
+                dim_len = self.max_shape[dim]
             except IndexError:
                 dim_len = 0
 

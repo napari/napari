@@ -118,10 +118,7 @@ class Image(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        ndim = self.ndim
-
-        indices = list(indices)
-        indices = indices[:ndim]
+        indices = indices[:self.ndim]
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
