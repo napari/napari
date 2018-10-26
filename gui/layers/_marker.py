@@ -1,7 +1,5 @@
 import weakref
 
-from typing import Union, Dict
-
 import numpy as np
 
 from ._base import Layer
@@ -20,8 +18,9 @@ class Marker(Layer):
         coordinates for each marker.
 
     marker_args: Dict
-        keyword arguments for the marker style. 
-        see set_data(): http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
+        keyword arguments for the marker style.
+        see set_data():
+        http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
 
     """
 
@@ -39,14 +38,11 @@ class Marker(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
-
-
     @property
     def marker_coords(self):
         """ndarray: coordinates of the marker centroids
         """
         return self._marker_coords
-
 
     @property
     def data(self):
@@ -62,7 +58,8 @@ class Marker(Layer):
     @property
     def marker_args(self):
         """Dict: keyword arguments for the marker styles
-           see set_data(): http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
+           see set_data():
+           http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
 
         return self._marker_args
@@ -117,11 +114,11 @@ class Marker(Layer):
         # Display markers if there are any in this slice
         if in_slice_markers:
             self._node.visible = True
-            self._node.set_data(np.array(in_slice_markers) + 0.5, **self._marker_args)
+            self._node.set_data(
+                np.array(in_slice_markers) + 0.5, **self._marker_args)
 
         else:
             self._node.visible = False
-
 
         self._need_visual_update = True
         self._update()
