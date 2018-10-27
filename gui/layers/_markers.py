@@ -154,7 +154,7 @@ class Markers(Layer):
 
     def _get_shape(self):
 
-        return self.marker_coords.shape
+        return np.max(self.marker_coords, axis=0) + 1
 
     def _update(self):
         """Update the underlying visual.
