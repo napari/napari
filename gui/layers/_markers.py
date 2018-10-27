@@ -17,10 +17,6 @@ class Markers(Layer):
     marker_coords : np.ndarray
         coordinates for each marker.
 
-    marker_args: Dict
-        keyword arguments for the marker style.
-        see set_data():
-        http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
 
     """
 
@@ -77,15 +73,20 @@ class Markers(Layer):
 
     @property
     def size(self):
-        """float, array: size of the marker symbol in px
+        """float, ndarray: size of the marker symbol in px
         """
 
         return self._size
 
     @size.setter
     def size(self, size):
-        self._size = size
-        self.refresh()
+
+        if isinstance(size, (float, np.ndarray)):
+            self._size = size
+            self.refresh()
+
+        else:
+            raise TypeError('size should be float or ndarray')
 
     @property
     def edge_width(self):
@@ -185,26 +186,23 @@ class Markers(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-
-        in_slice_markers = []
-        indices = list(indices)
-        sizes = []
-
+ 
         # Get a list of the coords for the markers in this slice
-        for i, coord in enumerate(self._marker_coords):
-            if np.array_equal(coord[2:], indices[2:]):
-                in_slice_markers.append(coord[:2])
-
-                # If sizes was given on a per-marker basis, get
-                # the appropriate size
-                if isinstance(self._size, list):
-                    sizes.append(self._size[i])
-
-                else:
-                    sizes.append(self._size)
+        coords = self.marker_coords
+        matches = np.equal(coords[:, 2:],
+                   np.repeat([indices[2:]], len(coords), axis=0))
+        in_slice_markers = coords[np.all(matches, axis=1), :2]
 
         # Display markers if there are any in this slice
-        if in_slice_markers:
+        if len(in_slice_markers) > 0:
+            # Get the marker sizes
+            if isinstance(self.size, np.ndarray):
+                sizes = self.size[np.all(matches, axis=1)]
+
+            else:
+                sizes = self.size
+
+            # Update the markers node
             self._node.visible = True
             self._node.set_data(
                 np.array(in_slice_markers) + 0.5,
