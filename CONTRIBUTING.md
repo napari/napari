@@ -4,6 +4,8 @@ We welcome your contributions! Please see the provided steps below and never hes
 
 ## Steps to contribute
 
+To start, you need to fork the napari-gui repository. This way you will get your own version of repository. You can follow the [Github Guides](https://guides.github.com/activities/forking/) for basics.
+
 #### First, make sure you get development version of the repository and create your own branch
 ```
 git clone https://github.com/<username>/napari-gui # get the repo
@@ -12,7 +14,7 @@ git branch <branchname> # create your own branch
 ```
 
 #### Checkout to your own branch for development
-- Ensure that your contribution is in its own branch in your fork of the repository (no other changes should be in the branch). You can it with:
+- Ensure that your contribution is in its own branch in your fork of the repository (no other changes should be in the branch). You can do it with:
 ```
 git checkout BRANCHNAME
 git status
