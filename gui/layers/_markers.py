@@ -17,6 +17,40 @@ class Markers(Layer):
     marker_coords : np.ndarray
         coordinates for each marker.
 
+    symbol : str
+        symbol to be used as a marker
+
+    size : int, float, np.ndarray, list
+        size of the marker. If given as a scalar, all markers are the 
+        same size. If given as a list/array, size must be the same 
+        length as marker_coords and sets the marker size for each marker 
+        in marker_coords (element-wise).
+
+    edge_width : float, None
+        width of the symbol edge in px
+            vispy docs say: "exactly one edge_width and
+            edge_width_rel must be supplied"
+
+    edge_width_rel : float, None
+        width of the marker edge as a fraction of the marker size.
+
+            vispy docs say: "exactly one edge_width and
+            edge_width_rel must be supplied"
+
+    edge_color : Color, ColorArray
+        color of the marker border
+
+    face_color : Color, ColorArray
+        color of the marker body
+
+    scaling : bool
+        if True, marker rescales when zooming
+
+    
+    See vispy's marker visual docs for more details:
+    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
+
+
 
     """
 
@@ -86,9 +120,22 @@ class Markers(Layer):
     @size.setter
     def size(self, size):
 
-        if isinstance(size, (float, np.ndarray)):
+        if isinstance(size, (int, float)):
             self._size = size
             self.refresh()
+
+        elif  isinstance(size, (np.ndarray, list)):
+            assert len(size) == len(self._marker_coords), \
+             'If size is a list/array, must be the same length as marker_coords'
+
+            if isinstance(size, list):
+                self._size = np.array(size)
+
+            else:
+                self._size = size
+            
+            self.refresh()
+
 
         else:
             raise TypeError('size should be float or ndarray')
@@ -201,7 +248,7 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            if isinstance(self.size, np.ndarray):
+            if isinstance(self.size, (list,np.ndarray)):
                 sizes = self.size[matches]
 
             else:
