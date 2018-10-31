@@ -190,14 +190,17 @@ class Markers(Layer):
         # Get a list of the coords for the markers in this slice
         coords = self.marker_coords
         matches = np.equal(coords[:, 2:],
-                   np.repeat([indices[2:]], len(coords), axis=0))
-        in_slice_markers = coords[np.all(matches, axis=1), :2]
+                   np.broadcast_to(indices[2:], (len(coords), len(indices) - 2)))
+
+        matches = np.all(matches, axis=1)
+
+        in_slice_markers = coords[matches, :2]
 
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
             if isinstance(self.size, np.ndarray):
-                sizes = self.size[np.all(matches, axis=1)]
+                sizes = self.size[matches]
 
             else:
                 sizes = self.size
