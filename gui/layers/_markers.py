@@ -58,6 +58,11 @@ class Markers(Layer):
     @data.setter
     def data(self, data):
         self._marker_coords = data
+
+        self.viewer._child_layer_changed = True
+        self.viewer._update()
+
+
         self.refresh()
 
     @property
@@ -162,9 +167,6 @@ class Markers(Layer):
         """
         if self._need_display_update:
             self._need_display_update = False
-
-            self.viewer._child_layer_changed = True
-            self.viewer._update()
 
             self._set_view_slice(self.viewer.indices)
 
