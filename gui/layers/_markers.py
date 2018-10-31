@@ -22,7 +22,7 @@ class Markers(Layer):
 
     def __init__(self, marker_coords, symbol='o', size=10, edge_width=1,
         edge_width_rel=None, edge_color='black', face_color='white',
-        scaling=False):
+        scaling=True):
 
         visual = MarkersNode()
         super().__init__(visual)
