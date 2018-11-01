@@ -25,12 +25,12 @@ class Markers(Layer):
         length as marker_coords and sets the marker size for each marker
         in marker_coords (element-wise).
 
-    edge_width : float, None
+    edge_width : int, float, None
         width of the symbol edge in px
             vispy docs say: "exactly one edge_width and
             edge_width_rel must be supplied"
 
-    edge_width_rel : float, None
+    edge_width_rel : int, float, None
         width of the marker edge as a fraction of the marker size.
 
             vispy docs say: "exactly one edge_width and
@@ -105,6 +105,8 @@ class Markers(Layer):
     def symbol(self, symbol: str) -> None:
         self._symbol = symbol
 
+        self.refresh()
+
     @property
     def size(self) -> Union[int, float, np.ndarray, list]:
         """float, ndarray: size of the marker symbol in px
@@ -118,6 +120,8 @@ class Markers(Layer):
         if isinstance(size, (int, float)):
             self._size = size
 
+            self.refresh()
+
         elif isinstance(size, (np.ndarray, list)):
             assert len(size) == len(self._marker_coords), \
              'If size is a list/array, must be the same length as '\
@@ -129,12 +133,14 @@ class Markers(Layer):
             else:
                 self._size = size
 
+            self.refresh()
+
         else:
             raise TypeError('size should be float or ndarray')
 
     @property
-    def edge_width(self) -> Union[None, float]:
-        """float, None: width of the symbol edge in px
+    def edge_width(self) -> Union[None, int, float]:
+        """None, int, float, None: width of the symbol edge in px
         """
 
         return self._edge_width
@@ -143,9 +149,11 @@ class Markers(Layer):
     def edge_width(self, edge_width: Union[None, float]) -> None:
         self._edge_width = edge_width
 
+        self.refresh()
+
     @property
-    def edge_width_rel(self) -> Union[None, float]:
-        """float, None: width of the marker edge as a fraction
+    def edge_width_rel(self) -> Union[None, int, float]:
+        """None, int, float: width of the marker edge as a fraction
             of the marker size.
 
             vispy docs say: "exactly one edge_width and
@@ -159,6 +167,8 @@ class Markers(Layer):
     def edge_width_rel(self, edge_width_rel: Union[None, float]) -> None:
         self._edge_width_rel = edge_width_rel
 
+        self.refresh()
+
     @property
     def edge_color(self) -> str:
         """Color, ColorArray: the marker edge color
@@ -169,6 +179,8 @@ class Markers(Layer):
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
         self._edge_color = edge_color
+
+        self.refresh()
 
     @property
     def face_color(self) -> str:
@@ -181,6 +193,8 @@ class Markers(Layer):
     def face_color(self, face_color: str) -> None:
         self._face_color = face_color
 
+        self.refresh()
+
     @property
     def scaling(self) -> bool:
         """bool: if True, marker rescales when zooming
@@ -191,6 +205,8 @@ class Markers(Layer):
     @scaling.setter
     def scaling(self, scaling: bool) -> None:
         self._scaling = scaling
+
+        self.refresh()
 
     def _get_shape(self):
 
