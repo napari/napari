@@ -13,7 +13,7 @@ class Markers(Layer):
 
     Parameters
     ----------
-    marker_coords : np.ndarray
+    coords : np.ndarray
         coordinates for each marker.
 
     symbol : str
@@ -22,8 +22,8 @@ class Markers(Layer):
     size : int, float, np.ndarray, list
         size of the marker. If given as a scalar, all markers are the
         same size. If given as a list/array, size must be the same
-        length as marker_coords and sets the marker size for each marker
-        in marker_coords (element-wise).
+        length as coords and sets the marker size for each marker
+        in coords (element-wise).
 
     edge_width : int, float, None
         width of the symbol edge in px
@@ -53,7 +53,7 @@ class Markers(Layer):
     """
 
     def __init__(
-        self, marker_coords, symbol='o', size=10, edge_width=1,
+        self, coords, symbol='o', size=10, edge_width=1,
             edge_width_rel=None, edge_color='black', face_color='white',
             scaling=True):
 
@@ -61,7 +61,7 @@ class Markers(Layer):
         super().__init__(visual)
 
         # Save the marker coordinates
-        self._marker_coords = marker_coords
+        self._coords = coords
 
         # Save the marker style params
         self._symbol = symbol
@@ -77,23 +77,27 @@ class Markers(Layer):
         self._need_visual_update = False
 
     @property
-    def marker_coords(self) -> np.ndarray:
+    def coords(self) -> np.ndarray:
         """ndarray: coordinates of the marker centroids
         """
-        return self._marker_coords
+        return self._coords
+
+    @coords.setter
+    def coords(self, coords: np.ndarray):
+        self._coords = coords
+
+        self.viewer._child_layer_changed = True
+        self._refresh()
 
     @property
     def data(self) -> np.ndarray:
         """ndarray: coordinates of the marker centroids
         """
-        return self._marker_coords
+        return self._coords
 
     @data.setter
     def data(self, data: np.ndarray) -> None:
-        self._marker_coords = data
-
-        self.viewer._child_layer_changed = True
-        self.viewer._update()
+        self.coords = data
 
     @property
     def symbol(self) -> str:
@@ -123,9 +127,9 @@ class Markers(Layer):
             self.refresh()
 
         elif isinstance(size, (np.ndarray, list)):
-            assert len(size) == len(self._marker_coords), \
+            assert len(size) == len(self._coords), \
              'If size is a list/array, must be the same length as '\
-             'marker_coords'
+             'coords'
 
             if isinstance(size, list):
                 self._size = np.array(size)
@@ -210,7 +214,7 @@ class Markers(Layer):
 
     def _get_shape(self):
 
-        return np.max(self.marker_coords, axis=0) + 1
+        return np.max(self.coords, axis=0) + 1
 
     def _update(self):
         """Update the underlying visual.
@@ -240,7 +244,7 @@ class Markers(Layer):
         """
 
         # Get a list of the coords for the markers in this slice
-        coords = self.marker_coords
+        coords = self.coords
         matches = np.equal(
             coords[:, 2:],
             np.broadcast_to(indices[2:], (len(coords), len(indices) - 2)))
