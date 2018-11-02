@@ -31,7 +31,7 @@ class Window:
         """
         viewer = Viewer(self)
         self.viewers.append(viewer)
-        self._qt_window.add_viewer(viewer)
+        self._qt_window.widget.layout().addWidget(viewer._qt_window)
         return viewer
 
     def resize(self, *args):
