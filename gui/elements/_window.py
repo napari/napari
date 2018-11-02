@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout
 
 from ._viewer import Viewer
 
@@ -7,10 +7,10 @@ class Window:
     """Application window.
     """
     def __init__(self):
-        self._qt_window = QMainWindow().__init__()
-        self._qt_window.widget = QWidget()
-        self._qt_window.setCentralWidget(self.widget)
-        self._qt_window.widget.setLayout(QHBoxLayout())
+        self._qt_window = QMainWindow()
+        self._qt_central_widget = QWidget()
+        self._qt_window.setCentralWidget(self._qt_central_widget)
+        self._qt_central_widget.setLayout(QHBoxLayout())
         self._qt_window.statusBar().showMessage('Ready')
 
         self._viewers = []
@@ -31,7 +31,7 @@ class Window:
         """
         viewer = Viewer(self)
         self.viewers.append(viewer)
-        self._qt_window.widget.layout().addWidget(viewer._qt_window)
+        self._qt_central_widget.layout().addWidget(viewer._qt)
         return viewer
 
     def resize(self, *args):
