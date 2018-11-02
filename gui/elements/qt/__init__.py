@@ -3,7 +3,6 @@ Qt backend.
 """
 from PyQt5.QtWidgets import QApplication as QtApplication
 
-from ._window import QtWindow
 from ._viewer import QtViewer
 
 
