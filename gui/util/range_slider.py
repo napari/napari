@@ -42,9 +42,9 @@ class QRangeSlider(QtWidgets.QWidget):
         else:
             self.setRange([0.0, 1.0, 0.01])
         if values:
-            self.values = values
+            self.setValues(values)
         else:
-            self.values = [0.3, 0.6]
+            self.setValues([0.3, 0.6])
 
     def emitRange(self):
         if (self.old_scale_min != self.scale_min) or (self.old_scale_max != self.scale_max):
@@ -55,16 +55,14 @@ class QRangeSlider(QtWidgets.QWidget):
             # if False:
             #     print("Range change:", self.scale_min, self.scale_max)
 
-    @property
-    def values(self):
+    def getValues(self):
         """
         Values of the range bar
         :return: [start, end]
         """
         return [self.scale_min, self.scale_max]
 
-    @values.setter
-    def values(self, values):
+    def setValues(self, values):
         """
         Setter for values of the range bar
         :param values: [start, end]
@@ -130,10 +128,10 @@ class QRangeSlider(QtWidgets.QWidget):
         self.bc_min, self.bc_max = self.scale_min, self.scale_max
         while int(self.scale_min) < int(self.scale_max):
             step = (self.scale_max - self.scale_min) / 2
-            self.values = [self.scale_min+step, self.scale_max-step]
+            self.setValues(self.scale_min+step, self.scale_max-step)
 
     def expand(self):
-        self.values = [self.bc_min, self.bc_max]
+        self.setValues(self.bc_min, self.bc_max)
 
     def mouseReleaseEvent(self, event):
         if not (self.moving == "none"):
@@ -275,20 +273,3 @@ class QVRangeSlider(QRangeSlider):
         :return: height attribute of parent class QWidget
         """
         return self.height()
-
-
-# Demo
-if __name__ == "__main__":
-    import sys
-
-    app = QtWidgets.QApplication(sys.argv)
-    if True:
-        hslider = QHRangeSlider(slider_range=[-15.0, 15.0, 0.02], values=[-2.5, 2.5])
-        hslider.setEmitWhileMoving(True)
-        hslider.show()
-    else:
-        vslider = QVRangeSlider(slider_range=[-5.0, 5.0, 0.02], values=[-2.5, 2.5])
-        vslider.setEmitWhileMoving(True)
-        vslider.show()
-    sys.exit(app.exec_())
-
