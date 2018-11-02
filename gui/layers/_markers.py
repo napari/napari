@@ -1,4 +1,5 @@
 from typing import Union
+from collections import Iterable
 
 import numpy as np
 
@@ -121,18 +122,18 @@ class Markers(Layer):
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
 
-        if isinstance(size, (int, float)):
+        if np.isscalar(size):
             self._size = size
 
             self.refresh()
 
-        elif isinstance(size, (np.ndarray, list)):
+        elif isinstance(size, Iterable):
             assert len(size) == len(self._coords), \
              'If size is a list/array, must be the same length as '\
              'coords'
 
             if isinstance(size, list):
-                self._size = np.array(size)
+                self._size = np.asarray(size)
 
             else:
                 self._size = size
@@ -266,10 +267,10 @@ class Markers(Layer):
             self._node.visible = True
             self._node.set_data(
                 np.array(in_slice_markers) + 0.5,
-                size=sizes, edge_width=self._edge_width, symbol=self._symbol,
-                edge_width_rel=self._edge_width_rel,
-                edge_color=self._edge_color, face_color=self._face_color,
-                scaling=self._scaling)
+                size=sizes, edge_width=self.edge_width, symbol=self.symbol,
+                edge_width_rel=self.edge_width_rel,
+                edge_color=self.edge_color, face_color=self.face_color,
+                scaling=self.scaling)
 
         else:
             self._node.visible = False
