@@ -11,10 +11,12 @@ class Layer(VisualWrapper, ABC):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
+        self.name = 'layer'
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
                                    deselect=Event)
+
 
     @property
     @abstractmethod

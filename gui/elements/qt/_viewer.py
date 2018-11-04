@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QGridLayout, QSlider
+from PyQt5.QtWidgets import QWidget, QGridLayout, QSlider, QVBoxLayout
 
 from vispy.scene import SceneCanvas, PanZoomCamera
 
@@ -17,11 +17,16 @@ class QtViewer(QWidget):
         layout = QGridLayout()
         self.setLayout(layout)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setColumnStretch(0, 4)
+        #layout.setColumnStretch(0, 4)
 
         row = 0
         layout.addWidget(self.canvas.native, row, 0)
-        layout.setRowStretch(row, 1)
+        #layout.setRowStretch(row, 1)
+
+        self.layersLayout = QVBoxLayout()
+        self.layersLayout.addStretch(1)
+        layout.addLayout(self.layersLayout,0,1,1,1)
+        #layout.setColumnStretch(1, 4)
 
         self.view = self.canvas.central_widget.add_view()
 
