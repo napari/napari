@@ -1,4 +1,4 @@
-from .qt import QtViewer
+from .qt import QtViewer, QtLayer
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
@@ -96,6 +96,7 @@ class Viewer:
             Layer to add.
         """
         self.layers.append(layer)
+        self._qt.layersLayout.insertWidget(len(self.layers)-1, QtLayer(layer))
         if len(self.layers) == 1:
             self.reset_view()
 
