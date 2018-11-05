@@ -85,7 +85,7 @@ class Viewer:
         if axis < 2:
             raise ValueError('cannot convert y/x-axes to rows')
 
-        return axis - 1
+        return axis
 
     def add_layer(self, layer):
         """Adds a layer to the viewer.

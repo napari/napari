@@ -56,7 +56,7 @@ class QtViewer(QWidget):
         grid = self.layout()
         row = self.viewer._axis_to_row(axis)
 
-        slider = grid.itemAt(row+1)
+        slider = grid.itemAt(row)
         if max_axis_length <= 0:
             # delete slider
             grid.takeAt(row)
