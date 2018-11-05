@@ -26,7 +26,6 @@ class QtViewer(QWidget):
         self.layersLayout = QVBoxLayout()
         self.layersLayout.addStretch(1)
         layout.addLayout(self.layersLayout,0,1,1,1)
-        #layout.setColumnStretch(1, 4)
 
         self.view = self.canvas.central_widget.add_view()
 
@@ -57,7 +56,7 @@ class QtViewer(QWidget):
         grid = self.layout()
         row = self.viewer._axis_to_row(axis)
 
-        slider = grid.itemAt(row)
+        slider = grid.itemAt(row+1)
         if max_axis_length <= 0:
             # delete slider
             grid.takeAt(row)
