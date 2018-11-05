@@ -5,7 +5,6 @@ from vispy.util.event import EmitterGroup, Event
 
 from ._visual_wrapper import VisualWrapper
 
-#global i
 class Layer(VisualWrapper, ABC):
     def __init__(self, central_node):
         super().__init__(central_node)
