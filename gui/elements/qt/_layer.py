@@ -44,3 +44,9 @@ class QtLayer(QGroupBox):
 
     def onActivated(self, text):
         self.layer.colormap = text
+
+    def update(self):
+        print('hello!!!')
+        #print(self.layout().children())
+        #sld.setValue(self.layer.opacity*100)
+        #cb.setChecked(self.layer.visible)

@@ -41,11 +41,12 @@ class LayerList:
             * remove_item(item): whenever an item is removed
             * reorder(): whenever the list is reordered
     """
-    __slots__ = ('__weakref__', '_list', '_viewer', 'events')
+    __slots__ = ('__weakref__', '_list', '_viewer', 'total', 'events')
 
     def __init__(self, viewer=None):
         self._list = []
         self._viewer = None
+        self.total = 0
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    add_item=ItemEvent,

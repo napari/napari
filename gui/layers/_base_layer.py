@@ -5,13 +5,13 @@ from vispy.util.event import EmitterGroup, Event
 
 from ._visual_wrapper import VisualWrapper
 
-
+#global i
 class Layer(VisualWrapper, ABC):
     def __init__(self, central_node):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
-        self.name = 'layer'
+        self.name = 'layer '
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,

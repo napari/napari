@@ -95,8 +95,11 @@ class Viewer:
         layer : Layer
             Layer to add.
         """
+        layer.name = layer.name + str(self.layers.total)
         self.layers.append(layer)
         self._qt.layersLayout.insertWidget(len(self.layers)-1, QtLayer(layer))
+        self.layers.total = self.layers.total+1
+
         if len(self.layers) == 1:
             self.reset_view()
 
