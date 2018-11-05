@@ -128,10 +128,10 @@ class QRangeSlider(QtWidgets.QWidget):
         self.bc_min, self.bc_max = self.scale_min, self.scale_max
         while int(self.scale_min) < int(self.scale_max):
             step = (self.scale_max - self.scale_min) / 2
-            self.setValues(self.scale_min+step, self.scale_max-step)
+            self.setValues([self.scale_min+step, self.scale_max-step])
 
     def expand(self):
-        self.setValues(self.bc_min, self.bc_max)
+        self.setValues([self.bc_min, self.bc_max])
 
     def mouseReleaseEvent(self, event):
         if not (self.moving == "none"):
