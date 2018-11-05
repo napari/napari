@@ -1,7 +1,7 @@
 import sys
 from PyQt5 import QtWidgets
 
-from napair_gui.util.range_slider import QHRangeSlider
+from napari_gui.util.range_slider import QHRangeSlider
 
 
 # Slider Demo
