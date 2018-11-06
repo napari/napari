@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QGridLayout, QSlider, QVBoxLayout, QScrollArea, QPushButton
+from PyQt5.QtWidgets import QWidget, QGridLayout, QSlider, QVBoxLayout
 
 from vispy.scene import SceneCanvas, PanZoomCamera
 
@@ -22,16 +22,6 @@ class QtViewer(QWidget):
         row = 0
         layout.addWidget(self.canvas.native, row, 0)
         #layout.setRowStretch(row, 1)
-
-        scrollArea = QScrollArea()
-        scrollArea.setWidgetResizable(True)
-        scrollArea.setFixedWidth(300)
-        scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scrollWidget = QWidget()
-        scrollArea.setWidget(scrollWidget)
-        self.layersLayout = QVBoxLayout(scrollWidget)
-        self.layersLayout.addStretch(1)
-        layout.addWidget(scrollArea,0,1,1,1)
 
         self.view = self.canvas.central_widget.add_view()
 
