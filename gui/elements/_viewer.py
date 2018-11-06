@@ -1,4 +1,4 @@
-from .qt import QtViewer, QtLayer
+from .qt import QtViewer
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
@@ -13,7 +13,8 @@ class Viewer:
         Parent window.
     """
     def __init__(self, window):
-        from ..layers import LayerList
+        from ._layer_list import LayerList
+        from ._controls import Controls
 
         self._window = window
 
@@ -27,6 +28,8 @@ class Viewer:
         self.indices = [slice(None), slice(None)]
 
         self.layers = LayerList(self)
+
+        self.controls = Controls()
 
         self._max_dims = 0
         self._max_shape = tuple()
@@ -85,7 +88,7 @@ class Viewer:
         if axis < 2:
             raise ValueError('cannot convert y/x-axes to rows')
 
-        return axis
+        return axis - 1
 
     def add_layer(self, layer):
         """Adds a layer to the viewer.
@@ -95,10 +98,7 @@ class Viewer:
         layer : Layer
             Layer to add.
         """
-        layer.name = layer.name + str(self.layers.total)
         self.layers.append(layer)
-        self._qt.layersLayout.insertWidget(len(self.layers)-1, QtLayer(layer))
-        self.layers.total = self.layers.total+1
 
         if len(self.layers) == 1:
             self.reset_view()

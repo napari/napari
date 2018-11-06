@@ -12,4 +12,6 @@ class QtWindow(QMainWindow):
         self.statusBar().showMessage('Ready')
 
     def add_viewer(self, viewer):
+        self.widget.layout().addLayout(viewer.controls._qt)
         self.widget.layout().addWidget(viewer._qt)
+        self.widget.layout().addWidget(viewer.layers._qt)
