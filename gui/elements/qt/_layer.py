@@ -27,13 +27,13 @@ class QtLayer(QGroupBox):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.opacity*100)
-        sld.valueChanged[int].connect(lambda value=sld: self.changeValue(value))
+        sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
         layout.addWidget(sld)
 
         self.setLayout(layout)
         self.setFixedHeight(75)
 
-    def changeValue(self, value):
+    def changeOpacity(self, value):
         self.layer.opacity = value/100
 
     def changeVisible(self, state):
