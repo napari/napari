@@ -2,7 +2,7 @@ import weakref
 from collections.abc import Iterable
 
 from vispy.util.event import EmitterGroup, Event
-from ._base import Layer
+from ._base_layer import Layer
 
 
 class ItemEvent(Event):

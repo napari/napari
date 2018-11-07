@@ -3,7 +3,7 @@ from collections import Iterable
 
 import numpy as np
 
-from ._base import Layer
+from ._base_layer import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Markers as MarkersNode
 

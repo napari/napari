@@ -2,7 +2,7 @@ import weakref
 
 import numpy as np
 
-from ._base import Layer
+from ._base_layer import Layer
 from .._vispy.scene.visuals import Image as ImageNode
 
 from ..util import is_multichannel
