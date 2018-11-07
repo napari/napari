@@ -44,6 +44,7 @@ class QtLayer(QGroupBox):
     def removeLayer(self):
         print('remove layer')
         #self.deleteLater()
+        #self = None
 
     def update(self):
         print('hello!!!')

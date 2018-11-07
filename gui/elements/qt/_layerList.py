@@ -15,7 +15,11 @@ class QtLayerList(QScrollArea):
         self.layersLayout.addStretch(1)
 
     def add_layer(self, index, layer):
-        self.layersLayout.insertWidget(index, layer._qt)
+        if layer._qt is not None:
+            self.layersLayout.insertWidget(index, layer._qt)
 
     def remove_layer(self, layer):
-        self.layersLayout.removeWidget(layer._qt)
+        if layer._qt is not None:
+            self.layersLayout.removeWidget(layer._qt)
+            layer._qt.deleteLater()
+            layer._qt = None
