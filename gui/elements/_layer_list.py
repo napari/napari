@@ -163,10 +163,8 @@ class LayerList:
         _check_layer(item, error=True)
 
         self._list.append(item)
-        item.name = item.name + str(self.total)
-        self._qt.add_layer(len(self)-1, item)
+        self.events.add_item(item=item, index=len(self)-1)
         self.total = self.total+1
-        self.events.add_item(item=item)
 
     def insert(self, index, item):
         """Inserts an item before an index.
@@ -181,10 +179,8 @@ class LayerList:
         _check_layer(item, error=True)
 
         self._list.insert(index, item)
-        item.name = item.name + str(self.total)
-        self._qt.add_layer(index-1, item)
+        self.events.add_item(item=item, index=index-1)
         self.total = self.total+1
-        self.events.add_item(item=item)
 
     def pop(self, index=-1):
         """Removes and returns an item given an index.
@@ -200,7 +196,6 @@ class LayerList:
             Removed item.
         """
         item = self._list.pop(index)
-        self._qt.remove_layer(item)
         self.events.remove_item(item=item)
 
     def remove(self, item):
@@ -212,7 +207,6 @@ class LayerList:
             Item to remove.
         """
         self._list.remove(item)
-        self._qt.remove_layer(item)
         self.events.remove_item(item=item)
 
     def __delitem__(self, index):
@@ -303,6 +297,7 @@ class LayerList:
         """Callback when an item is added to set its order and viewer.
         """
         layer = event.item
+        self._qt.add_layer(event.index, layer)
         layer._order = -len(self)
         layer.viewer = self.viewer
 
@@ -311,6 +306,7 @@ class LayerList:
         and reset its order.
         """
         layer = event.item
+        self._qt.remove_layer(layer)
         layer.viewer = None
         layer._order = 0
 
