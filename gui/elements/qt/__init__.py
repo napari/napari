@@ -7,6 +7,7 @@ from ._viewer import QtViewer
 from ._layerList import QtLayerList
 from ._controls import QtControls
 from ._imageLayer import QtImageLayer
+from ._markerLayer import QtMarkerLayer
 
 
 from vispy import app

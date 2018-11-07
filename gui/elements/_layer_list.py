@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from vispy.util.event import EmitterGroup, Event
 from ..layers._base import Layer
 
-from .qt import QtLayerList, QtImageLayer
+from .qt import QtLayerList
 
 
 class ItemEvent(Event):
@@ -164,7 +164,7 @@ class LayerList:
 
         self._list.append(item)
         item.name = item.name + str(self.total)
-        self._qt.layersLayout.insertWidget(len(self)-1, QtImageLayer(item))
+        self._qt.add_layer(len(self)-1, item)
         self.total = self.total+1
         self.events.add_item(item=item)
 
@@ -181,6 +181,9 @@ class LayerList:
         _check_layer(item, error=True)
 
         self._list.insert(index, item)
+        item.name = item.name + str(self.total)
+        self._qt.add_layer(index-1, item)
+        self.total = self.total+1
         self.events.add_item(item=item)
 
     def pop(self, index=-1):
@@ -197,6 +200,7 @@ class LayerList:
             Removed item.
         """
         item = self._list.pop(index)
+        self._qt.remove_layer(item)
         self.events.remove_item(item=item)
 
     def remove(self, item):
@@ -208,6 +212,7 @@ class LayerList:
             Item to remove.
         """
         self._list.remove(item)
+        self._qt.remove_layer(item)
         self.events.remove_item(item=item)
 
     def __delitem__(self, index):
