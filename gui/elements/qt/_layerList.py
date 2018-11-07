@@ -7,7 +7,7 @@ class QtLayerList(QScrollArea):
         super().__init__()
 
         self.setWidgetResizable(True)
-        self.setFixedWidth(300)
+        #self.setFixedWidth(315)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scrollWidget = QWidget()
         self.setWidget(scrollWidget)

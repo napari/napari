@@ -7,7 +7,7 @@ from ._base import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Markers as MarkersNode
 
-from ..elements.qt import QtMarkerLayer
+from ..elements.qt import QtMarkersLayer
 
 @add_to_viewer
 class Markers(Layer):
@@ -78,7 +78,7 @@ class Markers(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
-        self._qt = QtMarkerLayer(self)
+        self._qt = QtMarkersLayer(self)
 
     @property
     def coords(self) -> np.ndarray:

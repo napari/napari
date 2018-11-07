@@ -99,7 +99,6 @@ class Viewer:
             Layer to add.
         """
         self.layers.append(layer)
-
         if len(self.layers) == 1:
             self.reset_view()
 

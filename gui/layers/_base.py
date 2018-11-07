@@ -17,7 +17,6 @@ class Layer(VisualWrapper, ABC):
                                    select=Event,
                                    deselect=Event)
 
-
     @property
     @abstractmethod
     def data(self):
