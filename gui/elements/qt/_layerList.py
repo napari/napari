@@ -13,3 +13,9 @@ class QtLayerList(QScrollArea):
         self.setWidget(scrollWidget)
         self.layersLayout = QVBoxLayout(scrollWidget)
         self.layersLayout.addStretch(1)
+
+    def add_layer(self, index, layer):
+        self.layersLayout.insertWidget(index, layer._qt)
+
+    def remove_layer(self, layer):
+        self.layersLayout.removeWidget(layer._qt)

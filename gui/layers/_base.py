@@ -10,6 +10,7 @@ class Layer(VisualWrapper, ABC):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
+        self._qt = None
         self.name = 'layer '
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
@@ -65,13 +66,13 @@ class Layer(VisualWrapper, ABC):
         else:
             self.events.deselect()
 
-    @property
-    def _qt(self):
-        """PyQt5.QWidget or None: Widget, if any, inserted when
-        solely this layer is selected.
-        """
-        # TODO: actually insert said widget
-        return None
+#    @property
+#    def _qt(self):
+#        """PyQt5.QWidget or None: Widget, if any, inserted when
+#        solely this layer is selected.
+#        """
+#        # TODO: actually insert said widget
+#        return None
 
     @property
     def viewer(self):

@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QSlider, QComboBox, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox
 from PyQt5.QtCore import Qt
 
-class QtImageLayer(QGroupBox):
+class QtMarkerLayer(QGroupBox):
     def __init__(self, layer):
         super().__init__(layer.name)
         self.layer = layer
@@ -13,9 +13,10 @@ class QtImageLayer(QGroupBox):
         layout.addWidget(cb)
 
         comboBox = QComboBox()
-        for cmap in self.layer.colormaps:
-            comboBox.addItem(cmap)
-        index = comboBox.findText('hot', Qt.MatchFixedString)
+        colors = ['red', 'blue', 'green', 'white']
+        for c in colors:
+            comboBox.addItem(c)
+        index = comboBox.findText('white', Qt.MatchFixedString)
         if index >= 0:
             comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(lambda text=comboBox: self.changeColor(text))
@@ -43,7 +44,7 @@ class QtImageLayer(QGroupBox):
             self.layer.visible = False
 
     def changeColor(self, text):
-        self.layer.colormap = text
+        self.layer.face_color = text
 
     def update(self):
         print('hello!!!')
