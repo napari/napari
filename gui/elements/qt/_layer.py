@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QSlider, QComboBox, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox, QPushButton
+from PyQt5.QtWidgets import QSlider, QComboBox, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox
 from PyQt5.QtCore import Qt
 
 class QtLayer(QGroupBox):
@@ -25,10 +25,6 @@ class QtLayer(QGroupBox):
         sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
         layout.addWidget(sld)
 
-        button = QPushButton('X')
-        button.clicked.connect(self.removeLayer)
-        layout.addWidget(button)
-
         self.setLayout(layout)
         self.setFixedHeight(75)
 
@@ -40,11 +36,6 @@ class QtLayer(QGroupBox):
             self.layer.visible = True
         else:
             self.layer.visible = False
-
-    def removeLayer(self):
-        print('remove layer')
-        #self.deleteLater()
-        #self = None
 
     def update(self):
         print('hello!!!')
