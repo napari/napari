@@ -2,7 +2,7 @@ import weakref
 from collections.abc import Iterable
 
 from vispy.util.event import EmitterGroup, Event
-from ..layers._base import Layer
+from ..layers._base_layer import Layer
 
 from .qt import QtLayerList
 
