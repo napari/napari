@@ -13,7 +13,8 @@ class Viewer:
         Parent window.
     """
     def __init__(self, window):
-        from ..layers import LayerList
+        from ._layer_list import LayerList
+        from ._controls import Controls
 
         self._window = window
 
@@ -27,6 +28,8 @@ class Viewer:
         self.indices = [slice(None), slice(None)]
 
         self.layers = LayerList(self)
+
+        self.controls = Controls()
 
         self._max_dims = 0
         self._max_shape = tuple()

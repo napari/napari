@@ -5,12 +5,13 @@ from vispy.util.event import EmitterGroup, Event
 
 from ._visual_wrapper import VisualWrapper
 
-
 class Layer(VisualWrapper, ABC):
     def __init__(self, central_node):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
+        self._qt = None
+        self.name = 'layer '
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
@@ -64,13 +65,13 @@ class Layer(VisualWrapper, ABC):
         else:
             self.events.deselect()
 
-    @property
-    def _qt(self):
-        """PyQt5.QWidget or None: Widget, if any, inserted when
-        solely this layer is selected.
-        """
-        # TODO: actually insert said widget
-        return None
+#    @property
+#    def _qt(self):
+#        """PyQt5.QWidget or None: Widget, if any, inserted when
+#        solely this layer is selected.
+#        """
+#        # TODO: actually insert said widget
+#        return None
 
     @property
     def viewer(self):
