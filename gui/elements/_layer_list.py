@@ -1,8 +1,10 @@
 import weakref
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 
 from vispy.util.event import EmitterGroup, Event
-from ._base_layer import Layer
+from ..layers._base_layer import Layer
+
+from .qt import QtLayerList
 
 
 class ItemEvent(Event):
@@ -41,11 +43,13 @@ class LayerList:
             * remove_item(item): whenever an item is removed
             * reorder(): whenever the list is reordered
     """
-    __slots__ = ('__weakref__', '_list', '_viewer', 'events')
+    __slots__ = ('__weakref__', '_list', '_qt', '_viewer', 'total', 'events')
 
     def __init__(self, viewer=None):
         self._list = []
+        self._qt = QtLayerList()
         self._viewer = None
+        self.total = 0
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    add_item=ItemEvent,
@@ -159,7 +163,8 @@ class LayerList:
         _check_layer(item, error=True)
 
         self._list.append(item)
-        self.events.add_item(item=item)
+        self.events.add_item(item=item, index=len(self)-1)
+        self.total = self.total+1
 
     def insert(self, index, item):
         """Inserts an item before an index.
@@ -174,7 +179,8 @@ class LayerList:
         _check_layer(item, error=True)
 
         self._list.insert(index, item)
-        self.events.add_item(item=item)
+        self.events.add_item(item=item, index=index-1)
+        self.total = self.total+1
 
     def pop(self, index=-1):
         """Removes and returns an item given an index.
@@ -291,6 +297,7 @@ class LayerList:
         """Callback when an item is added to set its order and viewer.
         """
         layer = event.item
+        self._qt.add(event.index, layer)
         layer._order = -len(self)
         layer.viewer = self.viewer
 
@@ -299,6 +306,7 @@ class LayerList:
         and reset its order.
         """
         layer = event.item
+        self._qt.remove(layer)
         layer.viewer = None
         layer._order = 0
 
@@ -308,6 +316,7 @@ class LayerList:
         """
         for i in range(len(self)):
             self[i]._order = -i
+        self._qt.reorder(self)
         canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()
