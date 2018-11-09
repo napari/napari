@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QSlider, QComboBox, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox
 from PyQt5.QtCore import Qt
+import weakref 
 
 class QtLayer(QGroupBox):
     def __init__(self, layer):
