@@ -11,7 +11,7 @@ class Layer(VisualWrapper, ABC):
         self._selected = False
         self._viewer = None
         self._qt = None
-        self.name = 'layer '
+        self.name = 'layer'
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
