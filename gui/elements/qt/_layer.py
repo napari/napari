@@ -1,19 +1,26 @@
 from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox, QWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette
-
+from os.path import dirname, join, realpath
 import weakref
+
+dir_path = dirname(realpath(__file__))
+path_on = join(dir_path,'icons','eye_on.png')
+path_off = join(dir_path,'icons','eye_off.png')
 
 class QtLayer(QGroupBox):
     def __init__(self, layer):
         super().__init__()
         self.layer = weakref.proxy(layer)
+        self.unselectedStyleSheet = "QGroupBox {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
+        self.selectedStyleSheet = "QGroupBox {border: 3px solid rgb(71,143,205); background-color:lightGray; border-radius: 3px;}"
+
         layout = QHBoxLayout()
 
         cb = QCheckBox(self)
         cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
-                         "QCheckBox::indicator:unchecked {image: url(eye_off.png);}"
-                         "QCheckBox::indicator:checked {image: url(eye_on.png);}")
+                         "QCheckBox::indicator:unchecked {image: url(" + path_off + ");}"
+                         "QCheckBox::indicator:checked {image: url(" + path_on + ");}")
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
@@ -41,8 +48,7 @@ class QtLayer(QGroupBox):
 
         self.setLayout(layout)
         self.setFixedHeight(55)
-        self.setStyleSheet("QGroupBox {border: 3px solid lightGray; background-color:lightGray;"
-            "border-radius: 3px;}")
+        self.setStyleSheet(self.unselectedStyleSheet)
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -54,13 +60,18 @@ class QtLayer(QGroupBox):
             self.layer.visible = False
 
     def mouseReleaseEvent(self, event):
-        if event.modifiers == Qt.ShiftModifier:
-            print('shift!!!')
-        else:
-            print('no shift!!!')
+        modifiers = event.modifiers()
+        if modifiers != Qt.ShiftModifier:
+            self.unselectAll()
         self.layer.selected = True
-        self.setStyleSheet("QGroupBox { border: 3px solid darkBlue; background-color:lightGray;"
-            "border-radius: 3px;}")
+        self.setStyleSheet(self.selectedStyleSheet)
+
+    def unselectAll(self):
+        if self.layer.viewer is not None:
+            for layer in self.layer.viewer.layers:
+                if layer.selected:
+                    layer._qt.setStyleSheet(self.unselectedStyleSheet)
+                    layer.selected = False
 
     def update(self):
         print('hello!!!')
