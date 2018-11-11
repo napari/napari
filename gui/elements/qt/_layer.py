@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox
+from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox, QWidget
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPalette
 
 import weakref
 
@@ -9,7 +10,7 @@ class QtLayer(QGroupBox):
         self.layer = weakref.proxy(layer)
         layout = QHBoxLayout()
 
-        cb = QCheckBox('', self)
+        cb = QCheckBox(self)
         cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
                          "QCheckBox::indicator:unchecked {image: url(eye_off.png);}"
                          "QCheckBox::indicator:checked {image: url(eye_on.png);}")
@@ -19,7 +20,7 @@ class QtLayer(QGroupBox):
         layout.addWidget(cb)
 
         textbox = QLineEdit(self)
-        #textbox.setStyleSheet("QLineEdit {background-color: gray;}")
+        textbox.setStyleSheet('background-color:lightGray; border:none')
         textbox.setText(layer.name)
         textbox.setToolTip('Layer name')
         textbox.setFixedWidth(80)
@@ -40,6 +41,8 @@ class QtLayer(QGroupBox):
 
         self.setLayout(layout)
         self.setFixedHeight(55)
+        self.setStyleSheet("QGroupBox {border: 3px solid lightGray; background-color:lightGray;"
+            "border-radius: 3px;}")
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -49,6 +52,15 @@ class QtLayer(QGroupBox):
             self.layer.visible = True
         else:
             self.layer.visible = False
+
+    def mouseReleaseEvent(self, event):
+        if event.modifiers == Qt.ShiftModifier:
+            print('shift!!!')
+        else:
+            print('no shift!!!')
+        self.layer.selected = True
+        self.setStyleSheet("QGroupBox { border: 3px solid darkBlue; background-color:lightGray;"
+            "border-radius: 3px;}")
 
     def update(self):
         print('hello!!!')
