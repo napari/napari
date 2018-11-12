@@ -4,7 +4,12 @@ from ._viewer import Viewer
 
 
 class Window:
-    """Application window.
+    """Application window that contains the menu bar and viewers.
+
+    Attributes
+    ----------
+    viewers : list of Viewer
+        Contained viewers.
     """
     def __init__(self):
         self._qt_window = QMainWindow()
@@ -22,7 +27,7 @@ class Window:
         return self._viewers
 
     def add_viewer(self):
-        """Adds a viewer to the containing layout.
+        """Add a viewer to the containing layout.
 
         Returns
         -------
@@ -36,10 +41,21 @@ class Window:
         self._qt_central_widget.layout().addWidget(viewer.layers._qt)
         return viewer
 
-    def resize(self, *args):
-        self._qt_window.resize(*args)
+    def resize(self, width, height):
+        """Resize the window.
+
+        Parameters
+        ----------
+        width : int
+            Width in logical pixels.
+        height : int
+            Height in logical pixels.
+        """
+        self._qt_window.resize(width, height)
 
     def show(self):
-        self.resize(self._qt_window.layout().sizeHint())
+        """Resize, show, and bring forward the window.
+        """
+        self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
         self._qt_window.raise_()

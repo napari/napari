@@ -9,7 +9,6 @@ class QRangeSlider(QtWidgets.QWidget):
     """
     QRangeSlider class, super class for QVRangeSlider and QHRangeSlider.
     """
-
     rangeChanged = QtCore.pyqtSignal(float, float)
 
     def __init__(self, slider_range, values, parent=None):
@@ -56,16 +55,22 @@ class QRangeSlider(QtWidgets.QWidget):
             #     print("Range change:", self.scale_min, self.scale_max)
 
     def getValues(self):
-        """
-        Values of the range bar
-        :return: [start, end]
+        """Values of the range bar.
+
+        Returns
+        -------
+        values : 2-tuple of int
+            Start and end of the range.
         """
         return [self.scale_min, self.scale_max]
 
     def setValues(self, values):
-        """
-        Setter for values of the range bar
-        :param values: [start, end]
+        """Set values of the range bar.
+
+        Parameters
+        ----------
+        values : 2-tuple of int
+            Start and end of the range.
         """
         self.scale_min, self.scale_max = values
         self.emitRange()
@@ -172,30 +177,43 @@ class QRangeSlider(QtWidgets.QWidget):
 class QHRangeSlider(QRangeSlider):
     """
     Horizontal Range Slider, extended from QRangeSlider
-    """
 
+    Parameters
+    ----------
+    slider_range : 3-tuple of int
+        Min, max, and step of the slider.
+    values : 2-tuple of int
+        Start and end of the slider range.
+    parent : PyQt5.QtWidgets.QWidget
+        Parent widget.
+    """
     def __init__(self, slider_range=None, values=None, parent=None):
-        """
-        Constructor of the QHRangeSlider class
-        :param slider_range: Should be a list of three elements such: [min, max, step]. Default value is None and will be inherited from QRangeSlider.
-        :param values: Should be a list of two elements such: [beginning, end]. Default value is None and will be inherited from QRangeSlider.
-        :param parent: Shall be passed only if explicit call to parent constructor is needed.
-        """
         QRangeSlider.__init__(self, slider_range, values, parent)
         if not parent:
             self.setGeometry(200, 200, 200, 20)
 
     def getPos(self, event):
-        """
-        :param event: catches from qt context
-        :return: relative horizontal position of event
+        """Get event position.
+
+        Parameters
+        ----------
+        event : PyQt5.QtCore.QEvent
+            Event from the Qt context.
+        
+        Returns
+        -------
+        position : int
+            Relative horizontal position of the event.
         """
         return event.x()
 
     def paintEvent(self, event):
-        """
-        Method to handle painting of the background, range bar and splitters
-        :param event: catches from the qt context
+        """Paint the background, range bar and splitters.
+
+        Parameters
+        ----------
+        event : PyQt5.QtCore.QEvent
+            Event from the Qt context.
         """
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
 
@@ -216,8 +234,12 @@ class QHRangeSlider(QRangeSlider):
         painter.drawRect(self.display_max, 1, self.bar_width, h - 2)  # right
 
     def rangeSliderSize(self):
-        """
-        :return: width attribute of parent class QWidget
+        """Size of the slider.
+
+        Returns
+        -------
+        size : int
+            Slider widget width (horizontal sliders) or height (vertical sliders).
         """
         return self.width()
 
@@ -225,30 +247,43 @@ class QHRangeSlider(QRangeSlider):
 class QVRangeSlider(QRangeSlider):
     """
     Vertical Range Slider, extended from QRangeSlider
-    """
 
+    Parameters
+    ----------
+    slider_range : 3-tuple of int
+        Min, max, and step of the slider.
+    values : 2-tuple of int
+        Start and end of the slider range.
+    parent : PyQt5.QtWidgets.QWidget
+        Parent widget.
+    """
     def __init__(self, slider_range=None, values=None, parent=None):
-        """
-        Constructor of the QVRangeSlider class
-        :param slider_range: Should be a list of three elements such: [min, max, step]. Default value is None and will be inherited from QRangeSlider.
-        :param values: Should be a list of two elements such: [beginning, end]. Default value is None and will be inherited from QRangeSlider.
-        :param parent: Shall be passed only if explicit call to parent constructor is needed.
-        """
         QRangeSlider.__init__(self, slider_range, values, parent)
         if not parent:
             self.setGeometry(200, 200, 20, 200)
 
     def getPos(self, event):
-        """
-        :param event: catches from qt context
-        :return: relative vertical position of event
+        """Get event position.
+
+        Parameters
+        ----------
+        event : PyQt5.QtCore.QEvent
+            Event from the Qt context.
+        
+        Returns
+        -------
+        position : int
+            Relative horizontal position of the event.
         """
         return self.height() - event.y()
 
     def paintEvent(self, event):
-        """
-        Method to handle painting of the background, range bar and splitters
-        :param event: catches from the qt context
+        """Paint the background, range bar and splitters.
+
+        Parameters
+        ----------
+        event : PyQt5.QtCore.QEvent
+            Event from the Qt context.
         """
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
 
@@ -269,7 +304,11 @@ class QVRangeSlider(QRangeSlider):
         painter.drawRect(1, h - self.display_min - 1, w - 2, self.bar_width)  # lower
 
     def rangeSliderSize(self):
-        """
-        :return: height attribute of parent class QWidget
+        """Size of the slider.
+
+        Returns
+        -------
+        size : int
+            Slider widget width (horizontal sliders) or height (vertical sliders).
         """
         return self.height()
