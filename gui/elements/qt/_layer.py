@@ -31,6 +31,7 @@ class QtLayer(QGroupBox):
         textbox.setText(layer.name)
         textbox.setToolTip('Layer name')
         textbox.setFixedWidth(80)
+        textbox.editingFinished.connect(lambda text=textbox: self.changeText(text))
         layout.addWidget(textbox)
 
         sld = QSlider(Qt.Horizontal, self)
@@ -58,6 +59,9 @@ class QtLayer(QGroupBox):
             self.layer.visible = True
         else:
             self.layer.visible = False
+
+    def changeText(self, text):
+        self.layer.name = text.text()
 
     def mouseReleaseEvent(self, event):
         modifiers = event.modifiers()
