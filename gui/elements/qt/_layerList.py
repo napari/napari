@@ -14,11 +14,11 @@ class QtLayerList(QScrollArea):
         self.layersLayout = QVBoxLayout(scrollWidget)
         self.layersLayout.addStretch(1)
 
-    def insert(self, index, layer):
+    def insert(self, index, total, layer):
         """Inserts a layer widget at a specific index
         """
         if layer._qt is not None:
-            self.layersLayout.insertWidget(index, layer._qt)
+            self.layersLayout.insertWidget(total - index-1, layer._qt)
 
     def remove(self, layer):
         """Removes a layer widget
@@ -37,4 +37,4 @@ class QtLayerList(QScrollArea):
             layer = layerList[i]
             if layer._qt is not None:
                 self.layersLayout.removeWidget(layer._qt)
-                self.layersLayout.insertWidget(i,layer._qt)
+                self.layersLayout.insertWidget(len(layerList) - i-1,layer._qt)
