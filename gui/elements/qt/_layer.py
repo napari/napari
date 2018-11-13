@@ -50,11 +50,17 @@ class QtLayer(QFrame):
 
         self.setLayout(layout)
         self.setFixedHeight(55)
-        self.setStyleSheet(self.selectedStyleSheet)
-        self.layer.selected = True
-
-#        self.setDragEnabled(True)
-        #self.setAcceptDrops(True)
+        self.setSelected(True)
+        self.lastSelected = True
+        
+    def setSelected(self, state):
+        if state:
+            self.setStyleSheet(self.selectedStyleSheet)
+            self.layer.selected = True
+        else:
+            self.setStyleSheet(self.unselectedStyleSheet)
+            self.layer.selected = False
+            self.lastSelected = False
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -70,25 +76,41 @@ class QtLayer(QFrame):
 
     def mouseReleaseEvent(self, event):
         modifiers = event.modifiers()
-        if modifiers != Qt.ShiftModifier:
+        if modifiers == Qt.ShiftModifier:
+            index = self.layer.viewer.layers.index(self.layer)
+            lastSelected = None
+            for i in range(len(self.layer.viewer.layers)):
+                if self.layer.viewer.layers[i]._qt.lastSelected:
+                    lastSelected = i
+            r = [index, lastSelected]
+            r.sort()
+            for i in range(r[0], r[1]+1):
+                self.layer.viewer.layers[i]._qt.setSelected(True)
+        elif modifiers == Qt.ControlModifier:
+            totalSelected = 0
+            for layer in self.layer.viewer.layers:
+                if layer.selected:
+                    totalSelected = totalSelected + 1
+            if self.layer.selected and totalSelected > 1:
+                if self.lastSelected:
+                    self.setSelected(False)
+                    for layer in self.layer.viewer.layers:
+                        layer._qt.lastSelected = layer.selected
+                else:
+                    self.setSelected(False)
+            else:
+                self.setSelected(True)
+                self.lastSelected = True
+        else:
             self.unselectAll()
-        self.layer.selected = True
-        self.setStyleSheet(self.selectedStyleSheet)
+            self.setSelected(True)
+            self.lastSelected = True
 
     def unselectAll(self):
         if self.layer.viewer is not None:
             for layer in self.layer.viewer.layers:
                 if layer.selected:
-                    layer._qt.setStyleSheet(self.unselectedStyleSheet)
-                    layer.selected = False
-
-    def dragMoveEvent(self, event):
-        print('drag leave!!!')
-        self.layer.name = 'asdfa'
-
-    def dropEvent(self, event):
-        print('drop event!!!')
-        self.layer.name = 'qqqq'
+                    layer._qt.setSelected(False)
 
     def update(self):
         print('hello!!!')
