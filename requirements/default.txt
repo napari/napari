@@ -1,0 +1,5 @@
+numpy>=1.10.0    # numpy
+vispy>=0.5.3     # vispy
+PyOpenGL>=3.1.0  # OpenGl
+PyQt5>=5.10.1    # PyQt5
+SIP>=0.1.5       # sip
