@@ -2,7 +2,7 @@ import weakref
 
 import numpy as np
 
-from ._base import Layer
+from ._base_layer import Layer
 from .._vispy.scene.visuals import Image as ImageNode
 
 from ..util import is_multichannel
@@ -15,6 +15,7 @@ from vispy.color.colormap import get_colormaps
 
 from ._register import add_to_viewer
 
+from ..elements.qt import QtImageLayer
 
 @add_to_viewer
 class Image(Layer):
@@ -44,6 +45,8 @@ class Image(Layer):
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
+
+        self._qt = QtImageLayer(self)
 
     @property
     def image(self):

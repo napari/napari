@@ -27,6 +27,10 @@ class VisualWrapper:
 
     @_order.setter
     def _order(self, order):
+        # workaround for opacity (see: #22)
+        order = -order
+        self.z_index = order
+        # end workaround
         self._node.order = order
 
     @property
