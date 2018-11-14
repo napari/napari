@@ -51,8 +51,7 @@ class QtLayer(QFrame):
         self.setLayout(layout)
         self.setFixedHeight(55)
         self.setSelected(True)
-        self.lastSelected = True
-        
+
     def setSelected(self, state):
         if state:
             self.setStyleSheet(self.selectedStyleSheet)
@@ -60,7 +59,6 @@ class QtLayer(QFrame):
         else:
             self.setStyleSheet(self.unselectedStyleSheet)
             self.layer.selected = False
-            self.lastSelected = False
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -80,31 +78,17 @@ class QtLayer(QFrame):
             index = self.layer.viewer.layers.index(self.layer)
             lastSelected = None
             for i in range(len(self.layer.viewer.layers)):
-                if self.layer.viewer.layers[i]._qt.lastSelected:
+                if self.layer.viewer.layers[i].selected:
                     lastSelected = i
             r = [index, lastSelected]
             r.sort()
             for i in range(r[0], r[1]+1):
                 self.layer.viewer.layers[i]._qt.setSelected(True)
         elif modifiers == Qt.ControlModifier:
-            totalSelected = 0
-            for layer in self.layer.viewer.layers:
-                if layer.selected:
-                    totalSelected = totalSelected + 1
-            if self.layer.selected and totalSelected > 1:
-                if self.lastSelected:
-                    self.setSelected(False)
-                    for layer in self.layer.viewer.layers:
-                        layer._qt.lastSelected = layer.selected
-                else:
-                    self.setSelected(False)
-            else:
-                self.setSelected(True)
-                self.lastSelected = True
+            self.setSelected(not self.layer.selected)
         else:
             self.unselectAll()
             self.setSelected(True)
-            self.lastSelected = True
 
     def unselectAll(self):
         if self.layer.viewer is not None:

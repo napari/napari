@@ -38,3 +38,8 @@ class QtLayerList(QScrollArea):
             if layer._qt is not None:
                 self.layersLayout.removeWidget(layer._qt)
                 self.layersLayout.insertWidget(len(layerList) - i-1,layer._qt)
+
+    def mouseReleaseEvent(self, event):
+        """Unselects all layer widgets
+        """
+        self.layersLayout.itemAt(0).widget().unselectAll()
