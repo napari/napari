@@ -1,23 +1,37 @@
-from PyQt5.QtWidgets import QSlider, QComboBox, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox
+from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget
 from PyQt5.QtCore import Qt
-import weakref 
+from PyQt5.QtGui import QPalette
+from os.path import dirname, join, realpath
+import weakref
 
-class QtLayer(QGroupBox):
+dir_path = dirname(realpath(__file__))
+path_on = join(dir_path,'icons','eye_on.png')
+path_off = join(dir_path,'icons','eye_off.png')
+
+class QtLayer(QFrame):
     def __init__(self, layer):
-        super().__init__(layer.name)
+        super().__init__()
         self.layer = weakref.proxy(layer)
+        self.unselectedStyleSheet = "QFrame {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
+        self.selectedStyleSheet = "QFrame {border: 3px solid rgb(71,143,205); background-color:lightGray; border-radius: 3px;}"
+
         layout = QHBoxLayout()
 
-        cb = QCheckBox('Visibility', self)
+        cb = QCheckBox(self)
+        cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
+                         #{}"QCheckBox::indicator:unchecked {image: url(" + path_off + ");}"
+                         "QCheckBox::indicator:checked {image: url(" + path_on + ");}")
+        cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
         layout.addWidget(cb)
 
-        comboBox = QComboBox()
-        layout.addWidget(comboBox)
+        layout.insertSpacing(1, 5)
 
         sld = QSlider(Qt.Horizontal, self)
+        sld.setToolTip('Layer opacity')
         sld.setFocusPolicy(Qt.NoFocus)
+        sld.setInvertedAppearance(True)
         sld.setFixedWidth(75)
         sld.setMinimum(0)
         sld.setMaximum(100)
@@ -26,8 +40,25 @@ class QtLayer(QGroupBox):
         sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
         layout.addWidget(sld)
 
+        textbox = QLineEdit(self)
+        textbox.setStyleSheet('background-color:lightGray; border:none')
+        textbox.setText(layer.name)
+        textbox.setToolTip('Layer name')
+        textbox.setFixedWidth(80)
+        textbox.editingFinished.connect(lambda text=textbox: self.changeText(text))
+        layout.addWidget(textbox)
+
         self.setLayout(layout)
-        self.setFixedHeight(75)
+        self.setFixedHeight(55)
+        self.setSelected(True)
+
+    def setSelected(self, state):
+        if state:
+            self.setStyleSheet(self.selectedStyleSheet)
+            self.layer.selected = True
+        else:
+            self.setStyleSheet(self.unselectedStyleSheet)
+            self.layer.selected = False
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -37,6 +68,33 @@ class QtLayer(QGroupBox):
             self.layer.visible = True
         else:
             self.layer.visible = False
+
+    def changeText(self, text):
+        self.layer.name = text.text()
+
+    def mouseReleaseEvent(self, event):
+        modifiers = event.modifiers()
+        if modifiers == Qt.ShiftModifier:
+            index = self.layer.viewer.layers.index(self.layer)
+            lastSelected = None
+            for i in range(len(self.layer.viewer.layers)):
+                if self.layer.viewer.layers[i].selected:
+                    lastSelected = i
+            r = [index, lastSelected]
+            r.sort()
+            for i in range(r[0], r[1]+1):
+                self.layer.viewer.layers[i]._qt.setSelected(True)
+        elif modifiers == Qt.ControlModifier:
+            self.setSelected(not self.layer.selected)
+        else:
+            self.unselectAll()
+            self.setSelected(True)
+
+    def unselectAll(self):
+        if self.layer.viewer is not None:
+            for layer in self.layer.viewer.layers:
+                if layer.selected:
+                    layer._qt.setSelected(False)
 
     def update(self):
         print('hello!!!')

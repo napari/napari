@@ -297,7 +297,7 @@ class LayerList:
         """Callback when an item is added to set its order and viewer.
         """
         layer = event.item
-        self._qt.insert(event.index, layer)
+        self._qt.insert(event.index, len(self), layer)
         layer._order = -len(self)
         layer.viewer = self.viewer
 
