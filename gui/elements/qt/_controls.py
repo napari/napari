@@ -1,10 +1,13 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QHBoxLayout, QSlider
+from PyQt5.QtWidgets import QHBoxLayout, QWidget
 
+from napari_gui.util.range_slider import QVRangeSlider
 
-class QtControls(QHBoxLayout):
+class QtControls(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.addWidget(QSlider(Qt.Vertical))
-        self.addWidget(QSlider(Qt.Vertical))
+        self.hbox_layout = QHBoxLayout()
+        self.hbox_layout.addWidget(QVRangeSlider())
+        self.hbox_layout.addWidget(QVRangeSlider())
+        self.setLayout(self.hbox_layout)
