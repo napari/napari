@@ -12,7 +12,7 @@ class QtLayerList(QScrollArea):
         scrollWidget = QWidget()
         self.setWidget(scrollWidget)
         self.layersLayout = QVBoxLayout(scrollWidget)
-        self.layersLayout.addWidget(QtDivider('TOP'))
+        self.layersLayout.addWidget(QtDivider('TOP', self))
         self.layersLayout.addStretch(1)
 
     def insert(self, index, total, layer):
@@ -20,7 +20,7 @@ class QtLayerList(QScrollArea):
         """
         if layer._qt is not None:
             self.layersLayout.insertWidget(2*(total - index)-1, layer._qt)
-            self.layersLayout.insertWidget(2*(total - index), QtDivider('ADD'))
+            self.layersLayout.insertWidget(2*(total - index), QtDivider('ADD', self))
 
     def remove(self, layer):
         """Removes a layer widget
@@ -40,11 +40,16 @@ class QtLayerList(QScrollArea):
         widgets in list sequentially removing them and inserting
         them into the correct place in final list.
         """
-        for i in range(len(layerList)):
+        total = len(layerList)
+        for i in range(total):
             layer = layerList[i]
             if layer._qt is not None:
+                index = self.layersLayout.indexOf(layer._qt)
+                divider = self.layersLayout.itemAt(index+1).widget()
                 self.layersLayout.removeWidget(layer._qt)
-                self.layersLayout.insertWidget(2*(len(layerList) - i)-1,layer._qt)
+                self.layersLayout.removeWidget(divider)
+                self.layersLayout.insertWidget(2*(total - i)-1,layer._qt)
+                self.layersLayout.insertWidget(2*(total - i),divider)
 
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets

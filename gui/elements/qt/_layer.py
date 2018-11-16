@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget
-from PyQt5.QtCore import Qt, QMimeData
+from PyQt5.QtCore import Qt, QMimeData, QByteArray
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
 import weakref
@@ -94,6 +94,9 @@ class QtLayer(QFrame):
         print('Press!!')
         mimeData = QMimeData()
         mimeData.setText(self.layer.name)
+        index = self.layer.viewer.layers._qt.layersLayout.indexOf(self)
+        mimeData.setData('index', QByteArray().number(index))
+#        mimeData.setData('index', QByteArray().number(self.layer.viewer.layers.index(self.layer)))
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
