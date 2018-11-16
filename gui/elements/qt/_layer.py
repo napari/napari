@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPalette
+from PyQt5.QtCore import Qt, QMimeData
+from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
 import weakref
 
@@ -89,6 +89,15 @@ class QtLayer(QFrame):
         else:
             self.unselectAll()
             self.setSelected(True)
+
+    def mousePressEvent(self, event):
+        print('Press!!')
+        mimeData = QMimeData()
+        mimeData.setText(self.layer.name)
+        drag = QDrag(self)
+        drag.setMimeData(mimeData)
+        drag.setHotSpot(event.pos() - self.rect().topLeft())
+        dropAction = drag.exec_()
 
     def unselectAll(self):
         if self.layer.viewer is not None:
