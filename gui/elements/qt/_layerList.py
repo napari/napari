@@ -12,7 +12,7 @@ class QtLayerList(QScrollArea):
         scrollWidget = QWidget()
         self.setWidget(scrollWidget)
         self.layersLayout = QVBoxLayout(scrollWidget)
-        self.layersLayout.addWidget(QtDivider('TOP', self))
+        self.layersLayout.addWidget(QtDivider())
         self.layersLayout.addStretch(1)
         self.setAcceptDrops(True)
 
@@ -21,7 +21,7 @@ class QtLayerList(QScrollArea):
         """
         if layer._qt is not None:
             self.layersLayout.insertWidget(2*(total - index)-1, layer._qt)
-            self.layersLayout.insertWidget(2*(total - index), QtDivider('ADD', self))
+            self.layersLayout.insertWidget(2*(total - index), QtDivider())
 
     def remove(self, layer):
         """Removes a layer widget
@@ -63,3 +63,47 @@ class QtLayerList(QScrollArea):
 
     def dragEnterEvent(self, event):
         event.accept()
+        dividers = []
+        for i in range(0, self.layersLayout.count(), 2):
+            widget = self.layersLayout.itemAt(i).widget()
+            dividers.append(widget.y()+widget.frameGeometry().height()/2)
+        self.centers = [(dividers[i+1]+dividers[i])/2 for i in range(len(dividers)-1)]
+
+    def dragMoveEvent(self, event):
+        cord = event.pos().y()
+        divider_index = next((i for i, x in enumerate(self.centers) if x > cord), len(self.centers))
+        layer_index = int(event.mimeData().data('index'))
+        layerWidget = self.layersLayout.itemAt(layer_index).widget()
+        layers = layerWidget.layer.viewer.layers
+        index = layers.index(layerWidget.layer)
+        total = len(layers)
+        insert_index = total - divider_index
+        if not (insert_index == index) and not (insert_index-1 == index):
+            state = True
+        else:
+            state = False
+        for i in range(0, self.layersLayout.count(), 2):
+            if i == 2*divider_index:
+                self.layersLayout.itemAt(i).widget().select(state)
+            else:
+                self.layersLayout.itemAt(i).widget().select(False)
+
+    def dropEvent(self, event):
+        for i in range(0, self.layersLayout.count(), 2):
+            self.layersLayout.itemAt(i).widget().select(False)
+        cord = event.pos().y()
+        divider_index = next((i for i, x in enumerate(self.centers) if x > cord), len(self.centers))
+        layer_index = int(event.mimeData().data('index'))
+        layerWidget = self.layersLayout.itemAt(layer_index).widget()
+        layers = layerWidget.layer.viewer.layers
+        index = layers.index(layerWidget.layer)
+        total = len(layers)
+        insert_index = total - divider_index
+        indices = [i for i in range(total)]
+        indices.pop(index)
+        if not (insert_index == index) and not (insert_index-1 == index):
+            if insert_index <= index:
+                indices.insert(insert_index, index)
+            else:
+                indices.insert(insert_index-1, index)
+            layers.reorder(indices)

@@ -92,7 +92,6 @@ class QtLayer(QFrame):
             self.setSelected(True)
 
     def mousePressEvent(self, event):
-        print('Press!!')
         self.dragStartPosition = event.pos()
 
     def mouseMoveEvent(self, event):
@@ -102,7 +101,6 @@ class QtLayer(QFrame):
         mimeData.setText(self.layer.name)
         index = self.layer.viewer.layers._qt.layersLayout.indexOf(self)
         mimeData.setData('index', QByteArray().number(index))
-        #mimeData.setData('index', QByteArray().number(self.layer.viewer.layers.index(self.layer)))
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
