@@ -6,10 +6,10 @@ class QtDivider(QFrame):
         super().__init__()
         self.unselectedStlyeSheet = "QFrame {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
         self.selectedStlyeSheet = "QFrame {border: 3px solid rgb(71,143,205); background-color:rgb(71,143,205); border-radius: 3px;}"
-        self.select(False)
+        self.setSelected(False)
         self.setFixedHeight(4)
 
-    def select(self, bool):
+    def setSelected(self, bool):
         if bool:
             self.setStyleSheet(self.selectedStlyeSheet)
         else:

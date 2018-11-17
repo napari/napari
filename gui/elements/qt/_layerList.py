@@ -59,7 +59,7 @@ class QtLayerList(QScrollArea):
 
     def dragLeaveEvent(self, event):
         for i in range(0, self.layersLayout.count(), 2):
-            self.layersLayout.itemAt(i).widget().select(False)
+            self.layersLayout.itemAt(i).widget().setSelected(False)
 
     def dragEnterEvent(self, event):
         event.accept()
@@ -84,13 +84,13 @@ class QtLayerList(QScrollArea):
             state = False
         for i in range(0, self.layersLayout.count(), 2):
             if i == 2*divider_index:
-                self.layersLayout.itemAt(i).widget().select(state)
+                self.layersLayout.itemAt(i).widget().setSelected(state)
             else:
-                self.layersLayout.itemAt(i).widget().select(False)
+                self.layersLayout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
         for i in range(0, self.layersLayout.count(), 2):
-            self.layersLayout.itemAt(i).widget().select(False)
+            self.layersLayout.itemAt(i).widget().setSelected(False)
         cord = event.pos().y()
         divider_index = next((i for i, x in enumerate(self.centers) if x > cord), len(self.centers))
         layer_index = int(event.mimeData().data('index'))
@@ -107,3 +107,6 @@ class QtLayerList(QScrollArea):
             else:
                 indices.insert(insert_index-1, index)
             layers.reorder(indices)
+        if not layerWidget.layer.selected:
+            layerWidget.unselectAll()
+            layerWidget.setSelected(True)
