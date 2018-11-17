@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication
-from PyQt5.QtCore import Qt, QMimeData, QByteArray
+from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
 import weakref
@@ -19,7 +19,6 @@ class QtLayer(QFrame):
 
         cb = QCheckBox(self)
         cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
-                         #{}"QCheckBox::indicator:unchecked {image: url(" + path_off + ");}"
                          "QCheckBox::indicator:checked {image: url(" + path_on + ");}")
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
@@ -101,7 +100,6 @@ class QtLayer(QFrame):
         mimeData = QMimeData()
         mimeData.setText(self.layer.name)
         index = self.layer.viewer.layers._qt.layersLayout.indexOf(self)
-        mimeData.setData('index', QByteArray().number(index))
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())

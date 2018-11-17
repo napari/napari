@@ -58,6 +58,7 @@ class QtLayerList(QScrollArea):
         self.layersLayout.itemAt(1).widget().unselectAll()
 
     def dragLeaveEvent(self, event):
+        event.ignore()
         for i in range(0, self.layersLayout.count(), 2):
             self.layersLayout.itemAt(i).widget().setSelected(False)
 
@@ -72,8 +73,7 @@ class QtLayerList(QScrollArea):
     def dragMoveEvent(self, event):
         cord = event.pos().y()
         divider_index = next((i for i, x in enumerate(self.centers) if x > cord), len(self.centers))
-        layer_index = int(event.mimeData().data('index'))
-        layerWidget = self.layersLayout.itemAt(layer_index).widget()
+        layerWidget = event.source()
         layers = layerWidget.layer.viewer.layers
         index = layers.index(layerWidget.layer)
         total = len(layers)
@@ -89,13 +89,11 @@ class QtLayerList(QScrollArea):
                 self.layersLayout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
-        event.accept()
         for i in range(0, self.layersLayout.count(), 2):
             self.layersLayout.itemAt(i).widget().setSelected(False)
         cord = event.pos().y()
         divider_index = next((i for i, x in enumerate(self.centers) if x > cord), len(self.centers))
-        layer_index = int(event.mimeData().data('index'))
-        layerWidget = self.layersLayout.itemAt(layer_index).widget()
+        layerWidget = event.source()
         layers = layerWidget.layer.viewer.layers
         index = layers.index(layerWidget.layer)
         total = len(layers)
@@ -108,6 +106,9 @@ class QtLayerList(QScrollArea):
             else:
                 indices.insert(insert_index-1, index)
             layers.reorder(indices)
+            event.accept()
+        else:
+            event.ignore()
         if not layerWidget.layer.selected:
             layerWidget.unselectAll()
             layerWidget.setSelected(True)
