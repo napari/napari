@@ -52,6 +52,7 @@ class QtLayer(QFrame):
         self.setLayout(layout)
         self.setFixedHeight(55)
         self.setSelected(True)
+        self.setToolTip('Click to select\nDrag to rearrange')
 
     def setSelected(self, state):
         if state:
