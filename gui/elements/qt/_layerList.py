@@ -89,6 +89,7 @@ class QtLayerList(QScrollArea):
                 self.layersLayout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
+        event.accept()
         for i in range(0, self.layersLayout.count(), 2):
             self.layersLayout.itemAt(i).widget().setSelected(False)
         cord = event.pos().y()

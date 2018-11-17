@@ -107,7 +107,6 @@ class QtLayer(QFrame):
         drag.setHotSpot(event.pos() - self.rect().topLeft())
         dropAction = drag.exec_(Qt.MoveAction)
 
-
     def unselectAll(self):
         if self.layer.viewer is not None:
             for layer in self.layer.viewer.layers:
