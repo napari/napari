@@ -14,6 +14,7 @@ class QtLayerList(QScrollArea):
         self.layersLayout = QVBoxLayout(scrollWidget)
         self.layersLayout.addWidget(QtDivider('TOP', self))
         self.layersLayout.addStretch(1)
+        self.setAcceptDrops(True)
 
     def insert(self, index, total, layer):
         """Inserts a layer widget at a specific index
@@ -55,3 +56,10 @@ class QtLayerList(QScrollArea):
         """Unselects all layer widgets
         """
         self.layersLayout.itemAt(1).widget().unselectAll()
+
+    def dragLeaveEvent(self, event):
+        for i in range(0, self.layersLayout.count(), 2):
+            self.layersLayout.itemAt(i).widget().select(False)
+
+    def dragEnterEvent(self, event):
+        event.accept()

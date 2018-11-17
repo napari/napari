@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget
+from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication
 from PyQt5.QtCore import Qt, QMimeData, QByteArray
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
@@ -45,6 +45,7 @@ class QtLayer(QFrame):
         textbox.setText(layer.name)
         textbox.setToolTip('Layer name')
         textbox.setFixedWidth(80)
+        textbox.setAcceptDrops(False)
         textbox.editingFinished.connect(lambda text=textbox: self.changeText(text))
         layout.addWidget(textbox)
 
@@ -92,15 +93,21 @@ class QtLayer(QFrame):
 
     def mousePressEvent(self, event):
         print('Press!!')
+        self.dragStartPosition = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if (event.pos()- self.dragStartPosition).manhattanLength() < QApplication.startDragDistance():
+            return
         mimeData = QMimeData()
         mimeData.setText(self.layer.name)
         index = self.layer.viewer.layers._qt.layersLayout.indexOf(self)
         mimeData.setData('index', QByteArray().number(index))
-#        mimeData.setData('index', QByteArray().number(self.layer.viewer.layers.index(self.layer)))
+        #mimeData.setData('index', QByteArray().number(self.layer.viewer.layers.index(self.layer)))
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
-        dropAction = drag.exec_()
+        dropAction = drag.exec_(Qt.MoveAction)
+
 
     def unselectAll(self):
         if self.layer.viewer is not None:
