@@ -55,7 +55,7 @@ PACKAGES = [package for package in find_packages()
             if not package.startswith('gui')]
 
 
-with open(osp.join('requirements', 'default.txt')) as f:
+with open(osp.join('requirements', 'run.txt')) as f:
     requirements = [l.strip() for l in f.readlines() if l]
 
 

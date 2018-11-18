@@ -1,2 +1,2 @@
--r requirements/default.txt
--r requirements/test.txt
+-r requirements/run.txt
+-r requirements/develop.txt
