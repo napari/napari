@@ -37,28 +37,21 @@ class QDeleteButton(QPushButton):
         self.setStyleSheet(styleSheet)
 
     def on_click(self):
-        self.delete_layers()
-
-    def delete_layers(self):
-        to_delete = []
-        for i in range(len(self.layers)):
-            if self.layers[i].selected:
-                to_delete.append(i)
-        to_delete.reverse()
-        for i in to_delete:
-            self.layers.pop(i)
+        self.layers.remove_selected()
 
     def dragEnterEvent(self, event):
         event.accept()
+        self.hover = True
+        self.update()
+
+    def dragLeaveEvent(self, event):
+        event.ignore()
+        self.hover = False
+        self.update()
 
     def dropEvent(self, event):
+        event.setDropAction(Qt.CopyAction)
         event.accept()
-        layerWidget = event.source()
-        # if not layerWidget.layer.selected:
-        #      self.layers.remove(layerWidget.layer)
-        # else:
-        #     self.delete_layers()
-        print('Dropped!!!')
 
 class QtLayerControls(QFrame):
     def __init__(self, layers):

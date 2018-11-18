@@ -109,7 +109,13 @@ class QtLayer(QFrame):
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
-        dropAction = drag.exec_(Qt.MoveAction)
+        dropAction = drag.exec_(Qt.MoveAction | Qt.CopyAction)
+
+        if dropAction == Qt.CopyAction:
+            if not self.layer.selected:
+                self.layer.viewer.layers.remove(self.layer)
+            else:
+                self.layer.viewer.layers.remove_selected()
 
     def unselectAll(self):
         if self.layer.viewer is not None:

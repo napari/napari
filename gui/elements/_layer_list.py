@@ -320,3 +320,14 @@ class LayerList:
         canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()
+
+    def remove_selected(self):
+        """Removes selected items from list.
+        """
+        to_delete = []
+        for i in range(len(self)):
+            if self[i].selected:
+                to_delete.append(i)
+        to_delete.reverse()
+        for i in to_delete:
+            self.pop(i)
