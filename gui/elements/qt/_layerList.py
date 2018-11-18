@@ -99,12 +99,21 @@ class QtLayerList(QScrollArea):
         total = len(layers)
         insert_index = total - divider_index
         indices = [i for i in range(total)]
-        indices.pop(index)
-        if not (insert_index == index) and not (insert_index-1 == index):
-            if insert_index <= index:
-                indices.insert(insert_index, index)
-            else:
-                indices.insert(insert_index-1, index)
+        if layerWidget.layer.selected:
+            selected = []
+            for i in range(total):
+                if layers[i].selected:
+                    selected.append(i)
+        else:
+            selected = [index]
+        for i in selected:
+            indices.remove(i)
+        offset = sum([i<insert_index for i in selected])
+        j = insert_index - offset
+        for i in selected:
+            indices.insert(j,i)
+            j = j+1
+        if not indices == [i for i in range(total)]:
             layers.reorder(indices)
             event.accept()
         else:

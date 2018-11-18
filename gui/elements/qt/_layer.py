@@ -98,8 +98,15 @@ class QtLayer(QFrame):
         if (event.pos()- self.dragStartPosition).manhattanLength() < QApplication.startDragDistance():
             return
         mimeData = QMimeData()
-        mimeData.setText(self.layer.name)
-        index = self.layer.viewer.layers._qt.layersLayout.indexOf(self)
+        if not self.layer.selected:
+            name = self.layer.name
+        else:
+            name = ''
+            for layer in self.layer.viewer.layers:
+                if layer.selected:
+                    name = layer.name + '; ' + name
+            name = name[:-2]
+        mimeData.setText(name)
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
