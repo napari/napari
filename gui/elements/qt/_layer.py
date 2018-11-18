@@ -113,7 +113,8 @@ class QtLayer(QFrame):
 
         if dropAction == Qt.CopyAction:
             if not self.layer.selected:
-                self.layer.viewer.layers.remove(self.layer)
+                index = self.layer.viewer.layers.index(self.layer)
+                self.layer.viewer.layers.pop(index)
             else:
                 self.layer.viewer.layers.remove_selected()
 
