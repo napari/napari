@@ -2,10 +2,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea
 from ._layerDivider import QtDivider
 
+import weakref
+
 class QtLayerList(QScrollArea):
-    def __init__(self):
+    def __init__(self, layers):
         super().__init__()
 
+        self.layers = weakref.proxy(layers)
         self.setWidgetResizable(True)
         #self.setFixedWidth(315)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -15,6 +18,8 @@ class QtLayerList(QScrollArea):
         self.layersLayout.addWidget(QtDivider())
         self.layersLayout.addStretch(1)
         self.setAcceptDrops(True)
+        self.setToolTip('Layer list')
+
 
     def insert(self, index, total, layer):
         """Inserts a layer widget at a specific index
@@ -36,14 +41,14 @@ class QtLayerList(QScrollArea):
             divider.deleteLater()
             divider = None
 
-    def reorder(self, layerList):
+    def reorder(self):
         """Reorders list of layer widgets by looping through all
         widgets in list sequentially removing them and inserting
         them into the correct place in final list.
         """
-        total = len(layerList)
+        total = len(self.layers)
         for i in range(total):
-            layer = layerList[i]
+            layer = self.layers[i]
             if layer._qt is not None:
                 index = self.layersLayout.indexOf(layer._qt)
                 divider = self.layersLayout.itemAt(index+1).widget()
@@ -55,7 +60,8 @@ class QtLayerList(QScrollArea):
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets
         """
-        self.layersLayout.itemAt(1).widget().unselectAll()
+        if self.layersLayout.count() > 1:
+            self.layersLayout.itemAt(1).widget().unselectAll()
 
     def dragLeaveEvent(self, event):
         event.ignore()

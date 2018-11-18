@@ -6,7 +6,6 @@ import weakref
 
 dir_path = dirname(realpath(__file__))
 path_on = join(dir_path,'icons','eye_on.png')
-path_off = join(dir_path,'icons','eye_off.png')
 
 class QtLayer(QFrame):
     def __init__(self, layer):

@@ -47,7 +47,7 @@ class LayerList:
 
     def __init__(self, viewer=None):
         self._list = []
-        self._qt = QtLayerPanel()
+        self._qt = QtLayerPanel(self)
         self._viewer = None
         self.total = 0
         self.events = EmitterGroup(source=self,
@@ -316,7 +316,7 @@ class LayerList:
         """
         for i in range(len(self)):
             self[i]._order = -i
-        self._qt.layersList.reorder(self)
+        self._qt.layersList.reorder()
         canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()
