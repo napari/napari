@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPalette
+from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication
+from PyQt5.QtCore import Qt, QMimeData
+from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
 import weakref
 
@@ -19,7 +19,6 @@ class QtLayer(QFrame):
 
         cb = QCheckBox(self)
         cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
-                         #{}"QCheckBox::indicator:unchecked {image: url(" + path_off + ");}"
                          "QCheckBox::indicator:checked {image: url(" + path_on + ");}")
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
@@ -45,12 +44,14 @@ class QtLayer(QFrame):
         textbox.setText(layer.name)
         textbox.setToolTip('Layer name')
         textbox.setFixedWidth(80)
+        textbox.setAcceptDrops(False)
         textbox.editingFinished.connect(lambda text=textbox: self.changeText(text))
         layout.addWidget(textbox)
 
         self.setLayout(layout)
         self.setFixedHeight(55)
         self.setSelected(True)
+        self.setToolTip('Click to select\nDrag to rearrange')
 
     def setSelected(self, state):
         if state:
@@ -89,6 +90,27 @@ class QtLayer(QFrame):
         else:
             self.unselectAll()
             self.setSelected(True)
+
+    def mousePressEvent(self, event):
+        self.dragStartPosition = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if (event.pos()- self.dragStartPosition).manhattanLength() < QApplication.startDragDistance():
+            return
+        mimeData = QMimeData()
+        if not self.layer.selected:
+            name = self.layer.name
+        else:
+            name = ''
+            for layer in self.layer.viewer.layers:
+                if layer.selected:
+                    name = layer.name + '; ' + name
+            name = name[:-2]
+        mimeData.setText(name)
+        drag = QDrag(self)
+        drag.setMimeData(mimeData)
+        drag.setHotSpot(event.pos() - self.rect().topLeft())
+        dropAction = drag.exec_(Qt.MoveAction)
 
     def unselectAll(self):
         if self.layer.viewer is not None:
