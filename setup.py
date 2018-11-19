@@ -35,9 +35,12 @@ CLASSIFIERS = [
 
 
 import os
+import os.path as osp
 import sys
 from setuptools import setup, find_packages
+
 import versioneer
+
 
 if sys.version_info < (3, 6):
     sys.stderr.write(f'You are using Python '
@@ -52,7 +55,7 @@ PACKAGES = [package for package in find_packages()
             if not package.startswith('gui')]
 
 
-with open('requirements.txt') as f:
+with open(osp.join('requirements', 'default.txt')) as f:
     requirements = [l.strip() for l in f.readlines() if l]
 
 

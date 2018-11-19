@@ -4,6 +4,7 @@ from ._layerDivider import QtDivider
 
 import weakref
 
+
 class QtLayerList(QScrollArea):
     def __init__(self, layers):
         super().__init__()
@@ -19,7 +20,6 @@ class QtLayerList(QScrollArea):
         self.layersLayout.addStretch(1)
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
-
 
     def insert(self, index, total, layer):
         """Inserts a layer widget at a specific index

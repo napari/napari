@@ -118,6 +118,7 @@ class QtLayer(QFrame):
             else:
                 self.layer.viewer.layers.remove_selected()
 
+
     def unselectAll(self):
         if self.layer.viewer is not None:
             for layer in self.layer.viewer.layers:
