@@ -37,9 +37,9 @@ class Window:
         horizontalSplitter = QSplitter(Qt.Horizontal)
         viewer.controls._qt.setMinimumSize(QSize(60, 60))
         horizontalSplitter.addWidget(viewer.controls._qt)
-        viewer._qt.setMinimumSize(QSize(500, 500))
+        viewer._qt.setMinimumSize(QSize(100, 100))
         horizontalSplitter.addWidget(viewer._qt)
-        viewer.layers._qt.setMinimumSize(QSize(150, 150))
+        viewer.layers._qt.setMinimumSize(QSize(250, 250))
         horizontalSplitter.addWidget(viewer.layers._qt)
 
         self._qt_central_widget.layout().addWidget(horizontalSplitter)
