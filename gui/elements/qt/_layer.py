@@ -48,9 +48,11 @@ class QtLayer(QFrame):
         layout.addWidget(textbox)
 
         self.setLayout(layout)
-        self.setFixedHeight(55)
         self.setSelected(True)
-        self.setToolTip('Click to select\nDrag to rearrange')
+        self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
+        self.expanded = False
+        self.setFixedHeight(55)
+
 
     def setSelected(self, state):
         if state:
@@ -123,6 +125,13 @@ class QtLayer(QFrame):
             for layer in self.layer.viewer.layers:
                 if layer.selected:
                     layer._qt.setSelected(False)
+
+    def mouseDoubleClickEvent(self, event):
+        self.expanded = not self.expanded
+        if self.expanded:
+            self.setFixedHeight(110)
+        else:
+            self.setFixedHeight(55)
 
     def update(self):
         print('hello!!!')
