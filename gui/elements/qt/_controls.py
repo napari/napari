@@ -1,7 +1,8 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
 
-from napari_gui.util.range_slider import QVRangeSlider
+from ...util.range_slider import QVRangeSlider
+
 
 class QtControls(QWidget):
     def __init__(self):
