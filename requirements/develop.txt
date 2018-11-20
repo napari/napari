@@ -1,3 +1,4 @@
 pytest
 pytest-faulthandler
 jupytext
+nbconvert
