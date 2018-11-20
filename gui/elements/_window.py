@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter
 
 from ._viewer import Viewer
 
@@ -31,9 +32,17 @@ class Window:
         """
         viewer = Viewer(self)
         self.viewers.append(viewer)
-        self._qt_central_widget.layout().addLayout(viewer.controls._qt)
-        self._qt_central_widget.layout().addWidget(viewer._qt)
-        self._qt_central_widget.layout().addWidget(viewer.layers._qt)
+
+        # To split vertical sliders, viewer and layerlist, minimumsizes given for demo purposes/NOT FINAL
+        horizontalSplitter = QSplitter(Qt.Horizontal)
+        viewer.controls._qt.setMinimumSize(QSize(60, 60))
+        horizontalSplitter.addWidget(viewer.controls._qt)
+        viewer._qt.setMinimumSize(QSize(100, 100))
+        horizontalSplitter.addWidget(viewer._qt)
+        viewer.layers._qt.setMinimumSize(QSize(250, 250))
+        horizontalSplitter.addWidget(viewer.layers._qt)
+
+        self._qt_central_widget.layout().addWidget(horizontalSplitter)
         return viewer
 
     def resize(self, *args):
