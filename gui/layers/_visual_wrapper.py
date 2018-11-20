@@ -3,6 +3,33 @@ from vispy.visuals.transforms import STTransform
 
 
 class VisualWrapper:
+    """Wrapper around ``vispy.scene.VisualNode`` objects.
+    Meant to be subclassed.
+
+    "Hidden" properties:
+        * ``_master_transform``
+        * ``_order``
+        * ``_parent``
+
+    Parameters
+    ----------
+    central_node : vispy.scene.VisualNode
+        Central node/control point with which to interact with the visual.
+        Stored as ``_node``.
+
+    Attributes
+    ----------
+    opacity
+    visible
+    scale
+    translate
+    z_index
+
+    Notes
+    -----
+    It is recommended to use the backported ``vispy`` nodes
+    at ``_vispy.scene.visuals`` for various bug fixes.
+    """
     def __init__(self, central_node):
         self._node = central_node
 
