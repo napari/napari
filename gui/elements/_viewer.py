@@ -5,12 +5,28 @@ from ..util.misc import (compute_max_shape as _compute_max_shape,
 
 
 class Viewer:
-    """Viewer object.
+    """Viewer containing the rendered scene, layers, and controlling elements
+    including dimension sliders.
 
     Parameters
     ----------
     parent : Window
         Parent window.
+
+    Attributes
+    ----------
+    camera : vispy.scene.Camera
+        Viewer camera.
+    layers : LayerList
+        List of contained layers.
+    indices : list
+        Slicing indices controlled by the sliders.
+    window : Window
+        Parent window
+    max_dims : int
+        Maximum dimensions of the contained layers.
+    max_shape : tuple of int
+        Maximum shape of the contained layers.
     """
     def __init__(self, window):
         from ._layer_list import LayerList
@@ -219,5 +235,7 @@ class Viewer:
             self._update_sliders()
 
     def _on_layers_change(self, event):
+        """Called whenever a layer is changed.
+        """
         self._child_layer_changed = True
         self._update()
