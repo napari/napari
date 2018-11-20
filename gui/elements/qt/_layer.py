@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication
+from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
@@ -11,10 +11,11 @@ class QtLayer(QFrame):
     def __init__(self, layer):
         super().__init__()
         self.layer = weakref.proxy(layer)
-        self.unselectedStyleSheet = "QFrame {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
-        self.selectedStyleSheet = "QFrame {border: 3px solid rgb(71,143,205); background-color:lightGray; border-radius: 3px;}"
+        self.unselectedStyleSheet = "QFrame#layer {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
+        self.selectedStyleSheet = "QFrame#layer {border: 3px solid rgb(71,143,205); background-color:lightGray; border-radius: 3px;}"
+        self.setObjectName('layer')
 
-        layout = QHBoxLayout()
+        self.grid_layout = QGridLayout()
 
         cb = QCheckBox(self)
         cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
@@ -22,21 +23,9 @@ class QtLayer(QFrame):
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
-        layout.addWidget(cb)
+        self.grid_layout.addWidget(cb, 0, 0)
 
-        layout.insertSpacing(1, 5)
-
-        sld = QSlider(Qt.Horizontal, self)
-        sld.setToolTip('Layer opacity')
-        sld.setFocusPolicy(Qt.NoFocus)
-        sld.setInvertedAppearance(True)
-        sld.setFixedWidth(75)
-        sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
-        sld.setValue(self.layer.opacity*100)
-        sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
-        layout.addWidget(sld)
+        #self.grid_layout.insertSpacing(1, 5)
 
         textbox = QLineEdit(self)
         textbox.setStyleSheet('background-color:lightGray; border:none')
@@ -45,13 +34,26 @@ class QtLayer(QFrame):
         textbox.setFixedWidth(80)
         textbox.setAcceptDrops(False)
         textbox.editingFinished.connect(lambda text=textbox: self.changeText(text))
-        layout.addWidget(textbox)
+        self.grid_layout.addWidget(textbox, 0, 1)
 
-        self.setLayout(layout)
+        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setToolTip('Layer opacity')
+        sld.setFocusPolicy(Qt.NoFocus)
+        #sld.setInvertedAppearance(True)
+        sld.setFixedWidth(75)
+        sld.setMinimum(0)
+        sld.setMaximum(100)
+        sld.setSingleStep(1)
+        sld.setValue(self.layer.opacity*100)
+        sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
+        self.grid_layout.addWidget(sld, 1, 1)
+
+        self.setLayout(self.grid_layout)
         self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
         self.setSelected(True)
         self.setExpanded(False)
-
+        self.setFixedWidth(200)
 
     def setSelected(self, state):
         if state:
@@ -132,6 +134,14 @@ class QtLayer(QFrame):
         else:
             self.expanded = False
             self.setFixedHeight(55)
+        rows = self.grid_layout.rowCount()
+        for i in range(1, rows):
+            for j in range(2):
+                if self.expanded:
+                    self.grid_layout.itemAtPosition(i,j).widget().show()
+                else:
+                    self.grid_layout.itemAtPosition(i,j).widget().hide()
+
 
     def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)
