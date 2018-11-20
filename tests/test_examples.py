@@ -1,26 +1,34 @@
+import os
 import os.path as osp
+
+import pytest
 
 import jupytext
 from nbconvert.preprocessors import ExecutePreprocessor
 
 
-examples_folder = osp.join(osp.dirname(osp.dirname(__file__)), 'examples')
 ep = ExecutePreprocessor(timeout=1000)
 
 
-def jupytext_execute(filename, format_name=None, freeze_metadata=False):
+def jupytext_execute(path, format_name=None, freeze_metadata=False):
     # https://nbconvert.readthedocs.io/en/latest/execute_api.html
-    notebook = jupytext.readf(filename, format_name=format_name,
+    notebook = jupytext.readf(path, format_name=format_name,
                               freeze_metadata=freeze_metadata)
     return ep.preprocess(notebook,
-                         {'metadata': {'path': osp.dirname(filename)}})
+                         {'metadata': {'path': osp.dirname(path)}})
 
 
-def test_layers():
-    layers = osp.join(examples_folder, 'layers.md')
-    jupytext_execute(layers)
+examples_folder = osp.join(osp.dirname(osp.dirname(__file__)), 'examples')
+excludes = ['__init__.py', 'README.md', 'demo.py']
+filenames = []
+for filename in os.listdir(examples_folder):
+    if filename not in excludes:
+        for ext in jupytext.NOTEBOOK_EXTENSIONS:
+            if filename.endswith(ext):
+                filenames.append(filename)
 
-    
-def test_markers():
-    layers = osp.join(examples_folder, 'markers.md')
-    jupytext_execute(layers)
+
+@pytest.mark.parametrize('filename', filenames)
+def test_execute(filename):
+    path = osp.join(examples_folder, filename)
+    jupytext_execute(path)
