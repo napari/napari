@@ -58,8 +58,7 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         layout = QHBoxLayout()
-        pb = QDeleteButton(layers)
-        layout.addWidget(pb)
+        layout.addWidget(QDeleteButton(layers))
         layout.addStretch(0)
 
         self.setLayout(layout)
