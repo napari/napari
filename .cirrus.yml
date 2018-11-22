@@ -18,9 +18,10 @@ task:
         - apt-get install -y libgl1-mesa-glx xvfb
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
-        - bash ./install.sh -b -p $HOME/conda
+        - bash install.sh -b -p $HOME/conda
         - conda update -yn base conda
         - conda install -y python=$PY_VER
+        - rm install.sh
       # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
       xvfb_start_background_script: Xvfb :99 -ac -screen 0 1024x768x24
 
@@ -29,12 +30,20 @@ task:
         image: cirrusci/windowsservercore:2016
       env:
         PATH: $PATH;$USERPROFILE\anaconda\Scripts;$USERPROFILE\anaconda
+        # https://github.com/vispy/vispy/blob/master/appveyor.yml#L44
+        VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
+        PYTHON_ARCH: 64
+      system_script:
+        - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
+        - powershell ./opengl.ps1
+        - ps: rm opengl.ps1
       conda_script:
-        - powershell -Command "curl https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe -OutFile install.exe"
+        - ps: curl https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe -OutFile install.exe
         - start /wait "" install.exe /InstallationType=AllUsers /AddToPath=1 /RegisterPython=1 /S /D=%USERPROFILE%\anaconda
         - conda update -yn base conda
         - conda install -y python=%PY_VER%
         - pip install setuptools-scm
+        - ps: rm install.exe
 
     - name: osx
       osx_instance:
@@ -43,9 +52,10 @@ task:
         PATH: $HOME/conda/bin:$PATH
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
-        - bash ./install.sh -b -p $HOME/conda
+        - bash install.sh -b -p $HOME/conda
         - conda update -yn base conda
         - conda install -y python=$PY_VER
+        - rm install.sh
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
