@@ -6,8 +6,6 @@ class QtMarkersLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.expanded_height = 260
-
         self.grid_layout.addWidget(QLabel('size:'), 2, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -19,7 +17,6 @@ class QtMarkersLayer(QtLayer):
         sld.setValue(self.layer.size)
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.grid_layout.addWidget(sld, 2, 1)
-
 
         face_comboBox = QComboBox()
         colors = self.layer._colors

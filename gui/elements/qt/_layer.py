@@ -47,13 +47,13 @@ class QtLayer(QFrame):
         sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
         self.grid_layout.addWidget(sld, 1, 1)
 
-        self.expanded_height = 110
         self.setLayout(self.grid_layout)
         self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
         self.setSelected(True)
         self.setExpanded(False)
         self.setFixedWidth(200)
-
+        self.grid_layout.setColumnMinimumWidth(0, 100)
+        self.grid_layout.setColumnMinimumWidth(1, 100)
 
     def setSelected(self, state):
         if state:
@@ -130,7 +130,8 @@ class QtLayer(QFrame):
     def setExpanded(self, bool):
         if bool:
             self.expanded = True
-            self.setFixedHeight(self.expanded_height)
+            rows = self.grid_layout.rowCount()
+            self.setFixedHeight(55*(rows-1))
         else:
             self.expanded = False
             self.setFixedHeight(55)
