@@ -14,8 +14,8 @@ class QtLayerPanel(QWidget):
         layout = QVBoxLayout()
         self.layersList = QtLayerList(layers)
         self.layersControls = QtLayerControls(layers)
-        layout.addWidget(self.layersControls)
         layout.addWidget(self.layersList)
+        layout.addWidget(self.layersControls)
         self.setLayout(layout)
 
 class QDeleteButton(QPushButton):
@@ -56,7 +56,7 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         layout = QHBoxLayout()
-        layout.addWidget(QDeleteButton(layers))
         layout.addStretch(0)
+        layout.addWidget(QDeleteButton(layers))
 
         self.setLayout(layout)
