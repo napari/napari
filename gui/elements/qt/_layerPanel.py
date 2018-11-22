@@ -3,7 +3,6 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame
 from ._layerList import QtLayerList
 from os.path import dirname, join, realpath
-#import weakref
 
 dir_path = dirname(realpath(__file__))
 path_delete = join(dir_path,'icons','delete.png')
@@ -23,9 +22,7 @@ class QDeleteButton(QPushButton):
     def __init__(self, layers):
         super().__init__()
 
-        #self.layers = weakref.proxy(layers)
         self.layers = layers
-
         self.setIcon(QIcon(path_delete))
         self.setFixedWidth(28)
         self.setFixedHeight(28)

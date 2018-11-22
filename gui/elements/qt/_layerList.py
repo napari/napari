@@ -2,13 +2,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QScrollArea
 from ._layerDivider import QtDivider
 
-#import weakref
-
 class QtLayerList(QScrollArea):
     def __init__(self, layers):
         super().__init__()
 
-        #self.layers = weakref.proxy(layers)
         self.layers = layers
         self.setWidgetResizable(True)
         #self.setFixedWidth(315)
