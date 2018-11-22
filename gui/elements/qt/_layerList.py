@@ -18,7 +18,6 @@ class QtLayerList(QScrollArea):
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
 
-
     def insert(self, index, total, layer):
         """Inserts a layer widget at a specific index
         """

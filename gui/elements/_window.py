@@ -1,10 +1,16 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter
 
 from ._viewer import Viewer
 
 
 class Window:
-    """Application window.
+    """Application window that contains the menu bar and viewers.
+
+    Attributes
+    ----------
+    viewers : list of Viewer
+        Contained viewers.
     """
     def __init__(self):
         self._qt_window = QMainWindow()
@@ -22,7 +28,7 @@ class Window:
         return self._viewers
 
     def add_viewer(self):
-        """Adds a viewer to the containing layout.
+        """Add a viewer to the containing layout.
 
         Returns
         -------
@@ -31,15 +37,34 @@ class Window:
         """
         viewer = Viewer(self)
         self.viewers.append(viewer)
-        self._qt_central_widget.layout().addLayout(viewer.controls._qt)
-        self._qt_central_widget.layout().addWidget(viewer._qt)
-        self._qt_central_widget.layout().addWidget(viewer.layers._qt)
+
+        # To split vertical sliders, viewer and layerlist, minimumsizes given for demo purposes/NOT FINAL
+        horizontalSplitter = QSplitter(Qt.Horizontal)
+        viewer.controls._qt.setMinimumSize(QSize(60, 60))
+        horizontalSplitter.addWidget(viewer.controls._qt)
+        viewer._qt.setMinimumSize(QSize(100, 100))
+        horizontalSplitter.addWidget(viewer._qt)
+        viewer.layers._qt.setMinimumSize(QSize(250, 250))
+        horizontalSplitter.addWidget(viewer.layers._qt)
+
+        self._qt_central_widget.layout().addWidget(horizontalSplitter)
         return viewer
 
-    def resize(self, *args):
-        self._qt_window.resize(*args)
+    def resize(self, width, height):
+        """Resize the window.
+
+        Parameters
+        ----------
+        width : int
+            Width in logical pixels.
+        height : int
+            Height in logical pixels.
+        """
+        self._qt_window.resize(width, height)
 
     def show(self):
-        self.resize(self._qt_window.layout().sizeHint())
+        """Resize, show, and bring forward the window.
+        """
+        self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
         self._qt_window.raise_()

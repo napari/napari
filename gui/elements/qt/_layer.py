@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel
+=======
+from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication
+>>>>>>> master
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
@@ -48,11 +52,13 @@ class QtLayer(QFrame):
         sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
         self.grid_layout.addWidget(sld, 1, 1)
 
+
         self.setLayout(self.grid_layout)
         self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
         self.setSelected(True)
         self.setExpanded(False)
         self.setFixedWidth(200)
+
 
     def setSelected(self, state):
         if state:
