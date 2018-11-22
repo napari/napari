@@ -1,12 +1,9 @@
 ```python
 %gui qt5
+```
 
-# in case napari isn't in the path 
-import sys
-sys.path.insert(1, '..')
-
+```python
 import napari_gui as gui
-from skimage import data
 import numpy as np
 ```
 

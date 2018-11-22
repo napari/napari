@@ -2,6 +2,5 @@ pytest
 pytest-faulthandler
 jupytext
 ipykernel
-jupyter_client
+jupyter-client
 nbconvert
-scikit-image  # please remove me sometime
