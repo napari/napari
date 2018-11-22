@@ -78,6 +78,7 @@ class Markers(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
+        self.name = 'markers'
         self._qt = QtMarkersLayer(self)
 
     @property
