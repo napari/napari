@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel
-=======
-from PyQt5.QtWidgets import QSlider, QLineEdit, QHBoxLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication
->>>>>>> master
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
