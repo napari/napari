@@ -6,6 +6,8 @@ import numpy as np
 from ._base_layer import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Markers as MarkersNode
+from vispy.visuals import marker_types
+from vispy.color import get_color_names
 
 from ..elements.qt import QtMarkersLayer
 
@@ -73,6 +75,8 @@ class Markers(Layer):
         self._edge_color = edge_color
         self._face_color = face_color
         self._scaling = scaling
+        self._marker_types = marker_types
+        self._colors = get_color_names()
 
         # update flags
         self._need_display_update = False

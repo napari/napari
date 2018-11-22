@@ -6,6 +6,7 @@ class QtImageLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
+        self.expanded_height = 110
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
             comboBox.addItem(cmap)

@@ -37,7 +37,6 @@ class QtLayer(QFrame):
 
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
         sld = QSlider(Qt.Horizontal, self)
-        sld.setToolTip('Layer opacity')
         sld.setFocusPolicy(Qt.NoFocus)
         #sld.setInvertedAppearance(True)
         sld.setFixedWidth(75)
@@ -48,7 +47,7 @@ class QtLayer(QFrame):
         sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
         self.grid_layout.addWidget(sld, 1, 1)
 
-
+        self.expanded_height = 110
         self.setLayout(self.grid_layout)
         self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
         self.setSelected(True)
@@ -131,7 +130,7 @@ class QtLayer(QFrame):
     def setExpanded(self, bool):
         if bool:
             self.expanded = True
-            self.setFixedHeight(110)
+            self.setFixedHeight(self.expanded_height)
         else:
             self.expanded = False
             self.setFixedHeight(55)
