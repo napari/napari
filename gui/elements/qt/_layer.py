@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
-#import weakref
 
 dir_path = dirname(realpath(__file__))
 path_on = join(dir_path,'icons','eye_on.png')
@@ -10,7 +9,6 @@ path_on = join(dir_path,'icons','eye_on.png')
 class QtLayer(QFrame):
     def __init__(self, layer):
         super().__init__()
-        #self.layer = weakref.proxy(layer)
         self.layer = layer
         self.unselectedStyleSheet = "QFrame#layer {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
         self.selectedStyleSheet = "QFrame#layer {border: 3px solid rgb(71,143,205); background-color:lightGray; border-radius: 3px;}"
