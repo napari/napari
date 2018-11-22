@@ -3,13 +3,12 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QSlider, QVBoxLayout
 
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-import weakref
 
 
 class QtViewer(QWidget):
     def __init__(self, viewer):
         super().__init__()
-        self.viewer = weakref.proxy(viewer)
+        self.viewer = viewer
         self.sliders = []
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
