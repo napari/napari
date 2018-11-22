@@ -4,48 +4,49 @@ import os.path as osp
 import pytest
 
 import jupytext
-from jupytext import compare
+import jupytext.compare
 from nbconvert.preprocessors import ExecutePreprocessor
 
 
-ep = ExecutePreprocessor(timeout=1000)
+@pytest.fixture(scope='module')
+def ep():
+    return ExecutePreprocessor(timeout=1000)
 
 
-def jupytext_execute(path, format_name=None, freeze_metadata=False):
-    # https://nbconvert.readthedocs.io/en/latest/execute_api.html
-    notebook = jupytext.readf(path, format_name=format_name,
-                              freeze_metadata=freeze_metadata)
-    return ep.preprocess(notebook,
-                         {'metadata': {'path': osp.dirname(path)}})
-
-
-def jupytext_round_trip(path, format_name=None, freeze_metadata=False,
-                        update=False, allow_expected_differences=True,
-                        stop_on_first_error=True):
-    notebook = jupytext.readf(path, format_name=format_name,
-                              freeze_metadata=freeze_metadata)
-    return compare.test_round_trip_conversion(notebook,
-                                              osp.splitext(path)[1],
-                                              format_name, update,
-                                              allow_expected_differences,
-                                              stop_on_first_error)
-
-
-examples_folder = osp.join(osp.dirname(osp.dirname(__file__)), 'examples')
+root_dir = osp.dirname(osp.dirname(__file__))
+examples_dir = osp.join(root_dir, 'examples')
 excludes = ['__init__.py', 'README.md', 'demo.py']
+
 paths = []
-for filename in os.listdir(examples_folder):
+for filename in os.listdir(examples_dir):
     if filename not in excludes:
         for ext in jupytext.NOTEBOOK_EXTENSIONS:
             if filename.endswith(ext):
-                paths.append(osp.join(examples_folder, filename))
+                paths.append(osp.join(examples_dir, filename))
 
 
-@pytest.mark.parametrize('path', paths)
+def path_id(name):
+    if name.startswith(root_dir):
+        return name[len(root_dir) + 1:]
+    return name
+
+
+@pytest.mark.parametrize('path', paths,
+                         ids=path_id)
 def test_round_trip(path):
-    jupytext_round_trip(path)
+    ext = osp.splitext(path)[1]
+    with open(path) as f:
+        notebook = jupytext.reads(path, ext)
+    
+    jupytext.compare.test_round_trip_conversion(notebook, ext,
+                                                format_name=None,
+                                                update=False)
 
 
-@pytest.mark.parametrize('path', paths)
-def test_execute(path):
-    jupytext_execute(path)
+@pytest.mark.parametrize('path', paths,
+                         ids=path_id)
+def test_execute(path, ep):
+    # https://nbconvert.readthedocs.io/en/latest/execute_api.html
+    notebook = jupytext.readf(path)
+    ep.preprocess(notebook,
+                  {'metadata': {'path': osp.dirname(path)}})
