@@ -1,5 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QComboBox, QSlider
+from collections import Iterable
+import numpy as np
 from ._layer import QtLayer
 
 class QtMarkersLayer(QtLayer):
@@ -14,7 +16,12 @@ class QtMarkersLayer(QtLayer):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.setValue(self.layer.size)
+        value = self.layer.size
+        if isinstance(value, Iterable):
+            if isinstance(value, list):
+                value = np.asarray(value)
+            value = value.mean()
+        sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.grid_layout.addWidget(sld, 2, 1)
 
