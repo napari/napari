@@ -12,14 +12,17 @@ task:
         image: gcc:latest
       env:
         PATH: $HOME/conda/bin:$PATH
+        DISPLAY: ":99"
       system_script:
         - apt-get update
-        - apt-get install -y libgl1-mesa-glx
+        - apt-get install -y libgl1-mesa-glx xvfb
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
         - bash ./install.sh -b -p $HOME/conda
         - conda update -yn base conda
         - conda install -y python=$PY_VER
+      # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
+      xvfb_start_background_script: Xvfb :99 -ac -screen 0 1024x768x24
 
     - name: windows
       windows_container:
