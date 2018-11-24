@@ -252,28 +252,31 @@ class Viewer:
             visual = self.layers[0]._node
             tr = self._canvas.scene.node_transform(self.layers[0]._node)
             pos = tr.map(event.pos)
-            self._pos = [clip(pos[0],0,self.max_shape[0]-1), clip(pos[1],0,self.max_shape[1]-1)]
+            self._pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
             self.update_statusBar()
 
     def update_statusBar(self):
         from ..layers._image_layer import Image
 
-        msg = 'x=%d, y=%d' % (self._pos[0], self._pos[1])
+        msg = '(%d, %d' % (self._pos[0], self._pos[1])
         if self.max_dims > 2:
             for i in range(2,self.max_dims):
-                msg = msg + ', %d=%d' % (i, self.indices[i])
-        top = None
-        for i in range(len(self.layers)):
-            if self.layers[i].visible and isinstance(self.layers[i], Image):
-                top = i
-        if top is None:
+                msg = msg + ', %d' % self.indices[i]
+        msg = msg + ')'
+        for i, layer in enumerate(self.layers[::-1]):
+            if layer.visible and isinstance(layer, Image):
+                top = len(self.layers) - 1 - i
+                break
+        else:
             top = None
+        if top is None:
+            pass
         else:
             if self.max_dims > 2:
-                ind = int(self._pos[1]),int(self._pos[0]),*self.indices[2:]
+                ind = int(self._pos[0]),int(self._pos[1]),*self.indices[2:]
                 value = self.layers[top].image[ind]
             else:
-                value = self.layers[top].image[int(self._pos[1]),int(self._pos[0])]
+                value = self.layers[top].image[int(self._pos[0]),int(self._pos[1])]
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
                     msg = msg + ', r %d, g %d, b %d' % (value[0], value[1], value[2])
