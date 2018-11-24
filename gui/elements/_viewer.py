@@ -2,7 +2,7 @@ from .qt import QtViewer
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
-
+from numpy import clip, integer
 
 class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -35,7 +35,7 @@ class Viewer:
         self._window = window
 
         self._qt = QtViewer(self)
-
+        self._qt.canvas.connect(self.on_mouse_move)
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
@@ -58,6 +58,7 @@ class Viewer:
         self._recalc_max_dims = False
         self._recalc_max_shape = False
 
+        self._pos = [0, 0]
     @property
     def _canvas(self):
         return self._qt.canvas
@@ -188,6 +189,8 @@ class Viewer:
         for layer in self.layers:
             layer._set_view_slice(self.indices)
 
+        self.update_statusBar()
+
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
         """
@@ -239,3 +242,40 @@ class Viewer:
         """
         self._child_layer_changed = True
         self._update()
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            pos = None
+        else:
+            visual = self.layers[0]._node
+            tr = self._canvas.scene.node_transform(self.layers[0]._node)
+            pos = tr.map(event.pos)
+            self._pos = [clip(pos[0],0,self.max_shape[0]-1), clip(pos[1],0,self.max_shape[1]-1)]
+            self.update_statusBar()
+
+    def update_statusBar(self):
+        from ..layers._image_layer import Image
+
+        msg = 'x=%d, y=%d' % (self._pos[0], self._pos[1])
+        if self.max_dims > 2:
+            for i in range(2,self.max_dims):
+                msg = msg + ', %d=%d' % (i, self.indices[i])
+        top = None
+        for i in range(len(self.layers)):
+            if self.layers[i].visible and isinstance(self.layers[i], Image):
+                top = i
+        if top is None:
+            top = None
+        else:
+            if self.max_dims > 2:
+                ind = int(self._pos[0]),int(self._pos[1]),*self.indices[2:]
+                value = self.layers[top].image[ind]
+            else:
+                value = self.layers[top].image[int(self._pos[0]),int(self._pos[1])]
+            if isinstance(value, integer):
+                msg = msg + ', value %d' % value
+            else:
+                msg = msg + ', value %.3f' % value
+        self._window._qt_window.statusBar().showMessage(msg)
