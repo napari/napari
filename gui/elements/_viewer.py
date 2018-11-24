@@ -3,6 +3,7 @@ from .qt import QtViewer
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 from numpy import clip, integer, ndarray
+from copy import copy
 
 class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -272,19 +273,18 @@ class Viewer:
         if top is None:
             pass
         else:
-            if self.max_dims > 2:
-                ind = int(self._pos[0]),int(self._pos[1]),*self.indices[2:]
-                value = self.layers[top].image[ind]
-            else:
-                value = self.layers[top].image[int(self._pos[0]),int(self._pos[1])]
+            indices = copy(self.indices)
+            indices[0] = int(self._pos[0])
+            indices[1] = int(self._pos[1])
+            value = self.layers[top]._slice_image(indices)
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
-                    msg = msg + ', r %d, g %d, b %d' % (value[0], value[1], value[2])
+                    msg = msg + ' r %d, g %d, b %d' % (value[0], value[1], value[2])
                 else:
-                    msg = msg + ', r %.3f, g %.3f, b %.3f' % (value[0], value[1], value[2])
+                    msg = msg + ' r %.3f, g %.3f, b %.3f' % (value[0], value[1], value[2])
             else:
                 if isinstance(value, integer):
-                    msg = msg + ', value %d' % value
+                    msg = msg + ' value %d' % value
                 else:
-                    msg = msg + ', value %.3f' % value
+                    msg = msg + ' value %.3f' % value
         self._window._qt_window.statusBar().showMessage(msg)
