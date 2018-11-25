@@ -258,25 +258,43 @@ class Viewer:
 
     def update_statusBar(self):
         from ..layers._image_layer import Image
+        from ..layers._markers_layer import Markers
 
         msg = '(%d, %d' % (self._pos[0], self._pos[1])
         if self.max_dims > 2:
             for i in range(2,self.max_dims):
                 msg = msg + ', %d' % self.indices[i]
         msg = msg + ')'
+
+        top_markers = []
         for i, layer in enumerate(self.layers[::-1]):
             if layer.visible and isinstance(layer, Image):
-                top = len(self.layers) - 1 - i
+                top_image = len(self.layers) - 1 - i
                 break
+            elif layer.visible and isinstance(layer, Markers):
+                top_markers.append(len(self.layers) - 1 - i)
         else:
-            top = None
-        if top is None:
+            top_image = None
+
+        index = None
+        for i in top_markers:
+            indices = copy(self.indices)
+            indices[0] = int(self._pos[1])
+            indices[1] = int(self._pos[0])
+            index = self.layers[i]._selected_markers(indices)
+            if index is None:
+                pass
+            else:
+                msg = msg + ' index %d' % index
+                break
+
+        if top_image is None:
             pass
-        else:
+        elif index is None:
             indices = copy(self.indices)
             indices[0] = int(self._pos[0])
             indices[1] = int(self._pos[1])
-            value = self.layers[top]._slice_image(indices)
+            value = self.layers[top_image]._slice_image(indices)
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
                     msg = msg + ' r %d, g %d, b %d' % (value[0], value[1], value[2])
