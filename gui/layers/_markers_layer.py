@@ -282,7 +282,7 @@ class Markers(Layer):
             else:
                 sizes = self.size
             matches = np.where(matches)[0]
-            in_slice_matches = np.less_equal(distances, np.broadcast_to(sizes/2, (len(in_slice_markers),2)))
+            in_slice_matches = np.less_equal(distances, np.broadcast_to(sizes/2, (2, len(in_slice_markers))).T)
             in_slice_matches = np.all(in_slice_matches, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:

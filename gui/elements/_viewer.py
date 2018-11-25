@@ -285,7 +285,7 @@ class Viewer:
             if index is None:
                 pass
             else:
-                msg = msg + ' index %d' % index
+                msg = msg + ' index %d, layer %d' % (index, i)
                 break
 
         if top_image is None:
