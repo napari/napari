@@ -3,7 +3,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame
 from ._layerList import QtLayerList
 from os.path import dirname, join, realpath
-from numpy import array
+from numpy import empty
 
 dir_path = dirname(realpath(__file__))
 path_delete = join(dir_path,'icons','delete.png')
@@ -69,7 +69,7 @@ class QAddLayerButton(QPushButton):
         self.setStyleSheet(styleSheet)
 
     def on_click(self):
-        self.layers.viewer.add_markers(array([[],[]]).T)
+        self.layers.viewer.add_markers(empty((0, self.layers.viewer.max_dims)))
 
 class QtLayerControls(QFrame):
     def __init__(self, layers):

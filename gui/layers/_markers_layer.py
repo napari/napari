@@ -321,7 +321,7 @@ class Markers(Layer):
 
         else:
             # if no markers in this slice send dummy data
-            data = np.array([[],[]]).T
+            data = np.empty((0, 2))
             sizes = 0
 
         self._node.set_data(
