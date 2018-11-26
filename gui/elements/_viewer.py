@@ -37,7 +37,6 @@ class Viewer:
 
         self._qt = QtViewer(self)
         self._qt.canvas.connect(self.on_mouse_move)
-        self._qt.canvas.connect(self.on_mouse_press)
         self._qt.canvas.connect(self.on_mouse_release)
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
@@ -321,7 +320,6 @@ class Viewer:
         #    print('mouse_dragging')
 
     def on_mouse_release(self, event):
-        print('release')
         if self.interactive:
             if event.pos is None:
                 pass
@@ -335,7 +333,6 @@ class Viewer:
                 if accept:
                     self._update_pos(event)
                     top_image, top_markers = self._active_layers()
-                    print(top_markers)
                     for i in top_markers:
                         layer = self.layers[i]
                         if layer.selected:
@@ -343,7 +340,6 @@ class Viewer:
                             indices[0] = int(self._pos[1])
                             indices[1] = int(self._pos[0])
                             index = layer._selected_markers(indices)
-                            print(index)
                             if index is None:
                                 if isinstance(layer.size, (list, ndarray)):
                                     layer._size = insert(layer.size, 0, 10)
@@ -352,13 +348,3 @@ class Viewer:
                                 if isinstance(layer.size, (list, ndarray)):
                                     layer._size = delete(layer.size, index)
                                 layer.data = delete(layer.data,index, axis=0)
-
-        # print(event.trail())
-        # print(event.is_dragging)
-        # if event.is_dragging:
-        #     print('drag_release')
-        # else:
-        #     print('normal_release')
-
-    def on_mouse_press(self, event):
-        print('mouse_click')
