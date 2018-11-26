@@ -222,8 +222,10 @@ class Markers(Layer):
         self.refresh()
 
     def _get_shape(self):
-
-        return np.max(self.coords, axis=0) + 1
+        if len(self.coords) == 0:
+            return np.ones(self.coords.shape,dtype=int)
+        else:
+            return np.max(self.coords, axis=0) + 1
 
     def _update(self):
         """Update the underlying visual.
@@ -253,15 +255,17 @@ class Markers(Layer):
         """
         # Get a list of the coords for the markers in this slice
         coords = self.coords
-        matches = np.equal(
-            coords[:, 2:],
-            np.broadcast_to(indices[2:], (len(coords), len(indices) - 2)))
+        if len(coords) > 0:
+            matches = np.equal(
+                coords[:, 2:],
+                np.broadcast_to(indices[2:], (len(coords), len(indices) - 2)))
 
-        matches = np.all(matches, axis=1)
+            matches = np.all(matches, axis=1)
 
-        in_slice_markers = coords[matches, :2]
-
-        return in_slice_markers, matches
+            in_slice_markers = coords[matches, :2]
+            return in_slice_markers, matches
+        else:
+            return [], []
 
     def _selected_markers(self, indices):
         """Determines if a marker is selected given indices.
@@ -313,16 +317,17 @@ class Markers(Layer):
                 sizes = self.size
 
             # Update the markers node
-            self._node.visible = True
-            self._node.set_data(
-                np.array(in_slice_markers) + 0.5,
-                size=sizes, edge_width=self.edge_width, symbol=self.symbol,
-                edge_width_rel=self.edge_width_rel,
-                edge_color=self.edge_color, face_color=self.face_color,
-                scaling=self.scaling)
+            data = np.array(in_slice_markers) + 0.5
 
         else:
-            self._node.visible = False
+            # if no markers in this slice send dummy data
+            data = np.array([[],[]]).T
+            sizes = 0
 
+        self._node.set_data(
+            data, size=sizes, edge_width=self.edge_width, symbol=self.symbol,
+            edge_width_rel=self.edge_width_rel,
+            edge_color=self.edge_color, face_color=self.face_color,
+            scaling=self.scaling)
         self._need_visual_update = True
         self._update()

@@ -2,7 +2,7 @@ from .qt import QtViewer
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
-from numpy import clip, integer, ndarray
+from numpy import clip, integer, ndarray, append, insert, delete
 from copy import copy
 
 class Viewer:
@@ -37,6 +37,8 @@ class Viewer:
 
         self._qt = QtViewer(self)
         self._qt.canvas.connect(self.on_mouse_move)
+        self._qt.canvas.connect(self.on_mouse_press)
+        self._qt.canvas.connect(self.on_mouse_release)
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
@@ -60,6 +62,8 @@ class Viewer:
         self._recalc_max_shape = False
 
         self._pos = [0, 0]
+        self.interactive = False
+
     @property
     def _canvas(self):
         return self._qt.canvas
@@ -190,7 +194,7 @@ class Viewer:
         for layer in self.layers:
             layer._set_view_slice(self.indices)
 
-        self.update_statusBar()
+        self._update_statusBar()
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
@@ -244,27 +248,15 @@ class Viewer:
         self._child_layer_changed = True
         self._update()
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        if event.pos is None:
-            pos = None
-        else:
-            visual = self.layers[0]._node
-            tr = self._canvas.scene.node_transform(self.layers[0]._node)
-            pos = tr.map(event.pos)
-            self._pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
-            self.update_statusBar()
+    def _update_pos(self, event):
+        visual = self.layers[0]._node
+        tr = self._canvas.scene.node_transform(self.layers[0]._node)
+        pos = tr.map(event.pos)
+        self._pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
 
-    def update_statusBar(self):
+    def _active_layers(self):
         from ..layers._image_layer import Image
         from ..layers._markers_layer import Markers
-
-        msg = '(%d, %d' % (self._pos[0], self._pos[1])
-        if self.max_dims > 2:
-            for i in range(2,self.max_dims):
-                msg = msg + ', %d' % self.indices[i]
-        msg = msg + ')'
 
         top_markers = []
         for i, layer in enumerate(self.layers[::-1]):
@@ -275,6 +267,15 @@ class Viewer:
                 top_markers.append(len(self.layers) - 1 - i)
         else:
             top_image = None
+        return top_image, top_markers
+
+    def _update_statusBar(self):
+        msg = '(%d, %d' % (self._pos[0], self._pos[1])
+        for i in range(2,self.max_dims):
+            msg = msg + ', %d' % self.indices[i]
+        msg = msg + ')'
+
+        top_image, top_markers = self._active_layers()
 
         index = None
         for i in top_markers:
@@ -306,3 +307,58 @@ class Viewer:
                 else:
                     msg = msg + ' value %.3f' % value
         self._window._qt_window.statusBar().showMessage(msg)
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            pass
+        elif not event.is_dragging:
+            self._update_pos(event)
+            self._update_statusBar()
+
+        #if event.is_dragging:
+        #    print('mouse_dragging')
+
+    def on_mouse_release(self, event):
+        print('release')
+        if self.interactive:
+            if event.pos is None:
+                pass
+            else:
+                if event.trail() is None:
+                    accept = True
+                elif len(event.trail())<2:
+                    accept = True
+                else:
+                    accept = False
+                if accept:
+                    self._update_pos(event)
+                    top_image, top_markers = self._active_layers()
+                    print(top_markers)
+                    for i in top_markers:
+                        layer = self.layers[i]
+                        if layer.selected:
+                            indices = copy(self.indices)
+                            indices[0] = int(self._pos[1])
+                            indices[1] = int(self._pos[0])
+                            index = layer._selected_markers(indices)
+                            print(index)
+                            if index is None:
+                                if isinstance(layer.size, (list, ndarray)):
+                                    layer._size = insert(layer.size, 0, 10)
+                                layer.data = insert(layer.data, 0, [indices], axis=0)
+                            else:
+                                if isinstance(layer.size, (list, ndarray)):
+                                    layer._size = delete(layer.size, index)
+                                layer.data = delete(layer.data,index, axis=0)
+
+        # print(event.trail())
+        # print(event.is_dragging)
+        # if event.is_dragging:
+        #     print('drag_release')
+        # else:
+        #     print('normal_release')
+
+    def on_mouse_press(self, event):
+        print('mouse_click')
