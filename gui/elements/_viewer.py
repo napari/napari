@@ -1,3 +1,5 @@
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor
 from .qt import QtViewer
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
@@ -62,6 +64,8 @@ class Viewer:
 
         self._pos = [0, 0]
         self.annotation = False
+        self._active_image = None
+        self._active_markers = []
 
     @property
     def _canvas(self):
@@ -253,7 +257,7 @@ class Viewer:
         pos = tr.map(event.pos)
         self._pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
 
-    def _active_layers(self):
+    def _update_active_layers(self):
         from ..layers._image_layer import Image
         from ..layers._markers_layer import Markers
 
@@ -266,7 +270,9 @@ class Viewer:
                 top_markers.append(len(self.layers) - 1 - i)
         else:
             top_image = None
-        return top_image, top_markers
+
+        self._active_image = top_image
+        self._active_markers = top_markers
 
     def _update_statusBar(self):
         msg = '(%d, %d' % (self._pos[0], self._pos[1])
@@ -274,10 +280,8 @@ class Viewer:
             msg = msg + ', %d' % self.indices[i]
         msg = msg + ')'
 
-        top_image, top_markers = self._active_layers()
-
         index = None
-        for i in top_markers:
+        for i in self._active_markers:
             indices = copy(self.indices)
             indices[0] = int(self._pos[1])
             indices[1] = int(self._pos[0])
@@ -288,13 +292,13 @@ class Viewer:
                 msg = msg + ' index %d, layer %d' % (index, i)
                 break
 
-        if top_image is None:
+        if self._active_image is None:
             pass
         elif index is None:
             indices = copy(self.indices)
             indices[0] = int(self._pos[0])
             indices[1] = int(self._pos[1])
-            value = self.layers[top_image]._slice_image(indices)
+            value = self.layers[self._active_image]._slice_image(indices)
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
                     msg = msg + ' r %d, g %d, b %d' % (value[0], value[1], value[2])
@@ -306,6 +310,7 @@ class Viewer:
                 else:
                     msg = msg + ' value %.3f' % value
         self._window._qt_window.statusBar().showMessage(msg)
+        return index
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -314,7 +319,26 @@ class Viewer:
             pass
         elif not event.is_dragging:
             self._update_pos(event)
-            self._update_statusBar()
+            self._update_active_layers()
+            index = self._update_statusBar()
+            if self.annotation:
+                for i in self._active_markers:
+                    if self.layers[i].selected:
+                        selected = True
+                        break
+                else:
+                    selected = False
+                if selected:
+                    if index is None:
+                        self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                    else:
+                        self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
+                else:
+                    self._qt.canvas.native.setCursor(QCursor())
+            else:
+                self._qt.canvas.native.setCursor(QCursor())
+
+
 
         #if event.is_dragging:
         #    print('mouse_dragging')
@@ -331,9 +355,7 @@ class Viewer:
                 else:
                     accept = False
                 if accept:
-                    self._update_pos(event)
-                    top_image, top_markers = self._active_layers()
-                    for i in top_markers:
+                    for i in self._active_markers:
                         layer = self.layers[i]
                         if layer.selected:
                             indices = copy(self.indices)
@@ -344,7 +366,9 @@ class Viewer:
                                 if isinstance(layer.size, (list, ndarray)):
                                     layer._size = insert(layer.size, 0, 10)
                                 layer.data = insert(layer.data, 0, [indices], axis=0)
+                                self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
                             else:
                                 if isinstance(layer.size, (list, ndarray)):
                                     layer._size = delete(layer.size, index)
                                 layer.data = delete(layer.data,index, axis=0)
+                                self._qt.canvas.native.setCursor(Qt.CrossCursor)
