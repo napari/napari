@@ -285,7 +285,7 @@ class Viewer:
             if index is None:
                 pass
             else:
-                msg = msg + ' index %d, layer %d' % (index, i)
+                msg = msg + ', index %d, layer %d' % (index, i)
                 break
 
         if top_image is None:
@@ -295,14 +295,16 @@ class Viewer:
             indices[0] = int(self._pos[0])
             indices[1] = int(self._pos[1])
             value = self.layers[top_image]._slice_image(indices)
+            msg = msg + ', value '
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
-                    msg = msg + ' r %d, g %d, b %d' % (value[0], value[1], value[2])
+                    msg = msg + '(%d, %d, %d)' % (value[0], value[1], value[2])
                 else:
-                    msg = msg + ' r %.3f, g %.3f, b %.3f' % (value[0], value[1], value[2])
+                    msg = msg + '(%.3f, %.3f, %.3f)' % (value[0], value[1], value[2])
             else:
                 if isinstance(value, integer):
-                    msg = msg + ' value %d' % value
+                    msg = msg + '%d' % value
                 else:
-                    msg = msg + ' value %.3f' % value
+                    msg = msg + '%.3f' % value
+            msg = msg + ', layer %d' % top_image
         self._window._qt_window.statusBar().showMessage(msg)
