@@ -41,11 +41,13 @@ class Image(Layer):
         self._meta = meta
         self.cmap = Image.default_cmap
         self.interpolation = Image.default_interpolation
-
+        self._interpolation_names = interpolation_names
+        
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
 
+        self.name = 'image'
         self._qt = QtImageLayer(self)
 
     @property
@@ -110,8 +112,8 @@ class Image(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
+    def _slice_image(self, indices):
+        """Determines the slice of image given the indices.
 
         Parameters
         ----------
@@ -132,7 +134,17 @@ class Image(Layer):
             except TypeError:
                 pass
 
-        sliced_image = self.image[tuple(indices)]
+        return self.image[tuple(indices)]
+
+    def _set_view_slice(self, indices):
+        """Sets the view given the indices to slice with.
+
+        Parameters
+        ----------
+        indices : sequence of int or slice
+            Indices to slice with.
+        """
+        sliced_image = self._slice_image(indices)
 
         self._node.set_data(sliced_image)
 

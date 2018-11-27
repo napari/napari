@@ -5,13 +5,38 @@ from vispy.util.event import EmitterGroup, Event
 
 from ._visual_wrapper import VisualWrapper
 
+
 class Layer(VisualWrapper, ABC):
+    """Base layer class.
+
+    Must define the following:
+        * ``_get_shape()``: called by ``shape`` property
+        * ``_refresh()``: called by ``refresh`` method
+        * ``data`` property (setter & getter)
+
+    May define the following:
+        * ``_set_view_slice(indices)``: called to set currently viewed slice
+        * ``_after_set_viewer()``: called after the viewer is set
+        * ``_qt``: QtWidget inserted into the layer list GUI
+
+    Attributes
+    ----------
+    ndim
+    shape
+    selected
+    viewer
+
+    Methods
+    -------
+    refresh()
+        Refresh the current view.
+    """
     def __init__(self, central_node):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
         self._qt = None
-        self.name = 'layer '
+        self.name = 'layer'
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
@@ -64,14 +89,6 @@ class Layer(VisualWrapper, ABC):
             self.events.select()
         else:
             self.events.deselect()
-
-#    @property
-#    def _qt(self):
-#        """PyQt5.QWidget or None: Widget, if any, inserted when
-#        solely this layer is selected.
-#        """
-#        # TODO: actually insert said widget
-#        return None
 
     @property
     def viewer(self):

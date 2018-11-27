@@ -1,33 +1,67 @@
-from PyQt5.QtWidgets import QSlider, QComboBox, QHBoxLayout, QGroupBox, QVBoxLayout, QCheckBox
-from PyQt5.QtCore import Qt
-import weakref 
+from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel
+from PyQt5.QtCore import Qt, QMimeData
+from PyQt5.QtGui import QPalette, QDrag
+from os.path import dirname, join, realpath
 
-class QtLayer(QGroupBox):
+dir_path = dirname(realpath(__file__))
+path_on = join(dir_path,'icons','eye_on.png')
+
+class QtLayer(QFrame):
     def __init__(self, layer):
-        super().__init__(layer.name)
-        self.layer = weakref.proxy(layer)
-        layout = QHBoxLayout()
+        super().__init__()
+        self.layer = layer
+        self.unselectedStyleSheet = "QFrame#layer {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
+        self.selectedStyleSheet = "QFrame#layer {border: 3px solid rgb(71,143,205); background-color:lightGray; border-radius: 3px;}"
+        self.setObjectName('layer')
 
-        cb = QCheckBox('Visibility', self)
+        self.grid_layout = QGridLayout()
+
+        cb = QCheckBox(self)
+        cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
+                         "QCheckBox::indicator:checked {image: url(" + path_on + ");}")
+        cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
-        layout.addWidget(cb)
+        self.grid_layout.addWidget(cb, 0, 0)
 
-        comboBox = QComboBox()
-        layout.addWidget(comboBox)
+        #self.grid_layout.insertSpacing(1, 5)
 
+        textbox = QLineEdit(self)
+        textbox.setStyleSheet('background-color:lightGray; border:none')
+        textbox.setText(layer.name)
+        textbox.setToolTip('Layer name')
+        textbox.setFixedWidth(80)
+        textbox.setAcceptDrops(False)
+        textbox.editingFinished.connect(lambda text=textbox: self.changeText(text))
+        self.grid_layout.addWidget(textbox, 0, 1)
+
+        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
+        #sld.setInvertedAppearance(True)
         sld.setFixedWidth(75)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.opacity*100)
         sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
-        layout.addWidget(sld)
+        self.grid_layout.addWidget(sld, 1, 1)
 
-        self.setLayout(layout)
-        self.setFixedHeight(75)
+        self.setLayout(self.grid_layout)
+        self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
+        self.setSelected(True)
+        self.setExpanded(False)
+        self.setFixedWidth(200)
+        self.grid_layout.setColumnMinimumWidth(0, 100)
+        self.grid_layout.setColumnMinimumWidth(1, 100)
+
+    def setSelected(self, state):
+        if state:
+            self.setStyleSheet(self.selectedStyleSheet)
+            self.layer.selected = True
+        else:
+            self.setStyleSheet(self.unselectedStyleSheet)
+            self.layer.selected = False
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -37,6 +71,81 @@ class QtLayer(QGroupBox):
             self.layer.visible = True
         else:
             self.layer.visible = False
+
+    def changeText(self, text):
+        self.layer.name = text.text()
+
+    def mouseReleaseEvent(self, event):
+        modifiers = event.modifiers()
+        if modifiers == Qt.ShiftModifier:
+            index = self.layer.viewer.layers.index(self.layer)
+            lastSelected = None
+            for i in range(len(self.layer.viewer.layers)):
+                if self.layer.viewer.layers[i].selected:
+                    lastSelected = i
+            r = [index, lastSelected]
+            r.sort()
+            for i in range(r[0], r[1]+1):
+                self.layer.viewer.layers[i]._qt.setSelected(True)
+        elif modifiers == Qt.ControlModifier:
+            self.setSelected(not self.layer.selected)
+        else:
+            self.unselectAll()
+            self.setSelected(True)
+
+    def mousePressEvent(self, event):
+        self.dragStartPosition = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if (event.pos()- self.dragStartPosition).manhattanLength() < QApplication.startDragDistance():
+            return
+        mimeData = QMimeData()
+        if not self.layer.selected:
+            name = self.layer.name
+        else:
+            name = ''
+            for layer in self.layer.viewer.layers:
+                if layer.selected:
+                    name = layer.name + '; ' + name
+            name = name[:-2]
+        mimeData.setText(name)
+        drag = QDrag(self)
+        drag.setMimeData(mimeData)
+        drag.setHotSpot(event.pos() - self.rect().topLeft())
+        dropAction = drag.exec_(Qt.MoveAction | Qt.CopyAction)
+
+        if dropAction == Qt.CopyAction:
+            if not self.layer.selected:
+                index = self.layer.viewer.layers.index(self.layer)
+                self.layer.viewer.layers.pop(index)
+            else:
+                self.layer.viewer.layers.remove_selected()
+
+    def unselectAll(self):
+        if self.layer.viewer is not None:
+            for layer in self.layer.viewer.layers:
+                if layer.selected:
+                    layer._qt.setSelected(False)
+
+    def setExpanded(self, bool):
+        if bool:
+            self.expanded = True
+            rows = self.grid_layout.rowCount()
+            self.setFixedHeight(55*(rows-1))
+        else:
+            self.expanded = False
+            self.setFixedHeight(55)
+        rows = self.grid_layout.rowCount()
+        for i in range(1, rows):
+            for j in range(2):
+                if self.expanded:
+                    self.grid_layout.itemAtPosition(i,j).widget().show()
+                else:
+                    self.grid_layout.itemAtPosition(i,j).widget().hide()
+
+
+    def mouseDoubleClickEvent(self, event):
+        self.setExpanded(not self.expanded)
 
     def update(self):
         print('hello!!!')
