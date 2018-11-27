@@ -61,7 +61,7 @@ class Viewer:
         self._recalc_max_shape = False
 
         self._pos = [0, 0]
-        self.interactive = False
+        self.annotation = False
 
     @property
     def _canvas(self):
@@ -320,7 +320,7 @@ class Viewer:
         #    print('mouse_dragging')
 
     def on_mouse_release(self, event):
-        if self.interactive:
+        if self.annotation:
             if event.pos is None:
                 pass
             else:
