@@ -94,8 +94,10 @@ class QAnnotationCheckBox(QCheckBox):
     def changeAnnotation(self, state):
         if state == Qt.Checked:
             self.layers.viewer.annotation = True
+            self.layers.viewer._qt.view.interactive = False
         else:
             self.layers.viewer.annotation = False
+            self.layers.viewer._qt.view.interactive = True
 
 class QtLayerControls(QFrame):
     def __init__(self, layers):

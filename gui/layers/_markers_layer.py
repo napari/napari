@@ -84,6 +84,7 @@ class Markers(Layer):
 
         self.name = 'markers'
         self._qt = QtMarkersLayer(self)
+        self._selected_markers = None
 
     @property
     def coords(self) -> np.ndarray:
@@ -267,8 +268,8 @@ class Markers(Layer):
         else:
             return [], []
 
-    def _selected_markers(self, indices):
-        """Determines if a marker is selected given indices.
+    def _set_selected_markers(self, indices):
+        """Determines selected markers selected given indices.
 
         Parameters
         ----------
@@ -290,11 +291,13 @@ class Markers(Layer):
             in_slice_matches = np.all(in_slice_matches, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                return matches[indices[0]]
+                matches = matches[indices[0]]
             else:
-                return None
+                matches = None
         else:
-            return None
+            matches = None
+
+        self._selected_markers = matches
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -308,35 +311,6 @@ class Markers(Layer):
         in_slice_markers, matches = self._slice_markers(indices)
 
         return in_slice_markers, matches
-
-    def _selected_markers(self, indices):
-        """Determines if a marker is selected given indices.
-
-        Parameters
-        ----------
-        indices : sequence of int
-            Indices to check if marker at.
-        """
-        in_slice_markers, matches = self._slice_markers(indices)
-
-        # Display markers if there are any in this slice
-        if len(in_slice_markers) > 0:
-            distances = abs(in_slice_markers - np.broadcast_to(indices[:2], (len(in_slice_markers),2)))
-            # Get the marker sizes
-            if isinstance(self.size, (list, np.ndarray)):
-                sizes = self.size[matches]
-            else:
-                sizes = self.size
-            matches = np.where(matches)[0]
-            in_slice_matches = np.less_equal(distances, np.broadcast_to(sizes/2, (2, len(in_slice_markers))).T)
-            in_slice_matches = np.all(in_slice_matches, axis=1)
-            indices = np.where(in_slice_matches)[0]
-            if len(indices) > 0:
-                return matches[indices[0]]
-            else:
-                return None
-        else:
-            return None
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.

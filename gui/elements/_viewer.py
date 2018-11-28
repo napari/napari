@@ -40,6 +40,8 @@ class Viewer:
         self._qt = QtViewer(self)
         self._qt.canvas.connect(self.on_mouse_move)
         self._qt.canvas.connect(self.on_mouse_release)
+        #self._qt.canvas.connect(self.on_key_press)
+        #self._qt.canvas.connect(self.on_key_release)
 
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
@@ -63,8 +65,9 @@ class Viewer:
         self._recalc_max_dims = False
         self._recalc_max_shape = False
 
-        self._pos = [0, 0]
+        self._index = [0, 0]
         self.annotation = False
+        self._annotation_history = False
         self._active_image = None
         self._active_markers = []
 
@@ -252,11 +255,14 @@ class Viewer:
         self._child_layer_changed = True
         self._update()
 
-    def _update_pos(self, event):
+    def _update_index(self, event):
         visual = self.layers[0]._node
         tr = self._canvas.scene.node_transform(self.layers[0]._node)
         pos = tr.map(event.pos)
-        self._pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
+        pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
+        self._index = copy(self.indices)
+        self._index[0] = int(pos[0])
+        self._index[1] = int(pos[1])
 
     def _update_active_layers(self):
         from ..layers._image_layer import Image
@@ -269,6 +275,8 @@ class Viewer:
                 break
             elif layer.visible and isinstance(layer, Markers):
                 top_markers.append(len(self.layers) - 1 - i)
+                coord = [self._index[1],self._index[0],*self._index[2:]]
+                layer._set_selected_markers(coord)
         else:
             top_image = None
 
@@ -276,30 +284,26 @@ class Viewer:
         self._active_markers = top_markers
 
     def _update_statusBar(self):
-        msg = '(%d, %d' % (self._pos[0], self._pos[1])
-        for i in range(2,self.max_dims):
-            msg = msg + ', %d' % self.indices[i]
+        msg = '('
+        for i in range(0,self.max_dims):
+            msg = msg + '%d, ' % self._index[i]
+        msg = msg[:-2]
         msg = msg + ')'
 
         index = None
         for i in self._active_markers:
-            indices = copy(self.indices)
-            indices[0] = int(self._pos[1])
-            indices[1] = int(self._pos[0])
-            index = self.layers[i]._selected_markers(indices)
+            index = self.layers[i]._selected_markers
             if index is None:
                 pass
             else:
-                msg = msg + ', index %d, layer %d' % (index, i)
+                msg = msg + ', layer %d, index %d' % (i, index)
                 break
 
         if self._active_image is None:
             pass
         elif index is None:
-            indices = copy(self.indices)
-            indices[0] = int(self._pos[0])
-            indices[1] = int(self._pos[1])
-            value = self.layers[self._active_image]._slice_image(indices)
+            msg = msg + ', layer %d' % self._active_image
+            value = self.layers[self._active_image]._slice_image(self._index)
             msg = msg + ', value '
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
@@ -311,7 +315,6 @@ class Viewer:
                     msg = msg + '%d' % value
                 else:
                     msg = msg + '%.3f' % value
-            msg = msg + ', layer %d' % self._active_image
         self._window._qt_window.statusBar().showMessage(msg)
         return index
 
@@ -321,30 +324,42 @@ class Viewer:
         if event.pos is None:
             pass
         elif not event.is_dragging:
-            self._update_pos(event)
+            self._update_index(event)
             self._update_active_layers()
             index = self._update_statusBar()
+            # if self.annotation:
+            #     selected = False
+            #     for i in self._active_markers:
+            #         if self.layers[i].selected:
+            #             selected = True
+            #             break
+            #     if selected:
+            #         if index is None:
+            #             self._qt.canvas.native.setCursor(Qt.CrossCursor)
+            #             #print('A')
+            #         else:
+            #             self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
+            #             #print('B')
+            #     else:
+            #         self._qt.canvas.native.setCursor(Qt.PointingHandCursor)
+            #         #print('C')
+            # else:
+            #     self._qt.canvas.native.setCursor(Qt.WaitCursor)
+            #    #print('D')
+        else:
             if self.annotation:
+                self._update_index(event)
                 for i in self._active_markers:
-                    if self.layers[i].selected:
-                        selected = True
-                        break
-                else:
-                    selected = False
-                if selected:
-                    if index is None:
-                        self._qt.canvas.native.setCursor(Qt.CrossCursor)
-                    else:
-                        self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
-                else:
-                    self._qt.canvas.native.setCursor(QCursor())
-            else:
-                self._qt.canvas.native.setCursor(QCursor())
-
-
-
-        #if event.is_dragging:
-        #    print('mouse_dragging')
+                    layer = self.layers[i]
+                    if layer.selected:
+                        index = layer._selected_markers
+                        if index is None:
+                            pass
+                        else:
+                            layer.data[index] = [self._index[1],self._index[0],*self._index[2:]]
+                            layer._refresh()
+                            self._update_statusBar()
+                            break
 
     def on_mouse_release(self, event):
         if self.annotation:
@@ -361,17 +376,38 @@ class Viewer:
                     for i in self._active_markers:
                         layer = self.layers[i]
                         if layer.selected:
-                            indices = copy(self.indices)
-                            indices[0] = int(self._pos[1])
-                            indices[1] = int(self._pos[0])
-                            index = layer._selected_markers(indices)
-                            if index is None:
-                                if isinstance(layer.size, (list, ndarray)):
-                                    layer._size = insert(layer.size, 0, 10)
-                                layer.data = insert(layer.data, 0, [indices], axis=0)
-                                self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
+                            index = layer._selected_markers
+                            if 'Shift' in event.modifiers:
+                                if index is None:
+                                    pass
+                                else:
+                                    if isinstance(layer.size, (list, ndarray)):
+                                        layer._size = delete(layer.size, index)
+                                    layer.data = delete(layer.data,index, axis=0)
+                                    layer._selected_markers = None
+                                    self._update_statusBar()
                             else:
                                 if isinstance(layer.size, (list, ndarray)):
-                                    layer._size = delete(layer.size, index)
-                                layer.data = delete(layer.data,index, axis=0)
-                                self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                                    layer._size = insert(layer.size, 0, 10)
+                                coord = [self._index[1],self._index[0],*self._index[2:]]
+                                layer.data = insert(layer.data, 0, [coord], axis=0)
+                                layer._selected_markers = 0
+                                self._update_statusBar()
+                            break
+
+    # def on_key_press(self, event):
+    #     if event.key == ' ':
+    #         print('space_down')
+    #         if self.annotation:
+    #             self._annotation_history = True
+    #             self.layers.viewer._qt.view.interactive = True
+    #             self.annotation = False
+    #         else:
+    #             self._annotation_history = False
+    #
+    # def on_key_release(self, event):
+    #     if event.key == ' ':
+    #         print('space_up')
+    #         if self._annotation_history:
+    #             self.layers.viewer._qt.view.interactive = False
+    #             self.annotation = True
