@@ -347,7 +347,7 @@ class Viewer:
             #     self._qt.canvas.native.setCursor(Qt.WaitCursor)
             #    #print('D')
         else:
-            if self.annotation:
+            if self.annotation and 'Shift' in event.modifiers:
                 self._update_index(event)
                 for i in self._active_markers:
                     layer = self.layers[i]
@@ -377,7 +377,7 @@ class Viewer:
                         layer = self.layers[i]
                         if layer.selected:
                             index = layer._selected_markers
-                            if 'Shift' in event.modifiers:
+                            if 'Meta' in event.modifiers:
                                 if index is None:
                                     pass
                                 else:
