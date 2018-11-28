@@ -39,7 +39,7 @@ class Viewer:
 
         self._qt = QtViewer(self)
         self._qt.canvas.connect(self.on_mouse_move)
-        self._qt.canvas.connect(self.on_mouse_release)
+        self._qt.canvas.connect(self.on_mouse_press)
         #self._qt.canvas.connect(self.on_key_press)
         #self._qt.canvas.connect(self.on_key_release)
 
@@ -341,14 +341,34 @@ class Viewer:
             self._update_active_layers()
             self._update_statusBar()
 
-    def on_mouse_release(self, event):
+        # if self.annotation:
+        #     selected = False
+        #     for i in self._active_markers:
+        #         if self.layers[i].selected:
+        #             selected = True
+        #             break
+        #     if selected:
+        #         if index is None:
+        #             self._qt.canvas.native.setCursor(Qt.CrossCursor)
+        #             print('A')
+        #         else:
+        #             self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
+        #             print('B')
+        #     else:
+        #         self._qt.canvas.native.setCursor(Qt.PointingHandCursor)
+        #         print('C')
+        # else:
+        #     self._qt.canvas.native.setCursor(Qt.WaitCursor)
+        #    print('D')
+
+    def on_mouse_press(self, event):
         if self.annotation:
             if event.pos is None:
                 pass
             else:
                 if event.trail() is None:
                     accept = True
-                elif len(event.trail())<2:
+                elif len(event.trail())<10000:
                     accept = True
                 else:
                     accept = False
@@ -356,8 +376,8 @@ class Viewer:
                     for i in self._active_markers:
                         layer = self.layers[i]
                         if layer.selected:
-                            index = layer._selected_markers
                             if 'Meta' in event.modifiers:
+                                index = layer._selected_markers
                                 if index is None:
                                     pass
                                 else:
@@ -366,6 +386,8 @@ class Viewer:
                                     layer.data = delete(layer.data,index, axis=0)
                                     layer._selected_markers = None
                                     self._update_statusBar()
+                            elif 'Shift' in event.modifiers:
+                                pass
                             else:
                                 if isinstance(layer.size, (list, ndarray)):
                                     layer._size = insert(layer.size, 0, 10)
