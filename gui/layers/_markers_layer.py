@@ -291,7 +291,7 @@ class Markers(Layer):
             in_slice_matches = np.all(in_slice_matches, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                matches = matches[indices[0]]
+                matches = matches[indices[-1]]
             else:
                 matches = None
         else:
@@ -341,7 +341,7 @@ class Markers(Layer):
             sizes = 0
 
         self._node.set_data(
-            data, size=sizes, edge_width=self.edge_width, symbol=self.symbol,
+            data[::-1], size=sizes, edge_width=self.edge_width, symbol=self.symbol,
             edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)

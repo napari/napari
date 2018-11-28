@@ -316,39 +316,16 @@ class Viewer:
                 else:
                     msg = msg + '%.3f' % value
         self._window._qt_window.statusBar().showMessage(msg)
-        return index
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
         if event.pos is None:
-            pass
-        elif not event.is_dragging:
-            self._update_index(event)
-            self._update_active_layers()
-            index = self._update_statusBar()
-            # if self.annotation:
-            #     selected = False
-            #     for i in self._active_markers:
-            #         if self.layers[i].selected:
-            #             selected = True
-            #             break
-            #     if selected:
-            #         if index is None:
-            #             self._qt.canvas.native.setCursor(Qt.CrossCursor)
-            #             #print('A')
-            #         else:
-            #             self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
-            #             #print('B')
-            #     else:
-            #         self._qt.canvas.native.setCursor(Qt.PointingHandCursor)
-            #         #print('C')
-            # else:
-            #     self._qt.canvas.native.setCursor(Qt.WaitCursor)
-            #    #print('D')
-        else:
+            return
+
+        self._update_index(event)
+        if event.is_dragging:
             if self.annotation and 'Shift' in event.modifiers:
-                self._update_index(event)
                 for i in self._active_markers:
                     layer = self.layers[i]
                     if layer.selected:
@@ -360,6 +337,9 @@ class Viewer:
                             layer._refresh()
                             self._update_statusBar()
                             break
+        else:
+            self._update_active_layers()
+            self._update_statusBar()
 
     def on_mouse_release(self, event):
         if self.annotation:
@@ -390,8 +370,8 @@ class Viewer:
                                 if isinstance(layer.size, (list, ndarray)):
                                     layer._size = insert(layer.size, 0, 10)
                                 coord = [self._index[1],self._index[0],*self._index[2:]]
-                                layer.data = insert(layer.data, 0, [coord], axis=0)
-                                layer._selected_markers = 0
+                                layer.data = append(layer.data, [coord], axis=0)
+                                layer._selected_markers = len(layer.data)-1
                                 self._update_statusBar()
                             break
 
