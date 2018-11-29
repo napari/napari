@@ -78,33 +78,31 @@ class QAnnotationCheckBox(QCheckBox):
         super().__init__()
 
         self.layers = layers
-        #self.setFixedWidth(28)
-        #self.setFixedHeight(28)
         self.setToolTip('Annotation mode')
         self.setChecked(False)
         self.stateChanged.connect(lambda state=self: self.changeAnnotation(state))
         styleSheet = """QCheckBox {background-color:lightGray; border-radius: 3px;}
                         QCheckBox::indicator {subcontrol-position: center center; subcontrol-origin: content;
                             width: 28px; height: 28px;}
-                        QCheckBox::indicator:unchecked:hover {background-color:rgb(71,143,205); border-radius: 3px;}
+                        QCheckBox::indicator:checked {background-color:rgb(71,143,205); border-radius: 3px;
+                            image: url(""" + path_off + """);}
                         QCheckBox::indicator:unchecked {image: url(""" + path_off + """);}
-                        QCheckBox::indicator:checked {image: url(""" + path_on + ");}"
+                        QCheckBox::indicator:unchecked:hover {image: url(""" + path_on + ");}"
         self.setStyleSheet(styleSheet)
 
     def changeAnnotation(self, state):
         if state == Qt.Checked:
-            self.layers.viewer.annotation = True
-            self.layers.viewer._qt.view.interactive = False
+            self.layers.viewer._set_annotation_mode(True)
         else:
-            self.layers.viewer.annotation = False
-            self.layers.viewer._qt.view.interactive = True
+            self.layers.viewer._set_annotation_mode(False)
 
 class QtLayerControls(QFrame):
     def __init__(self, layers):
         super().__init__()
 
+        self.annotationCheckBox = QAnnotationCheckBox(layers)
         layout = QHBoxLayout()
-        layout.addWidget(QAnnotationCheckBox(layers))
+        layout.addWidget(self.annotationCheckBox)
         layout.addStretch(0)
         layout.addWidget(QAddLayerButton(layers))
         layout.addWidget(QDeleteButton(layers))
