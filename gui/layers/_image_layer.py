@@ -34,8 +34,8 @@ class Image(Layer):
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta):
-        visual = ImageNode(None, method='auto')
-        super().__init__(visual)
+        self.visual = ImageNode(None, method='auto')
+        super().__init__(self.visual)
 
         self._image = image
         self._meta = meta
