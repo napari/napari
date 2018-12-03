@@ -22,9 +22,19 @@ class QtImageLayer(QtLayer):
         index = interp_comboBox.findText(self.layer.interpolation, Qt.MatchFixedString)
         if index >= 0:
             interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(lambda text=comboBox: self.changeInterpolation(text))
+        interp_comboBox.activated[str].connect(lambda text=interp_comboBox: self.changeInterpolation(text))
         self.grid_layout.addWidget(QLabel('interpolation:'), 3, 0)
         self.grid_layout.addWidget(interp_comboBox, 3, 1)
+
+        blend_comboBox = QComboBox()
+        for blend in self.layer._blending_modes:
+            blend_comboBox.addItem(blend)
+        index = blend_comboBox.findText(self.layer._blending, Qt.MatchFixedString)
+        if index >= 0:
+            blend_comboBox.setCurrentIndex(index)
+        blend_comboBox.activated[str].connect(lambda text=blend_comboBox: self.changeBlending(text))
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
+        self.grid_layout.addWidget(blend_comboBox, 4, 1)
 
         self.setExpanded(False)
 
@@ -33,3 +43,6 @@ class QtImageLayer(QtLayer):
 
     def changeInterpolation(self, text):
         self.layer.interpolation = text
+
+    def changeBlending(self, text):
+        self.layer.blending = text

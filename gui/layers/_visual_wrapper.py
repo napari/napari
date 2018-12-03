@@ -1,6 +1,6 @@
 # TODO: create & use our own transform class
 from vispy.visuals.transforms import STTransform
-
+from vispy.gloo import get_state_presets
 
 class VisualWrapper:
     """Wrapper around ``vispy.scene.VisualNode`` objects.
@@ -22,6 +22,7 @@ class VisualWrapper:
     opacity
     visible
     scale
+    blending
     translate
     z_index
 
@@ -32,6 +33,8 @@ class VisualWrapper:
     """
     def __init__(self, central_node):
         self._node = central_node
+        self._blending_modes = list(get_state_presets().keys())
+        self._blending = 'translucent'
 
     @property
     def _master_transform(self):
@@ -83,6 +86,22 @@ class VisualWrapper:
                              f'got {opacity}')
 
         self._node.opacity = opacity
+
+    @property
+    def blending(self):
+        """string: Selects blending mode. Can be one of ('opaque',
+        'translucent', 'additive').
+        """
+        return self._blending
+
+    @blending.setter
+    def blending(self, blending):
+        if blending not in self._blending_modes:
+            raise ValueError("""blending must be between one of
+                             ('opaque', 'translucent', 'additive');
+                             got %s""" % blending)
+        self._node.set_gl_state(blending)
+        self._blending = blending
 
     @property
     def visible(self):

@@ -58,6 +58,16 @@ class QtMarkersLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('symbol:'), 5, 0)
         self.grid_layout.addWidget(symbol_comboBox, 5, 1)
 
+        blend_comboBox = QComboBox()
+        for blend in self.layer._blending_modes:
+            blend_comboBox.addItem(blend)
+        index = blend_comboBox.findText(self.layer._blending, Qt.MatchFixedString)
+        if index >= 0:
+            blend_comboBox.setCurrentIndex(index)
+        blend_comboBox.activated[str].connect(lambda text=blend_comboBox: self.changeBlending(text))
+        self.grid_layout.addWidget(QLabel('blending:'), 6, 0)
+        self.grid_layout.addWidget(blend_comboBox, 6, 1)
+
         self.setExpanded(False)
 
     def changeFaceColor(self, text):
@@ -71,3 +81,6 @@ class QtMarkersLayer(QtLayer):
 
     def changeSize(self, value):
         self.layer.size = value
+
+    def changeBlending(self, text):
+        self.layer.blending = text
