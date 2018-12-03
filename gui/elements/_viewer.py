@@ -5,6 +5,7 @@ from ..util.misc import (compute_max_shape as _compute_max_shape,
 from numpy import clip, integer, ndarray
 from copy import copy
 
+
 class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders.
@@ -29,6 +30,10 @@ class Viewer:
     max_shape : tuple of int
         Maximum shape of the contained layers.
     """
+    _min_ddim = 2      # TODO: 1
+    _max_ddim = 2      # TODO: 3
+    default_ddim = 2   # 2-D by default
+    
     def __init__(self, window):
         from ._layer_list import LayerList
         from ._controls import Controls
@@ -37,9 +42,12 @@ class Viewer:
 
         self._qt = QtViewer(self)
         self._qt.canvas.connect(self.on_mouse_move)
-        # TODO: allow arbitrary display axis setting
-        # self.y_axis = 0  # typically the y-axis
-        # self.x_axis = 1  # typically the x-axis
+
+        self._x_axis = 1                 # typically the x-axis
+        self._y_axis = 0                 # typically the y-axis
+        self._z_axis = 2                 # typically the z-axis
+
+        self._ddim = self.default_ddim   # num of displayed dimensions
 
         # TODO: wrap indices in custom data structure
         self.indices = [slice(None), slice(None)]
@@ -60,6 +68,48 @@ class Viewer:
         self._recalc_max_shape = False
 
         self._pos = [0, 0]
+
+    @property
+    def axes(self):
+        """tuple of int: Displayed axes.
+        """
+        return (self._x_axis, self._y_axis, self._z_axis)[:self.ddim]
+
+    @axes.setter
+    def axes(self, axes):
+        # TODO: pause updates until end (otherwise will update twice)
+        self.ddim = len(axes)
+
+        if axes == self.axes:
+            return
+
+        try:
+            self._x_axis = axes[0]
+            self._y_axis = axes[1]
+            self._z_axis = axes[2]
+        except IndexError:
+            pass
+
+        self._child_layer_changed = True
+        self._update()
+
+    @property
+    def ddim(self):
+        """int: Number of displayed dimensions.
+        """
+        return self._ddim
+
+    @ddim.setter
+    def ddim(self, ddim):
+        if ddim == self.ddim:
+            return
+        
+        assert self._min_ddim <= ddim <= self._max_ddim
+        self._ddim = ddim
+        
+        self._child_layer_changed = True
+        self._update()
+        
     @property
     def _canvas(self):
         return self._qt.canvas
