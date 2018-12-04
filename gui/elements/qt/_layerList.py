@@ -59,6 +59,9 @@ class QtLayerList(QScrollArea):
         """
         if self.layersLayout.count() > 1:
             self.layersLayout.itemAt(1).widget().unselectAll()
+        self.layers.viewer._update_active_layers()
+        self.layers.viewer._set_annotation_mode(self.layers.viewer.annotation)
+
 
     def dragLeaveEvent(self, event):
         event.ignore()

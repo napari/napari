@@ -327,7 +327,7 @@ class Markers(Layer):
         if len(in_slice_markers) > 0:
             # Get the marker sizes
             if isinstance(self.size, (list, np.ndarray)):
-                sizes = self.size[matches]
+                sizes = self.size[matches][::-1]
 
             else:
                 sizes = self.size
