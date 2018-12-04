@@ -49,8 +49,7 @@ class Viewer:
 
         self._ddim = self.default_ddim   # num of displayed dimensions
 
-        # TODO: wrap indices in custom data structure
-        self.indices = [slice(None), slice(None)]
+        self._indices = [0] * self.ddim
 
         self.layers = LayerList(self)
 
@@ -143,7 +142,7 @@ class Viewer:
         return self._max_shape
 
     def _axis_to_row(self, axis):
-        dims = len(self.indices)
+        dims = len(self._indices)
         message = f'axis {axis} out of bounds for {dims} dims'
 
         if axis < 0:
@@ -169,6 +168,16 @@ class Viewer:
         self.layers.append(layer)
         if len(self.layers) == 1:
             self.reset_view()
+
+    def slice_layer(self, layer):
+        """Sets the viewed slice for a layer.
+
+        Parameters
+        ----------
+        layer : Layer
+            Layer to slice.
+        """
+        layer._set_view_slice(self._indices, self.axes)
 
     def imshow(self, image, meta=None, multichannel=None, **kwargs):
         """Shows an image in the viewer.
@@ -217,14 +226,14 @@ class Viewer:
         max_dims = self.max_dims
         max_shape = self.max_shape
 
-        curr_dims = len(self.indices)
+        curr_dims = len(self._indices)
 
         if curr_dims > max_dims:
-            self.indices = self.indices[:max_dims]
+            self._indices = self._indices[:max_dims]
             dims = curr_dims
         else:
             dims = max_dims
-            self.indices.extend([0] * (max_dims - curr_dims))
+            self._indices.extend([0] * (max_dims - curr_dims))
 
         for dim in range(2, dims):  # do not create sliders for y/x-axes
             try:
@@ -238,7 +247,7 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer._set_view_slice(self.indices)
+            self.slice_layer(layer)
 
         self.update_statusBar()
 
@@ -313,7 +322,7 @@ class Viewer:
         msg = '(%d, %d' % (self._pos[0], self._pos[1])
         if self.max_dims > 2:
             for i in range(2,self.max_dims):
-                msg = msg + ', %d' % self.indices[i]
+                msg = msg + ', %d' % self._indices[i]
         msg = msg + ')'
 
         top_markers = []
@@ -328,7 +337,7 @@ class Viewer:
 
         index = None
         for i in top_markers:
-            indices = copy(self.indices)
+            indices = copy(self._indices)
             indices[0] = int(self._pos[1])
             indices[1] = int(self._pos[0])
             index = self.layers[i]._selected_markers(indices)
@@ -341,7 +350,7 @@ class Viewer:
         if top_image is None:
             pass
         elif index is None:
-            indices = copy(self.indices)
+            indices = copy(self._indices)
             indices[0] = int(self._pos[0])
             indices[1] = int(self._pos[1])
             value = self.layers[top_image]._slice_image(indices)

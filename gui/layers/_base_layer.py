@@ -124,14 +124,17 @@ class Layer(VisualWrapper, ABC):
         if self.viewer is not None:
             self.refresh()
 
-    def _set_view_slice(self, indices):
+    def _set_view_slice(self, indices, axes):
         """Called whenever the sliders change. Sets the
-        current view given a specific slice to view.
+        current view given a specific slice to view
+        and the axes to display.
 
         Parameters
         ----------
-        indices : sequence of int or slice
+        indices : sequence of int
             Indices that make up the slice.
+        axes : sequence of int
+            Axes to display.
         """
 
     def refresh(self):

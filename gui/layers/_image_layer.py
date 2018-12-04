@@ -17,6 +17,7 @@ from ._register import add_to_viewer
 
 from ..elements.qt import QtImageLayer
 
+
 @add_to_viewer
 class Image(Layer):
     """Image layer.
@@ -100,7 +101,7 @@ class Image(Layer):
             self.viewer._update()
 
             self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.indices)
+            self.viewer.slice_layer(self)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -112,39 +113,42 @@ class Image(Layer):
         self._need_display_update = True
         self._update()
 
-    def _slice_image(self, indices):
+    def _slice_image(self, indices, axes=None):
         """Determines the slice of image given the indices.
 
         Parameters
         ----------
-        indices : sequence of int or slice
+        indices : sequence of int
             Indices to slice with.
+        axes : sequence of int, optional
+            Axes to display.
         """
-        ndim = self.ndim
-
-        indices = list(indices)
-        indices = indices[:ndim]
+        indices = list(indices)[:self.ndim]
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
 
-            try:
-                if indices[dim] > max_dim_index:
-                    indices[dim] = max_dim_index
-            except TypeError:
-                pass
+            if indices[dim] > max_dim_index:
+                indices[dim] = max_dim_index
+
+        if axes:
+            for axis in axes:
+                indices[axis] = np.s_[:]
 
         return self.image[tuple(indices)]
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
+    def _set_view_slice(self, indices, axes):
+        """Sets the view given the indices to slice with and the axes
+        to display.
 
         Parameters
         ----------
-        indices : sequence of int or slice
+        indices : sequence of int
             Indices to slice with.
+        axes : sequence of int
+            Axes to display.
         """
-        sliced_image = self._slice_image(indices)
+        sliced_image = self._slice_image(indices, axes)
 
         self._node.set_data(sliced_image)
 
