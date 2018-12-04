@@ -33,8 +33,9 @@ class VisualWrapper:
     """
     def __init__(self, central_node):
         self._node = central_node
-        self._blending_modes = list(get_state_presets().keys())
         self._blending = 'translucent'
+
+    _blending_modes = set(get_state_presets().keys())
 
     @property
     def _master_transform(self):
@@ -89,17 +90,30 @@ class VisualWrapper:
 
     @property
     def blending(self):
-        """string: Selects blending mode. Can be one of ('opaque',
-        'translucent', 'additive').
+        """{'opaque', 'translucent', 'additive'}: Blending mode.
+            Selects a preset blending mode in vispy that determines how
+            RGB and alpha values get mixed.
+            'opaque'
+                Allows for only the top layer to be visible and corresponds to
+                depth_test=True, cull_face=False, blend=False.
+            'translucent'
+                Allows for multiple layers to be blended with different opacity
+                and corresponds to depth_test=True, cull_face=False, blend=True,
+                blend_func=('src_alpha', 'one_minus_src_alpha').
+            'additive'
+                Allows for multiple layers to be blended together with different
+                colors and opacity. Useful for creating overlays. It corresponds
+                to depth_test=False, cull_face=False, blend=True, blend_func=
+                ('src_alpha', 'one').
         """
         return self._blending
 
     @blending.setter
     def blending(self, blending):
         if blending not in self._blending_modes:
-            raise ValueError("""blending must be between one of
-                             ('opaque', 'translucent', 'additive');
-                             got %s""" % blending)
+            raise ValueError('expected one of '
+                 "{'opaque', 'translucent', 'additive'}; "
+                 f'got {blending}')
         self._node.set_gl_state(blending)
         self._blending = blending
 
