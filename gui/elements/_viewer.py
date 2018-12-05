@@ -1,4 +1,5 @@
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QCursor, QPixmap
 from .qt import QtViewer
 
@@ -9,7 +10,7 @@ from copy import copy
 
 from os.path import dirname, join, realpath
 dir_path = dirname(realpath(__file__))
-path_cursor = join(dir_path,'icons','cursor_disabled.png')
+path_cursor = join(dir_path,'qt','icons','cursor_disabled.png')
 
 class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -75,7 +76,10 @@ class Viewer:
         self._active_image = None
         self._active_markers = None
         self._visible_markers = []
-        self._status_message = None
+
+        self._status_widget = QLabel('hold <space> to pan/zoom')
+        self._window._qt_window.statusBar().addPermanentWidget(self._status_widget)
+        self._status_widget.hide()
 
         self._disabled_cursor = QCursor(QPixmap(path_cursor).scaled(20,20))
     @property
@@ -270,12 +274,12 @@ class Viewer:
                 self._qt.canvas.native.setCursor(Qt.CrossCursor)
             else:
                 self._qt.canvas.native.setCursor(self._disabled_cursor)
-            self._status_message = 'hold <space> to pan/zoom'
+            self._status_widget.show()
         else:
             self.annotation = False
             self._qt.view.interactive = True
             self._qt.canvas.native.setCursor(QCursor())
-            self._status_message = None
+            self._status_widget.hide()
         self._update_statusBar()
 
     def _update_index(self, event):
@@ -346,8 +350,6 @@ class Viewer:
                 else:
                     msg = msg + '%.3f' % value
 
-        if self._status_message:
-            msg = msg + '       ' + self._status_message
         self._window._qt_window.statusBar().showMessage(msg)
 
     def on_mouse_move(self, event):
