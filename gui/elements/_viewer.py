@@ -1,9 +1,16 @@
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtGui import QCursor, QPixmap
 from .qt import QtViewer
 
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
-from numpy import clip, integer, ndarray
+from numpy import clip, integer, ndarray, append, insert, delete
 from copy import copy
+
+from os.path import dirname, join, realpath
+dir_path = dirname(realpath(__file__))
+path_cursor = join(dir_path,'qt','icons','cursor_disabled.png')
 
 class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -37,6 +44,10 @@ class Viewer:
 
         self._qt = QtViewer(self)
         self._qt.canvas.connect(self.on_mouse_move)
+        self._qt.canvas.connect(self.on_mouse_press)
+        self._qt.canvas.connect(self.on_key_press)
+        self._qt.canvas.connect(self.on_key_release)
+
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
@@ -59,7 +70,18 @@ class Viewer:
         self._recalc_max_dims = False
         self._recalc_max_shape = False
 
-        self._pos = [0, 0]
+        self._index = [0, 0]
+        self.annotation = False
+        self._annotation_history = False
+        self._active_image = None
+        self._active_markers = None
+        self._visible_markers = []
+
+        self._status_widget = QLabel('hold <space> to pan/zoom')
+        self._window._qt_window.statusBar().addPermanentWidget(self._status_widget)
+        self._status_widget.hide()
+
+        self._disabled_cursor = QCursor(QPixmap(path_cursor).scaled(20,20))
     @property
     def _canvas(self):
         return self._qt.canvas
@@ -190,7 +212,7 @@ class Viewer:
         for layer in self.layers:
             layer._set_view_slice(self.indices)
 
-        self.update_statusBar()
+        self._update_statusBar()
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
@@ -244,27 +266,34 @@ class Viewer:
         self._child_layer_changed = True
         self._update()
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        if event.pos is None:
-            pos = None
+    def _set_annotation_mode(self, bool):
+        if bool:
+            self.annotation = True
+            self._qt.view.interactive = False
+            if self._active_markers:
+                self._qt.canvas.native.setCursor(Qt.CrossCursor)
+            else:
+                self._qt.canvas.native.setCursor(self._disabled_cursor)
+            self._status_widget.show()
         else:
-            visual = self.layers[0]._node
-            tr = self._canvas.scene.node_transform(self.layers[0]._node)
-            pos = tr.map(event.pos)
-            self._pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
-            self.update_statusBar()
+            self.annotation = False
+            self._qt.view.interactive = True
+            self._qt.canvas.native.setCursor(QCursor())
+            self._status_widget.hide()
+        self._update_statusBar()
 
-    def update_statusBar(self):
+    def _update_index(self, event):
+        visual = self.layers[0]._node
+        tr = self._canvas.scene.node_transform(self.layers[0]._node)
+        pos = tr.map(event.pos)
+        pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
+        self._index = copy(self.indices)
+        self._index[0] = int(pos[0])
+        self._index[1] = int(pos[1])
+
+    def _update_active_layers(self):
         from ..layers._image_layer import Image
         from ..layers._markers_layer import Markers
-
-        msg = '(%d, %d' % (self._pos[0], self._pos[1])
-        if self.max_dims > 2:
-            for i in range(2,self.max_dims):
-                msg = msg + ', %d' % self.indices[i]
-        msg = msg + ')'
 
         top_markers = []
         for i, layer in enumerate(self.layers[::-1]):
@@ -273,28 +302,42 @@ class Viewer:
                 break
             elif layer.visible and isinstance(layer, Markers):
                 top_markers.append(len(self.layers) - 1 - i)
+                coord = [self._index[1],self._index[0],*self._index[2:]]
+                layer._set_selected_markers(coord)
         else:
             top_image = None
 
-        index = None
+        active_markers = None
         for i in top_markers:
-            indices = copy(self.indices)
-            indices[0] = int(self._pos[1])
-            indices[1] = int(self._pos[0])
-            index = self.layers[i]._selected_markers(indices)
+            if self.layers[i].selected:
+                active_markers = i
+                break
+
+        self._active_image = top_image
+        self._visible_markers = top_markers
+        self._active_markers = active_markers
+
+    def _update_statusBar(self):
+        msg = '('
+        for i in range(0,self.max_dims):
+            msg = msg + '%d, ' % self._index[i]
+        msg = msg[:-2]
+        msg = msg + ')'
+
+        index = None
+        for i in self._visible_markers:
+            index = self.layers[i]._selected_markers
             if index is None:
                 pass
             else:
-                msg = msg + ', index %d, layer %d' % (index, i)
+                msg = msg + ', %s, index %d' % (self.layers[i].name, index)
                 break
 
-        if top_image is None:
+        if self._active_image is None:
             pass
         elif index is None:
-            indices = copy(self.indices)
-            indices[0] = int(self._pos[0])
-            indices[1] = int(self._pos[1])
-            value = self.layers[top_image]._slice_image(indices)
+            msg = msg + ', %s' % self.layers[self._active_image].name
+            value = self.layers[self._active_image]._slice_image(self._index)
             msg = msg + ', value '
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
@@ -306,5 +349,97 @@ class Viewer:
                     msg = msg + '%d' % value
                 else:
                     msg = msg + '%.3f' % value
-            msg = msg + ', layer %d' % top_image
+
         self._window._qt_window.statusBar().showMessage(msg)
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            return
+
+        self._update_index(event)
+        if event.is_dragging:
+            if self.annotation and 'Shift' in event.modifiers:
+                if self._active_markers:
+                    layer = self.layers[self._active_markers]
+                    index = layer._selected_markers
+                    if index is None:
+                        pass
+                    else:
+                        layer.data[index] = [self._index[1],self._index[0],*self._index[2:]]
+                        layer._refresh()
+                        self._update_statusBar()
+        else:
+            self._update_active_layers()
+            self._update_statusBar()
+
+    def on_mouse_press(self, event):
+        if event.pos is None:
+            return
+
+        if self.annotation:
+            if self._active_markers:
+                layer = self.layers[self._active_markers]
+                if 'Meta' in event.modifiers:
+                    index = layer._selected_markers
+                    if index is None:
+                        pass
+                    else:
+                        if isinstance(layer.size, (list, ndarray)):
+                            layer._size = delete(layer.size, index)
+                        layer.data = delete(layer.data, index, axis=0)
+                        layer._selected_markers = None
+                        self._update_statusBar()
+                elif 'Shift' in event.modifiers:
+                    pass
+                else:
+                    if isinstance(layer.size, (list, ndarray)):
+                        layer._size = append(layer.size, 10)
+                    coord = [self._index[1],self._index[0],*self._index[2:]]
+                    layer.data = append(layer.data, [coord], axis=0)
+                    layer._selected_markers = len(layer.data)-1
+                    self._update_statusBar()
+
+    def on_key_press(self, event):
+        if event.native.isAutoRepeat():
+            return
+        else:
+            if event.key == ' ':
+                if self.annotation:
+                    self._annotation_history = True
+                    self.layers.viewer._qt.view.interactive = True
+                    self.annotation = False
+                    self._qt.canvas.native.setCursor(QCursor())
+                else:
+                    self._annotation_history = False
+            elif event.key == 'Shift':
+                if self.annotation and self._active_markers:
+                    self._qt.canvas.native.setCursor(Qt.PointingHandCursor)
+            elif event.key == 'Meta':
+                if self.annotation and self._active_markers:
+                    self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
+            elif event.key == 'a':
+                cb = self.layers._qt.layersControls.annotationCheckBox
+                cb.setChecked(not cb.isChecked())
+
+    def on_key_release(self, event):
+        if event.key == ' ':
+            if self._annotation_history:
+                self.layers.viewer._qt.view.interactive = False
+                self.annotation = True
+                if self._active_markers:
+                    self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                else:
+                    self._qt.canvas.native.setCursor(self._disabled_cursor)
+        elif event.key == 'Shift':
+            if self.annotation:
+                if self._active_markers:
+                    self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                else:
+                    self._qt.canvas.native.setCursor(self._disabled_cursor)
+        elif event.key == 'Meta':
+                if self._active_markers:
+                    self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                else:
+                    self._qt.canvas.native.setCursor(self._disabled_cursor)
