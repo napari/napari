@@ -8,7 +8,7 @@ class QtMarkersLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.grid_layout.addWidget(QLabel('size:'), 2, 0)
+        self.grid_layout.addWidget(QLabel('size:'), 3, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
         #sld.setInvertedAppearance(True)
@@ -23,7 +23,7 @@ class QtMarkersLayer(QtLayer):
             value = value.mean()
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
-        self.grid_layout.addWidget(sld, 2, 1)
+        self.grid_layout.addWidget(sld, 3, 1)
 
         face_comboBox = QComboBox()
         colors = self.layer._colors
@@ -33,8 +33,8 @@ class QtMarkersLayer(QtLayer):
         if index >= 0:
            face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(lambda text=face_comboBox: self.changeFaceColor(text))
-        self.grid_layout.addWidget(QLabel('face_color:'), 3, 0)
-        self.grid_layout.addWidget(face_comboBox, 3, 1)
+        self.grid_layout.addWidget(QLabel('face_color:'), 4, 0)
+        self.grid_layout.addWidget(face_comboBox, 4, 1)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
@@ -44,8 +44,8 @@ class QtMarkersLayer(QtLayer):
         if index >= 0:
            edge_comboBox.setCurrentIndex(index)
         edge_comboBox.activated[str].connect(lambda text=edge_comboBox: self.changeEdgeColor(text))
-        self.grid_layout.addWidget(QLabel('edge_color:'), 4, 0)
-        self.grid_layout.addWidget(edge_comboBox, 4, 1)
+        self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
+        self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
         symbol_comboBox = QComboBox()
         symbols = self.layer._marker_types
@@ -55,8 +55,8 @@ class QtMarkersLayer(QtLayer):
         if index >= 0:
            symbol_comboBox.setCurrentIndex(index)
         symbol_comboBox.activated[str].connect(lambda text=symbol_comboBox: self.changeSymbol(text))
-        self.grid_layout.addWidget(QLabel('symbol:'), 5, 0)
-        self.grid_layout.addWidget(symbol_comboBox, 5, 1)
+        self.grid_layout.addWidget(QLabel('symbol:'), 6, 0)
+        self.grid_layout.addWidget(symbol_comboBox, 6, 1)
 
         self.setExpanded(False)
 
