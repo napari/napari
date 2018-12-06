@@ -71,6 +71,8 @@ class QtLayer(QFrame):
             self.layer.visible = True
         else:
             self.layer.visible = False
+        self.layer.viewer._update_active_layers()
+        self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
 
     def changeText(self, text):
         self.layer.name = text.text()
@@ -92,6 +94,8 @@ class QtLayer(QFrame):
         else:
             self.unselectAll()
             self.setSelected(True)
+        self.layer.viewer._update_active_layers()
+        self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
 
     def mousePressEvent(self, event):
         self.dragStartPosition = event.pos()
@@ -142,7 +146,6 @@ class QtLayer(QFrame):
                     self.grid_layout.itemAtPosition(i,j).widget().show()
                 else:
                     self.grid_layout.itemAtPosition(i,j).widget().hide()
-
 
     def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)
