@@ -20,3 +20,4 @@ class QtControls(QWidget):
         self.hbox_layout.addWidget(self.climSlider)
 
         self.setLayout(self.hbox_layout)
+        self.setMouseTracking(True)

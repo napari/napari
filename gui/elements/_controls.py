@@ -39,7 +39,6 @@ class Controls:
                 break
 
     def _mouseMoveEvent(self, event):
-        print('hello!!!!')
         for layer in self.viewer.layers[::-1]:
             if layer.visual is not None and layer.selected:
                 cmin, cmax = layer.clim
