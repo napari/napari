@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel
+from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel, QComboBox
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
@@ -47,6 +47,16 @@ class QtLayer(QFrame):
         sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
         self.grid_layout.addWidget(sld, 1, 1)
 
+        blend_comboBox = QComboBox()
+        for blend in self.layer._blending_modes:
+            blend_comboBox.addItem(blend)
+        index = blend_comboBox.findText(self.layer._blending, Qt.MatchFixedString)
+        if index >= 0:
+            blend_comboBox.setCurrentIndex(index)
+        blend_comboBox.activated[str].connect(lambda text=blend_comboBox: self.changeBlending(text))
+        self.grid_layout.addWidget(QLabel('blending:'), 2, 0)
+        self.grid_layout.addWidget(blend_comboBox, 2, 1)
+
         self.setLayout(self.grid_layout)
         self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
         self.setSelected(True)
@@ -71,9 +81,14 @@ class QtLayer(QFrame):
             self.layer.visible = True
         else:
             self.layer.visible = False
+        self.layer.viewer._update_active_layers()
+        self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
 
     def changeText(self, text):
         self.layer.name = text.text()
+
+    def changeBlending(self, text):
+        self.layer.blending = text
 
     def mouseReleaseEvent(self, event):
         modifiers = event.modifiers()
@@ -92,6 +107,8 @@ class QtLayer(QFrame):
         else:
             self.unselectAll()
             self.setSelected(True)
+        self.layer.viewer._update_active_layers()
+        self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
 
     def mousePressEvent(self, event):
         self.dragStartPosition = event.pos()
@@ -142,7 +159,6 @@ class QtLayer(QFrame):
                     self.grid_layout.itemAtPosition(i,j).widget().show()
                 else:
                     self.grid_layout.itemAtPosition(i,j).widget().hide()
-
 
     def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)

@@ -3,8 +3,6 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QSlider, QVBoxLayout
 
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-
-
 class QtViewer(QWidget):
     def __init__(self, viewer):
         super().__init__()
