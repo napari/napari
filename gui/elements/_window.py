@@ -40,7 +40,7 @@ class Window:
 
         # To split vertical sliders, viewer and layerlist, minimumsizes given for demo purposes/NOT FINAL
         horizontalSplitter = QSplitter(Qt.Horizontal)
-        viewer.controls._qt.setMinimumSize(QSize(30, 30))
+        viewer.controls._qt.setMinimumSize(QSize(40, 40))
         horizontalSplitter.addWidget(viewer.controls._qt)
         viewer._qt.setMinimumSize(QSize(100, 100))
         horizontalSplitter.addWidget(viewer._qt)

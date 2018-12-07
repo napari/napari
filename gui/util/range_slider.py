@@ -13,7 +13,8 @@ class QRangeSlider(QtWidgets.QWidget):
 
     def __init__(self, slider_range, values, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
-        self.bar_width = 4
+        self.bar_width = 16
+        self.slider_width = 2
         self.emit_while_moving = 0
         self.moving = "none"
         self.old_scale_min = 0.0
@@ -288,20 +289,20 @@ class QVRangeSlider(QRangeSlider):
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
 
         # Background
-        painter.setPen(QtCore.Qt.gray)
-        painter.setBrush(QtCore.Qt.transparent)
-        painter.drawRect(2, 2, w - 4, h - 4)
+        painter.setPen(QtCore.Qt.lightGray)
+        painter.setBrush(QtCore.Qt.lightGray)
+        painter.drawRect(w/2-self.slider_width/2, 2, self.slider_width, h - 4)
 
         # Range Bar
-        painter.setPen(QtCore.Qt.darkGray)
-        painter.setBrush(QtCore.Qt.darkCyan)
-        painter.drawRect(5, h - self.display_max - 1, w - 10, self.display_max - self.display_min + 1)
+        painter.setPen(QtGui.QColor(0, 153, 255))
+        painter.setBrush(QtGui.QColor(0, 153, 255))
+        painter.drawRect(w/2-self.slider_width/2, h - self.display_max - 1, self.slider_width, self.display_max - self.display_min + 1)
 
         # Splitters
-        painter.setPen(QtCore.Qt.black)
-        painter.setBrush(QtCore.Qt.gray)
-        painter.drawRect(1, h - self.display_max - self.bar_width - 1, w - 2, self.bar_width)  # upper
-        painter.drawRect(1, h - self.display_min - 1, w - 2, self.bar_width)  # lower
+        painter.setPen(QtCore.Qt.lightGray)
+        painter.setBrush(QtCore.Qt.white)
+        painter.drawEllipse(w/2-self.bar_width/2, h-self.display_max-1-self.bar_width/2, self.bar_width, self.bar_width) # upper
+        painter.drawEllipse(w/2-self.bar_width/2, h-self.display_min+1-self.bar_width/2, self.bar_width, self.bar_width) # lower
 
     def rangeSliderSize(self):
         """Size of the slider.

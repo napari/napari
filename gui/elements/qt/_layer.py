@@ -11,7 +11,7 @@ class QtLayer(QFrame):
         super().__init__()
         self.layer = layer
         self.unselectedStyleSheet = "QFrame#layer {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
-        self.selectedStyleSheet = "QFrame#layer {border: 3px solid rgb(71,143,205); background-color:lightGray; border-radius: 3px;}"
+        self.selectedStyleSheet = "QFrame#layer {border: 3px solid rgb(0, 153, 255); background-color:lightGray; border-radius: 3px;}"
         self.setObjectName('layer')
 
         self.grid_layout = QGridLayout()

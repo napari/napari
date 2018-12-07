@@ -34,8 +34,8 @@ class QDeleteButton(QPushButton):
         self.clicked.connect(self.on_click)
         self.setAcceptDrops(True)
         styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
-            QPushButton:pressed {background-color:rgb(71,143,205); border-radius: 3px;}
-            QPushButton:hover {background-color:rgb(71,143,205); border-radius: 3px;}"""
+            QPushButton:pressed {background-color:rgb(0, 153, 255); border-radius: 3px;}
+            QPushButton:hover {background-color:rgb(0, 153, 255); border-radius: 3px;}"""
         self.setStyleSheet(styleSheet)
 
     def on_click(self):
@@ -66,8 +66,8 @@ class QAddLayerButton(QPushButton):
         self.setToolTip('Add layer')
         self.clicked.connect(self.on_click)
         styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
-            QPushButton:pressed {background-color:rgb(71,143,205); border-radius: 3px;}
-            QPushButton:hover {background-color:rgb(71,143,205); border-radius: 3px;}"""
+            QPushButton:pressed {background-color:rgb(0, 153, 255); border-radius: 3px;}
+            QPushButton:hover {background-color:rgb(0, 153, 255); border-radius: 3px;}"""
         self.setStyleSheet(styleSheet)
 
     def on_click(self):
@@ -84,7 +84,7 @@ class QAnnotationCheckBox(QCheckBox):
         styleSheet = """QCheckBox {background-color:lightGray; border-radius: 3px;}
                         QCheckBox::indicator {subcontrol-position: center center; subcontrol-origin: content;
                             width: 28px; height: 28px;}
-                        QCheckBox::indicator:checked {background-color:rgb(71,143,205); border-radius: 3px;
+                        QCheckBox::indicator:checked {background-color:rgb(0, 153, 255); border-radius: 3px;
                             image: url(""" + path_off + """);}
                         QCheckBox::indicator:unchecked {image: url(""" + path_off + """);}
                         QCheckBox::indicator:unchecked:hover {image: url(""" + path_on + ");}"
