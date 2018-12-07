@@ -10,7 +10,8 @@ Viewer
     Data viewer displaying the currently rendered scene and
     layer-related controls.
 """
-from ._window import Window
+from ._gui import Gui
 from ._viewer import Viewer
 from ._layer_list import LayerList
 from ._controls import Controls
+from ._center import Center

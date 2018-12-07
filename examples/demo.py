@@ -4,7 +4,7 @@ import vispy
 from PyQt5.QtWidgets import QApplication, QAction
 import numpy as np
 
-from napari_gui.elements import Window
+from napari_gui.elements import Gui
 
 from vispy.visuals.transforms import STTransform
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     # starting
     application = QApplication(sys.argv)
 
-    win = Window()
+    win = Gui()
 
     open_2Drgb(win)
     open_2Dsc(win)

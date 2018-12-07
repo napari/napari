@@ -124,7 +124,7 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     viewer: Viewer
         Viewer object.
     """
-    from ..elements import Window
+    from ..elements import Viewer
     from ..elements.qt import QtApplication
 
     meta = guess_metadata(image, meta, multichannel, kwargs)
@@ -132,11 +132,11 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     global _app
     _app = _app or QtApplication.instance() or QtApplication([])
 
-    window = Window()
+    viewer = Viewer()
 
-    viewer = window.add_viewer()
+    #viewer = window.add_viewer()
     layer = viewer.add_image(image, meta)
 
-    window.show()
+    viewer.show()
 
     return viewer
