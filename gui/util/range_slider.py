@@ -108,9 +108,9 @@ class QRangeSlider(QtWidgets.QWidget):
         pos = self.getPos(event)
         if event.button() == QtCore.Qt.LeftButton:
             if not self.collapsed:
-                if abs(self.display_min - 0.5 * self.bar_width - pos) <= (0.5 * self.bar_width):
+                if abs(self.display_min - pos) <= (0.5 * self.bar_width):
                     self.moving = "min"
-                elif abs(self.display_max + 0.5 * self.bar_width - pos) <= (0.5 * self.bar_width):
+                elif abs(self.display_max - pos) <= (0.5 * self.bar_width):
                     self.moving = "max"
                 elif (pos > self.display_min) and (pos < self.display_max):
                     self.moving = "bar"
