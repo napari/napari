@@ -36,6 +36,7 @@ class QRangeSlider(QtWidgets.QWidget):
         self.start_pos = None
         self.display_min = None
         self.display_max = None
+        self.setEnabled(False)
 
         if slider_range:
             self.setRange(slider_range)
@@ -79,56 +80,58 @@ class QRangeSlider(QtWidgets.QWidget):
         self.update()
 
     def mouseMoveEvent(self, event):
-        size = self.rangeSliderSize()
-        diff = self.start_pos - self.getPos(event)
-        if self.moving == "min":
-            temp = self.start_display_min - diff
-            if (temp >= self.bar_width) and (temp <= self.start_display_max):
-                self.display_min = temp
-                if self.display_max < self.display_min:
-                    self.display_max = self.display_min
-        elif self.moving == "max":
-            temp = self.start_display_max - diff
-            if (temp >= self.start_display_min) and (temp < size - self.bar_width):
-                self.display_max = temp
-                if self.display_max < self.display_min:
-                    self.display_min = self.display_max
-        elif self.moving == "bar":
-            temp = self.start_display_min - diff
-            if (temp >= self.bar_width) and (
-                    temp < size - self.bar_width - (self.start_display_max - self.start_display_min)):
-                self.display_min = temp
-                self.display_max = self.start_display_max - diff
+        if self.enabled:
+            size = self.rangeSliderSize()
+            diff = self.start_pos - self.getPos(event)
+            if self.moving == "min":
+                temp = self.start_display_min - diff
+                if (temp >= self.bar_width) and (temp <= self.start_display_max):
+                    self.display_min = temp
+                    if self.display_max < self.display_min:
+                        self.display_max = self.display_min
+            elif self.moving == "max":
+                temp = self.start_display_max - diff
+                if (temp >= self.start_display_min) and (temp < size - self.bar_width):
+                    self.display_max = temp
+                    if self.display_max < self.display_min:
+                        self.display_min = self.display_max
+            elif self.moving == "bar":
+                temp = self.start_display_min - diff
+                if (temp >= self.bar_width) and (
+                        temp < size - self.bar_width - (self.start_display_max - self.start_display_min)):
+                    self.display_min = temp
+                    self.display_max = self.start_display_max - diff
 
-        self.updateScaleValues()
-        if self.emit_while_moving:
-            self.emitRange()
+            self.updateScaleValues()
+            if self.emit_while_moving:
+                self.emitRange()
 
     def mousePressEvent(self, event):
-        pos = self.getPos(event)
-        if event.button() == QtCore.Qt.LeftButton:
-            if not self.collapsed:
-                if abs(self.display_min - pos) <= (0.5 * self.bar_width):
-                    self.moving = "min"
-                elif abs(self.display_max - pos) <= (0.5 * self.bar_width):
-                    self.moving = "max"
-                elif (pos > self.display_min) and (pos < self.display_max):
+        if self.enabled:
+            pos = self.getPos(event)
+            if event.button() == QtCore.Qt.LeftButton:
+                if not self.collapsed:
+                    if abs(self.display_min - pos) <= (0.5 * self.bar_width):
+                        self.moving = "min"
+                    elif abs(self.display_max - pos) <= (0.5 * self.bar_width):
+                        self.moving = "max"
+                    elif (pos > self.display_min) and (pos < self.display_max):
+                        self.moving = "bar"
+                else:
                     self.moving = "bar"
             else:
-                self.moving = "bar"
-        else:
-            if self.collapsed:
-                # print("collapsed already")
-                self.expand()
-                self.collapsed = False
-            else:
-                # print("not collapsed")
-                self.collapse()
-                self.collapsed = True
+                if self.collapsed:
+                    # print("collapsed already")
+                    self.expand()
+                    self.collapsed = False
+                else:
+                    # print("not collapsed")
+                    self.collapse()
+                    self.collapsed = True
 
-        self.start_display_min = self.display_min
-        self.start_display_max = self.display_max
-        self.start_pos = pos
+            self.start_display_min = self.display_min
+            self.start_display_max = self.display_max
+            self.start_pos = pos
 
     def collapse(self):
         self.bc_min, self.bc_max = self.scale_min, self.scale_max
@@ -140,9 +143,10 @@ class QRangeSlider(QtWidgets.QWidget):
         self.setValues([self.bc_min, self.bc_max])
 
     def mouseReleaseEvent(self, event):
-        if not (self.moving == "none"):
-            self.emitRange()
-        self.moving = "none"
+        if self.enabled:
+            if not (self.moving == "none"):
+                self.emitRange()
+            self.moving = "none"
 
     def resizeEvent(self, event):
         self.updateDisplayValues()
@@ -294,13 +298,13 @@ class QVRangeSlider(QRangeSlider):
         painter.drawRect(w/2-self.slider_width/2, 2, self.slider_width, h - 4)
 
         # Range Bar
-        painter.setPen(QtGui.QColor(0, 153, 255))
-        painter.setBrush(QtGui.QColor(0, 153, 255))
+        painter.setPen(self.bar_color)
+        painter.setBrush(self.bar_color)
         painter.drawRect(w/2-self.slider_width/2, h - self.display_max - 1, self.slider_width, self.display_max - self.display_min + 1)
 
         # Splitters
-        painter.setPen(QtCore.Qt.lightGray)
-        painter.setBrush(QtCore.Qt.white)
+        painter.setPen(self.handle_border_color)
+        painter.setBrush(self.handle_color)
         painter.drawEllipse(w/2-self.bar_width/2, h-self.display_max-1-self.bar_width/2, self.bar_width, self.bar_width) # upper
         painter.drawEllipse(w/2-self.bar_width/2, h-self.display_min+1-self.bar_width/2, self.bar_width, self.bar_width) # lower
 
@@ -313,3 +317,16 @@ class QVRangeSlider(QRangeSlider):
             Slider widget width (horizontal sliders) or height (vertical sliders).
         """
         return self.height()
+
+    def setEnabled(self, bool):
+        if bool:
+            self.enabled = True
+            self.bar_color = QtGui.QColor(0, 153, 255)
+            self.handle_color = QtCore.Qt.white
+            self.handle_border_color = QtCore.Qt.lightGray
+        else:
+            self.enabled = False
+            self.bar_color = QtCore.Qt.gray
+            self.handle_color = QtCore.Qt.gray
+            self.handle_border_color = QtCore.Qt.gray
+        self.update()

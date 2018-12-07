@@ -24,6 +24,8 @@ class QtLayerList(QScrollArea):
         if layer._qt is not None:
             self.layersLayout.insertWidget(2*(total - index)-1, layer._qt)
             self.layersLayout.insertWidget(2*(total - index), QtDivider())
+        self.layers.viewer._update_active_layers()
+        self.layers.viewer.controls.climSliderUpdate()
 
     def remove(self, layer):
         """Removes a layer widget
@@ -37,6 +39,8 @@ class QtLayerList(QScrollArea):
             self.layersLayout.removeWidget(divider)
             divider.deleteLater()
             divider = None
+        self.layers.viewer._update_active_layers()
+        self.layers.viewer.controls.climSliderUpdate()
 
     def reorder(self):
         """Reorders list of layer widgets by looping through all
@@ -53,6 +57,8 @@ class QtLayerList(QScrollArea):
                 self.layersLayout.removeWidget(divider)
                 self.layersLayout.insertWidget(2*(total - i)-1,layer._qt)
                 self.layersLayout.insertWidget(2*(total - i),divider)
+        self.layers.viewer._update_active_layers()
+        self.layers.viewer.controls.climSliderUpdate()
 
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets
