@@ -57,7 +57,7 @@ class Viewer:
 
         self.layers = LayerList(self)
 
-        self.controls = Controls()
+        self.controls = Controls(self)
 
         self._max_dims = 0
         self._max_shape = tuple()
