@@ -51,6 +51,7 @@ class Image(Layer):
         self._qt = QtImageLayer(self)
 
         self._clim_range = self._clim_range_default()
+        self._node.clim = [np.min(self.image), np.max(self.image)]
 
     @property
     def image(self):
@@ -208,8 +209,6 @@ class Image(Layer):
 
     @clim.setter
     def clim(self, clim):
-        if clim == 'auto':
-            clim = [np.min(self.image), np.max(self.image)]
         self._node.clim = clim
 
     @property
