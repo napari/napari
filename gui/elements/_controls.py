@@ -11,35 +11,38 @@ class Controls:
 
         self._qt = QtControls()
         self._qt.climSlider.rangeChanged.connect(self.climSliderChanged)
-
-    def calc_clim_minmax(self):
-        # Initialize
-        clim_min, clim_max = float("inf"), -float("inf")
-
-        # Iterate over the layer_list and get min/max values
-        for layer in self.viewer.layers:
-            image_data = layer.image
-            clim_min = min(clim_min, np.min(image_data))
-            clim_max = max(clim_max, np.max(image_data))
-            # print("this are layers", np.min(image_data), np.max(image_data))
-
-        if clim_min == float("inf"):
-            clim_min = 0
-        if clim_max == -float("inf"):
-            clim_max = 1
-
-        return clim_min, clim_max
+        self._qt.mouseMoveEvent = self._mouseMoveEvent
 
     def climSliderChanged(self):
-        valmin, valmax = self.calc_clim_minmax()
-        # print("val", valmin, valmax)
         slidermin, slidermax = self._qt.climSlider.getValues()
-        # print("slider", slidermin, slidermax)
-
-        dismin = valmin*0.8+slidermin*(1.2*valmax-0.8*valmin)
-        dismax = valmin*0.8+slidermax*(1.2*valmax-0.8*valmin)
-        # print("display",dismin,dismax)
-
+        msg = None
         for layer in self.viewer.layers:
-            if layer.visual is not None:
-                layer.visual.clim = [dismin, dismax]
+            if layer.visual is not None and layer.selected:
+                valmin, valmax = layer._clim_range
+                cmin = valmin+slidermin*(valmax-valmin)
+                cmax = valmin+slidermax*(valmax-valmin)
+                layer.clim = [cmin, cmax]
+                msg = '(%.3f, %.3f)' % (cmin, cmax)
+        if msg is not None:
+            self.viewer._window._qt_window.statusBar().showMessage(msg)
+
+    def climSliderUpdate(self):
+        for layer in self.viewer.layers[::-1]:
+            if layer.visual is not None and layer.selected:
+                valmin, valmax = layer._clim_range
+                cmin, cmax = layer.clim
+                slidermin = (cmin - valmin)/(valmax - valmin)
+                slidermax = (cmax - valmin)/(valmax - valmin)
+                self._qt.climSlider.setValues((slidermin, slidermax))
+                msg = '(%.3f, %.3f)' % (cmin, cmax)
+                self.viewer._window._qt_window.statusBar().showMessage(msg)
+                break
+
+    def _mouseMoveEvent(self, event):
+        print('hello!!!!')
+        for layer in self.viewer.layers[::-1]:
+            if layer.visual is not None and layer.selected:
+                cmin, cmax = layer.clim
+                msg = '(%.3f, %.3f)' % (cmin, cmax)
+                self.viewer._window._qt_window.statusBar().showMessage(msg)
+                break

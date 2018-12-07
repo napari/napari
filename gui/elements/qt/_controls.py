@@ -10,9 +10,9 @@ class QtControls(QWidget):
         self.hbox_layout = QHBoxLayout()
 
         # Gamma Slider
-        self.gammaSlider = QVRangeSlider(slider_range=[-5.0, 5.0, 0.02], values=[-2.5, 2.5])
-        self.gammaSlider.setEmitWhileMoving(True)
-        self.hbox_layout.addWidget(self.gammaSlider)
+        # self.gammaSlider = QVRangeSlider(slider_range=[-5.0, 5.0, 0.02], values=[-2.5, 2.5])
+        # self.gammaSlider.setEmitWhileMoving(True)
+        # self.hbox_layout.addWidget(self.gammaSlider)
 
         # Clim Slider
         self.climSlider = QVRangeSlider(slider_range=[0, 1, 0.0001], values=[0, 1], parent=self)

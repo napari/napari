@@ -73,7 +73,7 @@ class QRangeSlider(QtWidgets.QWidget):
             Start and end of the range.
         """
         self.scale_min, self.scale_max = values
-        self.emitRange()
+        #self.emitRange()
         self.updateDisplayValues()
         self.update()
 
@@ -199,7 +199,7 @@ class QHRangeSlider(QRangeSlider):
         ----------
         event : PyQt5.QtCore.QEvent
             Event from the Qt context.
-        
+
         Returns
         -------
         position : int
@@ -269,7 +269,7 @@ class QVRangeSlider(QRangeSlider):
         ----------
         event : PyQt5.QtCore.QEvent
             Event from the Qt context.
-        
+
         Returns
         -------
         position : int
