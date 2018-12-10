@@ -100,8 +100,6 @@ class Markers(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            self.name = 'markers'
-
             self.events.add(mode=Event)
             self._qt_properties = QtMarkersLayer(self)
             self._qt_controls = QtMarkersControls(self)

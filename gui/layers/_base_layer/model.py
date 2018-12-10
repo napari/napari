@@ -24,6 +24,7 @@ class Layer(VisualWrapper, ABC):
 
     Attributes
     ----------
+    name
     ndim
     shape
     selected
@@ -40,7 +41,7 @@ class Layer(VisualWrapper, ABC):
         self._viewer = None
         self._qt_properties = None
         self._qt_controls = None
-        self.name = 'layer'
+        self.name = None
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -51,6 +52,35 @@ class Layer(VisualWrapper, ABC):
                                    select=Event,
                                    deselect=Event)
 
+    def __str__(self):
+        """Return self.name
+        """
+        return self.name
+
+    def __repr__(self):
+        cls = type(self)
+        return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+        
+    @classmethod
+    def _basename(cls):
+        return f'{cls.__name__} 0'
+        
+    @property
+    def name(self):
+        """str: Layer's unique name.
+        """
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if not name:
+            name = self._basename()
+
+        if self.viewer:
+            name = self.viewer.layers._coerce_name(name, self)
+            
+        self._name = name
+        
     @property
     @abstractmethod
     def data(self):
@@ -184,6 +214,7 @@ class Layer(VisualWrapper, ABC):
             Previous viewer.
         """
         if self.viewer is not None:
+            self.name = self.name
             self.refresh()
 
     def _set_view_slice(self, indices):

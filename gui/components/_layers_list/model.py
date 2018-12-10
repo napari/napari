@@ -4,6 +4,7 @@ from collections.abc import Iterable, Sequence
 from vispy.util.event import EmitterGroup, Event
 from ...layers import Layer
 
+from ...util.naming import inc_name_count
 from .view import QtLayersPanel
 
 
@@ -43,12 +44,11 @@ class LayersList:
             * remove_item(item): whenever an item is removed
             * reorder(): whenever the list is reordered
     """
-    __slots__ = ('__weakref__', '_list', '_qt', '_viewer', 'total', 'events')
+    __slots__ = ('__weakref__', '_list', '_qt', '_viewer', 'events')
 
     def __init__(self, viewer=None):
         self._list = []
         self._viewer = None
-        self.total = 0
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    add_item=ItemEvent,
@@ -69,11 +69,46 @@ class LayersList:
 
     def __iter__(self): return iter(self._list)
 
-    def __contains__(self, item): return item in self._list
-
     def __len__(self): return len(self._list)
 
-    def __getitem__(self, i): return self._list[i]
+    def __contains__(self, item):
+        try:
+            self[item]
+        except KeyError:
+            return False
+        else:
+            return True
+
+    def __getitem__(self, query):
+        """Get item in list.
+
+        Parameters
+        ----------
+        query : str, int, or slice
+            Querying index, slice or layer name.
+        
+        Returns
+        -------
+        layer : Layer
+            Matching layer.
+        
+        Throws
+        ------
+        KeyError
+            When the query returns no results.
+        """
+        # TODO: handle slicing ourselves
+        try:
+            if isinstance(query, str):
+                match = self._name_match(query)
+                if match:
+                    return match[1]
+            else:
+                return self._list[query]
+        except IndexError:
+            pass
+
+        raise KeyError(query)
 
     @property
     def viewer(self):
@@ -110,12 +145,60 @@ class LayersList:
 
         self._viewer = viewer
 
+    def _name_match(self, name, start=None, stop=None, ignore=None):
+        """Check if a name matches a layer within the interval.
+
+        Parameters
+        ----------
+        name : str
+            Name of the layer.
+        start : int, optional
+            Start of the interval.
+        stop : int, optional
+            End of the interval.
+        ignore : Layer, optional
+            Layer to ignore if the names match.
+
+        Returns
+        -------
+        match : int, Layer tuple or None
+            Matching index, layer pair, if found.
+        """
+        if start is None:
+            start = 0
+            
+        for i, layer in enumerate(self._list[start:stop]):
+            if ignore:
+                if layer is ignore:
+                    continue
+            if layer.name == name:
+                return i + start, layer
+
+    def _coerce_name(self, name, layer=None):
+        """Coerce a name into a unique equivalent.
+
+        Parameters
+        ----------
+        name : str
+            Original name.
+        layer : Layer, optional
+            Layer for which name is generated.
+
+        Returns
+        -------
+        new_name : str
+            Coerced, unique name.
+        """
+        while self._name_match(name, ignore=layer):
+            name = inc_name_count(name)
+        return name
+
     def _to_index(self, obj):
         """Ensures that an object is a proper integer index.
 
         Parameters
         ----------
-        obj : int or Layer
+        obj : str, int, or Layer
             Object to be converted.
 
         Returns
@@ -123,10 +206,11 @@ class LayersList:
         index : int
             Index of the object if it is not already an int.
         """
-        if _check_layer(obj):
+        if _check_layer(obj) or isinstance(obj, str):
             return self.index(obj)
+        
         if not isinstance(obj, int):
-            raise TypeError(f'expected {obj} to be int or Layer; '
+            raise TypeError(f'expected {obj} to be str, int, or Layer; '
                             f'got {type(obj)}') from None
         return obj
 
@@ -140,7 +224,7 @@ class LayersList:
 
         Yields
         ------
-        item : Layer
+        layer : Layer
             Next layer in the ordered list.
 
         Raises
@@ -163,81 +247,81 @@ class LayersList:
         if expected:
             raise ValueError(f'indices {tuple(expected)} not provided')
 
-    def append(self, item):
+    def append(self, layer):
         """Appends a layer to the list.
 
         Parameters
         ----------
-        item : Layer
+        layer : Layer
             Layer to append.
         """
-        _check_layer(item, error=True)
+        _check_layer(layer, error=True)
 
-        self._list.append(item)
-        self.events.add_item(item=item, index=len(self)-1)
-        self.total = self.total+1
+        self._list.append(layer)
+        self.events.add_item(item=layer, index=len(self) - 1)
 
-    def insert(self, index, item):
-        """Inserts an item before an index.
+    def insert(self, id, layer):
+        """Inserts a layer before another layer.
 
         Parameters
         ----------
-        index : int
-            Index to insert before.
-        item : Layer
+        id : str, int, or Lyaer
+            Layer, its name, or its index to insert before.
+        layer : Layer
             Layer to insert.
         """
-        _check_layer(item, error=True)
+        _check_layer(layer, error=True)
+        index = self._to_index(id)
 
-        self._list.insert(index, item)
-        self.events.add_item(item=item, index=index-1)
-        self.total = self.total+1
+        self._list.insert(index, layer)
+        self.events.add_item(item=layer, index=index - 1)
 
-    def pop(self, index=-1):
-        """Removes and returns an item given an index.
+    def pop(self, id=-1):
+        """Removes and returns a layer given its identifier.
 
         Parameters
         ----------
-        index : int, optional
-            Index to remove.
+        id : str or int, optional
+            Name or index of layer to remove.
 
         Returns
         -------
-        item : Layer
-            Removed item.
+        layer : Layer
+            Removed layer.
         """
-        item = self._list.pop(index)
-        self.events.remove_item(item=item)
+        index = self._to_index(id)
+        layer = self._list.pop(index)
+        self.events.remove_item(item=layer)
+        return layer
 
-    def remove(self, item):
-        """Removes an item from the list.
+    def remove(self, id):
+        """Removes a layer from the list given its identifier.
 
         Parameters
         ----------
-        item : Layer
-            Item to remove.
+        id : Layer, str, or int
+            Layer or its name to remove.
         """
-        self._list.remove(item)
-        self.events.remove_item(item=item)
+        self.pop(id)
 
-    def __delitem__(self, index):
-        """Removes an item given its index.
+    def __delitem__(self, id):
+        """Removes an item given its identifier.
 
         Parameters
         ----------
-        index : int
+        id : str or int
             Index of the item to remove.
         """
-        self.pop(index)
+        self.remove(id)
 
     def swap(self, a, b):
         """Swaps the ordering of two elements in the list.
 
         Parameters
         ----------
-        a : Layer or int
+        a : str, Layer, or int
             Layer to swap or its index.
-        b : Layer or int
+        b : str, Layer, or int
             Layer to swap or its index.
         """
         i = self._to_index(a)
@@ -252,15 +336,15 @@ class LayersList:
 
         Parameters
         ----------
-        ordering : iterable of Layer or int
-            Ordering of the items. Can also be used as *args.
+        ordering : iterable of str, Layer, or int
+            Ordering of the layers. Can also be used as *args.
 
         Notes
         -----
         LayerList.reorder(i, j, k, ...)
         LayerList.reorder([i, j, k, ...])
         """
-        if not isinstance(ordering[0], (int, Layer)):
+        if not isinstance(ordering[0], (int, str, Layer)):
             ordering = ordering[0]
             if not isinstance(ordering, Sequence):
                 raise TypeError(f'expected {ordering} to be Sequence; '
@@ -270,13 +354,13 @@ class LayersList:
                                              for o in ordering)
         self.events.reorder()
 
-    def index(self, item, start=None, stop=None):
-        """Finds the index of an item in the list.
+    def index(self, query, start=None, stop=None):
+        """Finds the index of an layer in the list.
 
         Parameters
         ----------
-        item : object
-            Querying item..
+        query : Layer or str
+            Querying layer or its name.
         start : int, optional
             Start of slice index to look.
         stop : int, optional
@@ -285,14 +369,20 @@ class LayersList:
         Returns
         -------
         index : int
-            Index of the item.
+            Index of the layer.
 
         Raises
         ------
         ValueError
-            When the item is not in the list.
+            When the query does not find a match.
         """
-        args = (item,)
+        if isinstance(query, str):
+            match = self._name_match(query, start, stop)
+            if not match:
+                raise ValueError(query)
+            return match[0]
+
+        args = (query,)
         if stop is not None and start is None:
             start = 0
 
