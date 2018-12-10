@@ -42,13 +42,16 @@ class Image(Layer):
         self.cmap = Image.default_cmap
         self.interpolation = Image.default_interpolation
         self._interpolation_names = interpolation_names
-        
+
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
 
         self.name = 'image'
         self._qt = QtImageLayer(self)
+
+        self._clim_range = self._clim_range_default()
+        self._node.clim = [np.min(self.image), np.max(self.image)]
 
     @property
     def image(self):
@@ -197,7 +200,6 @@ class Image(Layer):
         return tuple(self._colormaps.keys())
 
     # wrap visual properties:
-
     @property
     def clim(self):
         """string or tuple of float: Limits to use for the colormap.
@@ -265,3 +267,6 @@ class Image(Layer):
     @property
     def interpolation_functions(self):
         return tuple(interpolation_names)
+
+    def _clim_range_default(self):
+        return [np.min(self.image), np.max(self.image)]
