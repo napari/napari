@@ -23,6 +23,7 @@ class QRangeSlider(QtWidgets.QWidget):
         self.setMouseTracking(False)
         self.single_step = 0.0
 
+        self.collapsable = True
         self.collapsed = False
         self.prev_moving = None
         self.bc_min = None
@@ -75,7 +76,7 @@ class QRangeSlider(QtWidgets.QWidget):
             Start and end of the range.
         """
         self.scale_min, self.scale_max = values
-        #self.emitRange()
+        self.emitRange()
         self.updateDisplayValues()
         self.update()
 
@@ -137,17 +138,24 @@ class QRangeSlider(QtWidgets.QWidget):
                         self.updateScaleValues()
                         if self.emit_while_moving:
                             self.emitRange()
-                    else:
-                        self.moving = "bar"
-            else:
-                if self.collapsed:
-                    # print("collapsed already")
-                    self.expand()
-                    self.collapsed = False
                 else:
-                    # print("not collapsed")
-                    self.collapse()
-                    self.collapsed = True
+                    self.moving = "bar"
+                    if (pos > 0.5 * self.bar_width) and (pos < (self.rangeSliderSize() + 0.5 * self.bar_width)):
+                        self.display_max = pos
+                        self.display_min = pos
+                        self.updateScaleValues()
+                        if self.emit_while_moving:
+                            self.emitRange()
+            else:
+                if self.collapsable:
+                    if self.collapsed:
+                        # print("collapsed already")
+                        self.expand()
+                        self.collapsed = False
+                    else:
+                        # print("not collapsed")
+                        self.collapse()
+                        self.collapsed = True
 
             self.start_display_min = self.display_min
             self.start_display_max = self.display_max
@@ -155,12 +163,20 @@ class QRangeSlider(QtWidgets.QWidget):
 
     def collapse(self):
         self.bc_min, self.bc_max = self.scale_min, self.scale_max
-        while int(self.scale_min) < int(self.scale_max):
-            step = (self.scale_max - self.scale_min) / 2
-            self.setValues([self.scale_min+step, self.scale_max-step])
+        #while int(self.scale_min) < int(self.scale_max):
+        #    step = (self.scale_max - self.scale_min) / 2
+        self.setValues([(self.scale_max+self.scale_min)/2, (self.scale_max+self.scale_min)/2])
 
     def expand(self):
-        self.setValues([self.bc_min, self.bc_max])
+        min_value = self.scale_min - (self.bc_max - self.bc_min)/2
+        max_value = self.scale_min + (self.bc_max - self.bc_min)/2
+        if min_value < self.start:
+            min_value = self.start
+            max_value = min_value + self.bc_max - self.bc_min
+        elif max_value > self.end:
+            max_value = self.end
+            min_value = max_value - (self.bc_max - self.bc_min)
+        self.setValues([min_value, max_value])
 
     def mouseReleaseEvent(self, event):
         if self.enabled:
@@ -175,6 +191,7 @@ class QRangeSlider(QtWidgets.QWidget):
         self.start = slider_range[0]
         self.scale = slider_range[1] - slider_range[0]
         self.single_step = slider_range[2]
+        self.end = slider_range[1]
 
     def setEmitWhileMoving(self, flag):
         if flag:
@@ -198,6 +215,18 @@ class QRangeSlider(QtWidgets.QWidget):
         self.updateDisplayValues()
         self.update()
 
+    def setEnabled(self, bool):
+        if bool:
+            self.enabled = True
+            self.bar_color = QtGui.QColor(0, 153, 255)
+            self.handle_color = QtCore.Qt.white
+            self.handle_border_color = QtCore.Qt.lightGray
+        else:
+            self.enabled = False
+            self.bar_color = QtCore.Qt.gray
+            self.handle_color = QtCore.Qt.gray
+            self.handle_border_color = QtCore.Qt.gray
+        self.update()
 
 class QHRangeSlider(QRangeSlider):
     """
@@ -243,20 +272,23 @@ class QHRangeSlider(QRangeSlider):
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
 
         # Background
-        painter.setPen(QtCore.Qt.gray)
-        painter.setBrush(QtCore.Qt.transparent)
-        painter.drawRect(2, 2, w - 4, h - 4)
+        painter.setPen(QtCore.Qt.lightGray)
+        painter.setBrush(QtCore.Qt.lightGray)
+        painter.drawRect(self.bar_width/2, h/2-self.slider_width/2, w-self.bar_width, self.slider_width)
 
         # Range Bar
-        painter.setPen(QtCore.Qt.darkGray)
-        painter.setBrush(QtCore.Qt.darkCyan)
-        painter.drawRect(self.display_min - 1, 5, self.display_max - self.display_min + 2, h - 10)
+        painter.setPen(self.bar_color)
+        painter.setBrush(self.bar_color)
+        if self.collapsed:
+            painter.drawRect(self.bar_width/2, h/2-self.slider_width/2, self.display_max-self.bar_width/2, self.slider_width)
+        else:
+            painter.drawRect(self.display_min, h/2-self.slider_width/2, self.display_max-self.display_min, self.slider_width)
 
         # Splitters
-        painter.setPen(QtCore.Qt.black)
-        painter.setBrush(QtCore.Qt.gray)
-        painter.drawRect(self.display_min - self.bar_width, 1, self.bar_width, h - 2)  # left
-        painter.drawRect(self.display_max, 1, self.bar_width, h - 2)  # right
+        painter.setPen(self.handle_border_color)
+        painter.setBrush(self.handle_color)
+        painter.drawEllipse(self.display_min-self.bar_width/2, h/2-self.bar_width/2, self.bar_width, self.bar_width) # left
+        painter.drawEllipse(self.display_max-self.bar_width/2, h/2-self.bar_width/2, self.bar_width, self.bar_width) # right
 
     def rangeSliderSize(self):
         """Size of the slider.
@@ -320,7 +352,10 @@ class QVRangeSlider(QRangeSlider):
         # Range Bar
         painter.setPen(self.bar_color)
         painter.setBrush(self.bar_color)
-        painter.drawRect(w/2-self.slider_width/2, h-self.display_max, self.slider_width, self.display_max-self.display_min)
+        if self.collapsed:
+            painter.drawRect(w/2-self.slider_width/2, h-self.display_max, self.slider_width, self.display_max-self.bar_width/2)
+        else:
+            painter.drawRect(w/2-self.slider_width/2, h-self.display_max, self.slider_width, self.display_max-self.display_min)
 
         # Splitters
         painter.setPen(self.handle_border_color)
@@ -337,16 +372,3 @@ class QVRangeSlider(QRangeSlider):
             Slider bar length (horizontal sliders) or height (vertical sliders).
         """
         return float(self.height() - self.bar_width)
-
-    def setEnabled(self, bool):
-        if bool:
-            self.enabled = True
-            self.bar_color = QtGui.QColor(0, 153, 255)
-            self.handle_color = QtCore.Qt.white
-            self.handle_border_color = QtCore.Qt.lightGray
-        else:
-            self.enabled = False
-            self.bar_color = QtCore.Qt.gray
-            self.handle_color = QtCore.Qt.gray
-            self.handle_border_color = QtCore.Qt.gray
-        self.update()

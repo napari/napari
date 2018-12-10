@@ -17,6 +17,7 @@ class QtControls(QWidget):
         # Clim Slider
         self.climSlider = QVRangeSlider(slider_range=[0, 1, 0.0001], values=[0, 1], parent=self)
         self.climSlider.setEmitWhileMoving(True)
+        self.climSlider.collapsable = False
         self.hbox_layout.addWidget(self.climSlider)
 
         self.setLayout(self.hbox_layout)
