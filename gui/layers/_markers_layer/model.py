@@ -23,57 +23,39 @@ class Markers(Layer):
     Parameters
     ----------
     coords : np.ndarray
-        coordinates for each marker.
-
+        Coordinates for each marker.
     symbol : str
-        symbol to be used as a marker
-
+        Symbol to be used as a marker
     size : int, float, np.ndarray, list
-        size of the marker. If given as a scalar, all markers are the
+        Size of the marker. If given as a scalar, all markers are the
         same size. If given as a list/array, size must be the same
         length as coords and sets the marker size for each marker
         in coords (element-wise). If n_dimensional is True then can be a list
         of length dims or can be an array of shape Nxdims where N is the number
         of markers and dims is the number of dimensions
-
     edge_width : int, float, None
-        width of the symbol edge in px
-            vispy docs say: "exactly one edge_width and
-            edge_width_rel must be supplied"
-
+        Width of the symbol edge in pixels.
     edge_width_rel : int, float, None
-        width of the marker edge as a fraction of the marker size.
-
-            vispy docs say: "exactly one edge_width and
-            edge_width_rel must be supplied"
-
+        Width of the marker edge as a fraction of the marker size.
     edge_color : Color, ColorArray
-        color of the marker border
-
+        Color of the marker border.
     face_color : Color, ColorArray
-        color of the marker body
-
+        Color of the marker body.
     scaling : bool
-        if True, marker rescales when zooming
-
+        If True, marker rescales when zooming.
     n_dimensional : bool
-        if True, renders markers not just in central plane but also in all
-        n dimensions according to specified marker size
+        If True, renders markers not just in central plane but also in all
+        n-dimensions according to specified marker size.
 
+    Notes
+    -----
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
-
-
-
     """
-
-    def __init__(
-        self, coords, symbol='o', size=10, edge_width=1,
-            edge_width_rel=None, edge_color='black', face_color='white',
-            scaling=True, n_dimensional=False):
-
-        visual = MarkersNode()
-        super().__init__(visual)
+    def __init__(self, coords, symbol='o', size=10, edge_width=1,
+                 edge_width_rel=None, edge_color='black', face_color='white',
+                 scaling=True, n_dimensional=False, *, name=None):
+        super().__init__(MarkersNode(), name)
 
         # Freeze refreshes
         with self.freeze_refresh():
@@ -95,7 +77,7 @@ class Markers(Layer):
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
             self._status = self._mode
-
+            
             # update flags
             self._need_display_update = False
             self._need_visual_update = False

@@ -57,6 +57,7 @@ AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
                        list(color.get_colormaps())}
 
 
+
 @add_to_viewer
 class Image(Layer):
     """Image layer.
@@ -67,15 +68,17 @@ class Image(Layer):
         Image data.
     meta : dict
         Image metadata.
+    name : str, keyword-only
+        Name of the layer.
     """
     _colormaps = AVAILABLE_COLORMAPS
 
     default_cmap = 'magma'
     default_interpolation = 'nearest'
 
-    def __init__(self, image, meta):
+    def __init__(self, image, meta, *, name=None):
         self.visual = ImageNode(None, method='auto')
-        super().__init__(self.visual)
+        super().__init__(self.visual, name)
 
         self._image = image
         self._meta = meta

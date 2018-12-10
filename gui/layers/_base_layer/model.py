@@ -11,16 +11,27 @@ from .._visual_wrapper import VisualWrapper
 class Layer(VisualWrapper, ABC):
     """Base layer class.
 
+    Parameters
+    ----------
+    central_node : vispy.scene.visuals.VisualNode
+        Visual node that controls all others.
+    name : str, optional
+        Name of the layer. If not provided, is automatically generated
+        from `cls._basename()`
+
+    Notes
+    -----
     Must define the following:
-        * ``_get_shape()``: called by ``shape`` property
-        * ``_refresh()``: called by ``refresh`` method
-        * ``data`` property (setter & getter)
+        * `_get_shape()`: called by `shape` property
+        * `_refresh()`: called by `refresh` method
+        * `data` property (setter & getter)
 
     May define the following:
-        * ``_set_view_slice(indices)``: called to set currently viewed slice
-        * ``_after_set_viewer()``: called after the viewer is set
-        * ``_qt_properties``: QtWidget inserted into the layer list GUI
-        * ``_qt_controls``: QtWidget inserted into the controls panel GUI
+        * `_set_view_slice(indices)`: called to set currently viewed slice
+        * `_after_set_viewer()`: called after the viewer is set
+        * `_qt_properties`: QtWidget inserted into the layer list GUI
+        * `_qt_controls`: QtWidget inserted into the controls panel GUI
+        * `_basename()`: base/default name of the layer
 
     Attributes
     ----------
@@ -35,13 +46,13 @@ class Layer(VisualWrapper, ABC):
     refresh()
         Refresh the current view.
     """
-    def __init__(self, central_node):
+    def __init__(self, central_node, name=None):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
         self._qt_properties = None
         self._qt_controls = None
-        self.name = None
+        self.name = name
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
