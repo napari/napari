@@ -1,0 +1,40 @@
+"""Automatically generate names.
+"""
+import re
+
+
+sep = ' '
+start = 1
+
+numbered_patt = re.compile(r'(?<!\d)(?:\d+|)$')
+
+
+def _inc_name_count_sub(match):
+    count = match.group(0)
+    
+    try:
+        count = int(count)
+    except ValueError:  # not an int
+        count = f'{sep}{start}'
+    else:
+        count = f'{count + 1}'
+        
+    return count
+
+
+def inc_name_count(name):
+    """Increase a name's count matching `{}` by ``1``.
+
+    If the name is not already numbered, append '{}{}'.
+
+    Parameters
+    ----------
+    name : str
+        Original name.
+
+    Returns
+    -------
+    incremented_name : str
+        Numbered name incremented by ``1``.
+    """.format(numbered_patt, sep, start)
+    return numbered_patt.sub(_inc_name_count_sub, name)
