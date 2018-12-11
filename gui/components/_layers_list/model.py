@@ -398,6 +398,7 @@ class LayersList:
         """Callback when an item is added to set its order and viewer.
         """
         layer = event.item
+        layer.name = self._coerce_name(layer.name, layer)
         layer._order = -len(self)
         layer.viewer = self.viewer
         layer.events.select.connect(self.viewer._update_layer_selection)

@@ -52,7 +52,6 @@ class Layer(VisualWrapper, ABC):
         self._viewer = None
         self._qt_properties = None
         self._qt_controls = None
-        self.name = name
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -61,7 +60,9 @@ class Layer(VisualWrapper, ABC):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
-                                   deselect=Event)
+                                   deselect=Event,
+                                   name=Event)
+        self.name = name
 
     def __str__(self):
         """Return self.name
@@ -86,11 +87,12 @@ class Layer(VisualWrapper, ABC):
     def name(self, name):
         if not name:
             name = self._basename()
-
+        
         if self.viewer:
             name = self.viewer.layers._coerce_name(name, self)
             
         self._name = name
+        self.events.name()
         
     @property
     @abstractmethod
@@ -225,7 +227,6 @@ class Layer(VisualWrapper, ABC):
             Previous viewer.
         """
         if self.viewer is not None:
-            self.name = self.name
             self.refresh()
 
     def _set_view_slice(self, indices):
