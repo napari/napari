@@ -108,7 +108,15 @@ class LayersList:
         except IndexError:
             pass
 
-        raise KeyError(query)
+        if isinstance(query, str):
+            msg = (f'{repr(query)} does not match any layer names; '
+                   f'try one of {set(layer.name for layer in self)}')
+        elif isinstance(query, int):
+            msg = f'invalid index {query}'
+        else:
+            msg = f'invalid slice {query}'
+
+        raise KeyError(msg)
 
     @property
     def viewer(self):
