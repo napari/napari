@@ -8,9 +8,9 @@ class QtViewer(QSplitter):
         super().__init__()
 
         # To split vertical sliders, viewer and layerlist, minimumsizes given for demo purposes/NOT FINAL
-        viewer.controls._qt.setMinimumSize(QSize(60, 60))
-        self.addWidget(viewer.controls._qt)
-        viewer.center._qt.setMinimumSize(QSize(100, 100))
-        self.addWidget(viewer.center._qt)
-        # viewer.layers._qt.setMinimumSize(QSize(250, 250))
-        # self.addWidget(viewer.layers._qt)
+        viewer.controlBars._qt.setMinimumSize(QSize(60, 60))
+        self.addWidget(viewer.controlBars._qt)
+        viewer.dimensions._qt.setMinimumSize(QSize(100, 100))
+        self.addWidget(viewer.dimensions._qt)
+        viewer.layers._qt.setMinimumSize(QSize(250, 250))
+        self.addWidget(viewer.layers._qt)

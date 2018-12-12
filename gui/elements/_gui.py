@@ -8,19 +8,18 @@ class Gui:
 
     Attributes
     ----------
-    viewers : list of Viewer
-        Contained viewers.
+    viewer : Viewer
+        Contained viewer.
     """
     def __init__(self):
         self._qt_window = QMainWindow()
-        self._qt_central_widget = QWidget()
-        self._qt_window.setCentralWidget(self._qt_central_widget)
-        self._qt_central_widget.setLayout(QHBoxLayout())
+        self._qt_central = QWidget()
+        self._qt_window.setCentralWidget(self._qt_central)
+        self._qt_central.setLayout(QHBoxLayout())
         self._qt_window.statusBar().showMessage('Ready')
 
-        # self._viewers = []
-        self.viewer = Viewer()
-        self._qt_central_widget.layout().addWidget(self.viewer._qt)
+        self.viewer = Viewer(self)
+        self._qt_central.layout().addWidget(self.viewer._qt)
 
     def resize(self, width, height):
         """Resize the window.

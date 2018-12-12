@@ -231,7 +231,7 @@ class Markers(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_slice(self.viewer.indices)
+            self._set_view_slice(self.viewer.dimensions.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
