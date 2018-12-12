@@ -26,8 +26,8 @@ class Viewer:
         Parent gui window.
     layers : LayerList
         List of contained layers.
-    dimensions : Dimensions
-        Contains axes, indices, dimensions and sliders.
+    center : Center
+        Contains view, canvas, axes, indices, dimensions and sliders.
     controlBars : ControlBars
         Contains contorl bar sliders.
     """
