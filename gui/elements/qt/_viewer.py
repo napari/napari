@@ -1,14 +1,12 @@
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 
-
-
 class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
 
-        # To split vertical sliders, viewer and layerlist, minimumsizes given for demo purposes/NOT FINAL
-        viewer.controlBars._qt.setMinimumSize(QSize(60, 60))
+        # To split vertical sliders, viewer and layerlist
+        viewer.controlBars._qt.setMinimumSize(QSize(40, 40))
         self.addWidget(viewer.controlBars._qt)
         viewer.dimensions._qt.setMinimumSize(QSize(100, 100))
         self.addWidget(viewer.dimensions._qt)

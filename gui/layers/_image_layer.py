@@ -34,8 +34,8 @@ class Image(Layer):
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta):
-        visual = ImageNode(None, method='auto')
-        super().__init__(visual)
+        self.visual = ImageNode(None, method='auto')
+        super().__init__(self.visual)
 
         self._image = image
         self._meta = meta
@@ -49,6 +49,9 @@ class Image(Layer):
 
         self.name = 'image'
         self._qt = QtImageLayer(self)
+
+        self._clim_range = self._clim_range_default()
+        self._node.clim = [np.min(self.image), np.max(self.image)]
 
     @property
     def image(self):
@@ -197,7 +200,6 @@ class Image(Layer):
         return tuple(self._colormaps.keys())
 
     # wrap visual properties:
-
     @property
     def clim(self):
         """string or tuple of float: Limits to use for the colormap.
@@ -265,3 +267,6 @@ class Image(Layer):
     @property
     def interpolation_functions(self):
         return tuple(interpolation_names)
+
+    def _clim_range_default(self):
+        return [np.min(self.image), np.max(self.image)]
