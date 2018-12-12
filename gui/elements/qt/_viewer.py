@@ -12,4 +12,3 @@ class QtViewer(QSplitter):
         self.addWidget(viewer.center._qt)
         viewer.layers._qt.setMinimumSize(QSize(250, 250))
         self.addWidget(viewer.layers._qt)
-center
