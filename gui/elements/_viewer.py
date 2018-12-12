@@ -37,14 +37,14 @@ class Viewer:
         from ._center import Center
 
         self.gui = gui
-        self.dimensions = Center(self)
+        self.center = Center(self)
         self.layers = LayerList(self)
         self.controlBars = ControlBars(self)
 
         self._qt = QtViewer(self)
-        self._view = self.dimensions._view
-        self._canvas = self.dimensions._canvas
-        self._update = self.dimensions._update
+        self._view = self.center._view
+        self._canvas = self.center._canvas
+        self._update = self.center._update
         self._statusBar = self.gui._qt_window.statusBar
 
         self.annotation = False
@@ -69,7 +69,7 @@ class Viewer:
         """
         self.layers.append(layer)
         if len(self.layers) == 1:
-            self.dimensions.reset_view()
+            self.center.reset_view()
 
     def imshow(self, image, meta=None, multichannel=None, **kwargs):
         """Shows an image in the viewer.
@@ -98,39 +98,39 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer._set_view_slice(self.dimensions.indices)
+            layer._set_view_slice(self.center.indices)
 
         self._update_statusBar()
 
     def _on_layers_change(self, event):
         """Called whenever a layer is changed.
         """
-        self.dimensions._child_layer_changed = True
-        self.dimensions._update()
+        self.center._child_layer_changed = True
+        self.center._update()
 
     def update_statusBar(self):
         from ..layers._image_layer import Image
         from ..layers._markers_layer import Markers
 
-        msg = '(%d, %d' % (self.dimensions._pos[0], self.dimensions._pos[1])
-        if self.dimensions.max_dims > 2:
-            for i in range(2,self.dimensions.max_dims):
-                msg = msg + ', %d' % self.dimensions.indices[i]
+        msg = '(%d, %d' % (self.center._pos[0], self.center._pos[1])
+        if self.center.max_dims > 2:
+            for i in range(2,self.center.max_dims):
+                msg = msg + ', %d' % self.center.indices[i]
         msg = msg + ')'
 
     def _set_annotation_mode(self, bool):
         if bool:
             self.annotation = True
-            self.dimensions._qt.view.interactive = False
+            self.center._qt.view.interactive = False
             if self._active_markers:
-                self.dimensions._qt.canvas.native.setCursor(Qt.CrossCursor)
+                self.center._qt.canvas.native.setCursor(Qt.CrossCursor)
             else:
-                self.dimensions._qt.canvas.native.setCursor(self._disabled_cursor)
+                self.center._qt.canvas.native.setCursor(self._disabled_cursor)
             self._status_widget.show()
         else:
             self.annotation = False
-            self.dimensions._qt.view.interactive = True
-            self.dimensions._qt.canvas.native.setCursor(QCursor())
+            self.center._qt.view.interactive = True
+            self.center._qt.canvas.native.setCursor(QCursor())
             self._status_widget.hide()
         self._update_statusBar()
 
@@ -144,7 +144,7 @@ class Viewer:
                 break
             elif layer.visible and isinstance(layer, Markers):
                 top_markers.append(len(self.layers) - 1 - i)
-                coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
+                coord = [self.center._index[1],self.center._index[0],*self.center._index[2:]]
                 layer._set_selected_markers(coord)
         else:
             top_image = None
@@ -161,8 +161,8 @@ class Viewer:
 
     def _update_statusBar(self):
         msg = '('
-        for i in range(0,self.dimensions.max_dims):
-            msg = msg + '%d, ' % self.dimensions._index[i]
+        for i in range(0,self.center.max_dims):
+            msg = msg + '%d, ' % self.center._index[i]
         msg = msg[:-2]
         msg = msg + ')'
 
@@ -179,7 +179,7 @@ class Viewer:
             pass
         elif index is None:
             msg = msg + ', %s' % self.layers[self._active_image].name
-            value = self.layers[self._active_image]._slice_image(self.dimensions._index)
+            value = self.layers[self._active_image]._slice_image(self.center._index)
             msg = msg + ', value '
             if isinstance(value, ndarray):
                 if isinstance(value[0], integer):
