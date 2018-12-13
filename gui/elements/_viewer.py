@@ -22,8 +22,8 @@ class Viewer:
 
     Attributes
     ----------
-    gui : Gui
-        Parent gui window.
+    window : Window
+        Parent window.
     layers : LayerList
         List of contained layers.
     dimensions : Dimensions
@@ -33,19 +33,19 @@ class Viewer:
     camera : vispy.scene.Camera
         Viewer camera.
     """
-    def __init__(self, gui):
+    def __init__(self, window):
         from ._layer_list import LayerList
         from ._control_bars import ControlBars
         from ._dimensions import Dimensions
 
-        self.gui = gui
+        self.window = window
         self.dimensions = Dimensions(self)
         self.layers = LayerList(self)
         self.controlBars = ControlBars(self)
 
         self._qt = QtViewer(self)
         self._update = self.dimensions._update
-        self._statusBar = self.gui._qt_window.statusBar
+        self._statusBar = self.window._qt_window.statusBar
 
         self._qt.canvas.connect(self.on_mouse_move)
         self._qt.canvas.connect(self.on_mouse_press)
