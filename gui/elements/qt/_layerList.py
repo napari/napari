@@ -68,7 +68,7 @@ class QtLayerList(QScrollArea):
         self.layers.viewer._update_active_layers()
         self.layers.viewer._set_annotation_mode(self.layers.viewer.annotation)
         self.layers.viewer.controlBars.climSliderUpdate()
-        self.layers.viewer.statusBar().showMessage('Ready')
+        self.layers.viewer._statusBar().showMessage('Ready')
 
     def dragLeaveEvent(self, event):
         event.ignore()
