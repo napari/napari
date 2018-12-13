@@ -71,7 +71,7 @@ class QAddLayerButton(QPushButton):
         self.setStyleSheet(styleSheet)
 
     def on_click(self):
-        self.layers.viewer.add_markers(empty((0, self.layers.viewer.center.max_dims)))
+        self.layers.viewer.add_markers(empty((0, self.layers.viewer.dimensions.max_dims)))
 
 class QAnnotationCheckBox(QCheckBox):
     def __init__(self, layers):

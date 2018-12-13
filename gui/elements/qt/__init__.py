@@ -8,7 +8,7 @@ from ._layerPanel import QtLayerPanel
 from ._controlBars import QtControlBars
 from ._imageLayer import QtImageLayer
 from ._markersLayer import QtMarkersLayer
-from ._center import QtCenter
+from ._dimensions import QtDimensions
 from ._viewer import QtViewer
 
 from vispy import app

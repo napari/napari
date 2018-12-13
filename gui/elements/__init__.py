@@ -14,4 +14,4 @@ from ._gui import Gui
 from ._viewer import Viewer
 from ._layer_list import LayerList
 from ._control_bars import ControlBars
-from ._center import Center
+from ._dimensions import Dimensions
