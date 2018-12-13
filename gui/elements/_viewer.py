@@ -13,7 +13,7 @@ path_cursor = join(dir_path,'qt','icons','cursor_disabled.png')
 
 class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
-    including dimension sliders.
+    including dimension sliders, and control bars for color limits.
 
     Parameters
     ----------
@@ -27,7 +27,7 @@ class Viewer:
     layers : LayerList
         List of contained layers.
     dimensions : Dimensions
-        Contains view, canvas, axes, indices, dimensions and sliders.
+        Contains axes, indices, dimensions and sliders.
     controlBars : ControlBars
         Contains contorl bar sliders.
     camera : vispy.scene.Camera
