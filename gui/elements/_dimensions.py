@@ -50,7 +50,7 @@ class Dimensions:
         self._recalc_max_shape = False
 
         self._pos = [0, 0]
-        self._index = [0, 0]
+        self._index = None
 
     @property
     def max_dims(self):

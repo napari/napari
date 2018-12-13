@@ -179,9 +179,12 @@ class Viewer:
                 top_image = len(self.layers) - 1 - i
                 break
             elif layer.visible and isinstance(layer, Markers):
-                top_markers.append(len(self.layers) - 1 - i)
-                coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
-                layer._set_selected_markers(coord)
+                if self.dimensions._index is None:
+                    pass
+                else:
+                    top_markers.append(len(self.layers) - 1 - i)
+                    coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
+                    layer._set_selected_markers(coord)
         else:
             top_image = None
 
