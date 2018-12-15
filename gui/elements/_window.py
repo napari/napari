@@ -6,20 +6,29 @@ from ._viewer import Viewer
 class Window:
     """Application window that contains the menu bar and viewers.
 
+    Parameters
+    ----------
+    viewer : Viewer
+        Contained viewer.
+
     Attributes
     ----------
     viewer : Viewer
         Contained viewer.
     """
-    def __init__(self):
+    def __init__(self, viewer, show=True):
         self._qt_window = QMainWindow()
-        self._qt_main = QWidget()
-        self._qt_window.setCentralWidget(self._qt_main)
-        self._qt_main.setLayout(QHBoxLayout())
-        self._qt_window.statusBar().showMessage('Ready')
+        self._qt_center = QWidget()
+        self._qt_window.setCentralWidget(self._qt_center)
+        self._qt_center.setLayout(QHBoxLayout())
+        self._statusBar = self._qt_window.statusBar()
+        self._statusBar.showMessage('Ready')
 
-        self.viewer = Viewer(self)
-        self._qt_main.layout().addWidget(self.viewer._qt)
+        self.viewer = viewer
+        self._qt_center.layout().addWidget(self.viewer._qt)
+
+        if show:
+            self.show()
 
     def resize(self, width, height):
         """Resize the window.

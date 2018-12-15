@@ -10,6 +10,7 @@ class QtDimensions(QWidget):
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
+        self.setFixedHeight(0)
 
     def _axis_to_row(self, axis):
         dims = len(self.viewer.dimensions.indices)

@@ -15,11 +15,6 @@ class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
-    Parameters
-    ----------
-    parent : Window
-        Parent window.
-
     Attributes
     ----------
     window : Window
@@ -33,19 +28,17 @@ class Viewer:
     camera : vispy.scene.Camera
         Viewer camera.
     """
-    def __init__(self, window):
+    def __init__(self):
         from ._layer_list import LayerList
         from ._control_bars import ControlBars
         from ._dimensions import Dimensions
 
-        self.window = window
         self.dimensions = Dimensions(self)
         self.layers = LayerList(self)
         self.controlBars = ControlBars(self)
 
         self._qt = QtViewer(self)
         self._update = self.dimensions._update
-        self._statusBar = self.window._qt_window.statusBar
 
         self._qt.canvas.connect(self.on_mouse_move)
         self._qt.canvas.connect(self.on_mouse_press)
@@ -58,9 +51,9 @@ class Viewer:
         self._active_markers = None
         self._visible_markers = []
 
-        self._status_widget = QLabel('hold <space> to pan/zoom')
-        self._statusBar().addPermanentWidget(self._status_widget)
-        self._status_widget.hide()
+        #self._status_widget = QLabel('hold <space> to pan/zoom')
+        #self._statusBar().addPermanentWidget(self._status_widget)
+        #self._status_widget.hide()
 
         self._disabled_cursor = QCursor(QPixmap(path_cursor).scaled(20,20))
 
@@ -162,12 +155,12 @@ class Viewer:
                 self._qt.canvas.native.setCursor(Qt.CrossCursor)
             else:
                 self._qt.canvas.native.setCursor(self._disabled_cursor)
-            self._status_widget.show()
+            #self._status_widget.show()
         else:
             self.annotation = False
             self._qt.view.interactive = True
             self._qt.canvas.native.setCursor(QCursor())
-            self._status_widget.hide()
+            #self._status_widget.hide()
         self._update_statusBar()
 
     def _update_active_layers(self):
@@ -230,55 +223,57 @@ class Viewer:
                     msg = msg + '%d' % value
                 else:
                     msg = msg + '%.3f' % value
-        self._statusBar().showMessage(msg)
+        #self._statusBar().showMessage(msg)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
-        if event.pos is None:
-            return
+        if self.layers:
+            if event.pos is None:
+                return
 
-        self.dimensions._update_index(event)
-        if event.is_dragging:
-            if self.annotation and 'Shift' in event.modifiers:
-                if self._active_markers:
-                    layer = self.layers[self._active_markers]
-                    index = layer._selected_markers
-                    if index is None:
-                        pass
-                    else:
-                        layer.data[index] = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
-                        layer._refresh()
-                        self._update_statusBar()
-        else:
-            self._update_active_layers()
-            self._update_statusBar()
+            self.dimensions._update_index(event)
+            if event.is_dragging:
+                if self.annotation and 'Shift' in event.modifiers:
+                    if self._active_markers:
+                        layer = self.layers[self._active_markers]
+                        index = layer._selected_markers
+                        if index is None:
+                            pass
+                        else:
+                            layer.data[index] = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
+                            layer._refresh()
+                            self._update_statusBar()
+            else:
+                self._update_active_layers()
+                self._update_statusBar()
 
     def on_mouse_press(self, event):
-        if event.pos is None:
-            return
-        if self.annotation:
-            if self._active_markers:
-                layer = self.layers[self._active_markers]
-                if 'Meta' in event.modifiers:
-                    index = layer._selected_markers
-                    if index is None:
+        if self.layers:
+            if event.pos is None:
+                return
+            if self.annotation:
+                if self._active_markers:
+                    layer = self.layers[self._active_markers]
+                    if 'Meta' in event.modifiers:
+                        index = layer._selected_markers
+                        if index is None:
+                            pass
+                        else:
+                            if isinstance(layer.size, (list, ndarray)):
+                                layer._size = delete(layer.size, index)
+                            layer.data = delete(layer.data, index, axis=0)
+                            layer._selected_markers = None
+                            self._update_statusBar()
+                    elif 'Shift' in event.modifiers:
                         pass
                     else:
                         if isinstance(layer.size, (list, ndarray)):
-                            layer._size = delete(layer.size, index)
-                        layer.data = delete(layer.data, index, axis=0)
-                        layer._selected_markers = None
+                            layer._size = append(layer.size, 10)
+                        coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
+                        layer.data = append(layer.data, [coord], axis=0)
+                        layer._selected_markers = len(layer.data)-1
                         self._update_statusBar()
-                elif 'Shift' in event.modifiers:
-                    pass
-                else:
-                    if isinstance(layer.size, (list, ndarray)):
-                        layer._size = append(layer.size, 10)
-                    coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
-                    layer.data = append(layer.data, [coord], axis=0)
-                    layer._selected_markers = len(layer.data)-1
-                    self._update_statusBar()
 
     def on_key_press(self, event):
         if event.native.isAutoRepeat():
