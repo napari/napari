@@ -1,5 +1,4 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel
+from PyQt5.QtCore import Qt, pyqtSignal, QObject
 from PyQt5.QtGui import QCursor, QPixmap
 from .qt import QtViewer
 
@@ -11,7 +10,7 @@ from os.path import dirname, join, realpath
 dir_path = dirname(realpath(__file__))
 path_cursor = join(dir_path,'qt','icons','cursor_disabled.png')
 
-class Viewer:
+class Viewer(QObject):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -28,7 +27,12 @@ class Viewer:
     camera : vispy.scene.Camera
         Viewer camera.
     """
+
+    statusChanged = pyqtSignal(str)
+    helpChanged = pyqtSignal(str)
+
     def __init__(self):
+        super().__init__()
         from ._layer_list import LayerList
         from ._control_bars import ControlBars
         from ._dimensions import Dimensions
@@ -54,6 +58,9 @@ class Viewer:
         #self._status_widget = QLabel('hold <space> to pan/zoom')
         #self._statusBar().addPermanentWidget(self._status_widget)
         #self._status_widget.hide()
+
+        self._status = 'Ready'
+        self._help = ''
 
         self._disabled_cursor = QCursor(QPixmap(path_cursor).scaled(20,20))
 
@@ -155,12 +162,13 @@ class Viewer:
                 self._qt.canvas.native.setCursor(Qt.CrossCursor)
             else:
                 self._qt.canvas.native.setCursor(self._disabled_cursor)
-            #self._status_widget.show()
+            self._help = 'hold <space> to pan/zoom'
         else:
             self.annotation = False
             self._qt.view.interactive = True
             self._qt.canvas.native.setCursor(QCursor())
-            #self._status_widget.hide()
+            self._help = ''
+        self.helpChanged.emit(self._help)
         self._update_statusBar()
 
     def _update_active_layers(self):
@@ -223,7 +231,11 @@ class Viewer:
                     msg = msg + '%d' % value
                 else:
                     msg = msg + '%.3f' % value
-        #self._statusBar().showMessage(msg)
+        self._status = msg
+        self.emitStatus()
+
+    def emitStatus(self):
+            self.statusChanged.emit(self._status)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

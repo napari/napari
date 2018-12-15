@@ -20,8 +20,9 @@ class ControlBars:
                 cmax = valmin+slidermax*(valmax-valmin)
                 layer.clim = [cmin, cmax]
                 msg = '(%.3f, %.3f)' % (cmin, cmax)
-        #if msg is not None:
-            #self.viewer._statusBar().showMessage(msg)
+        if msg is not None:
+            self.viewer._status = msg
+            self.viewer.emitStatus()
 
     def climSliderUpdate(self):
         for layer in self.viewer.layers[::-1]:
@@ -32,7 +33,8 @@ class ControlBars:
                 slidermax = (cmax - valmin)/(valmax - valmin)
                 self._qt.climSlider.setValues((slidermin, slidermax))
                 msg = '(%.3f, %.3f)' % (cmin, cmax)
-                #self.viewer._statusBar().showMessage(msg)
+                self.viewer._status = msg
+                self.viewer.emitStatus()
                 self._qt.climSlider.setEnabled(True)
                 break
         else:
@@ -43,5 +45,6 @@ class ControlBars:
             if hasattr(layer, 'visual') and layer.selected:
                 cmin, cmax = layer.clim
                 msg = '(%.3f, %.3f)' % (cmin, cmax)
-                #self.viewer._statusBar().showMessage(msg)
+                self.viewer._status = msg
+                self.viewer.emitStatus()
                 break
