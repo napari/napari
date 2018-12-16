@@ -4,7 +4,7 @@ import vispy
 from PyQt5.QtWidgets import QApplication, QAction
 import numpy as np
 
-from napari_gui.elements import Window, Viewer
+from napari_gui import Window, Viewer
 
 from vispy.visuals.transforms import STTransform
 

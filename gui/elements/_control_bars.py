@@ -2,6 +2,11 @@ from .qt import QtControlBars
 
 class ControlBars:
     """Controls object.
+
+    Parameters
+    ----------
+    viewer : Viewer
+        Parent viewer.
     """
     def __init__(self, viewer):
         self.viewer = viewer

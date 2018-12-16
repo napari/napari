@@ -55,10 +55,6 @@ class Viewer(QObject):
         self._active_markers = None
         self._visible_markers = []
 
-        #self._status_widget = QLabel('hold <space> to pan/zoom')
-        #self._statusBar().addPermanentWidget(self._status_widget)
-        #self._status_widget.hide()
-
         self._status = 'Ready'
         self._help = ''
 
@@ -77,6 +73,7 @@ class Viewer(QObject):
         """vispy.scene.Camera: Viewer camera.
         """
         return self._view.camera
+
     def reset_view(self):
         """Resets the camera's view.
         """

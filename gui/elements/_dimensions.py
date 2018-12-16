@@ -13,7 +13,7 @@ class Dimensions:
 
     Parameters
     ----------
-    parent : Viewer
+    viewer : Viewer
         Parent viewer.
 
     Attributes
