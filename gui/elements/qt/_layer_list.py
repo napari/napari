@@ -26,7 +26,7 @@ class QtLayerList(QScrollArea):
             self.layersLayout.insertWidget(2*(total - index)-1, layer._qt)
             self.layersLayout.insertWidget(2*(total - index), QtDivider())
         self.layers.viewer._update_active_layers()
-        self.layers.viewer.controlBars.climSliderUpdate()
+        self.layers.viewer.controlBars.clim_slider_update()
 
     def remove(self, layer):
         """Removes a layer widget
@@ -41,7 +41,7 @@ class QtLayerList(QScrollArea):
             divider.deleteLater()
             divider = None
         self.layers.viewer._update_active_layers()
-        self.layers.viewer.controlBars.climSliderUpdate()
+        self.layers.viewer.controlBars.clim_slider_update()
 
     def reorder(self):
         """Reorders list of layer widgets by looping through all
@@ -59,7 +59,7 @@ class QtLayerList(QScrollArea):
                 self.layersLayout.insertWidget(2*(total - i)-1,layer._qt)
                 self.layersLayout.insertWidget(2*(total - i),divider)
         self.layers.viewer._update_active_layers()
-        self.layers.viewer.controlBars.climSliderUpdate()
+        self.layers.viewer.controlBars.clim_slider_update()
 
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets
@@ -68,9 +68,9 @@ class QtLayerList(QScrollArea):
             self.layersLayout.itemAt(1).widget().unselectAll()
         self.layers.viewer._update_active_layers()
         self.layers.viewer._set_annotation_mode(self.layers.viewer.annotation)
-        self.layers.viewer.controlBars.climSliderUpdate()
+        self.layers.viewer.controlBars.clim_slider_update()
         self.layers.viewer._status = 'Ready'
-        self.layers.viewer.emitStatus()
+        self.layers.viewer.emit_status()
 
     def dragLeaveEvent(self, event):
         event.ignore()

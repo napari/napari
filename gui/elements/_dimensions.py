@@ -1,12 +1,9 @@
-from .qt import QtDimensions
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QCursor, QPixmap
-
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 from numpy import clip, integer, ndarray, append, insert, delete
 from copy import copy
+
+from .qt import QtDimensions
 
 class Dimensions:
     """Dimensions containing the dimension sliders

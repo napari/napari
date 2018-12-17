@@ -109,7 +109,7 @@ class QtLayer(QFrame):
             self.setSelected(True)
         self.layer.viewer._update_active_layers()
         self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
-        self.layer.viewer.controlBars.climSliderUpdate()
+        self.layer.viewer.controlBars.clim_slider_update()
 
     def mousePressEvent(self, event):
         self.dragStartPosition = event.pos()

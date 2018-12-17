@@ -133,7 +133,7 @@ class Viewer(QObject):
         for layer in self.layers:
             layer._set_view_slice(self.dimensions.indices)
 
-        self._update_statusBar()
+        self._update_status_bar()
 
     def _on_layers_change(self, event):
         """Called whenever a layer is changed.
@@ -141,7 +141,7 @@ class Viewer(QObject):
         self.dimensions._child_layer_changed = True
         self.dimensions._update()
 
-    def update_statusBar(self):
+    def update_status_bar(self):
         from ..layers._image_layer import Image
         from ..layers._markers_layer import Markers
 
@@ -166,7 +166,7 @@ class Viewer(QObject):
             self._qt.canvas.native.setCursor(QCursor())
             self._help = ''
         self.helpChanged.emit(self._help)
-        self._update_statusBar()
+        self._update_status_bar()
 
     def _update_active_layers(self):
         from ..layers._image_layer import Image
@@ -196,7 +196,7 @@ class Viewer(QObject):
         self._visible_markers = top_markers
         self._active_markers = active_markers
 
-    def _update_statusBar(self):
+    def _update_status_bar(self):
         msg = '('
         for i in range(0,self.dimensions.max_dims):
             msg = msg + '%d, ' % self.dimensions._index[i]
@@ -229,9 +229,9 @@ class Viewer(QObject):
                 else:
                     msg = msg + '%.3f' % value
         self._status = msg
-        self.emitStatus()
+        self.emit_status()
 
-    def emitStatus(self):
+    def emit_status(self):
             self.statusChanged.emit(self._status)
 
     def on_mouse_move(self, event):
@@ -252,10 +252,10 @@ class Viewer(QObject):
                         else:
                             layer.data[index] = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
                             layer._refresh()
-                            self._update_statusBar()
+                            self._update_status_bar()
             else:
                 self._update_active_layers()
-                self._update_statusBar()
+                self._update_status_bar()
 
     def on_mouse_press(self, event):
         if self.layers:
@@ -273,7 +273,7 @@ class Viewer(QObject):
                                 layer._size = delete(layer.size, index)
                             layer.data = delete(layer.data, index, axis=0)
                             layer._selected_markers = None
-                            self._update_statusBar()
+                            self._update_status_bar()
                     elif 'Shift' in event.modifiers:
                         pass
                     else:
@@ -282,7 +282,7 @@ class Viewer(QObject):
                         coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
                         layer.data = append(layer.data, [coord], axis=0)
                         layer._selected_markers = len(layer.data)-1
-                        self._update_statusBar()
+                        self._update_status_bar()
 
     def on_key_press(self, event):
         if event.native.isAutoRepeat():
