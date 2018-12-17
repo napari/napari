@@ -303,7 +303,7 @@ class Viewer(QObject):
                 if self.annotation and self._active_markers:
                     self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
             elif event.key == 'a':
-                cb = self.layers._qt.layersControls.annotationCheckBox
+                cb = self.layers._qt.layersButtons.annotationCheckBox
                 cb.setChecked(not cb.isChecked())
 
     def on_key_release(self, event):

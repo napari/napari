@@ -4,7 +4,7 @@ wrap.
 """
 from PyQt5.QtWidgets import QApplication as QtApplication
 
-from ._layer_list import QtLayerPanel
+from ._layer_panel import QtLayerPanel
 from ._control_bars import QtControlBars
 from ._dimensions import QtDimensions
 from ._viewer import QtViewer
