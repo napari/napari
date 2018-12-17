@@ -133,6 +133,7 @@ class Viewer(QObject):
         for layer in self.layers:
             layer._set_view_slice(self.dimensions.indices)
 
+        self.dimensions._update_index(None)
         self._update_status_bar()
 
     def _on_layers_change(self, event):

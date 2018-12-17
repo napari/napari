@@ -107,10 +107,13 @@ class Dimensions:
         self._max_shape = _compute_max_shape(shapes, self.max_dims)
 
     def _update_index(self, event):
-        visual = self.viewer.layers[0]._node
-        tr = self.viewer._canvas.scene.node_transform(self.viewer.layers[0]._node)
-        pos = tr.map(event.pos)
-        pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
+        if event is None:
+            pos = self._index[:2]
+        else:
+            visual = self.viewer.layers[0]._node
+            tr = self.viewer._canvas.scene.node_transform(self.viewer.layers[0]._node)
+            pos = tr.map(event.pos)
+            pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
         self._index = copy(self.indices)
         self._index[0] = int(pos[0])
         self._index[1] = int(pos[1])
