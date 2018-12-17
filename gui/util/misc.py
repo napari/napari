@@ -98,11 +98,8 @@ def compute_max_shape(shapes, max_dims=None):
             else:
                 if dim_len > max_shape[dim]:
                     max_shape[dim] = dim_len
+    return tuple(max_shape)
 
-    if max_shape:
-        return tuple(max_shape)
-    else:
-        return (1000, 1000)
 
 _app = None
 

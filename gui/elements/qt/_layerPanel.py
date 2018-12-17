@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QCheckBox
 from ._layerList import QtLayerList
@@ -21,6 +21,7 @@ class QtLayerPanel(QWidget):
         layout.addWidget(self.layersList)
         layout.addWidget(self.layersControls)
         self.setLayout(layout)
+        self.setMinimumSize(QSize(250, 250))
 
 class QDeleteButton(QPushButton):
     def __init__(self, layers):

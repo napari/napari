@@ -23,7 +23,7 @@ class Viewer(QObject):
     dimensions : Dimensions
         Contains axes, indices, dimensions and sliders.
     controlBars : ControlBars
-        Contains contorl bar sliders.
+        Contains control bar sliders.
     camera : vispy.scene.Camera
         Viewer camera.
     """
@@ -77,20 +77,35 @@ class Viewer(QObject):
     def reset_view(self):
         """Resets the camera's view.
         """
-        try:
-            self.camera.set_range()
-        except AttributeError:
-            pass
+        self.camera.set_range()
 
-    def screenshot(self, *args, **kwargs):
-        """Renders the current canvas.
+    def screenshot(self, region=None, size=None, bgcolor=None, crop=None):
+        """Render the scene to an offscreen buffer and return the image array.
 
+        Parameters
+        ----------
+        region : tuple | None
+            Specifies the region of the canvas to render. Format is
+            (x, y, w, h). By default, the entire canvas is rendered.
+        size : tuple | None
+            Specifies the size of the image array to return. If no size is
+            given, then the size of the *region* is used, multiplied by the
+            pixel scaling factor of the canvas (see `pixel_scale`). This
+            argument allows the scene to be rendered at resolutions different
+            from the native canvas resolution.
+        bgcolor : instance of Color | None
+            The background color to use.
+        crop : array-like | None
+            If specified it determines the pixels read from the framebuffer.
+            In the format (x, y, w, h), relative to the region being rendered.
         Returns
         -------
-        screenshot : np.ndarray
-            View of the current canvas.
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+
         """
-        return self._canvas.render(*args, **kwargs)
+        return self._canvas.render(region=None, size=None, bgcolor=None, crop=None)
 
     def add_layer(self, layer):
         """Adds a layer to the viewer.
@@ -141,16 +156,6 @@ class Viewer(QObject):
         self.dimensions._child_layer_changed = True
         self.dimensions._update()
 
-    def update_statusBar(self):
-        from ..layers._image_layer import Image
-        from ..layers._markers_layer import Markers
-
-        msg = '(%d, %d' % (self.dimensions._pos[0], self.dimensions._pos[1])
-        if self.dimensions.max_dims > 2:
-            for i in range(2,self.dimensions.max_dims):
-                msg = msg + ', %d' % self.dimensions.indices[i]
-        msg = msg + ')'
-
     def _set_annotation_mode(self, bool):
         if bool:
             self.annotation = True
@@ -197,11 +202,7 @@ class Viewer(QObject):
         self._active_markers = active_markers
 
     def _update_statusBar(self):
-        msg = '('
-        for i in range(0,self.dimensions.max_dims):
-            msg = msg + '%d, ' % self.dimensions._index[i]
-        msg = msg[:-2]
-        msg = msg + ')'
+        msg = f'{self.dimensions._index}'
 
         index = None
         for i in self._visible_markers:
@@ -232,7 +233,7 @@ class Viewer(QObject):
         self.emitStatus()
 
     def emitStatus(self):
-            self.statusChanged.emit(self._status)
+        self.statusChanged.emit(self._status)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
