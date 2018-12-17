@@ -15,7 +15,7 @@ from vispy.color.colormap import get_colormaps
 
 from ._register import add_to_viewer
 
-from ..elements.qt import QtImageLayer
+from .qt import QtImageLayer
 
 @add_to_viewer
 class Image(Layer):

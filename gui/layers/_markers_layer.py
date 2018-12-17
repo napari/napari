@@ -9,7 +9,7 @@ from .._vispy.scene.visuals import Markers as MarkersNode
 from vispy.visuals import marker_types
 from vispy.color import get_color_names
 
-from ..elements.qt import QtMarkersLayer
+from .qt import QtMarkersLayer
 
 @add_to_viewer
 class Markers(Layer):
