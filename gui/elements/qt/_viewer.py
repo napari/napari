@@ -5,7 +5,7 @@ from vispy.scene import SceneCanvas, PanZoomCamera
 
 from os.path import dirname, join, realpath
 dir_path = dirname(realpath(__file__))
-path_cursor = join(dir_path,'icons','cursor_disabled.png')
+path_cursor = join(dir_path,'..', '..', 'icons','cursor_disabled.png')
 
 class QtViewer(QSplitter):
 

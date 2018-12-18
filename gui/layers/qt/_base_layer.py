@@ -4,7 +4,7 @@ from PyQt5.QtGui import QPalette, QDrag
 from os.path import dirname, join, realpath
 
 dir_path = dirname(realpath(__file__))
-path_on = join(dir_path,'icons','eye_on.png')
+path_on = join(dir_path, '..', '..', 'icons','eye_on.png')
 
 class QtLayer(QFrame):
     def __init__(self, layer):

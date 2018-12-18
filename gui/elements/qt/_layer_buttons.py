@@ -5,10 +5,10 @@ from os.path import dirname, join, realpath
 from numpy import empty
 
 dir_path = dirname(realpath(__file__))
-path_delete = join(dir_path,'icons','delete.png')
-path_add = join(dir_path,'icons','add.png')
-path_off = join(dir_path,'icons','annotation_off.png')
-path_on = join(dir_path,'icons','annotation_on.png')
+path_delete = join(dir_path, '..', '..', 'icons','delete.png')
+path_add = join(dir_path, '..', '..', 'icons','add.png')
+path_off = join(dir_path,'..', '..', 'icons','annotation_off.png')
+path_on = join(dir_path,'..', '..', 'icons','annotation_on.png')
 
 class QtLayerButtons(QFrame):
     def __init__(self, layers):
