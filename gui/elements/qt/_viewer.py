@@ -1,8 +1,17 @@
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
+from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
+from os.path import dirname, join, realpath
+dir_path = dirname(realpath(__file__))
+path_cursor = join(dir_path,'icons','cursor_disabled.png')
+
 class QtViewer(QSplitter):
+
+    statusChanged = pyqtSignal(str)
+    helpChanged = pyqtSignal(str)
+
     def __init__(self, viewer):
         super().__init__()
 
@@ -30,3 +39,11 @@ class QtViewer(QSplitter):
         self.addWidget(viewer.layers._qt)
 
         viewer.dimensions._qt.setFixedHeight(0)
+
+        self._cursors = {
+            'diabled' : QCursor(QPixmap(path_cursor).scaled(20,20)),
+            'cross' : Qt.CrossCursor,
+            'forbidden' : Qt.ForbiddenCursor,
+            'pointing' : Qt.PointingHandCursor,
+            'standard' : QCursor()
+        }

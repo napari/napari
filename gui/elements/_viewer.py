@@ -1,16 +1,9 @@
-from PyQt5.QtCore import Qt, pyqtSignal, QObject
-from PyQt5.QtGui import QCursor, QPixmap
 from .qt import QtViewer
 
 from numpy import clip, integer, ndarray, append, insert, delete
 from copy import copy
 
-
-from os.path import dirname, join, realpath
-dir_path = dirname(realpath(__file__))
-path_cursor = join(dir_path,'qt','icons','cursor_disabled.png')
-
-class Viewer(QObject):
+class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -27,9 +20,6 @@ class Viewer(QObject):
     camera : vispy.scene.Camera
         Viewer camera.
     """
-
-    statusChanged = pyqtSignal(str)
-    helpChanged = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -57,8 +47,6 @@ class Viewer(QObject):
 
         self._status = 'Ready'
         self._help = ''
-
-        self._disabled_cursor = QCursor(QPixmap(path_cursor).scaled(20,20))
 
     @property
     def _canvas(self):
@@ -157,16 +145,16 @@ class Viewer(QObject):
             self.annotation = True
             self._qt.view.interactive = False
             if self._active_markers:
-                self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
             else:
-                self._qt.canvas.native.setCursor(self._disabled_cursor)
+                self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])
             self._help = 'hold <space> to pan/zoom'
         else:
             self.annotation = False
             self._qt.view.interactive = True
-            self._qt.canvas.native.setCursor(QCursor())
+            self._qt.canvas.native.setCursor(self._qt._cursors['standard'])
             self._help = ''
-        self.helpChanged.emit(self._help)
+        self._qt.helpChanged.emit(self._help)
         self._update_status_bar()
 
     def _update_active_layers(self):
@@ -233,7 +221,7 @@ class Viewer(QObject):
         self.emit_status()
 
     def emit_status(self):
-            self.statusChanged.emit(self._status)
+            self._qt.statusChanged.emit(self._status)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -294,15 +282,15 @@ class Viewer(QObject):
                     self._annotation_history = True
                     self._qt.view.interactive = True
                     self.annotation = False
-                    self._qt.canvas.native.setCursor(QCursor())
+                    self._qt.canvas.native.setCursor(self._qt._cursors['standard'])
                 else:
                     self._annotation_history = False
             elif event.key == 'Shift':
                 if self.annotation and self._active_markers:
-                    self._qt.canvas.native.setCursor(Qt.PointingHandCursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['pointing'])
             elif event.key == 'Meta':
                 if self.annotation and self._active_markers:
-                    self._qt.canvas.native.setCursor(Qt.ForbiddenCursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['forbidden'])
             elif event.key == 'a':
                 cb = self.layers._qt.layersButtons.annotationCheckBox
                 cb.setChecked(not cb.isChecked())
@@ -313,17 +301,17 @@ class Viewer(QObject):
                 self._qt.view.interactive = False
                 self.annotation = True
                 if self._active_markers:
-                    self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
                 else:
-                    self._qt.canvas.native.setCursor(self._disabled_cursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])
         elif event.key == 'Shift':
             if self.annotation:
                 if self._active_markers:
-                    self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
                 else:
-                    self._qt.canvas.native.setCursor(self._disabled_cursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])
         elif event.key == 'Meta':
                 if self._active_markers:
-                    self._qt.canvas.native.setCursor(Qt.CrossCursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
                 else:
-                    self._qt.canvas.native.setCursor(self._disabled_cursor)
+                    self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])

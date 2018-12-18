@@ -31,8 +31,8 @@ class Window():
         self.viewer = viewer
         self._qt_center.layout().addWidget(self.viewer._qt)
 
-        self.viewer.statusChanged.connect(self._statusChanged)
-        self.viewer.helpChanged.connect(self._helpChanged)
+        self.viewer._qt.statusChanged.connect(self._statusChanged)
+        self.viewer._qt.helpChanged.connect(self._helpChanged)
 
         if show:
             self.show()
