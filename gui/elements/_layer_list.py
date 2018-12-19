@@ -60,6 +60,8 @@ class LayerList:
         self.events.remove_item.connect(self._remove)
         self.events.reorder.connect(self._reorder)
 
+        self._qt.layerButtons.deleteButton.clicked.connect(self.remove_selected)
+
         # property setting - happens last
         self.viewer = viewer
 

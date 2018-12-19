@@ -1,6 +1,6 @@
 from .qt import QtViewer
 
-from numpy import clip, integer, ndarray, append, insert, delete
+from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
 class Viewer:
@@ -38,6 +38,9 @@ class Viewer:
         self._qt.canvas.connect(self.on_mouse_press)
         self._qt.canvas.connect(self.on_key_press)
         self._qt.canvas.connect(self.on_key_release)
+
+        self.layers._qt.layerButtons.annotationCheckBox.stateChanged.connect(lambda state=self: self._set_annotation(state))
+        self.layers._qt.layerButtons.addLayerButton.clicked.connect(self._new_markers)
 
         self.annotation = False
         self._annotation_history = False
@@ -92,6 +95,13 @@ class Viewer:
         if len(self.layers) == 1:
             self.reset_view()
 
+    def _new_markers(self):
+        if self.dimensions.max_dims == 0:
+            empty_markers = empty((0, 2))
+        else:
+            empty_markers = empty((0, self.dimensions.max_dims))
+        self.add_markers(empty_markers)
+
     def imshow(self, image, meta=None, multichannel=None, **kwargs):
         """Shows an image in the viewer.
 
@@ -140,7 +150,7 @@ class Viewer:
                 msg = msg + ', %d' % self.dimensions.indices[i]
         msg = msg + ')'
 
-    def _set_annotation_mode(self, bool):
+    def _set_annotation(self, bool):
         if bool:
             self.annotation = True
             self._qt.view.interactive = False
@@ -292,7 +302,7 @@ class Viewer:
                 if self.annotation and self._active_markers:
                     self._qt.canvas.native.setCursor(self._qt._cursors['forbidden'])
             elif event.key == 'a':
-                cb = self.layers._qt.layersButtons.annotationCheckBox
+                cb = self.layers._qt.layerButtons.annotationCheckBox
                 cb.setChecked(not cb.isChecked())
 
     def on_key_release(self, event):

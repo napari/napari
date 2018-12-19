@@ -67,7 +67,7 @@ class QtLayerList(QScrollArea):
         if self.layersLayout.count() > 1:
             self.layersLayout.itemAt(1).widget().unselectAll()
         self.layers.viewer._update_active_layers()
-        self.layers.viewer._set_annotation_mode(self.layers.viewer.annotation)
+        self.layers.viewer._set_annotation(self.layers.viewer.annotation)
         self.layers.viewer.controlBars.clim_slider_update()
         self.layers.viewer._status = 'Ready'
         self.layers.viewer.emit_status()
