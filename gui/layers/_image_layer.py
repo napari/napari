@@ -103,7 +103,7 @@ class Image(Layer):
             self.viewer._update()
 
             self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.indices)
+            self._set_view_slice(self.viewer.dimensions.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False

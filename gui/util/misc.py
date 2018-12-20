@@ -98,7 +98,6 @@ def compute_max_shape(shapes, max_dims=None):
             else:
                 if dim_len > max_shape[dim]:
                     max_shape[dim] = dim_len
-
     return tuple(max_shape)
 
 
@@ -121,10 +120,10 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
 
     Returns
     -------
-    viewer: Viewer
-        Viewer object.
+    window: Window
+        Window object.
     """
-    from ..elements import Window
+    from ..elements import Window, Viewer
     from ..elements.qt import QtApplication
 
     meta = guess_metadata(image, meta, multichannel, kwargs)
@@ -132,11 +131,8 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     global _app
     _app = _app or QtApplication.instance() or QtApplication([])
 
-    window = Window()
-
-    viewer = window.add_viewer()
-    layer = viewer.add_image(image, meta)
-
+    window = Window(Viewer(), show=False)
+    layer = window.viewer.add_image(image, meta)
     window.show()
 
-    return viewer
+    return window

@@ -13,4 +13,5 @@ Viewer
 from ._window import Window
 from ._viewer import Viewer
 from ._layer_list import LayerList
-from ._controls import Controls
+from ._control_bars import ControlBars
+from ._dimensions import Dimensions

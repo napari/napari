@@ -4,7 +4,7 @@ import vispy
 from PyQt5.QtWidgets import QApplication, QAction
 import numpy as np
 
-from napari_gui.elements import Window
+from napari_gui import Window, Viewer
 
 from vispy.visuals.transforms import STTransform
 
@@ -15,7 +15,8 @@ def open_2Drgb(win):
     # opening a 2D RGB image:
     image = data.astronaut()
     meta = dict(name='BlueMarble', itype='rgb')
-    viewer = win.add_viewer().add_image(image, meta)
+    win.viewer.add_image(image, meta)
+    win.show()
 
 
 def open_2Dsc(win):
@@ -27,9 +28,10 @@ def open_2Dsc(win):
     image[:] = np.random.rand(h, w)
     image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='2D1C', itype='mono')
-    viewer = win.add_viewer()
+    viewer = win.viewer
     layer = viewer.add_image(image, meta)
     layer.cmap = 'viridis'
+    win.show()
 
 
 def open_3Dsc(win):
@@ -42,9 +44,10 @@ def open_3Dsc(win):
     image[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
     # image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='3D1C', itype='mono')
-    viewer = win.add_viewer()
+    viewer = win.viewer
     layer = viewer.add_image(image, meta)
     layer.cmap = 'blues'
+    win.show()
 
 
 def open_4Dsc(win):
@@ -58,16 +61,16 @@ def open_4Dsc(win):
     image[:] = np.exp(- X ** 2 - Y ** 2 - Z ** 2 - C ** 2)  # * (1. + .5*(np.random.rand(h, w)-.5))
     # image[-30:] = np.linspace(0, 1, w)
     meta = dict(name='4D1C', itype='mono')
-    viewer = win.add_viewer()
+    viewer = win.viewer
     layer = viewer.add_image(image, meta)
     layer.cmap = 'blues'
     layer.interpolation = 'spline36'
+    win.show()
 
 
-def open_multi():
+def open_multi(win):
     # opening a 3D and 4D single-channel images in the same viewer
-    win = Window()
-    viewer = win.add_viewer()
+    viewer = win.viewer
 
     h = 64
     w = 64
@@ -102,22 +105,16 @@ def open_multi():
     viewer.camera.set_range((0, w * 2), (0, h))
     win.show()
 
-    return win
-
-
 if __name__ == '__main__':
     # starting
     application = QApplication(sys.argv)
 
-    win = Window()
-
-    open_2Drgb(win)
-    open_2Dsc(win)
+    viewer = Viewer()
+    win = Window(Viewer(), show=False)
+    #open_2Drgb(Window(Viewer(), show=False))
+    #open_2Dsc(Window(Viewer(), show=False))
     open_3Dsc(win)
-    open_4Dsc(win)
-
-    win.show()
-
-    multi_win = open_multi()
+    #open_4Dsc(Window(Viewer(), show=False))
+    #open_multi(Window(Viewer(), show=False))
 
     sys.exit(application.exec_())

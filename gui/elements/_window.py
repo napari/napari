@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QSplitter
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
+from PyQt5.QtCore import Qt
 
 from ._viewer import Viewer
 
@@ -7,48 +7,35 @@ from ._viewer import Viewer
 class Window:
     """Application window that contains the menu bar and viewers.
 
+    Parameters
+    ----------
+    viewer : Viewer
+        Contained viewer.
+
     Attributes
     ----------
-    viewers : list of Viewer
-        Contained viewers.
+    viewer : Viewer
+        Contained viewer.
     """
-    def __init__(self):
+    def __init__(self, viewer, show=True):
         self._qt_window = QMainWindow()
-        self._qt_central_widget = QWidget()
-        self._qt_window.setCentralWidget(self._qt_central_widget)
-        self._qt_central_widget.setLayout(QHBoxLayout())
-        self._qt_window.statusBar().showMessage('Ready')
+        self._qt_center = QWidget()
+        self._qt_window.setCentralWidget(self._qt_center)
+        self._qt_center.setLayout(QHBoxLayout())
+        self._statusBar = self._qt_window.statusBar()
+        self._statusBar.showMessage('Ready')
 
-        self._viewers = []
+        self._help = QLabel('')
+        self._statusBar.addPermanentWidget(self._help)
 
-    @property
-    def viewers(self):
-        """list of Viewer: Contained viewers.
-        """
-        return self._viewers
+        self.viewer = viewer
+        self._qt_center.layout().addWidget(self.viewer._qt)
 
-    def add_viewer(self):
-        """Add a viewer to the containing layout.
+        self.viewer.statusChanged.connect(self._statusChanged)
+        self.viewer.helpChanged.connect(self._helpChanged)
 
-        Returns
-        -------
-        viewer : Viewer
-            Viewer object.
-        """
-        viewer = Viewer(self)
-        self.viewers.append(viewer)
-
-        # To split vertical sliders, viewer and layerlist, minimumsizes given for demo purposes/NOT FINAL
-        horizontalSplitter = QSplitter(Qt.Horizontal)
-        viewer.controls._qt.setMinimumSize(QSize(40, 40))
-        horizontalSplitter.addWidget(viewer.controls._qt)
-        viewer._qt.setMinimumSize(QSize(100, 100))
-        horizontalSplitter.addWidget(viewer._qt)
-        viewer.layers._qt.setMinimumSize(QSize(250, 250))
-        horizontalSplitter.addWidget(viewer.layers._qt)
-
-        self._qt_central_widget.layout().addWidget(horizontalSplitter)
-        return viewer
+        if show:
+            self.show()
 
     def resize(self, width, height):
         """Resize the window.
@@ -68,3 +55,13 @@ class Window:
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
         self._qt_window.raise_()
+
+    def _statusChanged(self, message):
+        """Update status bar.
+        """
+        self._statusBar.showMessage(message)
+
+    def _helpChanged(self, message):
+        """Update help message on status bar.
+        """
+        self._help.setText(message)
