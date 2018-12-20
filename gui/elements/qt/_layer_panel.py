@@ -8,8 +8,8 @@ class QtLayerPanel(QWidget):
         super().__init__()
 
         layout = QVBoxLayout()
-        self.layersList = QtLayerList(layers)
+        self.layerList = QtLayerList(layers)
         self.layerButtons = QtLayerButtons()
-        layout.addWidget(self.layersList)
+        layout.addWidget(self.layerList)
         layout.addWidget(self.layerButtons)
         self.setLayout(layout)

@@ -299,7 +299,7 @@ class LayerList:
         """Callback when an item is added to set its order and viewer.
         """
         layer = event.item
-        self._qt.layersList.insert(event.index, len(self), layer)
+        self._qt.layerList.insert(event.index, len(self), layer)
         layer._order = -len(self)
         layer.viewer = self.viewer
 
@@ -308,7 +308,7 @@ class LayerList:
         and reset its order.
         """
         layer = event.item
-        self._qt.layersList.remove(layer)
+        self._qt.layerList.remove(layer)
         layer.viewer = None
         layer._order = 0
 
@@ -318,7 +318,7 @@ class LayerList:
         """
         for i in range(len(self)):
             self[i]._order = -i
-        self._qt.layersList.reorder()
+        self._qt.layerList.reorder()
         canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()
