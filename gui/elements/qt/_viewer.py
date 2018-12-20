@@ -16,6 +16,7 @@ class QtViewer(QSplitter):
         super().__init__()
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.canvas.native.setMinimumSize(QSize(100, 100))
 
         self.view = self.canvas.central_widget.add_view()
         # Set 2D camera (the camera will scale to the contents in the scene)
@@ -31,11 +32,8 @@ class QtViewer(QSplitter):
         center.setLayout(layout)
 
         # Add vertical sliders, center, and layerlist
-        viewer.controlBars._qt.setMinimumSize(QSize(40, 40))
         self.addWidget(viewer.controlBars._qt)
-        viewer.dimensions._qt.setMinimumSize(QSize(100, 100))
         self.addWidget(center)
-        viewer.layers._qt.setMinimumSize(QSize(250, 250))
         self.addWidget(viewer.layers._qt)
 
         viewer.dimensions._qt.setFixedHeight(0)

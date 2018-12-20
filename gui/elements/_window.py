@@ -61,6 +61,7 @@ class Window():
         """
         self._status_bar.showMessage(message)
 
+
     def _helpChanged(self, message):
         """Update help message on status bar.
         """

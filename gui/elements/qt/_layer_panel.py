@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from ._layer_list import QtLayerList
 from ._layer_buttons import QtLayerButtons
@@ -13,3 +14,4 @@ class QtLayerPanel(QWidget):
         layout.addWidget(self.layerList)
         layout.addWidget(self.layerButtons)
         self.setLayout(layout)
+        self.setMinimumSize(QSize(250, 250))

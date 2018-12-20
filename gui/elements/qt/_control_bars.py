@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
+from PyQt5.QtCore import QSize
 
 from ...util.range_slider import QVRangeSlider
 
@@ -22,3 +23,4 @@ class QtControlBars(QWidget):
 
         self.setLayout(self.hbox_layout)
         self.setMouseTracking(True)
+        self.setMinimumSize(QSize(40, 40))
