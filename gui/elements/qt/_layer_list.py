@@ -1,7 +1,5 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QCheckBox, QScrollArea
-from os.path import dirname, join, realpath
-from numpy import empty
 
 class QtLayerList(QScrollArea):
     def __init__(self, layers):

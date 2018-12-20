@@ -26,7 +26,7 @@ class Dimensions:
 
         self.viewer = viewer
 
-        self._qt = QtDimensions(self.viewer)
+        self._qt = QtDimensions()
 
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
@@ -81,9 +81,14 @@ class Dimensions:
                 dim_len = max_shape[dim]
             except IndexError:
                 dim_len = 0
-
-            self._qt.update_slider(dim, dim_len)
+            self._qt.update_slider(dim, dim_len, max_dims)
+            self._qt.sliders[dim-2].valueChanged.connect(lambda value, dim=dim: self._slider_value_changed(value, dim))
         self._qt.setFixedHeight((dims-2)*19)
+
+    def _slider_value_changed(self, value, dim):
+        self.indices[dim] = value
+        self._need_redraw = True
+        self._update()
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.

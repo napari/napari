@@ -2,9 +2,8 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
 
 class QtDimensions(QWidget):
-    def __init__(self, viewer):
+    def __init__(self):
         super().__init__()
-        self.viewer = viewer
         self.sliders = []
 
         layout = QGridLayout()
@@ -12,8 +11,7 @@ class QtDimensions(QWidget):
         self.setLayout(layout)
         self.setFixedHeight(0)
 
-    def _axis_to_row(self, axis):
-        dims = len(self.viewer.dimensions.indices)
+    def _axis_to_row(self, axis, dims):
         message = f'axis {axis} out of bounds for {dims} dims'
 
         if axis < 0:
@@ -28,7 +26,7 @@ class QtDimensions(QWidget):
 
         return axis - 2
 
-    def update_slider(self, axis, max_axis_length):
+    def update_slider(self, axis, max_axis_length, dims):
         """Updates a slider for the given axis or creates
         it if it does not already exist.
 
@@ -45,7 +43,7 @@ class QtDimensions(QWidget):
             Updated slider, if it exists.
         """
         grid = self.layout()
-        row = self._axis_to_row(axis)
+        row = self._axis_to_row(axis, dims)
 
         slider = grid.itemAt(row)
         if max_axis_length <= 0:
@@ -68,13 +66,6 @@ class QtDimensions(QWidget):
             # tick_interval = int(max(8,max_axis_length/8))
             # slider.setTickInterval(tick_interval)
             slider.setSingleStep(1)
-
-            def value_changed():
-                self.viewer.dimensions.indices[axis] = slider.value()
-                self.viewer.dimensions._need_redraw = True
-                self.viewer.dimensions._update()
-
-            slider.valueChanged.connect(value_changed)
 
             grid.addWidget(slider, row, 0)
             self.sliders.append(slider)
