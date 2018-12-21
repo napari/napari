@@ -3,9 +3,9 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-from os.path import dirname, join, realpath
-dir_path = dirname(realpath(__file__))
-path_cursor = join(dir_path,'..', '..', 'icons','cursor_disabled.png')
+from os.path import join
+from ...icons import icons_dir
+path_cursor = join(icons_dir, 'cursor_disabled.png')
 
 class QtViewer(QSplitter):
 
