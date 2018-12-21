@@ -62,6 +62,7 @@ class LayerList:
 
         self._qt.layerButtons.deleteButton.clicked.connect(self.remove_selected)
         self._qt.layerList.orderSet.connect(self._reorder_set)
+        self._qt.layerList.unselect.connect(self._unselect_all)
 
         # property setting - happens last
         self.viewer = viewer
@@ -341,12 +342,16 @@ class LayerList:
         for i in selected:
             indices.insert(j,i)
             j = j+1
+        if not self[index].selected:
+            self._unselect_all()
+            self[index]._qt.setSelected(True)
         if not indices == [i for i in range(total)]:
             self.reorder(indices)
-        if not self[index].selected:
-            self[index]._qt.unselectAll()
-            self[index].setSelected(True)
 
+    def _unselect_all(self):
+        for layer in self:
+            if layer.selected:
+                layer._qt.setSelected(False)
 
     def remove_selected(self):
         """Removes selected items from list.

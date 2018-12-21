@@ -203,7 +203,7 @@ class Viewer:
         self._visible_markers = top_markers
         self._active_markers = active_markers
 
-    def _reset():
+    def _reset(self):
         self._set_annotation(self.annotation)
         self._status = 'Ready'
         self.emit_status()

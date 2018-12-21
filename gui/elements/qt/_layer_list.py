@@ -64,8 +64,6 @@ class QtLayerList(QScrollArea):
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets
         """
-        if self.vbox_layout.count() > 1:
-            self.vbox_layout.itemAt(1).widget().unselectAll()
         self.orderChanged.emit()
         self.unselect.emit()
 

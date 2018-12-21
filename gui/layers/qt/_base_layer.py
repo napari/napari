@@ -105,7 +105,7 @@ class QtLayer(QFrame):
         elif modifiers == Qt.ControlModifier:
             self.setSelected(not self.layer.selected)
         else:
-            self.unselectAll()
+            self.layer.viewer.layers._unselect_all()
             self.setSelected(True)
         self.layer.viewer._update_active_layers()
         self.layer.viewer._set_annotation(self.layer.viewer.annotation)
@@ -138,12 +138,6 @@ class QtLayer(QFrame):
                 self.layer.viewer.layers.pop(index)
             else:
                 self.layer.viewer.layers.remove_selected()
-
-    def unselectAll(self):
-        if self.layer.viewer is not None:
-            for layer in self.layer.viewer.layers:
-                if layer.selected:
-                    layer._qt.setSelected(False)
 
     def setExpanded(self, bool):
         if bool:
