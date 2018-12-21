@@ -1,10 +1,10 @@
 from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel, QComboBox
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
-from os.path import dirname, join, realpath
 
-dir_path = dirname(realpath(__file__))
-path_on = join(dir_path, '..', '..', 'icons','eye_on.png')
+from os.path import join
+from ...icons import icons_dir
+path_on = join(icons_dir, 'eye_on.png')
 
 class QtLayer(QFrame):
     def __init__(self, layer):
