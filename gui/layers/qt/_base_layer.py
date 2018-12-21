@@ -82,7 +82,7 @@ class QtLayer(QFrame):
         else:
             self.layer.visible = False
         self.layer.viewer._update_active_layers()
-        self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
+        self.layer.viewer._set_annotation(self.layer.viewer.annotation)
 
     def changeText(self, text):
         self.layer.name = text.text()

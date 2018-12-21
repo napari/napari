@@ -13,9 +13,9 @@ class QtLayerButtons(QFrame):
     def __init__(self):
         super().__init__()
 
-        self.annotationCheckBox = QAnnotationCheckBox()
-        self.deleteButton = QDeleteButton()
-        self.addLayerButton = QAddLayerButton()
+        self.annotationCheckBox = QtAnnotationCheckBox()
+        self.deleteButton = QtDeleteButton()
+        self.addLayerButton = QtAddLayerButton()
 
         layout = QHBoxLayout()
         layout.addWidget(self.annotationCheckBox)
@@ -24,7 +24,7 @@ class QtLayerButtons(QFrame):
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
 
-class QDeleteButton(QPushButton):
+class QtDeleteButton(QPushButton):
     def __init__(self):
         super().__init__()
 
@@ -52,7 +52,7 @@ class QDeleteButton(QPushButton):
         event.setDropAction(Qt.CopyAction)
         event.accept()
 
-class QAddLayerButton(QPushButton):
+class QtAddLayerButton(QPushButton):
     def __init__(self):
         super().__init__()
 
@@ -65,7 +65,7 @@ class QAddLayerButton(QPushButton):
             QPushButton:hover {background-color:rgb(0, 153, 255); border-radius: 3px;}"""
         self.setStyleSheet(styleSheet)
 
-class QAnnotationCheckBox(QCheckBox):
+class QtAnnotationCheckBox(QCheckBox):
     def __init__(self):
         super().__init__()
 

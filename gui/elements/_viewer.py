@@ -42,6 +42,10 @@ class Viewer:
         self.layers._qt.layerButtons.annotationCheckBox.stateChanged.connect(lambda state=self: self._set_annotation(state))
         self.layers._qt.layerButtons.addLayerButton.clicked.connect(self._new_markers)
 
+        self.layers._qt.layerList.orderChanged.connect(self._update_active_layers)
+        self.layers._qt.layerList.orderChanged.connect(self.controlBars.clim_slider_update)
+        self.layers._qt.layerList.unselect.connect(self._reset)
+
         self.annotation = False
         self._annotation_history = False
         self._active_image = None
@@ -199,6 +203,10 @@ class Viewer:
         self._visible_markers = top_markers
         self._active_markers = active_markers
 
+    def _reset():
+        self._set_annotation(self.annotation)
+        self._status = 'Ready'
+        self.emit_status()
 
     def _update_status_bar(self):
         msg = f'{self.dimensions._index}'
@@ -232,7 +240,7 @@ class Viewer:
         self.emit_status()
 
     def emit_status(self):
-            self._qt.statusChanged.emit(self._status)
+        self._qt.statusChanged.emit(self._status)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

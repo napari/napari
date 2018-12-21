@@ -8,7 +8,7 @@ class QtControlBars(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.hbox_layout = QHBoxLayout()
+        layout = QHBoxLayout()
 
         # Gamma Slider
         # self.gammaSlider = QVRangeSlider(slider_range=[-5.0, 5.0, 0.02], values=[-2.5, 2.5])
@@ -19,8 +19,8 @@ class QtControlBars(QWidget):
         self.climSlider = QVRangeSlider(slider_range=[0, 1, 0.0001], values=[0, 1], parent=self)
         self.climSlider.setEmitWhileMoving(True)
         self.climSlider.collapsable = False
-        self.hbox_layout.addWidget(self.climSlider)
+        layout.addWidget(self.climSlider)
 
-        self.setLayout(self.hbox_layout)
+        self.setLayout(layout)
         self.setMouseTracking(True)
         self.setMinimumSize(QSize(40, 40))

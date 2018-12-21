@@ -47,7 +47,7 @@ class LayerList:
 
     def __init__(self, viewer=None):
         self._list = []
-        self._qt = QtLayerPanel(self)
+        self._qt = QtLayerPanel()
         self._viewer = None
         self.total = 0
         self.events = EmitterGroup(source=self,
@@ -61,6 +61,7 @@ class LayerList:
         self.events.reorder.connect(self._reorder)
 
         self._qt.layerButtons.deleteButton.clicked.connect(self.remove_selected)
+        self._qt.layerList.orderSet.connect(self._reorder_set)
 
         # property setting - happens last
         self.viewer = viewer
@@ -318,10 +319,34 @@ class LayerList:
         """
         for i in range(len(self)):
             self[i]._order = -i
-        self._qt.layerList.reorder()
+        self._qt.layerList.reorder(self)
         canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()
+
+    def _reorder_set(self, index, insert_index):
+        total = len(self)
+        indices = [i for i in range(total)]
+        if self[index].selected:
+            selected = []
+            for i in range(total):
+                if self[i].selected:
+                    selected.append(i)
+        else:
+            selected = [index]
+        for i in selected:
+            indices.remove(i)
+        offset = sum([i<insert_index for i in selected])
+        j = insert_index - offset
+        for i in selected:
+            indices.insert(j,i)
+            j = j+1
+        if not indices == [i for i in range(total)]:
+            self.reorder(indices)
+        if not self[index].selected:
+            self[index]._qt.unselectAll()
+            self[index].setSelected(True)
+
 
     def remove_selected(self):
         """Removes selected items from list.
