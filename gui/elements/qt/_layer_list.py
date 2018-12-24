@@ -19,18 +19,24 @@ class QtLayerList(QScrollArea):
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
 
-    def insert(self, index, total, layer):
+        self.layers.events.add_item.connect(self._add)
+        self.layers.events.remove_item.connect(self._remove)
+        self.layers.events.reorder.connect(self._reorder)
+
+    def _add(self, event):
         """Inserts a layer widget at a specific index
         """
+        layer = event.item
+        index = event.index
+        total = len(self.layers)
         if layer._qt is not None:
             self.vbox_layout.insertWidget(2*(total - index)-1, layer._qt)
             self.vbox_layout.insertWidget(2*(total - index), QtDivider())
-            self.layers.viewer._update_active_layers()
 
-
-    def remove(self, layer):
+    def _remove(self, event):
         """Removes a layer widget
         """
+        layer = event.item
         if layer._qt is not None:
             index = self.vbox_layout.indexOf(layer._qt)
             divider = self.vbox_layout.itemAt(index+1).widget()
@@ -40,16 +46,15 @@ class QtLayerList(QScrollArea):
             self.vbox_layout.removeWidget(divider)
             divider.deleteLater()
             divider = None
-            self.layers.viewer._update_active_layers()
 
-    def reorder(self, layers):
+    def _reorder(self, event):
         """Reorders list of layer widgets by looping through all
         widgets in list sequentially removing them and inserting
         them into the correct place in final list.
         """
-        total = len(layers)
+        total = len(self.layers)
         for i in range(total):
-            layer = layers[i]
+            layer = self.layers[i]
             if layer._qt is not None:
                 index = self.vbox_layout.indexOf(layer._qt)
                 divider = self.vbox_layout.itemAt(index+1).widget()
@@ -57,12 +62,11 @@ class QtLayerList(QScrollArea):
                 self.vbox_layout.removeWidget(divider)
                 self.vbox_layout.insertWidget(2*(total - i)-1,layer._qt)
                 self.vbox_layout.insertWidget(2*(total - i),divider)
-        self.layers.viewer._update_active_layers()
 
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets
         """
-        self.layers.viewer._update_active_layers()
+        self.layers.viewer._update_active_layers(None)
         self.layers._unselect_all()
         self.layers.viewer._reset()
 

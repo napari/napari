@@ -81,7 +81,7 @@ class QtLayer(QFrame):
             self.layer.visible = True
         else:
             self.layer.visible = False
-        self.layer.viewer._update_active_layers()
+        self.layer.viewer._update_active_layers(None)
         self.layer.viewer._set_annotation(self.layer.viewer.annotation)
 
     def changeText(self, text):
@@ -107,7 +107,7 @@ class QtLayer(QFrame):
         else:
             self.layer.viewer.layers._unselect_all()
             self.setSelected(True)
-        self.layer.viewer._update_active_layers()
+        self.layer.viewer._update_active_layers(None)
         self.layer.viewer._set_annotation(self.layer.viewer.annotation)
         self.layer.viewer.control_bars.clim_slider_update()
 

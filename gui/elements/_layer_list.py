@@ -88,6 +88,9 @@ class LayerList:
         if prev is not None:
             self.events.add_item.disconnect(prev._on_layers_change)
             self.events.remove_item.disconnect(prev._on_layers_change)
+            self.events.add_item.disconnect(prev._update_active_layers)
+            self.events.remove_item.disconnect(prev._update_active_layers)
+            self.events.reorder.disconnect(prev._update_active_layers)
 
         for layer in self:
             layer.viewer = viewer
@@ -95,6 +98,9 @@ class LayerList:
         if viewer is not None:
             self.events.add_item.connect(viewer._on_layers_change)
             self.events.remove_item.connect(viewer._on_layers_change)
+            self.events.add_item.connect(viewer._update_active_layers)
+            self.events.remove_item.connect(viewer._update_active_layers)
+            self.events.reorder.connect(viewer._update_active_layers)
             viewer = weakref.ref(viewer)
 
         self._viewer = viewer
@@ -297,7 +303,6 @@ class LayerList:
         """Callback when an item is added to set its order and viewer.
         """
         layer = event.item
-        self._qt.layerList.insert(event.index, len(self), layer)
         layer._order = -len(self)
         layer.viewer = self.viewer
 
@@ -306,7 +311,6 @@ class LayerList:
         and reset its order.
         """
         layer = event.item
-        self._qt.layerList.remove(layer)
         layer.viewer = None
         layer._order = 0
 
@@ -316,7 +320,6 @@ class LayerList:
         """
         for i in range(len(self)):
             self[i]._order = -i
-        self._qt.layerList.reorder(self)
         canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()

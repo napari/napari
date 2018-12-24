@@ -168,7 +168,7 @@ class Viewer:
         self._qt.helpChanged.emit(self._help)
         self._update_status_bar()
 
-    def _update_active_layers(self):
+    def _update_active_layers(self, event):
         from ..layers._image_layer import Image
         from ..layers._markers_layer import Markers
         top_markers = []
@@ -201,6 +201,7 @@ class Viewer:
         self._set_annotation(self.annotation)
         self._status = 'Ready'
         self.emit_status()
+        self.control_bars.clim_slider_update()
 
     def _update_status_bar(self):
         msg = f'{self.dimensions._index}'
@@ -256,7 +257,7 @@ class Viewer:
                             layer._refresh()
                             self._update_status_bar()
             else:
-                self._update_active_layers()
+                self._update_active_layers(None)
                 self._update_status_bar()
 
 
