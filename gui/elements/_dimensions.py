@@ -3,6 +3,8 @@ from ..util.misc import (compute_max_shape as _compute_max_shape,
 from numpy import clip, integer, ndarray, append, insert, delete
 from copy import copy
 
+from vispy.util.event import EmitterGroup, Event
+
 from .qt import QtDimensions
 
 class Dimensions:
@@ -25,9 +27,9 @@ class Dimensions:
     def __init__(self, viewer):
 
         self.viewer = viewer
-
-        self._qt = QtDimensions()
-
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   update_slider=Event)
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
@@ -48,6 +50,8 @@ class Dimensions:
 
         self._pos = [0, 0]
         self._index = None
+
+        self._qt = QtDimensions(self)
 
     @property
     def max_dims(self):
@@ -81,14 +85,7 @@ class Dimensions:
                 dim_len = max_shape[dim]
             except IndexError:
                 dim_len = 0
-            self._qt.update_slider(dim, dim_len, max_dims)
-            self._qt.sliders[dim-2].valueChanged.connect(lambda value, dim=dim: self._slider_value_changed(value, dim))
-        self._qt.setFixedHeight((dims-2)*19)
-
-    def _slider_value_changed(self, value, dim):
-        self.indices[dim] = value
-        self._need_redraw = True
-        self._update()
+            self.events.update_slider(dim=dim, dim_len=dim_len)
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
