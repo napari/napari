@@ -47,7 +47,6 @@ class LayerList:
 
     def __init__(self, viewer=None):
         self._list = []
-        self._qt = QtLayerPanel()
         self._viewer = None
         self.total = 0
         self.events = EmitterGroup(source=self,
@@ -60,12 +59,9 @@ class LayerList:
         self.events.remove_item.connect(self._remove)
         self.events.reorder.connect(self._reorder)
 
-        self._qt.layerButtons.deleteButton.clicked.connect(self.remove_selected)
-        self._qt.layerList.orderSet.connect(self._reorder_set)
-        self._qt.layerList.unselect.connect(self._unselect_all)
-
         # property setting - happens last
         self.viewer = viewer
+        self._qt = QtLayerPanel(self)
 
     def __str__(self): return str(self._list)
     def __repr__(self): return repr(self._list)
@@ -325,7 +321,9 @@ class LayerList:
         canvas._draw_order.clear()
         canvas.update()
 
-    def _reorder_set(self, index, insert_index):
+    def _insert_reorder(self, index, insert):
+        """Reorder list by inserting index and if others selected at insert
+        """
         total = len(self)
         indices = [i for i in range(total)]
         if self[index].selected:
@@ -337,8 +335,8 @@ class LayerList:
             selected = [index]
         for i in selected:
             indices.remove(i)
-        offset = sum([i<insert_index for i in selected])
-        j = insert_index - offset
+        offset = sum([i<insert for i in selected])
+        j = insert - offset
         for i in selected:
             indices.insert(j,i)
             j = j+1

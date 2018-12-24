@@ -3,13 +3,10 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFra
 
 class QtLayerList(QScrollArea):
 
-    orderSet = pyqtSignal(int, int)
-    orderChanged = pyqtSignal()
-    unselect = pyqtSignal()
-
-    def __init__(self):
+    def __init__(self, layers):
         super().__init__()
 
+        self.layers = layers
         self.setWidgetResizable(True)
         #self.setFixedWidth(315)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -28,7 +25,8 @@ class QtLayerList(QScrollArea):
         if layer._qt is not None:
             self.vbox_layout.insertWidget(2*(total - index)-1, layer._qt)
             self.vbox_layout.insertWidget(2*(total - index), QtDivider())
-            self.orderChanged.emit()
+            self.layers.viewer._update_active_layers()
+
 
     def remove(self, layer):
         """Removes a layer widget
@@ -42,7 +40,7 @@ class QtLayerList(QScrollArea):
             self.vbox_layout.removeWidget(divider)
             divider.deleteLater()
             divider = None
-            self.orderChanged.emit()
+            self.layers.viewer._update_active_layers()
 
     def reorder(self, layers):
         """Reorders list of layer widgets by looping through all
@@ -59,13 +57,14 @@ class QtLayerList(QScrollArea):
                 self.vbox_layout.removeWidget(divider)
                 self.vbox_layout.insertWidget(2*(total - i)-1,layer._qt)
                 self.vbox_layout.insertWidget(2*(total - i),divider)
-        self.orderChanged.emit()
+        self.layers.viewer._update_active_layers()
 
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets
         """
-        self.orderChanged.emit()
-        self.unselect.emit()
+        self.layers.viewer._update_active_layers()
+        self.layers._unselect_all()
+        self.layers.viewer._reset()
 
     def dragLeaveEvent(self, event):
         """Unselects layer dividers
@@ -88,8 +87,8 @@ class QtLayerList(QScrollArea):
         layerWidget = event.source()
         total = self.vbox_layout.count()//2 - 1
         index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
-        insert_index = total - divider_index
-        if not (insert_index == index) and not (insert_index-1 == index):
+        insert = total - divider_index
+        if not (insert == index) and not (insert-1 == index):
             state = True
         else:
             state = False
@@ -107,8 +106,8 @@ class QtLayerList(QScrollArea):
         layerWidget = event.source()
         total = self.vbox_layout.count()//2 - 1
         index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
-        insert_index = total - divider_index
-        self.orderSet.emit(index, insert_index)
+        insert = total - divider_index
+        self.layers._insert_reorder(index, insert)
         event.accept()
 
 class QtDivider(QFrame):

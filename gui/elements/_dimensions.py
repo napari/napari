@@ -116,7 +116,7 @@ class Dimensions:
             pos = self._index[:2]
         else:
             visual = self.viewer.layers[0]._node
-            tr = self.viewer._canvas.scene.node_transform(self.viewer.layers[0]._node)
+            tr = self.viewer._canvas.scene.node_transform(visual)
             pos = tr.map(event.pos)
             pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
         self._index = copy(self.indices)

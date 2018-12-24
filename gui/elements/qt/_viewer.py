@@ -32,7 +32,7 @@ class QtViewer(QSplitter):
         center.setLayout(layout)
 
         # Add vertical sliders, center, and layerlist
-        self.addWidget(viewer.controlBars._qt)
+        self.addWidget(viewer.control_bars._qt)
         self.addWidget(center)
         self.addWidget(viewer.layers._qt)
 

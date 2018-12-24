@@ -10,24 +10,26 @@ path_off = join(icons_dir,'annotation_off.png')
 path_on = join(icons_dir,'annotation_on.png')
 
 class QtLayerButtons(QFrame):
-    def __init__(self):
+    def __init__(self, layers):
         super().__init__()
 
-        self.annotationCheckBox = QtAnnotationCheckBox()
-        self.deleteButton = QtDeleteButton()
-        self.addLayerButton = QtAddLayerButton()
+        self.layers = layers
+        self.annotationCheckBox = QtAnnotationCheckBox(self.layers)
+        self.deleteButton = QtDeleteButton(self.layers)
+        self.addButton = QtAddButton(self.layers)
 
         layout = QHBoxLayout()
         layout.addWidget(self.annotationCheckBox)
         layout.addStretch(0)
-        layout.addWidget(self.addLayerButton)
+        layout.addWidget(self.addButton)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
 
 class QtDeleteButton(QPushButton):
-    def __init__(self):
+    def __init__(self, layers):
         super().__init__()
 
+        self.layers = layers
         self.setIcon(QIcon(path_delete))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
@@ -37,6 +39,7 @@ class QtDeleteButton(QPushButton):
             QPushButton:pressed {background-color:rgb(0, 153, 255); border-radius: 3px;}
             QPushButton:hover {background-color:rgb(0, 153, 255); border-radius: 3px;}"""
         self.setStyleSheet(styleSheet)
+        self.clicked.connect(self.layers.remove_selected)
 
     def dragEnterEvent(self, event):
         event.accept()
@@ -52,10 +55,11 @@ class QtDeleteButton(QPushButton):
         event.setDropAction(Qt.CopyAction)
         event.accept()
 
-class QtAddLayerButton(QPushButton):
-    def __init__(self):
+class QtAddButton(QPushButton):
+    def __init__(self, layers):
         super().__init__()
 
+        self.layers = layers
         self.setIcon(QIcon(path_add))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
@@ -64,11 +68,13 @@ class QtAddLayerButton(QPushButton):
             QPushButton:pressed {background-color:rgb(0, 153, 255); border-radius: 3px;}
             QPushButton:hover {background-color:rgb(0, 153, 255); border-radius: 3px;}"""
         self.setStyleSheet(styleSheet)
+        self.clicked.connect(self.layers.viewer._new_markers)
 
 class QtAnnotationCheckBox(QCheckBox):
-    def __init__(self):
+    def __init__(self, layers):
         super().__init__()
 
+        self.layers = layers
         self.setToolTip('Annotation mode')
         self.setChecked(False)
         styleSheet = """QCheckBox {background-color:lightGray; border-radius: 3px;}
@@ -79,3 +85,4 @@ class QtAnnotationCheckBox(QCheckBox):
                         QCheckBox::indicator:unchecked {image: url(""" + path_off + """);}
                         QCheckBox::indicator:unchecked:hover {image: url(""" + path_on + ");}"
         self.setStyleSheet(styleSheet)
+        self.stateChanged.connect(lambda state=self: self.layers.viewer._set_annotation(state))

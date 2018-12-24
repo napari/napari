@@ -5,12 +5,13 @@ from ._layer_buttons import QtLayerButtons
 
 
 class QtLayerPanel(QWidget):
-    def __init__(self):
+    def __init__(self, layers):
         super().__init__()
 
+        self.layers = layers
+        self.layerList = QtLayerList(self.layers)
+        self.layerButtons = QtLayerButtons(self.layers)
         layout = QVBoxLayout()
-        self.layerList = QtLayerList()
-        self.layerButtons = QtLayerButtons()
         layout.addWidget(self.layerList)
         layout.addWidget(self.layerButtons)
         self.setLayout(layout)
