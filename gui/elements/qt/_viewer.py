@@ -24,6 +24,7 @@ class QtViewer(QSplitter):
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
+        self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
 
@@ -110,6 +111,9 @@ class QtViewer(QSplitter):
                         layer.data = append(layer.data, [coord], axis=0)
                         layer._selected_markers = len(layer.data)-1
                     self.viewer._update_status()
+
+    def on_mouse_release(self, event):
+        pass
 
     def on_key_press(self, event):
         if event.native.isAutoRepeat():

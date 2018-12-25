@@ -138,3 +138,15 @@ class Layer(VisualWrapper, ABC):
         """Fully refreshes the layer.
         """
         self._refresh()
+
+    # def on_mouse_move(self, event):
+    #     """Called whenever mouse moves over canvas.
+    #     """
+    #
+    # def on_mouse_pressed(self, event):
+    #     """Called whenever mouse pressed over canvas.
+    #     """
+    #
+    # def on_mouse_released(self, event):
+    #     """Called whenever mouse released over canvas.
+    #     """

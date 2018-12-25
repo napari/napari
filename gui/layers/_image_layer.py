@@ -99,8 +99,8 @@ class Image(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer._child_layer_changed = True
-            self.viewer._update()
+            self.viewer.dimensions._child_layer_changed = True
+            self.viewer.dimensions._update()
 
             self._node._need_colortransform_update = True
             self._set_view_slice(self.viewer.dimensions.indices)
@@ -270,3 +270,12 @@ class Image(Layer):
 
     def _clim_range_default(self):
         return [np.min(self.image), np.max(self.image)]
+
+    # def _get_cursor_value(self, position, indices):
+    #     transform = self.viewer._canvas.scene.node_transform(self._node)
+    #     pos = transform.map(position)
+    #     pos = [clip(pos[1],0,self.shape[0]-1), clip(pos[0],0,self.shape[1]-1)]
+    #     index = copy(indices)
+    #     index[0] = int(pos[0])
+    #     index[1] = int(pos[1])
+    #     return self._slice_image(index)

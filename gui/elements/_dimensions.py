@@ -120,6 +120,12 @@ class Dimensions:
         self._index[0] = int(pos[0])
         self._index[1] = int(pos[1])
 
+    def _on_layers_change(self, event):
+        """Called whenever a layer is changed.
+        """
+        self._child_layer_changed = True
+        self._update()
+
     def _update(self):
         """Updates the viewer.
         """
@@ -131,6 +137,7 @@ class Dimensions:
 
         if self._need_redraw:
             self._need_redraw = False
+            self._update_index(None)
             self.viewer._update_layers()
 
         if self._recalc_max_dims:

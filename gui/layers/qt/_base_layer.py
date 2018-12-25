@@ -107,7 +107,6 @@ class QtLayer(QFrame):
         else:
             self.layer.viewer.layers.unselect_all()
             self.layer.selected = True
-        self.layer.viewer._update_active_layers(None)
 
     def mousePressEvent(self, event):
         self.dragStartPosition = event.pos()

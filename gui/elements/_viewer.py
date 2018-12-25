@@ -38,8 +38,6 @@ class Viewer:
         self.layers = LayerList(self)
         self.control_bars = ControlBars(self)
 
-        self._update = self.dimensions._update
-
         self._annotation = False
         self._annotation_history = False
         self._active_image = None
@@ -184,14 +182,7 @@ class Viewer:
         """
         for layer in self.layers:
             layer._set_view_slice(self.dimensions.indices)
-        self.dimensions._update_index(None)
         self._update_status()
-
-    def _on_layers_change(self, event):
-        """Called whenever a layer is changed.
-        """
-        self.dimensions._child_layer_changed = True
-        self.dimensions._update()
 
     def _set_annotation(self, bool):
         if bool:
