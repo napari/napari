@@ -357,7 +357,6 @@ class LayerList:
         for layer in self:
             if layer.selected:
                 layer.selected = False
-                print('aaaa')
 
     def remove_selected(self):
         """Removes selected items from list.

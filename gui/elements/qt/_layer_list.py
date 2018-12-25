@@ -67,7 +67,6 @@ class QtLayerList(QScrollArea):
         """Unselects all layer widgets
         """
         self.layers._unselect_all()
-        self.layers.viewer._reset()
 
     def dragLeaveEvent(self, event):
         """Unselects layer dividers

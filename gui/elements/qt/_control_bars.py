@@ -44,3 +44,5 @@ class QtControlBars(QWidget):
                 msg = '(%.3f, %.3f)' % (cmin, cmax)
                 self.control_bars.viewer.status = msg
                 break
+        else:
+            self.control_bars.viewer.status = 'Ready'

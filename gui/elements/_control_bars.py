@@ -30,6 +30,9 @@ class ControlBars:
                 msg = '(%.3f, %.3f)' % (cmin, cmax)
         if msg is not None:
             self.viewer.status = msg
+        else:
+            self.viewer.status = 'Ready'
+
 
     def clim_slider_update(self):
         for layer in self.viewer.layers[::-1]:
@@ -45,3 +48,4 @@ class ControlBars:
                 break
         else:
             self.events.update_slider(enabled=False)
+            self.viewer.status = 'Ready'

@@ -40,7 +40,7 @@ class Viewer:
 
         self._update = self.dimensions._update
 
-        self.annotation = False
+        self._annotation = False
         self._annotation_history = False
         self._active_image = None
         self._active_markers = None
@@ -90,6 +90,19 @@ class Viewer:
             return
         self._help = help
         self.events.help(text=self._help)
+
+    @property
+    def annotation(self):
+        """bool: Annotation mode
+        """
+        return self._annotation
+
+    @annotation.setter
+    def annotation(self, annotation):
+        # if annotation == self.annotation:
+        #     return
+        self._annotation = annotation
+        self.events.annotation(enabled=self._annotation)
 
     def reset_view(self):
         """Resets the camera's view.
@@ -187,8 +200,6 @@ class Viewer:
         else:
             self.annotation = False
             self.help = ''
-        self.events.annotation()
-        self._update_status_bar()
 
     def _update_active_layers(self, event):
         from ..layers._image_layer import Image
@@ -217,11 +228,7 @@ class Viewer:
         self._active_image = top_image
         self._visible_markers = top_markers
         self._active_markers = active_markers
-        self.control_bars.clim_slider_update()
-
-    def _reset(self):
         self._set_annotation(self.annotation)
-        self.status = 'Ready'
         self.control_bars.clim_slider_update()
 
     def _update_status_bar(self):
