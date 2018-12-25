@@ -214,8 +214,6 @@ class Viewer:
                     pass
                 else:
                     top_markers.append(len(self.layers) - 1 - i)
-                    coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
-                    layer._set_selected_markers(coord)
         else:
             top_image = None
 
@@ -236,6 +234,8 @@ class Viewer:
 
         index = None
         for i in self._visible_markers:
+            coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
+            self.layers[i]._set_selected_markers(coord)
             index = self.layers[i]._selected_markers
             if index is None:
                 pass

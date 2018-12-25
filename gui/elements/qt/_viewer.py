@@ -17,7 +17,7 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
 
-        self.viewer.events.annotation.connect(self.update_annotation)
+        self.viewer.events.annotation.connect(self.set_annotation)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -55,7 +55,7 @@ class QtViewer(QSplitter):
             'standard' : QCursor()
         }
 
-    def update_annotation(self, event):
+    def set_annotation(self, event):
         if self.viewer.annotation:
             self.view.interactive = False
             if self.viewer._active_markers:
@@ -72,7 +72,6 @@ class QtViewer(QSplitter):
         if self.viewer.layers:
             if event.pos is None:
                 return
-
             self.viewer.dimensions._update_index(event)
             if event.is_dragging:
                 if self.viewer.annotation and 'Shift' in event.modifiers:

@@ -348,12 +348,12 @@ class LayerList:
             indices.insert(j,i)
             j = j+1
         if not self[index].selected:
-            self._unselect_all()
+            self.unselect_all()
             self[index].selected = True
         if not indices == [i for i in range(total)]:
             self.reorder(indices)
 
-    def _unselect_all(self):
+    def unselect_all(self):
         for layer in self:
             if layer.selected:
                 layer.selected = False
