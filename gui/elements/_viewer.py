@@ -31,13 +31,7 @@ class Viewer:
         self.layers = LayerList(self)
         self.control_bars = ControlBars(self)
 
-        self._qt = QtViewer(self)
         self._update = self.dimensions._update
-
-        self._qt.canvas.connect(self.on_mouse_move)
-        self._qt.canvas.connect(self.on_mouse_press)
-        self._qt.canvas.connect(self.on_key_press)
-        self._qt.canvas.connect(self.on_key_release)
 
         self.annotation = False
         self._annotation_history = False
@@ -47,6 +41,8 @@ class Viewer:
 
         self._status = 'Ready'
         self._help = ''
+
+        self._qt = QtViewer(self)
 
     @property
     def _canvas(self):
@@ -236,97 +232,3 @@ class Viewer:
 
     def emit_status(self):
         self._qt.statusChanged.emit(self._status)
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        if self.layers:
-            if event.pos is None:
-                return
-
-            self.dimensions._update_index(event)
-            if event.is_dragging:
-                if self.annotation and 'Shift' in event.modifiers:
-                    if self._active_markers:
-                        layer = self.layers[self._active_markers]
-                        index = layer._selected_markers
-                        if index is None:
-                            pass
-                        else:
-                            layer.data[index] = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
-                            layer._refresh()
-                            self._update_status_bar()
-            else:
-                self._update_active_layers(None)
-                self._update_status_bar()
-
-
-    def on_mouse_press(self, event):
-        if self.layers:
-            if event.pos is None:
-                return
-            if self.annotation:
-                if self._active_markers:
-                    layer = self.layers[self._active_markers]
-                    if 'Meta' in event.modifiers:
-                        index = layer._selected_markers
-                        if index is None:
-                            pass
-                        else:
-                            if isinstance(layer.size, (list, ndarray)):
-                                layer._size = delete(layer.size, index)
-                            layer.data = delete(layer.data, index, axis=0)
-                            layer._selected_markers = None
-                            self._update_status_bar()
-                    elif 'Shift' in event.modifiers:
-                        pass
-                    else:
-                        if isinstance(layer.size, (list, ndarray)):
-                            layer._size = append(layer.size, 10)
-                        coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
-                        layer.data = append(layer.data, [coord], axis=0)
-                        layer._selected_markers = len(layer.data)-1
-                        self._update_status_bar()
-
-    def on_key_press(self, event):
-        if event.native.isAutoRepeat():
-            return
-        else:
-            if event.key == ' ':
-                if self.annotation:
-                    self._annotation_history = True
-                    self._qt.view.interactive = True
-                    self.annotation = False
-                    self._qt.canvas.native.setCursor(self._qt._cursors['standard'])
-                else:
-                    self._annotation_history = False
-            elif event.key == 'Shift':
-                if self.annotation and self._active_markers:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['pointing'])
-            elif event.key == 'Meta':
-                if self.annotation and self._active_markers:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['forbidden'])
-            elif event.key == 'a':
-                cb = self.layers._qt.layerButtons.annotationCheckBox
-                cb.setChecked(not cb.isChecked())
-
-    def on_key_release(self, event):
-        if event.key == ' ':
-            if self._annotation_history:
-                self._qt.view.interactive = False
-                self.annotation = True
-                if self._active_markers:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
-                else:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])
-        elif event.key == 'Shift':
-            if self.annotation:
-                if self._active_markers:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
-                else:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])
-        elif event.key == 'Meta':
-                if self._active_markers:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
-                else:
-                    self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])
