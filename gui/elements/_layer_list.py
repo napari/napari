@@ -345,14 +345,15 @@ class LayerList:
             j = j+1
         if not self[index].selected:
             self._unselect_all()
-            self[index]._qt.setSelected(True)
+            self[index].selected = True
         if not indices == [i for i in range(total)]:
             self.reorder(indices)
 
     def _unselect_all(self):
         for layer in self:
             if layer.selected:
-                layer._qt.setSelected(False)
+                layer.selected = False
+                print('aaaa')
 
     def remove_selected(self):
         """Removes selected items from list.

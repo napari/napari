@@ -10,9 +10,13 @@ class QtLayer(QFrame):
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
+        self.layer.events.select.connect(self._on_select)
+        self.layer.events.deselect.connect(self._on_deselect)
+
         self.unselectedStyleSheet = "QFrame#layer {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
         self.selectedStyleSheet = "QFrame#layer {border: 3px solid rgb(0, 153, 255); background-color:lightGray; border-radius: 3px;}"
         self.setObjectName('layer')
+        self.layer.selected = True
 
         self.grid_layout = QGridLayout()
 
@@ -59,19 +63,16 @@ class QtLayer(QFrame):
 
         self.setLayout(self.grid_layout)
         self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
-        self.setSelected(True)
         self.setExpanded(False)
         self.setFixedWidth(200)
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
 
-    def setSelected(self, state):
-        if state:
-            self.setStyleSheet(self.selectedStyleSheet)
-            self.layer.selected = True
-        else:
-            self.setStyleSheet(self.unselectedStyleSheet)
-            self.layer.selected = False
+    def _on_select(self, event):
+        self.setStyleSheet(self.selectedStyleSheet)
+
+    def _on_deselect(self, event):
+        self.setStyleSheet(self.unselectedStyleSheet)
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -101,12 +102,12 @@ class QtLayer(QFrame):
             r = [index, lastSelected]
             r.sort()
             for i in range(r[0], r[1]+1):
-                self.layer.viewer.layers[i]._qt.setSelected(True)
+                self.layer.viewer.layers[i].selected = True
         elif modifiers == Qt.ControlModifier:
-            self.setSelected(not self.layer.selected)
+            self.layer.selected = not self.layer.selected
         else:
             self.layer.viewer.layers._unselect_all()
-            self.setSelected(True)
+            self.layer.selected = True
         self.layer.viewer._update_active_layers(None)
         self.layer.viewer._set_annotation(self.layer.viewer.annotation)
         self.layer.viewer.control_bars.clim_slider_update()
