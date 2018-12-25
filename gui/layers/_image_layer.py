@@ -273,7 +273,7 @@ class Image(Layer):
     def _clim_range_default(self):
         return [np.min(self.image), np.max(self.image)]
 
-    def _get_value(self, position, indices):
+    def get_value(self, position, indices):
         """Returns coordinates, values, and a string
         for a given mouse position and set of indices.
 

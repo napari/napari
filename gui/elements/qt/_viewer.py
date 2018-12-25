@@ -3,9 +3,6 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-from numpy import clip, integer, ndarray, append, insert, delete, empty
-from copy import copy
-
 from os.path import join
 from ...icons import icons_dir
 path_cursor = join(icons_dir, 'cursor_disabled.png')
@@ -70,51 +67,31 @@ class QtViewer(QSplitter):
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
-        if self.viewer.layers:
-            if event.pos is None:
-                return
-            self.viewer.position = event.pos
-            self.viewer.dimensions._update_index(event)
-            if event.is_dragging:
-                if self.viewer.annotation and 'Shift' in event.modifiers:
-                    if self.viewer._active_markers:
-                        layer = self.viewer.layers[self.viewer._active_markers]
-                        index = layer._selected_markers
-                        if index is None:
-                            pass
-                        else:
-                            layer.data[index] = [self.viewer.dimensions._index[1],self.viewer.dimensions._index[0],*self.viewer.dimensions._index[2:]]
-                            layer._refresh()
-            self.viewer._update_status()
+        if event.pos is None:
+            return
+        self.viewer.position = event.pos
+        if event.is_dragging and self.viewer.annotation and 'Shift' in event.modifiers and self.viewer._active_markers:
+            layer = self.viewer.layers[self.viewer._active_markers]
+            layer.move(self.viewer.position, self.viewer.dimensions.indices)
+        self.viewer._update_status()
 
     def on_mouse_press(self, event):
-        if self.viewer.layers:
-            if event.pos is None:
-                return
-            if self.viewer.annotation:
-                if self.viewer._active_markers:
-                    layer = self.viewer.layers[self.viewer._active_markers]
-                    if 'Meta' in event.modifiers:
-                        index = layer._selected_markers
-                        if index is None:
-                            pass
-                        else:
-                            if isinstance(layer.size, (list, ndarray)):
-                                layer._size = delete(layer.size, index)
-                            layer.data = delete(layer.data, index, axis=0)
-                            layer._selected_markers = None
-                    elif 'Shift' in event.modifiers:
-                        pass
-                    else:
-                        if isinstance(layer.size, (list, ndarray)):
-                            layer._size = append(layer.size, 10)
-                        coord = [self.viewer.dimensions._index[1],self.viewer.dimensions._index[0],*self.viewer.dimensions._index[2:]]
-                        layer.data = append(layer.data, [coord], axis=0)
-                        layer._selected_markers = len(layer.data)-1
-                    self.viewer._update_status()
+        """Called whenever mouse pressed in canvas.
+        """
+        if self.viewer.annotation and self.viewer._active_markers:
+            layer = self.viewer.layers[self.viewer._active_markers]
+            if 'Meta' in event.modifiers:
+                layer.remove(self.viewer.position, self.viewer.dimensions.indices)
+            elif 'Shift' in event.modifiers:
+                pass
+            else:
+                layer.add(self.viewer.position, self.viewer.dimensions.indices)
+            self.viewer._update_status()
 
     def on_mouse_release(self, event):
-        pass
+        """Called whenever mouse released in canvas.
+        """
+        return
 
     def on_key_press(self, event):
         if event.native.isAutoRepeat():

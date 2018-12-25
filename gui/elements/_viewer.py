@@ -202,10 +202,7 @@ class Viewer:
                 top_image = len(self.layers) - 1 - i
                 break
             elif layer.visible and isinstance(layer, Markers):
-                if self.dimensions._index is None:
-                    pass
-                else:
-                    top_markers.append(len(self.layers) - 1 - i)
+                top_markers.append(len(self.layers) - 1 - i)
         else:
             top_image = None
 
@@ -224,7 +221,7 @@ class Viewer:
     def _update_status(self):
         msg = ''
         for i in self._visible_markers:
-            coord, value, msg = self.layers[i]._get_value(self.position, self.dimensions.indices)
+            coord, value, msg = self.layers[i].get_value(self.position, self.dimensions.indices)
             if value is None:
                 pass
             else:
@@ -233,5 +230,5 @@ class Viewer:
             if self._active_image is None:
                 pass
             else:
-                coord, value, msg = self.layers[self._active_image]._get_value(self.position, self.dimensions.indices)
+                coord, value, msg = self.layers[self._active_image].get_value(self.position, self.dimensions.indices)
         self.status = msg

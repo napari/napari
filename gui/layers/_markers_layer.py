@@ -350,7 +350,17 @@ class Markers(Layer):
         self._need_visual_update = True
         self._update()
 
-    def _get_value(self, position, indices):
+    def _get_coord(self, position, indices):
+        max_shape = self.viewer.dimensions.max_shape
+        transform = self.viewer._canvas.scene.node_transform(self._node)
+        pos = transform.map(position)
+        pos = [clip(pos[1],0,max_shape[0]-1), clip(pos[0],0,max_shape[1]-1)]
+        coord = copy(indices)
+        coord[0] = int(pos[1])
+        coord[1] = int(pos[0])
+        return coord
+
+    def get_value(self, position, indices):
         """Returns coordinates, values, and a string
         for a given mouse position and set of indices.
 
@@ -371,13 +381,7 @@ class Markers(Layer):
             String containing a message that can be used as
             a status update.
         """
-        max_shape = self.viewer.dimensions.max_shape
-        transform = self.viewer._canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
-        pos = [clip(pos[1],0,max_shape[0]-1), clip(pos[0],0,max_shape[1]-1)]
-        coord = copy(indices)
-        coord[0] = int(pos[1])
-        coord[1] = int(pos[0])
+        coord = self._get_coord(position, indices)
         self._set_selected_markers(coord)
         value = self._selected_markers
         msg = f'{coord}'
@@ -386,3 +390,60 @@ class Markers(Layer):
         else:
             msg = msg + ', %s, index %d' % (self.name, value)
         return coord, value, msg
+
+    def add(self, position, indices):
+        """Returns coordinates, values, and a string
+        for a given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        coord = self._get_coord(position, indices)
+        if isinstance(self.size, (list, ndarray)):
+            self._size = append(self.size, 10)
+        self.data = append(self.data, [coord], axis=0)
+        self._selected_markers = len(self.data)-1
+
+    def remove(self, position, indices):
+        """Returns coordinates, values, and a string
+        for a given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        coord = self._get_coord(position, indices)
+        index = self._selected_markers
+        if index is None:
+            pass
+        else:
+            if isinstance(self.size, (list, ndarray)):
+                self._size = delete(self.size, index)
+            self.data = delete(self.data, index, axis=0)
+            self._selected_markers = None
+
+    def move(self, position, indices):
+        """Returns coordinates, values, and a string
+        for a given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        coord = self._get_coord(position, indices)
+        index = self._selected_markers
+        if index is None:
+            pass
+        else:
+            self.data[index] = coord
+            self._refresh()

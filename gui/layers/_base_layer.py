@@ -139,7 +139,7 @@ class Layer(VisualWrapper, ABC):
         """
         self._refresh()
 
-    def _get_value(self, position, indices):
+    def get_value(self, position, indices):
         """Returns coordinates, values, and a string
         for a given mouse position and set of indices.
 
