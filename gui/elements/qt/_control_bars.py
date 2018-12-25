@@ -42,6 +42,5 @@ class QtControlBars(QWidget):
             if hasattr(layer, 'visual') and layer.selected:
                 cmin, cmax = layer.clim
                 msg = '(%.3f, %.3f)' % (cmin, cmax)
-                self.control_bars.viewer._status = msg
-                self.control_bars.viewer.emit_status()
+                self.control_bars.viewer.status = msg
                 break

@@ -48,7 +48,7 @@ class QtViewer(QSplitter):
         viewer.dimensions._qt.setFixedHeight(0)
 
         self._cursors = {
-            'diabled' : QCursor(QPixmap(path_cursor).scaled(20,20)),
+            'disabled' : QCursor(QPixmap(path_cursor).scaled(20,20)),
             'cross' : Qt.CrossCursor,
             'forbidden' : Qt.ForbiddenCursor,
             'pointing' : Qt.PointingHandCursor,
@@ -86,7 +86,6 @@ class QtViewer(QSplitter):
                             layer._refresh()
                             self.viewer._update_status_bar()
             else:
-                self.viewer._update_active_layers(None)
                 self.viewer._update_status_bar()
 
     def on_mouse_press(self, event):

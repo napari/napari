@@ -305,6 +305,8 @@ class LayerList:
         layer = event.item
         layer._order = -len(self)
         layer.viewer = self.viewer
+        layer.events.select.connect(self.viewer._update_active_layers)
+        layer.events.deselect.connect(self.viewer._update_active_layers)
 
     def _remove(self, event):
         """Callback when an item is removed to remove its viewer
@@ -313,6 +315,8 @@ class LayerList:
         layer = event.item
         layer.viewer = None
         layer._order = 0
+        layer.events.select.disconnect(self.viewer._update_active_layers)
+        layer.events.deselect.disconnect(self.viewer._update_active_layers)
 
     def _reorder(self, event):
         """Callback when the list is reordered to propagate those changes

@@ -65,6 +65,32 @@ class Viewer:
         """
         return self._view.camera
 
+    @property
+    def status(self):
+        """string: Status string
+        """
+        return self._status
+
+    @status.setter
+    def status(self, status):
+        if status == self.status:
+            return
+        self._status = status
+        self.events.status(text=self._status)
+
+    @property
+    def help(self):
+        """string: Help string
+        """
+        return self._help
+
+    @help.setter
+    def help(self, help):
+        if help == self.help:
+            return
+        self._help = help
+        self.events.help(text=self._help)
+
     def reset_view(self):
         """Resets the camera's view.
         """
@@ -157,12 +183,11 @@ class Viewer:
     def _set_annotation(self, bool):
         if bool:
             self.annotation = True
-            self._help = 'hold <space> to pan/zoom'
+            self.help = 'hold <space> to pan/zoom'
         else:
             self.annotation = False
-            self._help = ''
+            self.help = ''
         self.events.annotation()
-        self.events.help(text=self._help)
         self._update_status_bar()
 
     def _update_active_layers(self, event):
@@ -196,8 +221,7 @@ class Viewer:
 
     def _reset(self):
         self._set_annotation(self.annotation)
-        self._status = 'Ready'
-        self.events.status(text=self._status)
+        self.status = 'Ready'
         self.control_bars.clim_slider_update()
 
     def _update_status_bar(self):
@@ -228,5 +252,4 @@ class Viewer:
                     msg = msg + '%d' % value
                 else:
                     msg = msg + '%.3f' % value
-        self._status = msg
-        self.events.status(text=self._status)
+        self.status = msg
