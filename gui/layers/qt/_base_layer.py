@@ -83,7 +83,6 @@ class QtLayer(QFrame):
         else:
             self.layer.visible = False
         self.layer.viewer._update_active_layers(None)
-        self.layer.viewer._set_annotation(self.layer.viewer.annotation)
 
     def changeText(self, text):
         self.layer.name = text.text()
@@ -108,7 +107,6 @@ class QtLayer(QFrame):
         else:
             self.layer.viewer.layers._unselect_all()
             self.layer.selected = True
-        self.layer.viewer._set_annotation(self.layer.viewer.annotation)
 
     def mousePressEvent(self, event):
         self.dragStartPosition = event.pos()

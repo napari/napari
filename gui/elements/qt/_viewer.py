@@ -84,7 +84,7 @@ class QtViewer(QSplitter):
                         else:
                             layer.data[index] = [self.viewer.dimensions._index[1],self.viewer.dimensions._index[0],*self.viewer.dimensions._index[2:]]
                             layer._refresh()
-            self.viewer._update_status_bar()
+            self.viewer._update_status()
 
     def on_mouse_press(self, event):
         if self.viewer.layers:
@@ -110,7 +110,7 @@ class QtViewer(QSplitter):
                         coord = [self.viewer.dimensions._index[1],self.viewer.dimensions._index[0],*self.viewer.dimensions._index[2:]]
                         layer.data = append(layer.data, [coord], axis=0)
                         layer._selected_markers = len(layer.data)-1
-                    self.viewer._update_status_bar()
+                    self.viewer._update_status()
 
     def on_key_press(self, event):
         if event.native.isAutoRepeat():

@@ -37,7 +37,7 @@ class Viewer:
         self.dimensions = Dimensions(self)
         self.layers = LayerList(self)
         self.control_bars = ControlBars(self)
-        
+
         self._update = self.dimensions._update
 
         self._annotation = False
@@ -185,7 +185,7 @@ class Viewer:
         for layer in self.layers:
             layer._set_view_slice(self.dimensions.indices)
         self.dimensions._update_index(None)
-        self._update_status_bar()
+        self._update_status()
 
     def _on_layers_change(self, event):
         """Called whenever a layer is changed.
@@ -231,7 +231,7 @@ class Viewer:
         self._set_annotation(self.annotation)
         self.control_bars.clim_slider_update()
 
-    def _update_status_bar(self):
+    def _update_status(self):
         msg = f'{self.dimensions._index}'
 
         index = None
