@@ -17,6 +17,8 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
 
+        self.viewer.events.annotation.connect(self.update_annotation)
+
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
 
@@ -53,6 +55,16 @@ class QtViewer(QSplitter):
             'standard' : QCursor()
         }
 
+    def update_annotation(self, event):
+        if self.viewer.annotation:
+            self.view.interactive = False
+            if self.viewer._active_markers:
+                self.canvas.native.setCursor(self._cursors['cross'])
+            else:
+                self.canvas.native.setCursor(self._cursors['disabled'])
+        else:
+            self.view.interactive = True
+            self.canvas.native.setCursor(self._cursors['standard'])
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

@@ -35,7 +35,8 @@ class Viewer:
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    status=Event,
-                                   help=Event)
+                                   help=Event,
+                                   annotation=Event)
 
         self._update = self.dimensions._update
 
@@ -156,17 +157,11 @@ class Viewer:
     def _set_annotation(self, bool):
         if bool:
             self.annotation = True
-            self._qt.view.interactive = False
-            if self._active_markers:
-                self._qt.canvas.native.setCursor(self._qt._cursors['cross'])
-            else:
-                self._qt.canvas.native.setCursor(self._qt._cursors['disabled'])
             self._help = 'hold <space> to pan/zoom'
         else:
             self.annotation = False
-            self._qt.view.interactive = True
-            self._qt.canvas.native.setCursor(self._qt._cursors['standard'])
             self._help = ''
+        self.events.annotation()
         self.events.help(text=self._help)
         self._update_status_bar()
 
