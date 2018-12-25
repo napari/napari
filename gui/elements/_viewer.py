@@ -29,15 +29,15 @@ class Viewer:
         from ._control_bars import ControlBars
         from ._dimensions import Dimensions
 
-        self.dimensions = Dimensions(self)
-        self.layers = LayerList(self)
-        self.control_bars = ControlBars(self)
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    status=Event,
                                    help=Event,
                                    annotation=Event)
-
+        self.dimensions = Dimensions(self)
+        self.layers = LayerList(self)
+        self.control_bars = ControlBars(self)
+        
         self._update = self.dimensions._update
 
         self._annotation = False

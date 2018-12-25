@@ -86,3 +86,8 @@ class QtAnnotationCheckBox(QCheckBox):
                         QCheckBox::indicator:unchecked:hover {image: url(""" + path_on + ");}"
         self.setStyleSheet(styleSheet)
         self.stateChanged.connect(lambda state=self: self.layers.viewer._set_annotation(state))
+        self.layers.viewer.events.annotation.connect(self._set_annotation)
+
+    def _set_annotation(self, event):
+        with self.layers.viewer.events.blocker(self._set_annotation):
+            self.setChecked(self.layers.viewer.annotation)
