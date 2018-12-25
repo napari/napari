@@ -139,14 +139,25 @@ class Layer(VisualWrapper, ABC):
         """
         self._refresh()
 
-    # def on_mouse_move(self, event):
-    #     """Called whenever mouse moves over canvas.
-    #     """
-    #
-    # def on_mouse_pressed(self, event):
-    #     """Called whenever mouse pressed over canvas.
-    #     """
-    #
-    # def on_mouse_released(self, event):
-    #     """Called whenever mouse released over canvas.
-    #     """
+    def _get_value(self, position, indices):
+        """Returns coordinates, values, and a string
+        for a given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+
+        Returns
+        ----------
+        coord : sequence of int
+            Position of mouse cursor in data.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
+        msg : string
+            String containing a message that can be used as
+            a status update.
+        """
+        return None, None, ''

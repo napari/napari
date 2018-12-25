@@ -2,6 +2,8 @@ from typing import Union
 from collections import Iterable
 
 import numpy as np
+from numpy import clip, integer, ndarray, append, insert, delete, empty
+from copy import copy
 
 from ._base_layer import Layer
 from ._register import add_to_viewer
@@ -347,3 +349,40 @@ class Markers(Layer):
             scaling=self.scaling)
         self._need_visual_update = True
         self._update()
+
+    def _get_value(self, position, indices):
+        """Returns coordinates, values, and a string
+        for a given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+
+        Returns
+        ----------
+        coord : sequence of int
+            Position of mouse cursor in data.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
+        msg : string
+            String containing a message that can be used as
+            a status update.
+        """
+        max_shape = self.viewer.dimensions.max_shape
+        transform = self.viewer._canvas.scene.node_transform(self._node)
+        pos = transform.map(position)
+        pos = [clip(pos[1],0,max_shape[0]-1), clip(pos[0],0,max_shape[1]-1)]
+        coord = copy(indices)
+        coord[0] = int(pos[1])
+        coord[1] = int(pos[0])
+        self._set_selected_markers(coord)
+        value = self._selected_markers
+        msg = f'{coord}'
+        if value is None:
+            pass
+        else:
+            msg = msg + ', %s, index %d' % (self.name, value)
+        return coord, value, msg

@@ -73,6 +73,7 @@ class QtViewer(QSplitter):
         if self.viewer.layers:
             if event.pos is None:
                 return
+            self.viewer.position = event.pos
             self.viewer.dimensions._update_index(event)
             if event.is_dragging:
                 if self.viewer.annotation and 'Shift' in event.modifiers:

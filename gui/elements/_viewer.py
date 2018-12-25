@@ -43,6 +43,7 @@ class Viewer:
         self._active_image = None
         self._active_markers = None
         self._visible_markers = []
+        self.position = [0, 0]
 
         self._status = 'Ready'
         self._help = ''
@@ -221,33 +222,16 @@ class Viewer:
         self.control_bars.clim_slider_update()
 
     def _update_status(self):
-        msg = f'{self.dimensions._index}'
-
-        index = None
+        msg = ''
         for i in self._visible_markers:
-            coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
-            self.layers[i]._set_selected_markers(coord)
-            index = self.layers[i]._selected_markers
-            if index is None:
+            coord, value, msg = self.layers[i]._get_value(self.position, self.dimensions.indices)
+            if value is None:
                 pass
             else:
-                msg = msg + ', %s, index %d' % (self.layers[i].name, index)
                 break
-
-        if self._active_image is None:
-            pass
-        elif index is None:
-            msg = msg + ', %s' % self.layers[self._active_image].name
-            value = self.layers[self._active_image]._slice_image(self.dimensions._index)
-            msg = msg + ', value '
-            if isinstance(value, ndarray):
-                if isinstance(value[0], integer):
-                    msg = msg + '(%d, %d, %d)' % (value[0], value[1], value[2])
-                else:
-                    msg = msg + '(%.3f, %.3f, %.3f)' % (value[0], value[1], value[2])
+        else:
+            if self._active_image is None:
+                pass
             else:
-                if isinstance(value, integer):
-                    msg = msg + '%d' % value
-                else:
-                    msg = msg + '%.3f' % value
+                coord, value, msg = self.layers[self._active_image]._get_value(self.position, self.dimensions.indices)
         self.status = msg

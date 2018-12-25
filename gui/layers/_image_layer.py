@@ -1,6 +1,8 @@
 import weakref
 
 import numpy as np
+from numpy import clip, integer, ndarray, append, insert, delete, empty
+from copy import copy
 
 from ._base_layer import Layer
 from .._vispy.scene.visuals import Image as ImageNode
@@ -271,11 +273,44 @@ class Image(Layer):
     def _clim_range_default(self):
         return [np.min(self.image), np.max(self.image)]
 
-    # def _get_cursor_value(self, position, indices):
-    #     transform = self.viewer._canvas.scene.node_transform(self._node)
-    #     pos = transform.map(position)
-    #     pos = [clip(pos[1],0,self.shape[0]-1), clip(pos[0],0,self.shape[1]-1)]
-    #     index = copy(indices)
-    #     index[0] = int(pos[0])
-    #     index[1] = int(pos[1])
-    #     return self._slice_image(index)
+    def _get_value(self, position, indices):
+        """Returns coordinates, values, and a string
+        for a given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+
+        Returns
+        ----------
+        coord : sequence of int
+            Position of mouse cursor in data.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
+        msg : string
+            String containing a message that can be used as
+            a status update.
+        """
+        transform = self.viewer._canvas.scene.node_transform(self._node)
+        pos = transform.map(position)
+        pos = [clip(pos[1],0,self.shape[0]-1), clip(pos[0],0,self.shape[1]-1)]
+        coord = copy(indices)
+        coord[0] = int(pos[0])
+        coord[1] = int(pos[1])
+        value = self._slice_image(coord)
+        msg = f'{coord}'
+        msg = msg + ', %s' % self.name + ', value '
+        if isinstance(value, ndarray):
+            if isinstance(value[0], integer):
+                msg = msg + '(%d, %d, %d)' % (value[0], value[1], value[2])
+            else:
+                msg = msg + '(%.3f, %.3f, %.3f)' % (value[0], value[1], value[2])
+        else:
+            if isinstance(value, integer):
+                msg = msg + '%d' % value
+            else:
+                msg = msg + '%.3f' % value
+        return coord, value, msg

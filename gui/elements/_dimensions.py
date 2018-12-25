@@ -48,7 +48,6 @@ class Dimensions:
         self._recalc_max_dims = False
         self._recalc_max_shape = False
 
-        self._pos = [0, 0]
         self._index = None
 
         self._qt = QtDimensions(self)
