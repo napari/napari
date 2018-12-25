@@ -1,6 +1,8 @@
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
+from vispy.util.event import EmitterGroup, Event
+
 from .qt import QtViewer
 
 class Viewer:
@@ -30,6 +32,10 @@ class Viewer:
         self.dimensions = Dimensions(self)
         self.layers = LayerList(self)
         self.control_bars = ControlBars(self)
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   status=Event,
+                                   help=Event)
 
         self._update = self.dimensions._update
 
@@ -161,7 +167,7 @@ class Viewer:
             self._qt.view.interactive = True
             self._qt.canvas.native.setCursor(self._qt._cursors['standard'])
             self._help = ''
-        self._qt.helpChanged.emit(self._help)
+        self.events.help(text=self._help)
         self._update_status_bar()
 
     def _update_active_layers(self, event):
@@ -196,7 +202,7 @@ class Viewer:
     def _reset(self):
         self._set_annotation(self.annotation)
         self._status = 'Ready'
-        self.emit_status()
+        self.events.status(text=self._status)
         self.control_bars.clim_slider_update()
 
     def _update_status_bar(self):
@@ -228,7 +234,4 @@ class Viewer:
                 else:
                     msg = msg + '%.3f' % value
         self._status = msg
-        self.emit_status()
-
-    def emit_status(self):
-        self._qt.statusChanged.emit(self._status)
+        self.events.status(text=self._status)

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
@@ -11,9 +11,6 @@ from ...icons import icons_dir
 path_cursor = join(icons_dir, 'cursor_disabled.png')
 
 class QtViewer(QSplitter):
-
-    statusChanged = pyqtSignal(str)
-    helpChanged = pyqtSignal(str)
 
     def __init__(self, viewer):
         super().__init__()

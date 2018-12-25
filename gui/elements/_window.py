@@ -31,8 +31,8 @@ class Window():
         self.viewer = viewer
         self._qt_center.layout().addWidget(self.viewer._qt)
 
-        self.viewer._qt.statusChanged.connect(self._statusChanged)
-        self.viewer._qt.helpChanged.connect(self._helpChanged)
+        self.viewer.events.status.connect(self._status_changed)
+        self.viewer.events.help.connect(self._help_changed)
 
         if show:
             self.show()
@@ -56,13 +56,13 @@ class Window():
         self._qt_window.show()
         self._qt_window.raise_()
 
-    def _statusChanged(self, message):
+    def _status_changed(self, event):
         """Update status bar.
         """
-        self._status_bar.showMessage(message)
+        self._status_bar.showMessage(event.text)
 
 
-    def _helpChanged(self, message):
+    def _help_changed(self, event):
         """Update help message on status bar.
         """
-        self._help.setText(message)
+        self._help.setText(event.text)
