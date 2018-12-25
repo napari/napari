@@ -5,8 +5,10 @@ from ._range_slider import QVRangeSlider
 
 
 class QtControlBars(QWidget):
-    def __init__(self):
+    def __init__(self, control_bars):
         super().__init__()
+
+        self.control_bars = control_bars
 
         layout = QHBoxLayout()
 
@@ -24,3 +26,22 @@ class QtControlBars(QWidget):
         self.setLayout(layout)
         self.setMouseTracking(True)
         self.setMinimumSize(QSize(40, 40))
+
+        self.climSlider.rangeChanged.connect(self.control_bars.clim_slider_changed)
+        self.control_bars.events.update_slider.connect(self.update)
+
+    def update(self, event):
+        if event.enabled:
+            self.climSlider.setEnabled(True)
+            self.climSlider.setValues(event.values)
+        else:
+            self.climSlider.setEnabled(False)
+
+    def mouseMoveEvent(self, event):
+        for layer in self.control_bars.viewer.layers[::-1]:
+            if hasattr(layer, 'visual') and layer.selected:
+                cmin, cmax = layer.clim
+                msg = '(%.3f, %.3f)' % (cmin, cmax)
+                self.control_bars.viewer._status = msg
+                self.control_bars.viewer.emit_status()
+                break
