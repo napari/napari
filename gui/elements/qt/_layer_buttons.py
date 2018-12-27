@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QCheckBox
 from os.path import join
-from ...icons import icons_dir
+from ...resources.icons import icons_dir
 
 path_delete = join(icons_dir,'delete.png')
 path_add = join(icons_dir,'add.png')

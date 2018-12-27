@@ -294,7 +294,7 @@ class Image(Layer):
             String containing a message that can be used as
             a status update.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [clip(pos[1],0,self.shape[0]-1), clip(pos[0],0,self.shape[1]-1)]
         coord = copy(indices)

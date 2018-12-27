@@ -312,19 +312,6 @@ class Markers(Layer):
 
         in_slice_markers, matches = self._slice_markers(indices)
 
-        return in_slice_markers, matches
-
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-
-        in_slice_markers, matches = self._slice_markers(indices)
-
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
@@ -352,7 +339,7 @@ class Markers(Layer):
 
     def _get_coord(self, position, indices):
         max_shape = self.viewer.dimensions.max_shape
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [clip(pos[1],0,max_shape[0]-1), clip(pos[0],0,max_shape[1]-1)]
         coord = copy(indices)
@@ -392,8 +379,8 @@ class Markers(Layer):
         return coord, value, msg
 
     def add(self, position, indices):
-        """Returns coordinates, values, and a string
-        for a given mouse position and set of indices.
+        """Adds object at given mouse position
+        and set of indices.
 
         Parameters
         ----------
@@ -409,8 +396,8 @@ class Markers(Layer):
         self._selected_markers = len(self.data)-1
 
     def remove(self, position, indices):
-        """Returns coordinates, values, and a string
-        for a given mouse position and set of indices.
+        """Removes object at given mouse position
+        and set of indices.
 
         Parameters
         ----------
@@ -430,8 +417,8 @@ class Markers(Layer):
             self._selected_markers = None
 
     def move(self, position, indices):
-        """Returns coordinates, values, and a string
-        for a given mouse position and set of indices.
+        """Moves object at given mouse position
+        and set of indices.
 
         Parameters
         ----------

@@ -161,3 +161,39 @@ class Layer(VisualWrapper, ABC):
             a status update.
         """
         return None, None, ''
+
+    def add(self, position, indices):
+        """Adds object at given mouse position
+        and set of indices.
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        return
+
+    def remove(self, position, indices):
+        """Removes object at given mouse position
+        and set of indices.
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        return
+
+    def move(self, position, indices):
+        """Moves object at given mouse position
+        and set of indices.
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        return

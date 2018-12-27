@@ -8,7 +8,6 @@ class QtMarkersLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.grid_layout.addWidget(QLabel('size:'), 3, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
         #sld.setInvertedAppearance(True)
@@ -23,6 +22,7 @@ class QtMarkersLayer(QtLayer):
             value = value.mean()
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
+        self.grid_layout.addWidget(QLabel('size:'), 3, 0)
         self.grid_layout.addWidget(sld, 3, 1)
 
         face_comboBox = QComboBox()

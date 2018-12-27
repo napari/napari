@@ -4,7 +4,7 @@ from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from os.path import join
-from ...icons import icons_dir
+from ...resources.icons import icons_dir
 path_cursor = join(icons_dir, 'cursor_disabled.png')
 
 class QtViewer(QSplitter):

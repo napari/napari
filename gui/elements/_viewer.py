@@ -79,7 +79,8 @@ class Viewer:
 
     @property
     def help(self):
-        """string: Help string
+        """string: String that can be displayed to the
+        user in the status bar with helpful usage tips.
         """
         return self._help
 
