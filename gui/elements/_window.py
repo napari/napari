@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from ._viewer import Viewer
 
 
-class Window():
+class Window:
     """Application window that contains the menu bar and viewers.
 
     Parameters

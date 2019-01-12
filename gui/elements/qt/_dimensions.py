@@ -1,7 +1,10 @@
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
 
+
 class QtDimensions(QWidget):
+    SLIDERHEIGHT = 19
+
     def __init__(self, dimensions):
         super().__init__()
 
@@ -80,9 +83,9 @@ class QtDimensions(QWidget):
         else:
             slider = slider.widget()
 
-        slider.valueChanged.connect(lambda value, axis=axis: self._slider_value_changed(value, axis))
+        slider.valueChanged.connect(lambda value: self._slider_value_changed(value, axis))
         slider.setMaximum(max_axis_length - 1)
-        self.setFixedHeight((dims-2)*19)
+        self.setFixedHeight((dims-2)*self.SLIDERHEIGHT)
         return slider
 
     def _slider_value_changed(self, value, axis):

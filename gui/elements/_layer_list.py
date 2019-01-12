@@ -329,10 +329,23 @@ class LayerList:
         canvas.update()
 
     def _insert_reorder(self, index, insert):
-        """Reorder list by inserting index and if others selected at insert
+        """Reorder list by moving the item at index and insterting it
+        at the insert index. If additional items are selected these will
+        get inserted at the insert index too. This allows for rearranging
+        the list based on dragging and dropping a selection of items, where
+        index is the index of the primary item being dragged, and insert is
+        the index of the drop location, and the selection indicates if
+        multiple items are being dragged.
+
+        Parameters
+        ----------
+        index : int
+            Index of primary item to be moved
+        insert : int
+            Index that item(s) will be inserted at
         """
         total = len(self)
-        indices = [i for i in range(total)]
+        indices = list(range(total))
         if self[index].selected:
             selected = []
             for i in range(total):

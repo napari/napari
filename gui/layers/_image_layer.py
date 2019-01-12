@@ -301,16 +301,15 @@ class Image(Layer):
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
         value = self._slice_image(coord)
-        msg = f'{coord}'
-        msg = msg + ', %s' % self.name + ', value '
+        msg = f'{coord}, {self.name}'+ ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):
-                msg = msg + '(%d, %d, %d)' % (value[0], value[1], value[2])
+                msg = msg + str(value)
             else:
-                msg = msg + '(%.3f, %.3f, %.3f)' % (value[0], value[1], value[2])
+                msg = msg + '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
         else:
             if isinstance(value, integer):
-                msg = msg + '%d' % value
+                msg = msg + str(value)
             else:
-                msg = msg + '%.3f' % value
+                msg = msg + f'{value:0.3}'
         return coord, value, msg

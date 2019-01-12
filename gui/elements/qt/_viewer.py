@@ -4,10 +4,18 @@ from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from os.path import join
-from ...resources.icons import icons_dir
-path_cursor = join(icons_dir, 'cursor_disabled.png')
+from ...resources import resources_dir
+path_cursor = join(resources_dir, 'icons', 'cursor_disabled.png')
 
 class QtViewer(QSplitter):
+
+    _cursors = {
+        'disabled' : QCursor(QPixmap(path_cursor).scaled(20,20)),
+        'cross' : Qt.CrossCursor,
+        'forbidden' : Qt.ForbiddenCursor,
+        'pointing' : Qt.PointingHandCursor,
+        'standard' : QCursor()
+    }
 
     def __init__(self, viewer):
         super().__init__()
@@ -45,14 +53,6 @@ class QtViewer(QSplitter):
         self.addWidget(self.viewer.layers._qt)
 
         viewer.dimensions._qt.setFixedHeight(0)
-
-        self._cursors = {
-            'disabled' : QCursor(QPixmap(path_cursor).scaled(20,20)),
-            'cross' : Qt.CrossCursor,
-            'forbidden' : Qt.ForbiddenCursor,
-            'pointing' : Qt.PointingHandCursor,
-            'standard' : QCursor()
-        }
 
     def set_annotation(self, event):
         if self.viewer.annotation:

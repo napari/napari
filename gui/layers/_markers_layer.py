@@ -375,7 +375,7 @@ class Markers(Layer):
         if value is None:
             pass
         else:
-            msg = msg + ', %s, index %d' % (self.name, value)
+            msg = msg + ', ' + self.name + ', index ' + str(value)
         return coord, value, msg
 
     def add(self, position, indices):

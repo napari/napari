@@ -172,7 +172,6 @@ class Layer(VisualWrapper, ABC):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
-        return
 
     def remove(self, position, indices):
         """Removes object at given mouse position
@@ -184,7 +183,6 @@ class Layer(VisualWrapper, ABC):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
-        return
 
     def move(self, position, indices):
         """Moves object at given mouse position
@@ -196,4 +194,3 @@ class Layer(VisualWrapper, ABC):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
-        return

@@ -28,11 +28,10 @@ class ControlBars:
                 cmax = valmin+self.slider_values[1]*(valmax-valmin)
                 layer.clim = [cmin, cmax]
                 msg = '(%.3f, %.3f)' % (cmin, cmax)
-        if msg is not None:
-            self.viewer.status = msg
-        else:
-            self.viewer.status = 'Ready'
+        if msg is None:
+            msg = 'Ready'
 
+        self.viewer.status = msg
 
     def clim_slider_update(self):
         for layer in self.viewer.layers[::-1]:

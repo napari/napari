@@ -2,12 +2,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QCheckBox
 from os.path import join
-from ...resources.icons import icons_dir
+from ...resources import resources_dir
 
-path_delete = join(icons_dir,'delete.png')
-path_add = join(icons_dir,'add.png')
-path_off = join(icons_dir,'annotation_off.png')
-path_on = join(icons_dir,'annotation_on.png')
+path_delete = join(resources_dir, 'icons','delete.png')
+path_add = join(resources_dir, 'icons','add.png')
+path_off = join(resources_dir, 'icons','annotation_off.png')
+path_on = join(resources_dir, 'icons','annotation_on.png')
 
 class QtLayerButtons(QFrame):
     def __init__(self, layers):
