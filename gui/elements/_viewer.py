@@ -5,6 +5,7 @@ from vispy.util.event import EmitterGroup, Event
 
 from .qt import QtViewer
 
+
 class Viewer:
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
@@ -149,7 +150,8 @@ class Viewer:
             upper-left corner of the rendered region.
 
         """
-        return self._canvas.render(region=None, size=None, bgcolor=None, crop=None)
+        return self._canvas.render(region=None, size=None, bgcolor=None,
+                                   crop=None)
 
     def add_layer(self, layer):
         """Adds a layer to the viewer.
@@ -235,7 +237,9 @@ class Viewer:
     def _update_status(self):
         msg = ''
         for i in self._visible_markers:
-            coord, value, msg = self.layers[i].get_value(self.position, self.dimensions.indices)
+            layer = self.layers[i]
+            coord, value, msg = layer.get_value(self.position,
+                                                self.dimensions.indices)
             if value is None:
                 pass
             else:
@@ -244,5 +248,7 @@ class Viewer:
             if self._active_image is None:
                 pass
             else:
-                coord, value, msg = self.layers[self._active_image].get_value(self.position, self.dimensions.indices)
+                layer = self.layers[self._active_image]
+                coord, value, msg = layer.get_value(self.position,
+                                                    self.dimensions.indices)
         self.status = msg

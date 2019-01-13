@@ -7,15 +7,8 @@ from os.path import join
 from ...resources import resources_dir
 path_cursor = join(resources_dir, 'icons', 'cursor_disabled.png')
 
-class QtViewer(QSplitter):
 
-    _cursors = {
-        'disabled' : QCursor(QPixmap(path_cursor).scaled(20,20)),
-        'cross' : Qt.CrossCursor,
-        'forbidden' : Qt.ForbiddenCursor,
-        'pointing' : Qt.PointingHandCursor,
-        'standard' : QCursor()
-    }
+class QtViewer(QSplitter):
 
     def __init__(self, viewer):
         super().__init__()
@@ -54,6 +47,14 @@ class QtViewer(QSplitter):
 
         viewer.dimensions._qt.setFixedHeight(0)
 
+        self._cursors = {
+                'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
+                'cross': Qt.CrossCursor,
+                'forbidden': Qt.ForbiddenCursor,
+                'pointing': Qt.PointingHandCursor,
+                'standard': QCursor()
+            }
+
     def set_annotation(self, event):
         if self.viewer.annotation:
             self.view.interactive = False
@@ -71,7 +72,8 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
         self.viewer.position = event.pos
-        if event.is_dragging and self.viewer.annotation and 'Shift' in event.modifiers and self.viewer.active_markers:
+        if (event.is_dragging and self.viewer.annotation and
+                'Shift' in event.modifiers and self.viewer.active_markers):
             layer = self.viewer.layers[self.viewer.active_markers]
             layer.move(self.viewer.position, self.viewer.dimensions.indices)
         self.viewer._update_status()
@@ -82,7 +84,8 @@ class QtViewer(QSplitter):
         if self.viewer.annotation and self.viewer.active_markers:
             layer = self.viewer.layers[self.viewer.active_markers]
             if 'Meta' in event.modifiers:
-                layer.remove(self.viewer.position, self.viewer.dimensions.indices)
+                layer.remove(self.viewer.position,
+                             self.viewer.dimensions.indices)
             elif 'Shift' in event.modifiers:
                 pass
             else:

@@ -13,6 +13,7 @@ from vispy.color import get_color_names
 
 from .qt import QtMarkersLayer
 
+
 @add_to_viewer
 class Markers(Layer):
     """Markers layer.
@@ -226,7 +227,7 @@ class Markers(Layer):
 
     def _get_shape(self):
         if len(self.coords) == 0:
-            return np.ones(self.coords.shape,dtype=int)
+            return np.ones(self.coords.shape, dtype=int)
         else:
             return np.max(self.coords, axis=0) + 1
 
@@ -282,14 +283,17 @@ class Markers(Layer):
 
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
-            distances = abs(in_slice_markers - np.broadcast_to(indices[:2], (len(in_slice_markers),2)))
+            shape = (len(in_slice_markers), 2)
+            index_array = np.broadcast_to(indices[:2], shape)
+            distances = abs(in_slice_markers - index_array)
             # Get the marker sizes
             if isinstance(self.size, (list, np.ndarray)):
                 sizes = self.size[matches]
             else:
                 sizes = self.size
             matches = np.where(matches)[0]
-            in_slice_matches = np.less_equal(distances, np.broadcast_to(sizes/2, (2, len(in_slice_markers))).T)
+            size_array = np.broadcast_to(sizes/2, (2, len(in_slice_markers))).T
+            in_slice_matches = np.less_equal(distances, size_array)
             in_slice_matches = np.all(in_slice_matches, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
@@ -330,8 +334,8 @@ class Markers(Layer):
             sizes = 0
 
         self._node.set_data(
-            data[::-1], size=sizes, edge_width=self.edge_width, symbol=self.symbol,
-            edge_width_rel=self.edge_width_rel,
+            data[::-1], size=sizes, edge_width=self.edge_width,
+            symbol=self.symbol, edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
         self._need_visual_update = True
@@ -341,7 +345,8 @@ class Markers(Layer):
         max_shape = self.viewer.dimensions.max_shape
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [clip(pos[1],0,max_shape[0]-1), clip(pos[0],0,max_shape[1]-1)]
+        pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
+                                                     max_shape[1]-1)]
         coord = copy(indices)
         coord[0] = int(pos[1])
         coord[1] = int(pos[0])

@@ -7,6 +7,7 @@ from vispy.util.event import EmitterGroup, Event
 
 from .qt import QtDimensions
 
+
 class Dimensions:
     """Dimensions containing the dimension sliders
 

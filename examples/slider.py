@@ -6,7 +6,7 @@ from napari_gui.util.range_slider import QHRangeSlider
 
 # Slider Demo
 app = QtWidgets.QApplication(sys.argv)
-if True: # Toggle this to change between horizantal and vertical sliders
+if True:  # Toggle this to change between horizantal and vertical sliders
     hslider = QHRangeSlider(slider_range=[-15.0, 15.0, 0.02], values=[-2.5, 2.5])
     hslider.setEmitWhileMoving(True)
     hslider.show()

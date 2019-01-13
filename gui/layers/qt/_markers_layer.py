@@ -4,13 +4,13 @@ from collections import Iterable
 import numpy as np
 from ._base_layer import QtLayer
 
+
 class QtMarkersLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        #sld.setInvertedAppearance(True)
         sld.setFixedWidth(75)
         sld.setMinimum(0)
         sld.setMaximum(100)
@@ -28,33 +28,39 @@ class QtMarkersLayer(QtLayer):
         face_comboBox = QComboBox()
         colors = self.layer._colors
         for c in colors:
-           face_comboBox.addItem(c)
-        index = face_comboBox.findText(self.layer.face_color, Qt.MatchFixedString)
+            face_comboBox.addItem(c)
+        index = face_comboBox.findText(
+            self.layer.face_color, Qt.MatchFixedString)
         if index >= 0:
-           face_comboBox.setCurrentIndex(index)
-        face_comboBox.activated[str].connect(lambda text=face_comboBox: self.changeFaceColor(text))
+            face_comboBox.setCurrentIndex(index)
+        face_comboBox.activated[str].connect(
+            lambda text=face_comboBox: self.changeFaceColor(text))
         self.grid_layout.addWidget(QLabel('face_color:'), 4, 0)
         self.grid_layout.addWidget(face_comboBox, 4, 1)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
         for c in colors:
-           edge_comboBox.addItem(c)
-        index = edge_comboBox.findText(self.layer.edge_color, Qt.MatchFixedString)
+            edge_comboBox.addItem(c)
+        index = edge_comboBox.findText(
+            self.layer.edge_color, Qt.MatchFixedString)
         if index >= 0:
-           edge_comboBox.setCurrentIndex(index)
-        edge_comboBox.activated[str].connect(lambda text=edge_comboBox: self.changeEdgeColor(text))
+            edge_comboBox.setCurrentIndex(index)
+        edge_comboBox.activated[str].connect(
+            lambda text=edge_comboBox: self.changeEdgeColor(text))
         self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
         self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
         symbol_comboBox = QComboBox()
         symbols = self.layer._marker_types
         for s in symbols:
-           symbol_comboBox.addItem(s)
-        index = symbol_comboBox.findText(self.layer.symbol, Qt.MatchFixedString)
+            symbol_comboBox.addItem(s)
+        index = symbol_comboBox.findText(
+            self.layer.symbol, Qt.MatchFixedString)
         if index >= 0:
-           symbol_comboBox.setCurrentIndex(index)
-        symbol_comboBox.activated[str].connect(lambda text=symbol_comboBox: self.changeSymbol(text))
+            symbol_comboBox.setCurrentIndex(index)
+        symbol_comboBox.activated[str].connect(
+            lambda text=symbol_comboBox: self.changeSymbol(text))
         self.grid_layout.addWidget(QLabel('symbol:'), 6, 0)
         self.grid_layout.addWidget(symbol_comboBox, 6, 1)
 

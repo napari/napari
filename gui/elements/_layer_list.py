@@ -64,10 +64,15 @@ class LayerList:
         self._qt = QtLayerPanel(self)
 
     def __str__(self): return str(self._list)
+
     def __repr__(self): return repr(self._list)
+
     def __iter__(self): return iter(self._list)
+
     def __contains__(self, item): return item in self._list
+
     def __len__(self): return len(self._list)
+
     def __getitem__(self, i): return self._list[i]
 
     @property
@@ -87,7 +92,8 @@ class LayerList:
 
         if prev is not None:
             self.events.add_item.disconnect(prev.dimensions._on_layers_change)
-            self.events.remove_item.disconnect(prev.dimensions._on_layers_change)
+            self.events.remove_item.disconnect(prev.dimensions.
+                                               _on_layers_change)
             self.events.add_item.disconnect(prev._update_active_layers)
             self.events.remove_item.disconnect(prev._update_active_layers)
             self.events.reorder.disconnect(prev._update_active_layers)
@@ -97,7 +103,8 @@ class LayerList:
 
         if viewer is not None:
             self.events.add_item.connect(viewer.dimensions._on_layers_change)
-            self.events.remove_item.connect(viewer.dimensions._on_layers_change)
+            self.events.remove_item.connect(viewer.dimensions.
+                                            _on_layers_change)
             self.events.add_item.connect(viewer._update_active_layers)
             self.events.remove_item.connect(viewer._update_active_layers)
             self.events.reorder.connect(viewer._update_active_layers)
@@ -355,10 +362,10 @@ class LayerList:
             selected = [index]
         for i in selected:
             indices.remove(i)
-        offset = sum([i<insert for i in selected])
+        offset = sum([i < insert for i in selected])
         j = insert - offset
         for i in selected:
-            indices.insert(j,i)
+            indices.insert(j, i)
             j = j+1
         if not self[index].selected:
             self.unselect_all()

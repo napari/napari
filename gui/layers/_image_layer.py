@@ -19,6 +19,7 @@ from ._register import add_to_viewer
 
 from .qt import QtImageLayer
 
+
 @add_to_viewer
 class Image(Layer):
     """Image layer.
@@ -296,17 +297,19 @@ class Image(Layer):
         """
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [clip(pos[1],0,self.shape[0]-1), clip(pos[0],0,self.shape[1]-1)]
+        pos = [clip(pos[1], 0, self.shape[0]-1), clip(pos[0], 0,
+                                                      self.shape[1]-1)]
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
         value = self._slice_image(coord)
-        msg = f'{coord}, {self.name}'+ ', value '
+        msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):
                 msg = msg + str(value)
             else:
-                msg = msg + '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
+                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
+                msg = msg + v_str
         else:
             if isinstance(value, integer):
                 msg = msg + str(value)

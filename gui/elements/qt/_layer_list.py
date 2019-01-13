@@ -1,5 +1,7 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QCheckBox, QScrollArea
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+                             QFrame, QCheckBox, QScrollArea)
+
 
 class QtLayerList(QScrollArea):
 
@@ -8,7 +10,6 @@ class QtLayerList(QScrollArea):
 
         self.layers = layers
         self.setWidgetResizable(True)
-        #self.setFixedWidth(315)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scrollWidget = QWidget()
         self.setWidget(scrollWidget)
@@ -60,8 +61,8 @@ class QtLayerList(QScrollArea):
                 divider = self.vbox_layout.itemAt(index+1).widget()
                 self.vbox_layout.removeWidget(layer._qt)
                 self.vbox_layout.removeWidget(divider)
-                self.vbox_layout.insertWidget(2*(total - i)-1,layer._qt)
-                self.vbox_layout.insertWidget(2*(total - i),divider)
+                self.vbox_layout.insertWidget(2*(total - i)-1, layer._qt)
+                self.vbox_layout.insertWidget(2*(total - i), divider)
 
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets
@@ -77,15 +78,16 @@ class QtLayerList(QScrollArea):
 
     def dragEnterEvent(self, event):
         event.accept()
-        dividers = []
+        divs = []
         for i in range(0, self.vbox_layout.count(), 2):
             widget = self.vbox_layout.itemAt(i).widget()
-            dividers.append(widget.y()+widget.frameGeometry().height()/2)
-        self.centers = [(dividers[i+1]+dividers[i])/2 for i in range(len(dividers)-1)]
+            divs.append(widget.y()+widget.frameGeometry().height()/2)
+        self.centers = [(divs[i+1]+divs[i])/2 for i in range(len(divs)-1)]
 
     def dragMoveEvent(self, event):
         cord = event.pos().y()
-        divider_index = next((i for i, x in enumerate(self.centers) if x > cord), len(self.centers))
+        center_list = (i for i, x in enumerate(self.centers) if x > cord)
+        divider_index = next(center_list, len(self.centers))
         layerWidget = event.source()
         total = self.vbox_layout.count()//2 - 1
         index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
@@ -104,7 +106,8 @@ class QtLayerList(QScrollArea):
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
         cord = event.pos().y()
-        divider_index = next((i for i, x in enumerate(self.centers) if x > cord), len(self.centers))
+        center_list = (i for i, x in enumerate(self.centers) if x > cord)
+        divider_index = next(center_list, len(self.centers))
         layerWidget = event.source()
         total = self.vbox_layout.count()//2 - 1
         index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
@@ -112,9 +115,12 @@ class QtLayerList(QScrollArea):
         self.layers._insert_reorder(index, insert)
         event.accept()
 
+
 class QtDivider(QFrame):
-    unselectedStlyesheet = "QFrame {border: 3px solid rgb(236,236,236); background-color:rgb(236,236,236); border-radius: 3px;}"
-    selectedStlyesheet = "QFrame {border: 3px solid rgb(0, 153, 255); background-color:rgb(0, 153, 255); border-radius: 3px;}"
+    unselectedStlyesheet = """QFrame {border: 3px solid rgb(236,236,236);
+        background-color:rgb(236,236,236); border-radius: 3px;}"""
+    selectedStlyesheet = """QFrame {border: 3px solid rgb(0, 153, 255);
+        background-color:rgb(0, 153, 255); border-radius: 3px;}"""
 
     def __init__(self):
         super().__init__()
