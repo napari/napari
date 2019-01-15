@@ -20,6 +20,7 @@ class ControlBars:
         self._qt = QtControlBars(self)
 
     def clim_slider_update(self):
+        # iteration goes backwards to find top most visible layer
         for layer in self.viewer.layers[::-1]:
             if hasattr(layer, 'visual') and layer.selected:
                 valmin, valmax = layer._clim_range

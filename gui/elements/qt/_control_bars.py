@@ -49,6 +49,7 @@ class QtControlBars(QWidget):
         self.control_bars.viewer.status = msg
 
     def mouseMoveEvent(self, event):
+        # iteration goes backwards to find top most visible layer
         for layer in self.control_bars.viewer.layers[::-1]:
             if hasattr(layer, 'visual') and layer.selected:
                 cmin, cmax = layer.clim
