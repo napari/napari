@@ -1,12 +1,12 @@
-from .qt import QtDimensions
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QCursor, QPixmap
-
 from ..util.misc import (compute_max_shape as _compute_max_shape,
                          guess_metadata)
 from numpy import clip, integer, ndarray, append, insert, delete
 from copy import copy
+
+from vispy.util.event import EmitterGroup, Event
+
+from .qt import QtDimensions
+
 
 class Dimensions:
     """Dimensions containing the dimension sliders
@@ -28,9 +28,9 @@ class Dimensions:
     def __init__(self, viewer):
 
         self.viewer = viewer
-
-        self._qt = QtDimensions(self.viewer)
-
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   update_slider=Event)
         # TODO: allow arbitrary display axis setting
         # self.y_axis = 0  # typically the y-axis
         # self.x_axis = 1  # typically the x-axis
@@ -49,8 +49,7 @@ class Dimensions:
         self._recalc_max_dims = False
         self._recalc_max_shape = False
 
-        self._pos = [0, 0]
-        self._index = None
+        self._qt = QtDimensions(self)
 
     @property
     def max_dims(self):
@@ -84,9 +83,7 @@ class Dimensions:
                 dim_len = max_shape[dim]
             except IndexError:
                 dim_len = 0
-
-            self._qt.update_slider(dim, dim_len)
-        self._qt.setFixedHeight((dims-2)*19)
+            self.events.update_slider(dim=dim, dim_len=dim_len)
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
@@ -109,14 +106,11 @@ class Dimensions:
         shapes = (layer.shape for layer in self.viewer.layers)
         self._max_shape = _compute_max_shape(shapes, self.max_dims)
 
-    def _update_index(self, event):
-        visual = self.viewer.layers[0]._node
-        tr = self.viewer._canvas.scene.node_transform(self.viewer.layers[0]._node)
-        pos = tr.map(event.pos)
-        pos = [clip(pos[1],0,self.max_shape[0]-1), clip(pos[0],0,self.max_shape[1]-1)]
-        self._index = copy(self.indices)
-        self._index[0] = int(pos[0])
-        self._index[1] = int(pos[1])
+    def _on_layers_change(self, event):
+        """Called whenever a layer is changed.
+        """
+        self._child_layer_changed = True
+        self._update()
 
     def _update(self):
         """Updates the viewer.

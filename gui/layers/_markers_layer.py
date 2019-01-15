@@ -2,6 +2,8 @@ from typing import Union
 from collections import Iterable
 
 import numpy as np
+from numpy import clip, integer, ndarray, append, insert, delete, empty
+from copy import copy
 
 from ._base_layer import Layer
 from ._register import add_to_viewer
@@ -9,7 +11,8 @@ from .._vispy.scene.visuals import Markers as MarkersNode
 from vispy.visuals import marker_types
 from vispy.color import get_color_names
 
-from ..elements.qt import QtMarkersLayer
+from .qt import QtMarkersLayer
+
 
 @add_to_viewer
 class Markers(Layer):
@@ -224,7 +227,7 @@ class Markers(Layer):
 
     def _get_shape(self):
         if len(self.coords) == 0:
-            return np.ones(self.coords.shape,dtype=int)
+            return np.ones(self.coords.shape, dtype=int)
         else:
             return np.max(self.coords, axis=0) + 1
 
@@ -280,14 +283,17 @@ class Markers(Layer):
 
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
-            distances = abs(in_slice_markers - np.broadcast_to(indices[:2], (len(in_slice_markers),2)))
+            shape = (len(in_slice_markers), 2)
+            index_array = np.broadcast_to(indices[:2], shape)
+            distances = abs(in_slice_markers - index_array)
             # Get the marker sizes
             if isinstance(self.size, (list, np.ndarray)):
                 sizes = self.size[matches]
             else:
                 sizes = self.size
             matches = np.where(matches)[0]
-            in_slice_matches = np.less_equal(distances, np.broadcast_to(sizes/2, (2, len(in_slice_markers))).T)
+            size_array = np.broadcast_to(sizes/2, (2, len(in_slice_markers))).T
+            in_slice_matches = np.less_equal(distances, size_array)
             in_slice_matches = np.all(in_slice_matches, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
@@ -298,19 +304,6 @@ class Markers(Layer):
             matches = None
 
         self._selected_markers = matches
-
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-
-        in_slice_markers, matches = self._slice_markers(indices)
-
-        return in_slice_markers, matches
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -341,9 +334,105 @@ class Markers(Layer):
             sizes = 0
 
         self._node.set_data(
-            data[::-1], size=sizes, edge_width=self.edge_width, symbol=self.symbol,
-            edge_width_rel=self.edge_width_rel,
+            data[::-1], size=sizes, edge_width=self.edge_width,
+            symbol=self.symbol, edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
         self._need_visual_update = True
         self._update()
+
+    def _get_coord(self, position, indices):
+        max_shape = self.viewer.dimensions.max_shape
+        transform = self._node.canvas.scene.node_transform(self._node)
+        pos = transform.map(position)
+        pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
+                                                     max_shape[1]-1)]
+        coord = copy(indices)
+        coord[0] = int(pos[1])
+        coord[1] = int(pos[0])
+        return coord
+
+    def get_value(self, position, indices):
+        """Returns coordinates, values, and a string for a given mouse position
+        and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+
+        Returns
+        ----------
+        coord : sequence of int
+            Position of mouse cursor in data.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
+        msg : string
+            String containing a message that can be used as
+            a status update.
+        """
+        coord = self._get_coord(position, indices)
+        self._set_selected_markers(coord)
+        value = self._selected_markers
+        msg = f'{coord}'
+        if value is None:
+            pass
+        else:
+            msg = msg + ', ' + self.name + ', index ' + str(value)
+        return coord, value, msg
+
+    def add(self, position, indices):
+        """Adds object at given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        coord = self._get_coord(position, indices)
+        if isinstance(self.size, (list, ndarray)):
+            self._size = append(self.size, 10)
+        self.data = append(self.data, [coord], axis=0)
+        self._selected_markers = len(self.data)-1
+
+    def remove(self, position, indices):
+        """Removes object at given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        coord = self._get_coord(position, indices)
+        index = self._selected_markers
+        if index is None:
+            pass
+        else:
+            if isinstance(self.size, (list, ndarray)):
+                self._size = delete(self.size, index)
+            self.data = delete(self.data, index, axis=0)
+            self._selected_markers = None
+
+    def move(self, position, indices):
+        """Moves object at given mouse position and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        coord = self._get_coord(position, indices)
+        index = self._selected_markers
+        if index is None:
+            pass
+        else:
+            self.data[index] = coord
+            self._refresh()

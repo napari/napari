@@ -47,7 +47,6 @@ class LayerList:
 
     def __init__(self, viewer=None):
         self._list = []
-        self._qt = QtLayerPanel(self)
         self._viewer = None
         self.total = 0
         self.events = EmitterGroup(source=self,
@@ -62,12 +61,18 @@ class LayerList:
 
         # property setting - happens last
         self.viewer = viewer
+        self._qt = QtLayerPanel(self)
 
     def __str__(self): return str(self._list)
+
     def __repr__(self): return repr(self._list)
+
     def __iter__(self): return iter(self._list)
+
     def __contains__(self, item): return item in self._list
+
     def __len__(self): return len(self._list)
+
     def __getitem__(self, i): return self._list[i]
 
     @property
@@ -86,15 +91,23 @@ class LayerList:
             return
 
         if prev is not None:
-            self.events.add_item.disconnect(prev._on_layers_change)
-            self.events.remove_item.disconnect(prev._on_layers_change)
+            self.events.add_item.disconnect(prev.dimensions._on_layers_change)
+            self.events.remove_item.disconnect(prev.dimensions.
+                                               _on_layers_change)
+            self.events.add_item.disconnect(prev._update_active_layers)
+            self.events.remove_item.disconnect(prev._update_active_layers)
+            self.events.reorder.disconnect(prev._update_active_layers)
 
         for layer in self:
             layer.viewer = viewer
 
         if viewer is not None:
-            self.events.add_item.connect(viewer._on_layers_change)
-            self.events.remove_item.connect(viewer._on_layers_change)
+            self.events.add_item.connect(viewer.dimensions._on_layers_change)
+            self.events.remove_item.connect(viewer.dimensions.
+                                            _on_layers_change)
+            self.events.add_item.connect(viewer._update_active_layers)
+            self.events.remove_item.connect(viewer._update_active_layers)
+            self.events.reorder.connect(viewer._update_active_layers)
             viewer = weakref.ref(viewer)
 
         self._viewer = viewer
@@ -297,18 +310,20 @@ class LayerList:
         """Callback when an item is added to set its order and viewer.
         """
         layer = event.item
-        self._qt.layersList.insert(event.index, len(self), layer)
         layer._order = -len(self)
         layer.viewer = self.viewer
+        layer.events.select.connect(self.viewer._update_active_layers)
+        layer.events.deselect.connect(self.viewer._update_active_layers)
 
     def _remove(self, event):
         """Callback when an item is removed to remove its viewer
         and reset its order.
         """
         layer = event.item
-        self._qt.layersList.remove(layer)
         layer.viewer = None
         layer._order = 0
+        layer.events.select.disconnect(self.viewer._update_active_layers)
+        layer.events.deselect.disconnect(self.viewer._update_active_layers)
 
     def _reorder(self, event):
         """Callback when the list is reordered to propagate those changes
@@ -316,10 +331,43 @@ class LayerList:
         """
         for i in range(len(self)):
             self[i]._order = -i
-        self._qt.layersList.reorder()
         canvas = self.viewer._canvas
         canvas._draw_order.clear()
         canvas.update()
+
+    def _move_layers(self, index, insert):
+        """Reorder list by moving the item at index and insterting it
+        at the insert index. If additional items are selected these will
+        get inserted at the insert index too. This allows for rearranging
+        the list based on dragging and dropping a selection of items, where
+        index is the index of the primary item being dragged, and insert is
+        the index of the drop location, and the selection indicates if
+        multiple items are being dragged.
+
+        Parameters
+        ----------
+        index : int
+            Index of primary item to be moved
+        insert : int
+            Index that item(s) will be inserted at
+        """
+        total = len(self)
+        indices = list(range(total))
+        if self[index].selected:
+            selected = [i for i in range(total) if self[i].selected]
+        else:
+            selected = [index]
+        for i in selected:
+            indices.remove(i)
+        offset = sum([i < insert for i in selected])
+        for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
+            indices.insert(insert_idx, elem_idx)
+        self.reorder(indices)
+
+    def unselect_all(self):
+        for layer in self:
+            if layer.selected:
+                layer.selected = False
 
     def remove_selected(self):
         """Removes selected items from list.

@@ -22,17 +22,17 @@ class Window:
         self._qt_center = QWidget()
         self._qt_window.setCentralWidget(self._qt_center)
         self._qt_center.setLayout(QHBoxLayout())
-        self._statusBar = self._qt_window.statusBar()
-        self._statusBar.showMessage('Ready')
+        self._status_bar = self._qt_window.statusBar()
+        self._status_bar.showMessage('Ready')
 
         self._help = QLabel('')
-        self._statusBar.addPermanentWidget(self._help)
+        self._status_bar.addPermanentWidget(self._help)
 
         self.viewer = viewer
         self._qt_center.layout().addWidget(self.viewer._qt)
 
-        self.viewer.statusChanged.connect(self._statusChanged)
-        self.viewer.helpChanged.connect(self._helpChanged)
+        self.viewer.events.status.connect(self._status_changed)
+        self.viewer.events.help.connect(self._help_changed)
 
         if show:
             self.show()
@@ -56,12 +56,12 @@ class Window:
         self._qt_window.show()
         self._qt_window.raise_()
 
-    def _statusChanged(self, message):
+    def _status_changed(self, event):
         """Update status bar.
         """
-        self._statusBar.showMessage(message)
+        self._status_bar.showMessage(event.text)
 
-    def _helpChanged(self, message):
+    def _help_changed(self, event):
         """Update help message on status bar.
         """
-        self._help.setText(message)
+        self._help.setText(event.text)

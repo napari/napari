@@ -125,8 +125,8 @@ class Layer(VisualWrapper, ABC):
             self.refresh()
 
     def _set_view_slice(self, indices):
-        """Called whenever the sliders change. Sets the
-        current view given a specific slice to view.
+        """Called whenever the sliders change. Sets the current view given a
+        specific slice to view.
 
         Parameters
         ----------
@@ -138,3 +138,56 @@ class Layer(VisualWrapper, ABC):
         """Fully refreshes the layer.
         """
         self._refresh()
+
+    def get_value(self, position, indices):
+        """Returns coordinates, values, and a string for a given mouse position
+        and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+
+        Returns
+        ----------
+        coord : sequence of int
+            Position of mouse cursor in data.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
+        msg : string
+            String containing a message that can be used as
+            a status update.
+        """
+        return None, None, ''
+
+    def add(self, position, indices):
+        """Adds object at given mouse position and set of indices.
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+
+    def remove(self, position, indices):
+        """Removes object at given mouse position and set of indices.
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+
+    def move(self, position, indices):
+        """Moves object at given mouse position and set of indices.
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """

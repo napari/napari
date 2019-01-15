@@ -1,3 +1,3 @@
 include versioneer.py
 include napari_gui/_version.py
-recursive-include napari_gui/elements/qt/icons
+recursive-include napari_gui/resources
