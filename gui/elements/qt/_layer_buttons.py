@@ -16,6 +16,7 @@ styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
                 QPushButton:hover {background-color:rgb(0, 153, 255);
                 border-radius: 3px;}"""
 
+
 class QtLayerButtons(QFrame):
     def __init__(self, layers):
         super().__init__()
