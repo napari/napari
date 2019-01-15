@@ -112,7 +112,11 @@ class QtLayerList(QScrollArea):
         total = self.vbox_layout.count()//2 - 1
         index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
         insert = total - divider_index
-        self.layers._insert_reorder(index, insert)
+        if index != insert and index+1 != insert:
+            if not self.layers[index].selected:
+                self.layers.unselect_all()
+                self.layers[index].selected = True
+            self.layers._move_layers(index, insert)
         event.accept()
 
 

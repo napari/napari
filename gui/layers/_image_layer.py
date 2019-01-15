@@ -275,8 +275,8 @@ class Image(Layer):
         return [np.min(self.image), np.max(self.image)]
 
     def get_value(self, position, indices):
-        """Returns coordinates, values, and a string
-        for a given mouse position and set of indices.
+        """Returns coordinates, values, and a string for a given mouse position
+        and set of indices.
 
         Parameters
         ----------

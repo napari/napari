@@ -10,6 +10,11 @@ path_add = join(resources_dir, 'icons', 'add.png')
 path_off = join(resources_dir, 'icons', 'annotation_off.png')
 path_on = join(resources_dir, 'icons', 'annotation_on.png')
 
+styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
+                QPushButton:pressed {background-color:rgb(0, 153, 255);
+                border-radius: 3px;}
+                QPushButton:hover {background-color:rgb(0, 153, 255);
+                border-radius: 3px;}"""
 
 class QtLayerButtons(QFrame):
     def __init__(self, layers):
@@ -38,12 +43,6 @@ class QtDeleteButton(QPushButton):
         self.setFixedHeight(28)
         self.setToolTip('Delete layers')
         self.setAcceptDrops(True)
-        styleSheet = """QPushButton {background-color:lightGray;
-            border-radius: 3px;}
-            QPushButton:pressed {background-color:rgb(0, 153, 255);
-            border-radius: 3px;}
-            QPushButton:hover {background-color:rgb(0, 153, 255);
-            border-radius: 3px;}"""
         self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layers.remove_selected)
 
@@ -71,12 +70,6 @@ class QtAddButton(QPushButton):
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Add layer')
-        styleSheet = """QPushButton {background-color:lightGray;
-                        border-radius: 3px;}
-                        QPushButton:pressed {background-color:rgb(0, 153, 255);
-                        border-radius: 3px;}
-                        QPushButton:hover {background-color:rgb(0, 153, 255);
-                        border-radius: 3px;}"""
         self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layers.viewer._new_markers)
 

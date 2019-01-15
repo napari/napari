@@ -42,7 +42,7 @@ class QtControlBars(QWidget):
                 cmin = valmin+self.control_bars.values[0]*(valmax-valmin)
                 cmax = valmin+self.control_bars.values[1]*(valmax-valmin)
                 layer.clim = [cmin, cmax]
-                msg = '(%.3f, %.3f)' % (cmin, cmax)
+                msg = f'({cmin:0.3}, {cmax:0.3})'
         if msg is None:
             msg = 'Ready'
 

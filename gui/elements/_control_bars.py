@@ -26,7 +26,7 @@ class ControlBars:
                 cmin, cmax = layer.clim
                 slidermin = (cmin - valmin)/(valmax - valmin)
                 slidermax = (cmax - valmin)/(valmax - valmin)
-                msg = '(%.3f, %.3f)' % (cmin, cmax)
+                msg = f'({cmin:0.3}, {cmax:0.3})'
                 self.viewer.status = msg
                 self.values = (slidermin, slidermax)
                 self.events.update_slider(values=self.values,

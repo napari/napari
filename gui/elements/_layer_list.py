@@ -335,7 +335,7 @@ class LayerList:
         canvas._draw_order.clear()
         canvas.update()
 
-    def _insert_reorder(self, index, insert):
+    def _move_layers(self, index, insert):
         """Reorder list by moving the item at index and insterting it
         at the insert index. If additional items are selected these will
         get inserted at the insert index too. This allows for rearranging
@@ -354,24 +354,15 @@ class LayerList:
         total = len(self)
         indices = list(range(total))
         if self[index].selected:
-            selected = []
-            for i in range(total):
-                if self[i].selected:
-                    selected.append(i)
+            selected = [i for i in range(total) if self[i].selected]
         else:
             selected = [index]
         for i in selected:
             indices.remove(i)
         offset = sum([i < insert for i in selected])
-        j = insert - offset
-        for i in selected:
-            indices.insert(j, i)
-            j = j+1
-        if not self[index].selected:
-            self.unselect_all()
-            self[index].selected = True
-        if not indices == [i for i in range(total)]:
-            self.reorder(indices)
+        for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
+            indices.insert(insert_idx, elem_idx)
+        self.reorder(indices)
 
     def unselect_all(self):
         for layer in self:

@@ -125,8 +125,8 @@ class Layer(VisualWrapper, ABC):
             self.refresh()
 
     def _set_view_slice(self, indices):
-        """Called whenever the sliders change. Sets the
-        current view given a specific slice to view.
+        """Called whenever the sliders change. Sets the current view given a
+        specific slice to view.
 
         Parameters
         ----------
@@ -140,8 +140,8 @@ class Layer(VisualWrapper, ABC):
         self._refresh()
 
     def get_value(self, position, indices):
-        """Returns coordinates, values, and a string
-        for a given mouse position and set of indices.
+        """Returns coordinates, values, and a string for a given mouse position
+        and set of indices.
 
         Parameters
         ----------
@@ -163,8 +163,7 @@ class Layer(VisualWrapper, ABC):
         return None, None, ''
 
     def add(self, position, indices):
-        """Adds object at given mouse position
-        and set of indices.
+        """Adds object at given mouse position and set of indices.
         Parameters
         ----------
         position : sequence of two int
@@ -174,8 +173,7 @@ class Layer(VisualWrapper, ABC):
         """
 
     def remove(self, position, indices):
-        """Removes object at given mouse position
-        and set of indices.
+        """Removes object at given mouse position and set of indices.
         Parameters
         ----------
         position : sequence of two int
@@ -185,8 +183,7 @@ class Layer(VisualWrapper, ABC):
         """
 
     def move(self, position, indices):
-        """Moves object at given mouse position
-        and set of indices.
+        """Moves object at given mouse position and set of indices.
         Parameters
         ----------
         position : sequence of two int
