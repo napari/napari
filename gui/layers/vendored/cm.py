@@ -23,11 +23,9 @@ import functools
 import numpy as np
 from numpy import ma
 
-import matplotlib as mpl
-import matplotlib.colors as colors
-import matplotlib.cbook as cbook
-from matplotlib._cm import datad
-from matplotlib._cm_listed import cmaps as cmaps_listed
+from . import colors
+from ._cm import datad
+from ._cm_listed import cmaps as cmaps_listed
 
 
 cmap_d = {}
@@ -92,7 +90,8 @@ def _generate_cmap(name, lutsize):
     else:
         return colors.LinearSegmentedColormap.from_list(name, spec, lutsize)
 
-LUTSIZE = mpl.rcParams['image.lut']
+
+LUTSIZE = 256
 
 # Generate the reversed specifications (all at once, to avoid
 # modify-when-iterating).
@@ -146,7 +145,7 @@ def register_cmap(name=None, cmap=None, data=None, lut=None):
 
     # For the remainder, let exceptions propagate.
     if lut is None:
-        lut = mpl.rcParams['image.lut']
+        lut = LUTSIZE
     cmap = colors.LinearSegmentedColormap(name, data, lut)
     cmap_d[name] = cmap
 
@@ -166,7 +165,7 @@ def get_cmap(name=None, lut=None):
     mpl colormap name.
     """
     if name is None:
-        name = mpl.rcParams['image.cmap']
+        name = 'magma'
 
     if isinstance(name, colors.Colormap):
         return name
@@ -202,9 +201,6 @@ class ScalarMappable(object):
         cmap : str or :class:`~matplotlib.colors.Colormap` instance
             The colormap used to map normalized data values to RGBA colors.
         """
-
-        self.callbacksSM = cbook.CallbackRegistry()
-
         if cmap is None:
             cmap = get_cmap()
         if norm is None:
@@ -393,12 +389,6 @@ class ScalarMappable(object):
         return False
 
     def changed(self):
-        """
-        Call this whenever the mappable is changed to notify all the
-        callbackSM listeners to the 'changed' signal
-        """
-        self.callbacksSM.process('changed', self)
-
         for key in self.update_dict:
             self.update_dict[key] = True
         self.stale = True

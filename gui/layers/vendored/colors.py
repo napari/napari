@@ -65,8 +65,8 @@ import itertools
 import re
 
 import numpy as np
-import matplotlib.cbook as cbook
-from ._color_data import BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS, XKCD_COLORS
+from ._color_data import (BASE_COLORS, TABLEAU_COLORS, CSS4_COLORS,
+                          XKCD_COLORS, NTH_COLORS)
 
 
 class _ColorMapping(dict):
@@ -95,6 +95,7 @@ _colors_full_map.update({k.replace('gray', 'grey'): v
                          for k, v in TABLEAU_COLORS.items()
                          if 'gray' in k})
 _colors_full_map.update(BASE_COLORS)
+_colors_full_map.update(NTH_COLORS)
 _colors_full_map = _ColorMapping(_colors_full_map)
 
 
@@ -113,16 +114,8 @@ def _sanitize_extrema(ex):
     return ret
 
 
-def _is_nth_color(c):
-    """Return whether *c* can be interpreted as an item in the color cycle."""
-    return isinstance(c, str) and re.match(r"\AC[0-9]+\Z", c)
-
-
 def is_color_like(c):
     """Return whether *c* can be interpreted as an RGB(A) color."""
-    # Special-case nth color syntax because it cannot be parsed during setup.
-    if _is_nth_color(c):
-        return True
     try:
         to_rgba(c)
     except ValueError:
@@ -164,12 +157,6 @@ def to_rgba(c, alpha=None):
     tuple
         Tuple of ``(r, g, b, a)`` scalars.
     """
-    # Special-case nth color syntax because it should not be cached.
-    if _is_nth_color(c):
-        from matplotlib import rcParams
-        prop_cycler = rcParams['axes.prop_cycle']
-        colors = prop_cycler.by_key().get('color', ['k'])
-        c = colors[int(c[1:]) % len(colors)]
     try:
         rgba = _colors_full_map.cache[c, alpha]
     except (KeyError, TypeError):  # Not in cache, or unhashable.
@@ -263,7 +250,7 @@ def to_rgba_array(c, alpha=None):
     # Note that this occurs *after* handling inputs that are already arrays, as
     # `to_rgba(c, alpha)` (below) is expensive for such inputs, due to the need
     # to format the array in the ValueError message(!).
-    if cbook._str_lower_equal(c, "none"):
+    if isinstance(c, str) and c.lower() == "none":
         return np.zeros((0, 4), float)
     try:
         return np.array([to_rgba(c, alpha)], float)
@@ -292,34 +279,6 @@ def to_hex(c, keep_alpha=False):
         c = c[:3]
     return "#" + "".join(format(int(np.round(val * 255)), "02x")
                          for val in c)
-
-
-### Backwards-compatible color-conversion API
-
-
-cnames = CSS4_COLORS
-hexColorPattern = re.compile(r"\A#[a-fA-F0-9]{6}\Z")
-rgb2hex = to_hex
-hex2color = to_rgb
-
-
-class ColorConverter(object):
-    """
-    This class is only kept for backwards compatibility.
-
-    Its functionality is entirely provided by module-level functions.
-    """
-    colors = _colors_full_map
-    cache = _colors_full_map.cache
-    to_rgb = staticmethod(to_rgb)
-    to_rgba = staticmethod(to_rgba)
-    to_rgba_array = staticmethod(to_rgba_array)
-
-
-colorConverter = ColorConverter()
-
-
-### End of backwards-compatible color-conversion API
 
 
 def makeMappingArray(N, data, gamma=1.0):

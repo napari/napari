@@ -2,18 +2,33 @@ from collections import OrderedDict
 
 
 BASE_COLORS = {
-    'b': (0, 0, 1),
-    'g': (0, 0.5, 0),
-    'r': (1, 0, 0),
-    'c': (0, 0.75, 0.75),
-    'm': (0.75, 0, 0.75),
-    'y': (0.75, 0.75, 0),
-    'k': (0, 0, 0),
-    'w': (1, 1, 1)}
+    'b': '#0000ff',
+    'g': '#008000',
+    'r': '#ff0000',
+    'c': '#00bfbf',
+    'm': '#bf00bf',
+    'y': '#bfbf00',
+    'k': '#000000',
+    'w': '#ffffff',
+}
+
+
+NTH_COLORS = {
+    'C0': '#1f77b4',
+    'C1': '#ff7f0e',
+    'C2': '#2ca02c',
+    'C3': '#d62728',
+    'C4': '#9467bd',
+    'C5': '#8c564b',
+    'C6': '#e377c2',
+    'C7': '#7f7f7f',
+    'C8': '#bcbd22',
+    'C9': '#17becf',
+}
 
 
 # These colors are from Tableau
-TABLEAU_COLORS = (
+TABLEAU_COLOR_TUPLES = (
     ('blue', '#1f77b4'),
     ('orange', '#ff7f0e'),
     ('green', '#2ca02c'),
@@ -28,7 +43,7 @@ TABLEAU_COLORS = (
 
 # Normalize name to "tab:<name>" to avoid name collisions.
 TABLEAU_COLORS = OrderedDict(
-    ('tab:' + name, value) for name, value in TABLEAU_COLORS)
+    ('tab:' + name, value) for name, value in TABLEAU_COLOR_TUPLES)
 
 # This mapping of color names -> hex values is taken from
 # a survey run by Randall Munroe see:
