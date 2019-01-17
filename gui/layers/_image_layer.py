@@ -1,5 +1,3 @@
-import weakref
-
 import numpy as np
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
@@ -9,7 +7,6 @@ from ._base_layer import Layer
 from .._vispy.scene.visuals import Image as ImageNode
 
 from ..util import is_multichannel
-from ..util.misc import guess_metadata
 from ..util.interpolation import (interpolation_names,
                                   interpolation_index_to_name as _index_to_name,  # noqa
                                   interpolation_name_to_index as _name_to_index)  # noqa
@@ -257,12 +254,6 @@ class Image(Layer):
         """
         return self._node.cmap
 
-        for name, obj in Image._colormaps.items():
-            if obj == cmap:
-                return name
-        else:
-            return cmap
-
     @cmap.setter
     def cmap(self, cmap):
         try:
@@ -291,7 +282,7 @@ class Image(Layer):
         return self._node.method
 
     @method.setter
-    def method(self):
+    def method(self, method):
         self._node.method = method
 
     @property
