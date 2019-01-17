@@ -12,6 +12,7 @@ from ..util.interpolation import (interpolation_names,
                                   interpolation_name_to_index as _name_to_index)  # noqa
 
 from vispy import color
+from .colormaps import matplotlib_colormaps
 
 from ._register import add_to_viewer
 
@@ -52,7 +53,7 @@ def vispy_or_mpl_colormap(name):
 
 
 AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
-                       for k in {**cm.cmap_d, **color.get_colormaps()}}
+                       for k in matplotlib_colormaps + list(color.get_colormaps())}
 
 
 @add_to_viewer
