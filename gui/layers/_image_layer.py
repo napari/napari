@@ -1,6 +1,8 @@
 import weakref
 
 import numpy as np
+from numpy import clip, integer, ndarray, append, insert, delete, empty
+from copy import copy
 
 from ._base_layer import Layer
 from .._vispy.scene.visuals import Image as ImageNode
@@ -15,7 +17,8 @@ from vispy.color.colormap import get_colormaps
 
 from ._register import add_to_viewer
 
-from ..elements.qt import QtImageLayer
+from .qt import QtImageLayer
+
 
 @add_to_viewer
 class Image(Layer):
@@ -34,21 +37,24 @@ class Image(Layer):
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta):
-        visual = ImageNode(None, method='auto')
-        super().__init__(visual)
+        self.visual = ImageNode(None, method='auto')
+        super().__init__(self.visual)
 
         self._image = image
         self._meta = meta
         self.cmap = Image.default_cmap
         self.interpolation = Image.default_interpolation
         self._interpolation_names = interpolation_names
-        
+
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
 
         self.name = 'image'
         self._qt = QtImageLayer(self)
+
+        self._clim_range = self._clim_range_default()
+        self._node.clim = [np.min(self.image), np.max(self.image)]
 
     @property
     def image(self):
@@ -96,11 +102,11 @@ class Image(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer._child_layer_changed = True
-            self.viewer._update()
+            self.viewer.dimensions._child_layer_changed = True
+            self.viewer.dimensions._update()
 
             self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.indices)
+            self._set_view_slice(self.viewer.dimensions.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -197,7 +203,6 @@ class Image(Layer):
         return tuple(self._colormaps.keys())
 
     # wrap visual properties:
-
     @property
     def clim(self):
         """string or tuple of float: Limits to use for the colormap.
@@ -265,3 +270,49 @@ class Image(Layer):
     @property
     def interpolation_functions(self):
         return tuple(interpolation_names)
+
+    def _clim_range_default(self):
+        return [np.min(self.image), np.max(self.image)]
+
+    def get_value(self, position, indices):
+        """Returns coordinates, values, and a string for a given mouse position
+        and set of indices.
+
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+
+        Returns
+        ----------
+        coord : sequence of int
+            Position of mouse cursor in data.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
+        msg : string
+            String containing a message that can be used as
+            a status update.
+        """
+        transform = self._node.canvas.scene.node_transform(self._node)
+        pos = transform.map(position)
+        pos = [clip(pos[1], 0, self.shape[0]-1), clip(pos[0], 0,
+                                                      self.shape[1]-1)]
+        coord = copy(indices)
+        coord[0] = int(pos[0])
+        coord[1] = int(pos[1])
+        value = self._slice_image(coord)
+        msg = f'{coord}, {self.name}' + ', value '
+        if isinstance(value, ndarray):
+            if isinstance(value[0], integer):
+                msg = msg + str(value)
+            else:
+                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
+                msg = msg + v_str
+        else:
+            if isinstance(value, integer):
+                msg = msg + str(value)
+            else:
+                msg = msg + f'{value:0.3}'
+        return coord, value, msg
