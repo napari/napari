@@ -15,9 +15,6 @@ from napari_gui import Window, Viewer
 
 import numpy as np
 
-from skimage import data
-
-
 class open_multi(QWidget):
 
     def __init__(self, window):
@@ -35,7 +32,6 @@ class open_multi(QWidget):
 
         # zigzag the lines
         pos[::2, 1] += (4 * N - 1) / N
-        print(np.max(pos, axis=0))
 
         self.viewer.add_markers(pos)
         self.viewer.add_vectors(pos)
