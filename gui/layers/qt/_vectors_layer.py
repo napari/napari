@@ -12,7 +12,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QComboBox, QSlider
 from collections import Iterable
 import numpy as np
-from ._layer import QtLayer
+from ._base_layer import QtLayer
 
 class QtVectorsLayer(QtLayer):
     def __init__(self, layer):

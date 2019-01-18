@@ -9,7 +9,7 @@ from .._vispy.scene.visuals import Line as LinesNode
 # from vispy.visuals import LineVisual
 from vispy.color import get_color_names
 
-from ..elements.qt import QtVectorsLayer
+from .qt import QtVectorsLayer
 
 @add_to_viewer
 class Vectors(Layer):
