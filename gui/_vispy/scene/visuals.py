@@ -228,6 +228,7 @@ def generate_docstring(subclass, clsname):
 # are attached programatically in the create_visual_node call.
 # However, help(vispy.scene.FooVisual) still works
 
+
 Arrow = create_visual_node(visuals.ArrowVisual)
 Axis = create_visual_node(visuals.AxisVisual)
 Box = create_visual_node(visuals.BoxVisual)

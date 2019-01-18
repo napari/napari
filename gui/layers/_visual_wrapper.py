@@ -2,6 +2,7 @@
 from vispy.visuals.transforms import STTransform
 from vispy.gloo import get_state_presets
 
+
 class VisualWrapper:
     """Wrapper around ``vispy.scene.VisualNode`` objects.
     Meant to be subclassed.
@@ -98,13 +99,13 @@ class VisualWrapper:
                 depth_test=True, cull_face=False, blend=False.
             'translucent'
                 Allows for multiple layers to be blended with different opacity
-                and corresponds to depth_test=True, cull_face=False, blend=True,
-                blend_func=('src_alpha', 'one_minus_src_alpha').
+                and corresponds to depth_test=True, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
             'additive'
-                Allows for multiple layers to be blended together with different
-                colors and opacity. Useful for creating overlays. It corresponds
-                to depth_test=False, cull_face=False, blend=True, blend_func=
-                ('src_alpha', 'one').
+                Allows for multiple layers to be blended together with
+                different colors and opacity. Useful for creating overlays. It
+                corresponds to depth_test=False, cull_face=False, blend=True,
+                blend_func=('src_alpha', 'one').
         """
         return self._blending
 
@@ -112,8 +113,8 @@ class VisualWrapper:
     def blending(self, blending):
         if blending not in self._blending_modes:
             raise ValueError('expected one of '
-                 "{'opaque', 'translucent', 'additive'}; "
-                 f'got {blending}')
+                             "{'opaque', 'translucent', 'additive'}; "
+                             f'got {blending}')
         self._node.set_gl_state(blending)
         self._blending = blending
 

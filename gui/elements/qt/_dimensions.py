@@ -1,10 +1,14 @@
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
 
+
 class QtDimensions(QWidget):
-    def __init__(self, viewer):
+    SLIDERHEIGHT = 19
+
+    def __init__(self, dimensions):
         super().__init__()
-        self.viewer = viewer
+
+        self.dimensions = dimensions
         self.sliders = []
 
         layout = QGridLayout()
@@ -12,8 +16,9 @@ class QtDimensions(QWidget):
         self.setLayout(layout)
         self.setFixedHeight(0)
 
-    def _axis_to_row(self, axis):
-        dims = len(self.viewer.dimensions.indices)
+        self.dimensions.events.update_slider.connect(self.update_slider)
+
+    def _axis_to_row(self, axis, dims):
         message = f'axis {axis} out of bounds for {dims} dims'
 
         if axis < 0:
@@ -28,7 +33,7 @@ class QtDimensions(QWidget):
 
         return axis - 2
 
-    def update_slider(self, axis, max_axis_length):
+    def update_slider(self, event):
         """Updates a slider for the given axis or creates
         it if it does not already exist.
 
@@ -44,8 +49,12 @@ class QtDimensions(QWidget):
         slider : PyQt5.QSlider or None
             Updated slider, if it exists.
         """
+        axis = event.dim
+        max_axis_length = event.dim_len
+        dims = self.dimensions.max_dims
+
         grid = self.layout()
-        row = self._axis_to_row(axis)
+        row = self._axis_to_row(axis, dims)
 
         slider = grid.itemAt(row)
         if max_axis_length <= 0:
@@ -69,17 +78,18 @@ class QtDimensions(QWidget):
             # slider.setTickInterval(tick_interval)
             slider.setSingleStep(1)
 
-            def value_changed():
-                self.viewer.dimensions.indices[axis] = slider.value()
-                self.viewer.dimensions._need_redraw = True
-                self.viewer.dimensions._update()
-
-            slider.valueChanged.connect(value_changed)
-
             grid.addWidget(slider, row, 0)
             self.sliders.append(slider)
         else:
             slider = slider.widget()
 
+        slider.valueChanged.connect(lambda value:
+                                    self._slider_value_changed(value, axis))
         slider.setMaximum(max_axis_length - 1)
+        self.setFixedHeight((dims-2)*self.SLIDERHEIGHT)
         return slider
+
+    def _slider_value_changed(self, value, axis):
+        self.dimensions.indices[axis] = value
+        self.dimensions._need_redraw = True
+        self.dimensions._update()

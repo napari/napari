@@ -1,30 +1,41 @@
-from PyQt5.QtWidgets import QSlider, QLineEdit, QGridLayout, QFrame, QVBoxLayout, QCheckBox, QWidget, QApplication, QLabel, QComboBox
+from PyQt5.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame,
+                             QVBoxLayout, QCheckBox, QWidget, QApplication,
+                             QLabel, QComboBox)
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
-from os.path import dirname, join, realpath
 
-dir_path = dirname(realpath(__file__))
-path_on = join(dir_path,'icons','eye_on.png')
+from os.path import join
+from ...resources import resources_dir
+path_on = join(resources_dir, 'icons', 'eye_on.png')
+
 
 class QtLayer(QFrame):
+    unselectedStylesheet = """QFrame#layer {border: 3px solid lightGray;
+        background-color:lightGray; border-radius: 3px;}"""
+
+    selectedStylesheet = """QFrame#layer {border: 3px solid rgb(0, 153, 255);
+        background-color:lightGray; border-radius: 3px;}"""
+
+    cbStylesheet = """QCheckBox::indicator {width: 18px; height: 18px;}
+        QCheckBox::indicator:checked {image: url(""" + path_on + ");}"
+
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
-        self.unselectedStyleSheet = "QFrame#layer {border: 3px solid lightGray; background-color:lightGray; border-radius: 3px;}"
-        self.selectedStyleSheet = "QFrame#layer {border: 3px solid rgb(0, 153, 255); background-color:lightGray; border-radius: 3px;}"
+        self.layer.events.select.connect(self._on_select)
+        self.layer.events.deselect.connect(self._on_deselect)
+
         self.setObjectName('layer')
+        self.layer.selected = True
 
         self.grid_layout = QGridLayout()
 
         cb = QCheckBox(self)
-        cb.setStyleSheet("QCheckBox::indicator {width: 18px; height: 18px;}"
-                         "QCheckBox::indicator:checked {image: url(" + path_on + ");}")
+        cb.setStyleSheet(self.cbStylesheet)
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
         self.grid_layout.addWidget(cb, 0, 0)
-
-        #self.grid_layout.insertSpacing(1, 5)
 
         textbox = QLineEdit(self)
         textbox.setStyleSheet('background-color:lightGray; border:none')
@@ -32,46 +43,47 @@ class QtLayer(QFrame):
         textbox.setToolTip('Layer name')
         textbox.setFixedWidth(80)
         textbox.setAcceptDrops(False)
-        textbox.editingFinished.connect(lambda text=textbox: self.changeText(text))
+        textbox.editingFinished.connect(
+            lambda text=textbox: self.changeText(text))
         self.grid_layout.addWidget(textbox, 0, 1)
 
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        #sld.setInvertedAppearance(True)
         sld.setFixedWidth(75)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.opacity*100)
-        sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
+        sld.valueChanged[int].connect(
+            lambda value=sld: self.changeOpacity(value))
         self.grid_layout.addWidget(sld, 1, 1)
 
         blend_comboBox = QComboBox()
         for blend in self.layer._blending_modes:
             blend_comboBox.addItem(blend)
-        index = blend_comboBox.findText(self.layer._blending, Qt.MatchFixedString)
+        index = blend_comboBox.findText(
+            self.layer._blending, Qt.MatchFixedString)
         if index >= 0:
             blend_comboBox.setCurrentIndex(index)
-        blend_comboBox.activated[str].connect(lambda text=blend_comboBox: self.changeBlending(text))
+        blend_comboBox.activated[str].connect(
+            lambda text=blend_comboBox: self.changeBlending(text))
         self.grid_layout.addWidget(QLabel('blending:'), 2, 0)
         self.grid_layout.addWidget(blend_comboBox, 2, 1)
 
         self.setLayout(self.grid_layout)
-        self.setToolTip('Click to select\nDrag to rearrange\nDouble click to expand')
-        self.setSelected(True)
+        msg = 'Click to select\nDrag to rearrange\nDouble click to expand'
+        self.setToolTip(msg)
         self.setExpanded(False)
         self.setFixedWidth(200)
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
 
-    def setSelected(self, state):
-        if state:
-            self.setStyleSheet(self.selectedStyleSheet)
-            self.layer.selected = True
-        else:
-            self.setStyleSheet(self.unselectedStyleSheet)
-            self.layer.selected = False
+    def _on_select(self, event):
+        self.setStyleSheet(self.selectedStylesheet)
+
+    def _on_deselect(self, event):
+        self.setStyleSheet(self.unselectedStylesheet)
 
     def changeOpacity(self, value):
         self.layer.opacity = value/100
@@ -81,8 +93,7 @@ class QtLayer(QFrame):
             self.layer.visible = True
         else:
             self.layer.visible = False
-        self.layer.viewer._update_active_layers()
-        self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
+        self.layer.viewer._update_active_layers(None)
 
     def changeText(self, text):
         self.layer.name = text.text()
@@ -101,21 +112,19 @@ class QtLayer(QFrame):
             r = [index, lastSelected]
             r.sort()
             for i in range(r[0], r[1]+1):
-                self.layer.viewer.layers[i]._qt.setSelected(True)
+                self.layer.viewer.layers[i].selected = True
         elif modifiers == Qt.ControlModifier:
-            self.setSelected(not self.layer.selected)
+            self.layer.selected = not self.layer.selected
         else:
-            self.unselectAll()
-            self.setSelected(True)
-        self.layer.viewer._update_active_layers()
-        self.layer.viewer._set_annotation_mode(self.layer.viewer.annotation)
-        self.layer.viewer.controlBars.climSliderUpdate()
+            self.layer.viewer.layers.unselect_all()
+            self.layer.selected = True
 
     def mousePressEvent(self, event):
         self.dragStartPosition = event.pos()
 
     def mouseMoveEvent(self, event):
-        if (event.pos()- self.dragStartPosition).manhattanLength() < QApplication.startDragDistance():
+        distance = (event.pos() - self.dragStartPosition).manhattanLength()
+        if distance < QApplication.startDragDistance():
             return
         mimeData = QMimeData()
         if not self.layer.selected:
@@ -139,12 +148,6 @@ class QtLayer(QFrame):
             else:
                 self.layer.viewer.layers.remove_selected()
 
-    def unselectAll(self):
-        if self.layer.viewer is not None:
-            for layer in self.layer.viewer.layers:
-                if layer.selected:
-                    layer._qt.setSelected(False)
-
     def setExpanded(self, bool):
         if bool:
             self.expanded = True
@@ -157,15 +160,12 @@ class QtLayer(QFrame):
         for i in range(1, rows):
             for j in range(2):
                 if self.expanded:
-                    self.grid_layout.itemAtPosition(i,j).widget().show()
+                    self.grid_layout.itemAtPosition(i, j).widget().show()
                 else:
-                    self.grid_layout.itemAtPosition(i,j).widget().hide()
+                    self.grid_layout.itemAtPosition(i, j).widget().hide()
 
     def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)
 
     def update(self):
-        print('hello!!!')
-        #print(self.layout().children())
-        #sld.setValue(self.layer.opacity*100)
-        #cb.setChecked(self.layer.visible)
+        return

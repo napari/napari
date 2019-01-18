@@ -105,6 +105,7 @@ def open_multi(win):
     viewer.camera.set_range((0, w * 2), (0, h))
     win.show()
 
+
 if __name__ == '__main__':
     # starting
     application = QApplication(sys.argv)

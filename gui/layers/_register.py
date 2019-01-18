@@ -73,7 +73,7 @@ def create_func(cls, name=None, doc=None):
                           cls_name=cls_name,
                           call_args=str(call_args)[1:-1])
 
-    execdict = { cls_name : cls }
+    execdict = {cls_name: cls}
     exec(src, execdict)
     func = execdict[name]
 

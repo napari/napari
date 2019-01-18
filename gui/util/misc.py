@@ -87,7 +87,7 @@ def compute_max_shape(shapes, max_dims=None):
     if max_dims is None:
         max_dims = max(len(shape) for shape in shapes)
 
-    max_shape = [0,] * max_dims
+    max_shape = [0, ] * max_dims
 
     for dim in range(max_dims):
         for shape in shapes:
