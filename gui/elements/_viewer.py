@@ -176,12 +176,20 @@ class Viewer(QObject):
     def _update_active_layers(self):
         from ..layers._image_layer import Image
         from ..layers._markers_layer import Markers
+        from ..layers._vectors_layer import Vectors
         top_markers = []
         for i, layer in enumerate(self.layers[::-1]):
             if layer.visible and isinstance(layer, Image):
                 top_image = len(self.layers) - 1 - i
                 break
             elif layer.visible and isinstance(layer, Markers):
+                if self.dimensions._index is None:
+                    pass
+                else:
+                    top_markers.append(len(self.layers) - 1 - i)
+                    coord = [self.dimensions._index[1],self.dimensions._index[0],*self.dimensions._index[2:]]
+                    layer._set_selected_markers(coord)
+            elif layer.visible and isinstance(layer, Vectors):
                 if self.dimensions._index is None:
                     pass
                 else:

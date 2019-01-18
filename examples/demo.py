@@ -113,8 +113,9 @@ if __name__ == '__main__':
     win = Window(Viewer(), show=False)
     #open_2Drgb(Window(Viewer(), show=False))
     #open_2Dsc(Window(Viewer(), show=False))
-    open_3Dsc(win)
+    # open_3Dsc(win)
     #open_4Dsc(Window(Viewer(), show=False))
-    #open_multi(Window(Viewer(), show=False))
+    # open_multi(Window(Viewer(), show=False))
+    open_multi(win)
 
     sys.exit(application.exec_())

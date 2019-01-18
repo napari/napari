@@ -10,6 +10,7 @@ from ._imageLayer import QtImageLayer
 from ._markersLayer import QtMarkersLayer
 from ._dimensions import QtDimensions
 from ._viewer import QtViewer
+from ._vectorsLayer import QtVectorsLayer
 
 from vispy import app
 app.use_app('pyqt5')
