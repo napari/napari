@@ -13,6 +13,8 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget
 from napari_gui import Window, Viewer
 
+from skimage import data
+
 import numpy as np
 
 class open_multi(QWidget):
@@ -35,7 +37,7 @@ class open_multi(QWidget):
 
         self.viewer.add_markers(pos)
         self.viewer.add_vectors(pos)
-        self.viewer.add_markers(pos)
+        self.viewer.add_image(data.astronaut(), {})
 
         self.win.show()
 
