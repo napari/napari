@@ -7,7 +7,7 @@ from copy import copy
 
 from ._base_layer import Layer
 from ._register import add_to_viewer
-from .._vispy.scene.visuals import Mesh as ShapesNode
+from .._vispy.scene.visuals import Shape as ShapesNode
 from .shapes_data import ShapesData
 from vispy.color import get_color_names
 from vispy.visuals import marker_types
@@ -291,9 +291,19 @@ class Shapes(Layer):
         #
         #
         # self._view_data = data
-        self._node.set_data(vertices=self.data._triangles_vertices,
-                            faces=self.data._triangles_faces,
-                            color=self.face_color)
+        # self._node.set_data(vertices=self.data._triangles_vertices,
+        #                     faces=self.data._triangles_faces,
+        #                     color=self.face_color)
+        self._node.set_data(mesh_vertices=self.data._triangles_vertices,
+                            mesh_faces=self.data._triangles_faces,
+                            lines_vertices=self.data._lines_vertices,
+                            lines_connect=self.data._lines_connect,
+                            marker_vertices=self.data._points_vertices,
+                            edge_width=self.edge_width,
+                            edge_color=self.edge_color,
+                            face_color=self.face_color,
+                            marker_symbol=self.point_symbol,
+                            marker_size=self.point_size)
         self._need_visual_update = True
         #self._set_highlight()
         self._update()
