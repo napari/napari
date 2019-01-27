@@ -1,4 +1,16 @@
+#!/usr/bin/env python
+# title           : _vectors_layer.py
+# description     :class Vectors layer that defines properties
+# author          :bryant.chhun
+# date            :1/16/19
+# version         :0.0
+# usage           :
+# notes           :
+# python_version  :3.6
+
 from typing import Union
+from collections import Iterable
+from PyQt5.QtCore import pyqtSignal
 
 import numpy as np
 
@@ -9,21 +21,76 @@ from vispy.color import get_color_names
 
 from .qt import QtVectorsLayer
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
-
 @add_to_viewer
 class Vectors(Layer):
-    """Line layer.
-
     """
-    # avg_changed = pyqtSignal(str)
+    Properties
+    ----------
+    vectors : np.ndarray
+        array of shape (N,2) or (N,3) = array of 2d or 3d coordinates
 
+    data : np.ndarray
+        ABC implementation.  Same as vectors
+
+    averaging : str
+        kernel over which to average from one of _avg_dims
+        averaging.setter adjusts the underlying data and must be implemented per use case
+        subscribe an observer by registering it with "averaging_bind_to"
+
+    width : int
+        width of the line in pixels
+
+    length : int or float
+        length of the line
+        length.setter adjusts the underlying data and must be implemented per use case
+        subscribe an observer by registering it with "length_bind_to"
+
+    color : str
+        one of "get_color_names" from vispy.color
+
+    conector : str or np.ndarray
+        way to render line between coordinates
+        two built in types: "segment" or "strip"
+        third type is np.ndarray
+
+    method : str
+        Render method: one of 'agg' or 'gl'
+        used by vispy.LineVisual
+
+    antialias : bool
+        Antialias rendering
+        used by vispy.LineVisual
+
+    Attributes
+    ----------
+        Private (not associated with property)
+        -------
+        _connector_types
+        _colors
+        _avg_dims
+        _avg_observers
+        _len_observers
+        _need_display_update
+        _need_visual_update
+        
+        Public
+        -------
+        name
+
+
+    See vispy's marker visual docs for more details:
+    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
+    """
+    
+    line_length = pyqtSignal(float)
+    
     def __init__(
         self, vectors,
             width=1,
             color='red',
             connector='segments',
             averaging='1x1',
+            length = 10,
             method='agg',
             antialias=True):
 
@@ -45,7 +112,9 @@ class Vectors(Layer):
         
         self._avg_dims = ['1x1','3x3','5x5','7x7','9x9','11x11']
         self._averaging = averaging
-        self._observers = []
+        self._length = length
+        self._avg_observers = []
+        self._len_observers = []
 
         # update flags
         self._need_display_update = False
@@ -53,7 +122,6 @@ class Vectors(Layer):
 
         self.name = 'vectors'
         self._qt = QtVectorsLayer(self)
-        self._selected_markers = None
 
     @property
     def vectors(self) -> np.ndarray:
@@ -85,36 +153,64 @@ class Vectors(Layer):
     @property
     def averaging(self) -> str:
         """
-        
+        Set the kernel over which to average
         :return: string of averaging kernel size
         """
         return self._averaging
     
     @averaging.setter
     def averaging(self, averaging: str):
+        '''
+        Averaging does nothing unless the user binds an observer and updates
+            the underlying data manually.
+        :param averaging: one of "_avg_dims" above
+        :return: None
+        '''
         self._averaging = averaging
-        # self.avg_changed.emit(averaging)
-        for callback in self._observers:
+        for callback in self._avg_observers:
             print('averaging changed, broadcasting to subscribers')
             callback(self._averaging)
 
-    def bind_to(self, callback):
-        print('bound')
-        self._observers.append(callback)
+    def averaging_bind_to(self, callback):
+        self._avg_observers.append(callback)
         
     @property
     def width(self) -> Union[int, float]:
         """
         width of the line in pixels
             widths greater than 1px only guaranteed to work with "agg" method
-        :return:
+        :return: int or float line width
         """
         return self._width
 
     @width.setter
     def width(self, width: Union[int, float]) -> None:
         self._width = width
-        self.refresh()
+        self._refresh()
+
+    @property
+    def length(self) -> Union[int, float]:
+        return self._length
+
+    @length.setter
+    def length(self, length: Union[int, float]):
+        """
+        Length of the line.
+        Does nothing unless the user binds an observer and updates
+            the underlying data manually
+        :param magnitude: length multiplicative factor
+        :return: None
+        """
+
+        print('length setter called, new length = '+str(length))
+        self._length = length
+        for callback in self._len_observers:
+            print('length changed, broadcasting to subscribers')
+            callback(self._length)
+        self._refresh()
+
+    def length_bind_to(self, callback):
+        self._len_observers.append(callback)
 
     @property
     def color(self) -> str:
@@ -125,7 +221,7 @@ class Vectors(Layer):
     @color.setter
     def color(self, color: str) -> None:
         self._color = color
-        self.refresh()
+        self._refresh()
 
     @property
     def connector(self):
@@ -139,11 +235,12 @@ class Vectors(Layer):
     @connector.setter
     def connector(self, connector_type: Union[str, np.ndarray]):
         self._connector = connector_type
-        self.refresh()
+        self._refresh()
 
     @property
     def method(self) -> str:
         """
+        *** NOT IMPLEMENTED ***
         method used to render the lines.  one of:
             'agg' = anti-grain geometry
             'gl' = openGL
@@ -153,19 +250,31 @@ class Vectors(Layer):
 
     @method.setter
     def method(self, method_type: str):
+        """
+        ** NOT IMPLEMENTED ***
+        :param method_type: 
+        :return: 
+        """
         self._method = method_type
-        self.refresh()
+        self._refresh()
 
     @property
     def antialias(self) -> bool:
-        """Color, ColorArray: color of the body of the marker
+        """
+        
+        :return: 
         """
         return self._antialias
 
     @antialias.setter
     def antialias(self, antialias_bool: str) -> None:
+        """
+        
+        :param antialias_bool: 
+        :return: 
+        """
         self._antialias = antialias_bool
-        self.refresh()
+        self._refresh()
 
     def _get_shape(self):
         if len(self.vectors) == 0:
@@ -190,38 +299,6 @@ class Vectors(Layer):
         """
         self._need_display_update = True
         self._update()
-
-    # def _set_selected_markers(self, indices):
-    #     """Determines selected markers selected given indices.
-    #     Borrowed from Markers layer
-    #
-    #     Parameters
-    #     ----------
-    #     indices : sequence of int
-    #         Indices to check if marker at.
-    #     """
-    #     in_slice_markers, matches = self._slice_markers(indices)
-    #
-    #     # Display markers if there are any in this slice
-    #     if len(in_slice_markers) > 0:
-    #         distances = abs(in_slice_markers - np.broadcast_to(indices[:2], (len(in_slice_markers),2)))
-    #         # Get the marker sizes
-    #         if isinstance(self.width, (list, np.ndarray)):
-    #             widths = self.width[matches]
-    #         else:
-    #             widths = self.width
-    #         matches = np.where(matches)[0]
-    #         in_slice_matches = np.less_equal(distances, np.broadcast_to(widths/2, (2, len(in_slice_markers))).T)
-    #         in_slice_matches = np.all(in_slice_matches, axis=1)
-    #         indices = np.where(in_slice_matches)[0]
-    #         if len(indices) > 0:
-    #             matches = matches[indices[-1]]
-    #         else:
-    #             matches = None
-    #     else:
-    #         matches = None
-    #
-    #     self._selected_markers = matches
 
     def _slice_markers(self, indices):
         """Determines the slice of markers given the indices.
