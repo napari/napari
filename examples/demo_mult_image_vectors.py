@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# title           : this_python_file.py
-# description     :This will create a header for a python script.
+# title           : demo_mult_image_vectors.py
+# description     :demonstration of vector image using napari layers
 # author          :bryant.chhun
-# date            :12/19/18
+# date            :1/16/19
 # version         :0.0
-# usage           :python this_python_file.py -flags
+# usage           :
 # notes           :
 # python_version  :3.6
 
@@ -13,43 +13,42 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget
 from napari_gui import Window, Viewer
 
-from skimage import data
-
 import numpy as np
 
-class open_multi(QWidget):
+from skimage import data
+
+class vector_window_example(QWidget):
+    '''
+    This example generates an image of vectors
+    The end points of the vectors are marked by markers
+    '''
 
     def __init__(self, window):
         super().__init__()
         self.win = window
         self.viewer = self.win.viewer
 
-        N = 200
-        N2 = N * N
-        pos = np.zeros((N2, 2), dtype=np.float32)
-        dim = np.linspace(0, 4 * N - 1, N)
-        xv, yv = np.meshgrid(dim, dim)
+        # sample vector data
+        N = 512
+        pos = np.zeros((N*N, 2), dtype=np.float32)
+        xdim = np.linspace(0, N, N)
+        ydim = np.linspace(0, N, N)
+        xv, yv = np.meshgrid(xdim, ydim)
         pos[:, 0] = xv.flatten()
         pos[:, 1] = yv.flatten()
 
-        # zigzag the lines
-        pos[::2, 1] += (4 * N - 1) / N
+        # add slant to the lines
+        # add a value to every other y-coordinate
+        pos[1::2, 1] += 0.5
 
-        self.viewer.add_markers(pos)
-        self.viewer.add_vectors(pos)
-        self.viewer.add_image(data.astronaut(), {})
+        mk1 = self.viewer.add_markers(pos)
+        mk1.size = 0.3
+        vect1 = self.viewer.add_vectors(pos)
+        vect1.width = 4
+        # self.viewer.add_image(data.astronaut(), {})
 
         self.win.show()
 
-
-    def add_another_image(self):
-        image_random = np.random.rand(512,512)
-        self.viewer.add_image(image_random, {})
-        self.win.show()
-
-    def modify_image(self):
-        self.win.show()
-        # self.layers[-1].image = self.image3D_2
 
 if __name__ == '__main__':
     # starting
@@ -58,12 +57,6 @@ if __name__ == '__main__':
     viewer = Viewer()
     win = Window(Viewer(), show=False)
 
-    multi_win = open_multi(win)
-    # multi_win.add_another_image()
-    # multi_win.add_another_image()
-    # multi_win.add_another_image()
-
-    # multi_win.modify_image()
-
+    multi_win = vector_window_example(win)
 
     sys.exit(application.exec_())
