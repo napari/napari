@@ -1,20 +1,22 @@
 #!/usr/bin/env python
-# title           : this_python_file.py
-# description     :This will create a header for a python script.
+# title           : _vectors_layer.py
+# description     :qt vectors layer
 # author          :bryant.chhun
 # date            :1/16/19
 # version         :0.0
-# usage           :python this_python_file.py -flags
+# usage           :
 # notes           :
 # python_version  :3.6
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QLabel, QComboBox, QSpinBox
+from collections import Iterable
+
+import numpy as np
+
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QLabel, QComboBox, QSpinBox, QSlider
 from ._base_layer import QtLayer
 
 class QtVectorsLayer(QtLayer):
-
-    # compute_average = pyqtSignal(object)
 
     def __init__(self, layer):
         super().__init__(layer)
@@ -37,7 +39,7 @@ class QtVectorsLayer(QtLayer):
         value = self.layer.width
         width_field.setValue(value)
         width_field.valueChanged.connect(self.changeWidth)
-        self.grid_layout.addWidget(QLabel('size:'), 4, 0)
+        self.grid_layout.addWidget(QLabel('width:'), 4, 0)
         self.grid_layout.addWidget(width_field, 4, 1)
 
         # vector color adjustment and widget
@@ -49,8 +51,45 @@ class QtVectorsLayer(QtLayer):
         if index >= 0:
            face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(lambda text=face_comboBox: self.changeFaceColor(text))
-        self.grid_layout.addWidget(QLabel('face_color:'), 5, 0)
+        self.grid_layout.addWidget(QLabel('color:'), 5, 0)
         self.grid_layout.addWidget(face_comboBox, 5, 1)
+        
+        # length slider bar
+        # sld = QSlider(Qt.Horizontal, self)
+        # sld.setFocusPolicy(Qt.NoFocus)
+        # sld.setFixedWidth(75)
+        # sld.setMinimum(0)
+        # sld.setMaximum(10)
+        # sld.setSingleStep(1)
+        # value = self.layer.length
+        # if isinstance(value, Iterable):
+        #     if isinstance(value, list):
+        #         value = np.asarray(value)
+        #     value = value.mean()
+        # sld.setValue(int(value))
+        # sld.valueChanged[int].connect(lambda value=sld: self.changeLength(value))
+        # self.grid_layout.addWidget(QLabel('length:'), 6, 0)
+        # self.grid_layout.addWidget(sld, 6, 1)
+        
+        length_field = QSpinBox()
+        value = self.layer.length
+        length_field.setValue(value)
+        length_field.valueChanged.connect(self.changeLength)
+        self.grid_layout.addWidget(QLabel('length:'), 6, 0)
+        self.grid_layout.addWidget(length_field, 6, 1)
+        
+        # length_combobox = QComboBox()
+        # for length in ['1','5','10','15','20','25','30']:
+        #     length_combobox.addItem(length)
+        # # index = length_combobox.findText(self.layer.length, Qt.MatchFixedString)
+        # index = length_combobox.findData(self.layer.length)
+        # print(index)
+        # if index >= 0:
+        #     length_combobox.setCurrentIndex(index)
+        #     length_combobox.activated[str].connect(lambda text=length_combobox: self.changeLength(value))
+        #
+        # self.grid_layout.addWidget(QLabel('length:'), 6, 0)
+        # self.grid_layout.addWidget(length_combobox, 6, 1)
 
         # line connector type.  Only two built in: Segments or Connected
         # connector_comboBox = QComboBox()
@@ -74,7 +113,10 @@ class QtVectorsLayer(QtLayer):
 
     def changeAvgType(self, text):
         self.layer.averaging = text
-        # self.compute_average.emit(text)
 
     def changeWidth(self, value):
         self.layer.width = value
+    
+    def changeLength(self, value):
+        print('length changed to = '+str(value))
+        self.layer.length = int(value)
