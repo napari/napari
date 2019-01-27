@@ -27,11 +27,6 @@ class open_multi(QWidget):
 
         image_random = np.random.rand(512,512)
 
-        # self.meta = dict(name='3D1C', itype='mono')
-        # self.layers.append(self.viewer.add_image(self.image3D, self.meta))
-        # self.layers[0].cmap = 'blues'
-        # self.layers[0].interpolation = 'spline36'
-
         self.viewer.add_image(image_random, {})
         self.viewer.add_image(data.astronaut(), {})
 
@@ -43,9 +38,6 @@ class open_multi(QWidget):
         self.viewer.add_image(image_random, {})
         self.win.show()
 
-    def modify_image(self):
-        self.win.show()
-        # self.layers[-1].image = self.image3D_2
 
 if __name__ == '__main__':
     # starting
@@ -56,11 +48,5 @@ if __name__ == '__main__':
 
     multi_win = open_multi(win)
     multi_win.add_another_image()
-    # multi_win.add_another_image()
-    # multi_win.add_another_image()
-    # multi_win.add_another_image()
-
-    # multi_win.modify_image()
-
 
     sys.exit(application.exec_())
