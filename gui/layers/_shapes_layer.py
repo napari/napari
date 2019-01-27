@@ -62,7 +62,11 @@ class Shapes(Layer):
         self._data = ShapesData(lines=lines, paths=paths, rectangles=rectangles,
                                 ellipses=ellipses, polygons=polygons,
                                 thickness=self._edge_width)
-        self._set_color_array()
+
+        c = Color(self.edge_color).rgba
+        self._color_array = np.array([c for i in range(len(self.data._mesh_faces))])
+        faces_indices = self.data._mesh_faces_index[:,2]==0
+        self._color_array[faces_indices] = Color(self.face_color).rgba
 
         # update flags
         self._need_display_update = False
@@ -158,7 +162,7 @@ class Shapes(Layer):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
-        self._set_color_array()
+        self.set_color(self.edge_color)
 
         self.refresh()
 
@@ -172,7 +176,7 @@ class Shapes(Layer):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
-        self._set_color_array()
+        self.set_color(self.face_color)
 
         self.refresh()
 
@@ -202,11 +206,59 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_color_array(self):
-        c = Color(self.edge_color).rgba
-        self._color_array = np.array([c for i in range(len(self.data._mesh_faces))])
-        faces_indices = self.data._mesh_faces_index[:,2]==0
-        self._color_array[faces_indices] = Color(self.face_color).rgba
+    def set_color(self, index=True, edge_color=False, face_color=False):
+        if face_color is False:
+            pass
+        else:
+            if type(face_color) is list:
+                if index is True:
+                    assert(self.data._mesh_faces_index[:, 0].max()<len(face_color))
+                    for i in range(len(self.data._mesh_faces_index)):
+                        if self.data._mesh_faces_index[i, 2] == 0:
+                            self._color_array[i] = Color(face_color[self.data._mesh_faces_index[i, 0]]).rgba
+                else:
+                    assert(type(index) is list and len(face_color)==len(index))
+                    for i in range(len(index)):
+                        indices = self._select_meshes(index[i], 0)
+                        color = Color(face_color[i]).rgba
+                        self._color_array[indices] = color
+            else:
+                indices = self._select_meshes(index, 0)
+                color = Color(face_color).rgba
+                self._color_array[indices] = color
+        if edge_color is False:
+            pass
+        else:
+            if type(edge_color) is list:
+                if index is True:
+                    assert(self.data._mesh_faces_index[:, 0].max()<len(edge_color))
+                    for i in range(len(self.data._mesh_faces_index)):
+                        if self.data._mesh_faces_index[i, 2] == 1:
+                            self._color_array[i] = Color(edge_color[self.data._mesh_faces_index[i, 0]]).rgba
+                else:
+                    assert(type(index) is list and len(edge_color)==len(index))
+                    for i in range(len(index)):
+                        indices = self._select_meshes(index[i], 1)
+                        color = Color(edge_color[i]).rgba
+                        self._color_array[indices] = color
+            else:
+                indices = self._select_meshes(index, 1)
+                color = Color(edge_color).rgba
+                self._color_array[indices] = color
+        self._refresh()
+
+    def _select_meshes(self, index, object_type):
+        if index is True:
+            indices = self.data._mesh_faces_index[:,2]==object_type
+        elif type(index) is list:
+            indices = [i for i, x in enumerate(self.data._mesh_faces_index) if x[0] in index and x[2]==object_type]
+        elif type(index) is int:
+            index = np.broadcast_to([index, object_type], (len(self.data._mesh_faces_index), 2))
+            indices = np.all(np.equal(self.data._mesh_faces_index[:,[0, 2]], index), axis=1)
+        else:
+            indices = []
+        return indices
+
     #
     # def _slice_boxes(self, indices):
     #     """Determines the slice of boxes given the indices.

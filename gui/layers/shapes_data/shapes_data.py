@@ -33,9 +33,9 @@ class ShapesData():
         self.boxes = np.empty((0, 9, 2)) # Bounding box + center point for each of N objects
 
         self._mesh_vertices = np.empty((0, 2)) # Mx2 array of vertices of triangles
-        self._mesh_vertices_index = np.empty((0, 3), dtype=int) #Mx3 array of object indices and types of vertices and shape id
+        self._mesh_vertices_index = np.empty((0, 3), dtype=int) #Mx3 array of object indices, shape id, and types of vertices
         self._mesh_faces = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form a triangle
-        self._mesh_faces_index = np.empty((0, 3), dtype=int) #Px3 array of object indices of faces and shape id
+        self._mesh_faces_index = np.empty((0, 3), dtype=int) #Px3 array of object indices of faces, shape id, and types of vertices
 
         if lines is not None:
             self._add_lines(lines)
