@@ -5,8 +5,6 @@ class ShapesData():
     """Shapes class.
     Parameters
     ----------
-    points : np.ndarray
-        Nx2 array of vertices.
     lines : np.ndarray
         Nx2x2 array of endpoints of lines.
     rectangles : np.ndarray
@@ -17,33 +15,27 @@ class ShapesData():
         list of Nx2 arrays of points on each path.
     polygons : list
         list of Nx2 arrays of vertices of each polygon.
+    thicknes : float
+        thickness of lines and edges.
     """
-    objects = ['points', 'lines', 'rectangles', 'ellipses', 'paths', 'polygons']
+    objects = ['lines', 'rectangles', 'ellipses', 'paths', 'polygons']
+    types = ['face', 'edge']
     _ellipse_segments = 100
 
-    def __init__(self, points=None, lines=None, rectangles=None, ellipses=None,
-                 paths=None, polygons=None):
+    def __init__(self, lines=None, rectangles=None, ellipses=None, paths=None,
+                 polygons=None, thickness=2):
 
-        self.id = np.empty((0), dtype=int) # For N objects, array of object ids
+        self.thickness = thickness
+
+        self.id = np.empty((0), dtype=int) # For N objects, array of shape ids
         self.vertices = np.empty((0, 2)) # Array of M vertices from all N objects
         self.index = np.empty((0), dtype=int) # Object index (0, ..., N-1) for each of M vertices
         self.boxes = np.empty((0, 9, 2)) # Bounding box + center point for each of N objects
 
-        self._points_vertices = np.empty((0, 2)) # Mx2 array of vertices to be rendered as markers
-        self._points_vertices_index = np.empty((0), dtype=int) # Mx1 array of object indices of vertices
-
-        self._lines_vertices = np.empty((0, 2)) # Mx2 array of vertices to be rendered as lines
-        self._lines_vertices_index = np.empty((0), dtype=int) #Mx1 array of object indices of vertices
-        self._lines_connect = np.empty((0, 2), dtype=np.uint32) # Px2 array of vertex indices to be connected
-        self._lines_connect_index = np.empty((0), dtype=int) #Px1 array of object indices of connections
-
-        self._triangles_vertices = np.empty((0, 2)) # Mx2 array of vertices of triangles
-        self._triangles_vertices_index = np.empty((0), dtype=int) #Mx1 array of object indices of vertices
-        self._triangles_faces = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form a triangle
-        self._triangles_faces_index = np.empty((0), dtype=int) #Px1 array of object indices of faces
-
-        if points is not None:
-            self._add_points(points)
+        self._mesh_vertices = np.empty((0, 2)) # Mx2 array of vertices of triangles
+        self._mesh_vertices_index = np.empty((0, 3), dtype=int) #Mx3 array of object indices and types of vertices and shape id
+        self._mesh_faces = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form a triangle
+        self._mesh_faces_index = np.empty((0, 3), dtype=int) #Px3 array of object indices of faces and shape id
 
         if lines is not None:
             self._add_lines(lines)
@@ -60,20 +52,8 @@ class ShapesData():
         if polygons is not None:
             self._add_polygons(polygons)
 
-    def _add_points(self, points):
-        self.id = np.append(self.id, np.repeat(0, len(points)), axis=0)
-        self.vertices = np.append(self.vertices, points, axis=0)
-        m = max(self.index, default=-1) + 1
-        indices = np.arange(m, m+len(points))
-        self.index = np.append(self.index, indices, axis=0)
-        self.boxes = np.append(self.boxes, np.stack([points]*9, axis=1), axis=0)
-        # Build objects to be rendered
-        # For points just render vertices as is
-        self._points_vertices = np.append(self._points_vertices, points, axis=0)
-        self._points_vertices_index = np.append(self._points_vertices_index, indices, axis=0)
-
     def _add_lines(self, lines):
-        self.id = np.append(self.id, np.repeat(1, len(lines)), axis=0)
+        self.id = np.append(self.id, np.repeat(0, len(lines)), axis=0)
         self.vertices = np.append(self.vertices, lines.reshape((-1, lines.shape[-1])), axis=0)
         m = max(self.index, default=-1) + 1
         indices = m + np.arange(0, 2*len(lines))//2
@@ -81,16 +61,12 @@ class ShapesData():
         boxes = np.array([self._expand_box(x) for x in lines])
         self.boxes = np.append(self.boxes, boxes, axis=0)
         # Build objects to be rendered
-        # For lines just add lines
-        m = len(self._lines_vertices)
-        connect = [[m+2*i, m+2*i+1] for i in range(len(lines))]
-        self._lines_vertices = np.append(self._lines_vertices, lines.reshape((-1, lines.shape[-1])), axis=0)
-        self._lines_vertices_index = np.append(self._lines_vertices_index, indices, axis=0)
-        self._lines_connect = np.append(self._lines_connect, connect, axis=0)
-        self._lines_connect_index = np.append(self._lines_connect_index, indices[::2], axis=0)
+        # For lines just add edge
+        for i in range(len(lines)):
+            self._compute_meshes(lines[i], edge=True, thickness=self.thickness, index=[m+i, 0])
 
     def _add_rectangles(self, rectangles):
-        self.id = np.append(self.id, np.repeat(2, len(rectangles)), axis=0)
+        self.id = np.append(self.id, np.repeat(1, len(rectangles)), axis=0)
         r = np.array([self._expand_rectangle(x) for x in rectangles])
         self.vertices = np.append(self.vertices, r.reshape((-1, r.shape[-1])), axis=0)
         m = max(self.index, default=-1) + 1
@@ -99,20 +75,11 @@ class ShapesData():
         boxes = np.array([self._expand_box(x) for x in rectangles])
         self.boxes = np.append(self.boxes, boxes, axis=0)
         # Build objects to be rendered
-        # For rectanges just add four boundary lines for each
-        m = len(self._lines_vertices)
-        connect = m + np.array([self._box_connect(i) for i in range(4*len(rectangles))])
-        self._lines_vertices = np.append(self._lines_vertices, r.reshape((-1, r.shape[-1])), axis=0)
-        self._lines_vertices_index = np.append(self._lines_vertices_index, indices, axis=0)
-        self._lines_connect = np.append(self._lines_connect, connect, axis=0)
-        self._lines_connect_index = np.append(self._lines_connect_index, indices[::4], axis=0)
-        # Add two triangle faces for each rectangle
-        m = len(self._triangles_vertices)
-        faces = m + np.array([self._box_face(i) for i in range(2*len(rectangles))]).astype(np.uint32)
-        self._triangles_vertices = np.append(self._triangles_vertices, r.reshape((-1, r.shape[-1])), axis=0)
-        self._triangles_vertices_index = np.append(self._triangles_vertices_index, indices, axis=0)
-        self._triangles_faces = np.append(self._triangles_faces, faces, axis=0)
-        self._triangles_faces_index = np.append(self._triangles_faces_index, indices[::2], axis=0)
+        # For rectanges add four boundary lines and then two triangles for each
+        for i in range(len(rectangles)):
+            fill_faces = np.array([[0, 1, 2], [0, 2, 3]])
+            self._compute_meshes(r[i], edge=True, fill=True, closed=True, thickness=self.thickness, index=[m+i, 1],
+                                 fill_vertices=r[i], fill_faces=fill_faces)
 
     def _add_ellipses(self, ellipses):
         self.id = np.append(self.id, np.repeat(3, len(ellipses)), axis=0)
@@ -125,29 +92,12 @@ class ShapesData():
         self.boxes = np.append(self.boxes, boxes, axis=0)
         # Build objects to be rendered
         # For ellipses build boundary vertices with num_segments
-        n = self._ellipse_segments
-        vertices = [self._generate_ellipse(x, n) for x in ellipses]
-        indices = m + np.arange(0, n*len(ellipses))//n
-        m = len(self._lines_vertices)
-        connect = [[[n*i+j, n*i+np.mod(j+1,n)] for j in range(n)] for i in range(len(ellipses))]
-        connect = m + np.concatenate(connect, axis=0)
-        self._lines_vertices = np.append(self._lines_vertices, np.concatenate([v[1:] for v in vertices], axis=0), axis=0)
-        self._lines_vertices_index = np.append(self._lines_vertices_index, indices, axis=0)
-        self._lines_connect = np.append(self._lines_connect, connect, axis=0)
-        self._lines_connect_index = np.append(self._lines_connect_index, indices, axis=0)
-        # Add triangulation data for each ellipse
-        vertices = np.concatenate(vertices, axis=0)
-        face_indices = indices
-        indices = m + np.arange(0, (n+1)*len(ellipses))//(n+1)
-        m = len(self._triangles_vertices)
-        faces = np.array([[0, i+1, i+2] for i in range(n)])
-        faces[-1, 2] = 1
-        faces = m + np.concatenate([(n+1)*i + faces for i in range(len(ellipses))]).astype(np.uint32)
-        self._triangles_vertices = np.append(self._triangles_vertices, vertices, axis=0)
-        self._triangles_vertices_index = np.append(self._triangles_vertices_index, indices, axis=0)
-        self._triangles_faces = np.append(self._triangles_faces, faces, axis=0)
-        self._triangles_faces_index = np.append(self._triangles_faces_index, face_indices, axis=0)
-
+        for i in range(len(ellipses)):
+            points = self._generate_ellipse(ellipses[i], self._ellipse_segments)
+            fill_faces = np.array([[0, i+1, i+2] for i in range(self._ellipse_segments)])
+            fill_faces[-1, 2] = 1
+            self._compute_meshes(points[1:-1], edge=True, fill=True, closed=True, thickness=self.thickness, index=[m+i, 2],
+                                 fill_vertices=points, fill_faces=fill_faces)
 
     def _add_paths(self, paths):
         self.id = np.append(self.id, np.repeat(4, len(paths)), axis=0)
@@ -159,15 +109,8 @@ class ShapesData():
         self.boxes = np.append(self.boxes, boxes, axis=0)
         # Build objects to be rendered
         # For paths connect every vertex in each path
-        connect_indices = m + np.concatenate([np.repeat(i, len(paths[i]-1)) for i in range(len(paths))])
-        m = len(self._lines_vertices)
-        offsets = np.concatenate(([0], np.array([len(p) for p in paths]).cumsum()))
-        connect = [[[offsets[i]+j, offsets[i]+j+1] for j in range(len(paths[i])-1)] for i in range(len(paths))]
-        connect = m + np.concatenate(connect, axis=0)
-        self._lines_vertices = np.append(self._lines_vertices, np.concatenate(paths, axis=0), axis=0)
-        self._lines_vertices_index = np.append(self._lines_vertices_index, indices, axis=0)
-        self._lines_connect = np.append(self._lines_connect, connect, axis=0)
-        self._lines_connect_index = np.append(self._lines_connect_index, connect_indices, axis=0)
+        for i in range(len(paths)):
+            self._compute_meshes(paths[i], edge=True, thickness=self.thickness, index=[m+i, 3])
 
     def _add_polygons(self, polygons):
         self.id = np.append(self.id, np.repeat(5, len(polygons)), axis=0)
@@ -179,26 +122,8 @@ class ShapesData():
         self.boxes = np.append(self.boxes, boxes, axis=0)
         # Build objects to be rendered
         # For polygons connect every vertex in each polygon, including loop back to close
-        m = len(self._lines_vertices)
-        offsets = np.concatenate(([0], np.array([len(p) for p in polygons]).cumsum()))
-        connect = [[[offsets[i]+j, offsets[i]+np.mod(j+1,len(polygons[i]))] for j in range(len(polygons[i]))] for i in range(len(polygons))]
-        connect = m + np.concatenate(connect, axis=0)
-        self._lines_vertices = np.append(self._lines_vertices, np.concatenate(polygons, axis=0), axis=0)
-        self._lines_vertices_index = np.append(self._lines_vertices_index, indices, axis=0)
-        self._lines_connect = np.append(self._lines_connect, connect, axis=0)
-        self._lines_connect_index = np.append(self._lines_connect_index, indices, axis=0)
-        # Add triangulation data for each polygon
-        data = [PolygonData(vertices=np.array(p, dtype=np.float32)).triangulate() for p in polygons]
-        vertices = np.concatenate([d[0] for d in data])
-        indices = m + np.concatenate([np.repeat(i, len(data[i][0])) for i in range(len(polygons))])
-        face_indices = m + np.concatenate([np.repeat(i, len(data[i][1])) for i in range(len(polygons))])
-        m = len(self._triangles_vertices)
-        offsets = np.concatenate(([0], np.array([len(d[0]) for d in data]).cumsum()))
-        faces = m + np.concatenate([data[i][1]+offsets[i] for i in range(len(polygons))]).astype(np.uint32)
-        self._triangles_vertices = np.append(self._triangles_vertices, vertices, axis=0)
-        self._triangles_vertices_index = np.append(self._triangles_vertices_index, indices, axis=0)
-        self._triangles_faces = np.append(self._triangles_faces, faces, axis=0)
-        self._triangles_faces_index = np.append(self._triangles_faces_index, face_indices, axis=0)
+        for i in range(len(polygons)):
+            self._compute_meshes(polygons[i], edge=True, fill=True, closed=True, thickness=self.thickness, index=[m+i, 4])
 
     def _expand_box(self, corners):
         min_val = [corners[:,0].min(axis=0), corners[:,1].min(axis=0)]
@@ -223,18 +148,6 @@ class ShapesData():
         bl = np.array([min(corners[0][0],corners[1][0]), max(corners[0][1],corners[1][1])])
         return np.array([(tl+tr)/2, (tr+br)/2, (br+bl)/2, (bl+tl)/2])
 
-    def _box_connect(self, i):
-        if np.mod(i, 4) == 3:
-            return [i, i-3]
-        else:
-            return [i, i+1]
-
-    def _box_face(self, i):
-        if np.mod(i, 2) == 1:
-            return [2*(i-1),2*(i-1)+3, 2*(i-1)+2]
-        else:
-            return [2*i, 2*i+1, 2*i+2]
-
     def _generate_ellipse(self, corners, num_segments):
         center = corners.mean(axis=0)
         xr = abs(corners[0][0]-center[0])
@@ -249,3 +162,124 @@ class ShapesData():
         # set center point to first vertex
         vertices[0] = np.float32([center[0], center[1]])
         return vertices
+
+    def _append_meshes(self, vertices, faces, index=[0, 0, 0]):
+        m = len(self._mesh_vertices)
+        vertices_indices = np.repeat([index], len(vertices), axis=0)
+        faces_indices = np.repeat([index], len(faces), axis=0)
+        self._mesh_vertices = np.append(self._mesh_vertices, vertices, axis=0)
+        self._mesh_vertices_index = np.append(self._mesh_vertices_index, vertices_indices, axis=0)
+        self._mesh_faces = np.append(self._mesh_faces, m+faces, axis=0)
+        self._mesh_faces_index = np.append(self._mesh_faces_index, faces_indices, axis=0)
+
+    def _compute_meshes(self, points, closed=False, fill=False, edge=False, thickness=1, index=[0, 0],
+                        fill_vertices=None, fill_faces=None):
+        if edge:
+            vertices, faces = path_triangulate(points, thickness=thickness, closed=closed)
+            self._append_meshes(vertices, faces, index=index + [1])
+        if fill:
+            if fill_vertices is not None and fill_faces is not None:
+                self._append_meshes(fill_vertices, fill_faces, index=index + [0])
+            else:
+                vertices, faces = PolygonData(vertices=points).triangulate()
+                self._append_meshes(vertices, faces.astype(np.uint32), index=index + [0])
+
+def path_triangulate(path, closed=False, thickness=1, limit=5, bevel=False):
+    if closed:
+        full_path = np.concatenate(([path[-1]], path, [path[0]]),axis=0)
+        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(path))]
+        #normals = normals[1:]
+        normals=np.array(normals)
+        full_path = np.concatenate((path, [path[0]]),axis=0)
+        full_normals = np.concatenate((normals, [normals[0]]),axis=0)
+        miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
+        miters = np.array([miters[i]/np.dot(miters[i], full_normals[i]) for i in range(len(full_path))])
+    else:
+        full_path = np.concatenate((path, [path[-2]]),axis=0)
+        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(path))]
+        normals[-1] = -normals[-1]
+        normals=np.array(normals)
+        full_path = path
+        full_normals = np.concatenate(([normals[0]], normals),axis=0)
+        miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
+        miters = np.array([miters[i]/np.dot(miters[i], full_normals[i]) for i in range(len(full_path))])
+    miter_lengths = np.linalg.norm(miters,axis=1)
+    miters = 0.5*thickness*miters
+    vertices = []
+    faces = []
+    m = 0
+    for i in range(len(full_path)):
+        if i==0:
+            if (bevel or miter_lengths[i]>limit) and closed:
+                offset = np.array([miters[i,1], -miters[i,0]])
+                offset = 0.5*thickness*offset/np.linalg.norm(offset)
+                flip = np.sign(np.dot(offset, full_normals[i]))
+                vertices.append(full_path[i] + offset)
+                vertices.append(full_path[i] - flip*miters[i])
+                vertices.append(full_path[i] - offset)
+                faces.append([0, 1, 2])
+                m=m+1
+            else:
+                vertices.append(full_path[i] - miters[i])
+                vertices.append(full_path[i] + miters[i])
+        elif i==len(full_path)-1:
+            if closed:
+                a = vertices[m+1] - full_path[i-1]
+                b = vertices[1] - full_path[i-1]
+                ray = full_path[i] - full_path[i-1]
+                if np.cross(a,ray)*np.cross(b,ray)>0:
+                    faces.append([m, m+1, 1])
+                    faces.append([m, 0, 1])
+                else:
+                    faces.append([m, m+1, 1])
+                    faces.append([m+1, 0, 1])
+            else:
+                vertices.append(full_path[i] - miters[i])
+                vertices.append(full_path[i] + miters[i])
+                a = vertices[m+1] - full_path[i-1]
+                b = vertices[m+3] - full_path[i-1]
+                ray = full_path[i] - full_path[i-1]
+                if np.cross(a,ray)*np.cross(b,ray)>0:
+                    faces.append([m, m+1, m+3])
+                    faces.append([m, m+2, m+3])
+                else:
+                    faces.append([m, m+1, m+3])
+                    faces.append([m+1, m+2, m+3])
+        elif (bevel or miter_lengths[i]>limit):
+            offset = np.array([miters[i,1], -miters[i,0]])
+            offset = 0.5*thickness*offset/np.linalg.norm(offset)
+            flip = np.sign(np.dot(offset, full_normals[i]))
+            vertices.append(full_path[i] + offset)
+            vertices.append(full_path[i] - flip*miters[i])
+            vertices.append(full_path[i] - offset)
+            a = vertices[m+1] - full_path[i-1]
+            b = vertices[m+3] - full_path[i-1]
+            ray = full_path[i] - full_path[i-1]
+            if np.cross(a,ray)*np.cross(b,ray)>0:
+                faces.append([m, m+1, m+3])
+                faces.append([m, m+2, m+3])
+            else:
+                faces.append([m, m+1, m+3])
+                faces.append([m+1, m+2, m+3])
+            faces.append([m+2, m+3, m+4])
+            m = m + 3
+        else:
+            vertices.append(full_path[i] - miters[i])
+            vertices.append(full_path[i] + miters[i])
+            a = vertices[m+1] - full_path[i-1]
+            b = vertices[m+3] - full_path[i-1]
+            ray = full_path[i] - full_path[i-1]
+            if np.cross(a,ray)*np.cross(b,ray)>0:
+                faces.append([m, m+1, m+3])
+                faces.append([m, m+2, m+3])
+            else:
+                faces.append([m, m+1, m+3])
+                faces.append([m+1, m+2, m+3])
+            m = m + 2
+    return np.array(vertices), np.array(faces)
+
+def segment_normal(a, b):
+    d = b-a
+    normal = np.array([d[1], -d[0]])
+    unit = normal/np.linalg.norm(normal)
+    return unit

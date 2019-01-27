@@ -7,9 +7,9 @@ from copy import copy
 
 from ._base_layer import Layer
 from ._register import add_to_viewer
-from .._vispy.scene.visuals import Shape as ShapesNode
+from .._vispy.scene.visuals import Mesh as ShapesNode
 from .shapes_data import ShapesData
-from vispy.color import get_color_names
+from vispy.color import get_color_names, Color
 from vispy.visuals import marker_types
 
 from .qt import QtShapesLayer
@@ -19,8 +19,6 @@ class Shapes(Layer):
     """Shapes layer.
     Parameters
     ----------
-    points : np.ndarray
-        Nx2 array of vertices.
     lines : np.ndarray
         Nx2x2 array of endpoints of lines.
     rectangles : np.ndarray
@@ -51,11 +49,6 @@ class Shapes(Layer):
         super().__init__(visual)
         self.name = 'shapes'
 
-        # Save the shape data
-        self._data = ShapesData(points=points, lines=lines, paths=paths,
-                                rectangles=rectangles, ellipses=ellipses,
-                                polygons=polygons)
-
         # Save the style params
         self._point_size = point_size
         self._point_symbol = point_symbol
@@ -64,6 +57,12 @@ class Shapes(Layer):
         self._face_color = face_color
         self._colors = get_color_names()
         self._symbols = marker_types
+
+        # Save the shape data
+        self._data = ShapesData(lines=lines, paths=paths, rectangles=rectangles,
+                                ellipses=ellipses, polygons=polygons,
+                                thickness=self._edge_width)
+        self._set_color_array()
 
         # update flags
         self._need_display_update = False
@@ -159,6 +158,7 @@ class Shapes(Layer):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
+        self._set_color_array()
 
         self.refresh()
 
@@ -172,6 +172,7 @@ class Shapes(Layer):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
+        self._set_color_array()
 
         self.refresh()
 
@@ -200,6 +201,12 @@ class Shapes(Layer):
         """
         self._need_display_update = True
         self._update()
+
+    def _set_color_array(self):
+        c = Color(self.edge_color).rgba
+        self._color_array = np.array([c for i in range(len(self.data._mesh_faces))])
+        faces_indices = self.data._mesh_faces_index[:,2]==0
+        self._color_array[faces_indices] = Color(self.face_color).rgba
     #
     # def _slice_boxes(self, indices):
     #     """Determines the slice of boxes given the indices.
@@ -294,16 +301,18 @@ class Shapes(Layer):
         # self._node.set_data(vertices=self.data._triangles_vertices,
         #                     faces=self.data._triangles_faces,
         #                     color=self.face_color)
-        self._node.set_data(mesh_vertices=self.data._triangles_vertices,
-                            mesh_faces=self.data._triangles_faces,
-                            lines_vertices=self.data._lines_vertices,
-                            lines_connect=self.data._lines_connect,
-                            marker_vertices=self.data._points_vertices,
-                            edge_width=self.edge_width,
-                            edge_color=self.edge_color,
-                            face_color=self.face_color,
-                            marker_symbol=self.point_symbol,
-                            marker_size=self.point_size)
+        # self._node.set_data(mesh_vertices=self.data._triangles_vertices,
+        #                     mesh_faces=self.data._triangles_faces,
+        #                     lines_vertices=self.data._lines_vertices,
+        #                     lines_connect=self.data._lines_connect,
+        #                     marker_vertices=self.data._points_vertices,
+        #                     edge_width=self.edge_width,
+        #                     edge_color=self.edge_color,
+        #                     face_color=self.face_color,
+        #                     marker_symbol=self.point_symbol,
+        #                     marker_size=self.point_size)
+        self._node.set_data(vertices=self.data._mesh_vertices,
+                            faces=self.data._mesh_faces, face_colors=self._color_array)
         self._need_visual_update = True
         #self._set_highlight()
         self._update()
