@@ -131,8 +131,7 @@ class Shapes(Layer):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-
-        self.refresh()
+        self._refresh()
 
 
     @property
@@ -145,9 +144,7 @@ class Shapes(Layer):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
-        self.set_color(self.edge_color)
-
-        self.refresh()
+        self.set_color(edge_color=self._edge_color)
 
     @property
     def face_color(self):
@@ -159,9 +156,7 @@ class Shapes(Layer):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
-        self.set_color(self.face_color)
-
-        self.refresh()
+        self.set_color(face_color=self._face_color)
 
     @property
     def z_order(self):
@@ -183,7 +178,7 @@ class Shapes(Layer):
         z_order_faces = [np.arange(offsets[z], offsets[z]+self._object_counts[z]) for z in self._z_order]
         self._z_order_faces = np.concatenate(z_order_faces)
 
-        self.refresh()
+        self._refresh()
 
     def _get_shape(self):
         return [1000, 1000]
