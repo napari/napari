@@ -5,12 +5,12 @@ import numpy as np
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
+from ..util import is_permutation
 from ._base_layer import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Mesh as ShapesNode
 from .shapes_data import ShapesData
 from vispy.color import get_color_names, Color
-from vispy.visuals import marker_types
 
 from .qt import QtShapesLayer
 
@@ -29,34 +29,29 @@ class Shapes(Layer):
         list of Nx2 arrays of points on each path.
     polygons : list
         list of Nx2 arrays of vertices of each polygon.
-    point_size : int
-        size of marker representing points.
-    point_symbol : str
-        symbol to be used as a marker.
     edge_width : int
         width of all lines and edges in pixels.
     face_color : Color, ColorArray
         fill color of all faces
     edge_color : Color, ColorArray
         color of all lines and edges
+    z_order : list
+        list of N o
     """
 
     def __init__(self, points=None, lines=None, paths=None, rectangles=None,
-                 ellipses=None, polygons=None, point_size=10, point_symbol='o',
-                 edge_width=1, edge_color='black', face_color='white'):
+                 ellipses=None, polygons=None, edge_width=1, edge_color='black',
+                 face_color='white', z_order=None):
 
         visual = ShapesNode()
         super().__init__(visual)
         self.name = 'shapes'
 
         # Save the style params
-        self._point_size = point_size
-        self._point_symbol = point_symbol
         self._edge_width = edge_width
         self._edge_color = edge_color
         self._face_color = face_color
         self._colors = get_color_names()
-        self._symbols = marker_types
 
         # Save the shape data
         self._data = ShapesData(lines=lines, paths=paths, rectangles=rectangles,
@@ -69,6 +64,18 @@ class Shapes(Layer):
         self._color_array[faces_indices] = Color(self.face_color).rgba
 
         self._show_faces = np.array([True for i in range(len(self.data._mesh_faces))])
+        default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
+        self._object_counts = counts
+        if z_order is None:
+            self._z_order = default_z_order
+            self._z_order_faces = np.arange(len(self.data._mesh_faces_index))
+        else:
+            assert(is_permutation(z_order, len(default_z_order)))
+            self._z_order = z_order
+            offsets = np.zeros(len(self._object_counts) + 1, dtype=int)
+            offsets[1:] = self._object_counts.cumsum()
+            z_order_faces = [np.arange(offsets[z], offsets[z]+self._object_counts[z]) for z in self._z_order]
+            self._z_order_faces = np.concatenate(z_order_faces)
 
         # update flags
         self._need_display_update = False
@@ -115,32 +122,6 @@ class Shapes(Layer):
         self.refresh()
 
     @property
-    def point_size(self):
-        """int: width of vertices in px
-        """
-
-        return self._point_size
-
-    @point_size.setter
-    def point_size(self, point_size):
-        self._point_size = point_size
-
-        self.refresh()
-
-    @property
-    def point_symbol(self):
-        """str: symbol for points
-        """
-
-        return self._point_symbol
-
-    @point_symbol.setter
-    def point_symbol(self, point_symbol):
-        self._point_symbol = point_symbol
-
-        self.refresh()
-
-    @property
     def edge_width(self):
         """int: width of edges in px
         """
@@ -182,6 +163,28 @@ class Shapes(Layer):
 
         self.refresh()
 
+    @property
+    def z_order(self):
+        """list: list of z order of objects. If there are N objects it
+        must be a permutation of 0,...,N-1
+        """
+
+        return self._z_order
+
+    @z_order.setter
+    def z_order(self, z_order):
+        ## Check z_order is a permutation of 0,...,N-1
+        assert(is_permutation(z_order, len(self._object_counts)))
+
+        self._z_order = np.array(z_order)
+
+        offsets = np.zeros(len(self._object_counts) + 1, dtype=int)
+        offsets[1:] = self._object_counts.cumsum()
+        z_order_faces = [np.arange(offsets[z], offsets[z]+self._object_counts[z]) for z in self._z_order]
+        self._z_order_faces = np.concatenate(z_order_faces)
+
+        self.refresh()
+
     def _get_shape(self):
         return [1000, 1000]
 
@@ -207,6 +210,58 @@ class Shapes(Layer):
         """
         self._need_display_update = True
         self._update()
+
+    def move_forward(self, index):
+        if type(index) is list:
+            for i in np.array(index).argsort():
+                self._move_one_forward(i)
+        else:
+            self._move_one_forward(index)
+        self.z_order = self._z_order
+
+    def move_backward(self, index):
+        if type(index) is list:
+            for i in np.array(index).argsort()[::-1]:
+                self._move_one_backward(i)
+        else:
+            self._move_one_backward(index)
+        self.z_order = self._z_order
+
+    def move_to_front(self, index):
+        if type(index) is list:
+            for i in np.array(index).argsort()[::-1]:
+                self._move_one_to_front(i)
+        else:
+            self._move_one_to_front(index)
+        self.z_order = self._z_order
+
+    def move_to_back(self, index):
+        if type(index) is list:
+            for i in np.array(index).argsort():
+                self._move_one_to_back(i)
+        else:
+            self._move_one_to_back(index)
+        self.z_order = self._z_order
+
+    def _move_one_forward(self, index):
+        ind = self._z_order.tolist().index(index)
+        if ind != 0:
+            self._z_order[ind] = self._z_order[ind-1]
+            self._z_order[ind-1] = index
+
+    def _move_one_backward(self, index):
+        ind = self._z_order.tolist().index(index)
+        if ind != len(self._z_order)-1:
+            self._z_order[ind] = self._z_order[ind+1]
+            self._z_order[ind+1] = index
+
+    def _move_one_to_front(self, index):
+        self._z_order[1:] = self._z_order[self._z_order!=index]
+        self._z_order[0] = index
+
+    def _move_one_to_back(self, index):
+        self._z_order[:-1] = self._z_order[self._z_order!=index]
+        self._z_order[-1] = index
 
     def hide(self, index=True, object_type=None):
         if index is None:
@@ -257,7 +312,7 @@ class Shapes(Layer):
                 self._color_array[indices] = color
         self._refresh()
 
-    def _select_meshes(self, index, object_type):
+    def _select_meshes(self, index, object_type=None):
         if object_type is None:
             if index is True:
                 indices = [i for i in range(len(self.data._mesh_faces_index))]
@@ -383,9 +438,11 @@ class Shapes(Layer):
         #                     face_color=self.face_color,
         #                     marker_symbol=self.point_symbol,
         #                     marker_size=self.point_size)
+        show_faces = self._show_faces[self._z_order_faces]
+        faces = self.data._mesh_faces[self._z_order_faces][show_faces]
+        colors = self._color_array[self._z_order_faces][show_faces]
         self._node.set_data(vertices=self.data._mesh_vertices,
-                            faces=self.data._mesh_faces[self._show_faces],
-                            face_colors=self._color_array[self._show_faces])
+                            faces=faces, face_colors=colors)
         self._need_visual_update = True
         #self._set_highlight()
         self._update()

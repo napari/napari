@@ -15,22 +15,6 @@ class QtShapesLayer(QtLayer):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        value = self.layer.point_size
-        if isinstance(value, Iterable):
-            if isinstance(value, list):
-                value = np.asarray(value)
-            value = value.mean()
-        sld.setValue(int(value))
-        sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
-        self.grid_layout.addWidget(QLabel('size:'), 3, 0)
-        self.grid_layout.addWidget(sld, 3, 1)
-
-        sld = QSlider(Qt.Horizontal, self)
-        sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(75)
-        sld.setMinimum(0)
-        sld.setMaximum(100)
-        sld.setSingleStep(1)
         value = self.layer.edge_width
         if isinstance(value, Iterable):
             if isinstance(value, list):
@@ -38,8 +22,8 @@ class QtShapesLayer(QtLayer):
             value = value.mean()
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeWidth(value))
-        self.grid_layout.addWidget(QLabel('width:'), 4, 0)
-        self.grid_layout.addWidget(sld, 4, 1)
+        self.grid_layout.addWidget(QLabel('width:'), 3, 0)
+        self.grid_layout.addWidget(sld, 3, 1)
 
         face_comboBox = QComboBox()
         colors = self.layer._colors
@@ -51,8 +35,8 @@ class QtShapesLayer(QtLayer):
             face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(
             lambda text=face_comboBox: self.changeFaceColor(text))
-        self.grid_layout.addWidget(QLabel('face_color:'), 5, 0)
-        self.grid_layout.addWidget(face_comboBox, 5, 1)
+        self.grid_layout.addWidget(QLabel('face_color:'), 4, 0)
+        self.grid_layout.addWidget(face_comboBox, 4, 1)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
@@ -64,21 +48,9 @@ class QtShapesLayer(QtLayer):
             edge_comboBox.setCurrentIndex(index)
         edge_comboBox.activated[str].connect(
             lambda text=edge_comboBox: self.changeEdgeColor(text))
-        self.grid_layout.addWidget(QLabel('edge_color:'), 6, 0)
-        self.grid_layout.addWidget(edge_comboBox, 6, 1)
+        self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
+        self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
-        symbol_comboBox = QComboBox()
-        symbols = self.layer._symbols
-        for s in symbols:
-            symbol_comboBox.addItem(s)
-        index = symbol_comboBox.findText(
-            self.layer.point_symbol, Qt.MatchFixedString)
-        if index >= 0:
-            symbol_comboBox.setCurrentIndex(index)
-        symbol_comboBox.activated[str].connect(
-            lambda text=symbol_comboBox: self.changeSymbol(text))
-        self.grid_layout.addWidget(QLabel('symbol:'), 7, 0)
-        self.grid_layout.addWidget(symbol_comboBox, 7, 1)
 
         self.setExpanded(False)
 
@@ -87,12 +59,6 @@ class QtShapesLayer(QtLayer):
 
     def changeEdgeColor(self, text):
         self.layer.edge_color = text
-
-    def changeSymbol(self, text):
-        self.layer.point_symbol = text
-
-    def changeSize(self, value):
-        self.layer.point_size = value
 
     def changeWidth(self, value):
         self.layer.edge_width = value
