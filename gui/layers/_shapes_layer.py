@@ -68,6 +68,8 @@ class Shapes(Layer):
         faces_indices = self.data._mesh_faces_index[:,2]==0
         self._color_array[faces_indices] = Color(self.face_color).rgba
 
+        self._show_faces = np.array([True for i in range(len(self.data._mesh_faces))])
+
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
@@ -206,6 +208,14 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
+    def hide(self, index=True, object_type=None):
+        if index is None:
+            self._show_faces = np.array([True for i in range(len(self.data._mesh_faces))])
+        else:
+            indices = self._select_meshes(index=index, object_type=object_type)
+            self._show_faces[indices] = False
+        self._refresh()
+
     def set_color(self, index=True, edge_color=False, face_color=False):
         if face_color is False:
             pass
@@ -248,15 +258,25 @@ class Shapes(Layer):
         self._refresh()
 
     def _select_meshes(self, index, object_type):
-        if index is True:
-            indices = self.data._mesh_faces_index[:,2]==object_type
-        elif type(index) is list:
-            indices = [i for i, x in enumerate(self.data._mesh_faces_index) if x[0] in index and x[2]==object_type]
-        elif type(index) is int:
-            index = np.broadcast_to([index, object_type], (len(self.data._mesh_faces_index), 2))
-            indices = np.all(np.equal(self.data._mesh_faces_index[:,[0, 2]], index), axis=1)
+        if object_type is None:
+            if index is True:
+                indices = [i for i in range(len(self.data._mesh_faces_index))]
+            elif type(index) is list:
+                indices = [i for i, x in enumerate(self.data._mesh_faces_index) if x[0] in index]
+            elif type(index) is int:
+                indices = self.data._mesh_faces_index[:,0] == index
+            else:
+                indices = []
         else:
-            indices = []
+            if index is True:
+                indices = self.data._mesh_faces_index[:,2]==object_type
+            elif type(index) is list:
+                indices = [i for i, x in enumerate(self.data._mesh_faces_index) if x[0] in index and x[2]==object_type]
+            elif type(index) is int:
+                index = np.broadcast_to([index, object_type], (len(self.data._mesh_faces_index), 2))
+                indices = np.all(np.equal(self.data._mesh_faces_index[:,[0, 2]], index), axis=1)
+            else:
+                indices = []
         return indices
 
     #
@@ -364,7 +384,8 @@ class Shapes(Layer):
         #                     marker_symbol=self.point_symbol,
         #                     marker_size=self.point_size)
         self._node.set_data(vertices=self.data._mesh_vertices,
-                            faces=self.data._mesh_faces, face_colors=self._color_array)
+                            faces=self.data._mesh_faces[self._show_faces],
+                            face_colors=self._color_array[self._show_faces])
         self._need_visual_update = True
         #self._set_highlight()
         self._update()
