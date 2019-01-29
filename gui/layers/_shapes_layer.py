@@ -131,8 +131,7 @@ class Shapes(Layer):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-        self._refresh()
-
+        self.set_thickness(thickness=self._edge_width)
 
     @property
     def edge_color(self):
@@ -206,6 +205,27 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
+    def set_thickness(self, index=True, thickness=1):
+        if type(thickness) is list:
+            if index is True:
+                pass
+                assert(self.data._mesh_vertices_index[:, 0].max()<len(thickness))
+                for i in self.data._mesh_vertices_index[:, 0].unique():
+                    indices = self._select_meshes(i, self.data._mesh_vertices_index, 1)
+                    self.data._mesh_vertices[indices] = (self.data._mesh_vertices_centers[indices]
+                                                         + thickness[i]*self.data._mesh_vertices_offsets[indices])
+            else:
+                assert(type(index) is list and len(thickness)==len(index))
+                for i in range(len(index)):
+                    indices = self._select_meshes(index[i], self.data._mesh_vertices_index, 1)
+                    self.data._mesh_vertices[indices] = (self.data._mesh_vertices_centers[indices]
+                                                         + thickness[i]*self.data._mesh_vertices_offsets[indices])
+        else:
+            indices = self._select_meshes(index, self.data._mesh_vertices_index, 1)
+            self.data._mesh_vertices[indices] = (self.data._mesh_vertices_centers[indices]
+                                                 + thickness*self.data._mesh_vertices_offsets[indices])
+        self._refresh()
+
     def move_forward(self, index):
         if type(index) is list:
             z_order = self._z_order.tolist()
@@ -270,7 +290,7 @@ class Shapes(Layer):
         if index is None:
             self._show_faces = np.array([True for i in range(len(self.data._mesh_faces))])
         else:
-            indices = self._select_meshes(index=index, object_type=object_type)
+            indices = self._select_meshes(index=index, meshes=self.data._mesh_faces_index, object_type=object_type)
             self._show_faces[indices] = False
         self._refresh()
 
@@ -287,11 +307,11 @@ class Shapes(Layer):
                 else:
                     assert(type(index) is list and len(face_color)==len(index))
                     for i in range(len(index)):
-                        indices = self._select_meshes(index[i], 0)
+                        indices = self._select_meshes(index[i], self.data._mesh_faces_index, 0)
                         color = Color(face_color[i]).rgba
                         self._color_array[indices] = color
             else:
-                indices = self._select_meshes(index, 0)
+                indices = self._select_meshes(index, self.data._mesh_faces_index, 0)
                 color = Color(face_color).rgba
                 self._color_array[indices] = color
         if edge_color is False:
@@ -306,33 +326,33 @@ class Shapes(Layer):
                 else:
                     assert(type(index) is list and len(edge_color)==len(index))
                     for i in range(len(index)):
-                        indices = self._select_meshes(index[i], 1)
+                        indices = self._select_meshes(index[i], self.data._mesh_faces_index, 1)
                         color = Color(edge_color[i]).rgba
                         self._color_array[indices] = color
             else:
-                indices = self._select_meshes(index, 1)
+                indices = self._select_meshes(index, self.data._mesh_faces_index, 1)
                 color = Color(edge_color).rgba
                 self._color_array[indices] = color
         self._refresh()
 
-    def _select_meshes(self, index, object_type=None):
+    def _select_meshes(self, index, meshes, object_type=None):
         if object_type is None:
             if index is True:
-                indices = [i for i in range(len(self.data._mesh_faces_index))]
+                indices = [i for i in range(len(meshes))]
             elif type(index) is list:
-                indices = [i for i, x in enumerate(self.data._mesh_faces_index) if x[0] in index]
+                indices = [i for i, x in enumerate(meshes) if x[0] in index]
             elif type(index) is int:
-                indices = self.data._mesh_faces_index[:,0] == index
+                indices = meshes[:,0] == index
             else:
                 indices = []
         else:
             if index is True:
-                indices = self.data._mesh_faces_index[:,2]==object_type
+                indices = meshes[:,2]==object_type
             elif type(index) is list:
-                indices = [i for i, x in enumerate(self.data._mesh_faces_index) if x[0] in index and x[2]==object_type]
+                indices = [i for i, x in enumerate(meshes) if x[0] in index and x[2]==object_type]
             elif type(index) is int:
-                index = np.broadcast_to([index, object_type], (len(self.data._mesh_faces_index), 2))
-                indices = np.all(np.equal(self.data._mesh_faces_index[:,[0, 2]], index), axis=1)
+                index = np.broadcast_to([index, object_type], (len(meshes), 2))
+                indices = np.all(np.equal(meshes[:,[0, 2]], index), axis=1)
             else:
                 indices = []
         return indices
