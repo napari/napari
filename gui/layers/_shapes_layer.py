@@ -35,13 +35,11 @@ class Shapes(Layer):
         fill color of all faces
     edge_color : Color, ColorArray
         color of all lines and edges
-    z_order : list
-        list of N o
     """
 
     def __init__(self, points=None, lines=None, paths=None, rectangles=None,
                  ellipses=None, polygons=None, edge_width=1, edge_color='black',
-                 face_color='white', z_order=None):
+                 face_color='white'):
 
         visual = ShapesNode()
         super().__init__(visual)
@@ -63,19 +61,12 @@ class Shapes(Layer):
         faces_indices = self.data._mesh_faces_index[:,2]==0
         self._color_array[faces_indices] = Color(self.face_color).rgba
 
-        self._show_faces = np.array([True for i in range(len(self.data._mesh_faces))])
+        self._show_faces = np.ones(len(self.data._mesh_faces), dtype=bool)
         default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
         self._object_counts = counts
-        if z_order is None:
-            self._z_order = default_z_order
-            self._z_order_faces = np.arange(len(self.data._mesh_faces_index))
-        else:
-            assert(is_permutation(z_order, len(default_z_order)))
-            self._z_order = z_order
-            offsets = np.zeros(len(self._object_counts) + 1, dtype=int)
-            offsets[1:] = self._object_counts.cumsum()
-            z_order_faces = [np.arange(offsets[z], offsets[z]+self._object_counts[z]) for z in self._z_order]
-            self._z_order_faces = np.concatenate(z_order_faces)
+        self._z_order = default_z_order
+        self._z_order_faces = np.arange(len(self.data._mesh_faces_index))
+
 
         # update flags
         self._need_display_update = False
@@ -204,6 +195,47 @@ class Shapes(Layer):
         """
         self._need_display_update = True
         self._update()
+
+    def add_shapes(self, lines=None, rectangles=None, ellipses=None, paths=None,
+                   polygons=None, thickness=1):
+        """Adds shapes to the exisiting ones.
+        """
+        num_shapes = len(self.data.id)
+        num_faces = len(self.data._mesh_faces_index)
+        self.data.add_shapes(lines=lines, rectangles=rectangles,
+                             ellipses=ellipses, paths=paths, polygons=polygons,
+                             thickness=thickness)
+        new_num_shapes = len(self.data.id)
+        t = np.ones(len(self.data._mesh_faces_index)-len(self._show_faces), dtype=bool)
+        self._show_faces = np.append(self._show_faces, t)
+
+        ec = Color(self.edge_color).rgba
+        fc = Color(self.face_color).rgba
+        color_array = np.repeat([ec], len(self.data._mesh_faces_index)-num_faces, axis=0)
+        color_array[self.data._mesh_faces_index[num_faces:,2]==0] = fc
+        self._color_array = np.concatenate((self._color_array, color_array), axis=0)
+        default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
+        self._object_counts = counts
+        self.z_order = np.concatenate((np.arange(num_shapes, new_num_shapes), self.z_order))
+
+    def set_shapes(self, lines=None, rectangles=None, ellipses=None, paths=None,
+                   polygons=None, thickness=1):
+        """Resets shapes to be only these ones.
+        """
+        self.data.set_shapes(lines=lines, rectangles=rectangles,
+                             ellipses=ellipses, paths=paths, polygons=polygons,
+                             thickness=thickness)
+
+        self._show_faces = np.ones(len(self.data._mesh_faces_index), dtype=bool)
+
+        ec = Color(self.edge_color).rgba
+        fc = Color(self.face_color).rgba
+        color_array = np.repeat([ec], len(self.data._mesh_faces_index), axis=0)
+        color_array[self.data._mesh_faces_index[:,2]==0] = fc
+        self._color_array = np.array(color_array)
+        default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
+        self._object_counts = counts
+        self.z_order = default_z_order
 
     def set_thickness(self, index=True, thickness=1):
         if type(thickness) is list:

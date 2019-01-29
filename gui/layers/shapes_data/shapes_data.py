@@ -41,22 +41,46 @@ class ShapesData():
         self._mesh_vertices_offsets = np.empty((0, 2)) # Mx2 array of vertices of offsets of lines, or 0 for faces
 
 
-        if lines is not None:
-            self._add_lines(lines)
+        self._add_lines(lines)
+        self._add_rectangles(rectangles)
+        self._add_ellipses(ellipses)
+        self._add_paths(paths)
+        self._add_polygons(polygons)
 
-        if rectangles is not None:
-            self._add_rectangles(rectangles)
+    def add_shapes(self, lines=None, rectangles=None, ellipses=None, paths=None,
+                   polygons=None, thickness=1):
 
-        if ellipses is not None:
-            self._add_ellipses(ellipses)
+        self._add_lines(lines)
+        self._add_rectangles(rectangles)
+        self._add_ellipses(ellipses)
+        self._add_paths(paths)
+        self._add_polygons(polygons)
 
-        if paths is not None:
-            self._add_paths(paths)
+    def set_shapes(self, lines=None, rectangles=None, ellipses=None, paths=None,
+                   polygons=None, thickness=1):
 
-        if polygons is not None:
-            self._add_polygons(polygons)
+        self.id = np.empty((0), dtype=int) # For N objects, array of shape ids
+        self.vertices = np.empty((0, 2)) # Array of M vertices from all N objects
+        self.index = np.empty((0), dtype=int) # Object index (0, ..., N-1) for each of M vertices
+        self.boxes = np.empty((0, 9, 2)) # Bounding box + center point for each of N objects
+
+        self._mesh_vertices = np.empty((0, 2)) # Mx2 array of vertices of triangles
+        self._mesh_vertices_index = np.empty((0, 3), dtype=int) #Mx3 array of object indices, shape id, and types of vertices
+        self._mesh_faces = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form a triangle
+        self._mesh_faces_index = np.empty((0, 3), dtype=int) #Px3 array of object indices of faces, shape id, and types of vertices
+
+        self._mesh_vertices_centers = np.empty((0, 2)) # Mx2 array of vertices of centers of lines, or vertices of faces
+        self._mesh_vertices_offsets = np.empty((0, 2)) # Mx2 array of vertices of offsets of lines, or 0 for faces
+
+        self._add_lines(lines)
+        self._add_rectangles(rectangles)
+        self._add_ellipses(ellipses)
+        self._add_paths(paths)
+        self._add_polygons(polygons)
 
     def _add_lines(self, lines):
+        if lines is None:
+            return
         self.id = np.append(self.id, np.repeat(0, len(lines)), axis=0)
         self.vertices = np.append(self.vertices, lines.reshape((-1, lines.shape[-1])), axis=0)
         m = max(self.index, default=-1) + 1
@@ -70,6 +94,8 @@ class ShapesData():
             self._compute_meshes(lines[i], edge=True, thickness=self.thickness, index=[m+i, 0])
 
     def _add_rectangles(self, rectangles):
+        if rectangles is None:
+            return
         self.id = np.append(self.id, np.repeat(1, len(rectangles)), axis=0)
         r = np.array([self._expand_rectangle(x) for x in rectangles])
         self.vertices = np.append(self.vertices, r.reshape((-1, r.shape[-1])), axis=0)
@@ -86,6 +112,8 @@ class ShapesData():
                                  fill_vertices=r[i], fill_faces=fill_faces)
 
     def _add_ellipses(self, ellipses):
+        if ellipses is None:
+            return
         self.id = np.append(self.id, np.repeat(3, len(ellipses)), axis=0)
         e = np.array([self._expand_ellipse(x) for x in ellipses])
         self.vertices = np.append(self.vertices, e.reshape((-1, e.shape[-1])), axis=0)
@@ -104,6 +132,8 @@ class ShapesData():
                                  fill_vertices=points, fill_faces=fill_faces)
 
     def _add_paths(self, paths):
+        if paths is None:
+            return
         self.id = np.append(self.id, np.repeat(4, len(paths)), axis=0)
         self.vertices = np.append(self.vertices, np.concatenate(paths, axis=0), axis=0)
         m = max(self.index, default=-1) + 1
@@ -117,6 +147,8 @@ class ShapesData():
             self._compute_meshes(paths[i], edge=True, thickness=self.thickness, index=[m+i, 3])
 
     def _add_polygons(self, polygons):
+        if polygons is None:
+            return
         self.id = np.append(self.id, np.repeat(5, len(polygons)), axis=0)
         self.vertices = np.append(self.vertices, np.concatenate(polygons, axis=0), axis=0)
         m = max(self.index, default=-1) + 1
