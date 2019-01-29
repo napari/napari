@@ -208,32 +208,40 @@ class Shapes(Layer):
 
     def move_forward(self, index):
         if type(index) is list:
-            for i in np.array(index).argsort():
-                self._move_one_forward(i)
+            z_order = self._z_order.tolist()
+            indices = [z_order.index(i) for i in index]
+            for i in np.sort(indices):
+                self._move_one_forward(z_order[i])
         else:
             self._move_one_forward(index)
         self.z_order = self._z_order
 
     def move_backward(self, index):
         if type(index) is list:
-            for i in np.array(index).argsort()[::-1]:
-                self._move_one_backward(i)
+            z_order = self._z_order.tolist()
+            indices = [z_order.index(i) for i in index]
+            for i in np.sort(indices)[::-1]:
+                self._move_one_backward(z_order[i])
         else:
             self._move_one_backward(index)
         self.z_order = self._z_order
 
     def move_to_front(self, index):
         if type(index) is list:
-            for i in np.array(index).argsort()[::-1]:
-                self._move_one_to_front(i)
+            z_order = self._z_order.tolist()
+            indices = [z_order.index(i) for i in index]
+            for i in np.sort(indices)[::-1]:
+                self._move_one_to_front(z_order[i])
         else:
             self._move_one_to_front(index)
         self.z_order = self._z_order
 
     def move_to_back(self, index):
         if type(index) is list:
-            for i in np.array(index).argsort():
-                self._move_one_to_back(i)
+            z_order = self._z_order.tolist()
+            indices = [z_order.index(i) for i in index]
+            for i in np.sort(indices):
+                self._move_one_to_back(z_order[i])
         else:
             self._move_one_to_back(index)
         self.z_order = self._z_order

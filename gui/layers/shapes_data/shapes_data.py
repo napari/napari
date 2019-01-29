@@ -23,7 +23,7 @@ class ShapesData():
     _ellipse_segments = 100
 
     def __init__(self, lines=None, rectangles=None, ellipses=None, paths=None,
-                 polygons=None, thickness=2):
+                 polygons=None, thickness=1):
 
         self.thickness = thickness
 
@@ -36,6 +36,10 @@ class ShapesData():
         self._mesh_vertices_index = np.empty((0, 3), dtype=int) #Mx3 array of object indices, shape id, and types of vertices
         self._mesh_faces = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form a triangle
         self._mesh_faces_index = np.empty((0, 3), dtype=int) #Px3 array of object indices of faces, shape id, and types of vertices
+
+        self._mesh_vertices_centers = np.empty((0, 2)) # Mx2 array of vertices of centers of lines, or vertices of faces
+        self._mesh_vertices_offsets = np.empty((0, 2)) # Mx2 array of vertices of offsets of lines, or 0 for faces
+
 
         if lines is not None:
             self._add_lines(lines)
@@ -163,20 +167,28 @@ class ShapesData():
         vertices[0] = np.float32([center[0], center[1]])
         return vertices
 
-    def _append_meshes(self, vertices, faces, index=[0, 0, 0]):
+    def _append_meshes(self, vertices, faces, index=[0, 0, 0],
+                       centers=None, offsets=None):
         m = len(self._mesh_vertices)
         vertices_indices = np.repeat([index], len(vertices), axis=0)
         faces_indices = np.repeat([index], len(faces), axis=0)
+        if centers is None and offsets is None:
+            centers = vertices
+            offsets = np.zeros((len(vertices),2))
         self._mesh_vertices = np.append(self._mesh_vertices, vertices, axis=0)
         self._mesh_vertices_index = np.append(self._mesh_vertices_index, vertices_indices, axis=0)
+        self._mesh_vertices_centers = np.append(self._mesh_vertices_centers, centers, axis=0)
+        self._mesh_vertices_offsets = np.append(self._mesh_vertices_offsets, offsets, axis=0)
         self._mesh_faces = np.append(self._mesh_faces, m+faces, axis=0)
         self._mesh_faces_index = np.append(self._mesh_faces_index, faces_indices, axis=0)
 
     def _compute_meshes(self, points, closed=False, fill=False, edge=False, thickness=1, index=[0, 0],
                         fill_vertices=None, fill_faces=None):
         if edge:
-            vertices, faces = path_triangulate(points, thickness=thickness, closed=closed)
-            self._append_meshes(vertices, faces, index=index + [1])
+            centers, offsets, faces = path_triangulate(points, closed=closed)
+            vertices = centers+thickness*offsets
+            self._append_meshes(vertices, faces, index=index + [1],
+                                centers=centers, offsets=offsets)
         if fill:
             if fill_vertices is not None and fill_faces is not None:
                 self._append_meshes(fill_vertices, fill_faces, index=index + [0])
@@ -184,11 +196,10 @@ class ShapesData():
                 vertices, faces = PolygonData(vertices=points).triangulate()
                 self._append_meshes(vertices, faces.astype(np.uint32), index=index + [0])
 
-def path_triangulate(path, closed=False, thickness=1, limit=5, bevel=False):
+def path_triangulate(path, closed=False, limit=5, bevel=False):
     if closed:
         full_path = np.concatenate(([path[-1]], path, [path[0]]),axis=0)
         normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(path))]
-        #normals = normals[1:]
         normals=np.array(normals)
         full_path = np.concatenate((path, [path[0]]),axis=0)
         full_normals = np.concatenate((normals, [normals[0]]),axis=0)
@@ -204,28 +215,34 @@ def path_triangulate(path, closed=False, thickness=1, limit=5, bevel=False):
         miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
         miters = np.array([miters[i]/np.dot(miters[i], full_normals[i]) for i in range(len(full_path))])
     miter_lengths = np.linalg.norm(miters,axis=1)
-    miters = 0.5*thickness*miters
-    vertices = []
+    miters = 0.5*miters
+    vertex_offsets = []
+    central_path = []
     faces = []
     m = 0
     for i in range(len(full_path)):
         if i==0:
             if (bevel or miter_lengths[i]>limit) and closed:
                 offset = np.array([miters[i,1], -miters[i,0]])
-                offset = 0.5*thickness*offset/np.linalg.norm(offset)
+                offset = 0.5*offset/np.linalg.norm(offset)
                 flip = np.sign(np.dot(offset, full_normals[i]))
-                vertices.append(full_path[i] + offset)
-                vertices.append(full_path[i] - flip*miters[i])
-                vertices.append(full_path[i] - offset)
+                vertex_offsets.append(offset)
+                vertex_offsets.append(-flip*miters[i])
+                vertex_offsets.append(-offset)
+                central_path.append(full_path[i])
+                central_path.append(full_path[i])
+                central_path.append(full_path[i])
                 faces.append([0, 1, 2])
                 m=m+1
             else:
-                vertices.append(full_path[i] - miters[i])
-                vertices.append(full_path[i] + miters[i])
+                vertex_offsets.append(-miters[i])
+                vertex_offsets.append(miters[i])
+                central_path.append(full_path[i])
+                central_path.append(full_path[i])
         elif i==len(full_path)-1:
             if closed:
-                a = vertices[m+1] - full_path[i-1]
-                b = vertices[1] - full_path[i-1]
+                a = vertex_offsets[m+1] - full_path[i-1]
+                b = vertex_offsets[1] - full_path[i-1]
                 ray = full_path[i] - full_path[i-1]
                 if np.cross(a,ray)*np.cross(b,ray)>0:
                     faces.append([m, m+1, 1])
@@ -234,10 +251,12 @@ def path_triangulate(path, closed=False, thickness=1, limit=5, bevel=False):
                     faces.append([m, m+1, 1])
                     faces.append([m+1, 0, 1])
             else:
-                vertices.append(full_path[i] - miters[i])
-                vertices.append(full_path[i] + miters[i])
-                a = vertices[m+1] - full_path[i-1]
-                b = vertices[m+3] - full_path[i-1]
+                vertex_offsets.append(-miters[i])
+                vertex_offsets.append(miters[i])
+                central_path.append(full_path[i])
+                central_path.append(full_path[i])
+                a = vertex_offsets[m+1] - full_path[i-1]
+                b = vertex_offsets[m+3] - full_path[i-1]
                 ray = full_path[i] - full_path[i-1]
                 if np.cross(a,ray)*np.cross(b,ray)>0:
                     faces.append([m, m+1, m+3])
@@ -247,13 +266,13 @@ def path_triangulate(path, closed=False, thickness=1, limit=5, bevel=False):
                     faces.append([m+1, m+2, m+3])
         elif (bevel or miter_lengths[i]>limit):
             offset = np.array([miters[i,1], -miters[i,0]])
-            offset = 0.5*thickness*offset/np.linalg.norm(offset)
+            offset = 0.5*offset/np.linalg.norm(offset)
             flip = np.sign(np.dot(offset, full_normals[i]))
-            vertices.append(full_path[i] + offset)
-            vertices.append(full_path[i] - flip*miters[i])
-            vertices.append(full_path[i] - offset)
-            a = vertices[m+1] - full_path[i-1]
-            b = vertices[m+3] - full_path[i-1]
+            vertex_offsets.append(offset)
+            vertex_offsets.append(-flip*miters[i])
+            vertex_offsets.append(-offset)
+            a = vertex_offsets[m+1] - full_path[i-1]
+            b = vertex_offsets[m+3] - full_path[i-1]
             ray = full_path[i] - full_path[i-1]
             if np.cross(a,ray)*np.cross(b,ray)>0:
                 faces.append([m, m+1, m+3])
@@ -264,10 +283,12 @@ def path_triangulate(path, closed=False, thickness=1, limit=5, bevel=False):
             faces.append([m+2, m+3, m+4])
             m = m + 3
         else:
-            vertices.append(full_path[i] - miters[i])
-            vertices.append(full_path[i] + miters[i])
-            a = vertices[m+1] - full_path[i-1]
-            b = vertices[m+3] - full_path[i-1]
+            vertex_offsets.append(-miters[i])
+            vertex_offsets.append(miters[i])
+            central_path.append(full_path[i])
+            central_path.append(full_path[i])
+            a = vertex_offsets[m+1] - full_path[i-1]
+            b = vertex_offsets[m+3] - full_path[i-1]
             ray = full_path[i] - full_path[i-1]
             if np.cross(a,ray)*np.cross(b,ray)>0:
                 faces.append([m, m+1, m+3])
@@ -276,7 +297,8 @@ def path_triangulate(path, closed=False, thickness=1, limit=5, bevel=False):
                 faces.append([m, m+1, m+3])
                 faces.append([m+1, m+2, m+3])
             m = m + 2
-    return np.array(vertices), np.array(faces)
+
+    return np.array(central_path), np.array(vertex_offsets), np.array(faces)
 
 def segment_normal(a, b):
     d = b-a
