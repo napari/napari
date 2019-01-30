@@ -59,6 +59,15 @@ class ShapesData():
     def set_shapes(self, lines=None, rectangles=None, ellipses=None, paths=None,
                    polygons=None, thickness=1):
 
+        self.remove_all_shapes()
+
+        self._add_lines(lines)
+        self._add_rectangles(rectangles)
+        self._add_ellipses(ellipses)
+        self._add_paths(paths)
+        self._add_polygons(polygons)
+
+    def remove_all_shapes(self):
         self.id = np.empty((0), dtype=int) # For N objects, array of shape ids
         self.vertices = np.empty((0, 2)) # Array of M vertices from all N objects
         self.index = np.empty((0), dtype=int) # Object index (0, ..., N-1) for each of M vertices
@@ -70,13 +79,53 @@ class ShapesData():
         self._mesh_faces_index = np.empty((0, 3), dtype=int) #Px3 array of object indices of faces, shape id, and types of vertices
 
         self._mesh_vertices_centers = np.empty((0, 2)) # Mx2 array of vertices of centers of lines, or vertices of faces
-        self._mesh_vertices_offsets = np.empty((0, 2)) # Mx2 array of vertices of offsets of lines, or 0 for faces
+        self._mesh_vertices_offsets = np.empty((0, 2)) #
 
-        self._add_lines(lines)
-        self._add_rectangles(rectangles)
-        self._add_ellipses(ellipses)
-        self._add_paths(paths)
-        self._add_polygons(polygons)
+    def remove_one_shape(self, index):
+        assert(type(index) is int)
+
+        self.id = np.delete(self.id, index, axis=0)
+        self.boxes = np.delete(self.boxes, index, axis=0)
+        self.vertices = self.vertices[self.index!=index]
+        self.index = self.index[self.index!=index]
+        self.index[self.index>index] = self.index[self.index>index]-1
+
+        indices = self._select_meshes(index, self._mesh_faces_index)
+        self._mesh_faces_index = np.delete(self._mesh_faces_index, indices, axis=0)
+        self._mesh_faces = np.delete(self._mesh_faces, indices, axis=0)
+
+        indices = self._select_meshes(index, self._mesh_vertices_index)
+        self._mesh_vertices_index = np.delete(self._mesh_vertices_index, indices, axis=0)
+        self._mesh_vertices = np.delete(self._mesh_vertices, indices, axis=0)
+        self._mesh_vertices_centers = np.delete(self._mesh_vertices_centers, indices, axis=0)
+        self._mesh_vertices_offsets = np.delete(self._mesh_vertices_offsets, indices, axis=0)
+        self._mesh_faces_index[self._mesh_faces_index[:,0]>index, 0] = self._mesh_faces_index[self._mesh_faces_index[:,0]>index, 0]-1
+        self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0]-1
+        self._mesh_faces[self._mesh_faces>indices[0]] = self._mesh_faces[self._mesh_faces>indices[0]] - len(indices)
+
+    def _select_meshes(self, index, meshes, object_type=None):
+        if object_type is None:
+            if index is True:
+                indices = [i for i in range(len(meshes))]
+            elif type(index) is list:
+                indices = [i for i, x in enumerate(meshes) if x[0] in index]
+            elif type(index) is int:
+                indices = meshes[:,0] == index
+                indices = np.where(indices)[0]
+            else:
+                indices = []
+        else:
+            if index is True:
+                indices = meshes[:,2]==object_type
+            elif type(index) is list:
+                indices = [i for i, x in enumerate(meshes) if x[0] in index and x[2]==object_type]
+            elif type(index) is int:
+                index = np.broadcast_to([index, object_type], (len(meshes), 2))
+                indices = np.all(np.equal(meshes[:,[0, 2]], index), axis=1)
+                indices = np.where(indices)[0]
+            else:
+                indices = []
+        return indices
 
     def _add_lines(self, lines):
         if lines is None:
