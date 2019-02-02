@@ -104,13 +104,13 @@ class ShapesData():
         self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0]-1
         self._mesh_faces[self._mesh_faces>indices[0]] = self._mesh_faces[self._mesh_faces>indices[0]] - len(indices)
 
-    def scale_shapes(self, scale, offset=None, index=True):
+    def scale_shapes(self, scale, center=None, index=True):
         """Perfroms a scaling on selected shapes
         Parameters
         ----------
         scale : float, list
             scalar or list specifying rescaling of shapes in 2D.
-        offset : list
+        center : list
             length 2 list specifying coordinate of center of rotation.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
@@ -121,58 +121,58 @@ class ShapesData():
             transform = np.array([[scale[0], 0, 0], [0, scale[1], 0]])
         else:
             transform = np.array([[scale, 0, 0], [0, scale, 0]])
-        if offset is None:
+        if center is None:
             self._transform_shapes(transform, index=index)
         else:
-            self.shift_shapes(-offset, index=index)
-            transform[:, 2] = offset
+            self.shift_shapes(-center, index=index)
+            transform[:, 2] = center
             self._transform_shapes(transform, index=index)
 
-    def flip_vertical_shapes(self, offset=None, index=True):
+    def flip_vertical_shapes(self, center=None, index=True):
         """Perfroms an vertical flip on selected shapes
         Parameters
         ----------
-        offset : list
+        center : list
             length 2 list specifying coordinate of center of flip axes.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        if offset is None:
+        if center is None:
             transform = np.array([[-1, 0, 0], [0, 1, 0]])
             self._transform_shapes(transform, index=index)
         else:
-            self.shift_shapes(-offset, index=index)
-            transform = np.array([[-1, 0, offset[0]], [0, 1, offset[1]]])
+            self.shift_shapes(-center, index=index)
+            transform = np.array([[-1, 0, center[0]], [0, 1, center[1]]])
             self._transform_shapes(transform, index=index)
 
-    def flip_horizontal_shapes(self, offset=None, index=True):
+    def flip_horizontal_shapes(self, center=None, index=True):
         """Perfroms an horizontal flip on selected shapes
         Parameters
         ----------
-        offset : list
+        center : list
             length 2 list specifying coordinate of center of flip axes.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        if offset is None:
+        if center is None:
             transform = np.array([[1, 0, 0], [0, -1, 0]])
             self._transform_shapes(transform, index=index)
         else:
-            self.shift_shapes(-offset, index=index)
-            transform = np.array([[1, 0, offset[0]], [0, -1, offset[1]]])
+            self.shift_shapes(-center, index=index)
+            transform = np.array([[1, 0, center[0]], [0, -1, center[1]]])
             self._transform_shapes(transform, index=index)
 
-    def rotate_shapes(self, angle, offset=None, index=True):
+    def rotate_shapes(self, angle, center=None, index=True):
         """Perfroms a rotation on selected shapes
         Parameters
         ----------
         angle : float
             angle specifying rotation of shapes in degrees.
-        offset : list
+        center : list
             length 2 list specifying coordinate of center of rotation.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
@@ -180,26 +180,26 @@ class ShapesData():
             integer to that particular object.
         """
         theta = np.radians(angle)
-        if offset is None:
+        if center is None:
             transform = np.array([[np.cos(theta), np.sin(theta), 0], [-np.sin(theta), np.cos(theta), 0]])
             self._transform_shapes(transform, index=index)
         else:
-            self.shift_shapes(-offset, index=index)
-            transform = np.array([[np.cos(theta), np.sin(theta), offset[0]], [-np.sin(theta), np.cos(theta), offset[1]]])
+            self.shift_shapes(-center, index=index)
+            transform = np.array([[np.cos(theta), np.sin(theta), center[0]], [-np.sin(theta), np.cos(theta), center[1]]])
             self._transform_shapes(transform, index=index)
 
-    def shift_shapes(self, offset, index=True):
+    def shift_shapes(self, shift, index=True):
         """Perfroms an 2D shift on selected shapes
         Parameters
         ----------
-        transform : np.ndarray
+        shift : np.ndarray
             length 2 array specifying shift of shapes.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        transform = np.array([[1, 0, offset[0]], [0, 1, offset[1]]])
+        transform = np.array([[1, 0, shift[0]], [0, 1, shift[1]]])
         self._transform_shapes(transform, index=index)
 
     def _transform_shapes(self, transform, index=True):

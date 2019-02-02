@@ -270,6 +270,83 @@ class Shapes(Layer):
         self._show_faces = self._show_faces[faces_indices!=index]
         self._color_array = self._color_array[faces_indices!=index]
 
+    def scale_shapes(self, scale, coord=-1, index=True):
+        """Perfroms a scaling on selected shapes
+        Parameters
+        ----------
+        scale : float, list
+            scalar or list specifying rescaling of shapes in 2D.
+        coord : int
+            coordinate of bounding box to use as center of scaling.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        center = self.data.selected_box(index)[coord]
+        self.data.scale_shapes(scale, center=center, index=index)
+        self._refresh()
+
+    def flip_vertical_shapes(self, coord=-1, index=True):
+        """Perfroms an vertical flip on selected shapes
+        Parameters
+        ----------
+        coord : int
+            coordinate of bounding box to use as center of flip axes.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        center = self.data.selected_box(index)[coord]
+        self.data.flip_vertical_shapes(center=center, index=index)
+        self._refresh()
+
+    def flip_horizontal_shapes(self, coord=-1, index=True):
+        """Perfroms an horizontal flip on selected shapes
+        Parameters
+        ----------
+        coord : int
+            coordinate of bounding box to use as center of flip axes.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        center = self.data.selected_box(index)[coord]
+        self.data.flip_horizontal_shapes(center=center, index=index)
+        self._refresh()
+
+    def rotate_shapes(self, angle, coord=-1, index=True):
+        """Perfroms a rotation on selected shapes
+        Parameters
+        ----------
+        angle : float
+            angle specifying rotation of shapes in degrees.
+        coord : int
+            coordinate of bounding box to use as center of rotation.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        center = self.data.selected_box(index)[coord]
+        self.data.rotate_shapes(angle, center=center, index=index)
+        self._refresh()
+
+    def shift_shapes(self, shift, index=True):
+        """Perfroms an 2D shift on selected shapes
+        Parameters
+        ----------
+        shift : np.ndarray
+            length 2 array specifying shift of shapes.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        self.data.shift_shapes(shift, index=index)
+        self._refresh()
 
     def set_thickness(self, index=True, thickness=1):
         if type(thickness) is list:
