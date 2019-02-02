@@ -103,6 +103,135 @@ class ShapesData():
         self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0]-1
         self._mesh_faces[self._mesh_faces>indices[0]] = self._mesh_faces[self._mesh_faces>indices[0]] - len(indices)
 
+    def scale_shapes(self, scale, offset=None, index=True):
+        """Perfroms a scaling on selected shapes
+        Parameters
+        ----------
+        scale : float, list
+            scalar or list specifying rescaling of shapes in 2D.
+        offset : list
+            length 2 list specifying coordinate of center of rotation.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        if type(scale) is list:
+            transform = np.array([[scale[0], 0, 0], [0, scale[1], 0]])
+        else:
+            transform = np.array([[scale, 0, 0], [0, scale, 0]])
+        if offset is None:
+            self._transform_shapes(transform, index=index)
+        else:
+            self.shift_shapes(-offset, index=index)
+            transform[:, 2] = offset
+            self._transform_shapes(transform, index=index)
+
+    def flip_vertical_shapes(self, offset=None, index=True):
+        """Perfroms an vertical flip on selected shapes
+        Parameters
+        ----------
+        offset : list
+            length 2 list specifying coordinate of center of flip axes.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        if offset is None:
+            transform = np.array([[-1, 0, 0], [0, 1, 0]])
+            self._transform_shapes(transform, index=index)
+        else:
+            self.shift_shapes(-offset, index=index)
+            transform = np.array([[-1, 0, offset[0]], [0, 1, offset[1]]])
+            self._transform_shapes(transform, index=index)
+
+    def flip_horizontal_shapes(self, offset=None, index=True):
+        """Perfroms an horizontal flip on selected shapes
+        Parameters
+        ----------
+        offset : list
+            length 2 list specifying coordinate of center of flip axes.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        if offset is None:
+            transform = np.array([[1, 0, 0], [0, -1, 0]])
+            self._transform_shapes(transform, index=index)
+        else:
+            self.shift_shapes(-offset, index=index)
+            transform = np.array([[1, 0, offset[0]], [0, -1, offset[1]]])
+            self._transform_shapes(transform, index=index)
+
+    def rotate_shapes(self, angle, offset=None, index=True):
+        """Perfroms a rotation on selected shapes
+        Parameters
+        ----------
+        angle : float
+            angle specifying rotation of shapes in degrees.
+        offset : list
+            length 2 list specifying coordinate of center of rotation.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        theta = np.radians(angle)
+        if offset is None:
+            transform = np.array([[np.cos(theta), np.sin(theta), 0], [-np.sin(theta), np.cos(theta), 0]])
+            self._transform_shapes(transform, index=index)
+        else:
+            self.shift_shapes(-offset, index=index)
+            transform = np.array([[np.cos(theta), np.sin(theta), offset[0]], [-np.sin(theta), np.cos(theta), offset[1]]])
+            self._transform_shapes(transform, index=index)
+
+    def shift_shapes(self, offset, index=True):
+        """Perfroms an 2D shift on selected shapes
+        Parameters
+        ----------
+        transform : np.ndarray
+            length 2 array specifying shift of shapes.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        transform = np.array([[1, 0, offset[0]], [0, 1, offset[1]]])
+        self._transform_shapes(transform, index=index)
+
+    def _transform_shapes(self, transform, index=True):
+        """Perfroms an affine transform on selected shapes
+        Parameters
+        ----------
+        transform : np.ndarray
+            3x2 array specifying affine transform.
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        """
+        A = np.concatenate((transform, [[0, 0, 1]]), axis=0).T
+
+        indices = self._select_meshes(index, self._mesh_vertices_index)
+        x = np.concatenate((self._mesh_vertices[indices], np.ones((len(indices), 1))), axis=1)
+        self._mesh_vertices[indices] = np.matmul(x, A)[:,:2]
+        x = np.concatenate((self._mesh_vertices_centers[indices], np.ones((len(indices), 1))), axis=1)
+        self._mesh_vertices_centers[indices] = np.matmul(x, A)[:,:2]
+        x = self._mesh_vertices_offsets[indices]
+        self._mesh_vertices_offsets[indices] = np.matmul(x, np.array(transform[:,:2]))
+
+        if type(index) is list:
+            x = np.concatenate((self.boxes[index], np.ones((len(index), 9, 1))), axis=2)
+            self.boxes[index] = np.matmul(x, A)[:,:,:2]
+        else:
+            x = np.concatenate((self.boxes[index], np.ones((9, 1))), axis=1)
+            self.boxes[index] = np.matmul(x, A)[:,:2]
+        indices = np.where(np.isin(self.index, index))[0]
+        x = np.concatenate((self.vertices[indices], np.ones((len(indices), 1))), axis=1)
+        self.vertices[indices] = np.matmul(x, A)[:,:2]
+
     def _select_meshes(self, index, meshes, object_type=None):
         if object_type is None:
             if index is True:
