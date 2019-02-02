@@ -1,5 +1,6 @@
 import numpy as np
 from vispy.geometry import PolygonData
+from copy import copy
 
 class ShapesData():
     """Shapes class.
@@ -376,6 +377,15 @@ class ShapesData():
         # set center point to first vertex
         vertices[0] = np.float32([center[0], center[1]])
         return vertices
+
+    def selected_box(self, index=True):
+        if index is True:
+            box = self._expand_box(self.vertices)
+        elif type(index) is list:
+            box = self._expand_box(self.vertices[np.isin(self.index, index)])
+        else:
+            box = copy(self.boxes[index])
+        return box
 
     def _append_meshes(self, vertices, faces, index=[0, 0, 0],
                        centers=None, offsets=None):
