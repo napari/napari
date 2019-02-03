@@ -174,7 +174,7 @@ class Shapes(Layer):
         self._refresh()
 
     def _get_shape(self):
-        return [1000, 1000]
+        return [1, 1]
 
     # def _get_shape(self):
     #     if len(self.coords) == 0:
@@ -346,6 +346,51 @@ class Shapes(Layer):
             integer to that particular object.
         """
         self.data.shift_shapes(shift, index=index)
+        self._refresh()
+
+    def align_shapes(self, index=True, axis=0, location=1, to_canvas=False):
+        """Aligns selected shapes either in horizontal or vertical axis to
+        the left, center, right, or top, center, bottom. If to_canvas is True
+        then it aligs to the canvas.
+        Parameters
+        ----------
+        index : bool, list, int
+            index of objects to be selected. Where True corresponds to all
+            objects, a list of integers to a list of objects, and a single
+            integer to that particular object.
+        axis : int
+            integer specifying axis to align along. 0 corresponds to horizontal
+            1 corresponds to vertical
+        location : int
+            location that objects are to be aligned too. One of 0, 1, 2 for
+            either left, center, right, or top, center, bottom for Horizontal
+            and vertical axes respectively.
+        to_canvas : bool
+            Bool specifying if to align to canvas or not.
+        """
+        if to_canvas:
+            max_shape = self.viewer.dimensions.max_shape
+            box = self.data._expand_box(np.array([[0, 0], max_shape[:2]]))
+        else:
+            box = self.data.selected_box(index)
+        coords = [[7, 8, 3], [1, 8, 5]]
+        coord = coords[axis][location]
+        align_point = box[coord][axis]
+
+        if index is True:
+            index = list(range(len(self.data.id)))
+
+        if type(index) is list:
+            for i in index:
+                box = self.data.selected_box(i)
+                shift = [0, 0]
+                shift[axis] = align_point - box[coord][axis]
+                self.data.shift_shapes(shift, index=i)
+        else:
+            box = self.data.selected_box(i)
+            shift = [0, 0]
+            shift[axis] = align_point - box[coord][axis]
+            self.data.shift_shapes(shift, index=index)
         self._refresh()
 
     def set_thickness(self, index=True, thickness=1):
