@@ -80,7 +80,7 @@ class Shapes(Layer):
         self._highlight = True
         self._highlight_color = (0, 0.6, 1)
         self._selected_shapes = None
-        # self._selected_shapes_stored = []
+        self._selected_shapes_stored = None
         # self._ready_to_create_box = False
         # self._creating_box = False
         # self._create_tl = None
@@ -652,7 +652,7 @@ class Shapes(Layer):
             self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
                                                face_colors=colors)
         self._need_visual_update = True
-        self._set_highlight()
+        #self._set_highlight()
         self._update()
 
     def _set_highlight(self):
@@ -704,8 +704,6 @@ class Shapes(Layer):
         """
         coord = self._get_coord(position, indices)
         value = self._shape_at(coord)
-        self._selected_shapes = value
-        self._set_highlight()
         coord_shift = copy(coord)
         coord_shift[0] = coord[1]
         coord_shift[1] = coord[0]
@@ -885,87 +883,91 @@ class Shapes(Layer):
     #     self._selected_shapes_stored = self._selected_shapes
     #     self._set_highlight()
     #
-    #
-    # def _unselect(self):
-    #     if self.highlight:
-    #         self.highlight = False
-    #         self._selected_shapes_stored = None
-    #         self._refresh()
-    #
-    # def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
-    #     pressed=False, released=False, moving=False):
-    #     """Highlights object at given mouse position
-    #     and set of indices.
-    #     Parameters
-    #     ----------
-    #     position : sequence of two int
-    #         Position of mouse cursor in canvas.
-    #     indices : sequence of int or slice
-    #         Indices that make up the slice.
-    #     """
-    #     if not self._fixed_aspect == shift:
-    #         self._fixed_aspect = shift
-    #         if self._is_moving:
-    #             coord = self._get_coord(position, indices)
-    #             self._move(coord)
-    #
-    #     if mode is None:
-    #         #If not in edit or addition mode unselect all
-    #         self._unselect()
-    #     elif mode == 'edit':
-    #         #If in edit mode
-    #         coord = self._get_coord(position, indices)
-    #         if pressed and not ctrl:
-    #             #Set coordinate of initial drag
-    #             self._selected_shapes = self._get_selected_shapes(coord)
-    #             self._drag_start = coord
-    #         elif pressed and ctrl:
-    #             #Delete an existing box if any on control press
-    #             self._selected_shapes = self._get_selected_shapes(coord)
-    #             self._remove(coord)
-    #         elif moving and dragging:
-    #             #Drag an existing box if any
-    #             self._move(coord)
-    #         elif released:
-    #             self._is_moving=False
-    #         elif self._is_moving:
-    #             pass
-    #         else:
-    #             #Highlight boxes if any an over
-    #             self._selected_shapes = self._get_selected_shapes(coord)
-    #             self._select(coord)
-    #             self._fixed = None
-    #     elif mode == 'add':
-    #         #If in addition mode
-    #         coord = self._get_coord(position, indices)
-    #         if pressed:
-    #             #Start add a new box
-    #             self._ready_to_create_box = True
-    #             self._creating_box = False
-    #             self._create_tl = coord
-    #         elif moving and dragging:
-    #             #If moving and dragging check if ready to make new box
-    #             if self._ready_to_create_box:
-    #                 self.highlight = True
-    #                 self._add(self._create_tl, coord)
-    #                 self._ready_to_create_box = False
-    #                 self._creating_box = True
-    #             elif self._creating_box:
-    #                 #If making a new box, update it's position
-    #                 self._move(coord)
-    #         elif released and dragging:
-    #             #One release add new box
-    #             if self._creating_box:
-    #                 self._creating_box = False
-    #                 self._unselect()
-    #                 self._fixed = None
-    #             else:
-    #                 self._add(coord)
-    #                 self._ready_to_create_box = False
-    #             self._is_moving=False
-    #         elif released:
-    #             self._is_moving=False
-    #         else:
-    #             self._unselect()
-    #     else:
-    #         pass
+    def _unselect(self):
+        if self._highlight:
+            self._highlight = False
+            self._selected_shapes_stored = None
+            self._set_highlight()
+
+    def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
+        pressed=False, released=False, moving=False):
+        """Highlights object at given mouse position
+        and set of indices.
+        Parameters
+        ----------
+        position : sequence of two int
+            Position of mouse cursor in canvas.
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        """
+        # if not self._fixed_aspect == shift:
+        #     self._fixed_aspect = shift
+        #     if self._is_moving:
+        #         coord = self._get_coord(position, indices)
+        #         self._move(coord)
+
+        if mode is None:
+            #If not in edit or addition mode unselect all
+            self._unselect()
+        elif mode == 'edit':
+            #If in edit mode
+            coord = self._get_coord(position, indices)
+            value = self._shape_at(coord)
+            self._selected_shapes = value
+            self._highlight = True
+            self._set_highlight()
+            # if pressed and not ctrl:
+            #     #Set coordinate of initial drag
+            #     self._selected_shapes = self._get_selected_shapes(coord)
+            #     self._drag_start = coord
+            # elif pressed and ctrl:
+            #     #Delete an existing box if any on control press
+            #     self._selected_shapes = self._get_selected_shapes(coord)
+            #     self._remove(coord)
+            # elif moving and dragging:
+            #     #Drag an existing box if any
+            #     self._move(coord)
+            # elif released:
+            #     self._is_moving=False
+            # elif self._is_moving:
+            #     pass
+            # else:
+            #     #Highlight boxes if any an over
+            #     self._selected_shapes = self._get_selected_shapes(coord)
+            #     self._select(coord)
+            #     self._fixed = None
+        elif mode == 'add':
+            self._unselect()
+        #     #If in addition mode
+        #     coord = self._get_coord(position, indices)
+        #     if pressed:
+        #         #Start add a new box
+        #         self._ready_to_create_box = True
+        #         self._creating_box = False
+        #         self._create_tl = coord
+        #     elif moving and dragging:
+        #         #If moving and dragging check if ready to make new box
+        #         if self._ready_to_create_box:
+        #             self.highlight = True
+        #             self._add(self._create_tl, coord)
+        #             self._ready_to_create_box = False
+        #             self._creating_box = True
+        #         elif self._creating_box:
+        #             #If making a new box, update it's position
+        #             self._move(coord)
+        #     elif released and dragging:
+        #         #One release add new box
+        #         if self._creating_box:
+        #             self._creating_box = False
+        #             self._unselect()
+        #             self._fixed = None
+        #         else:
+        #             self._add(coord)
+        #             self._ready_to_create_box = False
+        #         self._is_moving=False
+        #     elif released:
+        #         self._is_moving=False
+        #     else:
+        #         self._unselect()
+        else:
+            pass
