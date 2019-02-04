@@ -77,10 +77,28 @@ class Markers(Layer):
         self._coords = coords
 
         # Save the marker style params
+        size_array = np.array(size)
+        if len(size_array.shape) == 2:
+            assert(size_array.shape == self._coords.shape), \
+             'If size is a 2D array, must be the same shape as '\
+             'coords'
+            self._size = size_array
+        elif len(size_array.shape) == 1:
+            assert (len(size_array) == len(self._coords) or  len(size_array) == self.ndim), \
+            'If size is a list/ 1D array, must be the same length as '\
+            'either coords or ndim'
+            if len(size_array) == self.ndim:
+                self._size = np.broadcast_to(size_array, self._coords.shape)
+            else:
+                self._size = np.broadcast_to(size_array, self._coords.shape[::-1]).T
+        elif len(size_array.shape) == 0:
+            self._size = np.broadcast_to(size_array, self._coords.shape)
+        else:
+            raise TypeError('size should be float or ndarray of dim less than 2')
+        self._size_original = size
+
+
         self._symbol = symbol
-        if type(size) is list:
-            size = np.array(size)
-        self._size = size
         self._edge_width = edge_width
         self._edge_width_rel = edge_width_rel
         self._edge_color = edge_color
@@ -138,31 +156,31 @@ class Markers(Layer):
         """float, ndarray: size of the marker symbol in px
         """
 
-        return self._size
+        return self._size_original
 
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
 
-        if np.isscalar(size):
-            self._size = size
-
-            self.refresh()
-
-        elif isinstance(size, Iterable):
-            assert (len(size) == len(self._coords) or  len(size) == self.ndim), \
-             'If size is a list/array, must be the same length as '\
-             'coords or ndim'
-
-            if isinstance(size, list):
-                self._size = np.asarray(size)
-
+        size_array = np.array(size)
+        if len(size_array.shape) == 2:
+            assert(size_array.shape == self._coords.shape), \
+             'If size is a 2D array, must be the same shape as '\
+             'coords'
+            self._size = size_array
+        elif len(size_array.shape) == 1:
+            assert (len(size_array) == len(self._coords) or  len(size_array) == self.ndim), \
+            'If size is a list/ 1D array, must be the same length as '\
+            'either coords or ndim'
+            if len(size_array) == self.ndim:
+                self._size = np.broadcast_to(size_array, self._coords.shape)
             else:
-                self._size = size
-
-            self.refresh()
-
+                self._size = np.broadcast_to(size_array, self._coords.shape[::-1]).T
+        elif len(size_array.shape) == 0:
+            self._size = np.broadcast_to(size_array, self._coords.shape)
         else:
-            raise TypeError('size should be float or ndarray')
+            raise TypeError('size should be float or ndarray of dim less than 2')
+        self._size_original = size
+        self.refresh()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -236,7 +254,7 @@ class Markers(Layer):
 
     def _get_shape(self):
         if len(self.coords) == 0:
-            return np.ones(self.coords.shape, dtype=int)
+            return np.ones(self.coords.shape[1], dtype=int)
         else:
             return np.max(self.coords, axis=0) + 1
 
@@ -269,35 +287,18 @@ class Markers(Layer):
         # Get a list of the coords for the markers in this slice
         coords = self.coords
         if len(coords) > 0:
-            if self._n_dimensional is False:
-                matches = np.equal(
-                    coords[:, 2:],
-                    np.broadcast_to(indices[2:], (len(coords), len(indices) - 2)))
-
-                matches = np.all(matches, axis=1)
-
+            if self._n_dimensional is True and self.ndim > 2:
+                distances = abs(coords[:, 2:] - indices[2:])
+                size_array = self._size[:,2:]/2
+                matches = np.all(distances <= size_array, axis=1)
+                in_slice_markers = coords[matches, :2]
+                scale_per_dim = (size_array[matches] - distances[matches])/size_array[matches]
+                scale = np.prod(scale_per_dim, axis=1)
+                return in_slice_markers, matches, scale
+            else:
+                matches = np.all(coords[:, 2:]==indices[2:], axis=1)
                 in_slice_markers = coords[matches, :2]
                 return in_slice_markers, matches, 1
-            elif self.ndim > 2:
-                distances = abs(coords[:, 2:] -
-                                np.broadcast_to(indices[2:], (len(coords), len(indices) - 2)))
-                if isinstance(self.size, np.ndarray):
-                    if len(self.size) == len(indices):
-                        size_array = np.broadcast_to(self.size[2:]/2, (len(coords), len(indices) - 2))
-                    elif isinstance(self.size, np.ndarray) and len(self.size.shape)==2:
-                        size_array = self.size[:,2:]/2
-                    else:
-                        size_array = np.broadcast_to(self.size/2, (len(indices) - 2, len(coords))).T
-                else:
-                    size_array = np.broadcast_to(self.size/2, (len(indices) - 2, len(coords))).T
-
-                matches = np.less_equal(distances, size_array)
-                matches = np.all(matches, axis=1)
-
-                in_slice_markers = coords[matches, :2]
-                scale = (size_array[matches] - distances[matches])/size_array[matches]
-                scale = np.prod(scale, axis=1)
-                return in_slice_markers, matches, scale
         else:
             return [], [], []
 
@@ -313,32 +314,19 @@ class Markers(Layer):
 
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
-            shape = (len(in_slice_markers), 2)
-            index_array = np.broadcast_to(indices[:2], shape)
-            distances = abs(in_slice_markers - index_array)
             # Get the marker sizes
-            if isinstance(self.size, np.ndarray):
-                if len(self.size) == len(indices):
-                    sizes = (self.size[0]+self.size[1])/2*scale
-                elif isinstance(self.size, np.ndarray) and len(self.size.shape)==2:
-                    sizes = self.size[matches,:2].mean(axis=1)*scale
-                else:
-                    sizes = self.size[matches]*scale
-            else:
-                sizes = self.size*scale
-            matches = np.where(matches)[0]
-            size_array = np.broadcast_to(sizes/2, (2, len(in_slice_markers))).T
-            in_slice_matches = np.less_equal(distances, size_array)
-            in_slice_matches = np.all(in_slice_matches, axis=1)
+            size_array = self._size[matches,:2]*np.expand_dims(scale, axis=1)/2
+            distances = abs(in_slice_markers - indices[:2])
+            in_slice_matches = np.all(distances <= size_array, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                matches = matches[indices[-1]]
+                selection = np.where(matches)[0][indices[-1]]
             else:
-                matches = None
+                selection = None
         else:
-            matches = None
+            selection = None
 
-        self._selected_markers = matches
+        self._selected_markers = selection
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -354,19 +342,7 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-
-            if isinstance(self.size, np.ndarray):
-                if len(self.size) == len(indices):
-                    sizes = (self.size[0]+self.size[1])/2*scale
-                elif isinstance(self.size, np.ndarray) and len(self.size.shape)==2:
-                    sizes = self.size[matches,:2].mean(axis=1)*scale
-                else:
-                    sizes = self.size[matches]*scale
-            else:
-                sizes = self.size*scale
-
-            if isinstance(sizes, np.ndarray):
-                sizes = sizes[::-1]
+            sizes = (self._size[matches,:2].mean(axis=1)*scale)[::-1]
 
             # Update the markers node
             data = np.array(in_slice_markers) + 0.5
@@ -437,8 +413,7 @@ class Markers(Layer):
             Indices that make up the slice.
         """
         coord = self._get_coord(position, indices)
-        if isinstance(self.size, (list, ndarray)):
-            self._size = append(self.size, 10)
+        self._size = append(self._size, [np.repeat(10, self.ndim)], axis=0)
         self.data = append(self.data, [coord], axis=0)
         self._selected_markers = len(self.data)-1
 
@@ -457,8 +432,8 @@ class Markers(Layer):
         if index is None:
             pass
         else:
-            if isinstance(self.size, (list, ndarray)):
-                self._size = delete(self.size, index)
+
+            self._size = delete(self._size, index, axis=0)
             self.data = delete(self.data, index, axis=0)
             self._selected_markers = None
 
