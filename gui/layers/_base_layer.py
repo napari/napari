@@ -162,8 +162,10 @@ class Layer(VisualWrapper, ABC):
         """
         return None, None, ''
 
-    def add(self, position, indices):
-        """Adds object at given mouse position and set of indices.
+    def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
+        pressed=False, released=False, moving=False):
+        """Highlights object at given mouse position
+        and set of indices.
         Parameters
         ----------
         position : sequence of two int
@@ -171,23 +173,4 @@ class Layer(VisualWrapper, ABC):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
-
-    def remove(self, position, indices):
-        """Removes object at given mouse position and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-        """
-
-    def move(self, position, indices):
-        """Moves object at given mouse position and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-        """
+        return

@@ -383,33 +383,21 @@ class Markers(Layer):
             msg = msg + ', ' + self.name + ', index ' + str(value)
         return coord, value, msg
 
-    def add(self, position, indices):
-        """Adds object at given mouse position and set of indices.
-
+    def _add(self, coord):
+        """Adds object at given mouse position
+        and set of indices.
         Parameters
         ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+        coord : sequence of indices to add marker at
         """
-        coord = self._get_coord(position, indices)
         if isinstance(self.size, (list, ndarray)):
             self._size = append(self.size, 10)
         self.data = append(self.data, [coord], axis=0)
         self._selected_markers = len(self.data)-1
 
-    def remove(self, position, indices):
-        """Removes object at given mouse position and set of indices.
-
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def _remove(self):
+        """Removes selected object if any.
         """
-        coord = self._get_coord(position, indices)
         index = self._selected_markers
         if index is None:
             pass
@@ -419,9 +407,24 @@ class Markers(Layer):
             self.data = delete(self.data, index, axis=0)
             self._selected_markers = None
 
-    def move(self, position, indices):
-        """Moves object at given mouse position and set of indices.
+    def _move(self, coord):
+        """Moves object at given mouse position
+        and set of indices.
+        Parameters
+        ----------
+        coord : sequence of indices to move marker to
+        """
+        index = self._selected_markers
+        if index is None:
+            pass
+        else:
+            self.data[index] = coord
+            self._refresh()
 
+    def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
+        pressed=False, released=False, moving=False):
+        """Highlights object at given mouse position
+        and set of indices.
         Parameters
         ----------
         position : sequence of two int
@@ -429,10 +432,23 @@ class Markers(Layer):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
-        coord = self._get_coord(position, indices)
-        index = self._selected_markers
-        if index is None:
+        if mode is None:
             pass
+        elif mode == 'edit':
+            #If in edit mode
+            if pressed and ctrl:
+                #Delete an existing box if any on control press
+                coord = self._get_coord(position, indices)
+                self._remove()
+            elif moving and dragging:
+                #Drag an existing box if any
+                coord = self._get_coord(position, indices)
+                self._move(coord)
+        elif mode == 'add':
+            #If in addition mode
+            if pressed:
+                #Add a new box
+                coord = self._get_coord(position, indices)
+                self._add(coord)
         else:
-            self.data[index] = coord
-            self._refresh()
+            pass
