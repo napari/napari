@@ -81,17 +81,17 @@ class Shapes(Layer):
         self._highlight_color = (0, 0.6, 1)
         self._selected_shapes = None
         self._selected_shapes_stored = None
+
+        self._drag_start = None
+        self._fixed = None
+        self._fixed_aspect = False
+        self._aspect_ratio = 1
+        self._is_moving=False
+        self._fixed_index = 0
+
         # self._ready_to_create_box = False
         # self._creating_box = False
         # self._create_tl = None
-        # self._drag_start = None
-        # self._fixed = None
-        # self._fixed_aspect = False
-        # self._aspect_ratio = 1
-        # self._highlight = False
-        # self._is_moving=False
-        # self._fixed_index = 0
-        # self._view_data = None
 
         self._qt = QtShapesLayer(self)
 
@@ -617,21 +617,38 @@ class Shapes(Layer):
             # Check if any matching vertices
             in_slice_matches = np.all(distances <=  self._vertex_size/2, axis=2)
             indices = in_slice_matches.nonzero()
+            z_list = self._z_order.tolist()
 
             if len(indices[0]) > 0:
-                shape_index = self._z_order[matches[indices[0]]][0]
-                vertex = indices[1][-1]
-                return [shape_index, vertex]
+                cursor_matches = matches[indices[0]]
+                order_indices = np.array([z_list.index(m) for m in cursor_matches])
+                ordered_shapes = cursor_matches[np.argsort(order_indices)]
+                top_vertex = [ordered_shapes[0], indices[1][-1]]
             else:
-                # If no matching vertex check if index inside bounding box
-                # currently this will fail for a rotated shape ....
-                in_slice_matches = np.all(np.array([np.all(offsets[:,0]>=0, axis=1), np.all(offsets[:,4]<=0, axis=1)]), axis=0)
-                indices = in_slice_matches.nonzero()
-                if len(indices[0]) > 0:
-                    shape_index = self._z_order[matches[indices[0]]][0]
-                    return [shape_index, None]
+                top_vertex = None
+            # Check if index inside bounding box
+            # currently this will fail for a rotated shape / flipped ....
+            in_slice_matches = np.all(np.array([np.all(offsets[:,0]>=0, axis=1), np.all(offsets[:,4]<=0, axis=1)]), axis=0)
+            indices = in_slice_matches.nonzero()
+            if len(indices[0]) > 0:
+                cursor_matches = matches[indices[0]]
+                order_indices = np.array([z_list.index(m) for m in cursor_matches])
+                ordered_shapes = cursor_matches[np.argsort(order_indices)]
+                top_inside = [ordered_shapes[0], None]
+            else:
+                top_inside = None
+            if top_inside is not None and top_vertex is not None:
+                z_list = self._z_order.tolist()
+                if z_list.index(top_inside[0]) < z_list.index(top_vertex[0]):
+                    return top_inside
                 else:
-                    return None
+                    return top_vertex
+            elif top_inside is not None:
+                return top_inside
+            elif top_vertex is not None:
+                return top_vertex
+            else:
+                return None
         else:
             return None
 
@@ -681,7 +698,7 @@ class Shapes(Layer):
         coord = copy(indices)
         coord[0] = int(pos[1])
         coord[1] = int(pos[0])
-        return coord
+        return np.array(coord)
 
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string
@@ -775,114 +792,84 @@ class Shapes(Layer):
     #         self._selected_shapes = self._get_selected_shapes(coord)
     #         self._refresh()
     #
-    # def _move(self, coord):
-    #     """Moves object at given mouse position
-    #     and set of indices.
-    #     Parameters
-    #     ----------
-    #     position : sequence of two int
-    #         Position of mouse cursor in canvas.
-    #     indices : sequence of int or slice
-    #         Indices that make up the slice.
-    #     """
-    #     self._is_moving=True
-    #     index = self._selected_shapes
-    #     if index is None:
-    #         pass
-    #     else:
-    #         if index[1] is None:
-    #             box = self._expand_box(self.data[index[0]])
-    #
-    #             #Check where dragging box from
-    #             if self._drag_start is None:
-    #                 tl = [coord[0] - (box[2][0]-box[0][0])/2, coord[1] - (box[2][1]-box[0][1])/2]
-    #                 br = [coord[0] + (box[2][0]-box[0][0])/2, coord[1] + (box[2][1]-box[0][1])/2]
-    #             else:
-    #                 tl = [box[0][0] - (self._drag_start[0]-coord[0]), box[0][1] - (self._drag_start[1]-coord[1])]
-    #                 br = [box[2][0] - (self._drag_start[0]-coord[0]), box[2][1] - (self._drag_start[1]-coord[1])]
-    #                 self._drag_start = coord
-    #
-    #             # block box move if goes of edge
-    #             max_shape = self.viewer.dimensions.max_shape
-    #             if tl[0] < 0:
-    #                 br[0] = br[0] - tl[0]
-    #                 tl[0] = 0
-    #             if tl[1] < 0:
-    #                 br[1] = br[1] - tl[1]
-    #                 tl[1] = 0
-    #             if br[0] > max_shape[0]-1:
-    #                 tl[0] = max_shape[0]-1 - (br[0] - tl[0])
-    #                 br[0] = max_shape[0]-1
-    #             if br[1] > max_shape[1]-1:
-    #                 tl[1] = max_shape[1]-1 - (br[1] - tl[1])
-    #                 br[1] = max_shape[1]-1
-    #             self.data[index[0]] = [tl, br]
-    #         else:
-    #             box = self._expand_bounding_box(self.data[index[0]])
-    #             if self._fixed is None:
-    #                 self._fixed_index = np.mod(index[1]+4,8)
-    #                 self._fixed = box
-    #                 self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
-    #
-    #             if np.mod(self._fixed_index, 2) == 0:
-    #                 # corner selected
-    #                 br = self._fixed[self._fixed_index]
-    #                 tl = coord
-    #             elif np.mod(self._fixed_index, 4) == 1:
-    #                 # top selected
-    #                 br = self._fixed[np.mod(self._fixed_index-1,8)]
-    #                 tl = [self._fixed[np.mod(self._fixed_index+1,8)][0], coord[1]]
-    #             else:
-    #                 # side selected
-    #                 br = self._fixed[np.mod(self._fixed_index-1,8)]
-    #                 tl = [coord[0], self._fixed[np.mod(self._fixed_index+1,8)][1]]
-    #
-    #             if tl[0]==br[0]:
-    #                 if index[1] == 1 or index[1] == 2:
-    #                     tl[0] = tl[0]+1
-    #                 else:
-    #                     tl[0] = tl[0]-1
-    #             if tl[1]==br[1]:
-    #                 if index[1] == 2 or index[1] == 3:
-    #                     tl[1] = tl[1]+1
-    #                 else:
-    #                     tl[1] = tl[1]-1
-    #
-    #             if self._fixed_aspect:
-    #                 ratio = abs((tl[1]-br[1])/(tl[0]-br[0]))
-    #                 if np.mod(self._fixed_index, 2) == 0:
-    #                     # corner selected
-    #                     if ratio>self._aspect_ratio:
-    #                         tl[1] = br[1]+(tl[1]-br[1])*self._aspect_ratio/ratio
-    #                     else:
-    #                         tl[0] = br[0]+(tl[0]-br[0])*ratio/self._aspect_ratio
-    #
-    #             self.data[index[0]] = [tl, br]
-    #
-    #         self.highlight = True
-    #         self._selected_shapes_stored = index
-    #         self._refresh()
-    #
-    # def _select(self, coord):
-    #     """Highlights object at given mouse position
-    #     and set of indices.
-    #     Parameters
-    #     ----------
-    #     position : sequence of two int
-    #         Position of mouse cursor in canvas.
-    #     indices : sequence of int or slice
-    #         Indices that make up the slice.
-    #     """
-    #     if self._selected_shapes == self._selected_shapes_stored:
-    #         return
-    #
-    #     if self._selected_shapes is None:
-    #         self.highlight = False
-    #     else:
-    #         self.highlight = True
-    #     self._selected_shapes_stored = self._selected_shapes
-    #     self._set_highlight()
-    #
+    def _move(self, coord):
+        """Moves object at given mouse position
+        and set of indices.
+        Parameters
+        ----------
+        coord : sequence of two int
+            Position of mouse cursor in data.
+        """
+        self._is_moving=True
+        index = self._selected_shapes
+        print('adddd')
+        if index is None:
+            pass
+        else:
+            if index[1] is None:
+                #Check where dragging box from
+                print('asdasda')
+                if self._drag_start is None:
+                    shift = coord - self.data.boxes[index[0]][-1]
+                else:
+                    shift = coord - self._drag_start
+                print(shift, index[0])
+                self.shift_shapes(shift, index=index[0])
+                print('eeeeeeeeee')
+
+            # else:
+            #     box = self._expand_bounding_box(self.data[index[0]])
+            #     if self._fixed is None:
+            #         self._fixed_index = np.mod(index[1]+4,8)
+            #         self._fixed = box
+            #         self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
+            #
+            #     if np.mod(self._fixed_index, 2) == 0:
+            #         # corner selected
+            #         br = self._fixed[self._fixed_index]
+            #         tl = coord
+            #     elif np.mod(self._fixed_index, 4) == 1:
+            #         # top selected
+            #         br = self._fixed[np.mod(self._fixed_index-1,8)]
+            #         tl = [self._fixed[np.mod(self._fixed_index+1,8)][0], coord[1]]
+            #     else:
+            #         # side selected
+            #         br = self._fixed[np.mod(self._fixed_index-1,8)]
+            #         tl = [coord[0], self._fixed[np.mod(self._fixed_index+1,8)][1]]
+            #
+            #     if tl[0]==br[0]:
+            #         if index[1] == 1 or index[1] == 2:
+            #             tl[0] = tl[0]+1
+            #         else:
+            #             tl[0] = tl[0]-1
+            #     if tl[1]==br[1]:
+            #         if index[1] == 2 or index[1] == 3:
+            #             tl[1] = tl[1]+1
+            #         else:
+            #             tl[1] = tl[1]-1
+            #
+            #     if self._fixed_aspect:
+            #         ratio = abs((tl[1]-br[1])/(tl[0]-br[0]))
+            #         if np.mod(self._fixed_index, 2) == 0:
+            #             # corner selected
+            #             if ratio>self._aspect_ratio:
+            #                 tl[1] = br[1]+(tl[1]-br[1])*self._aspect_ratio/ratio
+            #             else:
+            #                 tl[0] = br[0]+(tl[0]-br[0])*ratio/self._aspect_ratio
+            #
+            #     self.data[index[0]] = [tl, br]
+
+            self.highlight = True
+            self._selected_shapes_stored = index
+            self._refresh()
+
+    def _select(self):
+        if self._selected_shapes == self._selected_shapes_stored:
+            return
+        self._highlight = True
+        self._selected_shapes_stored = self._selected_shapes
+        self._set_highlight()
+
     def _unselect(self):
         if self._highlight:
             self._highlight = False
@@ -900,11 +887,11 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
-        # if not self._fixed_aspect == shift:
-        #     self._fixed_aspect = shift
-        #     if self._is_moving:
-        #         coord = self._get_coord(position, indices)
-        #         self._move(coord)
+        if not self._fixed_aspect == shift:
+            self._fixed_aspect = shift
+            if self._is_moving:
+                coord = self._get_coord(position, indices)
+                self._move(coord)
 
         if mode is None:
             #If not in edit or addition mode unselect all
@@ -912,30 +899,26 @@ class Shapes(Layer):
         elif mode == 'edit':
             #If in edit mode
             coord = self._get_coord(position, indices)
-            value = self._shape_at(coord)
-            self._selected_shapes = value
-            self._highlight = True
-            self._set_highlight()
-            # if pressed and not ctrl:
-            #     #Set coordinate of initial drag
-            #     self._selected_shapes = self._get_selected_shapes(coord)
-            #     self._drag_start = coord
+            if pressed and not ctrl:
+                #Set coordinate of initial drag
+                self._selected_shapes = self._shape_at(coord)
+                self._drag_start = coord
             # elif pressed and ctrl:
             #     #Delete an existing box if any on control press
             #     self._selected_shapes = self._get_selected_shapes(coord)
             #     self._remove(coord)
-            # elif moving and dragging:
-            #     #Drag an existing box if any
-            #     self._move(coord)
-            # elif released:
-            #     self._is_moving=False
-            # elif self._is_moving:
-            #     pass
-            # else:
-            #     #Highlight boxes if any an over
-            #     self._selected_shapes = self._get_selected_shapes(coord)
-            #     self._select(coord)
-            #     self._fixed = None
+            elif moving and dragging:
+                #Drag an existing box if any
+                self._move(coord)
+            elif released:
+                self._is_moving=False
+            elif self._is_moving:
+                pass
+            else:
+                #Highlight boxes if over any
+                self._selected_shapes = self._shape_at(coord)
+                self._select()
+                self._fixed = None
         elif mode == 'add':
             self._unselect()
         #     #If in addition mode
