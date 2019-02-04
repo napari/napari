@@ -34,6 +34,7 @@ task:
         VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
         PYTHON_ARCH: 64
       system_script:
+        # install OpenGL using methods/scripts from vispy
         - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
         - powershell ./opengl.ps1
         - ps: rm opengl.ps1
