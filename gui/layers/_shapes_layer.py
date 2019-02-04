@@ -8,7 +8,10 @@ from copy import copy
 from ..util import is_permutation
 from ._base_layer import Layer
 from ._register import add_to_viewer
-from .._vispy.scene.visuals import Mesh as ShapesNode
+from .._vispy.scene.visuals import Mesh
+from .._vispy.scene.visuals import Markers
+from .._vispy.scene.visuals import Line
+from .._vispy.scene.visuals import Compound as VisualNode
 from .shapes_data import ShapesData
 from vispy.color import get_color_names, Color
 
@@ -41,7 +44,8 @@ class Shapes(Layer):
                  ellipses=None, polygons=None, edge_width=1, edge_color='black',
                  face_color='white'):
 
-        visual = ShapesNode()
+        visual = VisualNode([Markers(), Line(), Mesh()])
+
         super().__init__(visual)
         self.name = 'shapes'
 
@@ -73,8 +77,9 @@ class Shapes(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
-        self._qt = QtShapesLayer(self)
-        # self._selected_shapes = []
+        self._highlight = True
+        self._highlight_color = (0, 0.6, 1)
+        self._selected_shapes = None
         # self._selected_shapes_stored = []
         # self._ready_to_create_box = False
         # self._creating_box = False
@@ -87,6 +92,8 @@ class Shapes(Layer):
         # self._is_moving=False
         # self._fixed_index = 0
         # self._view_data = None
+
+        self._qt = QtShapesLayer(self)
 
     @property
     def data(self):
@@ -594,7 +601,7 @@ class Shapes(Layer):
             Indices to check if shape at.
         """
         #in_slice_boxes, matches = self._slice_boxes(indices)
-        in_slice_boxes = self.data.boxes
+        in_slice_boxes = self.data.boxes[:,:-1]
         matches = np.ones(len(in_slice_boxes), dtype=bool)
         matches = matches.nonzero()[0]
 
@@ -608,9 +615,7 @@ class Shapes(Layer):
             sizes = self._vertex_size
 
             # Check if any matching vertices
-            size = np.broadcast_to(self._vertex_size/2,
-                                   (2, 9, len(in_slice_boxes))).T
-            in_slice_matches = np.all(distances <=  size, axis=2)
+            in_slice_matches = np.all(distances <=  self._vertex_size/2, axis=2)
             indices = in_slice_matches.nonzero()
 
             if len(indices[0]) > 0:
@@ -619,6 +624,7 @@ class Shapes(Layer):
                 return [shape_index, vertex]
             else:
                 # If no matching vertex check if index inside bounding box
+                # currently this will fail for a rotated shape ....
                 in_slice_matches = np.all(np.array([np.all(offsets[:,0]>=0, axis=1), np.all(offsets[:,4]<=0, axis=1)]), axis=0)
                 indices = in_slice_matches.nonzero()
                 if len(indices[0]) > 0:
@@ -636,56 +642,37 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-
-        # in_slice_boxes, matches = self._slice_boxes(indices)
-        #
-        # # Display boxes if there are any in this slice
-        # if len(in_slice_boxes) > 0:
-        #     boxes = []
-        #     for box in in_slice_boxes:
-        #         boxes.append(self._expand_bounding_box(box))
-        #
-        #     # Update the boxes node
-        #     data = np.array(boxes) + 0.5
-        #     #data = data[0]
-        # else:
-        #     # if no markers in this slice send dummy data
-        #     data = np.empty((0, 2))
-        #
-        #
-        # self._view_data = data
-        # self._node.set_data(vertices=self.data._triangles_vertices,
-        #                     faces=self.data._triangles_faces,
-        #                     color=self.face_color)
-        # self._node.set_data(mesh_vertices=self.data._triangles_vertices,
-        #                     mesh_faces=self.data._triangles_faces,
-        #                     lines_vertices=self.data._lines_vertices,
-        #                     lines_connect=self.data._lines_connect,
-        #                     marker_vertices=self.data._points_vertices,
-        #                     edge_width=self.edge_width,
-        #                     edge_color=self.edge_color,
-        #                     face_color=self.face_color,
-        #                     marker_symbol=self.point_symbol,
-        #                     marker_size=self.point_size)
         show_faces = self._show_faces[self._z_order_faces]
         faces = self.data._mesh_faces[self._z_order_faces][show_faces]
         colors = self._color_array[self._z_order_faces][show_faces]
+        vertices = self.data._mesh_vertices
         if len(faces) == 0:
-            self._node.set_data(vertices=None, faces=None)
+            self._node._subvisuals[2].set_data(vertices=None, faces=None)
         else:
-            self._node.set_data(vertices=self.data._mesh_vertices,
-                                faces=faces, face_colors=colors)
+            self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
+                                               face_colors=colors)
         self._need_visual_update = True
-        #self._set_highlight()
+        self._set_highlight()
         self._update()
-    #
-    # def _set_highlight(self):
-    #     if self.highlight and self._selected_shapes is not None:
-    #         data = self._view_data[self._selected_shapes[0]].mean(axis=0)
-    #         self._highlight_node.set_data(np.array([data]), size=10, face_color='red')
-    #     else:
-    #         self._highlight_node.set_data(np.empty((0, 2)), size=0)
-    #
+
+    def _set_highlight(self):
+        if self._highlight and self._selected_shapes is not None:
+            data = self.data.boxes[self._selected_shapes[0]][:-1]
+            if self._selected_shapes[1] is None:
+                face_color = 'white'
+                edge_color = self._highlight_color
+            else:
+                face_color = self._highlight_color
+                edge_color = self._highlight_color
+            self._node._subvisuals[0].set_data(data, size=8, face_color=face_color,
+                                               edge_color=edge_color, edge_width=1,
+                                               symbol='square', scaling=True)
+            self._node._subvisuals[1].set_data(pos=data[[0, 2, 4, 6, 0]],
+                                               color=edge_color, width=1)
+        else:
+            self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
+            self._node._subvisuals[1].set_data(pos=None, width=0)
+
     def _get_coord(self, position, indices):
         max_shape = self.viewer.dimensions.max_shape
         transform = self.viewer._canvas.scene.node_transform(self._node)
@@ -717,6 +704,8 @@ class Shapes(Layer):
         """
         coord = self._get_coord(position, indices)
         value = self._shape_at(coord)
+        self._selected_shapes = value
+        self._set_highlight()
         coord_shift = copy(coord)
         coord_shift[0] = coord[1]
         coord_shift[1] = coord[0]
