@@ -5,7 +5,7 @@ import numpy as np
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from ..util import is_permutation
+from ..util import is_permutation, inside_boxes
 from ._base_layer import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Mesh
@@ -605,8 +605,9 @@ class Shapes(Layer):
 
         # Check boxes if there are any in this slice
         if len(in_slice_boxes) > 0:
+            z_list = self._z_order.tolist()
 
-            offsets = indices[:2] - in_slice_boxes
+            offsets = in_slice_boxes - indices[:2]
             distances = abs(offsets)
 
             # Get the vertex sizes
@@ -615,8 +616,6 @@ class Shapes(Layer):
             # Check if any matching vertices
             in_slice_matches = np.all(distances <=  self._vertex_size/2, axis=2)
             indices = in_slice_matches.nonzero()
-            z_list = self._z_order.tolist()
-
             if len(indices[0]) > 0:
                 cursor_matches = matches[indices[0]]
                 order_indices = np.array([z_list.index(m) for m in cursor_matches])
@@ -624,10 +623,12 @@ class Shapes(Layer):
                 top_vertex = [ordered_shapes[0], indices[1][-1]]
             else:
                 top_vertex = None
-            # Check if index inside bounding box
+
+            # Check if origin inside shifted bounding boxes
             # currently this will fail for a rotated shape / flipped ....
             # could either use real bbox or use triangles in meshes?????
-            in_slice_matches = np.all(np.array([np.all(offsets[:,0]>=0, axis=1), np.all(offsets[:,4]<=0, axis=1)]), axis=0)
+
+            in_slice_matches = inside_boxes(offsets)
             indices = in_slice_matches.nonzero()
             if len(indices[0]) > 0:
                 cursor_matches = matches[indices[0]]
@@ -636,6 +637,7 @@ class Shapes(Layer):
                 top_inside = [ordered_shapes[0], None]
             else:
                 top_inside = None
+
             if top_inside is not None and top_vertex is not None:
                 z_list = self._z_order.tolist()
                 if z_list.index(top_inside[0]) < z_list.index(top_vertex[0]):
@@ -814,14 +816,14 @@ class Shapes(Layer):
                 box = copy(self.data.boxes[index[0]])
                 if self._fixed is None:
                     self._fixed_index = np.mod(index[1]+4,8)
-                    self._fixed = box
+                    self._fixed_vertex = box[self._fixed_index]
                     self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
 
                 size = box[np.mod(self._fixed_index+4,8)] - box[self._fixed_index]
 
                 if np.mod(self._fixed_index, 2) == 0:
                     # corner selected
-                    fixed = self._fixed[self._fixed_index]
+                    fixed = self._fixed_vertex
                     new = coord
                     if self._fixed_aspect:
                         ratio = abs((new - fixed)[1]/(new - fixed)[0])
@@ -832,16 +834,14 @@ class Shapes(Layer):
                     scale = (new - fixed)/size
                 elif np.mod(self._fixed_index, 4) == 1:
                     # top selected
-                    fixed = self._fixed[np.mod(self._fixed_index-1,8)]
-                    new = np.array([self._fixed[np.mod(self._fixed_index+1,8)][0], coord[1]])
-                    scale = (new - fixed)/size
-                    scale[0] = 1
+                    fixed = self._fixed_vertex[1]
+                    new = coord[1]
+                    scale = np.array([1, (new - fixed)/size[1]])
                 else:
                     # side selected
-                    fixed = self._fixed[np.mod(self._fixed_index-1,8)]
-                    new = np.array([coord[0], self._fixed[np.mod(self._fixed_index+1,8)][1]])
-                    scale = (new - fixed)/size
-                    scale[1] = 1
+                    fixed = self._fixed_vertex[0]
+                    new = coord[0]
+                    scale = np.array([(new - fixed)/size[0], 1])
 
                 # prvent box from dissappearing if shrunk near 0
                 scale[scale==0]=1

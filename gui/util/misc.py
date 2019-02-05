@@ -1,5 +1,31 @@
 """Miscellaneous utility functions.
 """
+from numpy import multiply, all, array
+
+def inside_boxes(boxes):
+    """Checks which boxes contain the origin
+    Parameters
+    ----------
+    boxes : np.ndarray
+        Nx8 array of N boxes that should be checked
+    """
+
+    AB = boxes[:,0] - boxes[:,6]
+    AM = boxes[:,0]
+    BC = boxes[:,6] - boxes[:,4]
+    BM = boxes[:,6]
+
+    ABAM = multiply(AB, AM).sum(1)
+    ABAB = multiply(AB, AB).sum(1)
+    BCBM = multiply(BC, BM).sum(1)
+    BCBC = multiply(BC, BC).sum(1)
+
+    c1 = 0 <= ABAM
+    c2 = ABAM <= ABAB
+    c3 = 0 <= BCBM
+    c4 = BCBM <= BCBC
+
+    return all(array([c1, c2, c3, c4]), axis=0)
 
 def is_permutation(ar, N):
     """Checks is an array is a permutation of the intergers 0, ... N-1
