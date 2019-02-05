@@ -238,7 +238,6 @@ class Shapes(Layer):
     def remove_shapes(self, index=True):
         """Remove shapes specified in index.
         """
-
         if index==True:
             self.data.remove_all_shapes()
             self._show_faces = np.empty((0), dtype=bool)
@@ -253,7 +252,6 @@ class Shapes(Layer):
             self._remove_one_shape(index)
             self.z_order = self._z_order
 
-
     def _remove_one_shape(self, index):
         assert(type(index) is int)
         faces_indices = self.data._mesh_faces_index[:, 0]
@@ -265,67 +263,67 @@ class Shapes(Layer):
         self._show_faces = self._show_faces[faces_indices!=index]
         self._color_array = self._color_array[faces_indices!=index]
 
-    def scale_shapes(self, scale, coord=-1, index=True):
+    def scale_shapes(self, scale, vertex=-1, index=True):
         """Perfroms a scaling on selected shapes
         Parameters
         ----------
         scale : float, list
             scalar or list specifying rescaling of shapes in 2D.
-        coord : int
+        vertex : int
             coordinate of bounding box to use as center of scaling.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[coord]
+        center = self.data.selected_box(index)[vertex]
         self.data.scale_shapes(scale, center=center, index=index)
         self._refresh()
 
-    def flip_vertical_shapes(self, coord=-1, index=True):
+    def flip_vertical_shapes(self, vertex=-1, index=True):
         """Perfroms an vertical flip on selected shapes
         Parameters
         ----------
-        coord : int
+        vertex : int
             coordinate of bounding box to use as center of flip axes.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[coord]
+        center = self.data.selected_box(index)[vertex]
         self.data.flip_vertical_shapes(center=center, index=index)
         self._refresh()
 
-    def flip_horizontal_shapes(self, coord=-1, index=True):
+    def flip_horizontal_shapes(self, vertex=-1, index=True):
         """Perfroms an horizontal flip on selected shapes
         Parameters
         ----------
-        coord : int
+        vertex : int
             coordinate of bounding box to use as center of flip axes.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[coord]
+        center = self.data.selected_box(index)[vertex]
         self.data.flip_horizontal_shapes(center=center, index=index)
         self._refresh()
 
-    def rotate_shapes(self, angle, coord=-1, index=True):
+    def rotate_shapes(self, angle, vertex=-1, index=True):
         """Perfroms a rotation on selected shapes
         Parameters
         ----------
         angle : float
             angle specifying rotation of shapes in degrees.
-        coord : int
+        vertex : int
             coordinate of bounding box to use as center of rotation.
         index : bool, list, int
             index of objects to be selected. Where True corresponds to all
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[coord]
+        center = self.data.selected_box(index)[vertex]
         self.data.rotate_shapes(angle, center=center, index=index)
         self._refresh()
 
@@ -628,6 +626,7 @@ class Shapes(Layer):
                 top_vertex = None
             # Check if index inside bounding box
             # currently this will fail for a rotated shape / flipped ....
+            # could either use real bbox or use triangles in meshes?????
             in_slice_matches = np.all(np.array([np.all(offsets[:,0]>=0, axis=1), np.all(offsets[:,4]<=0, axis=1)]), axis=0)
             indices = in_slice_matches.nonzero()
             if len(indices[0]) > 0:
@@ -802,66 +801,53 @@ class Shapes(Layer):
         """
         self._is_moving=True
         index = self._selected_shapes
-        print('adddd')
-        if index is None:
-            pass
-        else:
+        if index is not None:
             if index[1] is None:
-                #Check where dragging box from
-                print('asdasda')
+                #Check where dragging box from to move whole object
                 if self._drag_start is None:
-                    shift = coord - self.data.boxes[index[0]][-1]
-                else:
-                    shift = coord - self._drag_start
-                print(shift, index[0])
+                    self._drag_start = coord - self.data.boxes[index[0]][-1]
+                shift = coord - self.data.boxes[index[0]][-1] - self._drag_start
                 self.shift_shapes(shift, index=index[0])
-                print('eeeeeeeeee')
+                self._set_highlight()
+            else:
+                #Vertex is being dragged so resize object
+                box = copy(self.data.boxes[index[0]])
+                if self._fixed is None:
+                    self._fixed_index = np.mod(index[1]+4,8)
+                    self._fixed = box
+                    self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
 
-            # else:
-            #     box = self._expand_bounding_box(self.data[index[0]])
-            #     if self._fixed is None:
-            #         self._fixed_index = np.mod(index[1]+4,8)
-            #         self._fixed = box
-            #         self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
-            #
-            #     if np.mod(self._fixed_index, 2) == 0:
-            #         # corner selected
-            #         br = self._fixed[self._fixed_index]
-            #         tl = coord
-            #     elif np.mod(self._fixed_index, 4) == 1:
-            #         # top selected
-            #         br = self._fixed[np.mod(self._fixed_index-1,8)]
-            #         tl = [self._fixed[np.mod(self._fixed_index+1,8)][0], coord[1]]
-            #     else:
-            #         # side selected
-            #         br = self._fixed[np.mod(self._fixed_index-1,8)]
-            #         tl = [coord[0], self._fixed[np.mod(self._fixed_index+1,8)][1]]
-            #
-            #     if tl[0]==br[0]:
-            #         if index[1] == 1 or index[1] == 2:
-            #             tl[0] = tl[0]+1
-            #         else:
-            #             tl[0] = tl[0]-1
-            #     if tl[1]==br[1]:
-            #         if index[1] == 2 or index[1] == 3:
-            #             tl[1] = tl[1]+1
-            #         else:
-            #             tl[1] = tl[1]-1
-            #
-            #     if self._fixed_aspect:
-            #         ratio = abs((tl[1]-br[1])/(tl[0]-br[0]))
-            #         if np.mod(self._fixed_index, 2) == 0:
-            #             # corner selected
-            #             if ratio>self._aspect_ratio:
-            #                 tl[1] = br[1]+(tl[1]-br[1])*self._aspect_ratio/ratio
-            #             else:
-            #                 tl[0] = br[0]+(tl[0]-br[0])*ratio/self._aspect_ratio
-            #
-            #     self.data[index[0]] = [tl, br]
+                size = box[np.mod(self._fixed_index+4,8)] - box[self._fixed_index]
 
-            self.highlight = True
-            self._selected_shapes_stored = index
-            self._refresh()
+                if np.mod(self._fixed_index, 2) == 0:
+                    # corner selected
+                    fixed = self._fixed[self._fixed_index]
+                    new = coord
+                    if self._fixed_aspect:
+                        ratio = abs((new - fixed)[1]/(new - fixed)[0])
+                        if ratio>self._aspect_ratio:
+                            new[1] = fixed[1]+(new[1]-fixed[1])*self._aspect_ratio/ratio
+                        else:
+                            new[0] = fixed[0]+(new[0]-fixed[0])*ratio/self._aspect_ratio
+                    scale = (new - fixed)/size
+                elif np.mod(self._fixed_index, 4) == 1:
+                    # top selected
+                    fixed = self._fixed[np.mod(self._fixed_index-1,8)]
+                    new = np.array([self._fixed[np.mod(self._fixed_index+1,8)][0], coord[1]])
+                    scale = (new - fixed)/size
+                    scale[0] = 1
+                else:
+                    # side selected
+                    fixed = self._fixed[np.mod(self._fixed_index-1,8)]
+                    new = np.array([coord[0], self._fixed[np.mod(self._fixed_index+1,8)][1]])
+                    scale = (new - fixed)/size
+                    scale[1] = 1
+
+                # prvent box from dissappearing if shrunk near 0
+                scale[scale==0]=1
+
+                self.scale_shapes(scale, vertex=self._fixed_index, index=index[0])
+                self._set_highlight()
 
     def _select(self):
         if self._selected_shapes == self._selected_shapes_stored:
@@ -901,8 +887,8 @@ class Shapes(Layer):
             coord = self._get_coord(position, indices)
             if pressed and not ctrl:
                 #Set coordinate of initial drag
-                self._selected_shapes = self._shape_at(coord)
-                self._drag_start = coord
+                if self._is_moving==False:
+                    self._selected_shapes = self._shape_at(coord)
             # elif pressed and ctrl:
             #     #Delete an existing box if any on control press
             #     self._selected_shapes = self._get_selected_shapes(coord)
@@ -912,6 +898,7 @@ class Shapes(Layer):
                 self._move(coord)
             elif released:
                 self._is_moving=False
+                self._drag_start=None
             elif self._is_moving:
                 pass
             else:

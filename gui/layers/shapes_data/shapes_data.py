@@ -117,7 +117,7 @@ class ShapesData():
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        if type(scale) is list:
+        if isinstance(scale, (list, np.ndarray)):
             transform = np.array([[scale[0], 0, 0], [0, scale[1], 0]])
         else:
             transform = np.array([[scale, 0, 0], [0, scale, 0]])
@@ -214,8 +214,8 @@ class ShapesData():
             integer to that particular object.
         """
         A = np.concatenate((transform, [[0, 0, 1]]), axis=0).T
-
         indices = self._select_meshes(index, self._mesh_vertices_index)
+
         x = np.concatenate((self._mesh_vertices[indices], np.ones((len(indices), 1))), axis=1)
         self._mesh_vertices[indices] = np.matmul(x, A)[:,:2]
         x = np.concatenate((self._mesh_vertices_centers[indices], np.ones((len(indices), 1))), axis=1)
@@ -237,9 +237,9 @@ class ShapesData():
         if object_type is None:
             if index is True:
                 indices = [i for i in range(len(meshes))]
-            elif type(index) is list:
+            elif isinstance(index, (list, np.ndarray)):
                 indices = [i for i, x in enumerate(meshes) if x[0] in index]
-            elif type(index) is int:
+            elif np.isscalar(index):
                 indices = meshes[:,0] == index
                 indices = np.where(indices)[0]
             else:
@@ -247,9 +247,9 @@ class ShapesData():
         else:
             if index is True:
                 indices = meshes[:,2]==object_type
-            elif type(index) is list:
+            elif isinstance(index, (list, np.ndarray)):
                 indices = [i for i, x in enumerate(meshes) if x[0] in index and x[2]==object_type]
-            elif type(index) is int:
+            elif np.isscalar(index):
                 index = np.broadcast_to([index, object_type], (len(meshes), 2))
                 indices = np.all(np.equal(meshes[:,[0, 2]], index), axis=1)
                 indices = np.where(indices)[0]
