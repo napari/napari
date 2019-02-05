@@ -63,7 +63,8 @@ task:
         - rm install.sh
 
   install_script:
-    - python -m pip install --retries 3 --upgrade pip
+    # pip >= 19.0 crashes on Linux with Python 3.7
+    - python -m pip install --retries 3 --upgrade "pip<19.0"
     - pip install --retries 3 -r requirements.txt
     - python setup.py develop
 
