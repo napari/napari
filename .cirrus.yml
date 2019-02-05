@@ -29,11 +29,16 @@ task:
       windows_container:
         image: cirrusci/windowsservercore:2016
       env:
-        PATH: $PATH;$USERPROFILE\anaconda\Scripts;$USERPROFILE\anaconda
+        PATH: $PATH;$USERPROFILE\anaconda\Scripts;$USERPROFILE\anaconda;$ALLUSERSPROFILE\chocolately\bin
         # https://github.com/vispy/vispy/blob/master/appveyor.yml#L44
         VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
         PYTHON_ARCH: 64
       system_script:
+        # install chocolatey (windows package manager)
+        - ps: iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        # install OpenSSL
+        - ps: choco install -y openssl.light
+        # install OpenGL
         - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
         - powershell ./opengl.ps1
         - ps: rm opengl.ps1
