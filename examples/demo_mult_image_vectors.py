@@ -17,6 +17,8 @@ import numpy as np
 
 from skimage import data
 
+import time
+
 class vector_window_example(QWidget):
     '''
     This example generates an image of vectors
@@ -29,7 +31,7 @@ class vector_window_example(QWidget):
         self.viewer = self.win.viewer
 
         # sample vector data
-        N = 512
+        N = 6
         pos = np.zeros((N*N, 2), dtype=np.float32)
         xdim = np.linspace(0, N, N)
         ydim = np.linspace(0, N, N)
@@ -41,11 +43,13 @@ class vector_window_example(QWidget):
         # add a value to every other y-coordinate
         pos[1::2, 1] += 0.5
 
-        mk1 = self.viewer.add_markers(pos)
-        mk1.size = 0.3
+        # mk1 = self.viewer.add_markers(pos)
+        # mk1.size = 0.3
         vect1 = self.viewer.add_vectors(pos)
         vect1.width = 4
-        # self.viewer.add_image(data.astronaut(), {})
+        vect1.arrow_size = 100
+        vect1.arrows = pos.reshape((len(pos)//2, 4)) + 0.5
+        # vect1.arrows = None
 
         self.win.show()
 

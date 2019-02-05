@@ -9,20 +9,23 @@
 # python_version  :3.6
 
 from typing import Union
-from collections import Iterable
-from PyQt5.QtCore import pyqtSignal
 
 import numpy as np
 
 from ._base_layer import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Line as LinesNode
+from .._vispy.scene.visuals import Arrow as ArrowNode
 from vispy.color import get_color_names
 
 from .qt import QtVectorsLayer
 
 @add_to_viewer
 class Vectors(Layer):
+    #TODO: change input data type: receive (M,N,2) (for 2d vector array), where magnitude and angle passed.
+    #TODO: think about magnitude zero
+    #TODO: add ArrowNode?  Dynamically adjust this via dropdown?
+    #TODO: change "averaging" to something more natural
     """
     Properties
     ----------
@@ -80,10 +83,9 @@ class Vectors(Layer):
 
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
+    http://vispy.org/visuals.html
     """
-    
-    line_length = pyqtSignal(float)
-    
+
     def __init__(
         self, vectors,
             width=1,
@@ -91,21 +93,22 @@ class Vectors(Layer):
             connector='segments',
             averaging='1x1',
             length = 10,
-            method='agg',
-            antialias=True):
+            arrow_size=10):
 
-        visual = LinesNode()
+        # visual = LinesNode()
+        visual = ArrowNode()
+        # visual = ArrowNode(arrow_size=10, color='white')
         super().__init__(visual)
 
         # Save the line vertex coordinates
         self._vectors = vectors
+        self._arrows = None
+        self._arrow_size = arrow_size
 
         # Save the line style params
         self._width = width
         self._color = color
         self._connector = connector
-        self._method = method
-        self._antialias = antialias
 
         self._connector_types = ['segments']
         self._colors = get_color_names()
@@ -123,32 +126,110 @@ class Vectors(Layer):
         self.name = 'vectors'
         self._qt = QtVectorsLayer(self)
 
+    #====================== Property getter and setters =======================================
     @property
     def vectors(self) -> np.ndarray:
-        """
-
-        :return: coordinates of line vertices
-        """
         return self._vectors
 
     @vectors.setter
     def vectors(self, vectors: np.ndarray):
-        self._vectors = vectors
+        """
+        Can accept two data types:
+            1) (N, 4) array with elements (x, y, u, v),
+                where x-y are position (center) and u-v are x-y projections of the vector
+            2) (N, M, 2) array with elements (u, v)
+                where u-v are projections of the vector
+                position is one vector per-pixel in the NxM array
+        :param vectors:
+        :return:
+        """
+
+        if vectors.shape[-1] == 4:
+            self._vectors = self._convert_proj_to_coordinates(vectors)
+        elif len(vectors.shape) == 3 and vectors.shape[-1] == 2:
+            raise NotImplementedError("image-like vector data is not supported")
+            # self._vectors = self._convert_polar_to_coordinates(vectors)
+        else:
+            raise NotImplementedError("Vector data of shape %s is not supported" % str(vectors.shape))
 
         self.viewer._child_layer_changed = True
         self._refresh()
 
+    def _convert_polar_to_coordinates(self, vect) -> np.ndarray:
+        """
+        To convert an image-like array of (x-proj, y-proj) into an
+            image-like array of vectors
+
+        :param vect: np.ndarray of shape (N, M, 2)
+        :return: position list of shape (N, 2) for vispy
+        """
+
+        xdim = vect.shape[0]
+        ydim = vect.shape[1]
+        stride_x = 1
+        stride_y = 1
+        length = 1
+        # azimuth = np.arctan2(vect[:,:,1],vect[:,:,0])
+        # retardance = np.sqrt(vect[:,:,0].dot(vect[:,:,1]))
+
+        # create empty vector of necessary shape
+        # every pixel has 2 coordinates,
+        pos = np.zeros((2 * xdim * ydim, 2), dtype=np.float32)
+
+        # create coordinate spacing for x-y
+        # double the num of elements by doubling x sampling
+        xspace = np.linspace(0, stride_x * xdim, 2 * xdim)
+        yspace = np.linspace(0, stride_y * ydim, ydim)
+        xv, yv = np.meshgrid(xspace, yspace)
+
+        # assign coordinates (pos) to all pixels
+        pos[:, 0] = xv.flatten()
+        pos[:, 1] = yv.flatten()
+
+        # pixel midpoints are the first x-value of positions
+        midpt = np.zeros((xdim * ydim, 2), dtype=np.float32)
+        midpt[:, 0] = pos[0::2, 0]
+        midpt[:, 1] = pos[0::2, 1]
+
+        # rotate coordinates about midpoint to represent azimuth angle and length
+        # azimuth_flat = azimuth.flatten()
+        # retard_flat = retardance.flatten()
+        # pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * length * retard_flat * np.cos(azimuth_flat)
+        # pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * length * retard_flat * np.sin(azimuth_flat)
+        # pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * length * retard_flat * np.cos(azimuth_flat)
+        # pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * length * retard_flat * np.sin(azimuth_flat)
+
+        pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * length * vect[:,:,0]
+        pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * length * vect[:,:,1]
+        pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * length * vect[:,:,0]
+        pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * length * vect[:,:,1]
+
+        return pos
+
+
+    # def _convert_polar_to_coordinates(self, vect):
+
+
+
     @property
-    def data(self) -> np.ndarray:
-        """
+    def arrow_size(self):
+        return self._arrow_size
 
-        :return: coordinates of line vertices
-        """
-        return self._vectors
+    @arrow_size.setter
+    def arrow_size(self, val: int):
+        self._arrow_size = val
+        self._need_visual_update = True
+        self._refresh()
 
-    @data.setter
-    def data(self, data: np.ndarray) -> None:
-        self.vectors = data
+    @property
+    def arrows(self):
+        return self._arrows
+
+    @arrows.setter
+    def arrows(self, arrow_pos):
+        self._arrows = arrow_pos
+        self._need_visual_update = True
+        self._refresh()
 
     @property
     def averaging(self) -> str:
@@ -161,6 +242,7 @@ class Vectors(Layer):
     @averaging.setter
     def averaging(self, averaging: str):
         '''
+        Calculates an average vector over a kernel
         Averaging does nothing unless the user binds an observer and updates
             the underlying data manually.
         :param averaging: one of "_avg_dims" above
@@ -207,7 +289,7 @@ class Vectors(Layer):
         for callback in self._len_observers:
             print('length changed, broadcasting to subscribers')
             callback(self._length)
-        self._refresh()
+        # self._refresh()
 
     def length_bind_to(self, callback):
         self._len_observers.append(callback)
@@ -237,50 +319,36 @@ class Vectors(Layer):
         self._connector = connector_type
         self._refresh()
 
+    # =========================== Napari Layer ABC methods =====================
     @property
-    def method(self) -> str:
+    def data(self) -> np.ndarray:
         """
-        *** NOT IMPLEMENTED ***
-        method used to render the lines.  one of:
-            'agg' = anti-grain geometry
-            'gl' = openGL
-        :return: render method
-        """
-        return self._method
 
-    @method.setter
-    def method(self, method_type: str):
+        :return: coordinates of line vertices via the property (and not the private)
         """
-        ** NOT IMPLEMENTED ***
-        :param method_type: 
-        :return: 
-        """
-        self._method = method_type
-        self._refresh()
+        return self.vectors
 
-    @property
-    def antialias(self) -> bool:
+    @data.setter
+    def data(self, data: np.ndarray) -> None:
         """
-        
-        :return: 
+        Set the data via the property, which calls reformatters (and not by altering the private)
+        :param data:
+        :return:
         """
-        return self._antialias
+        self.vectors = data
 
-    @antialias.setter
-    def antialias(self, antialias_bool: str) -> None:
-        """
-        
-        :param antialias_bool: 
-        :return: 
-        """
-        self._antialias = antialias_bool
-        self._refresh()
 
     def _get_shape(self):
         if len(self.vectors) == 0:
             return np.ones(self.vectors.shape,dtype=int)
         else:
             return np.max(self.vectors, axis=0) + 1
+
+    def _refresh(self):
+        """Fully refresh the underlying visual.
+        """
+        self._need_display_update = True
+        self._update()
 
     def _update(self):
         """Update the underlying visual.
@@ -294,33 +362,6 @@ class Vectors(Layer):
             self._need_visual_update = False
             self._node.update()
 
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
-    def _slice_markers(self, indices):
-        """Determines the slice of markers given the indices.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-        # Get a list of the vectors for the markers in this slice
-        vectors = self.vectors
-        if len(vectors) > 0:
-            matches = np.equal(
-                vectors[:, 2:],
-                np.broadcast_to(indices[2:], (len(vectors), len(indices) - 2)))
-
-            matches = np.all(matches, axis=1)
-
-            in_slice_markers = vectors[matches, :2]
-            return in_slice_markers, matches
-        else:
-            return [], []
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -331,22 +372,22 @@ class Vectors(Layer):
             Indices to slice with.
         """
 
-        in_slice_markers, matches = self._slice_markers(indices)
+        in_slice_vectors, matches = self._slice_vectors(indices)
 
-        # Display markers if there are any in this slice
-        if len(in_slice_markers) > 0:
-            # Get the marker sizes
+        # Display vectors if there are any in this slice
+        if len(in_slice_vectors) > 0:
+            # Get the vectors sizes
             if isinstance(self.width, (list, np.ndarray)):
                 sizes = self.width[matches][::-1]
 
             else:
                 sizes = self.width
 
-            # Update the markers node
-            data = np.array(in_slice_markers) + 0.5
+            # Update the vectors node
+            data = np.array(in_slice_vectors) + 0.5
 
         else:
-            # if no markers in this slice send dummy data
+            # if no vectors in this slice send dummy data
             data = np.empty((0, 2))
             sizes = 0
 
@@ -355,7 +396,47 @@ class Vectors(Layer):
             width=self.width,
             color=self.color,
             connect=self.connector)
-            # method=self.method,
-            # antialias=self.antialias)
+            # arrows=self.arrows)
+            # arrow_size=self.arrow_size)
         self._need_visual_update = True
         self._update()
+
+    def _slice_vectors(self, indices):
+        """Determines the slice of markers given the indices.
+
+        Parameters
+        ----------
+        indices : sequence of int or slice
+            Indices to slice with.
+        """
+        # Get a list of the vectors for the vectors in this slice
+
+        # we MUST add a check for vector shape here, and perform reformatting if necessary.
+        # this method gets called upon construction and bypasses calls to reformatting in the getter/setters above.
+        # TODO: must check for vector shape.  Think about where data conversion happens -- here or in property?
+
+        vectors = self.vectors
+        if len(vectors) > 0:
+            matches = np.equal(
+                vectors[:, 2:],
+                np.broadcast_to(indices[2:], (len(vectors),len(indices) - 2) )
+            )
+
+            matches = np.all(matches, axis=1)
+
+            in_slice_vectors = vectors[matches, :2]
+            return in_slice_vectors, matches
+        else:
+            return [], []
+
+
+
+class InvalidDataFormatError(Exception):
+    """
+    To better describe when vector data is not correct
+        more informative than TypeError
+    """
+
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        self.message = message
