@@ -2,12 +2,30 @@
 """
 from numpy import multiply, all, array
 
+def inside_triangles(triangles):
+    """Checks which triangles contain the origin
+    Parameters
+    ----------
+    boxes : np.ndarray
+        Nx3x2 array of N triangles that should be checked
+    """
+
+    AB = triangles[:,1,:] - triangles[:,0,:]
+    AC = triangles[:,2,:] - triangles[:,0,:]
+    BC = triangles[:,2,:] - triangles[:,1,:]
+
+    s_AB = -AB[:,0]*triangles[:,0,1] + AB[:,1]*triangles[:,0,0] >= 0
+    s_AC = -AC[:,0]*triangles[:,0,1] + AC[:,1]*triangles[:,0,0] >= 0
+    s_BC = -BC[:,0]*triangles[:,1,1] + BC[:,1]*triangles[:,1,0] >= 0
+
+    return all(array([s_AB != s_AC, s_AB == s_BC]), axis=0)
+
 def inside_boxes(boxes):
     """Checks which boxes contain the origin
     Parameters
     ----------
     boxes : np.ndarray
-        Nx8 array of N boxes that should be checked
+        Nx8x2 array of N boxes that should be checked
     """
 
     AB = boxes[:,0] - boxes[:,6]

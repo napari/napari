@@ -5,7 +5,7 @@ import numpy as np
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from ..util import is_permutation, inside_boxes
+from ..util import is_permutation, inside_boxes, inside_triangles
 from ._base_layer import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Mesh
@@ -44,7 +44,7 @@ class Shapes(Layer):
                  ellipses=None, polygons=None, edge_width=1, edge_color='black',
                  face_color='white'):
 
-        visual = VisualNode([Markers(), Line(), Mesh()])
+        visual = VisualNode([Markers(), Line(), Mesh(), Mesh()])
 
         super().__init__(visual)
         self.name = 'shapes'
@@ -592,6 +592,28 @@ class Shapes(Layer):
     #         return [], []
     #
     def _shape_at(self, indices):
+        """Determines if any shapes at given indices by looking inside triangle
+        meshes.
+        Parameters
+        ----------
+        indices : sequence of int
+            Indices to check if shape at.
+        """
+
+        z_list = self._z_order.tolist()
+
+        triangles = self.data._mesh_vertices[self.data._mesh_faces] - indices[:2]
+        shapes = self.data._mesh_faces_index[inside_triangles(triangles)]
+
+        if len(shapes) > 0:
+            indices = shapes[:, 0]
+            order_indices = np.array([z_list.index(m) for m in indices])
+            ordered_shapes = indices[np.argsort(order_indices)]
+            return [ordered_shapes[0], None]
+        else:
+            return None
+
+    def _vertex_at(self, indices):
         """Determines if any shapes at given indices.
         Parameters
         ----------
@@ -665,9 +687,9 @@ class Shapes(Layer):
         colors = self._color_array[self._z_order_faces][show_faces]
         vertices = self.data._mesh_vertices
         if len(faces) == 0:
-            self._node._subvisuals[2].set_data(vertices=None, faces=None)
+            self._node._subvisuals[3].set_data(vertices=None, faces=None)
         else:
-            self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
+            self._node._subvisuals[3].set_data(vertices=vertices, faces=faces,
                                                face_colors=colors)
         self._need_visual_update = True
         #self._set_highlight()
@@ -697,8 +719,8 @@ class Shapes(Layer):
         pos = transform.map(position)
         pos = [pos[1], pos[0]]
         coord = copy(indices)
-        coord[0] = int(pos[1])
-        coord[1] = int(pos[0])
+        coord[0] = pos[1]
+        coord[1] = pos[0]
         return np.array(coord)
 
     def get_value(self, position, indices):
@@ -723,8 +745,8 @@ class Shapes(Layer):
         coord = self._get_coord(position, indices)
         value = self._shape_at(coord)
         coord_shift = copy(coord)
-        coord_shift[0] = coord[1]
-        coord_shift[1] = coord[0]
+        coord_shift[0] = int(coord[1])
+        coord_shift[1] = int(coord[0])
         msg = f'{coord_shift}'
         if value is not None:
             msg = msg + ', ' + self.name + ', index ' + str(value[0])
