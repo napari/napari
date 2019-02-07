@@ -602,19 +602,33 @@ class Shapes(Layer):
         indices : sequence of int
             Indices to check if shape at.
         """
+        # Check if mouse inside vertex of bounding box
+        if self._selected_shapes is not None:
+            box = self.data.selected_box(self._selected_shapes[0])[:-1]
+            distances = abs(box - indices[:2])
 
-        z_list = self._z_order.tolist()
+            # Get the vertex sizes
+            sizes = self._vertex_size
 
+            # Check if any matching vertices
+            matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()
+            if len(matches[0]) > 0:
+                return [self._selected_shapes[0], matches[0][-1]]
+
+        # Check if mouse inside shape
         triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_faces]]
         shapes = self.data._mesh_faces_index[inside_triangles(triangles - indices[:2])]
 
         if len(shapes) > 0:
             indices = shapes[:, 0]
+            z_list = self._z_order.tolist()
             order_indices = np.array([z_list.index(m) for m in indices])
             ordered_shapes = indices[np.argsort(order_indices)]
             return [ordered_shapes[0], None]
         else:
             return None
+
+
 
     def _vertex_at(self, indices):
         """Determines if any shapes at given indices.
@@ -700,6 +714,7 @@ class Shapes(Layer):
 
     def _set_highlight(self):
         if self._highlight and self._hover_shapes is not None:
+            # show any hover shapes
             index = self._hover_shapes[0]
             faces_indices = self.data._select_meshes(index, self.data._mesh_faces_index, 1)
             vertices_indices = self.data._select_meshes(index, self.data._mesh_vertices_index, 1)
@@ -707,23 +722,27 @@ class Shapes(Layer):
             faces = self.data._mesh_faces[faces_indices] - vertices_indices[0]
             self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
                                                color=self._highlight_color)
-        # if self._highlight and self._selected_shapes is not None:
-        #     data = self.data.boxes[self._selected_shapes[0]][:-1]
-        #     if self._selected_shapes[1] is None:
-        #         face_color = 'white'
-        #         edge_color = self._highlight_color
-        #     else:
-        #         face_color = self._highlight_color
-        #         edge_color = self._highlight_color
-        #     self._node._subvisuals[0].set_data(data, size=8, face_color=face_color,
-        #                                        edge_color=edge_color, edge_width=1,
-        #                                        symbol='square', scaling=True)
-        #     self._node._subvisuals[1].set_data(pos=data[[0, 2, 4, 6, 0]],
-        #                                        color=edge_color, width=1)
+            # show a bounding box over any selected shapes
+        else:
+            self._node._subvisuals[2].set_data(vertices=None, faces=None)
+
+        if self._highlight and self._selected_shapes is not None:
+            box = self.data.selected_box(self._selected_shapes[0])[:-1]
+            if self._hover_shapes is None:
+                face_color = 'white'
+            elif self._hover_shapes[1] is None:
+                face_color = 'white'
+            else:
+                face_color = self._highlight_color
+            edge_color = self._highlight_color
+            self._node._subvisuals[0].set_data(box, size=8, face_color=face_color,
+                                               edge_color=edge_color, edge_width=1,
+                                               symbol='square', scaling=True)
+            self._node._subvisuals[1].set_data(pos=box[[0, 2, 4, 6, 0]],
+                                               color=edge_color, width=1)
         else:
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
             self._node._subvisuals[1].set_data(pos=None, width=0)
-            self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
     def _get_coord(self, position, indices):
         max_shape = self.viewer.dimensions.max_shape
@@ -918,6 +937,7 @@ class Shapes(Layer):
 
         if mode is None:
             #If not in edit or addition mode unselect all
+            self._selected_shapes = None
             self._unselect()
         elif mode == 'edit':
             #If in edit mode
@@ -926,6 +946,8 @@ class Shapes(Layer):
                 #Set coordinate of initial drag
                 if self._is_moving==False:
                     self._selected_shapes = self._shape_at(coord)
+                    self._select()
+
             # elif pressed and ctrl:
             #     #Delete an existing box if any on control press
             #     self._selected_shapes = self._get_selected_shapes(coord)
@@ -936,6 +958,8 @@ class Shapes(Layer):
             elif released:
                 self._is_moving=False
                 self._drag_start=None
+                self._hover_shapes = self._shape_at(coord)
+                self._select()
             elif self._is_moving:
                 pass
             else:
@@ -944,6 +968,7 @@ class Shapes(Layer):
                 self._select()
                 self._fixed = None
         elif mode == 'add':
+            self._selected_shapes = None
             self._unselect()
         #     #If in addition mode
         #     coord = self._get_coord(position, indices)
