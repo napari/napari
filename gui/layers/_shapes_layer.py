@@ -79,8 +79,11 @@ class Shapes(Layer):
 
         self._highlight = True
         self._highlight_color = (0, 0.6, 1)
+        self._highlight_thickness = 0.5
         self._selected_shapes = None
         self._selected_shapes_stored = None
+        self._hover_shapes = None
+        self._hover_shapes_stored = None
 
         self._drag_start = None
         self._fixed = None
@@ -602,8 +605,8 @@ class Shapes(Layer):
 
         z_list = self._z_order.tolist()
 
-        triangles = self.data._mesh_vertices[self.data._mesh_faces] - indices[:2]
-        shapes = self.data._mesh_faces_index[inside_triangles(triangles)]
+        triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_faces]]
+        shapes = self.data._mesh_faces_index[inside_triangles(triangles - indices[:2])]
 
         if len(shapes) > 0:
             indices = shapes[:, 0]
@@ -696,22 +699,31 @@ class Shapes(Layer):
         self._update()
 
     def _set_highlight(self):
-        if self._highlight and self._selected_shapes is not None:
-            data = self.data.boxes[self._selected_shapes[0]][:-1]
-            if self._selected_shapes[1] is None:
-                face_color = 'white'
-                edge_color = self._highlight_color
-            else:
-                face_color = self._highlight_color
-                edge_color = self._highlight_color
-            self._node._subvisuals[0].set_data(data, size=8, face_color=face_color,
-                                               edge_color=edge_color, edge_width=1,
-                                               symbol='square', scaling=True)
-            self._node._subvisuals[1].set_data(pos=data[[0, 2, 4, 6, 0]],
-                                               color=edge_color, width=1)
+        if self._highlight and self._hover_shapes is not None:
+            index = self._hover_shapes[0]
+            faces_indices = self.data._select_meshes(index, self.data._mesh_faces_index, 1)
+            vertices_indices = self.data._select_meshes(index, self.data._mesh_vertices_index, 1)
+            vertices = self.data._mesh_vertices_centers[vertices_indices] + self._highlight_thickness*self.data._mesh_vertices_offsets[vertices_indices]
+            faces = self.data._mesh_faces[faces_indices] - vertices_indices[0]
+            self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
+                                               color=self._highlight_color)
+        # if self._highlight and self._selected_shapes is not None:
+        #     data = self.data.boxes[self._selected_shapes[0]][:-1]
+        #     if self._selected_shapes[1] is None:
+        #         face_color = 'white'
+        #         edge_color = self._highlight_color
+        #     else:
+        #         face_color = self._highlight_color
+        #         edge_color = self._highlight_color
+        #     self._node._subvisuals[0].set_data(data, size=8, face_color=face_color,
+        #                                        edge_color=edge_color, edge_width=1,
+        #                                        symbol='square', scaling=True)
+        #     self._node._subvisuals[1].set_data(pos=data[[0, 2, 4, 6, 0]],
+        #                                        color=edge_color, width=1)
         else:
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
             self._node._subvisuals[1].set_data(pos=None, width=0)
+            self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
     def _get_coord(self, position, indices):
         max_shape = self.viewer.dimensions.max_shape
@@ -872,16 +884,19 @@ class Shapes(Layer):
                 self._set_highlight()
 
     def _select(self):
-        if self._selected_shapes == self._selected_shapes_stored:
+        if (self._selected_shapes == self._selected_shapes_stored and
+            self._hover_shapes == self._hover_shapes_stored):
             return
         self._highlight = True
         self._selected_shapes_stored = self._selected_shapes
+        self._hover_shapes_stored = self._hover_shapes
         self._set_highlight()
 
     def _unselect(self):
         if self._highlight:
             self._highlight = False
             self._selected_shapes_stored = None
+            self._hover_shapes_stored = None
             self._set_highlight()
 
     def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
@@ -925,7 +940,7 @@ class Shapes(Layer):
                 pass
             else:
                 #Highlight boxes if over any
-                self._selected_shapes = self._shape_at(coord)
+                self._hover_shapes = self._shape_at(coord)
                 self._select()
                 self._fixed = None
         elif mode == 'add':
