@@ -37,6 +37,7 @@ class Layer(VisualWrapper, ABC):
         self._viewer = None
         self._qt = None
         self.name = 'layer'
+        self._freeze = False
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
@@ -135,8 +136,10 @@ class Layer(VisualWrapper, ABC):
         """
 
     def refresh(self):
-        """Fully refreshes the layer.
+        """Fully refreshes the layer. If layer is frozen refresh will not occur
         """
+        if self._freeze:
+            return
         self._refresh()
 
     def get_value(self, position, indices):
