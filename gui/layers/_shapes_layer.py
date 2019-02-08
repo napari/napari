@@ -80,14 +80,15 @@ class Shapes(Layer):
         self._highlight = True
         self._highlight_color = (0, 0.6, 1)
         self._highlight_thickness = 0.5
-        self._selected_shapes = None
-        self._selected_shapes_stored = None
-        self._hover_shapes = None
-        self._hover_shapes_stored = None
+        self._selected_shapes = []
+        self._selected_shapes_stored = []
+        self._hover_shapes = [None, None]
+        self._hover_shapes_stored = [None, None]
 
         self._drag_start = None
-        self._fixed = None
+        self._fixed_vertex = None
         self._fixed_aspect = False
+        self._selected_vertex = None
         self._aspect_ratio = 1
         self._is_moving=False
         self._fixed_index = 0
@@ -169,7 +170,7 @@ class Shapes(Layer):
             z_order_faces = [np.arange(offsets[z], offsets[z]+self._object_counts[z]) for z in self._z_order]
             self._z_order_faces = np.concatenate(z_order_faces)
 
-        self._refresh()
+        self.refresh()
 
     def _get_shape(self):
         return [1, 1]
@@ -281,7 +282,7 @@ class Shapes(Layer):
         """
         center = self.data.selected_box(index)[vertex]
         self.data.scale_shapes(scale, center=center, index=index)
-        self._refresh()
+        self.refresh()
 
     def flip_vertical_shapes(self, vertex=-1, index=True):
         """Perfroms an vertical flip on selected shapes
@@ -296,7 +297,7 @@ class Shapes(Layer):
         """
         center = self.data.selected_box(index)[vertex]
         self.data.flip_vertical_shapes(center=center, index=index)
-        self._refresh()
+        self.refresh()
 
     def flip_horizontal_shapes(self, vertex=-1, index=True):
         """Perfroms an horizontal flip on selected shapes
@@ -311,7 +312,7 @@ class Shapes(Layer):
         """
         center = self.data.selected_box(index)[vertex]
         self.data.flip_horizontal_shapes(center=center, index=index)
-        self._refresh()
+        self.refresh()
 
     def rotate_shapes(self, angle, vertex=-1, index=True):
         """Perfroms a rotation on selected shapes
@@ -328,7 +329,7 @@ class Shapes(Layer):
         """
         center = self.data.selected_box(index)[vertex]
         self.data.rotate_shapes(angle, center=center, index=index)
-        self._refresh()
+        self.refresh()
 
     def shift_shapes(self, shift, index=True):
         """Perfroms an 2D shift on selected shapes
@@ -342,7 +343,7 @@ class Shapes(Layer):
             integer to that particular object.
         """
         self.data.shift_shapes(shift, index=index)
-        self._refresh()
+        self.refresh()
 
     def align_shapes(self, index=True, axis=0, location=1, to_canvas=False):
         """Aligns selected shapes either in horizontal or vertical axis to
@@ -387,7 +388,7 @@ class Shapes(Layer):
             shift = [0, 0]
             shift[axis] = align_point - box[coord][axis]
             self.data.shift_shapes(shift, index=index)
-        self._refresh()
+        self.refresh()
 
     def distribute_shapes(self, index=True, axis=0, location=1, to_canvas=False):
         """Distributes selected shapes either in horizontal or vertical axis to
@@ -441,28 +442,22 @@ class Shapes(Layer):
             shift = [0, 0]
             shift[axis] = align_points - box[coord][axis]
             self.data.shift_shapes(shift, index=index)
-        self._refresh()
+        self.refresh()
 
     def set_thickness(self, index=True, thickness=1):
-        if type(thickness) is list:
+        if isinstance(thickness, (list, np.ndarray)):
             if index is True:
-                pass
-                assert(self.data._mesh_vertices_index[:, 0].max()<len(thickness))
-                for i in self.data._mesh_vertices_index[:, 0].unique():
-                    indices = self.data._select_meshes(i, self.data._mesh_vertices_index, 1)
-                    self.data._mesh_vertices[indices] = (self.data._mesh_vertices_centers[indices]
-                                                         + thickness[i]*self.data._mesh_vertices_offsets[indices])
+                self.data._thickness = thickness
             else:
-                assert(type(index) is list and len(thickness)==len(index))
-                for i in range(len(index)):
-                    indices = self.data._select_meshes(index[i], self.data._mesh_vertices_index, 1)
-                    self.data._mesh_vertices[indices] = (self.data._mesh_vertices_centers[indices]
-                                                         + thickness[i]*self.data._mesh_vertices_offsets[indices])
+                self.data._thickness[index] = thickness
         else:
-            indices = self.data._select_meshes(index, self.data._mesh_vertices_index, 1)
-            self.data._mesh_vertices[indices] = (self.data._mesh_vertices_centers[indices]
-                                                 + thickness*self.data._mesh_vertices_offsets[indices])
-        self._refresh()
+            if index is True:
+                self.data._thickness = np.repeat(thickness, len(self.data._thickness))
+            else:
+                self.data._thickness[index] = np.repeat(thickness, len(index))
+
+        self.data.update_thickness(index)
+        self.refresh()
 
     def move_forward(self, index):
         if type(index) is list:
@@ -530,7 +525,7 @@ class Shapes(Layer):
         else:
             indices = self.data._select_meshes(index=index, meshes=self.data._mesh_faces_index, object_type=object_type)
             self._show_faces[indices] = False
-        self._refresh()
+        self.refresh()
 
     def set_color(self, index=True, edge_color=False, face_color=False):
         if face_color is False:
@@ -571,29 +566,8 @@ class Shapes(Layer):
                 indices = self.data._select_meshes(index, self.data._mesh_faces_index, 1)
                 color = Color(edge_color).rgba
                 self._color_array[indices] = color
-        self._refresh()
+        self.refresh()
 
-    # def _slice_boxes(self, indices):
-    #     """Determines the slice of boxes given the indices.
-    #     Parameters
-    #     ----------
-    #     indices : sequence of int or slice
-    #         Indices to slice with.
-    #     """
-    #     # Get a list of the coords for the markers in this slice
-    #     coords = self.coords
-    #     if len(coords) > 0:
-    #         matches = np.equal(
-    #             coords[:, :, 2:],
-    #             np.broadcast_to(indices[2:], (len(coords), 2, len(indices) - 2)))
-    #
-    #         matches = np.all(matches, axis=(1,2))
-    #
-    #         in_slice_boxes = coords[matches, :, :2]
-    #         return in_slice_boxes, matches
-    #     else:
-    #         return [], []
-    #
     def _shape_at(self, indices):
         """Determines if any shapes at given indices by looking inside triangle
         meshes.
@@ -603,8 +577,8 @@ class Shapes(Layer):
             Indices to check if shape at.
         """
         # Check if mouse inside vertex of bounding box
-        if self._selected_shapes is not None:
-            box = self.data.selected_box(self._selected_shapes[0])[:-1]
+        if len(self._selected_shapes) > 0:
+            box = self.data.selected_box(self._selected_shapes)[:-1]
             distances = abs(box - indices[:2])
 
             # Get the vertex sizes
@@ -626,71 +600,7 @@ class Shapes(Layer):
             ordered_shapes = indices[np.argsort(order_indices)]
             return [ordered_shapes[0], None]
         else:
-            return None
-
-
-
-    def _vertex_at(self, indices):
-        """Determines if any shapes at given indices.
-        Parameters
-        ----------
-        indices : sequence of int
-            Indices to check if shape at.
-        """
-        #in_slice_boxes, matches = self._slice_boxes(indices)
-        in_slice_boxes = self.data.boxes[:,:-1]
-        matches = np.ones(len(in_slice_boxes), dtype=bool)
-        matches = matches.nonzero()[0]
-
-        # Check boxes if there are any in this slice
-        if len(in_slice_boxes) > 0:
-            z_list = self._z_order.tolist()
-
-            offsets = in_slice_boxes - indices[:2]
-            distances = abs(offsets)
-
-            # Get the vertex sizes
-            sizes = self._vertex_size
-
-            # Check if any matching vertices
-            in_slice_matches = np.all(distances <=  self._vertex_size/2, axis=2)
-            indices = in_slice_matches.nonzero()
-            if len(indices[0]) > 0:
-                cursor_matches = matches[indices[0]]
-                order_indices = np.array([z_list.index(m) for m in cursor_matches])
-                ordered_shapes = cursor_matches[np.argsort(order_indices)]
-                top_vertex = [ordered_shapes[0], indices[1][-1]]
-            else:
-                top_vertex = None
-
-            # Check if origin inside shifted bounding boxes
-            # currently this will fail for a rotated shape / flipped ....
-            # could either use real bbox or use triangles in meshes?????
-
-            in_slice_matches = inside_boxes(offsets)
-            indices = in_slice_matches.nonzero()
-            if len(indices[0]) > 0:
-                cursor_matches = matches[indices[0]]
-                order_indices = np.array([z_list.index(m) for m in cursor_matches])
-                ordered_shapes = cursor_matches[np.argsort(order_indices)]
-                top_inside = [ordered_shapes[0], None]
-            else:
-                top_inside = None
-
-            if top_inside is not None and top_vertex is not None:
-                z_list = self._z_order.tolist()
-                if z_list.index(top_inside[0]) < z_list.index(top_vertex[0]):
-                    return top_inside
-                else:
-                    return top_vertex
-            elif top_inside is not None:
-                return top_inside
-            elif top_vertex is not None:
-                return top_vertex
-            else:
-                return None
-        else:
-            return None
+            return [None, None]
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -713,22 +623,39 @@ class Shapes(Layer):
         self._update()
 
     def _set_highlight(self):
-        if self._highlight and self._hover_shapes is not None:
-            # show any hover shapes
-            index = self._hover_shapes[0]
+        if self._highlight and (self._hover_shapes[0] is not None or len(self._selected_shapes)>0):
+
+            # show outlines hover shape or any selected shapes
+            if len(self._selected_shapes)>0:
+                index = copy(self._selected_shapes)
+                if self._hover_shapes[0] is not None:
+                    if self._hover_shapes[0] in index:
+                        pass
+                    else:
+                        index.append(self._hover_shapes[0])
+                index.sort()
+            else:
+                index = self._hover_shapes[0]
+
             faces_indices = self.data._select_meshes(index, self.data._mesh_faces_index, 1)
             vertices_indices = self.data._select_meshes(index, self.data._mesh_vertices_index, 1)
             vertices = self.data._mesh_vertices_centers[vertices_indices] + self._highlight_thickness*self.data._mesh_vertices_offsets[vertices_indices]
-            faces = self.data._mesh_faces[faces_indices] - vertices_indices[0]
+            faces = self.data._mesh_faces[faces_indices]
+            if type(index) is list:
+                faces_index = self.data._mesh_faces_index[faces_indices][:,0]
+                starts = np.unique(self.data._mesh_vertices_index[vertices_indices][:,0], return_index=True)[1]
+                for i, ind in enumerate(index):
+                    faces[faces_index==ind] = faces[faces_index==ind] - vertices_indices[starts[i]] + starts[i]
+            else:
+                faces = faces - vertices_indices[0]
             self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
                                                color=self._highlight_color)
-            # show a bounding box over any selected shapes
         else:
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
-        if self._highlight and self._selected_shapes is not None:
-            box = self.data.selected_box(self._selected_shapes[0])[:-1]
-            if self._hover_shapes is None:
+        if self._highlight and len(self._selected_shapes) > 0:
+            box = self.data.selected_box(self._selected_shapes)[:-1]
+            if self._hover_shapes[0] is None:
                 face_color = 'white'
             elif self._hover_shapes[1] is None:
                 face_color = 'white'
@@ -775,13 +702,11 @@ class Shapes(Layer):
         """
         coord = self._get_coord(position, indices)
         value = self._shape_at(coord)
-        coord_shift = copy(coord)
-        coord_shift[0] = int(coord[1])
-        coord_shift[1] = int(coord[0])
+        coord_shift = [int(coord[1]), int(coord[0])]
         msg = f'{coord_shift}'
-        if value is not None:
+        if value[0] is not None:
             msg = msg + ', ' + self.name + ', index ' + str(value[0])
-        return coord, value, msg
+        return coord, value[0], msg
 
     # def _add(self, coord, br=None):
     #     """Returns coordinates, values, and a string
@@ -826,7 +751,7 @@ class Shapes(Layer):
     #     # print('index', index)
     #     self.data = append(self.data, [[tl, br]], axis=0)
     #     self._selected_shapes = [len(self.data)-1, index]
-    #     self._refresh()
+    #     self.refresh()
     #
     # def _remove(self, coord):
     #     """Returns coordinates, values, and a string
@@ -844,7 +769,7 @@ class Shapes(Layer):
     #     else:
     #         self.data = delete(self.data, index[0], axis=0)
     #         self._selected_shapes = self._get_selected_shapes(coord)
-    #         self._refresh()
+    #         self.refresh()
     #
     def _move(self, coord):
         """Moves object at given mouse position
@@ -856,19 +781,22 @@ class Shapes(Layer):
         """
         self._is_moving=True
         index = self._selected_shapes
-        if index is not None:
-            if index[1] is None:
+        vertex = self._selected_vertex
+        if len(index) > 0:
+            if vertex is None:
                 #Check where dragging box from to move whole object
                 if self._drag_start is None:
-                    self._drag_start = coord - self.data.boxes[index[0]][-1]
-                shift = coord - self.data.boxes[index[0]][-1] - self._drag_start
-                self.shift_shapes(shift, index=index[0])
+                    center = self.data.selected_box(index)[-1]
+                    self._drag_start = coord - center
+                center = self.data.selected_box(index)[-1]
+                shift = coord - center - self._drag_start
+                self.shift_shapes(shift, index=index)
                 self._set_highlight()
             else:
                 #Vertex is being dragged so resize object
-                box = copy(self.data.boxes[index[0]])
-                if self._fixed is None:
-                    self._fixed_index = np.mod(index[1]+4,8)
+                box = self.data.selected_box(index)
+                if self._fixed_vertex is None:
+                    self._fixed_index = np.mod(vertex+4,8)
                     self._fixed_vertex = box[self._fixed_index]
                     self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
 
@@ -898,8 +826,8 @@ class Shapes(Layer):
 
                 # prvent box from dissappearing if shrunk near 0
                 scale[scale==0]=1
-
-                self.scale_shapes(scale, vertex=self._fixed_index, index=index[0])
+                #print(self._fixed_index, scale)
+                self.scale_shapes(scale, vertex=self._fixed_index, index=index)
                 self._set_highlight()
 
     def _select(self):
@@ -907,15 +835,15 @@ class Shapes(Layer):
             self._hover_shapes == self._hover_shapes_stored):
             return
         self._highlight = True
-        self._selected_shapes_stored = self._selected_shapes
-        self._hover_shapes_stored = self._hover_shapes
+        self._selected_shapes_stored = copy(self._selected_shapes)
+        self._hover_shapes_stored = copy(self._hover_shapes)
         self._set_highlight()
 
     def _unselect(self):
         if self._highlight:
             self._highlight = False
-            self._selected_shapes_stored = None
-            self._hover_shapes_stored = None
+            self._selected_shapes_stored = []
+            self._hover_shapes_stored = [None, None]
             self._set_highlight()
 
     def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
@@ -929,6 +857,7 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
+        # Adjust shape of box on shift key press if currently moving
         if not self._fixed_aspect == shift:
             self._fixed_aspect = shift
             if self._is_moving:
@@ -937,38 +866,47 @@ class Shapes(Layer):
 
         if mode is None:
             #If not in edit or addition mode unselect all
-            self._selected_shapes = None
+            self._selected_shapes = []
             self._unselect()
         elif mode == 'edit':
             #If in edit mode
             coord = self._get_coord(position, indices)
-            if pressed and not ctrl:
-                #Set coordinate of initial drag
+            if pressed:
+                #print('layer press', self._is_moving)
                 if self._is_moving==False:
-                    self._selected_shapes = self._shape_at(coord)
+                    shape = self._shape_at(coord)
+                    self._selected_vertex = shape[1]
+                    if shift and shape[0] is not None:
+                        if shape[0] in self._selected_shapes:
+                            self._selected_shapes.remove(shape[0])
+                        else:
+                            self._selected_shapes.append(shape[0])
+                    elif shape[0] is not None:
+                        self._selected_shapes = [shape[0]]
+                    elif not shift:
+                        self._selected_shapes = []
                     self._select()
-
-            # elif pressed and ctrl:
-            #     #Delete an existing box if any on control press
-            #     self._selected_shapes = self._get_selected_shapes(coord)
-            #     self._remove(coord)
             elif moving and dragging:
-                #Drag an existing box if any
+                #print('layer moving!!!!')
+                #Drag any selected shapes
                 self._move(coord)
             elif released:
+                #print('layer release!!!!')
                 self._is_moving=False
                 self._drag_start=None
+                self._fixed_vertex = None
+                self._selected_vertex = None
                 self._hover_shapes = self._shape_at(coord)
                 self._select()
             elif self._is_moving:
+                #print('moving passsss!!!!')
                 pass
             else:
                 #Highlight boxes if over any
                 self._hover_shapes = self._shape_at(coord)
                 self._select()
-                self._fixed = None
         elif mode == 'add':
-            self._selected_shapes = None
+            self._selected_shapes = []
             self._unselect()
         #     #If in addition mode
         #     coord = self._get_coord(position, indices)
