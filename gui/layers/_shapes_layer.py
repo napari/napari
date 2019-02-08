@@ -873,7 +873,7 @@ class Shapes(Layer):
             coord = self._get_coord(position, indices)
             if pressed:
                 #print('layer press', self._is_moving)
-                if self._is_moving==False:
+                if not self._is_moving:
                     shape = self._shape_at(coord)
                     self._selected_vertex = shape[1]
                     if shift and shape[0] is not None:
@@ -882,8 +882,9 @@ class Shapes(Layer):
                         else:
                             self._selected_shapes.append(shape[0])
                     elif shape[0] is not None:
-                        self._selected_shapes = [shape[0]]
-                    elif not shift:
+                        if shape[0] not in self._selected_shapes:
+                            self._selected_shapes = [shape[0]]
+                    else:
                         self._selected_shapes = []
                     self._select()
             elif moving and dragging:
@@ -892,11 +893,19 @@ class Shapes(Layer):
                 self._move(coord)
             elif released:
                 #print('layer release!!!!')
+                shape = self._shape_at(coord)
+                if not self._is_moving:
+                    if shift and shape[0] is not None:
+                        pass
+                    elif shape[0] is not None:
+                        self._selected_shapes = [shape[0]]
+                    elif not shift:
+                        self._selected_shapes = []
                 self._is_moving=False
                 self._drag_start=None
                 self._fixed_vertex = None
                 self._selected_vertex = None
-                self._hover_shapes = self._shape_at(coord)
+                self._hover_shapes = shape
                 self._select()
             elif self._is_moving:
                 #print('moving passsss!!!!')
