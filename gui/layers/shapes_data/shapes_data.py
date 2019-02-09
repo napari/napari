@@ -64,12 +64,12 @@ class ShapesData():
         # update thickness for all new shapes
         if np.isscalar(thickness):
             self._thickness = np.concatenate((self._thickness, np.repeat(thickness, new_shapes)), axis=0)
-        elif isinstance(size, Iterable):
+        elif isinstance(index, (list, np.ndarray)):
             if len(thickness) != new_shapes:
              raise TypeError('If thickness is a list/array, must be the same length as '\
                              'number of shapes')
             if isinstance(size, list):
-                thickness = np.asarray(thickness)
+                thickness = np.array(thickness)
             self._thickness = np.concatenate((self._thickness, thickness), axis=0)
         else:
             raise TypeError('thickness should be float or ndarray')
@@ -458,7 +458,7 @@ class ShapesData():
     def select_box(self, index=True):
         if index is True:
             box = self._expand_box(self.vertices)
-        elif type(index) is list:
+        elif isinstance(index, (list, np.ndarray)):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:

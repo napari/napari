@@ -92,6 +92,8 @@ class Shapes(Layer):
         self._aspect_ratio = 1
         self._is_moving=False
         self._fixed_index = 0
+        self._is_selecting = False
+        self._drag_box = None
 
         # self._ready_to_create_box = False
         # self._creating_box = False
@@ -615,6 +617,23 @@ class Shapes(Layer):
         else:
             return [None, None]
 
+    def _shapes_in_box(self, box):
+        box = self.data._expand_box(box)[[0, 4]]
+        triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_faces]]
+
+        # check if triangle corners are inside box
+        points_inside = np.empty(triangles.shape[:-1], dtype=bool)
+        for i in range(3):
+            points_inside[:, i] = np.all(np.concatenate(([box[1] >= triangles[:,0,:], triangles[:,i,:] >= box[0]]), axis=1), axis=1)
+
+        # check if triangle edges intersect box edges
+        # not implemented
+
+        inside = np.any(points_inside, axis=1)
+        shapes = self.data._mesh_faces_index[inside, 0]
+
+        return np.unique(shapes).tolist()
+
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
         Parameters
@@ -681,6 +700,12 @@ class Shapes(Layer):
                                                edge_color=edge_color, edge_width=1,
                                                symbol='square', scaling=True)
             self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
+                                               color=edge_color, width=1)
+        elif self._is_selecting:
+            box = self.data._expand_box(self._drag_box)
+            edge_color = self._highlight_color
+            self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
+            self._node._subvisuals[1].set_data(pos=box[[0, 2, 4, 6, 0]],
                                                color=edge_color, width=1)
         else:
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
@@ -794,10 +819,10 @@ class Shapes(Layer):
         coord : sequence of two int
             Position of mouse cursor in data.
         """
-        self._is_moving=True
         index = self._selected_shapes
         vertex = self._selected_vertex
         if len(index) > 0:
+            self._is_moving=True
             if vertex is None:
                 #Check where dragging box from to move whole object
                 if self._drag_start is None:
@@ -883,6 +908,12 @@ class Shapes(Layer):
 
                 self.data.rotate_shapes(angle, center=self._fixed_vertex, index=index)
                 self.refresh()
+        else:
+            self._is_selecting=True
+            if self._drag_start is None:
+                self._drag_start = coord
+            self._drag_box = np.array([self._drag_start, coord])
+            self._set_highlight()
 
     def _select(self):
         if (self._selected_shapes == self._selected_shapes_stored and
@@ -930,8 +961,7 @@ class Shapes(Layer):
             #If in edit mode
             coord = self._get_coord(position, indices)
             if pressed:
-                #print('layer press', self._is_moving)
-                if not self._is_moving:
+                if not self._is_moving and not self._is_selecting:
                     shape = self._shape_at(coord)
                     self._selected_vertex = shape[1]
                     if self._selected_vertex is None:
@@ -951,27 +981,32 @@ class Shapes(Layer):
                             self.data.select_box(self._selected_shapes)
                         self._select()
             elif moving and dragging:
-                #print('layer moving!!!!')
                 #Drag any selected shapes
                 self._move(coord)
             elif released:
-                #print('layer release!!!!')
                 shape = self._shape_at(coord)
-                if not self._is_moving and not shift:
+                if not self._is_moving and not self._is_selecting and not shift:
                     if shape[0] is not None:
                         self._selected_shapes = [shape[0]]
                         self.data.select_box(self._selected_shapes)
                     else:
                         self._selected_shapes = []
                         self.data.select_box(self._selected_shapes)
+                elif self._is_selecting:
+                    self._selected_shapes = self._shapes_in_box(self._drag_box)
+                    self.data.select_box(self._selected_shapes)
+                    self._is_selecting=False
+                    self._set_highlight()
                 self._is_moving=False
                 self._drag_start=None
+                self._drag_box=None
                 self._fixed_vertex = None
                 self._selected_vertex = None
                 self._hover_shapes = shape
                 self._select()
             elif self._is_moving:
-                #print('moving passsss!!!!')
+                pass
+            elif self._is_selecting:
                 pass
             else:
                 #Highlight boxes if over any
