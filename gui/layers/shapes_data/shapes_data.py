@@ -24,6 +24,7 @@ class ShapesData():
     objects = ['lines', 'rectangles', 'ellipses', 'paths', 'polygons']
     types = ['face', 'edge']
     _ellipse_segments = 100
+    _rotion_handle_length = 20
 
     def __init__(self, lines=None, rectangles=None, ellipses=None, paths=None,
                  polygons=None, thickness=1, rotation=0):
@@ -31,7 +32,7 @@ class ShapesData():
         self.id = np.empty((0), dtype=int) # For N objects, array of shape ids
         self.vertices = np.empty((0, 2)) # Array of M vertices from all N objects
         self.index = np.empty((0), dtype=int) # Object index (0, ..., N-1) for each of M vertices
-        self.boxes = np.empty((0, 9, 2)) # Bounding box + center point for each of N objects
+        self.boxes = np.empty((0, 10, 2)) # Bounding box + center point + rotation handle for each of N objects
         self._thickness = np.empty((0)) # For N objects, array of thicknesses
         self._rotation = np.empty((0)) # For N objects, array of rotation
 
@@ -102,7 +103,7 @@ class ShapesData():
         self.id = np.empty((0), dtype=int) # For N objects, array of shape ids
         self.vertices = np.empty((0, 2)) # Array of M vertices from all N objects
         self.index = np.empty((0), dtype=int) # Object index (0, ..., N-1) for each of M vertices
-        self.boxes = np.empty((0, 9, 2)) # Bounding box + center point for each of N objects
+        self.boxes = np.empty((0, 10, 2)) # Bounding box + center point + rotation handle for each of N objects
         self._thickness = np.empty((0)) # For N objects, array of thicknesses
         self._rotation = np.empty((0)) # For N objects, array of rotation
 
@@ -281,15 +282,21 @@ class ShapesData():
         self._mesh_vertices_offsets[indices] = offsets/transform_norms*original_norms
 
         if type(index) is list:
-            x = np.concatenate((self.boxes[index], np.ones((len(index), 9, 1))), axis=2)
-            self.boxes[index] = np.matmul(x, A)[:,:,:2]
+            x = np.concatenate((self.boxes[index], np.ones((len(index), 10, 1))), axis=2)
+            boxes = np.matmul(x, A)[:,:,:2]
+            boxes[:, 9] = boxes[:, 1] + (boxes[:, 9]-boxes[:, 1])/np.expand_dims(np.linalg.norm(boxes[:,9]-boxes[:,1],axis=1), axis=1)*self._rotion_handle_length
+            self.boxes[index] = boxes
         else:
-            x = np.concatenate((self.boxes[index], np.ones((9, 1))), axis=1)
-            self.boxes[index] = np.matmul(x, A)[:,:2]
+            x = np.concatenate((self.boxes[index], np.ones((10, 1))), axis=1)
+            boxes = np.matmul(x, A)[:,:2]
+            boxes[9] = boxes[1] + (boxes[9]-boxes[1])/np.linalg.norm(boxes[9]-boxes[1])*self._rotion_handle_length
+            self.boxes[index] = boxes
 
         if self.selected_box is not None:
-            x = np.concatenate((self.selected_box, np.ones((9, 1))), axis=1)
-            self.selected_box = np.matmul(x, A)[:,:2]
+            x = np.concatenate((self.selected_box, np.ones((10, 1))), axis=1)
+            boxes = np.matmul(x, A)[:,:2]
+            boxes[9] = boxes[1] + (boxes[9]-boxes[1])/np.linalg.norm(boxes[9]-boxes[1])*self._rotion_handle_length
+            self.selected_box = boxes
 
         indices = np.where(np.isin(self.index, index))[0]
         x = np.concatenate((self.vertices[indices], np.ones((len(indices), 1))), axis=1)
@@ -411,7 +418,9 @@ class ShapesData():
         tr = np.array([max_val[0], min_val[1]])
         br = np.array([max_val[0], max_val[1]])
         bl = np.array([min_val[0], max_val[1]])
-        return np.array([tl, (tl+tr)/2, tr, (tr+br)/2, br, (br+bl)/2, bl, (bl+tl)/2, (tl+tr+br+bl)/4])
+        rot = (tl+tr)/2
+        rot[1] = rot[1]-self._rotion_handle_length
+        return np.array([tl, (tl+tr)/2, tr, (tr+br)/2, br, (br+bl)/2, bl, (bl+tl)/2, (tl+tr+br+bl)/4, rot])
 
     def _expand_rectangle(self, corners):
         tl = np.array([min(corners[0][0],corners[1][0]), min(corners[0][1],corners[1][1])])
@@ -446,10 +455,12 @@ class ShapesData():
         if index is True:
             box = self._expand_box(self.vertices)
         elif type(index) is list:
-            if len(index) > 0:
-                box = self._expand_box(self.vertices[np.isin(self.index, index)])
-            else:
+            if len(index) == 0:
                 box = None
+            elif len(index) == 1:
+                box = copy(self.boxes[index[0]])
+            else:
+                box = self._expand_box(self.vertices[np.isin(self.index, index)])
         else:
             box = copy(self.boxes[index])
         self.selected_box = box

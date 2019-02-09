@@ -255,6 +255,7 @@ class Shapes(Layer):
         else:
             self._remove_one_shape(index)
             self.z_order = self._z_order
+        self._selected_shapes = []
 
     def _remove_one_shape(self, index):
         assert(type(index) is int)
@@ -586,9 +587,11 @@ class Shapes(Layer):
         indices : sequence of int
             Indices to check if shape at.
         """
-        # Check if mouse inside vertex of bounding box
+        # Check if mouse inside vertex of bounding box, including rotation handle
         if len(self._selected_shapes) > 0:
-            box = self.data.selected_box[:-1]
+            inds = list(range(0,8))
+            inds.append(9)
+            box = self.data.selected_box[inds]
             distances = abs(box - indices[:2])
 
             # Get the vertex sizes
@@ -629,7 +632,7 @@ class Shapes(Layer):
             self._node._subvisuals[3].set_data(vertices=vertices, faces=faces,
                                                face_colors=colors)
         self._need_visual_update = True
-        #self._set_highlight()
+        self._set_highlight()
         self._update()
 
     def _set_highlight(self):
@@ -664,7 +667,9 @@ class Shapes(Layer):
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
         if self._highlight and len(self._selected_shapes) > 0:
-            box = self.data.selected_box[:-1]
+            inds = list(range(0,8))
+            inds.append(9)
+            box = self.data.selected_box[inds]
             if self._hover_shapes[0] is None:
                 face_color = 'white'
             elif self._hover_shapes[1] is None:
@@ -675,7 +680,7 @@ class Shapes(Layer):
             self._node._subvisuals[0].set_data(box, size=8, face_color=face_color,
                                                edge_color=edge_color, edge_width=1,
                                                symbol='square', scaling=True)
-            self._node._subvisuals[1].set_data(pos=box[[0, 2, 4, 6, 0]],
+            self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
                                                color=edge_color, width=1)
         else:
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
@@ -801,9 +806,8 @@ class Shapes(Layer):
                 center = self.data.selected_box[-1]
                 shift = coord - center - self._drag_start
                 self.shift_shapes(shift, index=index)
-                self._set_highlight()
-            else:
-                #Vertex is being dragged so resize object
+            elif vertex < 8:
+                #Corner / edge vertex is being dragged so resize object
                 box = self.data.selected_box
                 if self._fixed_vertex is None:
                     self._fixed_index = np.mod(vertex+4,8)
@@ -839,7 +843,10 @@ class Shapes(Layer):
 
                 self.data.scale_shapes(scale, center=self._fixed_vertex, index=index)
                 self.refresh()
-                self._set_highlight()
+            elif vertex==8:
+                #Rotation handle is being dragged so rotate object
+                print('rotateeeeee')
+                pass
 
     def _select(self):
         if (self._selected_shapes == self._selected_shapes_stored and
@@ -891,14 +898,17 @@ class Shapes(Layer):
                     if shift and shape[0] is not None:
                         if shape[0] in self._selected_shapes:
                             self._selected_shapes.remove(shape[0])
+                            self.data.select_box(self._selected_shapes)
                         else:
                             self._selected_shapes.append(shape[0])
+                            self.data.select_box(self._selected_shapes)
                     elif shape[0] is not None:
                         if shape[0] not in self._selected_shapes:
                             self._selected_shapes = [shape[0]]
+                            self.data.select_box(self._selected_shapes)
                     else:
                         self._selected_shapes = []
-                    self.data.select_box(self._selected_shapes)
+                        self.data.select_box(self._selected_shapes)
                     self._select()
             elif moving and dragging:
                 #print('layer moving!!!!')
@@ -910,14 +920,15 @@ class Shapes(Layer):
                 if not self._is_moving and not shift:
                     if shape[0] is not None:
                         self._selected_shapes = [shape[0]]
+                        self.data.select_box(self._selected_shapes)
                     else:
                         self._selected_shapes = []
+                        self.data.select_box(self._selected_shapes)
                 self._is_moving=False
                 self._drag_start=None
                 self._fixed_vertex = None
                 self._selected_vertex = None
                 self._hover_shapes = shape
-                self.data.select_box(self._selected_shapes)
                 self._select()
             elif self._is_moving:
                 #print('moving passsss!!!!')
@@ -925,7 +936,6 @@ class Shapes(Layer):
             else:
                 #Highlight boxes if over any
                 self._hover_shapes = self._shape_at(coord)
-                self.data.select_box(self._selected_shapes)
                 self._select()
         elif mode == 'add':
             self._selected_shapes = []
