@@ -845,8 +845,22 @@ class Shapes(Layer):
                 self.refresh()
             elif vertex==8:
                 #Rotation handle is being dragged so rotate object
-                print('rotateeeeee')
-                pass
+                handle = self.data.selected_box[-1]
+                if self._fixed_vertex is None:
+                    self._fixed_vertex = self.data.selected_box[-2]
+
+                new_offset = coord - self._fixed_vertex
+                new_angle = -np.arctan2(new_offset[0], -new_offset[1])/np.pi*180
+                fixed_offset = handle - self._fixed_vertex
+                fixed_angle = -np.arctan2(fixed_offset[0], -fixed_offset[1])/np.pi*180
+
+                if np.linalg.norm(new_offset)<1:
+                    angle = 0
+                else:
+                    angle = new_angle - fixed_angle
+
+                self.data.rotate_shapes(angle, center=self._fixed_vertex, index=index)
+                self.refresh()
 
     def _select(self):
         if (self._selected_shapes == self._selected_shapes_stored and
