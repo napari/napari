@@ -43,6 +43,8 @@ class ShapesData():
         self._mesh_vertices_centers = np.empty((0, 2)) # Mx2 array of vertices of centers of lines, or vertices of faces
         self._mesh_vertices_offsets = np.empty((0, 2)) # Mx2 array of vertices of offsets of lines, or 0 for faces
 
+        self.selected_box = None
+
         self.add_shapes(lines=lines, rectangles=rectangles, ellipses=ellipses,
                         paths=paths, polygons=polygons, thickness=thickness,
                         rotation=rotation)
@@ -111,6 +113,8 @@ class ShapesData():
 
         self._mesh_vertices_centers = np.empty((0, 2)) # Mx2 array of vertices of centers of lines, or vertices of faces
         self._mesh_vertices_offsets = np.empty((0, 2)) #
+
+        self.selected_box = None
 
     def remove_one_shape(self, index):
         assert(type(index) is int)
@@ -282,6 +286,11 @@ class ShapesData():
         else:
             x = np.concatenate((self.boxes[index], np.ones((9, 1))), axis=1)
             self.boxes[index] = np.matmul(x, A)[:,:2]
+
+        if self.selected_box is not None:
+            x = np.concatenate((self.selected_box, np.ones((9, 1))), axis=1)
+            self.selected_box = np.matmul(x, A)[:,:2]
+
         indices = np.where(np.isin(self.index, index))[0]
         x = np.concatenate((self.vertices[indices], np.ones((len(indices), 1))), axis=1)
         self.vertices[indices] = np.matmul(x, A)[:,:2]
@@ -433,14 +442,17 @@ class ShapesData():
         vertices[0] = np.float32([center[0], center[1]])
         return vertices
 
-    def selected_box(self, index=True):
+    def select_box(self, index=True):
         if index is True:
             box = self._expand_box(self.vertices)
         elif type(index) is list:
-            box = self._expand_box(self.vertices[np.isin(self.index, index)])
+            if len(index) > 0:
+                box = self._expand_box(self.vertices[np.isin(self.index, index)])
+            else:
+                box = None
         else:
             box = copy(self.boxes[index])
-        return box
+        self.selected_box = box
 
     def _append_meshes(self, vertices, faces, index=[0, 0, 0],
                        centers=None, offsets=None):

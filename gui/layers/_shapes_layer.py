@@ -280,7 +280,8 @@ class Shapes(Layer):
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[vertex]
+        self.data.select_box(index)
+        center = self.data.selected_box[vertex]
         self.data.scale_shapes(scale, center=center, index=index)
         self.refresh()
 
@@ -295,7 +296,8 @@ class Shapes(Layer):
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[vertex]
+        self.data.select_box(index)
+        center = self.data.selected_box[vertex]
         self.data.flip_vertical_shapes(center=center, index=index)
         self.refresh()
 
@@ -310,7 +312,8 @@ class Shapes(Layer):
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[vertex]
+        self.data.select_box(index)
+        center = self.data.selected_box[vertex]
         self.data.flip_horizontal_shapes(center=center, index=index)
         self.refresh()
 
@@ -327,7 +330,8 @@ class Shapes(Layer):
             objects, a list of integers to a list of objects, and a single
             integer to that particular object.
         """
-        center = self.data.selected_box(index)[vertex]
+        self.data.select_box(index)
+        center = self.data.selected_box[vertex]
         self.data.rotate_shapes(angle, center=center, index=index)
         self.refresh()
 
@@ -369,7 +373,8 @@ class Shapes(Layer):
             max_shape = self.viewer.dimensions.max_shape
             box = self.data._expand_box(np.array([[0, 0], max_shape[:2]]))
         else:
-            box = self.data.selected_box(index)
+            self.data.select_box(index)
+            box = self.data.selected_box
         coords = [[7, 8, 3], [1, 8, 5]]
         coord = coords[axis][location]
         align_point = box[coord][axis]
@@ -379,12 +384,14 @@ class Shapes(Layer):
 
         if type(index) is list:
             for i in index:
-                box = self.data.selected_box(i)
+                self.data.select_box(i)
+                box = self.data.selected_box
                 shift = [0, 0]
                 shift[axis] = align_point - box[coord][axis]
                 self.data.shift_shapes(shift, index=i)
         else:
-            box = self.data.selected_box(index)
+            self.data.select_box(index)
+            box = self.data.selected_box
             shift = [0, 0]
             shift[axis] = align_point - box[coord][axis]
             self.data.shift_shapes(shift, index=index)
@@ -414,7 +421,8 @@ class Shapes(Layer):
             max_shape = self.viewer.dimensions.max_shape
             box = self.data._expand_box(np.array([[0, 0], max_shape[:2]]))
         else:
-            box = self.data.selected_box(index)
+            self.data.select_box(index)
+            box = self.data.selected_box
         coords = [[7, 8, 3], [1, 8, 5]]
         coord = coords[axis][location]
         align_points = [box[coords[axis][0]][axis], box[coords[axis][2]][axis]]
@@ -427,7 +435,8 @@ class Shapes(Layer):
             align_points = np.linspace(align_points[0], align_points[1], num_objects)
             offsets = []
             for obj_ind in index:
-                box = self.data.selected_box(obj_ind)
+                self.data.select_box(obj_ind)
+                box = self.data.selected_box
                 offsets.append(box[coord][axis])
             offsets = np.array(offsets)
             order = np.argsort(offsets)
@@ -438,7 +447,8 @@ class Shapes(Layer):
                 self.data.shift_shapes(shift, index=index[order[i]])
         else:
             align_points = (align_points[0] + align_points[1])/2
-            box = self.data.selected_box(index)
+            self.data.select_box(index)
+            box = self.data.selected_box
             shift = [0, 0]
             shift[axis] = align_points - box[coord][axis]
             self.data.shift_shapes(shift, index=index)
@@ -578,7 +588,7 @@ class Shapes(Layer):
         """
         # Check if mouse inside vertex of bounding box
         if len(self._selected_shapes) > 0:
-            box = self.data.selected_box(self._selected_shapes)[:-1]
+            box = self.data.selected_box[:-1]
             distances = abs(box - indices[:2])
 
             # Get the vertex sizes
@@ -654,7 +664,7 @@ class Shapes(Layer):
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
         if self._highlight and len(self._selected_shapes) > 0:
-            box = self.data.selected_box(self._selected_shapes)[:-1]
+            box = self.data.selected_box[:-1]
             if self._hover_shapes[0] is None:
                 face_color = 'white'
             elif self._hover_shapes[1] is None:
@@ -786,15 +796,15 @@ class Shapes(Layer):
             if vertex is None:
                 #Check where dragging box from to move whole object
                 if self._drag_start is None:
-                    center = self.data.selected_box(index)[-1]
+                    center = self.data.selected_box[-1]
                     self._drag_start = coord - center
-                center = self.data.selected_box(index)[-1]
+                center = self.data.selected_box[-1]
                 shift = coord - center - self._drag_start
                 self.shift_shapes(shift, index=index)
                 self._set_highlight()
             else:
                 #Vertex is being dragged so resize object
-                box = self.data.selected_box(index)
+                box = self.data.selected_box
                 if self._fixed_vertex is None:
                     self._fixed_index = np.mod(vertex+4,8)
                     self._fixed_vertex = box[self._fixed_index]
@@ -826,8 +836,9 @@ class Shapes(Layer):
 
                 # prvent box from dissappearing if shrunk near 0
                 scale[scale==0]=1
-                #print(self._fixed_index, scale)
-                self.scale_shapes(scale, vertex=self._fixed_index, index=index)
+
+                self.data.scale_shapes(scale, center=self._fixed_vertex, index=index)
+                self.refresh()
                 self._set_highlight()
 
     def _select(self):
@@ -867,6 +878,7 @@ class Shapes(Layer):
         if mode is None:
             #If not in edit or addition mode unselect all
             self._selected_shapes = []
+            self.data.select_box(self._selected_shapes)
             self._unselect()
         elif mode == 'edit':
             #If in edit mode
@@ -886,6 +898,7 @@ class Shapes(Layer):
                             self._selected_shapes = [shape[0]]
                     else:
                         self._selected_shapes = []
+                    self.data.select_box(self._selected_shapes)
                     self._select()
             elif moving and dragging:
                 #print('layer moving!!!!')
@@ -894,18 +907,17 @@ class Shapes(Layer):
             elif released:
                 #print('layer release!!!!')
                 shape = self._shape_at(coord)
-                if not self._is_moving:
-                    if shift and shape[0] is not None:
-                        pass
-                    elif shape[0] is not None:
+                if not self._is_moving and not shift:
+                    if shape[0] is not None:
                         self._selected_shapes = [shape[0]]
-                    elif not shift:
+                    else:
                         self._selected_shapes = []
                 self._is_moving=False
                 self._drag_start=None
                 self._fixed_vertex = None
                 self._selected_vertex = None
                 self._hover_shapes = shape
+                self.data.select_box(self._selected_shapes)
                 self._select()
             elif self._is_moving:
                 #print('moving passsss!!!!')
@@ -913,9 +925,11 @@ class Shapes(Layer):
             else:
                 #Highlight boxes if over any
                 self._hover_shapes = self._shape_at(coord)
+                self.data.select_box(self._selected_shapes)
                 self._select()
         elif mode == 'add':
             self._selected_shapes = []
+            self.data.select_box(self._selected_shapes)
             self._unselect()
         #     #If in addition mode
         #     coord = self._get_coord(position, indices)
