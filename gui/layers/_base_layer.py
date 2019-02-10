@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+
 import weakref
 
 from vispy.util.event import EmitterGroup, Event
@@ -141,6 +143,12 @@ class Layer(VisualWrapper, ABC):
         if self._freeze:
             return
         self._refresh()
+
+    @contextmanager
+    def freeze_refresh(self):
+        self._freeze = True
+        yield
+        self._freeze = False
 
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
