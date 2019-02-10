@@ -122,9 +122,8 @@ class ShapesData():
 
         self.id = np.delete(self.id, index, axis=0)
         self.boxes = np.delete(self.boxes, index, axis=0)
+        self._thickness = np.delete(self._thickness, index, axis=0)
         self.vertices = self.vertices[self.index!=index]
-        self._thickness = self._thickness[self.index!=index]
-        self._rotation = self._rotation[self.index!=index]
         self.index = self.index[self.index!=index]
         self.index[self.index>index] = self.index[self.index>index]-1
 

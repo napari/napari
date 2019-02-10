@@ -361,9 +361,10 @@ class Shapes(Layer):
         else:
             if index is True:
                 self.data._thickness = np.repeat(thickness, len(self.data._thickness))
-            else:
+            elif isinstance(index, (list, np.ndarray)):
                 self.data._thickness[index] = np.repeat(thickness, len(index))
-
+            else:
+                self.data._thickness[index] = thickness
         self.data.update_thickness(index)
         self.refresh()
 
