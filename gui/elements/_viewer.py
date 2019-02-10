@@ -203,7 +203,7 @@ class Viewer:
         self._update_status()
 
     def _set_mode(self, mode):
-        if (mode=='add') or (mode=='edit'):
+        if (mode=='add') or (mode=='select'):
             self.mode = mode
             self.help = 'hold <space> to pan/zoom'
         else:

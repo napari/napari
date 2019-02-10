@@ -352,111 +352,6 @@ class Shapes(Layer):
         self.data.shift_shapes(shift, index=index)
         self.refresh()
 
-    def align_shapes(self, index=True, axis=0, location=1, to_canvas=False):
-        """Aligns selected shapes either in horizontal or vertical axis to
-        the left, center, right, or top, center, bottom. If to_canvas is True
-        then it aligns to the canvas.
-        Parameters
-        ----------
-        index : bool, list, int
-            index of objects to be selected. Where True corresponds to all
-            objects, a list of integers to a list of objects, and a single
-            integer to that particular object.
-        axis : int
-            integer specifying axis to align along. 0 corresponds to horizontal
-            1 corresponds to vertical
-        location : int
-            location that objects are to be aligned too. One of 0, 1, 2 for
-            either left, center, right, or top, center, bottom for Horizontal
-            and vertical axes respectively.
-        to_canvas : bool
-            Bool specifying if to align to canvas or not.
-        """
-        if to_canvas:
-            max_shape = self.viewer.dimensions.max_shape
-            box = self.data._expand_box(np.array([[0, 0], max_shape[:2]]))
-        else:
-            self.data.select_box(index)
-            box = self.data.selected_box
-        coords = [[7, 8, 3], [1, 8, 5]]
-        coord = coords[axis][location]
-        align_point = box[coord][axis]
-
-        if index is True:
-            index = list(range(len(self.data.id)))
-
-        if type(index) is list:
-            for i in index:
-                self.data.select_box(i)
-                box = self.data.selected_box
-                shift = [0, 0]
-                shift[axis] = align_point - box[coord][axis]
-                self.data.shift_shapes(shift, index=i)
-        else:
-            self.data.select_box(index)
-            box = self.data.selected_box
-            shift = [0, 0]
-            shift[axis] = align_point - box[coord][axis]
-            self.data.shift_shapes(shift, index=index)
-        self.refresh()
-
-    def distribute_shapes(self, index=True, axis=0, location=1, to_canvas=False):
-        """Distributes selected shapes either in horizontal or vertical axis to
-        the left, center, right, or top, center, bottom. If to_canvas is True
-        then it dispributes along the canvas.
-        Parameters
-        ----------
-        index : bool, list, int
-            index of objects to be selected. Where True corresponds to all
-            objects, a list of integers to a list of objects, and a single
-            integer to that particular object.
-        axis : int
-            integer specifying axis to align along. 0 corresponds to horizontal
-            1 corresponds to vertical
-        location : int
-            location that objects are to be aligned too. One of 0, 1, 2 for
-            either left, center, right, or top, center, bottom for Horizontal
-            and vertical axes respectively.
-        to_canvas : bool
-            Bool specifying if to align to canvas or not.
-        """
-        if to_canvas:
-            max_shape = self.viewer.dimensions.max_shape
-            box = self.data._expand_box(np.array([[0, 0], max_shape[:2]]))
-        else:
-            self.data.select_box(index)
-            box = self.data.selected_box
-        coords = [[7, 8, 3], [1, 8, 5]]
-        coord = coords[axis][location]
-        align_points = [box[coords[axis][0]][axis], box[coords[axis][2]][axis]]
-
-        if index is True:
-            index = list(range(len(self.data.id)))
-
-        if type(index) is list:
-            num_objects = len(index)
-            align_points = np.linspace(align_points[0], align_points[1], num_objects)
-            offsets = []
-            for obj_ind in index:
-                self.data.select_box(obj_ind)
-                box = self.data.selected_box
-                offsets.append(box[coord][axis])
-            offsets = np.array(offsets)
-            order = np.argsort(offsets)
-            for i in range(len(index)):
-                obj_ind = index[order[i]]
-                shift = [0, 0]
-                shift[axis] = align_points[i] - offsets[order[i]]
-                self.data.shift_shapes(shift, index=index[order[i]])
-        else:
-            align_points = (align_points[0] + align_points[1])/2
-            self.data.select_box(index)
-            box = self.data.selected_box
-            shift = [0, 0]
-            shift[axis] = align_points - box[coord][axis]
-            self.data.shift_shapes(shift, index=index)
-        self.refresh()
-
     def set_thickness(self, index=True, thickness=1):
         if isinstance(thickness, (list, np.ndarray)):
             if index is True:
@@ -748,69 +643,6 @@ class Shapes(Layer):
             msg = msg + ', ' + self.name + ', index ' + str(value[0])
         return coord, value[0], msg
 
-    # def _add(self, coord, br=None):
-    #     """Returns coordinates, values, and a string
-    #     for a given mouse position and set of indices.
-    #     Parameters
-    #     ----------
-    #     position : sequence of two int
-    #         Position of mouse cursor in canvas.
-    #     indices : sequence of int or slice
-    #         Indices that make up the slice.
-    #     """
-    #     max_shape = self.viewer.dimensions.max_shape
-    #
-    #     if br is None:
-    #         tl = [coord[0]-25, coord[1]-25, *coord[2:]]
-    #         br = [coord[0]+25, coord[1]+25, *coord[2:]]
-    #         index = None
-    #     else:
-    #         tl = coord
-    #         br = br
-    #         if br[0] == tl[0]:
-    #             br[0] = tl[0]+1
-    #         if br[1] == tl[1]:
-    #             br[1] = tl[1]+1
-    #         index = 2
-    #
-    #     if br[0] > max_shape[0]-1:
-    #         br[0] = max_shape[0]-1
-    #         tl[0] = max_shape[0]-1-50
-    #     if br[1] > max_shape[1]-1:
-    #         br[1] = max_shape[1]-1
-    #         tl[1] = max_shape[1]-1-50
-    #     if tl[0] < 0:
-    #         br[0] = 50
-    #         tl[0] = 0
-    #     if tl[1] < 0:
-    #         br[1] = 50
-    #         tl[1] = 0
-    #
-    #     # print('to_add', [[tl, br]])
-    #     # print('data', self.data)
-    #     # print('index', index)
-    #     self.data = append(self.data, [[tl, br]], axis=0)
-    #     self._selected_shapes = [len(self.data)-1, index]
-    #     self.refresh()
-    #
-    # def _remove(self, coord):
-    #     """Returns coordinates, values, and a string
-    #     for a given mouse position and set of indices.
-    #     Parameters
-    #     ----------
-    #     position : sequence of two int
-    #         Position of mouse cursor in canvas.
-    #     indices : sequence of int or slice
-    #         Indices that make up the slice.
-    #     """
-    #     index = self._selected_shapes
-    #     if index is None:
-    #         pass
-    #     else:
-    #         self.data = delete(self.data, index[0], axis=0)
-    #         self._selected_shapes = self._get_selected_shapes(coord)
-    #         self.refresh()
-    #
     def _move(self, coord):
         """Moves object at given mouse position
         and set of indices.
@@ -957,8 +789,8 @@ class Shapes(Layer):
             self._selected_shapes = []
             self.data.select_box(self._selected_shapes)
             self._unselect()
-        elif mode == 'edit':
-            #If in edit mode
+        elif mode == 'select':
+            #If in select mode
             coord = self._get_coord(position, indices)
             if pressed:
                 if not self._is_moving and not self._is_selecting:
@@ -1013,39 +845,9 @@ class Shapes(Layer):
                 self._hover_shapes = self._shape_at(coord)
                 self._select()
         elif mode == 'add':
+            # Not yet implemented
             self._selected_shapes = []
             self.data.select_box(self._selected_shapes)
             self._unselect()
-        #     #If in addition mode
-        #     coord = self._get_coord(position, indices)
-        #     if pressed:
-        #         #Start add a new box
-        #         self._ready_to_create_box = True
-        #         self._creating_box = False
-        #         self._create_tl = coord
-        #     elif moving and dragging:
-        #         #If moving and dragging check if ready to make new box
-        #         if self._ready_to_create_box:
-        #             self.highlight = True
-        #             self._add(self._create_tl, coord)
-        #             self._ready_to_create_box = False
-        #             self._creating_box = True
-        #         elif self._creating_box:
-        #             #If making a new box, update it's position
-        #             self._move(coord)
-        #     elif released and dragging:
-        #         #One release add new box
-        #         if self._creating_box:
-        #             self._creating_box = False
-        #             self._unselect()
-        #             self._fixed = None
-        #         else:
-        #             self._add(coord)
-        #             self._ready_to_create_box = False
-        #         self._is_moving=False
-        #     elif released:
-        #         self._is_moving=False
-        #     else:
-        #         self._unselect()
         else:
             pass
