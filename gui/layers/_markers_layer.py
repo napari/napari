@@ -77,24 +77,13 @@ class Markers(Layer):
         self._coords = coords
 
         # Save the marker style params
-        size_array = np.array(size)
-        if len(size_array.shape) == 2:
-            assert(size_array.shape == self._coords.shape), \
-             'If size is a 2D array, must be the same shape as '\
-             'coords'
-            self._size = size_array
-        elif len(size_array.shape) == 1:
-            assert (len(size_array) == len(self._coords) or  len(size_array) == self.ndim), \
-            'If size is a list/ 1D array, must be the same length as '\
-            'either coords or ndim'
-            if len(size_array) == self.ndim:
-                self._size = np.broadcast_to(size_array, self._coords.shape)
-            else:
-                self._size = np.broadcast_to(size_array, self._coords.shape[::-1]).T
-        elif len(size_array.shape) == 0:
-            self._size = np.broadcast_to(size_array, self._coords.shape)
-        else:
-            raise TypeError('size should be float or ndarray of dim less than 2')
+        try:
+            self._size = np.broadcast_to(size, self._coords.shape)
+        except:
+            try:
+                self._size = np.broadcast_to(size, self._coords.shape[::-1]).T
+            except:
+                raise ValueError("Size is not compatible for broadcasting")
         self._size_original = size
 
 
@@ -161,24 +150,13 @@ class Markers(Layer):
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
 
-        size_array = np.array(size)
-        if len(size_array.shape) == 2:
-            assert(size_array.shape == self._coords.shape), \
-             'If size is a 2D array, must be the same shape as '\
-             'coords'
-            self._size = size_array
-        elif len(size_array.shape) == 1:
-            assert (len(size_array) == len(self._coords) or  len(size_array) == self.ndim), \
-            'If size is a list/ 1D array, must be the same length as '\
-            'either coords or ndim'
-            if len(size_array) == self.ndim:
-                self._size = np.broadcast_to(size_array, self._coords.shape)
-            else:
-                self._size = np.broadcast_to(size_array, self._coords.shape[::-1]).T
-        elif len(size_array.shape) == 0:
-            self._size = np.broadcast_to(size_array, self._coords.shape)
-        else:
-            raise TypeError('size should be float or ndarray of dim less than 2')
+        try:
+            self._size = np.broadcast_to(size, self._coords.shape)
+        except:
+            try:
+                self._size = np.broadcast_to(size, self._coords.shape[::-1]).T
+            except:
+                raise ValueError("Size is not compatible for broadcasting")
         self._size_original = size
         self.refresh()
 
