@@ -292,7 +292,10 @@ class Markers(Layer):
                 size_array = self._size[:,2:]/2
                 matches = np.all(distances <= size_array, axis=1)
                 in_slice_markers = coords[matches, :2]
-                scale_per_dim = (size_array[matches] - distances[matches])/size_array[matches]
+                size_matches = size_array[matches]
+                size_matches[size_matches==0] = 1
+                scale_per_dim = (size_matches - distances[matches])/size_matches
+                scale_per_dim[size_matches==0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
                 return in_slice_markers, matches, scale
             else:
