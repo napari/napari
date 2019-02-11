@@ -129,6 +129,19 @@ class Markers(Layer):
         self.coords = data
 
     @property
+    def n_dimensional(self) -> str:
+        """ bool: if True, renders markers not just in central plane but also in all
+        n dimensions according to specified marker size
+        """
+        return self._n_dimensional
+
+    @n_dimensional.setter
+    def n_dimensional(self, n_dimensional: bool) -> None:
+        self._n_dimensional = n_dimensional
+
+        self.refresh()
+
+    @property
     def symbol(self) -> str:
         """ str: marker symbol
         """
@@ -265,7 +278,7 @@ class Markers(Layer):
         # Get a list of the coords for the markers in this slice
         coords = self.coords
         if len(coords) > 0:
-            if self._n_dimensional is True and self.ndim > 2:
+            if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, 2:] - indices[2:])
                 size_array = self._size[:,2:]/2
                 matches = np.all(distances <= size_array, axis=1)
