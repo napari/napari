@@ -10,8 +10,8 @@ Viewer
     Data viewer displaying the currently rendered scene and
     layer-related controls.
 """
-from ._window import Window
+from ._window import Window, QtApplication
 from ._viewer import Viewer
-from ._layer_list import LayerList
+from ._layers_list import LayersList
 from ._control_bars import ControlBars
 from ._dimensions import Dimensions
