@@ -1,23 +1,59 @@
-import weakref
-
 import numpy as np
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
+from .vendored import cm
 
 from ._base_layer import Layer
 from .._vispy.scene.visuals import Image as ImageNode
 
 from ..util import is_multichannel
-from ..util.misc import guess_metadata
 from ..util.interpolation import (interpolation_names,
                                   interpolation_index_to_name as _index_to_name,  # noqa
                                   interpolation_name_to_index as _name_to_index)  # noqa
 
-from vispy.color.colormap import get_colormaps
+from vispy import color
+from .colormaps import matplotlib_colormaps
 
 from ._register import add_to_viewer
 
 from .qt import QtImageLayer
+
+
+
+def vispy_or_mpl_colormap(name):
+    """Try to get a colormap from vispy, or convert an mpl one to vispy format.
+
+    Parameters
+    ----------
+    name : str
+        The name of the colormap.
+
+    Returns
+    -------
+    cmap : vispy.color.Colormap
+        The found colormap.
+
+    Raises
+    ------
+    KeyError
+        If no colormap with that name is found within vispy or matplotlib.
+    """
+    vispy_cmaps = color.get_colormaps()
+    if name in vispy_cmaps:
+        cmap = color.get_colormap(name)
+    else:
+        try:
+            mpl_cmap = getattr(cm, name)
+        except AttributeError:
+            raise KeyError(f'Colormap "{name}" not found in either vispy '
+                           'or matplotlib.')
+        mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
+        cmap = color.Colormap(mpl_colors)
+    return cmap
+
+
+AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
+                       for k in matplotlib_colormaps + list(color.get_colormaps())}
 
 
 @add_to_viewer
@@ -31,9 +67,9 @@ class Image(Layer):
     meta : dict
         Image metadata.
     """
-    _colormaps = get_colormaps()
+    _colormaps = AVAILABLE_COLORMAPS
 
-    default_cmap = 'hot'
+    default_cmap = 'magma'
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta):
@@ -197,10 +233,9 @@ class Image(Layer):
 
     @property
     def colormaps(self):
-        """tuple of str: Colormap names.
+        """tuple of str: names of available colormaps.
         """
-        # TODO: achieve this by wrapping DictKeys
-        return tuple(self._colormaps.keys())
+        return tuple(AVAILABLE_COLORMAPS.keys())
 
     # wrap visual properties:
     @property
@@ -219,12 +254,6 @@ class Image(Layer):
         """string or ColorMap: Colormap to use for luminance images.
         """
         return self._node.cmap
-
-        for name, obj in Image._colormaps.items():
-            if obj == cmap:
-                return name
-        else:
-            return cmap
 
     @cmap.setter
     def cmap(self, cmap):
@@ -254,7 +283,7 @@ class Image(Layer):
         return self._node.method
 
     @method.setter
-    def method(self):
+    def method(self, method):
         self._node.method = method
 
     @property
