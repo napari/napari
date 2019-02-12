@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QComboBox, QSlider
+from PyQt5.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
 from collections import Iterable
 import numpy as np
 from ._base_layer import QtLayer
@@ -64,6 +64,14 @@ class QtMarkersLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('symbol:'), 6, 0)
         self.grid_layout.addWidget(symbol_comboBox, 6, 1)
 
+        ndim_cb = QCheckBox()
+        ndim_cb.setToolTip('N-dimensional markers')
+        ndim_cb.setChecked(self.layer.n_dimensional)
+        ndim_cb.stateChanged.connect(lambda state=ndim_cb:
+                                     self.change_ndim(state))
+        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
+        self.grid_layout.addWidget(ndim_cb, 7, 1)
+
         self.setExpanded(False)
 
     def changeFaceColor(self, text):
@@ -77,3 +85,9 @@ class QtMarkersLayer(QtLayer):
 
     def changeSize(self, value):
         self.layer.size = value
+
+    def change_ndim(self, state):
+        if state == Qt.Checked:
+            self.layer.n_dimensional = True
+        else:
+            self.layer.n_dimensional = False
