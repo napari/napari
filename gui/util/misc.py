@@ -135,4 +135,4 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     layer = window.viewer.add_image(image, meta)
     window.show()
 
-    return window
+    return window.viewer

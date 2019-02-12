@@ -33,6 +33,7 @@ class Window:
 
         self.viewer.events.status.connect(self._status_changed)
         self.viewer.events.help.connect(self._help_changed)
+        self.viewer.window = self
 
         if show:
             self.show()

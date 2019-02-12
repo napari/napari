@@ -51,6 +51,7 @@ class Viewer:
         self._help = ''
 
         self._qt = QtViewer(self)
+        self.window = None
 
     @property
     def _canvas(self):
