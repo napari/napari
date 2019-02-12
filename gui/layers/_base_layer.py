@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+
 import weakref
 
 from vispy.util.event import EmitterGroup, Event
@@ -37,6 +39,7 @@ class Layer(VisualWrapper, ABC):
         self._viewer = None
         self._qt = None
         self.name = 'layer'
+        self._freeze = False
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
@@ -135,9 +138,17 @@ class Layer(VisualWrapper, ABC):
         """
 
     def refresh(self):
-        """Fully refreshes the layer.
+        """Fully refreshes the layer. If layer is frozen refresh will not occur
         """
+        if self._freeze:
+            return
         self._refresh()
+
+    @contextmanager
+    def freeze_refresh(self):
+        self._freeze = True
+        yield
+        self._freeze = False
 
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position

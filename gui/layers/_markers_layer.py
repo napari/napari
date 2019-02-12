@@ -67,27 +67,29 @@ class Markers(Layer):
         visual = MarkersNode()
         super().__init__(visual)
 
-        # Save the marker coordinates
-        self._coords = coords
+        # Freeze refreshes
+        with self.freeze_refresh():
+            # Save the marker coordinates
+            self._coords = coords
 
-        # Save the marker style params
-        self._symbol = symbol
-        self._size = size
-        self._edge_width = edge_width
-        self._edge_width_rel = edge_width_rel
-        self._edge_color = edge_color
-        self._face_color = face_color
-        self._scaling = scaling
-        self._marker_types = marker_types
-        self._colors = get_color_names()
+            # Save the marker style params
+            self.symbol = symbol
+            self.size = size
+            self.edge_width = edge_width
+            self.edge_width_rel = edge_width_rel
+            self.edge_color = edge_color
+            self.face_color = face_color
+            self.scaling = scaling
+            self._marker_types = marker_types
+            self._colors = get_color_names()
 
-        # update flags
-        self._need_display_update = False
-        self._need_visual_update = False
+            # update flags
+            self._need_display_update = False
+            self._need_visual_update = False
 
-        self.name = 'markers'
-        self._qt = QtMarkersLayer(self)
-        self._selected_markers = None
+            self.name = 'markers'
+            self._qt = QtMarkersLayer(self)
+            self._selected_markers = None
 
     @property
     def coords(self) -> np.ndarray:
@@ -100,7 +102,7 @@ class Markers(Layer):
         self._coords = coords
 
         self.viewer._child_layer_changed = True
-        self._refresh()
+        self.refresh()
 
     @property
     def data(self) -> np.ndarray:
@@ -435,4 +437,4 @@ class Markers(Layer):
             pass
         else:
             self.data[index] = coord
-            self._refresh()
+            self.refresh()
