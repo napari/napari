@@ -245,6 +245,8 @@ class Markers(Layer):
 
     def _get_shape(self):
         if len(self.coords) == 0:
+            # when no markers given, return (1,) * dim
+            # we use coords.shape[1] as the dimensionality of the image
             return np.ones(self.coords.shape[1], dtype=int)
         else:
             return np.max(self.coords, axis=0) + 1
