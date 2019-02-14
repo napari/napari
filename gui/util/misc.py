@@ -123,7 +123,7 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     window: Window
         Window object.
     """
-    from ..elements import Window, Viewer, QtApplication
+    from ..components import Window, Viewer, QtApplication
 
     meta = guess_metadata(image, meta, multichannel, kwargs)
 

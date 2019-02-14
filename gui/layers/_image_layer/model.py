@@ -16,7 +16,7 @@ from ..colormaps import matplotlib_colormaps
 
 from .._register import add_to_viewer
 
-from .view_props import QtImageLayer
+from .view import QtImageLayer
 
 
 

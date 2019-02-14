@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
-from ._view_list import QtLayersList
-from ._view_buttons import QtLayersButtons
+from .list import QtLayersList
+from .buttons import QtLayersButtons
 
 
 class QtLayersPanel(QWidget):

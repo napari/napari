@@ -11,7 +11,7 @@ from ..._vispy.scene.visuals import Markers as MarkersNode
 from vispy.visuals import marker_types
 from vispy.color import get_color_names
 
-from .view_props import QtMarkersLayer
+from .view import QtMarkersLayer
 
 
 @add_to_viewer
