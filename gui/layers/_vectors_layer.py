@@ -300,15 +300,15 @@ class Vectors(Layer):
         self._need_display_update = True
         self._update()
 
-    def _slice_markers(self, indices):
-        """Determines the slice of markers given the indices.
+    def _slice_vectors(self, indices):
+        """Determines the slice of vectors given the indices.
 
         Parameters
         ----------
         indices : sequence of int or slice
             Indices to slice with.
         """
-        # Get a list of the vectors for the markers in this slice
+        # Get a list of the vectors for the vectors in this slice
         vectors = self.vectors
         if len(vectors) > 0:
             matches = np.equal(
@@ -317,8 +317,8 @@ class Vectors(Layer):
 
             matches = np.all(matches, axis=1)
 
-            in_slice_markers = vectors[matches, :2]
-            return in_slice_markers, matches
+            in_slice_vectors = vectors[matches, :2]
+            return in_slice_vectors, matches
         else:
             return [], []
 
@@ -331,10 +331,10 @@ class Vectors(Layer):
             Indices to slice with.
         """
 
-        in_slice_markers, matches = self._slice_markers(indices)
+        in_slice_vectors, matches = self._slice_vectors(indices)
 
-        # Display markers if there are any in this slice
-        if len(in_slice_markers) > 0:
+        # Display vectors if there are any in this slice
+        if len(in_slice_vectors) > 0:
             # Get the marker sizes
             if isinstance(self.width, (list, np.ndarray)):
                 sizes = self.width[matches][::-1]
@@ -342,11 +342,11 @@ class Vectors(Layer):
             else:
                 sizes = self.width
 
-            # Update the markers node
-            data = np.array(in_slice_markers) + 0.5
+            # Update the vectors node
+            data = np.array(in_slice_vectors) + 0.5
 
         else:
-            # if no markers in this slice send dummy data
+            # if no vectors in this slice send dummy data
             data = np.empty((0, 2))
             sizes = 0
 
@@ -355,7 +355,5 @@ class Vectors(Layer):
             width=self.width,
             color=self.color,
             connect=self.connector)
-            # method=self.method,
-            # antialias=self.antialias)
         self._need_visual_update = True
         self._update()
