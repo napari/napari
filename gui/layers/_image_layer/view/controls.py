@@ -8,6 +8,8 @@ class QtImageControls(QWidget):
     def __init__(self, layer):
         super().__init__()
 
+        self.layer = layer
+
         # Create clim slider
         self.climSlider = QVRangeSlider(slider_range=[0, 1, 0.0001],
                                         values=[0, 1], parent=self)
@@ -18,42 +20,36 @@ class QtImageControls(QWidget):
         layout = QHBoxLayout()
         layout.addWidget(self.climSlider)
         self.setLayout(layout)
+        self.setMouseTracking(True)
 
-        # self.setMouseTracking(True)
-        # self.setMinimumSize(QSize(40, 40))
+        cmin, cmax = self.layer.clim
+        self.layer._controls_msg = f'({cmin: 0.3}, {cmax: 0.3})'
 
-        #self.climSlider.rangeChanged.connect(self.clim_slider_changed)
-        #self.control_bars.events.update_slider.connect(self.update)
+        self.climSlider.rangeChanged.connect(self.clim_slider_changed)
 
-    # def update(self, event):
-    #     if event.enabled:
-    #         self.climSlider.setEnabled(True)
-    #         self.climSlider.setValues(event.values)
-    #     else:
-    #         self.climSlider.setEnabled(False)
-    #
-    # def clim_slider_changed(self, slidermin, slidermax):
-    #     self.control_bars.values = (slidermin, slidermax)
-    #     msg = None
-    #     for layer in self.control_bars.viewer.layers:
-    #         if hasattr(layer, 'visual') and layer.selected:
-    #             valmin, valmax = layer._clim_range
-    #             cmin = valmin+self.control_bars.values[0]*(valmax-valmin)
-    #             cmax = valmin+self.control_bars.values[1]*(valmax-valmin)
-    #             layer.clim = [cmin, cmax]
-    #             msg = f'({cmin:0.3}, {cmax:0.3})'
-    #     if msg is None:
-    #         msg = 'Ready'
-    #
-    #     self.control_bars.viewer.status = msg
-    #
-    # def mouseMoveEvent(self, event):
-    #     # iteration goes backwards to find top most visible layer
-    #     for layer in self.control_bars.viewer.layers[::-1]:
-    #         if hasattr(layer, 'visual') and layer.selected:
-    #             cmin, cmax = layer.clim
-    #             msg = '(%.3f, %.3f)' % (cmin, cmax)
-    #             self.control_bars.viewer.status = msg
-    #             break
-    #     else:
-    #         self.control_bars.viewer.status = 'Ready'
+    def clim_slider_changed(self, slidermin, slidermax):
+        for layer in self.layer.viewer.layers:
+            if hasattr(layer, 'visual') and layer.selected:
+                valmin, valmax = layer._clim_range
+                cmin = valmin+slidermin*(valmax-valmin)
+                cmax = valmin+slidermax*(valmax-valmin)
+                layer.clim = [cmin, cmax]
+                layer._qt_controls.clim_slider_update()
+        self.update_status_bar()
+
+    def clim_slider_update(self):
+        valmin, valmax = self.layer._clim_range
+        cmin, cmax = self.layer.clim
+        slidermin = (cmin - valmin)/(valmax - valmin)
+        slidermax = (cmax - valmin)/(valmax - valmin)
+        self.climSlider.blockSignals(True)
+        self.climSlider.setValues((slidermin, slidermax))
+        self.climSlider.blockSignals(False)
+
+    def mouseMoveEvent(self, event):
+        self.update_status_bar()
+
+    def update_status_bar(self):
+        cmin, cmax = self.layer.clim
+        self.layer._controls_msg = f'({cmin: 0.3}, {cmax: 0.3})'
+        self.layer.viewer.status = self.layer._controls_msg

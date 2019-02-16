@@ -42,6 +42,7 @@ class Layer(VisualWrapper, ABC):
         self._qt_controls = None
         self.name = 'layer'
         self._freeze = False
+        self._controls_msg = 'Ready'
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,

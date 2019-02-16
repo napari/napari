@@ -21,6 +21,7 @@ class Controls:
         for layer in self.viewer.layers[::-1]:
             if layer.selected:
                 self._qt.display(layer)
+                self.viewer.status = layer._controls_msg
                 break
         else:
             self._qt.display(None)

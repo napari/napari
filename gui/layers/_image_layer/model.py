@@ -88,11 +88,12 @@ class Image(Layer):
         self._need_visual_update = False
 
         self.name = 'image'
-        self._qt_properties = QtImageLayer(self)
-        self._qt_controls = QtImageControls(self)
 
         self._clim_range = self._clim_range_default()
         self._node.clim = [np.min(self.image), np.max(self.image)]
+
+        self._qt_properties = QtImageLayer(self)
+        self._qt_controls = QtImageControls(self)
 
     @property
     def image(self):
