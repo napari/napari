@@ -17,6 +17,7 @@ from ..colormaps import matplotlib_colormaps
 from .._register import add_to_viewer
 
 from .view import QtImageLayer
+from .view import QtImageControls
 
 
 
@@ -87,7 +88,8 @@ class Image(Layer):
         self._need_visual_update = False
 
         self.name = 'image'
-        self._qt = QtImageLayer(self)
+        self._qt_properties = QtImageLayer(self)
+        self._qt_controls = QtImageControls(self)
 
         self._clim_range = self._clim_range_default()
         self._node.clim = [np.min(self.image), np.max(self.image)]

@@ -19,7 +19,8 @@ class Layer(VisualWrapper, ABC):
     May define the following:
         * ``_set_view_slice(indices)``: called to set currently viewed slice
         * ``_after_set_viewer()``: called after the viewer is set
-        * ``_qt``: QtWidget inserted into the layer list GUI
+        * ``_qt_properties``: QtWidget inserted into the layer list GUI
+        * ``_qt_controls``: QtWidget inserted into the controls panel GUI
 
     Attributes
     ----------
@@ -37,7 +38,8 @@ class Layer(VisualWrapper, ABC):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
-        self._qt = None
+        self._qt_properties = None
+        self._qt_controls = None
         self.name = 'layer'
         self._freeze = False
         self.events = EmitterGroup(source=self,

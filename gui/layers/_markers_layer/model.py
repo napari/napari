@@ -95,7 +95,7 @@ class Markers(Layer):
             self._need_visual_update = False
 
             self.name = 'markers'
-            self._qt = QtMarkersLayer(self)
+            self._qt_properties = QtMarkersLayer(self)
             self._selected_markers = None
 
     @property

@@ -18,8 +18,8 @@ class Viewer:
         List of contained layers.
     dimensions : Dimensions
         Contains axes, indices, dimensions and sliders.
-    control_bars : ControlBars
-        Contains control bar sliders.
+    controls : Controls
+        Contains layer specific controls.
     camera : vispy.scene.Camera
         Viewer camera.
     """
@@ -27,7 +27,7 @@ class Viewer:
     def __init__(self):
         super().__init__()
         from .._layers_list import LayersList
-        from .._control_bars import ControlBars
+        from .._controls import Controls
         from .._dimensions import Dimensions
 
         self.events = EmitterGroup(source=self,
@@ -38,7 +38,7 @@ class Viewer:
                                    active_markers=Event)
         self.dimensions = Dimensions(self)
         self.layers = LayersList(self)
-        self.control_bars = ControlBars(self)
+        self.controls = Controls(self)
 
         self._annotation = False
         self._annotation_history = False
@@ -232,7 +232,7 @@ class Viewer:
         self._active_image = top_image
         self._visible_markers = top_markers
         self.active_markers = active_markers
-        self.control_bars.clim_slider_update()
+        self.controls.update()
 
     def _update_status(self):
         msg = ''
