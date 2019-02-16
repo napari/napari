@@ -2,9 +2,9 @@ import weakref
 from collections.abc import Iterable, Sequence
 
 from vispy.util.event import EmitterGroup, Event
-from ..layers._base_layer import Layer
+from ...layers import Layer
 
-from .qt import QtLayerPanel
+from .view import QtLayersPanel
 
 
 class ItemEvent(Event):
@@ -25,7 +25,7 @@ def _check_layer(obj, error=False):
     return result
 
 
-class LayerList:
+class LayersList:
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
@@ -61,7 +61,7 @@ class LayerList:
 
         # property setting - happens last
         self.viewer = viewer
-        self._qt = QtLayerPanel(self)
+        self._qt = QtLayersPanel(self)
 
     def __str__(self): return str(self._list)
 

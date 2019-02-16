@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
 from PyQt5.QtCore import Qt
 
-from ._viewer import Viewer
+from .._viewer import Viewer
 
 
 class Window:

@@ -3,7 +3,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QFrame, QCheckBox)
 from os.path import join
-from ...resources import resources_dir
+from ....resources import resources_dir
 
 path_delete = join(resources_dir, 'icons', 'delete.png')
 path_add = join(resources_dir, 'icons', 'add.png')
@@ -17,7 +17,7 @@ styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
                 border-radius: 3px;}"""
 
 
-class QtLayerButtons(QFrame):
+class QtLayersButtons(QFrame):
     def __init__(self, layers):
         super().__init__()
 

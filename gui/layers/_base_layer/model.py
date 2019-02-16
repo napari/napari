@@ -5,7 +5,7 @@ import weakref
 
 from vispy.util.event import EmitterGroup, Event
 
-from ._visual_wrapper import VisualWrapper
+from .._visual_wrapper import VisualWrapper
 
 
 class Layer(VisualWrapper, ABC):

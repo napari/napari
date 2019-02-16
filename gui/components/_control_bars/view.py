@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
 from PyQt5.QtCore import QSize
 
-from ._range_slider import QVRangeSlider
+from ...util.range_slider import QVRangeSlider
 
 
 class QtControlBars(QWidget):

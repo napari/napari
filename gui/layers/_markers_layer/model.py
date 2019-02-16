@@ -5,13 +5,13 @@ import numpy as np
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from ._base_layer import Layer
-from ._register import add_to_viewer
-from .._vispy.scene.visuals import Markers as MarkersNode
+from .._base_layer import Layer
+from .._register import add_to_viewer
+from ..._vispy.scene.visuals import Markers as MarkersNode
 from vispy.visuals import marker_types
 from vispy.color import get_color_names
 
-from .qt import QtMarkersLayer
+from .view import QtMarkersLayer
 
 
 @add_to_viewer

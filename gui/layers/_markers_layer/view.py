@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
 from collections import Iterable
 import numpy as np
-from ._base_layer import QtLayer
+from .._base_layer import QtLayer
 
 
 class QtMarkersLayer(QtLayer):

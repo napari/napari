@@ -1,6 +1,6 @@
 from vispy.util.event import EmitterGroup, Event
 
-from .qt import QtControlBars
+from .view import QtControlBars
 
 
 class ControlBars:

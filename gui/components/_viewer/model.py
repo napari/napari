@@ -3,7 +3,7 @@ from copy import copy
 
 from vispy.util.event import EmitterGroup, Event
 
-from .qt import QtViewer
+from .view import QtViewer
 
 
 class Viewer:
@@ -14,7 +14,7 @@ class Viewer:
     ----------
     window : Window
         Parent window.
-    layers : LayerList
+    layers : LayersList
         List of contained layers.
     dimensions : Dimensions
         Contains axes, indices, dimensions and sliders.
@@ -26,9 +26,9 @@ class Viewer:
 
     def __init__(self):
         super().__init__()
-        from ._layer_list import LayerList
-        from ._control_bars import ControlBars
-        from ._dimensions import Dimensions
+        from .._layers_list import LayersList
+        from .._control_bars import ControlBars
+        from .._dimensions import Dimensions
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
@@ -37,7 +37,7 @@ class Viewer:
                                    annotation=Event,
                                    active_markers=Event)
         self.dimensions = Dimensions(self)
-        self.layers = LayerList(self)
+        self.layers = LayersList(self)
         self.control_bars = ControlBars(self)
 
         self._annotation = False
@@ -211,8 +211,8 @@ class Viewer:
             self.help = ''
 
     def _update_active_layers(self, event):
-        from ..layers._image_layer import Image
-        from ..layers._markers_layer import Markers
+        from ...layers._image_layer import Image
+        from ...layers._markers_layer import Markers
         top_markers = []
         for i, layer in enumerate(self.layers[::-1]):
             if layer.visible and isinstance(layer, Image):

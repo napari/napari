@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QFrame, QCheckBox, QScrollArea)
 
 
-class QtLayerList(QScrollArea):
+class QtLayersList(QScrollArea):
 
     def __init__(self, layers):
         super().__init__()
