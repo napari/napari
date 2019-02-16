@@ -7,8 +7,6 @@ from ....resources import resources_dir
 
 path_delete = join(resources_dir, 'icons', 'delete.png')
 path_add = join(resources_dir, 'icons', 'add.png')
-path_off = join(resources_dir, 'icons', 'annotation_off.png')
-path_on = join(resources_dir, 'icons', 'annotation_on.png')
 
 styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
                 QPushButton:pressed {background-color:rgb(0, 153, 255);
@@ -22,12 +20,10 @@ class QtLayersButtons(QFrame):
         super().__init__()
 
         self.layers = layers
-        self.annotationCheckBox = QtAnnotationCheckBox(self.layers)
         self.deleteButton = QtDeleteButton(self.layers)
         self.addButton = QtAddButton(self.layers)
 
         layout = QHBoxLayout()
-        layout.addWidget(self.annotationCheckBox)
         layout.addStretch(0)
         layout.addWidget(self.addButton)
         layout.addWidget(self.deleteButton)
@@ -73,32 +69,3 @@ class QtAddButton(QPushButton):
         self.setToolTip('Add layer')
         self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layers.viewer._new_markers)
-
-
-class QtAnnotationCheckBox(QCheckBox):
-    def __init__(self, layers):
-        super().__init__()
-
-        self.layers = layers
-        self.setToolTip('Annotation mode')
-        self.setChecked(False)
-        styleSheet = """QCheckBox {background-color:lightGray;
-                        border-radius: 3px;}
-                        QCheckBox::indicator {subcontrol-position:
-                        center center; subcontrol-origin: content;
-                        width: 28px; height: 28px;}
-                        QCheckBox::indicator:checked {
-                        background-color:rgb(0, 153, 255); border-radius: 3px;
-                        image: url(""" + path_off + """);}
-                        QCheckBox::indicator:unchecked
-                        {image: url(""" + path_off + """);}
-                        QCheckBox::indicator:unchecked:hover
-                        {image: url(""" + path_on + ");}"
-        self.setStyleSheet(styleSheet)
-        self.stateChanged.connect(lambda state=self:
-                                  self.layers.viewer._set_annotation(state))
-        self.layers.viewer.events.annotation.connect(self._set_annotation)
-
-    def _set_annotation(self, event):
-        with self.layers.viewer.events.blocker(self._set_annotation):
-            self.setChecked(self.layers.viewer.annotation)

@@ -12,6 +12,7 @@ from vispy.visuals import marker_types
 from vispy.color import get_color_names
 
 from .view import QtMarkersLayer
+from .view import QtMarkersControls
 
 
 @add_to_viewer
@@ -89,6 +90,10 @@ class Markers(Layer):
             self.n_dimensional = n_dimensional
             self._marker_types = marker_types
             self._colors = get_color_names()
+            self._selected_markers = None
+            self._mode = None
+            self._mode_history = None
+
 
             # update flags
             self._need_display_update = False
@@ -96,7 +101,7 @@ class Markers(Layer):
 
             self.name = 'markers'
             self._qt_properties = QtMarkersLayer(self)
-            self._selected_markers = None
+            self._qt_controls = QtMarkersControls(self)
 
     @property
     def coords(self) -> np.ndarray:
@@ -235,6 +240,19 @@ class Markers(Layer):
         self._scaling = scaling
 
         self.refresh()
+
+    @property
+    def mode(self):
+        """None, str: Interactive mode
+        """
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
+        if mode == self.mode:
+            return
+        self._mode = mode
+        #self.refresh()
 
     def _get_shape(self):
         if len(self.coords) == 0:
@@ -391,44 +409,42 @@ class Markers(Layer):
             msg = msg + ', ' + self.name + ', index ' + str(value)
         return coord, value, msg
 
-    def add(self, position, indices):
-        """Adds object at given mouse position and set of indices.
-
+    def _add(self, coord):
+        """Adds object at given mouse position
+        and set of indices.
         Parameters
         ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+        coord : sequence of indices to add marker at
         """
-        coord = self._get_coord(position, indices)
         self._size = append(self._size, [np.repeat(10, self.ndim)], axis=0)
         self.data = append(self.data, [coord], axis=0)
         self._selected_markers = len(self.data)-1
 
-    def remove(self, position, indices):
-        """Removes object at given mouse position and set of indices.
-
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def _remove(self):
+        """Removes selected object if any.
         """
-        coord = self._get_coord(position, indices)
         index = self._selected_markers
-        if index is None:
-            pass
-        else:
-
+        if index is not None:
             self._size = delete(self._size, index, axis=0)
             self.data = delete(self.data, index, axis=0)
             self._selected_markers = None
 
-    def move(self, position, indices):
-        """Moves object at given mouse position and set of indices.
+    def _move(self, coord):
+        """Moves object at given mouse position
+        and set of indices.
+        Parameters
+        ----------
+        coord : sequence of indices to move marker to
+        """
+        index = self._selected_markers
+        if index is not None:
+            self.data[index] = coord
+            self.refresh()
 
+    def interact(self, position, indices, dragging=False, shift=False, ctrl=False,
+        pressed=False, released=False, moving=False):
+        """Highlights object at given mouse position
+        and set of indices.
         Parameters
         ----------
         position : sequence of two int
@@ -436,10 +452,23 @@ class Markers(Layer):
         indices : sequence of int or slice
             Indices that make up the slice.
         """
-        coord = self._get_coord(position, indices)
-        index = self._selected_markers
-        if index is None:
+        if self.mode is None:
             pass
+        elif self.mode == 'select':
+            #If in edit mode
+            if pressed and ctrl:
+                #Delete an existing box if any on control press
+                coord = self._get_coord(position, indices)
+                self._remove()
+            elif moving and dragging:
+                #Drag an existing box if any
+                coord = self._get_coord(position, indices)
+                self._move(coord)
+        elif self.mode == 'add':
+            #If in addition mode
+            if pressed:
+                #Add a new box
+                coord = self._get_coord(position, indices)
+                self._add(coord)
         else:
-            self.data[index] = coord
-            self.refresh()
+            pass

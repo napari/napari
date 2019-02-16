@@ -34,14 +34,11 @@ class Viewer:
                                    auto_connect=True,
                                    status=Event,
                                    help=Event,
-                                   annotation=Event,
                                    active_markers=Event)
         self.dimensions = Dimensions(self)
         self.layers = LayersList(self)
         self.controls = Controls(self)
 
-        self._annotation = False
-        self._annotation_history = False
         self._active_image = None
         self._active_markers = None
         self._visible_markers = []
@@ -92,19 +89,6 @@ class Viewer:
             return
         self._help = help
         self.events.help(text=self._help)
-
-    @property
-    def annotation(self):
-        """bool: Annotation mode
-        """
-        return self._annotation
-
-    @annotation.setter
-    def annotation(self, annotation):
-        if annotation == self.annotation:
-            return
-        self._annotation = annotation
-        self.events.annotation(enabled=self._annotation)
 
     @property
     def active_markers(self):
@@ -201,14 +185,6 @@ class Viewer:
         for layer in self.layers:
             layer._set_view_slice(self.dimensions.indices)
         self._update_status()
-
-    def _set_annotation(self, bool):
-        if bool:
-            self.annotation = True
-            self.help = 'hold <space> to pan/zoom'
-        else:
-            self.annotation = False
-            self.help = ''
 
     def _update_active_layers(self, event):
         from ...layers._image_layer import Image
