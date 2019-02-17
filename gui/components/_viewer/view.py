@@ -47,36 +47,6 @@ class QtViewer(QSplitter):
 
         viewer.dimensions._qt.setFixedHeight(0)
 
-        # self._cursors = {
-        #         'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
-        #         'cross': Qt.CrossCursor,
-        #         'forbidden': Qt.ForbiddenCursor,
-        #         'pointing': Qt.PointingHandCursor,
-        #         'standard': QCursor()
-        #     }
-
-    # def set_cursor(self, event):
-    #     if self.viewer.mode == 'add':
-    #         self.view.interactive = False
-    #         if self.viewer.active_markers:
-    #             self.canvas.native.setCursor(self._cursors['cross'])
-    #         else:
-    #             self.canvas.native.setCursor(self._cursors['forbidden'])
-    #     elif self.viewer.mode == 'select':
-    #         self.view.interactive = False
-    #         if self.viewer.active_markers:
-    #             self.canvas.native.setCursor(self._cursors['pointing'])
-    #         else:
-    #             self.canvas.native.setCursor(self._cursors['forbidden'])
-    #     else:
-    #         self.view.interactive = True
-    #         self.canvas.native.setCursor(self._cursors['standard'])
-    #     if self.viewer.active_markers:
-    #         layer = self.viewer.layers[self.viewer.active_markers]
-    #         layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #         dragging=False, shift=False, ctrl=False,
-    #         pressed=False, released=False, moving=False)
-
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
@@ -117,51 +87,3 @@ class QtViewer(QSplitter):
             dragging=event.is_dragging,
             shift=shift, ctrl=ctrl, pressed=False, released=True, moving=False)
             self.viewer._update_status()
-
-    # def on_key_press(self, event):
-    #     if event.native.isAutoRepeat():
-    #         return
-    #     else:
-    #         if event.key == ' ':
-    #             if self.viewer.mode is not None:
-    #                 self.viewer._mode_history = self.viewer.mode
-    #                 self.viewer.mode = None
-    #             else:
-    #                 self.viewer._mode_history = None
-    #         elif event.key == 'Meta':
-    #             if self.viewer.mode == 'select' and self.viewer.active_markers:
-    #                 self.canvas.native.setCursor(self._cursors['remove'])
-    #                 layer = self.viewer.layers[self.viewer.active_markers]
-    #                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #                 mode=self.viewer.mode, dragging=False, shift=False, ctrl=True,
-    #                 pressed=False, released=False, moving=False)
-    #         elif event.key == 'Shift':
-    #             if self.viewer.mode is not None and self.viewer.active_markers:
-    #                 layer = self.viewer.layers[self.viewer.active_markers]
-    #                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #                 mode=self.viewer.mode, dragging=False, shift=True, ctrl=False,
-    #                 pressed=False, released=False, moving=False)
-    #         elif event.key == 'a':
-    #             self.viewer._set_mode('add')
-    #         elif event.key == 's':
-    #             self.viewer._set_mode('select')
-    #         elif event.key == 'n':
-    #             self.viewer._set_mode(None)
-    #
-    # def on_key_release(self, event):
-    #     if event.key == ' ':
-    #         if self.viewer._mode_history is not None:
-    #             self.viewer.mode = self.viewer._mode_history
-    #     elif event.key == 'Meta':
-    #         if self.viewer.mode == 'select' and self.viewer.active_markers:
-    #             self.canvas.native.setCursor(self._cursors['pointing'])
-    #             layer = self.viewer.layers[self.viewer.active_markers]
-    #             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #             mode=self.viewer.mode, dragging=False,
-    #             shift=False, ctrl=False, pressed=False, released=False, moving=False)
-    #     elif event.key == 'Shift':
-    #         if self.viewer.mode is not None and self.viewer.active_markers:
-    #             layer = self.viewer.layers[self.viewer.active_markers]
-    #             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #             mode=self.viewer.mode, dragging=False, shift=False, ctrl=False,
-    #             pressed=False, released=False, moving=False)

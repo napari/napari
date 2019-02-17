@@ -91,9 +91,9 @@ class Markers(Layer):
             self._marker_types = marker_types
             self._colors = get_color_names()
             self._selected_markers = None
-            self._mode = None
-            self._mode_history = None
-
+            self._mode = 'pan/zoom'
+            self._mode_history = 'pan/zoom'
+            self._help = ''
 
             # update flags
             self._need_display_update = False
@@ -251,7 +251,16 @@ class Markers(Layer):
     def mode(self, mode):
         if mode == self.mode:
             return
-        self._mode = mode
+        if (mode=='add') or (mode=='select'):
+                self.viewer._qt.view.interactive = False
+                self._help = 'hold <space> to pan/zoom'
+                self._mode = mode
+        elif mode == 'pan/zoom':
+            self.viewer._qt.view.interactive = True
+            self._help = ''
+            self._mode = mode
+        else:
+            raise ValueError("Mode not recongnized")
         #self.refresh()
 
     def _get_shape(self):
@@ -279,6 +288,16 @@ class Markers(Layer):
         """
         self._need_display_update = True
         self._update()
+
+    # def _set_mode(self, mode):
+    #     if (mode=='add') or (mode=='select'):
+    #         self.mode = mode
+    #         self.help = 'hold <space> to pan/zoom'
+    #         self.viewer._qt.view.interactive = False
+    #     else:
+    #         self.viewer._qt.view.interactive = True
+    #         self.mode = None
+    #         self.help = ''
 
     def _slice_markers(self, indices):
         """Determines the slice of markers given the indices.
