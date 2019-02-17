@@ -26,21 +26,11 @@ class QtMarkersControls(QFrame):
         layout.addWidget(self.panzoom_button)
         layout.addStretch(0)
         self.setLayout(layout)
+        self.setMouseTracking(True)
 
-    # def set_cursor(self, event):
-    #     if self.viewer.mode == 'add':
-    #         if self.viewer.active_markers:
-    #             self.canvas.native.setCursor(self._cursors['cross'])
-    #         else:
-    #             self.canvas.native.setCursor(self._cursors['forbidden'])
-    #     elif self.viewer.mode == 'select':
-    #         if self.viewer.active_markers:
-    #             self.canvas.native.setCursor(self._cursors['pointing'])
-    #         else:
-    #             self.canvas.native.setCursor(self._cursors['forbidden'])
-    #     else:
-    #         self.canvas.native.setCursor(self._cursors['standard'])
-    #
+    def mouseMoveEvent(self, event):
+        self.layer.viewer.status = self.layer.status
+
     # def on_key_press(self, event):
     #     if event.native.isAutoRepeat():
     #         return

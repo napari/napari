@@ -42,7 +42,10 @@ class Layer(VisualWrapper, ABC):
         self._qt_controls = None
         self.name = 'layer'
         self._freeze = False
-        self._controls_msg = 'Ready'
+        self._status = 'Ready'
+        self._help = ''
+        self._cursor = 'standard'
+        self._interactive = True
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
@@ -118,6 +121,59 @@ class Layer(VisualWrapper, ABC):
 
         self._parent = parent
         self._after_set_viewer(prev)
+
+    @property
+    def status(self):
+        """string: Status string
+        """
+        return self._status
+
+    @status.setter
+    def status(self, status):
+        if status == self.status:
+            return
+        self.viewer.status = status
+        self._status = status
+
+    @property
+    def help(self):
+        """string: String that can be displayed to the
+        user in the status bar with helpful usage tips.
+        """
+        return self._help
+
+    @help.setter
+    def help(self, help):
+        if help == self.help:
+            return
+        self.viewer.help = help
+        self._help = help
+        
+    @property
+    def interactive(self):
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
+        """
+        return self._interactive
+
+    @interactive.setter
+    def interactive(self, interactive):
+        if interactive == self.interactive:
+            return
+        self.viewer.interactive = interactive
+        self._interactive = interactive
+
+    @property
+    def cursor(self):
+        """string: String identifying cursor displayed over canvas.
+        """
+        return self._cursor
+
+    @cursor.setter
+    def cursor(self, cursor):
+        if cursor == self.cursor:
+            return
+        self.viewer.cursor = cursor
+        self._cursor = cursor
 
     def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.

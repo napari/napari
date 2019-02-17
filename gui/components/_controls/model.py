@@ -21,8 +21,14 @@ class Controls:
         for layer in self.viewer.layers[::-1]:
             if layer.selected:
                 self._qt.display(layer)
-                self.viewer.status = layer._controls_msg
+                self.viewer.status = layer.status
+                self.viewer.help = layer.help
+                self.viewer.cursor = layer.cursor
+                self.viewer.interactive = layer.interactive
                 break
         else:
             self._qt.display(None)
             self.viewer.status = 'Ready'
+            self.viewer.help = ''
+            self.viewer.cursor = 'standard'
+            self.viewer.interactive = True

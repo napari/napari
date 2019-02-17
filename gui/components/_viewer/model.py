@@ -79,6 +79,20 @@ class Viewer:
         self.events.status(text=self._status)
 
     @property
+    def help(self):
+        """string: String that can be displayed to the
+        user in the status bar with helpful usage tips.
+        """
+        return self._help
+
+    @help.setter
+    def help(self, help):
+        if help == self.help:
+            return
+        self._help = help
+        self.events.help(text=self._help)
+
+    @property
     def interactive(self):
         """bool: Determines if canvas pan/zoom interactivity is enabled or not.
         """
@@ -103,20 +117,6 @@ class Viewer:
             return
         self._qt.set_cursor(cursor)
         self._cursor = cursor
-
-    @property
-    def help(self):
-        """string: String that can be displayed to the
-        user in the status bar with helpful usage tips.
-        """
-        return self._help
-
-    @help.setter
-    def help(self, help):
-        if help == self.help:
-            return
-        self._help = help
-        self.events.help(text=self._help)
 
     @property
     def active_markers(self):

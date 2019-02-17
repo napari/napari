@@ -22,9 +22,6 @@ class QtImageControls(QWidget):
         self.setLayout(layout)
         self.setMouseTracking(True)
 
-        cmin, cmax = self.layer.clim
-        self.layer._controls_msg = f'({cmin: 0.3}, {cmax: 0.3})'
-
         self.climSlider.rangeChanged.connect(self.clim_slider_changed)
 
     def clim_slider_changed(self, slidermin, slidermax):
@@ -35,7 +32,6 @@ class QtImageControls(QWidget):
                 cmax = valmin+slidermax*(valmax-valmin)
                 layer.clim = [cmin, cmax]
                 layer._qt_controls.clim_slider_update()
-        self.update_status_bar()
 
     def clim_slider_update(self):
         valmin, valmax = self.layer._clim_range
@@ -47,9 +43,4 @@ class QtImageControls(QWidget):
         self.climSlider.blockSignals(False)
 
     def mouseMoveEvent(self, event):
-        self.update_status_bar()
-
-    def update_status_bar(self):
-        cmin, cmax = self.layer.clim
-        self.layer._controls_msg = f'({cmin: 0.3}, {cmax: 0.3})'
-        self.layer.viewer.status = self.layer._controls_msg
+        self.layer.viewer.status = self.layer.status
