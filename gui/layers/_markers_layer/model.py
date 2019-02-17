@@ -249,8 +249,8 @@ class Markers(Layer):
 
     @mode.setter
     def mode(self, mode):
-        # if mode == self.mode:
-        #     return
+        if mode == self.mode:
+            return
         if mode == 'add':
             self.cursor = 'cross'
             self.interactive = False
@@ -271,7 +271,6 @@ class Markers(Layer):
             self._mode = mode
         else:
             raise ValueError("Mode not recongnized")
-        #self.refresh()
 
     def _get_shape(self):
         if len(self.coords) == 0:
@@ -298,16 +297,6 @@ class Markers(Layer):
         """
         self._need_display_update = True
         self._update()
-
-    # def _set_mode(self, mode):
-    #     if (mode=='add') or (mode=='select'):
-    #         self.mode = mode
-    #         self.help = 'hold <space> to pan/zoom'
-    #         self.viewer._qt.view.interactive = False
-    #     else:
-    #         self.viewer._qt.view.interactive = True
-    #         self.mode = None
-    #         self.help = ''
 
     def _slice_markers(self, indices):
         """Determines the slice of markers given the indices.
