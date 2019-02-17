@@ -15,9 +15,6 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
 
-        #self.viewer.events.mode.connect(self.set_cursor)
-        #self.viewer.events.active_markers.connect(self.set_cursor)
-
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
 
@@ -70,8 +67,8 @@ class QtViewer(QSplitter):
              shift = 'Shift' in event.modifiers
              ctrl = 'Meta' in event.modifiers
              layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-             dragging=event.is_dragging,
-             shift=shift, ctrl=ctrl, pressed=False, released=False, moving=True)
+             dragging=event.is_dragging, shift=shift, ctrl=ctrl, pressed=False,
+             released=False, moving=True)
 
         self.viewer._update_status()
 
@@ -83,8 +80,8 @@ class QtViewer(QSplitter):
             shift = 'Shift' in event.modifiers
             ctrl = 'Meta' in event.modifiers
             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-            dragging=event.is_dragging,
-            shift=shift, ctrl=ctrl, pressed=True, released=False, moving=False)
+            dragging=event.is_dragging, shift=shift, ctrl=ctrl, pressed=True,
+            released=False, moving=False)
             self.viewer._update_status()
 
     def on_mouse_release(self, event):
@@ -95,6 +92,6 @@ class QtViewer(QSplitter):
             shift = 'Shift' in event.modifiers
             ctrl = 'Meta' in event.modifiers
             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-            dragging=event.is_dragging,
-            shift=shift, ctrl=ctrl, pressed=False, released=True, moving=False)
+            dragging=event.is_dragging, shift=shift, ctrl=ctrl, pressed=False,
+            released=True, moving=False)
             self.viewer._update_status()
