@@ -27,35 +27,19 @@ class QtMarkersControls(QFrame):
         layout.addStretch(0)
         self.setLayout(layout)
 
-        # self._cursors = {
-        #         'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
-        #         'cross': Qt.CrossCursor,
-        #         'forbidden': Qt.ForbiddenCursor,
-        #         'pointing': Qt.PointingHandCursor,
-        #         'standard': QCursor()
-        #     }
-
     # def set_cursor(self, event):
     #     if self.viewer.mode == 'add':
-    #         self.view.interactive = False
     #         if self.viewer.active_markers:
     #             self.canvas.native.setCursor(self._cursors['cross'])
     #         else:
     #             self.canvas.native.setCursor(self._cursors['forbidden'])
     #     elif self.viewer.mode == 'select':
-    #         self.view.interactive = False
     #         if self.viewer.active_markers:
     #             self.canvas.native.setCursor(self._cursors['pointing'])
     #         else:
     #             self.canvas.native.setCursor(self._cursors['forbidden'])
     #     else:
-    #         self.view.interactive = True
     #         self.canvas.native.setCursor(self._cursors['standard'])
-    #     if self.viewer.active_markers:
-    #         layer = self.viewer.layers[self.viewer.active_markers]
-    #         layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #         dragging=False, shift=False, ctrl=False,
-    #         pressed=False, released=False, moving=False)
     #
     # def on_key_press(self, event):
     #     if event.native.isAutoRepeat():

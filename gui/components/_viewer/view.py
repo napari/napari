@@ -47,6 +47,17 @@ class QtViewer(QSplitter):
 
         viewer.dimensions._qt.setFixedHeight(0)
 
+        self._cursors = {
+                'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
+                'cross': Qt.CrossCursor,
+                'forbidden': Qt.ForbiddenCursor,
+                'pointing': Qt.PointingHandCursor,
+                'standard': QCursor()
+            }
+
+    def set_cursor(self, cursor):
+        self.canvas.native.setCursor(self._cursors[cursor])
+
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """

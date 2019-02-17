@@ -46,6 +46,8 @@ class Viewer:
 
         self._status = 'Ready'
         self._help = ''
+        self._cursor = 'standard'
+        self._interactive = True
 
         self._qt = QtViewer(self)
 
@@ -75,6 +77,32 @@ class Viewer:
             return
         self._status = status
         self.events.status(text=self._status)
+
+    @property
+    def interactive(self):
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
+        """
+        return self._interactive
+
+    @interactive.setter
+    def interactive(self, interactive):
+        if interactive == self.interactive:
+            return
+        self._view.interactive = interactive
+        self._interactive = interactive
+
+    @property
+    def cursor(self):
+        """string: String identifying cursor displayed over canvas.
+        """
+        return self._cursor
+
+    @cursor.setter
+    def cursor(self, cursor):
+        if cursor == self.cursor:
+            return
+        self._qt.set_cursor(cursor)
+        self._cursor = cursor
 
     @property
     def help(self):

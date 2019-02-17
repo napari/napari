@@ -93,7 +93,6 @@ class Markers(Layer):
             self._selected_markers = None
             self._mode = 'pan/zoom'
             self._mode_history = 'pan/zoom'
-            self._help = ''
 
             # update flags
             self._need_display_update = False
@@ -249,15 +248,22 @@ class Markers(Layer):
 
     @mode.setter
     def mode(self, mode):
-        if mode == self.mode:
-            return
-        if (mode=='add') or (mode=='select'):
-                self.viewer._qt.view.interactive = False
-                self._help = 'hold <space> to pan/zoom'
-                self._mode = mode
+        # if mode == self.mode:
+        #     return
+        if mode == 'add':
+            self.viewer.cursor = 'cross'
+            self.viewer.interactive = False
+            self.viewer.help = 'hold <space> to pan/zoom'
+            self._mode = mode
+        elif mode == 'select':
+            self.viewer.cursor = 'pointing'
+            self.viewer.interactive = False
+            self.viewer.help = 'hold <space> to pan/zoom'
+            self._mode = mode
         elif mode == 'pan/zoom':
-            self.viewer._qt.view.interactive = True
-            self._help = ''
+            self.viewer.cursor = 'standard'
+            self.viewer.interactive = True
+            self.viewer.help = ''
             self._mode = mode
         else:
             raise ValueError("Mode not recongnized")
