@@ -93,7 +93,7 @@ class Image(Layer):
         self._node.clim = [np.min(self.image), np.max(self.image)]
 
         cmin, cmax = self.clim
-        self._status = f'{cmin: 0.3}, {cmax: 0.3}'
+        self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
 
         self._qt_properties = QtImageLayer(self)
         self._qt_controls = QtImageControls(self)
@@ -253,7 +253,8 @@ class Image(Layer):
 
     @clim.setter
     def clim(self, clim):
-        self.status = f'{clim[0]: 0.3}, {clim[1]: 0.3}'
+        self._clim_msg = f'{clim[0]: 0.3}, {clim[1]: 0.3}'
+        self.status = self._clim_msg
         self._node.clim = clim
 
     @property
@@ -352,3 +353,12 @@ class Image(Layer):
             else:
                 msg = msg + f'{value:0.3}'
         return coord, value, msg
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            return
+        coord, value, msg = self.get_value(event.pos,
+                                           self.viewer.dimensions.indices)
+        self.status = msg

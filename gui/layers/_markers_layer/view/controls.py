@@ -29,55 +29,7 @@ class QtMarkersControls(QFrame):
         self.setMouseTracking(True)
 
     def mouseMoveEvent(self, event):
-        self.layer.viewer.status = self.layer.status
-
-    # def on_key_press(self, event):
-    #     if event.native.isAutoRepeat():
-    #         return
-    #     else:
-    #         if event.key == ' ':
-    #             if self.viewer.mode is not None:
-    #                 self.viewer._mode_history = self.viewer.mode
-    #                 self.viewer.mode = None
-    #             else:
-    #                 self.viewer._mode_history = None
-    #         elif event.key == 'Meta':
-    #             if self.viewer.mode == 'select' and self.viewer.active_markers:
-    #                 self.canvas.native.setCursor(self._cursors['remove'])
-    #                 layer = self.viewer.layers[self.viewer.active_markers]
-    #                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #                 mode=self.viewer.mode, dragging=False, shift=False, ctrl=True,
-    #                 pressed=False, released=False, moving=False)
-    #         elif event.key == 'Shift':
-    #             if self.viewer.mode is not None and self.viewer.active_markers:
-    #                 layer = self.viewer.layers[self.viewer.active_markers]
-    #                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #                 mode=self.viewer.mode, dragging=False, shift=True, ctrl=False,
-    #                 pressed=False, released=False, moving=False)
-    #         elif event.key == 'a':
-    #             self.viewer._set_mode('add')
-    #         elif event.key == 's':
-    #             self.viewer._set_mode('select')
-    #         elif event.key == 'n':
-    #             self.viewer._set_mode(None)
-    #
-    # def on_key_release(self, event):
-    #     if event.key == ' ':
-    #         if self.viewer._mode_history is not None:
-    #             self.viewer.mode = self.viewer._mode_history
-    #     elif event.key == 'Meta':
-    #         if self.viewer.mode == 'select' and self.viewer.active_markers:
-    #             self.canvas.native.setCursor(self._cursors['pointing'])
-    #             layer = self.viewer.layers[self.viewer.active_markers]
-    #             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #             mode=self.viewer.mode, dragging=False,
-    #             shift=False, ctrl=False, pressed=False, released=False, moving=False)
-    #     elif event.key == 'Shift':
-    #         if self.viewer.mode is not None and self.viewer.active_markers:
-    #             layer = self.viewer.layers[self.viewer.active_markers]
-    #             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-    #             mode=self.viewer.mode, dragging=False, shift=False, ctrl=False,
-    #             pressed=False, released=False, moving=False)
+        self.layer.status = self.layer.mode
 
 
 class QtPanZoomButton(QRadioButton):

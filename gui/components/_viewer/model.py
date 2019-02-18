@@ -39,15 +39,11 @@ class Viewer:
         self.layers = LayersList(self)
         self.controls = Controls(self)
 
-        self._active_image = None
-        self._active_markers = None
-        self._visible_markers = []
-        self.position = [0, 0]
-
         self._status = 'Ready'
         self._help = ''
         self._cursor = 'standard'
         self._interactive = True
+        self._top = None
 
         self._qt = QtViewer(self)
 
@@ -214,45 +210,31 @@ class Viewer:
             layer._set_view_slice(self.dimensions.indices)
         self._update_status()
 
-    def _update_active_layers(self, event):
-        from ...layers._image_layer import Image
-        from ...layers._markers_layer import Markers
-        top_markers = []
-        for i, layer in enumerate(self.layers[::-1]):
-            if layer.visible and isinstance(layer, Image):
-                top_image = len(self.layers) - 1 - i
+    def _update_layer_selection(self, event):
+        #iteration goes backwards to find top most selected layer
+        for layer in self.layers[::-1]:
+            if layer.selected:
+                self._top = layer
                 break
-            elif layer.visible and isinstance(layer, Markers):
-                top_markers.append(len(self.layers) - 1 - i)
-        else:
-            top_image = None
-
-        active_markers = None
-        for i in top_markers:
-            if self.layers[i].selected:
-                active_markers = i
-                break
-
-        self._active_image = top_image
-        self._visible_markers = top_markers
-        self.active_markers = active_markers
+            else:
+                self._top = None
         self.controls.update()
 
-    def _update_status(self):
-        msg = ''
-        for i in self._visible_markers:
-            layer = self.layers[i]
-            coord, value, msg = layer.get_value(self.position,
-                                                self.dimensions.indices)
-            if value is None:
-                pass
-            else:
-                break
-        else:
-            if self._active_image is None:
-                pass
-            else:
-                layer = self.layers[self._active_image]
-                coord, value, msg = layer.get_value(self.position,
-                                                    self.dimensions.indices)
-        self.status = msg
+    # def _update_status(self):
+    #     msg = ''
+    #     for i in self._visible_markers:
+    #         layer = self.layers[i]
+    #         coord, value, msg = layer.get_value(self.position,
+    #                                             self.dimensions.indices)
+    #         if value is None:
+    #             pass
+    #         else:
+    #             break
+    #     else:
+    #         if self._active_image is None:
+    #             pass
+    #         else:
+    #             layer = self.layers[self._active_image]
+    #             coord, value, msg = layer.get_value(self.position,
+    #                                                 self.dimensions.indices)
+    #     self.status = msg

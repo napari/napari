@@ -17,15 +17,13 @@ class Controls:
         self._qt = QtControls(self)
 
     def update(self):
-        #iteration goes backwards to find top most selected layer
-        for layer in self.viewer.layers[::-1]:
-            if layer.selected:
-                self._qt.display(layer)
-                self.viewer.status = layer.status
-                self.viewer.help = layer.help
-                self.viewer.cursor = layer.cursor
-                self.viewer.interactive = layer.interactive
-                break
+        layer = self.viewer._top
+        if layer is not None:
+            self._qt.display(layer)
+            self.viewer.status = layer.status
+            self.viewer.help = layer.help
+            self.viewer.cursor = layer.cursor
+            self.viewer.interactive = layer.interactive
         else:
             self._qt.display(None)
             self.viewer.status = 'Ready'

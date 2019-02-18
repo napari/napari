@@ -148,7 +148,7 @@ class Layer(VisualWrapper, ABC):
             return
         self.viewer.help = help
         self._help = help
-        
+
     @property
     def interactive(self):
         """bool: Determines if canvas pan/zoom interactivity is enabled or not.
@@ -209,38 +209,27 @@ class Layer(VisualWrapper, ABC):
         yield
         self._freeze = False
 
-    def get_value(self, position, indices):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
-
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-
-        Returns
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
-        msg : string
-            String containing a message that can be used as
-            a status update.
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
         """
-        return None, None, ''
+        return
 
-    def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
-        pressed=False, released=False, moving=False):
-        """Highlights object at given mouse position
-        and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+        """
+        return
+
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
+        """
+        return
+
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        """
+        return
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
         """
         return

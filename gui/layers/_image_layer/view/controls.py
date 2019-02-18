@@ -25,8 +25,9 @@ class QtImageControls(QWidget):
         self.climSlider.rangeChanged.connect(self.clim_slider_changed)
 
     def clim_slider_changed(self, slidermin, slidermax):
+        from ..model import Image
         for layer in self.layer.viewer.layers:
-            if hasattr(layer, 'visual') and layer.selected:
+            if isinstance(layer, Image) and layer.selected:
                 valmin, valmax = layer._clim_range
                 cmin = valmin+slidermin*(valmax-valmin)
                 cmax = valmin+slidermax*(valmax-valmin)
@@ -43,4 +44,4 @@ class QtImageControls(QWidget):
         self.climSlider.blockSignals(False)
 
     def mouseMoveEvent(self, event):
-        self.layer.viewer.status = self.layer.status
+        self.layer.status = self.layer._clim_msg

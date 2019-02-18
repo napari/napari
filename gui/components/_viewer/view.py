@@ -21,8 +21,8 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
         self.canvas.connect(self.on_mouse_release)
-        #self.canvas.connect(self.on_key_press)
-        #self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_key_press)
+        self.canvas.connect(self.on_key_release)
 
         self.view = self.canvas.central_widget.add_view()
         # Set 2D camera (the camera will scale to the contents in the scene)
@@ -58,40 +58,34 @@ class QtViewer(QSplitter):
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
-        if event.pos is None:
-            return
-        self.viewer.position = event.pos
-
-        if self.viewer.active_markers:
-             layer = self.viewer.layers[self.viewer.active_markers]
-             shift = 'Shift' in event.modifiers
-             ctrl = 'Meta' in event.modifiers
-             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-             dragging=event.is_dragging, shift=shift, ctrl=ctrl, pressed=False,
-             released=False, moving=True)
-
-        self.viewer._update_status()
+        layer = self.viewer._top
+        if layer is not None:
+            layer.on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
-        if self.viewer.active_markers:
-            layer = self.viewer.layers[self.viewer.active_markers]
-            shift = 'Shift' in event.modifiers
-            ctrl = 'Meta' in event.modifiers
-            layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-            dragging=event.is_dragging, shift=shift, ctrl=ctrl, pressed=True,
-            released=False, moving=False)
-            self.viewer._update_status()
+        layer = self.viewer._top
+        if layer is not None:
+            layer.on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
-        if self.viewer.active_markers:
-            layer = self.viewer.layers[self.viewer.active_markers]
-            shift = 'Shift' in event.modifiers
-            ctrl = 'Meta' in event.modifiers
-            layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-            dragging=event.is_dragging, shift=shift, ctrl=ctrl, pressed=False,
-            released=True, moving=False)
-            self.viewer._update_status()
+        layer = self.viewer._top
+        if layer is not None:
+            layer.on_mouse_release(event)
+
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        """
+        layer = self.viewer._top
+        if layer is not None:
+            layer.on_key_press(event)
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+        """
+        layer = self.viewer._top
+        if layer is not None:
+            layer.on_key_release(event)

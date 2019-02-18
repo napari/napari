@@ -327,7 +327,7 @@ class Markers(Layer):
         else:
             return [], [], []
 
-    def _set_selected_markers(self, indices):
+    def _select_marker(self, indices):
         """Determines selected markers selected given indices.
 
         Parameters
@@ -351,7 +351,7 @@ class Markers(Layer):
         else:
             selection = None
 
-        self._selected_markers = selection
+        return selection
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -392,40 +392,37 @@ class Markers(Layer):
         pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
                                                      max_shape[1]-1)]
         coord = copy(indices)
-        coord[0] = int(pos[1])
-        coord[1] = int(pos[0])
+        coord[0] = pos[1]
+        coord[1] = pos[0]
         return coord
 
-    def get_value(self, position, indices):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def get_message(self, coord, value):
+        """Returns coordinate and value string for given mouse coordinates
+        and value.
 
         Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-
-        Returns
         ----------
         coord : sequence of int
             Position of mouse cursor in data.
         value : int or float or sequence of int or float
             Value of the data at the coord.
+
+        Returns
+        ----------
         msg : string
             String containing a message that can be used as
             a status update.
         """
-        coord = self._get_coord(position, indices)
-        self._set_selected_markers(coord)
-        value = self._selected_markers
-        msg = f'{coord}'
+        coord_shift = copy(coord)
+        coord_shift[0] = int(coord[1])
+        coord_shift[1] = int(coord[0])
+        msg = f'{coord_shift}'
+
         if value is None:
             pass
         else:
             msg = msg + ', ' + self.name + ', index ' + str(value)
-        return coord, value, msg
+        return msg
 
     def _add(self, coord):
         """Adds object at given mouse position
@@ -459,34 +456,117 @@ class Markers(Layer):
             self.data[index] = coord
             self.refresh()
 
-    def interact(self, position, indices, dragging=False, shift=False, ctrl=False,
-        pressed=False, released=False, moving=False):
-        """Highlights object at given mouse position
-        and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
         """
-        if self.mode is None:
-            pass
-        elif self.mode == 'select':
-            #If in edit mode
-            if pressed and ctrl:
-                #Delete an existing box if any on control press
-                coord = self._get_coord(position, indices)
-                self._remove()
-            elif moving and dragging:
-                #Drag an existing box if any
-                coord = self._get_coord(position, indices)
-                self._move(coord)
-        elif self.mode == 'add':
-            #If in addition mode
-            if pressed:
-                #Add a new box
-                coord = self._get_coord(position, indices)
-                self._add(coord)
+        if event.pos is None:
+            return
+        position = event.pos
+        indices = self.viewer.dimensions.indices
+        coord = self._get_coord(position, indices)
+        if self.mode == 'select' and event.is_dragging:
+            self._move(coord)
         else:
-            pass
+            self._selected_markers = self._select_marker(coord)
+
+        self.status = self.get_message(coord, self._selected_markers)
+
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+        """
+        position = event.pos
+        indices = self.viewer.dimensions.indices
+        coord = self._get_coord(position, indices)
+        self._selected_markers = self._select_marker(coord)
+        shift = 'Shift' in event.modifiers
+
+        if self.mode == 'add':
+            if shift:
+                self._remove()
+            else:
+                self._add(coord)
+
+        self.status = self.get_message(coord, self._selected_markers)
+
+    #
+    #
+    # def interact(self, position, indices, dragging=False, shift=False, ctrl=False,
+    #     pressed=False, released=False, moving=False):
+    #     """Highlights object at given mouse position
+    #     and set of indices.
+    #     Parameters
+    #     ----------
+    #     position : sequence of two int
+    #         Position of mouse cursor in canvas.
+    #     indices : sequence of int or slice
+    #         Indices that make up the slice.
+    #     """
+    #     if self.mode is None:
+    #         pass
+    #     elif self.mode == 'select':
+    #         #If in edit mode
+    #         if pressed and ctrl:
+    #             #Delete an existing box if any on control press
+    #             coord = self._get_coord(position, indices)
+    #             self._remove()
+    #         elif moving and dragging:
+    #             #Drag an existing box if any
+    #             coord = self._get_coord(position, indices)
+    #             self._move(coord)
+    #     elif self.mode == 'add':
+    #         #If in addition mode
+    #         if pressed:
+    #             #Add a new box
+    #             coord = self._get_coord(position, indices)
+    #             self._add(coord)
+    #     else:
+    #         pass
+
+
+# def on_key_press(self, event):
+#     if event.native.isAutoRepeat():
+#         return
+#     else:
+#         if event.key == ' ':
+#             if self.viewer.mode is not None:
+#                 self.viewer._mode_history = self.viewer.mode
+#                 self.viewer.mode = None
+#             else:
+#                 self.viewer._mode_history = None
+#         elif event.key == 'Meta':
+#             if self.viewer.mode == 'select' and self.viewer.active_markers:
+#                 self.canvas.native.setCursor(self._cursors['remove'])
+#                 layer = self.viewer.layers[self.viewer.active_markers]
+#                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
+#                 mode=self.viewer.mode, dragging=False, shift=False, ctrl=True,
+#                 pressed=False, released=False, moving=False)
+#         elif event.key == 'Shift':
+#             if self.viewer.mode is not None and self.viewer.active_markers:
+#                 layer = self.viewer.layers[self.viewer.active_markers]
+#                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
+#                 mode=self.viewer.mode, dragging=False, shift=True, ctrl=False,
+#                 pressed=False, released=False, moving=False)
+#         elif event.key == 'a':
+#             self.viewer._set_mode('add')
+#         elif event.key == 's':
+#             self.viewer._set_mode('select')
+#         elif event.key == 'n':
+#             self.viewer._set_mode(None)
+#
+# def on_key_release(self, event):
+#     if event.key == ' ':
+#         if self.viewer._mode_history is not None:
+#             self.viewer.mode = self.viewer._mode_history
+#     elif event.key == 'Meta':
+#         if self.viewer.mode == 'select' and self.viewer.active_markers:
+#             self.canvas.native.setCursor(self._cursors['pointing'])
+#             layer = self.viewer.layers[self.viewer.active_markers]
+#             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
+#             mode=self.viewer.mode, dragging=False,
+#             shift=False, ctrl=False, pressed=False, released=False, moving=False)
+#     elif event.key == 'Shift':
+#         if self.viewer.mode is not None and self.viewer.active_markers:
+#             layer = self.viewer.layers[self.viewer.active_markers]
+#             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
+#             mode=self.viewer.mode, dragging=False, shift=False, ctrl=False,
+#             pressed=False, released=False, moving=False)
