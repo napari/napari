@@ -18,8 +18,6 @@ class Viewer:
         List of contained layers.
     dimensions : Dimensions
         Contains axes, indices, dimensions and sliders.
-    controls : Controls
-        Contains layer specific controls.
     camera : vispy.scene.Camera
         Viewer camera.
     """
@@ -27,7 +25,6 @@ class Viewer:
     def __init__(self):
         super().__init__()
         from .._layers_list import LayersList
-        from .._controls import Controls
         from .._dimensions import Dimensions
 
         self.events = EmitterGroup(source=self,
@@ -37,7 +34,6 @@ class Viewer:
                                    active_markers=Event)
         self.dimensions = Dimensions(self)
         self.layers = LayersList(self)
-        self.controls = Controls(self)
 
         self._status = 'Ready'
         self._help = ''
@@ -211,30 +207,20 @@ class Viewer:
         self._update_status()
 
     def _update_layer_selection(self, event):
-        #iteration goes backwards to find top most selected layer
+        #iteration goes backwards to find top most selected layer if any
         for layer in self.layers[::-1]:
             if layer.selected:
+                self._qt.control_panel.display(layer)
+                self.status = layer.status
+                self.help = layer.help
+                self.cursor = layer.cursor
+                self.interactive = layer.interactive
                 self._top = layer
                 break
             else:
+                self._qt.control_panel.display(None)
+                self.status = 'Ready'
+                self.help = ''
+                self.cursor = 'standard'
+                self.interactive = True
                 self._top = None
-        self.controls.update()
-
-    # def _update_status(self):
-    #     msg = ''
-    #     for i in self._visible_markers:
-    #         layer = self.layers[i]
-    #         coord, value, msg = layer.get_value(self.position,
-    #                                             self.dimensions.indices)
-    #         if value is None:
-    #             pass
-    #         else:
-    #             break
-    #     else:
-    #         if self._active_image is None:
-    #             pass
-    #         else:
-    #             layer = self.layers[self._active_image]
-    #             coord, value, msg = layer.get_value(self.position,
-    #                                                 self.dimensions.indices)
-    #     self.status = msg

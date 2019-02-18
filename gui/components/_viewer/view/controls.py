@@ -3,10 +3,10 @@ from PyQt5.QtCore import QSize
 
 
 class QtControls(QStackedWidget):
-    def __init__(self, controls):
+    def __init__(self, viewer):
         super().__init__()
 
-        self.controls = controls
+        self.viewer = viewer
 
         self.setMouseTracking(True)
         self.setMinimumSize(QSize(40, 40))
@@ -14,8 +14,8 @@ class QtControls(QStackedWidget):
         self.addWidget(self.empty_widget)
         self.display(None)
 
-        self.controls.viewer.layers.events.add_item.connect(self._add)
-        self.controls.viewer.layers.events.remove_item.connect(self._remove)
+        self.viewer.layers.events.add_item.connect(self._add)
+        self.viewer.layers.events.remove_item.connect(self._remove)
 
     def display(self, layer):
         if layer is None or layer._qt_controls is None:

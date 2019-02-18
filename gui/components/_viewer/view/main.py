@@ -3,8 +3,10 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
+from .controls import QtControls
+
 from os.path import join
-from ...resources import resources_dir
+from ....resources import resources_dir
 path_cursor = join(resources_dir, 'icons', 'cursor_disabled.png')
 
 
@@ -37,8 +39,9 @@ class QtViewer(QSplitter):
         layout.addWidget(self.viewer.dimensions._qt)
         center.setLayout(layout)
 
-        # Add vertical sliders, center, and layerlist
-        self.addWidget(self.viewer.controls._qt)
+        # Add controls, center, and layerlist
+        self.control_panel = QtControls(viewer)
+        self.addWidget(self.control_panel)
         self.addWidget(center)
         self.addWidget(self.viewer.layers._qt)
 
