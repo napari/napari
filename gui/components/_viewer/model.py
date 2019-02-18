@@ -224,3 +224,4 @@ class Viewer:
                 self.cursor = 'standard'
                 self.interactive = True
                 self._top = None
+        self._canvas.native.setFocus()
