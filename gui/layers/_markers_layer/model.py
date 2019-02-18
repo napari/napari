@@ -131,8 +131,8 @@ class Markers(Layer):
 
     @property
     def n_dimensional(self) -> str:
-        """ bool: if True, renders markers not just in central plane but also in all
-        n dimensions according to specified marker size
+        """ bool: if True, renders markers not just in central plane but also
+        in all n dimensions according to specified marker size
         """
         return self._n_dimensional
 
@@ -346,9 +346,9 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            size_array = self._size[matches, :2]*np.expand_dims(scale, axis=1)/2
+            size_array = self._size[matches, :2]*np.expand_dims(scale, axis=1)
             distances = abs(in_slice_markers - indices[:2])
-            in_slice_matches = np.all(distances <= size_array, axis=1)
+            in_slice_matches = np.all(distances <= size_array/2, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
                 selection = np.where(matches)[0][indices[-1]]
@@ -507,7 +507,7 @@ class Markers(Layer):
                     self._mode_history = 'pan/zoom'
             elif event.key == 'Shift':
                 if self.mode == 'add':
-                        self.cursor = 'forbidden'
+                    self.cursor = 'forbidden'
             elif event.key == 'a':
                 self.mode = 'add'
             elif event.key == 's':
@@ -523,4 +523,4 @@ class Markers(Layer):
                 self.mode = self._mode_history
         elif event.key == 'Shift':
             if self.mode == 'add':
-                    self.cursor = 'cross'
+                self.cursor = 'cross'
