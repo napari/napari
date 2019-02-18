@@ -31,7 +31,8 @@ class QtLayersList(QScrollArea):
         index = event.index
         total = len(self.layers)
         if layer._qt_properties is not None:
-            self.vbox_layout.insertWidget(2*(total - index)-1, layer._qt_properties)
+            self.vbox_layout.insertWidget(2*(total - index)-1,
+                                          layer._qt_properties)
             self.vbox_layout.insertWidget(2*(total - index), QtDivider())
 
     def _remove(self, event):
@@ -61,7 +62,8 @@ class QtLayersList(QScrollArea):
                 divider = self.vbox_layout.itemAt(index+1).widget()
                 self.vbox_layout.removeWidget(layer._qt_properties)
                 self.vbox_layout.removeWidget(divider)
-                self.vbox_layout.insertWidget(2*(total - i)-1, layer._qt_properties)
+                self.vbox_layout.insertWidget(2*(total - i)-1,
+                                              layer._qt_properties)
                 self.vbox_layout.insertWidget(2*(total - i), divider)
 
     def mouseReleaseEvent(self, event):

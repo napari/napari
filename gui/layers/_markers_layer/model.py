@@ -317,17 +317,17 @@ class Markers(Layer):
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, 2:] - indices[2:])
-                size_array = self._size[:,2:]/2
+                size_array = self._size[:, 2:]/2
                 matches = np.all(distances <= size_array, axis=1)
                 in_slice_markers = coords[matches, :2]
-                size_matches = size_array[matches]
-                size_matches[size_matches==0] = 1
-                scale_per_dim = (size_matches - distances[matches])/size_matches
-                scale_per_dim[size_matches==0] = 1
+                size_match = size_array[matches]
+                size_match[size_match == 0] = 1
+                scale_per_dim = (size_match - distances[matches])/size_match
+                scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
                 return in_slice_markers, matches, scale
             else:
-                matches = np.all(coords[:, 2:]==indices[2:], axis=1)
+                matches = np.all(coords[:, 2:] == indices[2:], axis=1)
                 in_slice_markers = coords[matches, :2]
                 return in_slice_markers, matches, 1
         else:
@@ -346,7 +346,7 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            size_array = self._size[matches,:2]*np.expand_dims(scale, axis=1)/2
+            size_array = self._size[matches, :2]*np.expand_dims(scale, axis=1)/2
             distances = abs(in_slice_markers - indices[:2])
             in_slice_matches = np.all(distances <= size_array, axis=1)
             indices = np.where(in_slice_matches)[0]
@@ -373,7 +373,7 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            sizes = (self._size[matches,:2].mean(axis=1)*scale)[::-1]
+            sizes = (self._size[matches, :2].mean(axis=1)*scale)[::-1]
 
             # Update the markers node
             data = np.array(in_slice_markers) + 0.5
@@ -422,12 +422,11 @@ class Markers(Layer):
         coord_shift = copy(coord)
         coord_shift[0] = int(coord[1])
         coord_shift[1] = int(coord[0])
-        msg = f'{coord_shift}'
-
+        msg = f'{coord_shift}, {self.name}'
         if value is None:
             pass
         else:
-            msg = msg + ', ' + self.name + ', index ' + str(value)
+            msg = msg + ', index ' + str(value)
         return msg
 
     def _add(self, coord):

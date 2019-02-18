@@ -20,7 +20,6 @@ from .view import QtImageLayer
 from .view import QtImageControls
 
 
-
 def vispy_or_mpl_colormap(name):
     """Try to get a colormap from vispy, or convert an mpl one to vispy format.
 
@@ -54,7 +53,8 @@ def vispy_or_mpl_colormap(name):
 
 
 AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
-                       for k in matplotlib_colormaps + list(color.get_colormaps())}
+                       for k in matplotlib_colormaps +
+                       list(color.get_colormaps())}
 
 
 @add_to_viewer

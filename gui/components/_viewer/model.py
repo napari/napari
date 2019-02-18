@@ -207,7 +207,7 @@ class Viewer:
         self._update_status()
 
     def _update_layer_selection(self, event):
-        #iteration goes backwards to find top most selected layer if any
+        # iteration goes backwards to find top most selected layer if any
         for layer in self.layers[::-1]:
             if layer.selected:
                 self._qt.control_panel.display(layer)

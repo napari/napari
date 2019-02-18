@@ -98,6 +98,7 @@ class QtAdditionButton(QRadioButton):
             if bool:
                 self.layer.mode = 'add'
 
+
 def button_style(name):
     path_off = join(resources_dir, 'icons', name + '_off.png')
     path_on = join(resources_dir, 'icons', name + '_on.png')
