@@ -259,24 +259,23 @@ class Markers(Layer):
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
             self.status = mode
-            self.events.mode(mode=mode)
             self._mode = mode
         elif mode == 'select':
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
             self.status = mode
-            self.events.mode(mode=mode)
             self._mode = mode
         elif mode == 'pan/zoom':
             self.cursor = 'standard'
             self.interactive = True
             self.help = ''
             self.status = mode
-            self.events.mode(mode=mode)
             self._mode = mode
         else:
             raise ValueError("Mode not recongnized")
+
+        self.events.mode(mode=mode)
 
     def _get_shape(self):
         if len(self.coords) == 0:
