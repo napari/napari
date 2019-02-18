@@ -10,6 +10,7 @@ from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from vispy.visuals import marker_types
 from vispy.color import get_color_names
+from vispy.util.event import Event
 
 from .view import QtMarkersLayer
 from .view import QtMarkersControls
@@ -100,6 +101,8 @@ class Markers(Layer):
             self._need_visual_update = False
 
             self.name = 'markers'
+
+            self.events.add(mode=Event)
             self._qt_properties = QtMarkersLayer(self)
             self._qt_controls = QtMarkersControls(self)
 
@@ -256,18 +259,21 @@ class Markers(Layer):
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
             self.status = mode
+            self.events.mode(mode=mode)
             self._mode = mode
         elif mode == 'select':
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
             self.status = mode
+            self.events.mode(mode=mode)
             self._mode = mode
         elif mode == 'pan/zoom':
             self.cursor = 'standard'
             self.interactive = True
             self.help = ''
             self.status = mode
+            self.events.mode(mode=mode)
             self._mode = mode
         else:
             raise ValueError("Mode not recongnized")
@@ -488,85 +494,34 @@ class Markers(Layer):
 
         self.status = self.get_message(coord, self._selected_markers)
 
-    #
-    #
-    # def interact(self, position, indices, dragging=False, shift=False, ctrl=False,
-    #     pressed=False, released=False, moving=False):
-    #     """Highlights object at given mouse position
-    #     and set of indices.
-    #     Parameters
-    #     ----------
-    #     position : sequence of two int
-    #         Position of mouse cursor in canvas.
-    #     indices : sequence of int or slice
-    #         Indices that make up the slice.
-    #     """
-    #     if self.mode is None:
-    #         pass
-    #     elif self.mode == 'select':
-    #         #If in edit mode
-    #         if pressed and ctrl:
-    #             #Delete an existing box if any on control press
-    #             coord = self._get_coord(position, indices)
-    #             self._remove()
-    #         elif moving and dragging:
-    #             #Drag an existing box if any
-    #             coord = self._get_coord(position, indices)
-    #             self._move(coord)
-    #     elif self.mode == 'add':
-    #         #If in addition mode
-    #         if pressed:
-    #             #Add a new box
-    #             coord = self._get_coord(position, indices)
-    #             self._add(coord)
-    #     else:
-    #         pass
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        """
+        if event.native.isAutoRepeat():
+            return
+        else:
+            if event.key == ' ':
+                if self.mode != 'pan/zoom':
+                    self._mode_history = self.mode
+                    self.mode = 'pan/zoom'
+                else:
+                    self._mode_history = 'pan/zoom'
+            elif event.key == 'Shift':
+                if self.mode == 'add':
+                        self.cursor = 'forbidden'
+            elif event.key == 'a':
+                self.mode = 'add'
+            elif event.key == 's':
+                self.mode = 'select'
+            elif event.key == 'z':
+                self.mode = 'pan/zoom'
 
-
-# def on_key_press(self, event):
-#     if event.native.isAutoRepeat():
-#         return
-#     else:
-#         if event.key == ' ':
-#             if self.viewer.mode is not None:
-#                 self.viewer._mode_history = self.viewer.mode
-#                 self.viewer.mode = None
-#             else:
-#                 self.viewer._mode_history = None
-#         elif event.key == 'Meta':
-#             if self.viewer.mode == 'select' and self.viewer.active_markers:
-#                 self.canvas.native.setCursor(self._cursors['remove'])
-#                 layer = self.viewer.layers[self.viewer.active_markers]
-#                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-#                 mode=self.viewer.mode, dragging=False, shift=False, ctrl=True,
-#                 pressed=False, released=False, moving=False)
-#         elif event.key == 'Shift':
-#             if self.viewer.mode is not None and self.viewer.active_markers:
-#                 layer = self.viewer.layers[self.viewer.active_markers]
-#                 layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-#                 mode=self.viewer.mode, dragging=False, shift=True, ctrl=False,
-#                 pressed=False, released=False, moving=False)
-#         elif event.key == 'a':
-#             self.viewer._set_mode('add')
-#         elif event.key == 's':
-#             self.viewer._set_mode('select')
-#         elif event.key == 'n':
-#             self.viewer._set_mode(None)
-#
-# def on_key_release(self, event):
-#     if event.key == ' ':
-#         if self.viewer._mode_history is not None:
-#             self.viewer.mode = self.viewer._mode_history
-#     elif event.key == 'Meta':
-#         if self.viewer.mode == 'select' and self.viewer.active_markers:
-#             self.canvas.native.setCursor(self._cursors['pointing'])
-#             layer = self.viewer.layers[self.viewer.active_markers]
-#             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-#             mode=self.viewer.mode, dragging=False,
-#             shift=False, ctrl=False, pressed=False, released=False, moving=False)
-#     elif event.key == 'Shift':
-#         if self.viewer.mode is not None and self.viewer.active_markers:
-#             layer = self.viewer.layers[self.viewer.active_markers]
-#             layer.interact(self.viewer.position, self.viewer.dimensions.indices,
-#             mode=self.viewer.mode, dragging=False, shift=False, ctrl=False,
-#             pressed=False, released=False, moving=False)
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+        """
+        if event.key == ' ':
+            if self._mode_history != 'pan/zoom':
+                self.mode = self._mode_history
+        elif event.key == 'Shift':
+            if self.mode == 'add':
+                    self.cursor = 'cross'

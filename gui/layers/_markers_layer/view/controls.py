@@ -28,9 +28,20 @@ class QtMarkersControls(QFrame):
         self.setLayout(layout)
         self.setMouseTracking(True)
 
+        self.layer.events.mode.connect(self.set_mode)
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer.mode
 
+    def set_mode(self, event):
+        mode = event.mode
+        if mode == 'add':
+            self.addition_button.setChecked(True)
+        elif mode == 'select':
+            self.select_button.setChecked(True)
+        elif mode == 'pan/zoom':
+            self.panzoom_button.setChecked(True)
+        else:
+            raise ValueError("Mode not recongnized")
 
 class QtPanZoomButton(QRadioButton):
     def __init__(self, layer):
@@ -45,8 +56,9 @@ class QtPanZoomButton(QRadioButton):
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
-        if bool:
-            self.layer.mode = 'pan/zoom'
+        with self.layer.mode.events.blocker(self._set_mode):
+            if bool:
+                self.layer.mode = 'pan/zoom'
 
 
 class QtSelectButton(QRadioButton):
@@ -62,8 +74,9 @@ class QtSelectButton(QRadioButton):
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
-        if bool:
-            self.layer.mode = 'select'
+        with self.layer.mode.events.blocker(self._set_mode):
+            if bool:
+                self.layer.mode = 'select'
 
 
 class QtAdditionButton(QRadioButton):
@@ -79,8 +92,9 @@ class QtAdditionButton(QRadioButton):
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
-        if bool:
-            self.layer.mode = 'add'
+        with self.layer.mode.events.blocker(self._set_mode):
+            if bool:
+                self.layer.mode = 'add'
 
 def button_style(name):
     path_off = join(resources_dir, 'icons', name + '_off.png')
