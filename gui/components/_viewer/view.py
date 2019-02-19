@@ -37,7 +37,7 @@ class QtViewer(QSplitter):
         center = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.canvas.native)
-        layout.addWidget(self.viewer.dimensions._qt)
+        layout.addWidget(self.viewer.dims._qt)
         center.setLayout(layout)
 
         # Add vertical sliders, center, and layerlist
@@ -45,7 +45,7 @@ class QtViewer(QSplitter):
         self.addWidget(center)
         self.addWidget(self.viewer.layers._qt)
 
-        viewer.dimensions._qt.setFixedHeight(0)
+        viewer.dims._qt.setFixedHeight(0)
 
         self._cursors = {
                 'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
@@ -75,7 +75,7 @@ class QtViewer(QSplitter):
         if (event.is_dragging and self.viewer.annotation and
                 'Shift' in event.modifiers and self.viewer.active_markers):
             layer = self.viewer.layers[self.viewer.active_markers]
-            layer.move(self.viewer.position, self.viewer.dimensions.indices)
+            layer.move(self.viewer.position, self.viewer.dims.indices)
         self.viewer._update_status()
 
     def on_mouse_press(self, event):
@@ -85,11 +85,11 @@ class QtViewer(QSplitter):
             layer = self.viewer.layers[self.viewer.active_markers]
             if 'Meta' in event.modifiers:
                 layer.remove(self.viewer.position,
-                             self.viewer.dimensions.indices)
+                             self.viewer.dims.indices)
             elif 'Shift' in event.modifiers:
                 pass
             else:
-                layer.add(self.viewer.position, self.viewer.dimensions.indices)
+                layer.add(self.viewer.position, self.viewer.dims.indices)
             self.viewer._update_status()
 
     def on_mouse_release(self, event):

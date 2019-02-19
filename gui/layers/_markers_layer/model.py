@@ -250,7 +250,7 @@ class Markers(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_slice(self.viewer.dimensions.indices)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -350,7 +350,7 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-        max_shape = self.viewer.dimensions.max_shape
+        max_shape = self.viewer.dims.max_shape
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,

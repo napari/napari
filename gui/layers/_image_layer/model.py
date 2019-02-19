@@ -19,7 +19,6 @@ from .._register import add_to_viewer
 from .view import QtImageLayer
 
 
-
 def vispy_or_mpl_colormap(name):
     """Try to get a colormap from vispy, or convert an mpl one to vispy format.
 
@@ -138,11 +137,11 @@ class Image(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer.dimensions._child_layer_changed = True
-            self.viewer.dimensions._update()
+            self.viewer.dims._child_layer_changed = True
+            self.viewer.dims._update()
 
             self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.dimensions.indices)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False

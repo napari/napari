@@ -16,7 +16,7 @@ class Viewer:
         Parent window.
     layers : LayersList
         List of contained layers.
-    dimensions : Dimensions
+    dims : Dimensions
         Contains axes, indices, dimensions and sliders.
     control_bars : ControlBars
         Contains control bar sliders.
@@ -28,7 +28,7 @@ class Viewer:
         super().__init__()
         from .._layers_list import LayersList
         from .._control_bars import ControlBars
-        from .._dimensions import Dimensions
+        from .._dims import Dims
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
@@ -36,7 +36,7 @@ class Viewer:
                                    help=Event,
                                    annotation=Event,
                                    active_markers=Event)
-        self.dimensions = Dimensions(self)
+        self.dims = Dims(self)
         self.layers = LayersList(self)
         self.control_bars = ControlBars(self)
 
@@ -166,10 +166,10 @@ class Viewer:
             self.reset_view()
 
     def _new_markers(self):
-        if self.dimensions.max_dims == 0:
+        if self.dims.max_dims == 0:
             empty_markers = empty((0, 2))
         else:
-            empty_markers = empty((0, self.dimensions.max_dims))
+            empty_markers = empty((0, self.dims.max_dims))
         self.add_markers(empty_markers)
 
     def imshow(self, image, meta=None, multichannel=None, **kwargs):
@@ -199,7 +199,7 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer._set_view_slice(self.dimensions.indices)
+            layer._set_view_slice(self.dims.indices)
         self._update_status()
 
     def _set_annotation(self, bool):
@@ -239,7 +239,7 @@ class Viewer:
         for i in self._visible_markers:
             layer = self.layers[i]
             coord, value, msg = layer.get_value(self.position,
-                                                self.dimensions.indices)
+                                                self.dims.indices)
             if value is None:
                 pass
             else:
@@ -250,5 +250,5 @@ class Viewer:
             else:
                 layer = self.layers[self._active_image]
                 coord, value, msg = layer.get_value(self.position,
-                                                    self.dimensions.indices)
+                                                    self.dims.indices)
         self.status = msg
