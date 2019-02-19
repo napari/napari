@@ -174,6 +174,7 @@ def compute_max_shape(shapes, max_dims=None):
 
 
 _app = None
+_windows = []
 
 
 def imshow(image, meta=None, multichannel=None, **kwargs):
@@ -195,8 +196,7 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     window: Window
         Window object.
     """
-    from ..elements import Window, Viewer
-    from ..elements.qt import QtApplication
+    from ..components import Window, Viewer, QtApplication
 
     meta = guess_metadata(image, meta, multichannel, kwargs)
 
@@ -204,7 +204,8 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     _app = _app or QtApplication.instance() or QtApplication([])
 
     window = Window(Viewer(), show=False)
+    _windows.append(window)
     layer = window.viewer.add_image(image, meta)
     window.show()
 
-    return window
+    return window.viewer
