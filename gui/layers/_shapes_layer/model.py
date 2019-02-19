@@ -49,65 +49,59 @@ class Shapes(Layer):
         visual = VisualNode([Markers(), Line(), Mesh(), Mesh()])
 
         super().__init__(visual)
-        self.name = 'shapes'
 
-        # Save the style params
-        self._edge_width = edge_width
-        self._edge_color = edge_color
-        self._face_color = face_color
-        self._colors = get_color_names()
+        # Freeze refreshes
+        with self.freeze_refresh():
+            self.name = 'shapes'
 
-        # Save the shape data
-        self._data = ShapesData(lines=lines, paths=paths, rectangles=rectangles,
-                                ellipses=ellipses, polygons=polygons,
-                                thickness=self._edge_width)
+            # Save the shape data
+            self._data = ShapesData(lines=lines, paths=paths, rectangles=rectangles,
+                                    ellipses=ellipses, polygons=polygons,
+                                    thickness=edge_width)
 
-        c = Color(self.edge_color).rgba
-        self._color_array = np.array([c for i in range(len(self.data._mesh_faces))])
-        faces_indices = self.data._mesh_faces_index[:,2]==0
-        self._color_array[faces_indices] = Color(self.face_color).rgba
+            # Save the style params
+            self._colors = get_color_names()
+            self._color_array = np.empty((len(self.data._mesh_faces), 4))
+            self.edge_width = edge_width
+            self.edge_color = edge_color
+            self.face_color = face_color
 
-        self._show_faces = np.ones(len(self.data._mesh_faces), dtype=bool)
-        default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
-        self._object_counts = counts
-        self._z_order = default_z_order
-        self._z_order_faces = np.arange(len(self.data._mesh_faces_index))
+            self._show_faces = np.ones(len(self.data._mesh_faces), dtype=bool)
+            default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
+            self._object_counts = counts
+            self.z_order = default_z_order
 
-        self._vertex_size = 10
+            self._vertex_size = 10
 
-        # update flags
-        self._need_display_update = False
-        self._need_visual_update = False
+            # update flags
+            self._need_display_update = False
+            self._need_visual_update = False
 
-        self._highlight = True
-        self._highlight_color = (0, 0.6, 1)
-        self._highlight_thickness = 0.5
-        self._selected_shapes = []
-        self._selected_shapes_stored = []
-        self._hover_shapes = [None, None]
-        self._hover_shapes_stored = [None, None]
+            self._highlight = True
+            self._highlight_color = (0, 0.6, 1)
+            self._highlight_thickness = 0.5
+            self._selected_shapes = []
+            self._selected_shapes_stored = []
+            self._hover_shapes = [None, None]
+            self._hover_shapes_stored = [None, None]
 
-        self._drag_start = None
-        self._fixed_vertex = None
-        self._fixed_aspect = False
-        self._selected_vertex = None
-        self._aspect_ratio = 1
-        self._is_moving=False
-        self._fixed_index = 0
-        self._is_selecting = False
-        self._drag_box = None
+            self._drag_start = None
+            self._fixed_vertex = None
+            self._fixed_aspect = False
+            self._selected_vertex = None
+            self._aspect_ratio = 1
+            self._is_moving=False
+            self._fixed_index = 0
+            self._is_selecting = False
+            self._drag_box = None
 
-        # self._ready_to_create_box = False
-        # self._creating_box = False
-        # self._create_tl = None
+            self._mode = 'pan/zoom'
+            self._mode_history = self._mode
+            self._status = self._mode
 
-        self._mode = 'pan/zoom'
-        self._mode_history = self._mode
-        self._status = self._mode
-
-        self.events.add(mode=Event)
-        self._qt_properties = QtShapesLayer(self)
-        self._qt_controls = QtShapesControls(self)
+            self.events.add(mode=Event)
+            self._qt_properties = QtShapesLayer(self)
+            self._qt_controls = QtShapesControls(self)
 
     @property
     def data(self):
