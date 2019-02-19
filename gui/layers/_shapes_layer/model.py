@@ -658,32 +658,30 @@ class Shapes(Layer):
         coord[1] = pos[0]
         return np.array(coord)
 
-    def get_value(self, position, indices):
-        """Returns coordinates, values, and a string
-        for a given mouse position and set of indices.
+    def get_message(self, coord, value):
+        """Returns coordinate and value string for given mouse coordinates
+        and value.
+
         Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-        Returns
         ----------
         coord : sequence of int
             Position of mouse cursor in data.
         value : int or float or sequence of int or float
             Value of the data at the coord.
+
+        Returns
+        ----------
         msg : string
             String containing a message that can be used as
             a status update.
         """
-        coord = self._get_coord(position, indices)
-        value = self._shape_at(coord)
-        coord_shift = [int(coord[1]), int(coord[0])]
-        msg = f'{coord_shift}'
+        coord_shift = copy(coord)
+        coord_shift[0] = int(coord[1])
+        coord_shift[1] = int(coord[0])
+        msg = f'{coord_shift}, {self.name}'
         if value[0] is not None:
-            msg = msg + ', ' + self.name + ', index ' + str(value[0])
-        return coord, value[0], msg
+            msg = msg + ', index ' + str(value[0])
+        return msg
 
     def _move(self, coord):
         """Moves object at given mouse position
@@ -805,91 +803,169 @@ class Shapes(Layer):
             self._hover_shapes_stored = [None, None]
             self._set_highlight()
 
-    def interact(self, position, indices, mode=True, dragging=False, shift=False, ctrl=False,
-        pressed=False, released=False, moving=False):
-        """Highlights object at given mouse position
-        and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
         """
-        # Adjust shape of box on shift key press if currently moving
-        if not self._fixed_aspect == shift:
-            self._fixed_aspect = shift
+        if event.pos is None:
+            return
+        position = event.pos
+        indices = self.viewer.dimensions.indices
+        coord = self._get_coord(position, indices)
+
+        if self.mode == 'select':
+            if event.is_dragging:
+                # Drag any selected shapes
+                self._move(coord)
+            elif self._is_moving:
+                print('calllllll moving')
+                pass
+            elif self._is_selecting:
+                print('calllllll selecting')
+                pass
+            else:
+                # Highlight boxes if hover over any
+                self._hover_shapes = self._shape_at(coord)
+                self._select()
+            shape = self._hover_shapes
+        elif self.mode == 'add':
+            # Add mode not yet implemented
+            self._selected_shapes = []
+            self.data.select_box([])
+            self._unselect()
+            shape = self._shape_at(coord)
+        elif self.mode == 'pan/zoom':
+            # If in pan/zoom mode unselect all
+            self._selected_shapes = []
+            self.data.select_box([])
+            self._unselect()
+            shape = self._shape_at(coord)
+        else:
+            raise ValueError("Mode not recongnized")
+
+        self.status = self.get_message(coord, shape)
+
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+        """
+        position = event.pos
+        indices = self.viewer.dimensions.indices
+        coord = self._get_coord(position, indices)
+        shift = 'Shift' in event.modifiers
+
+        if self.mode == 'select':
+            if not self._is_moving and not self._is_selecting:
+                shape = self._shape_at(coord)
+                self._selected_vertex = shape[1]
+                if self._selected_vertex is None:
+                    if shift and shape[0] is not None:
+                        if shape[0] in self._selected_shapes:
+                            self._selected_shapes.remove(shape[0])
+                            self.data.select_box(self._selected_shapes)
+                        else:
+                            self._selected_shapes.append(shape[0])
+                            self.data.select_box(self._selected_shapes)
+                    elif shape[0] is not None:
+                        if shape[0] not in self._selected_shapes:
+                            self._selected_shapes = [shape[0]]
+                            self.data.select_box(self._selected_shapes)
+                    else:
+                        self._selected_shapes = []
+                        self.data.select_box(self._selected_shapes)
+                self._select()
+                #shape = self._hover_shapes
+                self.status = self.get_message(coord, shape)
+        elif self.mode == 'add':
+            # Add mode not yet implemented
+            pass
+        elif self.mode == 'pan/zoom':
+            # If in pan/zoom mode do nothing
+            pass
+        else:
+            raise ValueError("Mode not recongnized")
+
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
+        """
+        position = event.pos
+        indices = self.viewer.dimensions.indices
+        coord = self._get_coord(position, indices)
+        shift = 'Shift' in event.modifiers
+
+        if self.mode == 'select':
+            shape = self._shape_at(coord)
+            if not self._is_moving and not self._is_selecting and not shift:
+                if shape[0] is not None:
+                    self._selected_shapes = [shape[0]]
+                    self.data.select_box(self._selected_shapes)
+                else:
+                    self._selected_shapes = []
+                    self.data.select_box(self._selected_shapes)
+            elif self._is_selecting:
+                self._selected_shapes = self._shapes_in_box(self._drag_box)
+                self.data.select_box(self._selected_shapes)
+                self._is_selecting=False
+                self._set_highlight()
+            self._is_moving = False
+            self._drag_start = None
+            self._drag_box = None
+            self._fixed_vertex = None
+            self._selected_vertex = None
+            self._hover_shapes = shape
+            self._select()
+            self.status = self.get_message(coord, shape)
+        elif self.mode == 'add':
+            # Add mode not yet implemented
+            pass
+        elif self.mode == 'pan/zoom':
+            # If in pan/zoom mode do nothing
+            pass
+        else:
+            raise ValueError("Mode not recongnized")
+
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        """
+        if event.native.isAutoRepeat():
+            return
+        else:
+            if event.key == ' ':
+                if self.mode != 'pan/zoom':
+                    self._mode_history = self.mode
+                    self.mode = 'pan/zoom'
+                else:
+                    self._mode_history = 'pan/zoom'
+            elif event.key == 'Shift':
+                self._fixed_aspect = True
+                if self._is_moving:
+                    box = self.data.selected_box
+                    if box is not None:
+                        self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
+                    coord = self._get_coord(position, indices)
+                    self._move(coord)
+            elif event.key == 'a':
+                self.mode = 'add'
+                self._selected_shapes = []
+                self.data.select_box([])
+                self._unselect()
+            elif event.key == 's':
+                self.mode = 'select'
+            elif event.key == 'z':
+                self.mode = 'pan/zoom'
+                self._selected_shapes = []
+                self.data.select_box([])
+                self._unselect()
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+        """
+        if event.key == ' ':
+            if self._mode_history != 'pan/zoom':
+                self.mode = self._mode_history
+        elif event.key == 'Shift':
+            self._fixed_aspect = False
             if self._is_moving:
                 box = self.data.selected_box
                 if box is not None:
                     self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
                 coord = self._get_coord(position, indices)
                 self._move(coord)
-
-        if mode is None:
-            #If not in edit or addition mode unselect all
-            self._selected_shapes = []
-            self.data.select_box(self._selected_shapes)
-            self._unselect()
-        elif mode == 'select':
-            #If in select mode
-            coord = self._get_coord(position, indices)
-            if pressed:
-                if not self._is_moving and not self._is_selecting:
-                    shape = self._shape_at(coord)
-                    self._selected_vertex = shape[1]
-                    if self._selected_vertex is None:
-                        if shift and shape[0] is not None:
-                            if shape[0] in self._selected_shapes:
-                                self._selected_shapes.remove(shape[0])
-                                self.data.select_box(self._selected_shapes)
-                            else:
-                                self._selected_shapes.append(shape[0])
-                                self.data.select_box(self._selected_shapes)
-                        elif shape[0] is not None:
-                            if shape[0] not in self._selected_shapes:
-                                self._selected_shapes = [shape[0]]
-                                self.data.select_box(self._selected_shapes)
-                        else:
-                            self._selected_shapes = []
-                            self.data.select_box(self._selected_shapes)
-                        self._select()
-            elif moving and dragging:
-                #Drag any selected shapes
-                self._move(coord)
-            elif released:
-                shape = self._shape_at(coord)
-                if not self._is_moving and not self._is_selecting and not shift:
-                    if shape[0] is not None:
-                        self._selected_shapes = [shape[0]]
-                        self.data.select_box(self._selected_shapes)
-                    else:
-                        self._selected_shapes = []
-                        self.data.select_box(self._selected_shapes)
-                elif self._is_selecting:
-                    self._selected_shapes = self._shapes_in_box(self._drag_box)
-                    self.data.select_box(self._selected_shapes)
-                    self._is_selecting=False
-                    self._set_highlight()
-                self._is_moving=False
-                self._drag_start=None
-                self._drag_box=None
-                self._fixed_vertex = None
-                self._selected_vertex = None
-                self._hover_shapes = shape
-                self._select()
-            elif self._is_moving:
-                pass
-            elif self._is_selecting:
-                pass
-            else:
-                #Highlight boxes if over any
-                self._hover_shapes = self._shape_at(coord)
-                self._select()
-        elif mode == 'add':
-            # Not yet implemented
-            self._selected_shapes = []
-            self.data.select_box(self._selected_shapes)
-            self._unselect()
-        else:
-            pass
