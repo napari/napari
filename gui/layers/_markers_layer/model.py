@@ -93,8 +93,8 @@ class Markers(Layer):
             self._colors = get_color_names()
             self._selected_markers = None
             self._mode = 'pan/zoom'
-            self._mode_history = 'pan/zoom'
-            self._status = 'pan/zoom'
+            self._mode_history = self._mode
+            self._status = self._mode
 
             # update flags
             self._need_display_update = False
@@ -115,6 +115,15 @@ class Markers(Layer):
     @coords.setter
     def coords(self, coords: np.ndarray):
         self._coords = coords
+
+        if len(coords) < len(self._size):
+            with self.freeze_refresh():
+                self.size = self._size[:len(coords)]
+        elif len(coords) > len(self._size):
+            with self.freeze_refresh():
+                adding = len(coords)-len(self._size)
+                size = np.repeat([self._size[-1]], adding, axis=0)
+                self.size = np.concatenate((self._size, size), axis=0)
 
         self.viewer._child_layer_changed = True
         self.refresh()
