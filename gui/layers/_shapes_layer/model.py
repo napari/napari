@@ -94,6 +94,7 @@ class Shapes(Layer):
             self._fixed_index = 0
             self._is_selecting = False
             self._drag_box = None
+            self._mouse_coord = [0, 0]
 
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
@@ -193,6 +194,12 @@ class Shapes(Layer):
             self.status = mode
             self._mode = mode
         elif mode == 'select':
+            self.cursor = 'pointing'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom'
+            self.status = mode
+            self._mode = mode
+        elif mode == 'direct':
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
@@ -822,6 +829,12 @@ class Shapes(Layer):
                 self._hover_shapes = self._shape_at(coord)
                 self._select()
             shape = self._hover_shapes
+        elif self.mode == 'direct':
+            # Direct mode not yet implemented
+            self._selected_shapes = []
+            self.data.select_box([])
+            self._unselect()
+            shape = self._shape_at(coord)
         elif self.mode == 'add':
             # Add mode not yet implemented
             self._selected_shapes = []
@@ -869,6 +882,9 @@ class Shapes(Layer):
                 self._select()
                 #shape = self._hover_shapes
                 self.status = self.get_message(coord, shape)
+        elif self.mode == 'direct':
+            # Direct mode not yet implemented
+            pass
         elif self.mode == 'add':
             # Add mode not yet implemented
             pass
@@ -908,6 +924,9 @@ class Shapes(Layer):
             self._hover_shapes = shape
             self._select()
             self.status = self.get_message(coord, shape)
+        elif self.mode == 'direct':
+            # Direct mode not yet implemented
+            pass
         elif self.mode == 'add':
             # Add mode not yet implemented
             pass
@@ -941,8 +960,16 @@ class Shapes(Layer):
                 self._selected_shapes = []
                 self.data.select_box([])
                 self._unselect()
+            elif event.key == 'd':
+                self.mode = 'direct'
+                self._selected_shapes = []
+                self.data.select_box([])
+                self._unselect()
             elif event.key == 's':
                 self.mode = 'select'
+                self._selected_shapes = []
+                self.data.select_box([])
+                self._unselect()
             elif event.key == 'z':
                 self.mode = 'pan/zoom'
                 self._selected_shapes = []
