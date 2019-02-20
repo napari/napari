@@ -215,6 +215,9 @@ class Shapes(Layer):
             raise ValueError("Mode not recongnized")
 
         self.events.mode(mode=mode)
+        self._selected_shapes = []
+        self.data.select_box([])
+        self._unselect()
 
     def _get_shape(self):
         return [1, 1]
@@ -527,20 +530,37 @@ class Shapes(Layer):
         indices : sequence of int
             Indices to check if shape at.
         """
-        # Check if mouse inside vertex of bounding box, including rotation handle
+        # Check selected shapes
         if len(self._selected_shapes) > 0:
-            inds = list(range(0,8))
-            inds.append(9)
-            box = self.data.selected_box[inds]
-            distances = abs(box - indices[:2])
+            if self.mode == 'select':
+                # Check if inside vertex of bounding box or rotation handle
+                inds = list(range(0,8))
+                inds.append(9)
+                box = self.data.selected_box[inds]
+                distances = abs(box - indices[:2])
 
-            # Get the vertex sizes
-            sizes = self._vertex_size
+                # Get the vertex sizes
+                sizes = self._vertex_size
 
-            # Check if any matching vertices
-            matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()
-            if len(matches[0]) > 0:
-                return [self._selected_shapes[0], matches[0][-1]]
+                # Check if any matching vertices
+                matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()
+                if len(matches[0]) > 0:
+                    return [self._selected_shapes[0], matches[0][-1]]
+            elif self.mode == 'direct':
+                # Check if inside vertex of shape
+                inds = np.isin(self.data.index, self._selected_shapes)
+                vertices = self.data.vertices[inds]
+                distances = abs(vertices - indices[:2])
+
+                # Get the vertex sizes
+                sizes = self._vertex_size
+
+                # Check if any matching vertices
+                matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()[0]
+                if len(matches) > 0:
+                    index = inds.nonzero()[0][matches[-1]]
+                    shape = self.data.index[index]
+                    return [shape, index]
 
         # Check if mouse inside shape
         triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_faces]]
@@ -594,7 +614,6 @@ class Shapes(Layer):
 
     def _set_highlight(self):
         if self._highlight and (self._hover_shapes[0] is not None or len(self._selected_shapes)>0):
-
             # show outlines hover shape or any selected shapes
             if len(self._selected_shapes)>0:
                 index = copy(self._selected_shapes)
@@ -624,21 +643,36 @@ class Shapes(Layer):
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
         if self._highlight and len(self._selected_shapes) > 0:
-            inds = list(range(0,8))
-            inds.append(9)
-            box = self.data.selected_box[inds]
-            if self._hover_shapes[0] is None:
-                face_color = 'white'
-            elif self._hover_shapes[1] is None:
-                face_color = 'white'
-            else:
-                face_color = self._highlight_color
-            edge_color = self._highlight_color
-            self._node._subvisuals[0].set_data(box, size=8, face_color=face_color,
-                                               edge_color=edge_color, edge_width=1,
-                                               symbol='square', scaling=True)
-            self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
-                                               color=edge_color, width=1)
+            if self.mode == 'select':
+                inds = list(range(0,8))
+                inds.append(9)
+                box = self.data.selected_box[inds]
+                if self._hover_shapes[0] is None:
+                    face_color = 'white'
+                elif self._hover_shapes[1] is None:
+                    face_color = 'white'
+                else:
+                    face_color = self._highlight_color
+                edge_color = self._highlight_color
+                self._node._subvisuals[0].set_data(box, size=8, face_color=face_color,
+                                                   edge_color=edge_color, edge_width=1,
+                                                   symbol='square', scaling=True)
+                self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
+                                                   color=edge_color, width=1)
+            elif self.mode == 'direct':
+                inds = np.isin(self.data.index, self._selected_shapes)
+                vertices = self.data.vertices[inds]
+                if self._hover_shapes[0] is None:
+                    face_color = 'white'
+                elif self._hover_shapes[1] is None:
+                    face_color = 'white'
+                else:
+                    face_color = self._highlight_color
+                edge_color = self._highlight_color
+                self._node._subvisuals[0].set_data(vertices, size=8, face_color=face_color,
+                                                   edge_color=edge_color, edge_width=1,
+                                                   symbol='square', scaling=True)
+                self._node._subvisuals[1].set_data(pos=None, width=0)
         elif self._is_selecting:
             box = self.data._expand_box(self._drag_box)
             edge_color = self._highlight_color
@@ -819,10 +853,8 @@ class Shapes(Layer):
                 # Drag any selected shapes
                 self._move(coord)
             elif self._is_moving:
-                print('calllllll moving')
                 pass
             elif self._is_selecting:
-                print('calllllll selecting')
                 pass
             else:
                 # Highlight boxes if hover over any
@@ -831,10 +863,9 @@ class Shapes(Layer):
             shape = self._hover_shapes
         elif self.mode == 'direct':
             # Direct mode not yet implemented
-            self._selected_shapes = []
-            self.data.select_box([])
-            self._unselect()
-            shape = self._shape_at(coord)
+            self._hover_shapes = self._shape_at(coord)
+            self._select()
+            shape = self._hover_shapes
         elif self.mode == 'add':
             # Add mode not yet implemented
             self._selected_shapes = []
@@ -880,11 +911,24 @@ class Shapes(Layer):
                         self._selected_shapes = []
                         self.data.select_box(self._selected_shapes)
                 self._select()
-                #shape = self._hover_shapes
                 self.status = self.get_message(coord, shape)
         elif self.mode == 'direct':
-            # Direct mode not yet implemented
-            pass
+            if not self._is_moving and not self._is_selecting:
+                shape = self._shape_at(coord)
+                self._selected_vertex = shape[1]
+                if self._selected_vertex is None:
+                    if shift and shape[0] is not None:
+                        if shape[0] in self._selected_shapes:
+                            self._selected_shapes.remove(shape[0])
+                        else:
+                            self._selected_shapes.append(shape[0])
+                    elif shape[0] is not None:
+                        if shape[0] not in self._selected_shapes:
+                            self._selected_shapes = [shape[0]]
+                    else:
+                        self._selected_shapes = []
+                self._select()
+                self.status = self.get_message(coord, shape)
         elif self.mode == 'add':
             # Add mode not yet implemented
             pass
@@ -957,24 +1001,12 @@ class Shapes(Layer):
                     self._move(self._mouse_coord)
             elif event.key == 'a':
                 self.mode = 'add'
-                self._selected_shapes = []
-                self.data.select_box([])
-                self._unselect()
             elif event.key == 'd':
                 self.mode = 'direct'
-                self._selected_shapes = []
-                self.data.select_box([])
-                self._unselect()
             elif event.key == 's':
                 self.mode = 'select'
-                self._selected_shapes = []
-                self.data.select_box([])
-                self._unselect()
             elif event.key == 'z':
                 self.mode = 'pan/zoom'
-                self._selected_shapes = []
-                self.data.select_box([])
-                self._unselect()
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
