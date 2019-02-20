@@ -650,7 +650,8 @@ class Shapes(Layer):
         coord = copy(indices)
         coord[0] = pos[1]
         coord[1] = pos[0]
-        return np.array(coord)
+        self._mouse_coord = np.array(coord)
+        return self._mouse_coord
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -672,7 +673,7 @@ class Shapes(Layer):
         coord_shift = copy(coord)
         coord_shift[0] = int(coord[1])
         coord_shift[1] = int(coord[0])
-        msg = f'{coord_shift}, {self.name}'
+        msg = f'{coord_shift.astype(int)}, {self.name}'
         if value[0] is not None:
             msg = msg + ', index ' + str(value[0])
         return msg
@@ -713,7 +714,7 @@ class Shapes(Layer):
                 if np.mod(self._fixed_index, 2) == 0:
                     # corner selected
                     fixed = self._fixed_vertex
-                    new = coord
+                    new = copy(coord)
                     if self._fixed_aspect:
                         ratio = abs((new - fixed)[1]/(new - fixed)[0])
                         if ratio>self._aspect_ratio:
@@ -726,13 +727,13 @@ class Shapes(Layer):
                 elif np.mod(self._fixed_index, 4) == 1:
                     # top selected
                     fixed = self._fixed_vertex
-                    new = coord
+                    new = copy(coord)
                     dist = np.dot(new-fixed, offset)/np.dot(size, offset)
                     scale = np.array([1, dist])
                 else:
                     # side selected
                     fixed = self._fixed_vertex
-                    new = coord
+                    new = copy(coord)
                     dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
                     scale = np.array([dist_perp, 1])
 
@@ -934,8 +935,7 @@ class Shapes(Layer):
                     box = self.data.selected_box
                     if box is not None:
                         self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
-                    coord = self._get_coord(position, indices)
-                    self._move(coord)
+                    self._move(self._mouse_coord)
             elif event.key == 'a':
                 self.mode = 'add'
                 self._selected_shapes = []
@@ -961,5 +961,4 @@ class Shapes(Layer):
                 box = self.data.selected_box
                 if box is not None:
                     self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
-                coord = self._get_coord(position, indices)
-                self._move(coord)
+                self._move(self._mouse_coord)
