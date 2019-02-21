@@ -10,8 +10,10 @@ from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from vispy.visuals import marker_types
 from vispy.color import get_color_names
+from vispy.util.event import Event
 
 from .view import QtMarkersLayer
+from .view import QtMarkersControls
 
 
 @add_to_viewer
@@ -89,14 +91,20 @@ class Markers(Layer):
             self.n_dimensional = n_dimensional
             self._marker_types = marker_types
             self._colors = get_color_names()
+            self._selected_markers = None
+            self._mode = 'pan/zoom'
+            self._mode_history = self._mode
+            self._status = self._mode
 
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
 
             self.name = 'markers'
-            self._qt = QtMarkersLayer(self)
-            self._selected_markers = None
+
+            self.events.add(mode=Event)
+            self._qt_properties = QtMarkersLayer(self)
+            self._qt_controls = QtMarkersControls(self)
 
     @property
     def coords(self) -> np.ndarray:
@@ -107,6 +115,15 @@ class Markers(Layer):
     @coords.setter
     def coords(self, coords: np.ndarray):
         self._coords = coords
+
+        if len(coords) < len(self._size):
+            with self.freeze_refresh():
+                self.size = self._size[:len(coords)]
+        elif len(coords) > len(self._size):
+            with self.freeze_refresh():
+                adding = len(coords)-len(self._size)
+                size = np.repeat([self._size[-1]], adding, axis=0)
+                self.size = np.concatenate((self._size, size), axis=0)
 
         self.viewer._child_layer_changed = True
         self.refresh()
@@ -123,8 +140,8 @@ class Markers(Layer):
 
     @property
     def n_dimensional(self) -> str:
-        """ bool: if True, renders markers not just in central plane but also in all
-        n dimensions according to specified marker size
+        """ bool: if True, renders markers not just in central plane but also
+        in all n dimensions according to specified marker size
         """
         return self._n_dimensional
 
@@ -236,6 +253,39 @@ class Markers(Layer):
 
         self.refresh()
 
+    @property
+    def mode(self):
+        """None, str: Interactive mode
+        """
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
+        if mode == self.mode:
+            return
+        if mode == 'add':
+            self.cursor = 'cross'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom'
+            self.status = mode
+            self._mode = mode
+        elif mode == 'select':
+            self.cursor = 'pointing'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom'
+            self.status = mode
+            self._mode = mode
+        elif mode == 'pan/zoom':
+            self.cursor = 'standard'
+            self.interactive = True
+            self.help = ''
+            self.status = mode
+            self._mode = mode
+        else:
+            raise ValueError("Mode not recongnized")
+
+        self.events.mode(mode=mode)
+
     def _get_shape(self):
         if len(self.coords) == 0:
             # when no markers given, return (1,) * dim
@@ -275,23 +325,23 @@ class Markers(Layer):
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, 2:] - indices[2:])
-                size_array = self._size[:,2:]/2
+                size_array = self._size[:, 2:]/2
                 matches = np.all(distances <= size_array, axis=1)
                 in_slice_markers = coords[matches, :2]
-                size_matches = size_array[matches]
-                size_matches[size_matches==0] = 1
-                scale_per_dim = (size_matches - distances[matches])/size_matches
-                scale_per_dim[size_matches==0] = 1
+                size_match = size_array[matches]
+                size_match[size_match == 0] = 1
+                scale_per_dim = (size_match - distances[matches])/size_match
+                scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
                 return in_slice_markers, matches, scale
             else:
-                matches = np.all(coords[:, 2:]==indices[2:], axis=1)
+                matches = np.all(coords[:, 2:] == indices[2:], axis=1)
                 in_slice_markers = coords[matches, :2]
                 return in_slice_markers, matches, 1
         else:
             return [], [], []
 
-    def _set_selected_markers(self, indices):
+    def _select_marker(self, indices):
         """Determines selected markers selected given indices.
 
         Parameters
@@ -304,9 +354,9 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            size_array = self._size[matches,:2]*np.expand_dims(scale, axis=1)/2
+            size_array = self._size[matches, :2]*np.expand_dims(scale, axis=1)
             distances = abs(in_slice_markers - indices[:2])
-            in_slice_matches = np.all(distances <= size_array, axis=1)
+            in_slice_matches = np.all(distances <= size_array/2, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
                 selection = np.where(matches)[0][indices[-1]]
@@ -315,7 +365,7 @@ class Markers(Layer):
         else:
             selection = None
 
-        self._selected_markers = selection
+        return selection
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -331,7 +381,7 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            sizes = (self._size[matches,:2].mean(axis=1)*scale)[::-1]
+            sizes = (self._size[matches, :2].mean(axis=1)*scale)[::-1]
 
             # Update the markers node
             data = np.array(in_slice_markers) + 0.5
@@ -356,90 +406,129 @@ class Markers(Layer):
         pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
                                                      max_shape[1]-1)]
         coord = copy(indices)
-        coord[0] = int(pos[1])
-        coord[1] = int(pos[0])
+        coord[0] = pos[1]
+        coord[1] = pos[0]
         return coord
 
-    def get_value(self, position, indices):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def get_message(self, coord, value):
+        """Returns coordinate and value string for given mouse coordinates
+        and value.
 
         Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-
-        Returns
         ----------
         coord : sequence of int
             Position of mouse cursor in data.
         value : int or float or sequence of int or float
             Value of the data at the coord.
+
+        Returns
+        ----------
         msg : string
             String containing a message that can be used as
             a status update.
         """
-        coord = self._get_coord(position, indices)
-        self._set_selected_markers(coord)
-        value = self._selected_markers
-        msg = f'{coord}'
+        coord_shift = copy(coord)
+        coord_shift[0] = int(coord[1])
+        coord_shift[1] = int(coord[0])
+        msg = f'{coord_shift}, {self.name}'
         if value is None:
             pass
         else:
-            msg = msg + ', ' + self.name + ', index ' + str(value)
-        return coord, value, msg
+            msg = msg + ', index ' + str(value)
+        return msg
 
-    def add(self, position, indices):
-        """Adds object at given mouse position and set of indices.
-
+    def _add(self, coord):
+        """Adds object at given mouse position
+        and set of indices.
         Parameters
         ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+        coord : sequence of indices to add marker at
         """
-        coord = self._get_coord(position, indices)
         self._size = append(self._size, [np.repeat(10, self.ndim)], axis=0)
         self.data = append(self.data, [coord], axis=0)
         self._selected_markers = len(self.data)-1
 
-    def remove(self, position, indices):
-        """Removes object at given mouse position and set of indices.
-
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def _remove(self):
+        """Removes selected object if any.
         """
-        coord = self._get_coord(position, indices)
         index = self._selected_markers
-        if index is None:
-            pass
-        else:
-
+        if index is not None:
             self._size = delete(self._size, index, axis=0)
             self.data = delete(self.data, index, axis=0)
             self._selected_markers = None
 
-    def move(self, position, indices):
-        """Moves object at given mouse position and set of indices.
-
+    def _move(self, coord):
+        """Moves object at given mouse position
+        and set of indices.
         Parameters
         ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+        coord : sequence of indices to move marker to
         """
-        coord = self._get_coord(position, indices)
         index = self._selected_markers
-        if index is None:
-            pass
-        else:
+        if index is not None:
             self.data[index] = coord
             self.refresh()
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            return
+        position = event.pos
+        indices = self.viewer.dimensions.indices
+        coord = self._get_coord(position, indices)
+        if self.mode == 'select' and event.is_dragging:
+            self._move(coord)
+        else:
+            self._selected_markers = self._select_marker(coord)
+
+        self.status = self.get_message(coord, self._selected_markers)
+
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+        """
+        position = event.pos
+        indices = self.viewer.dimensions.indices
+        coord = self._get_coord(position, indices)
+        self._selected_markers = self._select_marker(coord)
+        shift = 'Shift' in event.modifiers
+
+        if self.mode == 'add':
+            if shift:
+                self._remove()
+            else:
+                self._add(coord)
+
+        self.status = self.get_message(coord, self._selected_markers)
+
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        """
+        if event.native.isAutoRepeat():
+            return
+        else:
+            if event.key == ' ':
+                if self.mode != 'pan/zoom':
+                    self._mode_history = self.mode
+                    self.mode = 'pan/zoom'
+                else:
+                    self._mode_history = 'pan/zoom'
+            elif event.key == 'Shift':
+                if self.mode == 'add':
+                    self.cursor = 'forbidden'
+            elif event.key == 'a':
+                self.mode = 'add'
+            elif event.key == 's':
+                self.mode = 'select'
+            elif event.key == 'z':
+                self.mode = 'pan/zoom'
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+        """
+        if event.key == ' ':
+            if self._mode_history != 'pan/zoom':
+                self.mode = self._mode_history
+        elif event.key == 'Shift':
+            if self.mode == 'add':
+                self.cursor = 'cross'

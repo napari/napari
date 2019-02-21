@@ -19,7 +19,8 @@ class Layer(VisualWrapper, ABC):
     May define the following:
         * ``_set_view_slice(indices)``: called to set currently viewed slice
         * ``_after_set_viewer()``: called after the viewer is set
-        * ``_qt``: QtWidget inserted into the layer list GUI
+        * ``_qt_properties``: QtWidget inserted into the layer list GUI
+        * ``_qt_controls``: QtWidget inserted into the controls panel GUI
 
     Attributes
     ----------
@@ -37,9 +38,14 @@ class Layer(VisualWrapper, ABC):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
-        self._qt = None
+        self._qt_properties = None
+        self._qt_controls = None
         self.name = 'layer'
         self._freeze = False
+        self._status = 'Ready'
+        self._help = ''
+        self._cursor = 'standard'
+        self._interactive = True
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
@@ -116,6 +122,59 @@ class Layer(VisualWrapper, ABC):
         self._parent = parent
         self._after_set_viewer(prev)
 
+    @property
+    def status(self):
+        """string: Status string
+        """
+        return self._status
+
+    @status.setter
+    def status(self, status):
+        if status == self.status:
+            return
+        self.viewer.status = status
+        self._status = status
+
+    @property
+    def help(self):
+        """string: String that can be displayed to the
+        user in the status bar with helpful usage tips.
+        """
+        return self._help
+
+    @help.setter
+    def help(self, help):
+        if help == self.help:
+            return
+        self.viewer.help = help
+        self._help = help
+
+    @property
+    def interactive(self):
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
+        """
+        return self._interactive
+
+    @interactive.setter
+    def interactive(self, interactive):
+        if interactive == self.interactive:
+            return
+        self.viewer.interactive = interactive
+        self._interactive = interactive
+
+    @property
+    def cursor(self):
+        """string: String identifying cursor displayed over canvas.
+        """
+        return self._cursor
+
+    @cursor.setter
+    def cursor(self, cursor):
+        if cursor == self.cursor:
+            return
+        self.viewer.cursor = cursor
+        self._cursor = cursor
+
     def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.
 
@@ -150,55 +209,27 @@ class Layer(VisualWrapper, ABC):
         yield
         self._freeze = False
 
-    def get_value(self, position, indices):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
-
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-
-        Returns
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
-        msg : string
-            String containing a message that can be used as
-            a status update.
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
         """
-        return None, None, ''
+        return
 
-    def add(self, position, indices):
-        """Adds object at given mouse position and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
         """
+        return
 
-    def remove(self, position, indices):
-        """Removes object at given mouse position and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
         """
+        return
 
-    def move(self, position, indices):
-        """Moves object at given mouse position and set of indices.
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
         """
+        return
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+        """
+        return

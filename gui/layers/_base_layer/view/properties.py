@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 
 from os.path import join
-from ...resources import resources_dir
+from ....resources import resources_dir
 path_on = join(resources_dir, 'icons', 'eye_on.png')
 
 
