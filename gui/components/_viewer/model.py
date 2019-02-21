@@ -204,7 +204,6 @@ class Viewer:
         """
         for layer in self.layers:
             layer._set_view_slice(self.dimensions.indices)
-        #self._update_status()
 
     def _update_layer_selection(self, event):
         # iteration goes backwards to find top most selected layer if any
