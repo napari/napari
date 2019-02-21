@@ -10,6 +10,7 @@ from ...util import is_multichannel
 from ...util.interpolation import (interpolation_names,
                                   interpolation_index_to_name as _index_to_name,  # noqa
                                   interpolation_name_to_index as _name_to_index)  # noqa
+from ...util.misc import guess_metadata
 
 from vispy import color
 from ..colormaps import matplotlib_colormaps
@@ -65,17 +66,23 @@ class Image(Layer):
     ----------
     image : np.ndarray
         Image data.
-    meta : dict
+    meta : dict, optional
         Image metadata.
+    multichannel : bool, optional
+        Whether the image is multichannel. Guesses if None.
+    **kwargs : dict
+        Parameters that will be translated to metadata.
     """
     _colormaps = AVAILABLE_COLORMAPS
 
     default_cmap = 'magma'
     default_interpolation = 'nearest'
 
-    def __init__(self, image, meta):
+    def __init__(self, image, meta=None, multichannel=None, **kwargs):
         self.visual = ImageNode(None, method='auto')
         super().__init__(self.visual)
+
+        meta = guess_metadata(image, meta, multichannel, kwargs)
 
         self._image = image
         self._meta = meta

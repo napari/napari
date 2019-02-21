@@ -176,29 +176,6 @@ class Viewer:
             empty_markers = empty((0, self.dimensions.max_dims))
         self.add_markers(empty_markers)
 
-    def imshow(self, image, meta=None, multichannel=None, **kwargs):
-        """Shows an image in the viewer.
-
-        Parameters
-        ----------
-        image : np.ndarray
-            Image data.
-        meta : dict, optional
-            Image metadata.
-        multichannel : bool, optional
-            Whether the image is multichannel. Guesses if None.
-        **kwargs : dict
-            Parameters that will be translated to metadata.
-
-        Returns
-        -------
-        layer : Image
-            Layer for the image.
-        """
-        meta = guess_metadata(image, meta, multichannel, kwargs)
-
-        return self.add_image(image, meta)
-
     def _update_layers(self):
         """Updates the contained layers.
         """

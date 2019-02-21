@@ -1,5 +1,9 @@
 """Miscellaneous utility functions.
 """
+import __main__
+
+
+INTERACTIVE = not hasattr(__main__, '__file__')
 
 
 def is_multichannel(meta):
@@ -121,19 +125,88 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
 
     Returns
     -------
-    window: Window
-        Window object.
+    viewer : Viewer
+        Viewer containing the image.
     """
     from ..components import Window, Viewer, QtApplication
-
-    meta = guess_metadata(image, meta, multichannel, kwargs)
 
     global _app
     _app = _app or QtApplication.instance() or QtApplication([])
 
     window = Window(Viewer(), show=False)
     _windows.append(window)
-    layer = window.viewer.add_image(image, meta)
+    layer = window.viewer.add_image(image, meta, multichannel, **kwargs)
     window.show()
+
+    if not INTERACTIVE:
+        _app.exec()
+
+    return window.viewer
+
+
+def scatter(coords, symbol='o', size=10, edge_width=1,
+            edge_width_rel=None, edge_color='black', face_color='white',
+            scaling=True, n_dimensional=False):
+    """Displays a scatterplot with markers of the given properties.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        coordinates for each marker.
+
+    symbol : str
+        symbol to be used as a marker
+
+    size : int, float, np.ndarray, list
+        size of the marker. If given as a scalar, all markers are the
+        same size. If given as a list/array, size must be the same
+        length as coords and sets the marker size for each marker
+        in coords (element-wise). If n_dimensional is True then can be a list
+        of length dims or can be an array of shape Nxdims where N is the number
+        of markers and dims is the number of dimensions
+
+    edge_width : int, float, None
+        width of the symbol edge in px
+            vispy docs say: "exactly one edge_width and
+            edge_width_rel must be supplied"
+
+    edge_width_rel : int, float, None
+        width of the marker edge as a fraction of the marker size.
+
+            vispy docs say: "exactly one edge_width and
+            edge_width_rel must be supplied"
+
+    edge_color : Color, ColorArray
+        color of the marker border
+
+    face_color : Color, ColorArray
+        color of the marker body
+
+    scaling : bool
+        if True, marker rescales when zooming
+
+    n_dimensional : bool
+        if True, renders markers not just in central plane but also in all
+        n dimensions according to specified marker size
+
+    Returns
+    -------
+    viewer : Viewer
+        Viewer containing the markers.
+    """
+    from ..components import Window, Viewer, QtApplication
+
+    global _app
+    _app = _app or QtApplication.instance() or QtApplication([])
+
+    window = Window(Viewer(), show=False)
+    _windows.append(window)
+    layer = window.viewer.add_markers(coords, symbol, size, edge_width,
+                                      edge_width_rel, edge_color,
+                                      face_color, scaling, n_dimensional)
+    window.show()
+
+    if not INTERACTIVE:
+        _app.exec()
 
     return window.viewer
