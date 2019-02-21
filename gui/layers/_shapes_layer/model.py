@@ -163,14 +163,15 @@ class Shapes(Layer):
     @z_order.setter
     def z_order(self, z_order):
         ## Check z_order is a permutation of 0,...,N-1
-        assert(is_permutation(z_order, len(self._object_counts)))
+        if not is_permutation(z_order, self.data.count):
+            raise ValueError('z_order is not permutation')
 
         self._z_order = np.array(z_order)
 
         if len(self._z_order) == 0:
             self._z_order_faces = np.empty((0), dtype=int)
         else:
-            offsets = np.zeros(len(self._object_counts) + 1, dtype=int)
+            offsets = np.zeros(self.data.count + 1, dtype=int)
             offsets[1:] = self._object_counts.cumsum()
             z_order_faces = [np.arange(offsets[z], offsets[z]+self._object_counts[z]) for z in self._z_order]
             self._z_order_faces = np.concatenate(z_order_faces)
@@ -304,10 +305,10 @@ class Shapes(Layer):
             self._remove_one_shape(index)
             self.z_order = self._z_order
 
-    def _remove_one_shape(self, index):
+    def _remove_one_shape(self, index, renumber=True):
         assert(type(index) is int)
         faces_indices = self.data._mesh_faces_index[:, 0]
-        self.data.remove_one_shape(index)
+        self.data.remove_one_shape(index, renumber=renumber)
         z_order = self._z_order[self._z_order!=index]
         z_order[z_order>index] = z_order[z_order>index]-1
         self._z_order = z_order
@@ -396,6 +397,17 @@ class Shapes(Layer):
         """
         self.data.shift_shapes(shift, index=index)
         self.refresh()
+
+    # def edit_shapes(self, index, vertices):
+    #     """Replaces the current vertices of the selected shape with new ones
+    #     Parameters
+    #     ----------
+    #     index : int
+    #         index of single object that is to be edited.
+    #     vertices : np.ndarray
+    #         Nx2 array specifying new vertices of shape.
+    #     """
+    #     self._remove_one_shape(index, renumber=False)
 
     def set_thickness(self, index=True, thickness=1):
         if isinstance(thickness, (list, np.ndarray)):
