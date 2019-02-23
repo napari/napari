@@ -30,20 +30,21 @@ class QtLayersList(QScrollArea):
         layer = event.item
         index = event.index
         total = len(self.layers)
-        if layer._qt is not None:
-            self.vbox_layout.insertWidget(2*(total - index)-1, layer._qt)
+        if layer._qt_properties is not None:
+            self.vbox_layout.insertWidget(2*(total - index)-1,
+                                          layer._qt_properties)
             self.vbox_layout.insertWidget(2*(total - index), QtDivider())
 
     def _remove(self, event):
         """Removes a layer widget
         """
         layer = event.item
-        if layer._qt is not None:
-            index = self.vbox_layout.indexOf(layer._qt)
+        if layer._qt_properties is not None:
+            index = self.vbox_layout.indexOf(layer._qt_properties)
             divider = self.vbox_layout.itemAt(index+1).widget()
-            self.vbox_layout.removeWidget(layer._qt)
-            layer._qt.deleteLater()
-            layer._qt = None
+            self.vbox_layout.removeWidget(layer._qt_properties)
+            layer._qt_properties.deleteLater()
+            layer._qt_properties = None
             self.vbox_layout.removeWidget(divider)
             divider.deleteLater()
             divider = None
@@ -56,12 +57,13 @@ class QtLayersList(QScrollArea):
         total = len(self.layers)
         for i in range(total):
             layer = self.layers[i]
-            if layer._qt is not None:
-                index = self.vbox_layout.indexOf(layer._qt)
+            if layer._qt_properties is not None:
+                index = self.vbox_layout.indexOf(layer._qt_properties)
                 divider = self.vbox_layout.itemAt(index+1).widget()
-                self.vbox_layout.removeWidget(layer._qt)
+                self.vbox_layout.removeWidget(layer._qt_properties)
                 self.vbox_layout.removeWidget(divider)
-                self.vbox_layout.insertWidget(2*(total - i)-1, layer._qt)
+                self.vbox_layout.insertWidget(2*(total - i)-1,
+                                              layer._qt_properties)
                 self.vbox_layout.insertWidget(2*(total - i), divider)
 
     def mouseReleaseEvent(self, event):

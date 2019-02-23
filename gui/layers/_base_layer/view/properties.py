@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QPalette, QDrag
 
 from os.path import join
-from ...resources import resources_dir
+from ....resources import resources_dir
 path_on = join(resources_dir, 'icons', 'eye_on.png')
 
 
@@ -93,7 +93,6 @@ class QtLayer(QFrame):
             self.layer.visible = True
         else:
             self.layer.visible = False
-        self.layer.viewer._update_active_layers(None)
 
     def changeText(self, text):
         self.layer.name = text.text()

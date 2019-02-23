@@ -17,7 +17,7 @@ from ..colormaps import matplotlib_colormaps
 from .._register import add_to_viewer
 
 from .view import QtImageLayer
-
+from .view import QtImageControls
 
 def vispy_or_mpl_colormap(name):
     """Try to get a colormap from vispy, or convert an mpl one to vispy format.
@@ -52,7 +52,8 @@ def vispy_or_mpl_colormap(name):
 
 
 AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
-                       for k in matplotlib_colormaps + list(color.get_colormaps())}
+                       for k in matplotlib_colormaps +
+                       list(color.get_colormaps())}
 
 
 @add_to_viewer
@@ -86,10 +87,15 @@ class Image(Layer):
         self._need_visual_update = False
 
         self.name = 'image'
-        self._qt = QtImageLayer(self)
 
         self._clim_range = self._clim_range_default()
         self._node.clim = [np.min(self.image), np.max(self.image)]
+
+        cmin, cmax = self.clim
+        self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
+
+        self._qt_properties = QtImageLayer(self)
+        self._qt_controls = QtImageControls(self)
 
     @property
     def image(self):
@@ -246,6 +252,8 @@ class Image(Layer):
 
     @clim.setter
     def clim(self, clim):
+        self._clim_msg = f'{clim[0]: 0.3}, {clim[1]: 0.3}'
+        self.status = self._clim_msg
         self._node.clim = clim
 
     @property
@@ -344,3 +352,11 @@ class Image(Layer):
             else:
                 msg = msg + f'{value:0.3}'
         return coord, value, msg
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            return
+        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
+        self.status = msg

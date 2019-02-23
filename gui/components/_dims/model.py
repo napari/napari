@@ -1,5 +1,5 @@
 from ...util.misc import (compute_max_shape as _compute_max_shape,
-                         guess_metadata)
+                          guess_metadata)
 from numpy import clip, integer, ndarray, append, insert, delete
 from copy import copy
 

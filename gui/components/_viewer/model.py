@@ -18,8 +18,6 @@ class Viewer:
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
-    control_bars : ControlBars
-        Contains control bar sliders.
     camera : vispy.scene.Camera
         Viewer camera.
     """
@@ -27,28 +25,21 @@ class Viewer:
     def __init__(self):
         super().__init__()
         from .._layers_list import LayersList
-        from .._control_bars import ControlBars
         from .._dims import Dims
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    status=Event,
                                    help=Event,
-                                   annotation=Event,
                                    active_markers=Event)
         self.dims = Dims(self)
         self.layers = LayersList(self)
-        self.control_bars = ControlBars(self)
-
-        self._annotation = False
-        self._annotation_history = False
-        self._active_image = None
-        self._active_markers = None
-        self._visible_markers = []
-        self.position = [0, 0]
 
         self._status = 'Ready'
         self._help = ''
+        self._cursor = 'standard'
+        self._interactive = True
+        self._top = None
 
         self._qt = QtViewer(self)
 
@@ -94,17 +85,30 @@ class Viewer:
         self.events.help(text=self._help)
 
     @property
-    def annotation(self):
-        """bool: Annotation mode
+    def interactive(self):
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
         """
-        return self._annotation
+        return self._interactive
 
-    @annotation.setter
-    def annotation(self, annotation):
-        if annotation == self.annotation:
+    @interactive.setter
+    def interactive(self, interactive):
+        if interactive == self.interactive:
             return
-        self._annotation = annotation
-        self.events.annotation(enabled=self._annotation)
+        self._view.interactive = interactive
+        self._interactive = interactive
+
+    @property
+    def cursor(self):
+        """string: String identifying cursor displayed over canvas.
+        """
+        return self._cursor
+
+    @cursor.setter
+    def cursor(self, cursor):
+        if cursor == self.cursor:
+            return
+        self._qt.set_cursor(cursor)
+        self._cursor = cursor
 
     @property
     def active_markers(self):
@@ -200,55 +204,23 @@ class Viewer:
         """
         for layer in self.layers:
             layer._set_view_slice(self.dims.indices)
-        self._update_status()
 
-    def _set_annotation(self, bool):
-        if bool:
-            self.annotation = True
-            self.help = 'hold <space> to pan/zoom'
+    def _update_layer_selection(self, event):
+        # iteration goes backwards to find top most selected layer if any
+        for layer in self.layers[::-1]:
+            if layer.selected:
+                self._qt.control_panel.display(layer)
+                self.status = layer.status
+                self.help = layer.help
+                self.cursor = layer.cursor
+                self.interactive = layer.interactive
+                self._top = layer
+                break
         else:
-            self.annotation = False
+            self._qt.control_panel.display(None)
+            self.status = 'Ready'
             self.help = ''
-
-    def _update_active_layers(self, event):
-        from ...layers._image_layer import Image
-        from ...layers._markers_layer import Markers
-        top_markers = []
-        for i, layer in enumerate(self.layers[::-1]):
-            if layer.visible and isinstance(layer, Image):
-                top_image = len(self.layers) - 1 - i
-                break
-            elif layer.visible and isinstance(layer, Markers):
-                top_markers.append(len(self.layers) - 1 - i)
-        else:
-            top_image = None
-
-        active_markers = None
-        for i in top_markers:
-            if self.layers[i].selected:
-                active_markers = i
-                break
-
-        self._active_image = top_image
-        self._visible_markers = top_markers
-        self.active_markers = active_markers
-        self.control_bars.clim_slider_update()
-
-    def _update_status(self):
-        msg = ''
-        for i in self._visible_markers:
-            layer = self.layers[i]
-            coord, value, msg = layer.get_value(self.position,
-                                                self.dims.indices)
-            if value is None:
-                pass
-            else:
-                break
-        else:
-            if self._active_image is None:
-                pass
-            else:
-                layer = self.layers[self._active_image]
-                coord, value, msg = layer.get_value(self.position,
-                                                    self.dims.indices)
-        self.status = msg
+            self.cursor = 'standard'
+            self.interactive = True
+            self._top = None
+        self._canvas.native.setFocus()

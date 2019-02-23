@@ -104,6 +104,7 @@ def compute_max_shape(shapes, max_dims=None):
 _app = None
 _windows = []
 
+
 def imshow(image, meta=None, multichannel=None, **kwargs):
     """Displays an image.
 

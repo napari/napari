@@ -13,5 +13,4 @@ Viewer
 from ._window import Window, QtApplication
 from ._viewer import Viewer
 from ._layers_list import LayersList
-from ._control_bars import ControlBars
 from ._dims import Dims
