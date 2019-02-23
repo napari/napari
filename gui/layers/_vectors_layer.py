@@ -81,7 +81,7 @@ class Vectors(Layer):
         name
 
 
-    See vispy's marker visual docs for more details:
+    See vispy's line visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
     http://vispy.org/visuals.html
     """
@@ -92,18 +92,19 @@ class Vectors(Layer):
             color='red',
             connector='segments',
             averaging='1x1',
-            length = 10,
-            arrow_size=10):
+            length = 10):
+            # arrow_size=10):
 
-        # visual = LinesNode()
-        visual = ArrowNode()
+        visual = LinesNode()
+        # visual = ArrowNode()
         # visual = ArrowNode(arrow_size=10, color='white')
         super().__init__(visual)
 
         # Save the line vertex coordinates
-        self._vectors = vectors
-        self._arrows = None
-        self._arrow_size = arrow_size
+        # self._vectors = vectors
+        self._vectors = self.check_vector_type(vectors)
+        # self._arrows = None
+        # self._arrow_size = arrow_size
 
         # Save the line style params
         self._width = width
@@ -129,6 +130,7 @@ class Vectors(Layer):
     #====================== Property getter and setters =======================================
     @property
     def vectors(self) -> np.ndarray:
+        print("get vector called")
         return self._vectors
 
     @vectors.setter
@@ -138,24 +140,28 @@ class Vectors(Layer):
             1) (N, 4) array with elements (x, y, u, v),
                 where x-y are position (center) and u-v are x-y projections of the vector
             2) (N, M, 2) array with elements (u, v)
-                where u-v are projections of the vector
-                position is one vector per-pixel in the NxM array
-        :param vectors:
+                where u-v are x-y projections of the vector
+                vector position is one per-pixel in the NxM array
+        :param vectors: ndarray
         :return:
         """
-
-        if vectors.shape[-1] == 4:
-            self._vectors = self._convert_proj_to_coordinates(vectors)
-        elif len(vectors.shape) == 3 and vectors.shape[-1] == 2:
-            raise NotImplementedError("image-like vector data is not supported")
-            # self._vectors = self._convert_polar_to_coordinates(vectors)
-        else:
-            raise NotImplementedError("Vector data of shape %s is not supported" % str(vectors.shape))
+        print("set vector called")
+        self._vectors = self.check_vector_type(vectors)
 
         self.viewer._child_layer_changed = True
         self._refresh()
 
-    def _convert_polar_to_coordinates(self, vect) -> np.ndarray:
+    def check_vector_type(self, vectors):
+        if vectors.shape[-1] == 4 and len(vectors.shape) == 2:
+            coord_list = self._convert_proj_to_coordinates(vectors)
+        elif vectors.shape[-1] == 2 and len(vectors.shape) == 3:
+            coord_list = self._convert_matrix_to_coordinates(vectors)
+            # raise NotImplementedError("image-like vector data is not supported")
+        else:
+            raise NotImplementedError("Vector data of shape %s is not supported" % str(vectors.shape))
+        return coord_list
+
+    def _convert_proj_to_coordinates(self, vect) -> np.ndarray:
         """
         To convert an image-like array of (x-proj, y-proj) into an
             image-like array of vectors
@@ -163,7 +169,7 @@ class Vectors(Layer):
         :param vect: np.ndarray of shape (N, M, 2)
         :return: position list of shape (N, 2) for vispy
         """
-
+        print("convert polar to coods called")
         xdim = vect.shape[0]
         ydim = vect.shape[1]
         stride_x = 1
@@ -206,10 +212,9 @@ class Vectors(Layer):
 
         return pos
 
+    def _convert_matrix_to_coordinates(self, vect) -> np.ndarray:
 
-    # def _convert_polar_to_coordinates(self, vect):
-
-
+        return None
 
     @property
     def arrow_size(self):
@@ -326,6 +331,7 @@ class Vectors(Layer):
 
         :return: coordinates of line vertices via the property (and not the private)
         """
+        print("get data called")
         return self.vectors
 
     @data.setter
@@ -335,10 +341,12 @@ class Vectors(Layer):
         :param data:
         :return:
         """
+        print("set data called")
         self.vectors = data
 
 
     def _get_shape(self):
+        print("get shape called")
         if len(self.vectors) == 0:
             return np.ones(self.vectors.shape,dtype=int)
         else:
@@ -371,17 +379,18 @@ class Vectors(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-
+        print('set view slice called')
         in_slice_vectors, matches = self._slice_vectors(indices)
 
         # Display vectors if there are any in this slice
         if len(in_slice_vectors) > 0:
             # Get the vectors sizes
-            if isinstance(self.width, (list, np.ndarray)):
-                sizes = self.width[matches][::-1]
-
-            else:
-                sizes = self.width
+            print('in_slice_vectors greater than zero')
+            # if isinstance(self.width, (list, np.ndarray)):
+            #     sizes = self.width[matches][::-1]
+            #
+            # else:
+            #     sizes = self.width
 
             # Update the vectors node
             data = np.array(in_slice_vectors) + 0.5
@@ -396,8 +405,6 @@ class Vectors(Layer):
             width=self.width,
             color=self.color,
             connect=self.connector)
-            # arrows=self.arrows)
-            # arrow_size=self.arrow_size)
         self._need_visual_update = True
         self._update()
 
@@ -414,7 +421,7 @@ class Vectors(Layer):
         # we MUST add a check for vector shape here, and perform reformatting if necessary.
         # this method gets called upon construction and bypasses calls to reformatting in the getter/setters above.
         # TODO: must check for vector shape.  Think about where data conversion happens -- here or in property?
-
+        print("slice vectors called")
         vectors = self.vectors
         if len(vectors) > 0:
             matches = np.equal(

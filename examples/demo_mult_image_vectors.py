@@ -46,8 +46,8 @@ class vector_window_example(QWidget):
         # mk1 = self.viewer.add_markers(pos)
         # mk1.size = 0.3
         vect1 = self.viewer.add_vectors(pos)
-        vect1.width = 4
-        vect1.arrow_size = 100
+        # vect1.width = 4
+        # vect1.arrow_size = 100
         vect1.arrows = pos.reshape((len(pos)//2, 4)) + 0.5
         # vect1.arrows = None
 
