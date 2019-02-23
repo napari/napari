@@ -92,8 +92,7 @@ class LayersList:
 
         if prev is not None:
             self.events.add_item.disconnect(prev.dims._on_layers_change)
-            self.events.remove_item.disconnect(prev.dims.
-                                               _on_layers_change)
+            self.events.remove_item.disconnect(prev.dims._on_layers_change)
             self.events.add_item.disconnect(prev._update_layer_selection)
             self.events.remove_item.disconnect(prev._update_layer_selection)
             self.events.reorder.disconnect(prev._update_layer_selection)
@@ -103,8 +102,7 @@ class LayersList:
 
         if viewer is not None:
             self.events.add_item.connect(viewer.dims._on_layers_change)
-            self.events.remove_item.connect(viewer.dims.
-                                            _on_layers_change)
+            self.events.remove_item.connect(viewer.dims._on_layers_change)
             self.events.add_item.connect(viewer._update_layer_selection)
             self.events.remove_item.connect(viewer._update_layer_selection)
             self.events.reorder.connect(viewer._update_layer_selection)
