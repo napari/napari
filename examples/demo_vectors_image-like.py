@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# title           : demo_mult_image_vectors.py
+# title           : demo_vectors_coord-like.py
 # description     :demonstration of vector image using napari layers
 # author          :bryant.chhun
 # date            :1/16/19
@@ -15,14 +15,14 @@ from napari_gui import Window, Viewer
 
 import numpy as np
 
-from skimage import data
-
-import time
 
 class vector_window_example(QWidget):
     '''
     This example generates an image of vectors
-    The end points of the vectors are marked by markers
+    Vector data is an array of shape (N, M, 2)
+    Each vector position is defined by an (x-proj, y-proj) element
+        where x-proj and y-proj are the vector projections at each center
+        where each vector is centered on a pixel of the NxM grid
     '''
 
     def __init__(self, window):
@@ -30,26 +30,16 @@ class vector_window_example(QWidget):
         self.win = window
         self.viewer = self.win.viewer
 
-        # sample vector data
-        N = 6
-        pos = np.zeros((N*N, 2), dtype=np.float32)
-        xdim = np.linspace(0, N, N)
-        ydim = np.linspace(0, N, N)
-        xv, yv = np.meshgrid(xdim, ydim)
-        pos[:, 0] = xv.flatten()
-        pos[:, 1] = yv.flatten()
+        # sample vector image-like data
+        # 10x5 grid of slanted lines
+        N = 10
+        M = 5
+        pos = np.zeros(shape=(N, M, 2), dtype=np.float32)
+        # all vectors have same projection
+        pos[:, :, 0] = 0.5
+        pos[:, :, 1] = 0.5
 
-        # add slant to the lines
-        # add a value to every other y-coordinate
-        pos[1::2, 1] += 0.5
-
-        # mk1 = self.viewer.add_markers(pos)
-        # mk1.size = 0.3
-        vect1 = self.viewer.add_vectors(pos)
-        # vect1.width = 4
-        # vect1.arrow_size = 100
-        vect1.arrows = pos.reshape((len(pos)//2, 4)) + 0.5
-        # vect1.arrows = None
+        self.viewer.add_vectors(pos)
 
         self.win.show()
 

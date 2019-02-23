@@ -15,17 +15,12 @@ import numpy as np
 from ._base_layer import Layer
 from ._register import add_to_viewer
 from .._vispy.scene.visuals import Line as LinesNode
-from .._vispy.scene.visuals import Arrow as ArrowNode
 from vispy.color import get_color_names
 
 from .qt import QtVectorsLayer
 
 @add_to_viewer
 class Vectors(Layer):
-    #TODO: change input data type: receive (M,N,2) (for 2d vector array), where magnitude and angle passed.
-    #TODO: think about magnitude zero
-    #TODO: add ArrowNode?  Dynamically adjust this via dropdown?
-    #TODO: change "averaging" to something more natural
     """
     Properties
     ----------
@@ -130,7 +125,6 @@ class Vectors(Layer):
     #====================== Property getter and setters =======================================
     @property
     def vectors(self) -> np.ndarray:
-        print("get vector called")
         return self._vectors
 
     @vectors.setter
@@ -145,7 +139,6 @@ class Vectors(Layer):
         :param vectors: ndarray
         :return:
         """
-        print("set vector called")
         self._vectors = self.check_vector_type(vectors)
 
         self.viewer._child_layer_changed = True
@@ -161,60 +154,70 @@ class Vectors(Layer):
             raise NotImplementedError("Vector data of shape %s is not supported" % str(vectors.shape))
         return coord_list
 
-    def _convert_proj_to_coordinates(self, vect) -> np.ndarray:
+    def _convert_matrix_to_coordinates(self, vect) -> np.ndarray:
         """
         To convert an image-like array of (x-proj, y-proj) into an
             image-like array of vectors
 
         :param vect: np.ndarray of shape (N, M, 2)
-        :return: position list of shape (N, 2) for vispy
+        :return: position list of shape (2*N*M, 2) for vispy
         """
-        print("convert polar to coods called")
         xdim = vect.shape[0]
         ydim = vect.shape[1]
-        stride_x = 1
-        stride_y = 1
-        length = 1
-        # azimuth = np.arctan2(vect[:,:,1],vect[:,:,0])
-        # retardance = np.sqrt(vect[:,:,0].dot(vect[:,:,1]))
+
+        # stride is used during averaging for a later implementation
+        # stride_x = 2
+        # stride_y = 2
 
         # create empty vector of necessary shape
         # every pixel has 2 coordinates,
-        pos = np.zeros((2 * xdim * ydim, 2), dtype=np.float32)
+        pos = np.empty((2 * xdim * ydim, 2), dtype=np.float32)
 
         # create coordinate spacing for x-y
         # double the num of elements by doubling x sampling
-        xspace = np.linspace(0, stride_x * xdim, 2 * xdim)
-        yspace = np.linspace(0, stride_y * ydim, ydim)
+        xspace = np.linspace(0, xdim, 2 * xdim)
+        yspace = np.linspace(0, ydim, ydim)
         xv, yv = np.meshgrid(xspace, yspace)
 
         # assign coordinates (pos) to all pixels
         pos[:, 0] = xv.flatten()
         pos[:, 1] = yv.flatten()
 
-        # pixel midpoints are the first x-value of positions
-        midpt = np.zeros((xdim * ydim, 2), dtype=np.float32)
-        midpt[:, 0] = pos[0::2, 0]
-        midpt[:, 1] = pos[0::2, 1]
+        # adjust second coordinate to represent vector projections
+        pos[1::2, 0] += vect.reshape((xdim*ydim, 2))[:, 0]
+        pos[1::2, 1] += vect.reshape((xdim*ydim, 2))[:, 1]
 
-        # rotate coordinates about midpoint to represent azimuth angle and length
-        # azimuth_flat = azimuth.flatten()
-        # retard_flat = retardance.flatten()
-        # pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * length * retard_flat * np.cos(azimuth_flat)
-        # pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * length * retard_flat * np.sin(azimuth_flat)
-        # pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * length * retard_flat * np.cos(azimuth_flat)
-        # pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * length * retard_flat * np.sin(azimuth_flat)
-
-        pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * length * vect[:,:,0]
-        pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * length * vect[:,:,1]
-        pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * length * vect[:,:,0]
-        pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * length * vect[:,:,1]
+        # # TODO: averaging implementation.  for image-like arrays only
+        # pos[1::2, 0] += (stride_x / 2) * vect.reshape((xdim*ydim, 2))[:, 0]
+        # pos[1::2, 1] += (stride_y / 2) * vect.reshape((xdim*ydim, 2))[:, 1]
 
         return pos
 
-    def _convert_matrix_to_coordinates(self, vect) -> np.ndarray:
+    def _convert_proj_to_coordinates(self, vect) -> np.ndarray:
+        """
+        To convert a list of coordinates of shape (x-center, y-center, x-proj, y-proj)
+            into a position list of vectors.
+        Every input coordinate of (N,4) results in two output coordinates of (N,2)
 
-        return None
+        :param vect: np.ndarray of shape (N, 4)
+        :return: position list of shape (2*N, 2) for vispy
+        """
+
+        # create empty vector of necessary shape
+        #   one coordinate for each endpoint of the vector
+        pos = np.empty((2 * len(vect), 2), dtype=np.float32)
+
+        # create pairs of points
+        pos[0::2, 0] = vect[:, 0]
+        pos[1::2, 0] = vect[:, 0]
+        pos[0::2, 1] = vect[:, 1]
+        pos[1::2, 1] = vect[:, 1]
+
+        # adjust second of each pair according to x-y projection
+        pos[1::2, 0] += vect[:, 2]
+        pos[1::2, 1] += vect[:, 3]
+
+        return pos
 
     @property
     def arrow_size(self):
@@ -331,7 +334,6 @@ class Vectors(Layer):
 
         :return: coordinates of line vertices via the property (and not the private)
         """
-        print("get data called")
         return self.vectors
 
     @data.setter
@@ -341,12 +343,10 @@ class Vectors(Layer):
         :param data:
         :return:
         """
-        print("set data called")
         self.vectors = data
 
 
     def _get_shape(self):
-        print("get shape called")
         if len(self.vectors) == 0:
             return np.ones(self.vectors.shape,dtype=int)
         else:
@@ -379,13 +379,12 @@ class Vectors(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        print('set view slice called')
         in_slice_vectors, matches = self._slice_vectors(indices)
 
         # Display vectors if there are any in this slice
         if len(in_slice_vectors) > 0:
             # Get the vectors sizes
-            print('in_slice_vectors greater than zero')
+            # print('in_slice_vectors greater than zero')
             # if isinstance(self.width, (list, np.ndarray)):
             #     sizes = self.width[matches][::-1]
             #
@@ -418,10 +417,6 @@ class Vectors(Layer):
         """
         # Get a list of the vectors for the vectors in this slice
 
-        # we MUST add a check for vector shape here, and perform reformatting if necessary.
-        # this method gets called upon construction and bypasses calls to reformatting in the getter/setters above.
-        # TODO: must check for vector shape.  Think about where data conversion happens -- here or in property?
-        print("slice vectors called")
         vectors = self.vectors
         if len(vectors) > 0:
             matches = np.equal(
