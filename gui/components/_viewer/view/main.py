@@ -3,7 +3,10 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
+from PyQt5.QtWidgets import QFrame
+
 from .controls import QtControls
+from .plugins import QtPlugins
 
 from os.path import join
 from ....resources import resources_dir
@@ -44,6 +47,9 @@ class QtViewer(QSplitter):
         self.addWidget(self.control_panel)
         self.addWidget(center)
         self.addWidget(self.viewer.layers._qt)
+        self.plugin_panel = QtPlugins(viewer)
+        self.addWidget(self.plugin_panel)
+        self.setSizes([40, 655, 250, 0])
 
         viewer.dimensions._qt.setFixedHeight(0)
 

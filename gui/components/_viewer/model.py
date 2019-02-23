@@ -35,6 +35,8 @@ class Viewer:
         self.dimensions = Dimensions(self)
         self.layers = LayersList(self)
 
+        self.plugins = []
+
         self._status = 'Ready'
         self._help = ''
         self._cursor = 'standard'
@@ -168,6 +170,18 @@ class Viewer:
         self.layers.append(layer)
         if len(self.layers) == 1:
             self.reset_view()
+
+    def add_plugin(self, plugin):
+        """Adds a plugin to the viewer.
+
+        Parameters
+        ----------
+        plugin : Plugin
+            Plugin to add.
+        """
+        plugin.layers = self.layers
+        self.plugins.append(plugin)
+        self._qt.plugin_panel._add(plugin)
 
     def _new_markers(self):
         if self.dimensions.max_dims == 0:
