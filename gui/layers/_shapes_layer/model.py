@@ -68,7 +68,7 @@ class Shapes(Layer):
 
             self._show_faces = np.ones(len(self.data._mesh_faces), dtype=bool)
             default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
-            self._object_counts = counts
+            self._face_counts = counts
             self.z_order = default_z_order
 
             self._vertex_size = 10
@@ -171,9 +171,11 @@ class Shapes(Layer):
         if len(self._z_order) == 0:
             self._z_order_faces = np.empty((0), dtype=int)
         else:
+            print(self.data.count)
+            print(self._face_counts)
             offsets = np.zeros(self.data.count + 1, dtype=int)
-            offsets[1:] = self._object_counts.cumsum()
-            z_order_faces = [np.arange(offsets[z], offsets[z]+self._object_counts[z]) for z in self._z_order]
+            offsets[1:] = self._face_counts.cumsum()
+            z_order_faces = [np.arange(offsets[z], offsets[z]+self._face_counts[z]) for z in self._z_order]
             self._z_order_faces = np.concatenate(z_order_faces)
 
         self.refresh()
@@ -265,7 +267,7 @@ class Shapes(Layer):
         color_array[self.data._mesh_faces_index[num_faces:,2]==0] = fc
         self._color_array = np.concatenate((self._color_array, color_array), axis=0)
         default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
-        self._object_counts = counts
+        self._face_counts = counts
         self.z_order = np.concatenate((np.arange(num_shapes, new_num_shapes), self.z_order))
 
     def set_shapes(self, lines=None, rectangles=None, ellipses=None, paths=None,
@@ -284,7 +286,7 @@ class Shapes(Layer):
         color_array[self.data._mesh_faces_index[:,2]==0] = fc
         self._color_array = np.array(color_array)
         default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
-        self._object_counts = counts
+        self._face_counts = counts
         self.z_order = default_z_order
 
     def remove_shapes(self, index=True):
@@ -295,7 +297,7 @@ class Shapes(Layer):
             self.data.remove_all_shapes()
             self._show_faces = np.empty((0), dtype=bool)
             self._color_array =  np.empty((0, 4))
-            self._object_counts = np.empty((0), dtype=int)
+            self._face_counts = np.empty((0), dtype=int)
             self.z_order = np.empty((0), dtype=int)
         elif type(index) is list:
             for i in np.sort(index)[::-1]:
@@ -309,12 +311,47 @@ class Shapes(Layer):
         assert(type(index) is int)
         faces_indices = self.data._mesh_faces_index[:, 0]
         self.data.remove_one_shape(index, renumber=renumber)
-        z_order = self._z_order[self._z_order!=index]
-        z_order[z_order>index] = z_order[z_order>index]-1
-        self._z_order = z_order
-        self._object_counts = np.delete(self._object_counts, index, axis=0)
+        if renumber:
+            z_order = self._z_order[self._z_order!=index]
+            z_order[z_order>index] = z_order[z_order>index]-1
+            self._z_order = z_order
+            self._face_counts = np.delete(self._face_counts, index, axis=0)
         self._show_faces = self._show_faces[faces_indices!=index]
         self._color_array = self._color_array[faces_indices!=index]
+
+    def edit_shape(self, index, vertices):
+        """Replaces the current vertices of the selected shape with new ones
+        Parameters
+        ----------
+        index : int
+            index of single object that is to be edited.
+        vertices : np.ndarray
+            Nx2 array specifying new vertices of shape.
+        """
+        object_type = self.data.objects[self.data.id[index]]
+        self._remove_one_shape(index, renumber=False)
+        if object_type == 'line':
+            pass
+        elif object_type == 'rectangle':
+            pass
+        elif object_type == 'ellipse':
+            pass
+        elif object_type == 'path':
+            pass
+        elif object_type == 'polygon':
+            self.data._add_polygon(vertices, index=index, thickness=self.data._thickness[index])
+        else:
+            raise ValueError("Object type not recongnized")
+
+        new_faces = sum(self.data._mesh_faces_index[:,0]==index)
+        self._face_counts[index] = new_faces
+        self._show_faces = np.concatenate((self._show_faces, np.ones(new_faces, dtype='bool')), axis=0)
+        ec = Color(self.edge_color).rgba
+        fc = Color(self.face_color).rgba
+        color_array = np.repeat([ec], new_faces, axis=0)
+        color_array[self.data._mesh_faces_index[-new_faces:,2]==0] = fc
+        self._color_array = np.concatenate((self._color_array, color_array), axis=0)
+        self.z_order = self._z_order
 
     def scale_shapes(self, scale, vertex=-2, index=True):
         """Perfroms a scaling on selected shapes
@@ -397,17 +434,6 @@ class Shapes(Layer):
         """
         self.data.shift_shapes(shift, index=index)
         self.refresh()
-
-    # def edit_shapes(self, index, vertices):
-    #     """Replaces the current vertices of the selected shape with new ones
-    #     Parameters
-    #     ----------
-    #     index : int
-    #         index of single object that is to be edited.
-    #     vertices : np.ndarray
-    #         Nx2 array specifying new vertices of shape.
-    #     """
-    #     self._remove_one_shape(index, renumber=False)
 
     def set_thickness(self, index=True, thickness=1):
         if isinstance(thickness, (list, np.ndarray)):

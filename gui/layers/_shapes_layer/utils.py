@@ -55,23 +55,17 @@ class ShapesData():
                    polygons=None, thickness=1, rotation=0):
 
         cur_shapes = len(self.id)
+        new_shapes = cur_shapes
         if lines is not None:
-            for shape in lines:
-                self._add_line(shape)
+            new_shapes = new_shapes + len(lines)
         if rectangles is not None:
-            for shape in rectangles:
-                self._add_rectangle(shape)
+            new_shapes = new_shapes + len(rectangles)
         if ellipses is not None:
-            for shape in ellipses:
-                self._add_ellipse(shape)
+            new_shapes = new_shapes + len(ellipses)
         if paths is not None:
-            for shape in paths:
-                self._add_path(shape)
+            new_shapes = new_shapes + len(paths)
         if polygons is not None:
-            for shape in polygons:
-                self._add_polygon(shape)
-        new_shapes = len(self.id) - cur_shapes
-        self.count = len(self.id)
+            new_shapes = new_shapes + len(polygons)
 
         # update thickness for all new shapes
         if np.isscalar(thickness):
@@ -86,7 +80,22 @@ class ShapesData():
         else:
             raise TypeError('thickness should be float or ndarray')
 
-        self.update_thickness(list(range(cur_shapes, new_shapes)))
+        if lines is not None:
+            for i, shape in enumerate(lines):
+                self._add_line(shape, thickness=self._thickness[cur_shapes+i])
+        if rectangles is not None:
+            for i, shape in enumerate(rectangles):
+                self._add_rectangle(shape, thickness=self._thickness[cur_shapes+i])
+        if ellipses is not None:
+            for i, shape in enumerate(ellipses):
+                self._add_ellipse(shape, thickness=self._thickness[cur_shapes+i])
+        if paths is not None:
+            for i, shape in enumerate(paths):
+                self._add_path(shape, thickness=self._thickness[cur_shapes+i])
+        if polygons is not None:
+            for i, shape in enumerate(polygons):
+                self._add_polygon(shape, thickness=self._thickness[cur_shapes+i])
+        self.count = len(self.id)
 
         # set rotation for all new shapes
         # if np.isscalar(rotation):
@@ -141,8 +150,6 @@ class ShapesData():
             self.boxes = np.delete(self.boxes, index, axis=0)
             self._thickness = np.delete(self._thickness, index, axis=0)
             self.count = self.count - 1
-        else:
-            self.index[self.index>index] = self.index[self.index>index]
 
         indices = self._select_meshes(index, self._mesh_faces_index)
         self._mesh_faces_index = np.delete(self._mesh_faces_index, indices, axis=0)
@@ -156,9 +163,6 @@ class ShapesData():
         if renumber:
             self._mesh_faces_index[self._mesh_faces_index[:,0]>index, 0] = self._mesh_faces_index[self._mesh_faces_index[:,0]>index, 0]-1
             self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0]-1
-        else:
-            self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index, 0]
-            self._mesh_faces_index[self._mesh_faces_index[:,0]>index, 0] = self._mesh_faces_index[self._mesh_faces_index[:,0]>index, 0]
         self._mesh_faces[self._mesh_faces>indices[0]] = self._mesh_faces[self._mesh_faces>indices[0]] - len(indices)
 
     def update_thickness(self, index):
@@ -386,7 +390,7 @@ class ShapesData():
                 indices = []
         return indices
 
-    def _add_line(self, shape, index=None):
+    def _add_line(self, shape, index=None, thickness=1):
         object_id = self.objects.index('line')
         box = self._expand_box(shape)
         if index is None:
@@ -402,9 +406,9 @@ class ShapesData():
         self.index = np.append(self.index, indices, axis=0)
         # Build objects to be rendered
         # For lines just add edge
-        self._compute_meshes(shape, edge=True, thickness=1, index=[m, object_id])
+        self._compute_meshes(shape, edge=True, thickness=thickness, index=[m, object_id])
 
-    def _add_rectangle(self, shape, index=None):
+    def _add_rectangle(self, shape, index=None, thickness=1):
         object_id = self.objects.index('rectangle')
         box = self._expand_box(shape)
         if index is None:
@@ -422,10 +426,10 @@ class ShapesData():
         # Build objects to be rendered
         # For rectanges add four boundary lines and then two triangles for each
         fill_faces = np.array([[0, 1, 2], [0, 2, 3]])
-        self._compute_meshes(rectangle, edge=True, fill=True, closed=True, thickness=1, index=[m, object_id],
+        self._compute_meshes(rectangle, edge=True, fill=True, closed=True, thickness=thickness, index=[m, object_id],
                              fill_vertices=rectangle, fill_faces=fill_faces)
 
-    def _add_ellipse(self, shape, index=None):
+    def _add_ellipse(self, shape, index=None, thickness=1):
         object_id = self.objects.index('ellipse')
         box = self._expand_box(shape)
         if index is None:
@@ -445,10 +449,10 @@ class ShapesData():
         points = self._generate_ellipse(shape, self._ellipse_segments)
         fill_faces = np.array([[0, i+1, i+2] for i in range(self._ellipse_segments)])
         fill_faces[-1, 2] = 1
-        self._compute_meshes(points[1:-1], edge=True, fill=True, closed=True, thickness=1, index=[m, object_id],
+        self._compute_meshes(points[1:-1], edge=True, fill=True, closed=True, thickness=thickness, index=[m, object_id],
                              fill_vertices=points, fill_faces=fill_faces)
 
-    def _add_path(self, shape, index=None):
+    def _add_path(self, shape, index=None, thickness=1):
         object_id = self.objects.index('path')
         box = self._expand_box(shape)
         if index is None:
@@ -464,9 +468,9 @@ class ShapesData():
         self.index = np.append(self.index, indices, axis=0)
         # Build objects to be rendered
         # For paths connect every vertex in each path
-        self._compute_meshes(shape, edge=True, thickness=1, index=[m, object_id])
+        self._compute_meshes(shape, edge=True, thickness=thickness, index=[m, object_id])
 
-    def _add_polygon(self, shape, index=None):
+    def _add_polygon(self, shape, index=None, thickness=1):
         object_id = self.objects.index('polygon')
         box = self._expand_box(shape)
         if index is None:
@@ -482,7 +486,7 @@ class ShapesData():
         self.index = np.append(self.index, indices, axis=0)
         # Build objects to be rendered
         # For polygons connect every vertex in each polygon, including loop back to close
-        self._compute_meshes(shape, edge=True, fill=True, closed=True, thickness=1, index=[m, object_id])
+        self._compute_meshes(shape, edge=True, fill=True, closed=True, thickness=thickness, index=[m, object_id])
 
     def _expand_box(self, corners):
         min_val = [corners[:,0].min(axis=0), corners[:,1].min(axis=0)]
