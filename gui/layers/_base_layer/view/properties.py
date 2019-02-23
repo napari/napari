@@ -93,7 +93,6 @@ class QtLayer(QFrame):
             self.layer.visible = True
         else:
             self.layer.visible = False
-        self.layer.viewer._update_active_layers(None)
 
     def changeText(self, text):
         self.layer.name = text.text()
