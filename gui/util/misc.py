@@ -105,7 +105,6 @@ def compute_max_shape(shapes, max_dims=None):
     return tuple(max_shape)
 
 
-_app = None
 _windows = []
 
 
@@ -130,8 +129,7 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     """
     from ..components import Window, Viewer, QtApplication
 
-    global _app
-    _app = _app or QtApplication.instance() or QtApplication([])
+    app = QtApplication.instance() or QtApplication([])
 
     window = Window(Viewer(), show=False)
     _windows.append(window)
@@ -139,7 +137,7 @@ def imshow(image, meta=None, multichannel=None, **kwargs):
     window.show()
 
     if not INTERACTIVE:
-        _app.exec()
+        app.exec()
 
     return window.viewer
 
@@ -196,8 +194,7 @@ def scatter(coords, symbol='o', size=10, edge_width=1,
     """
     from ..components import Window, Viewer, QtApplication
 
-    global _app
-    _app = _app or QtApplication.instance() or QtApplication([])
+    app = QtApplication.instance() or QtApplication([])
 
     window = Window(Viewer(), show=False)
     _windows.append(window)
@@ -207,6 +204,6 @@ def scatter(coords, symbol='o', size=10, edge_width=1,
     window.show()
 
     if not INTERACTIVE:
-        _app.exec()
+        app.exec()
 
     return window.viewer
