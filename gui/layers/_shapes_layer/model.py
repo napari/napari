@@ -244,7 +244,7 @@ class Shapes(Layer):
         """
         if self._need_display_update:
             self._need_display_update = False
-            self._set_view_slice(self.viewer.dimensions.indices)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -780,7 +780,7 @@ class Shapes(Layer):
             self._node._subvisuals[1].set_data(pos=None, width=0)
 
     def _get_coord(self, position, indices):
-        max_shape = self.viewer.dimensions.max_shape
+        max_shape = self.viewer.dims.max_shape
         transform = self.viewer._canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [pos[1], pos[0]]
@@ -951,7 +951,7 @@ class Shapes(Layer):
         if event.pos is None:
             return
         position = event.pos
-        indices = self.viewer.dimensions.indices
+        indices = self.viewer.dims.indices
         coord = self._get_coord(position, indices)
 
         if self.mode == 'select':
@@ -1001,7 +1001,7 @@ class Shapes(Layer):
         """Called whenever mouse pressed in canvas.
         """
         position = event.pos
-        indices = self.viewer.dimensions.indices
+        indices = self.viewer.dims.indices
         coord = self._get_coord(position, indices)
         shift = 'Shift' in event.modifiers
 
@@ -1056,7 +1056,7 @@ class Shapes(Layer):
         """Called whenever mouse released in canvas.
         """
         position = event.pos
-        indices = self.viewer.dimensions.indices
+        indices = self.viewer.dims.indices
         coord = self._get_coord(position, indices)
         shift = 'Shift' in event.modifiers
 

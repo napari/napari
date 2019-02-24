@@ -16,7 +16,7 @@ class Viewer:
         Parent window.
     layers : LayersList
         List of contained layers.
-    dimensions : Dimensions
+    dims : Dimensions
         Contains axes, indices, dimensions and sliders.
     camera : vispy.scene.Camera
         Viewer camera.
@@ -25,15 +25,14 @@ class Viewer:
     def __init__(self):
         super().__init__()
         from .._layers_list import LayersList
-        from .._dimensions import Dimensions
+        from .._dims import Dims
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    status=Event,
                                    help=Event,
                                    active_markers=Event)
-
-        self.dimensions = Dimensions(self)
+        self.dims = Dims(self)
         self.layers = LayersList(self)
 
         self._status = 'Ready'
@@ -171,10 +170,10 @@ class Viewer:
             self.reset_view()
 
     def _new_markers(self):
-        if self.dimensions.max_dims == 0:
+        if self.dims.max_dims == 0:
             empty_markers = empty((0, 2))
         else:
-            empty_markers = empty((0, self.dimensions.max_dims))
+            empty_markers = empty((0, self.dims.max_dims))
         self.add_markers(empty_markers)
 
     def imshow(self, image, meta=None, multichannel=None, **kwargs):
@@ -204,7 +203,7 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer._set_view_slice(self.dimensions.indices)
+            layer._set_view_slice(self.dims.indices)
 
     def _update_layer_selection(self, event):
         # iteration goes backwards to find top most selected layer if any
@@ -217,11 +216,11 @@ class Viewer:
                 self.interactive = layer.interactive
                 self._top = layer
                 break
-            else:
-                self._qt.control_panel.display(None)
-                self.status = 'Ready'
-                self.help = ''
-                self.cursor = 'standard'
-                self.interactive = True
-                self._top = None
+        else:
+            self._qt.control_panel.display(None)
+            self.status = 'Ready'
+            self.help = ''
+            self.cursor = 'standard'
+            self.interactive = True
+            self._top = None
         self._canvas.native.setFocus()

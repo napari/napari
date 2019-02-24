@@ -36,7 +36,7 @@ class QtViewer(QSplitter):
         center = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.canvas.native)
-        layout.addWidget(self.viewer.dimensions._qt)
+        layout.addWidget(self.viewer.dims._qt)
         center.setLayout(layout)
 
         # Add controls, center, and layerlist
@@ -45,7 +45,7 @@ class QtViewer(QSplitter):
         self.addWidget(center)
         self.addWidget(self.viewer.layers._qt)
 
-        viewer.dimensions._qt.setFixedHeight(0)
+        viewer.dims._qt.setFixedHeight(0)
 
         self._cursors = {
                 'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
