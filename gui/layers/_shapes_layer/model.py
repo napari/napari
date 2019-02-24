@@ -68,8 +68,8 @@ class Shapes(Layer):
             self.edge_color = edge_color
             self.face_color = face_color
 
-            self._show_faces = np.ones(len(self.data._mesh_faces), dtype=bool)
-            #self.show_objects = np.ones((self.data.count, 2), dtype=bool)
+            self._show_meshes = np.ones(len(self.data._mesh_faces), dtype=bool)
+            self.show_objects = np.ones((self.data.count, 2), dtype=bool)
 
             default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
             self._face_counts = counts
@@ -260,8 +260,9 @@ class Shapes(Layer):
                              thickness=thickness)
         new_num_shapes = self.data.count
         num_added = new_num_shapes - num_shapes
-        t = np.ones(len(self.data._mesh_faces_index)-len(self._show_faces), dtype=bool)
-        self._show_faces = np.append(self._show_faces, t)
+        t = np.ones(len(self.data._mesh_faces_index)-len(self._show_meshes), dtype=bool)
+        self._show_meshes = np.append(self._show_meshes, t)
+        self.show_objects = np.concatenate((self.show_objects, np.ones((num_added, 2), dtype=bool)), axis=0)
 
         ec = Color(self.edge_color).rgba
         fc = Color(self.face_color).rgba
@@ -284,7 +285,8 @@ class Shapes(Layer):
                              ellipses=ellipses, paths=paths, polygons=polygons,
                              thickness=thickness)
 
-        self._show_faces = np.ones(len(self.data._mesh_faces_index), dtype=bool)
+        self._show_meshes = np.ones(len(self.data._mesh_faces_index), dtype=bool)
+        self.show_objects = np.ones((len(self.data.count), 2), dtype=bool)
 
         ec = Color(self.edge_color).rgba
         fc = Color(self.face_color).rgba
@@ -303,12 +305,14 @@ class Shapes(Layer):
         self._selected_shapes = []
         if index==True:
             self.data.remove_all_shapes()
-            self._show_faces = np.empty((0), dtype=bool)
+            self._show_meshes = np.empty((0), dtype=bool)
             self._mesh_color_array =  np.empty((0, 4))
             self._face_color_array =  np.empty((0, 4))
             self._edge_color_array =  np.empty((0, 4))
             self._face_counts = np.empty((0), dtype=int)
             self.z_order = np.empty((0), dtype=int)
+            self.show_objects = np.empty((0, 2), dtype=bool)
+
         elif type(index) is list:
             for i in np.sort(index)[::-1]:
                 self._remove_one_shape(int(i))
@@ -328,7 +332,8 @@ class Shapes(Layer):
             self._face_counts = np.delete(self._face_counts, index, axis=0)
             self._face_color_array = np.delete(self._face_color_array, index, axis=0)
             self._edge_color_array = np.delete(self._edge_color_array, index, axis=0)
-        self._show_faces = self._show_faces[faces_indices!=index]
+            self.show_objects = np.delete(self.show_objects, index, axis=0)
+        self._show_meshes = self._show_meshes[faces_indices!=index]
         self._mesh_color_array = self._mesh_color_array[faces_indices!=index]
 
     def edit_shape(self, index, vertices):
@@ -355,9 +360,15 @@ class Shapes(Layer):
         else:
             raise ValueError("Object type not recongnized")
 
-        new_faces = sum(self.data._mesh_faces_index[:,0]==index)
+        faces = self.data._mesh_faces_index[:,0]==index
+        new_faces = sum(faces)
         self._face_counts[index] = new_faces
-        self._show_faces = np.concatenate((self._show_faces, np.ones(new_faces, dtype='bool')), axis=0)
+        new_show = np.ones(new_faces, dtype='bool')
+        if self.show_objects[index, 0] is False:
+            new_show[self.data._mesh_faces_index[faces, 2]==0] = False
+        if self.show_objects[index, 1] is False:
+            new_show[self.data._mesh_faces_index[faces, 2]==1] = False
+        self._show_meshes = np.concatenate((self._show_meshes, new_show), axis=0)
         ec = self._edge_color_array[index]
         fc = self._face_color_array[index]
         color_array = np.repeat([ec], new_faces, axis=0)
@@ -523,12 +534,22 @@ class Shapes(Layer):
         self._z_order[:-1] = self._z_order[self._z_order!=index]
         self._z_order[-1] = index
 
-    def hide(self, index=True, object_type=None):
-        if index is None:
-            self._show_faces = np.array([True for i in range(len(self.data._mesh_faces))])
+    def hide_shapes(self, index=True, object_type=None):
+        indices = self.data._select_meshes(index=index, meshes=self.data._mesh_faces_index, object_type=object_type)
+        self._show_meshes[indices] = False
+        if object_type is None:
+            self.show_objects[index, :] = False
         else:
-            indices = self.data._select_meshes(index=index, meshes=self.data._mesh_faces_index, object_type=object_type)
-            self._show_faces[indices] = False
+            self.show_objects[index, object_type] = False
+        self.refresh()
+
+    def show_shapes(self, index=True, object_type=None):
+        indices = self.data._select_meshes(index=index, meshes=self.data._mesh_faces_index, object_type=object_type)
+        self._show_meshes[indices] = True
+        if object_type is None:
+            self.show_objects[index, :] = True
+        else:
+            self.show_objects[index, object_type] = True
         self.refresh()
 
     def set_color(self, index=True, edge_color=False, face_color=False):
@@ -624,7 +645,7 @@ class Shapes(Layer):
                     return [shape, index]
 
         # Check if mouse inside shape
-        triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_faces]]
+        triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_meshes]]
         shapes = self.data._mesh_faces_index[inside_triangles(triangles - indices[:2])]
 
         if len(shapes) > 0:
@@ -638,7 +659,7 @@ class Shapes(Layer):
 
     def _shapes_in_box(self, box):
         box = self.data._expand_box(box)[[0, 4]]
-        triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_faces]]
+        triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_meshes]]
 
         # check if triangle corners are inside box
         points_inside = np.empty(triangles.shape[:-1], dtype=bool)
@@ -660,7 +681,7 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        show_faces = self._show_faces[self._z_order_faces]
+        show_faces = self._show_meshes[self._z_order_faces]
         faces = self.data._mesh_faces[self._z_order_faces][show_faces]
         colors = self._mesh_color_array[self._z_order_faces][show_faces]
         vertices = self.data._mesh_vertices
