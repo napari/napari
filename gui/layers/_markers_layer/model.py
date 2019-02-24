@@ -300,7 +300,7 @@ class Markers(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_slice(self.viewer.dimensions.indices)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -400,7 +400,7 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-        max_shape = self.viewer.dimensions.max_shape
+        max_shape = self.viewer.dims.max_shape
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
@@ -475,7 +475,7 @@ class Markers(Layer):
         if event.pos is None:
             return
         position = event.pos
-        indices = self.viewer.dimensions.indices
+        indices = self.viewer.dims.indices
         coord = self._get_coord(position, indices)
         if self.mode == 'select' and event.is_dragging:
             self._move(coord)
@@ -488,7 +488,7 @@ class Markers(Layer):
         """Called whenever mouse pressed in canvas.
         """
         position = event.pos
-        indices = self.viewer.dimensions.indices
+        indices = self.viewer.dims.indices
         coord = self._get_coord(position, indices)
         self._selected_markers = self._select_marker(coord)
         shift = 'Shift' in event.modifiers
