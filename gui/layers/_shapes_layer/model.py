@@ -345,16 +345,18 @@ class Shapes(Layer):
             Nx2 array specifying new vertices of shape.
         """
         object_type = self.data.objects[self.data.id[index]]
-        self._remove_one_shape(index, renumber=False)
         if object_type == 'line':
-            pass
+            self._remove_one_shape(index, renumber=False)
+            self.data._add_polygon(vertices, index=index, thickness=self.data._thickness[index])
         elif object_type == 'rectangle':
-            pass
+            return
         elif object_type == 'ellipse':
-            pass
+            return
         elif object_type == 'path':
-            pass
+            self._remove_one_shape(index, renumber=False)
+            self.data._add_path(vertices, index=index, thickness=self.data._thickness[index])
         elif object_type == 'polygon':
+            self._remove_one_shape(index, renumber=False)
             self.data._add_polygon(vertices, index=index, thickness=self.data._thickness[index])
         else:
             raise ValueError("Object type not recongnized")
@@ -798,7 +800,9 @@ class Shapes(Layer):
         coord_shift[1] = int(coord[0])
         msg = f'{coord_shift.astype(int)}, {self.name}'
         if value[0] is not None:
-            msg = msg + ', index ' + str(value[0])
+            msg = msg + ', shape ' + str(value[0])
+            if value[1] is not None:
+                msg = msg + ', vertex ' + str(value[1])
         return msg
 
     def _move(self, coord):
@@ -903,8 +907,6 @@ class Shapes(Layer):
                 if vertex is not None:
                     self._is_moving=True
                     index = self._selected_vertex[0]
-                    print(vertex)
-                    print(index)
                     vertices = self.data.vertices[self.data.index == index]
                     vertices[vertex] = coord
                     self.edit_shape(index, vertices)
@@ -1069,8 +1071,27 @@ class Shapes(Layer):
             self._select()
             self.status = self.get_message(coord, shape)
         elif self.mode == 'direct':
-            # Direct mode not yet implemented
-            pass
+            shape = self._shape_at(coord)
+            if not self._is_moving and not self._is_selecting and not shift:
+                if shape[0] is not None:
+                    self._selected_shapes = [shape[0]]
+                    self.data.select_box(self._selected_shapes)
+                else:
+                    self._selected_shapes = []
+                    self.data.select_box(self._selected_shapes)
+            elif self._is_selecting:
+                self._selected_shapes = self._shapes_in_box(self._drag_box)
+                self.data.select_box(self._selected_shapes)
+                self._is_selecting=False
+                self._set_highlight()
+            self._is_moving = False
+            self._drag_start = None
+            self._drag_box = None
+            self._fixed_vertex = None
+            self._selected_vertex = [None, None]
+            self._hover_shapes = shape
+            self._select()
+            self.status = self.get_message(coord, shape)
         elif self.mode == 'add':
             # Add mode not yet implemented
             pass

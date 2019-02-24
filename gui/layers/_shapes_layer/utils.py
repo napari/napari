@@ -82,7 +82,7 @@ class ShapesData():
 
         if lines is not None:
             for i, shape in enumerate(lines):
-                self._add_line(shape, thickness=self._thickness[cur_shapes+i])
+                self._add_path(shape, thickness=self._thickness[cur_shapes+i])
         if rectangles is not None:
             for i, shape in enumerate(rectangles):
                 self._add_rectangle(shape, thickness=self._thickness[cur_shapes+i])
@@ -290,40 +290,6 @@ class ShapesData():
         indices = np.where(np.isin(self.index, index))[0]
         self.vertices[indices] = self.vertices[indices] + shift
 
-    # def edit_shape(self, index, vertices):
-    #     """Replaces the current vertices of the selected shape with new ones
-    #     Parameters
-    #     ----------
-    #     index : int
-    #         index of single object that is to be edited.
-    #     vertices : np.ndarray
-    #         Nx2 array specifying new vertices of shape.
-    #     """
-    #     object_type = self.objects[self.id[index]]
-    #     if object_type == 'lines':
-    #         pass
-    #     elif object_type == 'rectangles':
-    #         pass
-    #     elif object_type == 'ellipses':
-    #         pass
-    #     elif object_type == 'paths':
-    #         pass
-    #     elif object_type == 'polygons':
-    #         # Remove old vertices / meshes
-    #         self.remove_one_shape(index, renumber=False)
-    #         # Add new vertices, indices
-    #         self.vertices = np.concatenate((self.vertices, vertices), axis=0)
-    #         self.index = np.concatenate((self.index, np.repeat(index, len(vertices))), axis=0)
-    #         # Replace old box with new one
-    #         self.boxes[index] = self._expand_box(vertices)
-    #         # Remake meshes
-    #         thickness = self._thickness[index]
-    #         mesh_index = [index, self.id[index]]
-    #         self._compute_meshes(vertices, edge=True, fill=True, closed=True,
-    #                              thickness=thickness, index=mesh_index)
-    #     else:
-    #         raise ValueError("Object type not recongnized")
-
     def transform_shapes(self, transform, index=True):
         """Perfroms an affine transform on selected shapes
         Parameters
@@ -387,24 +353,6 @@ class ShapesData():
             else:
                 indices = []
         return indices
-
-    def _add_line(self, shape, index=None, thickness=1):
-        object_id = self.objects.index('line')
-        box = self._expand_box(shape)
-        if index is None:
-            m = len(self.id)
-            self.id = np.append(self.id, [object_id], axis=0)
-            self.boxes = np.append(self.boxes, [box], axis=0)
-        else:
-            m = index
-            self.id[m] = object_id
-            self.boxes[m] = box
-        self.vertices = np.append(self.vertices, shape, axis=0)
-        indices = np.repeat(m, len(shape))
-        self.index = np.append(self.index, indices, axis=0)
-        # Build objects to be rendered
-        # For lines just add edge
-        self._compute_meshes(shape, edge=True, thickness=thickness, index=[m, object_id])
 
     def _add_rectangle(self, shape, index=None, thickness=1):
         object_id = self.objects.index('rectangle')
@@ -644,6 +592,9 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
             vertex_offsets.append(offset)
             vertex_offsets.append(-flip*miters[i])
             vertex_offsets.append(-offset)
+            central_path.append(full_path[i])
+            central_path.append(full_path[i])
+            central_path.append(full_path[i])
             a = vertex_offsets[m+1] - full_path[i-1]
             b = vertex_offsets[m+3] - full_path[i-1]
             ray = full_path[i] - full_path[i-1]
@@ -670,7 +621,6 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
                 faces.append([m, m+1, m+3])
                 faces.append([m+1, m+2, m+3])
             m = m + 2
-
     return np.array(central_path), np.array(vertex_offsets), np.array(faces)
 
 def segment_normal(a, b):
