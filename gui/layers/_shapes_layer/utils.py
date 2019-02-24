@@ -365,7 +365,7 @@ class ShapesData():
             m = index
             self.id[m] = object_id
             self.boxes[m] = box
-        rectangle = self._expand_rectangle(x)
+        rectangle = self._expand_rectangle(shape)
         self.vertices = np.append(self.vertices, rectangle, axis=0)
         indices = np.repeat(m, len(rectangle))
         self.index = np.append(self.index, indices, axis=0)
@@ -386,7 +386,10 @@ class ShapesData():
             m = index
             self.id[m] = object_id
             self.boxes[m] = box
-        ellipse = self._expand_ellipse(shape)
+        if len(shape) == 2:
+            ellipse = self._expand_ellipse(shape)
+        else:
+            ellipse = shape
         self.vertices = np.append(self.vertices, ellipse, axis=0)
         indices = np.repeat(m, len(ellipse))
         self.index = np.append(self.index, indices, axis=0)

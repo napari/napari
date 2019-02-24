@@ -191,6 +191,7 @@ class Shapes(Layer):
     def mode(self, mode):
         if mode == self.mode:
             return
+        old_mode = self.mode
         if mode == 'add':
             self.cursor = 'cross'
             self.interactive = False
@@ -219,9 +220,15 @@ class Shapes(Layer):
             raise ValueError("Mode not recongnized")
 
         self.events.mode(mode=mode)
-        self._selected_shapes = []
-        self.data.select_box([])
-        self._unselect()
+        if mode == 'direct' and old_mode == 'select':
+            self.data.select_box([])
+        elif mode == 'select' and old_mode == 'direct':
+            self.data.select_box(self._selected_shapes)
+        else:
+            self._selected_shapes = []
+            self.data.select_box([])
+            self._unselect()
+        self.refresh()
 
     def _get_shape(self):
         return [1, 1]
@@ -345,18 +352,23 @@ class Shapes(Layer):
             Nx2 array specifying new vertices of shape.
         """
         object_type = self.data.objects[self.data.id[index]]
+        if object_type == 'ellipse':
+            # NOT IMPLEMENTED
+            return
+
+        self._remove_one_shape(index, renumber=False)
         if object_type == 'line':
-            self._remove_one_shape(index, renumber=False)
             self.data._add_polygon(vertices, index=index, thickness=self.data._thickness[index])
         elif object_type == 'rectangle':
-            return
+            # converts rectange into polygon on editing
+            self.data.id[index] = self.data.objects.index('polygon')
+            self.data._add_polygon(vertices, index=index, thickness=self.data._thickness[index])
         elif object_type == 'ellipse':
-            return
+            pass
+            #self.data._add_ellipse(vertices, index=index, thickness=self.data._thickness[index])
         elif object_type == 'path':
-            self._remove_one_shape(index, renumber=False)
             self.data._add_path(vertices, index=index, thickness=self.data._thickness[index])
         elif object_type == 'polygon':
-            self._remove_one_shape(index, renumber=False)
             self.data._add_polygon(vertices, index=index, thickness=self.data._thickness[index])
         else:
             raise ValueError("Object type not recongnized")
