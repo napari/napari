@@ -140,8 +140,6 @@ class ShapesData():
         self.selected_box = None
 
     def remove_one_shape(self, index, renumber=True):
-        assert(type(index) is int)
-
         self.vertices = self.vertices[self.index!=index]
         self.index = self.index[self.index!=index]
         if renumber:

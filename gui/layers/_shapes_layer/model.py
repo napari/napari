@@ -92,7 +92,7 @@ class Shapes(Layer):
             self._drag_start = None
             self._fixed_vertex = None
             self._fixed_aspect = False
-            self._selected_vertex = None
+            self._selected_vertex = [None, None]
             self._aspect_ratio = 1
             self._is_moving=False
             self._fixed_index = 0
@@ -322,7 +322,6 @@ class Shapes(Layer):
             self.z_order = self._z_order
 
     def _remove_one_shape(self, index, renumber=True):
-        assert(type(index) is int)
         faces_indices = self.data._mesh_faces_index[:, 0]
         self.data.remove_one_shape(index, renumber=renumber)
         if renumber:
@@ -642,7 +641,8 @@ class Shapes(Layer):
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
                     shape = self.data.index[index]
-                    return [shape, index]
+                    _, idx = np.unique(self.data.index, return_index=True)
+                    return [shape, index - idx[shape]]
 
         # Check if mouse inside shape
         triangles = self.data._mesh_vertices[self.data._mesh_faces[self._show_meshes]]
@@ -810,94 +810,104 @@ class Shapes(Layer):
             Position of mouse cursor in data.
         """
         index = self._selected_shapes
-        vertex = self._selected_vertex
+        vertex = self._selected_vertex[1]
         if len(index) > 0:
-            self._is_moving=True
-            if vertex is None:
-                #Check where dragging box from to move whole object
-                if self._drag_start is None:
+            if self.mode == 'select':
+                self._is_moving=True
+                if vertex is None:
+                    #Check where dragging box from to move whole object
+                    if self._drag_start is None:
+                        center = self.data.selected_box[-1]
+                        self._drag_start = coord - center
                     center = self.data.selected_box[-1]
-                    self._drag_start = coord - center
-                center = self.data.selected_box[-1]
-                shift = coord - center - self._drag_start
-                self.shift_shapes(shift, index=index)
-            elif vertex < 8:
-                #Corner / edge vertex is being dragged so resize object
-                box = self.data.selected_box
-                if self._fixed_vertex is None:
-                    self._fixed_index = np.mod(vertex+4,8)
-                    self._fixed_vertex = box[self._fixed_index]
-                    self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
+                    shift = coord - center - self._drag_start
+                    self.shift_shapes(shift, index=index)
+                elif vertex < 8:
+                    #Corner / edge vertex is being dragged so resize object
+                    box = self.data.selected_box
+                    if self._fixed_vertex is None:
+                        self._fixed_index = np.mod(vertex+4,8)
+                        self._fixed_vertex = box[self._fixed_index]
+                        self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
 
-                size = box[np.mod(self._fixed_index+4,8)] - box[self._fixed_index]
-                offset = box[-1] - box[-2]
-                offset = offset/np.linalg.norm(offset)
-                offset_perp = np.array([offset[1], -offset[0]])
+                    size = box[np.mod(self._fixed_index+4,8)] - box[self._fixed_index]
+                    offset = box[-1] - box[-2]
+                    offset = offset/np.linalg.norm(offset)
+                    offset_perp = np.array([offset[1], -offset[0]])
 
-                if np.mod(self._fixed_index, 2) == 0:
-                    # corner selected
-                    fixed = self._fixed_vertex
-                    new = copy(coord)
-                    if self._fixed_aspect:
-                        ratio = abs((new - fixed)[1]/(new - fixed)[0])
-                        if ratio>self._aspect_ratio:
-                            new[1] = fixed[1]+(new[1]-fixed[1])*self._aspect_ratio/ratio
-                        else:
-                            new[0] = fixed[0]+(new[0]-fixed[0])*ratio/self._aspect_ratio
-                    dist = np.dot(new-fixed, offset)/np.dot(size, offset)
-                    dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
-                    scale = np.array([dist_perp, dist])
-                elif np.mod(self._fixed_index, 4) == 1:
-                    # top selected
-                    fixed = self._fixed_vertex
-                    new = copy(coord)
-                    dist = np.dot(new-fixed, offset)/np.dot(size, offset)
-                    scale = np.array([1, dist])
-                else:
-                    # side selected
-                    fixed = self._fixed_vertex
-                    new = copy(coord)
-                    dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
-                    scale = np.array([dist_perp, 1])
+                    if np.mod(self._fixed_index, 2) == 0:
+                        # corner selected
+                        fixed = self._fixed_vertex
+                        new = copy(coord)
+                        if self._fixed_aspect:
+                            ratio = abs((new - fixed)[1]/(new - fixed)[0])
+                            if ratio>self._aspect_ratio:
+                                new[1] = fixed[1]+(new[1]-fixed[1])*self._aspect_ratio/ratio
+                            else:
+                                new[0] = fixed[0]+(new[0]-fixed[0])*ratio/self._aspect_ratio
+                        dist = np.dot(new-fixed, offset)/np.dot(size, offset)
+                        dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
+                        scale = np.array([dist_perp, dist])
+                    elif np.mod(self._fixed_index, 4) == 1:
+                        # top selected
+                        fixed = self._fixed_vertex
+                        new = copy(coord)
+                        dist = np.dot(new-fixed, offset)/np.dot(size, offset)
+                        scale = np.array([1, dist])
+                    else:
+                        # side selected
+                        fixed = self._fixed_vertex
+                        new = copy(coord)
+                        dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
+                        scale = np.array([dist_perp, 1])
 
-                # prvent box from dissappearing if shrunk near 0
-                scale[scale==0]=1
+                    # prvent box from dissappearing if shrunk near 0
+                    scale[scale==0]=1
 
-                # check orientation of box
-                angle = -np.arctan2(offset[0], -offset[1])
-                if angle == 0:
-                    self.data.scale_shapes(scale, center=self._fixed_vertex, index=index)
-                else:
-                    rotation = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
-                    scale_tranform = np.array([[scale[0], 0], [0, scale[1]]])
-                    inverse_rotation = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
-                    transform = np.matmul(rotation, np.matmul(scale_tranform, inverse_rotation))
-                    self.data.shift_shapes(-self._fixed_vertex, index=index)
-                    self.data.transform_shapes(transform, index=index)
-                    self.data.shift_shapes(self._fixed_vertex, index=index)
-                self.refresh()
-            elif vertex==8:
-                #Rotation handle is being dragged so rotate object
-                handle = self.data.selected_box[-1]
-                if self._drag_start is None:
-                    self._fixed_vertex = self.data.selected_box[-2]
-                    offset = handle - self._fixed_vertex
-                    self._drag_start = -np.arctan2(offset[0], -offset[1])/np.pi*180
+                    # check orientation of box
+                    angle = -np.arctan2(offset[0], -offset[1])
+                    if angle == 0:
+                        self.data.scale_shapes(scale, center=self._fixed_vertex, index=index)
+                    else:
+                        rotation = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
+                        scale_tranform = np.array([[scale[0], 0], [0, scale[1]]])
+                        inverse_rotation = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+                        transform = np.matmul(rotation, np.matmul(scale_tranform, inverse_rotation))
+                        self.data.shift_shapes(-self._fixed_vertex, index=index)
+                        self.data.transform_shapes(transform, index=index)
+                        self.data.shift_shapes(self._fixed_vertex, index=index)
+                    self.refresh()
+                elif vertex==8:
+                    #Rotation handle is being dragged so rotate object
+                    handle = self.data.selected_box[-1]
+                    if self._drag_start is None:
+                        self._fixed_vertex = self.data.selected_box[-2]
+                        offset = handle - self._fixed_vertex
+                        self._drag_start = -np.arctan2(offset[0], -offset[1])/np.pi*180
 
-                new_offset = coord - self._fixed_vertex
-                new_angle = -np.arctan2(new_offset[0], -new_offset[1])/np.pi*180
-                fixed_offset = handle - self._fixed_vertex
-                fixed_angle = -np.arctan2(fixed_offset[0], -fixed_offset[1])/np.pi*180
+                    new_offset = coord - self._fixed_vertex
+                    new_angle = -np.arctan2(new_offset[0], -new_offset[1])/np.pi*180
+                    fixed_offset = handle - self._fixed_vertex
+                    fixed_angle = -np.arctan2(fixed_offset[0], -fixed_offset[1])/np.pi*180
 
-                if np.linalg.norm(new_offset)<1:
-                    angle = 0
-                elif self._fixed_aspect:
-                    angle = np.round(new_angle/45)*45 - fixed_angle
-                else:
-                    angle = new_angle - fixed_angle
+                    if np.linalg.norm(new_offset)<1:
+                        angle = 0
+                    elif self._fixed_aspect:
+                        angle = np.round(new_angle/45)*45 - fixed_angle
+                    else:
+                        angle = new_angle - fixed_angle
 
-                self.data.rotate_shapes(angle, center=self._fixed_vertex, index=index)
-                self.refresh()
+                    self.data.rotate_shapes(angle, center=self._fixed_vertex, index=index)
+                    self.refresh()
+            elif self.mode == 'direct':
+                if vertex is not None:
+                    self._is_moving=True
+                    index = self._selected_vertex[0]
+                    print(vertex)
+                    print(index)
+                    vertices = self.data.vertices[self.data.index == index]
+                    vertices[vertex] = coord
+                    self.edit_shape(index, vertices)
         else:
             self._is_selecting=True
             if self._drag_start is None:
@@ -944,9 +954,17 @@ class Shapes(Layer):
                 self._select()
             shape = self._hover_shapes
         elif self.mode == 'direct':
-            # Direct mode not yet implemented
-            self._hover_shapes = self._shape_at(coord)
-            self._select()
+            if event.is_dragging:
+                # Drag any selected shapes
+                self._move(coord)
+            elif self._is_moving:
+                pass
+            elif self._is_selecting:
+                pass
+            else:
+                # Highlight boxes if hover over any
+                self._hover_shapes = self._shape_at(coord)
+                self._select()
             shape = self._hover_shapes
         elif self.mode == 'add':
             # Add mode not yet implemented
@@ -976,8 +994,8 @@ class Shapes(Layer):
         if self.mode == 'select':
             if not self._is_moving and not self._is_selecting:
                 shape = self._shape_at(coord)
-                self._selected_vertex = shape[1]
-                if self._selected_vertex is None:
+                self._selected_vertex = shape
+                if self._selected_vertex[1] is None:
                     if shift and shape[0] is not None:
                         if shape[0] in self._selected_shapes:
                             self._selected_shapes.remove(shape[0])
@@ -997,8 +1015,8 @@ class Shapes(Layer):
         elif self.mode == 'direct':
             if not self._is_moving and not self._is_selecting:
                 shape = self._shape_at(coord)
-                self._selected_vertex = shape[1]
-                if self._selected_vertex is None:
+                self._selected_vertex = shape
+                if self._selected_vertex[1] is None:
                     if shift and shape[0] is not None:
                         if shape[0] in self._selected_shapes:
                             self._selected_shapes.remove(shape[0])
@@ -1046,7 +1064,7 @@ class Shapes(Layer):
             self._drag_start = None
             self._drag_box = None
             self._fixed_vertex = None
-            self._selected_vertex = None
+            self._selected_vertex = [None, None]
             self._hover_shapes = shape
             self._select()
             self.status = self.get_message(coord, shape)
