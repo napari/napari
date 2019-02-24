@@ -83,7 +83,8 @@ class Dims:
                 dim_len = max_shape[dim]
             except IndexError:
                 dim_len = 0
-            self.events.update_slider(dim=dim, dim_len=dim_len, max_dims=max_dims)
+            self.events.update_slider(dim=dim, dim_len=dim_len,
+                                      max_dims=max_dims)
 
     def _slider_value_changed(self, value, axis):
         self.indices[axis] = value

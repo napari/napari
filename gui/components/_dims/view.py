@@ -17,7 +17,6 @@ class QtDims(QWidget):
         self.setLayout(layout)
         self.setFixedHeight(0)
 
-
     def _axis_to_row(self, axis, max_dims):
         message = f'axis {axis} out of bounds for {max_dims} dims'
 
