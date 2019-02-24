@@ -61,12 +61,16 @@ class Shapes(Layer):
 
             # Save the style params
             self._colors = get_color_names()
-            self._color_array = np.empty((len(self.data._mesh_faces), 4))
+            self._mesh_color_array = np.empty((len(self.data._mesh_faces), 4))
+            self._edge_color_array = np.empty((self.data.count, 4))
+            self._face_color_array = np.empty((self.data.count, 4))
             self.edge_width = edge_width
             self.edge_color = edge_color
             self.face_color = face_color
 
             self._show_faces = np.ones(len(self.data._mesh_faces), dtype=bool)
+            #self.show_objects = np.ones((self.data.count, 2), dtype=bool)
+
             default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
             self._face_counts = counts
             self.z_order = default_z_order
@@ -171,11 +175,8 @@ class Shapes(Layer):
         if len(self._z_order) == 0:
             self._z_order_faces = np.empty((0), dtype=int)
         else:
-            print(self.data.count)
-            print(self._face_counts)
-            offsets = np.zeros(self.data.count + 1, dtype=int)
-            offsets[1:] = self._face_counts.cumsum()
-            z_order_faces = [np.arange(offsets[z], offsets[z]+self._face_counts[z]) for z in self._z_order]
+            _, idx = np.unique(self.data._mesh_faces_index[:,0], return_index=True)
+            z_order_faces = [np.arange(idx[z], idx[z]+self._face_counts[z]) for z in self._z_order]
             self._z_order_faces = np.concatenate(z_order_faces)
 
         self.refresh()
@@ -252,12 +253,13 @@ class Shapes(Layer):
                    polygons=None, thickness=1):
         """Adds shapes to the exisiting ones.
         """
-        num_shapes = len(self.data.id)
+        num_shapes = self.data.count
         num_faces = len(self.data._mesh_faces_index)
         self.data.add_shapes(lines=lines, rectangles=rectangles,
                              ellipses=ellipses, paths=paths, polygons=polygons,
                              thickness=thickness)
-        new_num_shapes = len(self.data.id)
+        new_num_shapes = self.data.count
+        num_added = new_num_shapes - num_shapes
         t = np.ones(len(self.data._mesh_faces_index)-len(self._show_faces), dtype=bool)
         self._show_faces = np.append(self._show_faces, t)
 
@@ -265,7 +267,11 @@ class Shapes(Layer):
         fc = Color(self.face_color).rgba
         color_array = np.repeat([ec], len(self.data._mesh_faces_index)-num_faces, axis=0)
         color_array[self.data._mesh_faces_index[num_faces:,2]==0] = fc
-        self._color_array = np.concatenate((self._color_array, color_array), axis=0)
+        _edge_color_array = np.repeat([ec], num_added, axis=0)
+        _face_color_array = np.repeat([fc], num_added, axis=0)
+        self._edge_color_array = np.concatenate((self._edge_color_array, _edge_color_array), axis=0)
+        self._face_color_array = np.concatenate((self._face_color_array, _face_color_array), axis=0)
+        self._mesh_color_array = np.concatenate((self._mesh_color_array, color_array), axis=0)
         default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
         self._face_counts = counts
         self.z_order = np.concatenate((np.arange(num_shapes, new_num_shapes), self.z_order))
@@ -284,7 +290,9 @@ class Shapes(Layer):
         fc = Color(self.face_color).rgba
         color_array = np.repeat([ec], len(self.data._mesh_faces_index), axis=0)
         color_array[self.data._mesh_faces_index[:,2]==0] = fc
-        self._color_array = np.array(color_array)
+        self._mesh_color_array = np.array(color_array)
+        self._edge_color_array = np.repeat([ec], len(self.data.count), axis=0)
+        self._face_color_array = np.repeat([fc], len(self.data.count), axis=0)
         default_z_order, counts = np.unique(self.data._mesh_faces_index[:,0], return_counts=True)
         self._face_counts = counts
         self.z_order = default_z_order
@@ -296,7 +304,9 @@ class Shapes(Layer):
         if index==True:
             self.data.remove_all_shapes()
             self._show_faces = np.empty((0), dtype=bool)
-            self._color_array =  np.empty((0, 4))
+            self._mesh_color_array =  np.empty((0, 4))
+            self._face_color_array =  np.empty((0, 4))
+            self._edge_color_array =  np.empty((0, 4))
             self._face_counts = np.empty((0), dtype=int)
             self.z_order = np.empty((0), dtype=int)
         elif type(index) is list:
@@ -316,8 +326,10 @@ class Shapes(Layer):
             z_order[z_order>index] = z_order[z_order>index]-1
             self._z_order = z_order
             self._face_counts = np.delete(self._face_counts, index, axis=0)
+            self._face_color_array = np.delete(self._face_color_array, index, axis=0)
+            self._edge_color_array = np.delete(self._edge_color_array, index, axis=0)
         self._show_faces = self._show_faces[faces_indices!=index]
-        self._color_array = self._color_array[faces_indices!=index]
+        self._mesh_color_array = self._mesh_color_array[faces_indices!=index]
 
     def edit_shape(self, index, vertices):
         """Replaces the current vertices of the selected shape with new ones
@@ -346,11 +358,11 @@ class Shapes(Layer):
         new_faces = sum(self.data._mesh_faces_index[:,0]==index)
         self._face_counts[index] = new_faces
         self._show_faces = np.concatenate((self._show_faces, np.ones(new_faces, dtype='bool')), axis=0)
-        ec = Color(self.edge_color).rgba
-        fc = Color(self.face_color).rgba
+        ec = self._edge_color_array[index]
+        fc = self._face_color_array[index]
         color_array = np.repeat([ec], new_faces, axis=0)
         color_array[self.data._mesh_faces_index[-new_faces:,2]==0] = fc
-        self._color_array = np.concatenate((self._color_array, color_array), axis=0)
+        self._mesh_color_array = np.concatenate((self._mesh_color_array, color_array), axis=0)
         self.z_order = self._z_order
 
     def scale_shapes(self, scale, vertex=-2, index=True):
@@ -525,39 +537,50 @@ class Shapes(Layer):
         else:
             if type(face_color) is list:
                 if index is True:
-                    assert(self.data._mesh_faces_index[:, 0].max()<len(face_color))
+                    for i, col in enumerate(face_color):
+                        self._face_color_array[i] = Color(col).rgba
                     for i in range(len(self.data._mesh_faces_index)):
                         if self.data._mesh_faces_index[i, 2] == 0:
-                            self._color_array[i] = Color(face_color[self.data._mesh_faces_index[i, 0]]).rgba
+                            self._mesh_color_array[i] = self._face_color_array[self.data._mesh_faces_index[i, 0]]
                 else:
                     assert(type(index) is list and len(face_color)==len(index))
-                    for i in range(len(index)):
-                        indices = self.data._select_meshes(index[i], self.data._mesh_faces_index, 0)
-                        color = Color(face_color[i]).rgba
-                        self._color_array[indices] = color
+                    for i, ind in enumerate(index):
+                        indices = self.data._select_meshes(ind, self.data._mesh_faces_index, 0)
+                        self._face_color_array[ind] = Color(face_color[i]).rgba
+                        self._mesh_color_array[indices] = self._face_color_array[ind]
             else:
                 indices = self.data._select_meshes(index, self.data._mesh_faces_index, 0)
-                color = Color(face_color).rgba
-                self._color_array[indices] = color
+                self._mesh_color_array[indices] = Color(face_color).rgba
+                if index is True:
+                    for i in range(self.data.count):
+                        self._face_color_array[i] = Color(face_color).rgba
+                else:
+                    self._face_color_array[index] = Color(face_color).rgba
         if edge_color is False:
             pass
         else:
             if type(edge_color) is list:
                 if index is True:
-                    assert(self.data._mesh_faces_index[:, 0].max()<len(edge_color))
+                    for i, col in enumerate(edge_color):
+                        self._edge_color_array[i] = Color(col).rgba
                     for i in range(len(self.data._mesh_faces_index)):
                         if self.data._mesh_faces_index[i, 2] == 1:
-                            self._color_array[i] = Color(edge_color[self.data._mesh_faces_index[i, 0]]).rgba
+                            self._mesh_color_array[i] = self._edge_color_array[self.data._mesh_faces_index[i, 0]]
                 else:
-                    assert(type(index) is list and len(edge_color)==len(index))
-                    for i in range(len(index)):
-                        indices = self.data._select_meshes(index[i], self.data._mesh_faces_index, 1)
-                        color = Color(edge_color[i]).rgba
-                        self._color_array[indices] = color
+                    assert(type(index) is list and len(face_color)==len(index))
+                    for i, ind in enumerate(index):
+                        indices = self.data._select_meshes(ind, self.data._mesh_faces_index, 1)
+                        self._edge_color_array[ind] = Color(edge_color[i]).rgba
+                        self._mesh_color_array[indices] = self._edge_color_array[ind]
             else:
                 indices = self.data._select_meshes(index, self.data._mesh_faces_index, 1)
-                color = Color(edge_color).rgba
-                self._color_array[indices] = color
+                self._mesh_color_array[indices] = Color(edge_color).rgba
+                if index is True:
+                    for i in range(self.data.count):
+                        self._edge_color_array[i] = Color(edge_color).rgba
+                else:
+                    self._edge_color_array[index] = Color(edge_color).rgba
+
         self.refresh()
 
     def _shape_at(self, indices):
@@ -639,7 +662,7 @@ class Shapes(Layer):
         """
         show_faces = self._show_faces[self._z_order_faces]
         faces = self.data._mesh_faces[self._z_order_faces][show_faces]
-        colors = self._color_array[self._z_order_faces][show_faces]
+        colors = self._mesh_color_array[self._z_order_faces][show_faces]
         vertices = self.data._mesh_vertices
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
