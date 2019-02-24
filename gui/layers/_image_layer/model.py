@@ -144,11 +144,11 @@ class Image(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer.dimensions._child_layer_changed = True
-            self.viewer.dimensions._update()
+            self.viewer.dims._child_layer_changed = True
+            self.viewer.dims._update()
 
             self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.dimensions.indices)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -359,6 +359,5 @@ class Image(Layer):
         """
         if event.pos is None:
             return
-        coord, value, msg = self.get_value(event.pos,
-                                           self.viewer.dimensions.indices)
+        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
         self.status = msg

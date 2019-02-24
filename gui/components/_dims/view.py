@@ -2,13 +2,14 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
 
 
-class QtDimensions(QWidget):
+class QtDims(QWidget):
     SLIDERHEIGHT = 19
 
-    def __init__(self, dimensions):
+    def __init__(self, dims):
         super().__init__()
 
-        self.dimensions = dimensions
+        dims.events.update_slider.connect(self.update_slider)
+        self._slider_value_changed = dims._slider_value_changed
         self.sliders = []
 
         layout = QGridLayout()
@@ -16,16 +17,14 @@ class QtDimensions(QWidget):
         self.setLayout(layout)
         self.setFixedHeight(0)
 
-        self.dimensions.events.update_slider.connect(self.update_slider)
-
-    def _axis_to_row(self, axis, dims):
-        message = f'axis {axis} out of bounds for {dims} dims'
+    def _axis_to_row(self, axis, max_dims):
+        message = f'axis {axis} out of bounds for {max_dims} dims'
 
         if axis < 0:
-            axis = dims - axis
+            axis = max_dims - axis
             if axis < 0:
                 raise IndexError(message)
-        elif axis >= dims:
+        elif axis >= max_dims:
             raise IndexError(message)
 
         if axis < 2:
@@ -51,10 +50,10 @@ class QtDimensions(QWidget):
         """
         axis = event.dim
         max_axis_length = event.dim_len
-        dims = self.dimensions.max_dims
+        max_dims = event.max_dims
 
         grid = self.layout()
-        row = self._axis_to_row(axis, dims)
+        row = self._axis_to_row(axis, max_dims)
 
         slider = grid.itemAt(row)
         if max_axis_length <= 0:
@@ -86,10 +85,5 @@ class QtDimensions(QWidget):
         slider.valueChanged.connect(lambda value:
                                     self._slider_value_changed(value, axis))
         slider.setMaximum(max_axis_length - 1)
-        self.setFixedHeight((dims-2)*self.SLIDERHEIGHT)
+        self.setFixedHeight((max_dims-2)*self.SLIDERHEIGHT)
         return slider
-
-    def _slider_value_changed(self, value, axis):
-        self.dimensions.indices[axis] = value
-        self.dimensions._need_redraw = True
-        self.dimensions._update()

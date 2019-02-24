@@ -5,11 +5,11 @@ from copy import copy
 
 from vispy.util.event import EmitterGroup, Event
 
-from .view import QtDimensions
+from .view import QtDims
 
 
-class Dimensions:
-    """Dimensions containing the dimension sliders
+class Dims:
+    """Dimensions object containing the dimension sliders
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ class Dimensions:
         self._recalc_max_dims = False
         self._recalc_max_shape = False
 
-        self._qt = QtDimensions(self)
+        self._qt = QtDims(self)
 
     @property
     def max_dims(self):
@@ -83,7 +83,13 @@ class Dimensions:
                 dim_len = max_shape[dim]
             except IndexError:
                 dim_len = 0
-            self.events.update_slider(dim=dim, dim_len=dim_len)
+            self.events.update_slider(dim=dim, dim_len=dim_len,
+                                      max_dims=max_dims)
+
+    def _slider_value_changed(self, value, axis):
+        self.indices[axis] = value
+        self._need_redraw = True
+        self._update()
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
