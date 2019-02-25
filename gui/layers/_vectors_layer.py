@@ -19,19 +19,20 @@ from vispy.color import get_color_names
 
 from .qt import QtVectorsLayer
 
+
 @add_to_viewer
 class Vectors(Layer):
     """
     Properties
     ----------
     vectors : np.ndarray
-        array of shape (N,2) or (N,3) = array of 2d or 3d coordinates
+        array of shape (N,4) or (N, M , 2)
 
     data : np.ndarray
         ABC implementation.  Same as vectors
 
     averaging : str
-        kernel over which to average from one of _avg_dims
+        kernel over which to average from one of _kernel_dict
         averaging.setter adjusts the underlying data and must be implemented per use case
         subscribe an observer by registering it with "averaging_bind_to"
 
@@ -61,11 +62,11 @@ class Vectors(Layer):
 
     Attributes
     ----------
-        Private (not associated with property)
+        Private
         -------
         _connector_types
         _colors
-        _avg_dims
+        _kernel_dict
         _avg_observers
         _len_observers
         _need_display_update
@@ -87,29 +88,33 @@ class Vectors(Layer):
             color='red',
             connector='segments',
             averaging='1x1',
-            length = 10):
-            # arrow_size=10):
+            length=1):
 
         visual = LinesNode()
-        # visual = ArrowNode()
-        # visual = ArrowNode(arrow_size=10, color='white')
         super().__init__(visual)
 
-        # Save the line vertex coordinates
-        # self._vectors = vectors
-        self._vectors = self.check_vector_type(vectors)
-        # self._arrows = None
-        # self._arrow_size = arrow_size
+        # map averaging type to tuple
+        self._kernel_dict = {'1x1': (1, 1),
+                            '3x3': (3, 3),
+                            '5x5': (5, 5),
+                            '7x7': (7, 7),
+                            '9x9': (9, 9),
+                            '11x11': (11, 11)}
+        self._kernel = self._kernel_dict['1x1']
+
+        # Store underlying data model
+        self._data_types = ('matrix', 'projection')
+        self._data_type = None
 
         # Save the line style params
         self._width = width
         self._color = color
-        self._connector = connector
-
         self._connector_types = ['segments']
+        self._connector = connector
         self._colors = get_color_names()
-        
-        self._avg_dims = ['1x1','3x3','5x5','7x7','9x9','11x11']
+
+        # averaging and length attributes
+        self._avg_dims = ['1x1', '3x3', '5x5', '7x7', '9x9', '11x11']
         self._averaging = averaging
         self._length = length
         self._avg_observers = []
@@ -118,6 +123,11 @@ class Vectors(Layer):
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
+
+        # assign vector data and establish default behavior
+        self._vectors = self.check_vector_type(vectors)
+        self.averaging_bind_to(self._default_avg)
+        self.length_bind_to(self._default_length)
 
         self.name = 'vectors'
         self._qt = QtVectorsLayer(self)
@@ -139,19 +149,20 @@ class Vectors(Layer):
         :param vectors: ndarray
         :return:
         """
-        self._vectors = self.check_vector_type(vectors)
+        self._vectors = self._check_vector_type(vectors)
 
         self.viewer._child_layer_changed = True
         self._refresh()
 
-    def check_vector_type(self, vectors):
+    def _check_vector_type(self, vectors):
         if vectors.shape[-1] == 4 and len(vectors.shape) == 2:
             coord_list = self._convert_proj_to_coordinates(vectors)
+            self._data_type = self._data_types[1]
         elif vectors.shape[-1] == 2 and len(vectors.shape) == 3:
             coord_list = self._convert_matrix_to_coordinates(vectors)
-            # raise NotImplementedError("image-like vector data is not supported")
+            self._data_type = self._data_types[0]
         else:
-            raise NotImplementedError("Vector data of shape %s is not supported" % str(vectors.shape))
+            raise InvalidDataFormatError("Vector data of shape %s is not supported" % str(vectors.shape))
         return coord_list
 
     def _convert_matrix_to_coordinates(self, vect) -> np.ndarray:
@@ -165,18 +176,18 @@ class Vectors(Layer):
         xdim = vect.shape[0]
         ydim = vect.shape[1]
 
-        # stride is used during averaging for a later implementation
-        # stride_x = 2
-        # stride_y = 2
+        # stride is used during averaging and length adjustment
+        stride_x = self._kernel[0]
+        stride_y = self._kernel[1]
 
         # create empty vector of necessary shape
-        # every pixel has 2 coordinates,
+        # every "pixel" has 2 coordinates
         pos = np.empty((2 * xdim * ydim, 2), dtype=np.float32)
 
         # create coordinate spacing for x-y
         # double the num of elements by doubling x sampling
-        xspace = np.linspace(0, xdim, 2 * xdim)
-        yspace = np.linspace(0, ydim, ydim)
+        xspace = np.linspace(0, stride_x*xdim, 2 * xdim)
+        yspace = np.linspace(0, stride_y*ydim, ydim)
         xv, yv = np.meshgrid(xspace, yspace)
 
         # assign coordinates (pos) to all pixels
@@ -184,12 +195,25 @@ class Vectors(Layer):
         pos[:, 1] = yv.flatten()
 
         # adjust second coordinate to represent vector projections
-        pos[1::2, 0] += vect.reshape((xdim*ydim, 2))[:, 0]
-        pos[1::2, 1] += vect.reshape((xdim*ydim, 2))[:, 1]
+        # pos[1::2, 0] += vect.reshape((xdim*ydim, 2))[:, 0]
+        # pos[1::2, 1] += vect.reshape((xdim*ydim, 2))[:, 1]
 
         # # TODO: averaging implementation.  for image-like arrays only
         # pos[1::2, 0] += (stride_x / 2) * vect.reshape((xdim*ydim, 2))[:, 0]
         # pos[1::2, 1] += (stride_y / 2) * vect.reshape((xdim*ydim, 2))[:, 1]
+
+        #new implementation
+
+        # pixel midpoints are the first x-values of positions
+        midpt = np.zeros((xdim * ydim, 2), dtype=np.float32)
+        midpt[:, 0] = pos[0::2, 0]
+        midpt[:, 1] = pos[0::2, 1]
+
+        # rotate coordinates about midpoint to represent angle and length
+        pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 0]
+        pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 1]
+        pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 0]
+        pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 1]
 
         return pos
 
@@ -251,18 +275,43 @@ class Vectors(Layer):
     def averaging(self, averaging: str):
         '''
         Calculates an average vector over a kernel
-        Averaging does nothing unless the user binds an observer and updates
-            the underlying data manually.
         :param averaging: one of "_avg_dims" above
         :return: None
         '''
         self._averaging = averaging
-        for callback in self._avg_observers:
-            print('averaging changed, broadcasting to subscribers')
-            callback(self._averaging)
+        self._kernel = self._kernel_dict[averaging]
+
+        print('averaging changed, broadcasting to subscribers')
+        if self._default_avg in self._avg_observers:
+            self._default_avg(averaging)
+        else:
+            for callback in self._avg_observers:
+                callback(self._averaging)
 
     def averaging_bind_to(self, callback):
+        '''
+        register an observer to be notified upon changes to averaging
+        Removes the default method for averaging if an external method is appended
+        :param callback: target function
+        :return:
+        '''
+        if self._default_avg in self._avg_observers:
+            self._avg_observers.remove(self._default_avg)
         self._avg_observers.append(callback)
+
+    def _default_avg(self, averaging: str):
+        '''
+        Default method for calculating average
+        :param averaging:
+        :return:
+        '''
+        if self._data_type == 'projection':
+            return None
+
+        #read self.vectors
+        #recalculate
+        #set self.vectors
+
         
     @property
     def width(self) -> Union[int, float]:
@@ -291,16 +340,41 @@ class Vectors(Layer):
         :param magnitude: length multiplicative factor
         :return: None
         """
+        print('length changed, broadcasting to subscribers')
 
-        print('length setter called, new length = '+str(length))
         self._length = length
-        for callback in self._len_observers:
-            print('length changed, broadcasting to subscribers')
-            callback(self._length)
-        # self._refresh()
+
+        if self._default_length in self._len_observers:
+            self._default_length(length)
+        else:
+            for callback in self._avg_observers:
+                callback(self._length)
 
     def length_bind_to(self, callback):
-        self._len_observers.append(callback)
+        '''
+
+        :param callback:
+        :return:
+        '''
+        if self._default_length in self._len_observers:
+            self._len_observers.remove(self._default_length)
+        else:
+            self._len_observers.append(callback)
+
+    def _default_length(self, newlen: int):
+        '''
+
+        :param newlen:
+        :return:
+        '''
+
+        if self._data_type == 'projection':
+            return None
+        else:
+            self._length = newlen
+            self.viewer._child_layer_changed = True
+            self._refresh()
+            # self._vectors = self.check_vector_type(self.vectors)
 
     @property
     def color(self) -> str:
@@ -345,7 +419,6 @@ class Vectors(Layer):
         """
         self.vectors = data
 
-
     def _get_shape(self):
         if len(self.vectors) == 0:
             return np.ones(self.vectors.shape,dtype=int)
@@ -370,7 +443,6 @@ class Vectors(Layer):
             self._need_visual_update = False
             self._node.update()
 
-
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
 
@@ -383,21 +455,10 @@ class Vectors(Layer):
 
         # Display vectors if there are any in this slice
         if len(in_slice_vectors) > 0:
-            # Get the vectors sizes
-            # print('in_slice_vectors greater than zero')
-            # if isinstance(self.width, (list, np.ndarray)):
-            #     sizes = self.width[matches][::-1]
-            #
-            # else:
-            #     sizes = self.width
-
-            # Update the vectors node
             data = np.array(in_slice_vectors) + 0.5
-
         else:
             # if no vectors in this slice send dummy data
             data = np.empty((0, 2))
-            sizes = 0
 
         self._node.set_data(
             data[::-1],
@@ -430,7 +491,6 @@ class Vectors(Layer):
             return in_slice_vectors, matches
         else:
             return [], []
-
 
 
 class InvalidDataFormatError(Exception):
