@@ -15,15 +15,16 @@ from napari_gui import Window, Viewer
 
 import numpy as np
 
+'''
+This example generates an image of vectors
+Vector data is an array of shape (N, M, 2)
+Each vector position is defined by an (x-proj, y-proj) element
+    where x-proj and y-proj are the vector projections at each center
+    where each vector is centered on a pixel of the NxM grid
+'''
 
 class vector_window_example(QWidget):
-    '''
-    This example generates an image of vectors
-    Vector data is an array of shape (N, M, 2)
-    Each vector position is defined by an (x-proj, y-proj) element
-        where x-proj and y-proj are the vector projections at each center
-        where each vector is centered on a pixel of the NxM grid
-    '''
+
 
     def __init__(self, window):
         super().__init__()

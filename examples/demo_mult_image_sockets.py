@@ -17,7 +17,13 @@ from napari_gui import Window, Viewer
 import numpy as np
 import time
 
+"""
+Example script that creates a napari window and populates it with a random image
 
+Uses pyqtSignal and Slots to communicate between processes
+
+Uses QRunnable for 
+"""
 class MainWindow(QWidget):
 
     def __init__(self, window):
@@ -58,7 +64,7 @@ class NewImageSender(QObject, QRunnable):
 
     data = np.random.rand(512,512)
 
-    def emit_image_sequence(self, num_images: int = 5, time_delay:float = 5):
+    def emit_image_sequence(self, num_images: int = 5, time_delay: float = 5):
         for k in range(0, num_images):
             self.data = np.random.rand(512,512)
             self.new_image.emit(self.data)
@@ -82,7 +88,6 @@ if __name__ == '__main__':
     #connect signals
     custom_window.make_connection(sender)
 
-    # sender.run(5, 3)
     sender.start()
 
     sys.exit(application.exec_())
