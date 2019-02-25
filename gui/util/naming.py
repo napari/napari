@@ -1,6 +1,7 @@
 """Automatically generate names.
 """
 import re
+from .misc import formatdoc
 
 
 sep = ' '
@@ -22,10 +23,11 @@ def _inc_name_count_sub(match):
     return count
 
 
+@formatdoc
 def inc_name_count(name):
-    """Increase a name's count matching `{}` by ``1``.
+    """Increase a name's count matching `{numbered_patt}` by ``1``.
 
-    If the name is not already numbered, append '{}{}'.
+    If the name is not already numbered, append '{sep}{start}'.
 
     Parameters
     ----------
@@ -36,5 +38,5 @@ def inc_name_count(name):
     -------
     incremented_name : str
         Numbered name incremented by ``1``.
-    """.format(numbered_patt, sep, start)
+    """
     return numbered_patt.sub(_inc_name_count_sub, name)
