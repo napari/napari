@@ -92,7 +92,7 @@ class LayersList:
         layer : Layer
             Matching layer.
         
-        Throws
+        Raises
         ------
         KeyError
             When the query returns no results.
@@ -169,7 +169,7 @@ class LayersList:
 
         Returns
         -------
-        match : int, Layer tuple or None
+        match : (int, Layer) tuple or None
             Matching index, layer pair, if found.
         """
         if start is None:

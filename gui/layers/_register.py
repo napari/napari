@@ -41,7 +41,11 @@ class CallSignature(inspect.Signature):
 
     
     def __str__(self):
-        """do not render separators"""
+        """do not render separators
+
+        commented code is what was taken out from 
+        the copy/pasted inspect module code :)
+        """
         result = []
         # render_pos_only_separator = False
         # render_kw_only_separator = True
