@@ -22,7 +22,7 @@ Example script that creates a napari window and populates it with a random image
 
 Uses pyqtSignal and Slots to communicate between processes
 
-Uses QRunnable for 
+Uses QRunnable so that timing thread is separate from UI thread
 """
 class MainWindow(QWidget):
 
@@ -57,6 +57,7 @@ class ProcessRunnable(QRunnable):
 
     def start(self):
         QThreadPool.globalInstance().start(self)
+
 
 class NewImageSender(QObject, QRunnable):
 

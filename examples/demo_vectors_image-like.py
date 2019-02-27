@@ -36,9 +36,11 @@ class vector_window_example(QWidget):
         N = 50
         M = 25
         pos = np.zeros(shape=(N, M, 2), dtype=np.float32)
+        rand1 = np.random.random_sample(N*M)
+        rand2 = np.random.random_sample(N*M)
         # assign projections for each vector
-        pos[:, :, 0] = 0.3
-        pos[:, :, 1] = 0.5
+        pos[:, :, 0] = rand1.reshape((N,M))
+        pos[:, :, 1] = rand2.reshape((N,M))
 
         self.viewer.add_vectors(pos)
 
