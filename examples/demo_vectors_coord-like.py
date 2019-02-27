@@ -32,21 +32,18 @@ class vector_window_example(QWidget):
         self.viewer = self.win.viewer
 
         # sample vector coord-like data
-        # 10x10 grid of slanted lines
-        N = 11
-        pos = np.zeros((N*N, 4), dtype=np.float32)
-        xdim = np.linspace(0, N, N)
-        ydim = np.linspace(0, N, N)
-        xv, yv = np.meshgrid(xdim, ydim)
-        pos[:, 0] = xv.flatten()
-        pos[:, 1] = yv.flatten()
+        N=1000
+        pos = np.zeros((N, 4), dtype=np.float32)
+        phi_space = np.linspace(0, 4*np.pi, N)
+        radius_space = np.linspace(0, 100, N)
 
-        # all vectors have same projection
-        pos[:, 2] = 0.5
-        pos[:, 3] = 0.5
-        # radial vectors from top center
-        # pos[:, 2] = pos[:, 0] - pos[5:6, 0]
-        # pos[:, 3] = pos[:, 1] - pos[5:6, 1]
+        #assign x-y position
+        pos[:, 0] = radius_space*np.cos(phi_space)
+        pos[:, 1] = radius_space*np.sin(phi_space)
+
+        #assign x-y projection
+        pos[:, 2] = radius_space*np.cos(phi_space)
+        pos[:, 3] = radius_space*np.sin(phi_space)
 
         self.viewer.add_vectors(pos)
 
