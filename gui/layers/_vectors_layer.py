@@ -19,6 +19,7 @@ from vispy.color import get_color_names
 
 from .qt import QtVectorsLayer
 
+import cv2
 
 @add_to_viewer
 class Vectors(Layer):
@@ -67,6 +68,7 @@ class Vectors(Layer):
         _connector_types
         _colors
         _kernel_dict
+        _kernel
         _avg_observers
         _len_observers
         _need_display_update
@@ -95,11 +97,11 @@ class Vectors(Layer):
 
         # map averaging type to tuple
         self._kernel_dict = {'1x1': (1, 1),
-                            '3x3': (3, 3),
-                            '5x5': (5, 5),
-                            '7x7': (7, 7),
-                            '9x9': (9, 9),
-                            '11x11': (11, 11)}
+                             '3x3': (3, 3),
+                             '5x5': (5, 5),
+                             '7x7': (7, 7),
+                             '9x9': (9, 9),
+                             '11x11': (11, 11)}
         self._kernel = self._kernel_dict['1x1']
 
         # Store underlying data model
@@ -125,14 +127,26 @@ class Vectors(Layer):
         self._need_visual_update = False
 
         # assign vector data and establish default behavior
-        self._vectors = self.check_vector_type(vectors)
+        self._raw_dat = None
+        self._original_data = vectors
+        self._vectors = self._check_vector_type(vectors)
         self.averaging_bind_to(self._default_avg)
         self.length_bind_to(self._default_length)
 
         self.name = 'vectors'
         self._qt = QtVectorsLayer(self)
 
+
     #====================== Property getter and setters =======================================
+    @property
+    def _original_data(self):
+        return self._raw_dat
+
+    @_original_data.setter
+    def _original_data(self, dat):
+        if self._raw_dat is None:
+            self._raw_dat = dat
+
     @property
     def vectors(self) -> np.ndarray:
         return self._vectors
@@ -149,12 +163,20 @@ class Vectors(Layer):
         :param vectors: ndarray
         :return:
         """
+        print('vector setter being called')
+        self._original_data = vectors
+
         self._vectors = self._check_vector_type(vectors)
 
         self.viewer._child_layer_changed = True
         self._refresh()
 
     def _check_vector_type(self, vectors):
+        """
+        check on input data for proper shape and dtype
+        :param vectors: ndarray
+        :return:
+        """
         if vectors.shape[-1] == 4 and len(vectors.shape) == 2:
             coord_list = self._convert_proj_to_coordinates(vectors)
             self._data_type = self._data_types[1]
@@ -163,6 +185,13 @@ class Vectors(Layer):
             self._data_type = self._data_types[0]
         else:
             raise InvalidDataFormatError("Vector data of shape %s is not supported" % str(vectors.shape))
+
+        if vectors.shape[-1] == 4:
+            print("four")
+            #check that this is range -1 to 1
+        elif vectors.shape[-1] == 2:
+            print("two")
+            #check that this is in range -1 to 1
         return coord_list
 
     def _convert_matrix_to_coordinates(self, vect) -> np.ndarray:
@@ -170,7 +199,7 @@ class Vectors(Layer):
         To convert an image-like array of (x-proj, y-proj) into an
             image-like array of vectors
 
-        :param vect: np.ndarray of shape (N, M, 2)
+        :param vect: ndarray of shape (N, M, 2)
         :return: position list of shape (2*N*M, 2) for vispy
         """
         xdim = vect.shape[0]
@@ -179,6 +208,7 @@ class Vectors(Layer):
         # stride is used during averaging and length adjustment
         stride_x = self._kernel[0]
         stride_y = self._kernel[1]
+        print('calling matrix to coords using kernel/length'+str(stride_x)+str(stride_y)+str(self._length))
 
         # create empty vector of necessary shape
         # every "pixel" has 2 coordinates
@@ -193,16 +223,6 @@ class Vectors(Layer):
         # assign coordinates (pos) to all pixels
         pos[:, 0] = xv.flatten()
         pos[:, 1] = yv.flatten()
-
-        # adjust second coordinate to represent vector projections
-        # pos[1::2, 0] += vect.reshape((xdim*ydim, 2))[:, 0]
-        # pos[1::2, 1] += vect.reshape((xdim*ydim, 2))[:, 1]
-
-        # # TODO: averaging implementation.  for image-like arrays only
-        # pos[1::2, 0] += (stride_x / 2) * vect.reshape((xdim*ydim, 2))[:, 0]
-        # pos[1::2, 1] += (stride_y / 2) * vect.reshape((xdim*ydim, 2))[:, 1]
-
-        #new implementation
 
         # pixel midpoints are the first x-values of positions
         midpt = np.zeros((xdim * ydim, 2), dtype=np.float32)
@@ -276,7 +296,7 @@ class Vectors(Layer):
         '''
         Calculates an average vector over a kernel
         :param averaging: one of "_avg_dims" above
-        :return: None
+        :return:
         '''
         self._averaging = averaging
         self._kernel = self._kernel_dict[averaging]
@@ -287,6 +307,8 @@ class Vectors(Layer):
         else:
             for callback in self._avg_observers:
                 callback(self._averaging)
+
+        self._refresh()
 
     def averaging_bind_to(self, callback):
         '''
@@ -299,20 +321,26 @@ class Vectors(Layer):
             self._avg_observers.remove(self._default_avg)
         self._avg_observers.append(callback)
 
-    def _default_avg(self, averaging: str):
+    def _default_avg(self, avg_kernel: str):
         '''
         Default method for calculating average
-        :param averaging:
+        :param avg_kernel: kernel over which to compute average
         :return:
         '''
         if self._data_type == 'projection':
+            # default averaging is supported only for 'matrix' type data formats
             return None
+        else:
+            self._kernel = self._kernel_dict[avg_kernel]
+            tempdat = self._original_data
+            x = self._kernel[0]
+            y = self._kernel[1]
+            x_offset = int((x - 1) / 2)
+            y_offset = int((y - 1) / 2)
 
-        #read self.vectors
-        #recalculate
-        #set self.vectors
+            #if we allow a cv2 dependency:
+            self._vectors = self._check_vector_type(cv2.blur(tempdat, (x, y))[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
 
-        
     @property
     def width(self) -> Union[int, float]:
         """
@@ -350,6 +378,8 @@ class Vectors(Layer):
             for callback in self._avg_observers:
                 callback(self._length)
 
+        self._refresh()
+
     def length_bind_to(self, callback):
         '''
 
@@ -372,9 +402,8 @@ class Vectors(Layer):
             return None
         else:
             self._length = newlen
-            self.viewer._child_layer_changed = True
-            self._refresh()
-            # self._vectors = self.check_vector_type(self.vectors)
+            self._vectors = self._check_vector_type(self._original_data)
+
 
     @property
     def color(self) -> str:
@@ -417,6 +446,7 @@ class Vectors(Layer):
         :param data:
         :return:
         """
+
         self.vectors = data
 
     def _get_shape(self):
