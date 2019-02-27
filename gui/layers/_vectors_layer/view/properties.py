@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# title           : _vectors_layer.py
+# title           : properties.py
 # description     :qt vectors layer
 # author          :bryant.chhun
 # date            :1/16/19
@@ -8,13 +8,11 @@
 # notes           :
 # python_version  :3.6
 
-from collections import Iterable
-
-import numpy as np
-
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QComboBox, QSpinBox, QSlider
-from ._base_layer import QtLayer
+from PyQt5.QtWidgets import QLabel, QComboBox, QSpinBox
+
+from ..._base_layer import QtLayer
+
 
 class QtVectorsLayer(QtLayer):
 

@@ -7,3 +7,5 @@
 # usage           :
 # notes           :
 # python_version  :3.6
+
+from .model import Vectors

@@ -7,3 +7,6 @@
 # usage           :
 # notes           :
 # python_version  :3.6
+
+from .properties import QtVectorsLayer
+from .controls import QtVectorsControls

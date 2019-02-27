@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# title           : _vectors_layer.py
+# title           : properties.py
 # description     :class Vectors layer that defines properties
 # author          :bryant.chhun
 # date            :1/16/19
@@ -12,12 +12,15 @@ from typing import Union
 
 import numpy as np
 
-from gui.layers._base_layer import Layer
-from gui.layers._register import add_to_viewer
+from .._base_layer import Layer
+from .._register import add_to_viewer
 from gui._vispy.scene.visuals import Line as LinesNode
 from vispy.color import get_color_names
 
-from gui.layers.qt import QtVectorsLayer
+from vispy.util.event import Event
+
+from .view import QtVectorsLayer
+from .view import QtVectorsControls
 
 import cv2
 
@@ -133,8 +136,14 @@ class Vectors(Layer):
         self.averaging_bind_to(self._default_avg)
         self.length_bind_to(self._default_length)
 
+        self._mode = 'pan/zoom'
+        self._mode_history = self._mode
+
         self.name = 'vectors'
-        self._qt = QtVectorsLayer(self)
+        # self._qt = QtVectorsLayer(self)
+        self.events.add(mode=Event)
+        self._qt_properties = QtVectorsLayer(self)
+        self._qt_controls = QtVectorsControls(self)
 
 
     #====================== Property getter and setters =======================================
@@ -430,6 +439,39 @@ class Vectors(Layer):
         self._connector = connector_type
         self._refresh()
 
+    @property
+    def mode(self):
+        """None, str: Interactive mode
+        """
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
+        if mode == self.mode:
+            return
+        # if mode == 'add':
+        #     self.cursor = 'cross'
+        #     self.interactive = False
+        #     self.help = 'hold <space> to pan/zoom'
+        #     self.status = mode
+        #     self._mode = mode
+        # elif mode == 'select':
+        #     self.cursor = 'pointing'
+        #     self.interactive = False
+        #     self.help = 'hold <space> to pan/zoom'
+        #     self.status = mode
+        #     self._mode = mode
+        if mode == 'pan/zoom':
+            self.cursor = 'standard'
+            self.interactive = True
+            self.help = ''
+            self.status = mode
+            self._mode = mode
+        else:
+            raise ValueError("Mode not recongnized")
+
+        self.events.mode(mode=mode)
+
     # =========================== Napari Layer ABC methods =====================
     @property
     def data(self) -> np.ndarray:
@@ -467,7 +509,7 @@ class Vectors(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_slice(self.viewer.dimensions.indices)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -521,6 +563,40 @@ class Vectors(Layer):
             return in_slice_vectors, matches
         else:
             return [], []
+
+    # ========================= Napari Layer ABC CONTROL methods =====================
+
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+        """
+        if event.native.isAutoRepeat():
+            return
+        else:
+            if event.key == ' ':
+                if self.mode != 'pan/zoom':
+                    self._mode_history = self.mode
+                    self.mode = 'pan/zoom'
+                else:
+                    self._mode_history = 'pan/zoom'
+            elif event.key == 'Shift':
+                if self.mode == 'add':
+                    self.cursor = 'forbidden'
+            elif event.key == 'a':
+                self.mode = 'add'
+            elif event.key == 's':
+                self.mode = 'select'
+            elif event.key == 'z':
+                self.mode = 'pan/zoom'
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+        """
+        if event.key == ' ':
+            if self._mode_history != 'pan/zoom':
+                self.mode = self._mode_history
+        elif event.key == 'Shift':
+            if self.mode == 'add':
+                self.cursor = 'cross'
 
 
 class InvalidDataFormatError(Exception):
