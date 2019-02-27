@@ -32,13 +32,13 @@ class vector_window_example(QWidget):
         self.viewer = self.win.viewer
 
         # sample vector image-like data
-        # 10x5 grid of slanted lines
-        N = 10
-        M = 10
+        # 50x25 grid of slanted lines
+        N = 50
+        M = 25
         pos = np.zeros(shape=(N, M, 2), dtype=np.float32)
-        # all vectors have same projection
-        pos[:, :, 0] = np.random.random(1)
-        pos[:, :, 1] = np.random.random(1)
+        # assign projections for each vector
+        pos[:, :, 0] = 0.3
+        pos[:, :, 1] = 0.5
 
         self.viewer.add_vectors(pos)
 
