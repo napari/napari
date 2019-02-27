@@ -27,13 +27,25 @@ import cv2
 @add_to_viewer
 class Vectors(Layer):
     """
+    Vectors layer renders lines onto the image.
+    There are currently two data modes supported:
+        1) image-like vectors where every pixel defines its own vector
+        2) coordinate-like vectors where x-y position is not fixed to a grid
+    Supports ONLY 2d vector field
+
     Properties
     ----------
     vectors : np.ndarray
         array of shape (N,4) or (N, M , 2)
 
     data : np.ndarray
-        ABC implementation.  Same as vectors
+        ABC implementation.
+        returns vectors property setter/getter
+
+    _original_data : np.ndarray
+        Used by averaging and length adjustments.
+        Is set during layer construction.
+        Is NOT updated if data is adjusted by assigning the 'vectors' property
 
     averaging : str
         kernel over which to average from one of _kernel_dict
@@ -56,27 +68,35 @@ class Vectors(Layer):
         two built in types: "segment" or "strip"
         third type is np.ndarray
 
-    method : str
-        Render method: one of 'agg' or 'gl'
-        used by vispy.LineVisual
-
-    antialias : bool
-        Antialias rendering
-        used by vispy.LineVisual
+    mode : str
+        control panel mode
 
     Attributes
     ----------
         Private
         -------
-
-        _connector_types
-        _colors
         _kernel_dict
         _kernel
+        _data_types
+        _data_type
+        _width
+        _color
+        _colors
+        _connector_types
+        _connector
+        _avg_dims
+        _averaging
+        _length
         _avg_observers
         _len_observers
         _need_display_update
         _need_visual_update
+        _raw_dat
+        _original_data
+        _current_shape
+        _vectors
+        _mode
+        _mode_history
         
         Public
         -------
@@ -115,9 +135,9 @@ class Vectors(Layer):
         # Save the line style params
         self._width = width
         self._color = color
+        self._colors = get_color_names()
         self._connector_types = ['segments']
         self._connector = connector
-        self._colors = get_color_names()
 
         # averaging and length attributes
         self._avg_dims = ['1x1', '3x3', '5x5', '7x7', '9x9', '11x11']
@@ -133,6 +153,7 @@ class Vectors(Layer):
         # assign vector data and establish default behavior
         self._raw_dat = None
         self._original_data = vectors
+        self._current_shape = vectors.shape
         self._vectors = self._check_vector_type(vectors)
         self.averaging_bind_to(self._default_avg)
         self.length_bind_to(self._default_length)
@@ -141,7 +162,6 @@ class Vectors(Layer):
         self._mode_history = self._mode
 
         self.name = 'vectors'
-        # self._qt = QtVectorsLayer(self)
         self.events.add(mode=Event)
         self._qt_properties = QtVectorsLayer(self)
         self._qt_controls = QtVectorsControls(self)
@@ -149,11 +169,17 @@ class Vectors(Layer):
 
     #====================== Property getter and setters =======================================
     @property
-    def _original_data(self):
+    def _original_data(self) -> np.ndarray:
         return self._raw_dat
 
     @_original_data.setter
-    def _original_data(self, dat):
+    def _original_data(self, dat: np.ndarray):
+        """
+        Must preserve data used at construction. Specifically for default averaging/length adjustments
+        averaging/length adjustments recalculate the underlying data
+        :param dat: updated only at construction
+        :return:
+        """
         if self._raw_dat is None:
             self._raw_dat = dat
 
@@ -173,7 +199,6 @@ class Vectors(Layer):
         :param vectors: ndarray
         :return:
         """
-        print('vector setter being called')
         self._original_data = vectors
 
         self._vectors = self._check_vector_type(vectors)
@@ -183,31 +208,30 @@ class Vectors(Layer):
 
     def _check_vector_type(self, vectors):
         """
-        check on input data for proper shape and dtype
+        Check on input data for proper shape and dtype
         :param vectors: ndarray
         :return:
         """
         if vectors.shape[-1] == 4 and len(vectors.shape) == 2:
+            self._current_shape = vectors.shape
             coord_list = self._convert_proj_to_coordinates(vectors)
             self._data_type = self._data_types[1]
+
         elif vectors.shape[-1] == 2 and len(vectors.shape) == 3:
+            self._current_shape = vectors.shape
             coord_list = self._convert_matrix_to_coordinates(vectors)
             self._data_type = self._data_types[0]
+
         else:
             raise InvalidDataFormatError("Vector data of shape %s is not supported" % str(vectors.shape))
 
-        if vectors.shape[-1] == 4:
-            print("four")
-            #check that this is range -1 to 1
-        elif vectors.shape[-1] == 2:
-            print("two")
-            #check that this is in range -1 to 1
         return coord_list
 
     def _convert_matrix_to_coordinates(self, vect) -> np.ndarray:
         """
-        To convert an image-like array of (x-proj, y-proj) into an
-            image-like array of vectors
+        To convert an image-like array with elements (x-proj, y-proj) into a
+            position list of coordinates
+        Every pixel position (n, m) results in two output coordinates of (N,2)
 
         :param vect: ndarray of shape (N, M, 2)
         :return: position list of shape (2*N*M, 2) for vispy
@@ -218,7 +242,6 @@ class Vectors(Layer):
         # stride is used during averaging and length adjustment
         stride_x = self._kernel[0]
         stride_y = self._kernel[1]
-        print('calling matrix to coords using kernel/length'+str(stride_x)+str(stride_y)+str(self._length))
 
         # create empty vector of necessary shape
         # every "pixel" has 2 coordinates
@@ -250,7 +273,7 @@ class Vectors(Layer):
     def _convert_proj_to_coordinates(self, vect) -> np.ndarray:
         """
         To convert a list of coordinates of shape (x-center, y-center, x-proj, y-proj)
-            into a position list of vectors.
+            into a position list of coordinates
         Every input coordinate of (N,4) results in two output coordinates of (N,2)
 
         :param vect: np.ndarray of shape (N, 4)
@@ -274,26 +297,6 @@ class Vectors(Layer):
         return pos
 
     @property
-    def arrow_size(self):
-        return self._arrow_size
-
-    @arrow_size.setter
-    def arrow_size(self, val: int):
-        self._arrow_size = val
-        self._need_visual_update = True
-        self._refresh()
-
-    @property
-    def arrows(self):
-        return self._arrows
-
-    @arrows.setter
-    def arrows(self, arrow_pos):
-        self._arrows = arrow_pos
-        self._need_visual_update = True
-        self._refresh()
-
-    @property
     def averaging(self) -> str:
         """
         Set the kernel over which to average
@@ -311,7 +314,6 @@ class Vectors(Layer):
         self._averaging = averaging
         self._kernel = self._kernel_dict[averaging]
 
-        print('averaging changed, broadcasting to subscribers')
         if self._default_avg in self._avg_observers:
             self._default_avg(averaging)
         else:
@@ -323,8 +325,8 @@ class Vectors(Layer):
     def averaging_bind_to(self, callback):
         '''
         register an observer to be notified upon changes to averaging
-        Removes the default method for averaging if an external method is appended
-        :param callback: target function
+        Removes the default method for averaging if an external method is registered
+        :param callback: function to call upon averaging changes
         :return:
         '''
         if self._default_avg in self._avg_observers:
@@ -334,13 +336,14 @@ class Vectors(Layer):
     def _default_avg(self, avg_kernel: str):
         '''
         Default method for calculating average
+        Implemented ONLY for image-like vector data
         :param avg_kernel: kernel over which to compute average
         :return:
         '''
         if self._data_type == 'projection':
             # default averaging is supported only for 'matrix' type data formats
             return None
-        else:
+        elif self._data_type == 'matrix':
             self._kernel = self._kernel_dict[avg_kernel]
             tempdat = self._original_data
             x = self._kernel[0]
@@ -348,7 +351,8 @@ class Vectors(Layer):
             x_offset = int((x - 1) / 2)
             y_offset = int((y - 1) / 2)
 
-            #if we allow a cv2 dependency:
+            # if we allow a cv2 dependency:
+            # averaging calculation is done using cv2.blur
             self._vectors = self._check_vector_type(cv2.blur(tempdat, (x, y))[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
 
     @property
@@ -372,48 +376,45 @@ class Vectors(Layer):
     @length.setter
     def length(self, length: Union[int, float]):
         """
-        Length of the line.
-        Does nothing unless the user binds an observer and updates
-            the underlying data manually
+        Change the length of all lines
         :param magnitude: length multiplicative factor
         :return: None
         """
-        print('length changed, broadcasting to subscribers')
-
         self._length = length
 
         if self._default_length in self._len_observers:
             self._default_length(length)
         else:
-            for callback in self._avg_observers:
+            for callback in self._len_observers:
                 callback(self._length)
 
         self._refresh()
 
     def length_bind_to(self, callback):
         '''
-
-        :param callback:
+        register an observer to be notified upon changes to length
+        Removes the default method for length if an external method is registered
+        :param callback: function to call upon length changes
         :return:
         '''
         if self._default_length in self._len_observers:
             self._len_observers.remove(self._default_length)
-        else:
-            self._len_observers.append(callback)
+            print('removing default length')
+        self._len_observers.append(callback)
 
     def _default_length(self, newlen: int):
         '''
-
-        :param newlen:
+        Default method for calculating vector lengths
+        Implemented ONLY for image-like vector data
+        :param newlen: new length
         :return:
         '''
 
         if self._data_type == 'projection':
             return None
-        else:
+        elif self._data_type == 'matrix':
             self._length = newlen
             self._vectors = self._check_vector_type(self._original_data)
-
 
     @property
     def color(self) -> str:
@@ -450,18 +451,6 @@ class Vectors(Layer):
     def mode(self, mode):
         if mode == self.mode:
             return
-        # if mode == 'add':
-        #     self.cursor = 'cross'
-        #     self.interactive = False
-        #     self.help = 'hold <space> to pan/zoom'
-        #     self.status = mode
-        #     self._mode = mode
-        # elif mode == 'select':
-        #     self.cursor = 'pointing'
-        #     self.interactive = False
-        #     self.help = 'hold <space> to pan/zoom'
-        #     self.status = mode
-        #     self._mode = mode
         if mode == 'pan/zoom':
             self.cursor = 'standard'
             self.interactive = True
