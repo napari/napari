@@ -68,6 +68,7 @@ class Vectors(Layer):
     ----------
         Private
         -------
+
         _connector_types
         _colors
         _kernel_dict
