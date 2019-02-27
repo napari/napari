@@ -15,12 +15,13 @@ task:
         DISPLAY: ":99"
       system_script:
         - apt-get update
-        - apt-get install -y libgl1-mesa-glx xvfb
+        - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
-        - bash ./install.sh -b -p $HOME/conda
+        - bash install.sh -b -p $HOME/conda
         - conda update -yn base conda
         - conda install -y python=$PY_VER
+        - rm install.sh
       # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
       xvfb_start_background_script: Xvfb :99 -ac -screen 0 1024x768x24
 
@@ -28,13 +29,26 @@ task:
       windows_container:
         image: cirrusci/windowsservercore:2016
       env:
-        PATH: $PATH;$USERPROFILE\anaconda\Scripts;$USERPROFILE\anaconda
+        PATH: $PATH;$USERPROFILE\anaconda\Scripts;$USERPROFILE\anaconda;$ALLUSERSPROFILE\chocolately\bin
+        # https://github.com/vispy/vispy/blob/master/appveyor.yml#L44
+        VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
+        PYTHON_ARCH: 64
+      system_script:
+        # install chocolatey (windows package manager)
+        - ps: iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+        # install OpenSSL
+        - ps: choco install -y openssl.light
+        # install OpenGL
+        - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
+        - powershell ./opengl.ps1
+        - ps: rm opengl.ps1
       conda_script:
-        - powershell -Command "curl https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe -OutFile install.exe"
+        - ps: curl https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe -OutFile install.exe
         - start /wait "" install.exe /InstallationType=AllUsers /AddToPath=1 /RegisterPython=1 /S /D=%USERPROFILE%\anaconda
         - conda update -yn base conda
         - conda install -y python=%PY_VER%
         - pip install setuptools-scm
+        - ps: rm install.exe
 
     - name: osx
       osx_instance:
@@ -43,12 +57,14 @@ task:
         PATH: $HOME/conda/bin:$PATH
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
-        - bash ./install.sh -b -p $HOME/conda
+        - bash install.sh -b -p $HOME/conda
         - conda update -yn base conda
         - conda install -y python=$PY_VER
+        - rm install.sh
 
   install_script:
-    - python -m pip install --retries 3 --upgrade pip
+    # pip >= 19.0 crashes on Linux with Python 3.7
+    - python -m pip install --retries 3 --upgrade "pip<19.0"
     - pip install --retries 3 -r requirements.txt
     - python setup.py develop
 

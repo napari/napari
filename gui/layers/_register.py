@@ -1,7 +1,7 @@
 import re
 import inspect
 
-from ..elements import Viewer
+from ..components import Viewer
 
 
 template = """def {name}(self, {signature}):
