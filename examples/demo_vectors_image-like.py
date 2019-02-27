@@ -34,23 +34,13 @@ class vector_window_example(QWidget):
         # sample vector image-like data
         # 10x5 grid of slanted lines
         N = 10
-        M = 5
+        M = 10
         pos = np.zeros(shape=(N, M, 2), dtype=np.float32)
         # all vectors have same projection
-        pos[:, :, 0] = 0.5
-        pos[:, :, 1] = 0.5
+        pos[:, :, 0] = np.random.random(1)
+        pos[:, :, 1] = np.random.random(1)
 
         self.viewer.add_vectors(pos)
-
-        # marker_pos = np.zeros(shape=(N*M,2), dtype=np.float32)
-        # xspace = np.linspace(0, N, N)
-        # yspace = np.linspace(0, M, M)
-        # xv, yv = np.meshgrid(xspace, yspace)
-        # marker_pos[:, 0] = xv.flatten()
-        # marker_pos[:, 1] = yv.flatten()
-        #
-        # mk1 = self.viewer.add_markers(marker_pos)
-        # mk1.size = 0.01
 
         self.win.show()
 
