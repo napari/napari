@@ -22,7 +22,9 @@ window = Window(viewer)
 # add the image
 viewer.add_image(np.random.rand(500, 500, 20, 10), {})
 # add the markers
-markers = np.array([[200, 200, 0, 0], [50, 150, 0, 0], [100, 400, 1, 0], [300, 200, 0, 1], [400, 100, 0, 1]])
-viewer.add_markers(markers, size=[10, 10, 6, 0], face_color='blue', n_dimensional=True)
+markers = np.array([[200, 200, 0, 0], [50, 150, 0, 0], [100, 400, 1, 0],
+                   [300, 200, 0, 1], [400, 100, 0, 1]])
+viewer.add_markers(markers, size=[10, 10, 6, 0], face_color='blue',
+                   n_dimensional=True)
 
 sys.exit(application.exec_())
