@@ -78,7 +78,6 @@ class TestVectorsLayer(unittest.TestCase):
         test data of vispy-coordinate shape (not allowed)
         :return:
         """
-        # self.a_create_env()
         N=10
         pos = np.zeros(shape=(N, 2), dtype=np.float32)
         try:
@@ -94,7 +93,6 @@ class TestVectorsLayer(unittest.TestCase):
         test replacing vector data after layer construction
         :return:
         """
-        # self.a_create_env()
         N=10
         pos = np.zeros(shape=(N, 4), dtype=np.float32)
         pos2 = np.zeros(shape=(N, N, 2), dtype=np.float32)
@@ -113,7 +111,6 @@ class TestVectorsLayer(unittest.TestCase):
         def testfunc(input):
             return input
 
-        # self.a_create_env()
         pos = np.zeros(shape=(10, 10, 2), dtype=np.float32)
         try:
             layer = self.viewer.add_vectors(pos)
@@ -133,7 +130,6 @@ class TestVectorsLayer(unittest.TestCase):
         def testfunc(input):
             return input
 
-        # self.a_create_env()
         pos = np.zeros(shape=(10, 10, 2), dtype=np.float32)
         try:
             layer = self.viewer.add_vectors(pos)
@@ -154,7 +150,6 @@ class TestVectorsLayer(unittest.TestCase):
             layer.vectors = np.zeros(shape=(5,5,2), dtype=np.uint8)
             return input
 
-        # self.a_create_env()
         pos = np.zeros(shape=(10, 10, 2), dtype=np.float32)
         try:
             layer = self.viewer.add_vectors(pos)
