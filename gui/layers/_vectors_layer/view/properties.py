@@ -75,5 +75,4 @@ class QtVectorsLayer(QtLayer):
         self.layer.width = value
     
     def changeLength(self, value):
-        print('length changed to = '+str(value))
         self.layer.length = int(value)
