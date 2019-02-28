@@ -1,5 +1,5 @@
 """
-This example shows a single rgb colored image using the imshow API
+Display a single rgb colored image using the imshow API
 """
 
 import sys
@@ -9,12 +9,11 @@ from skimage import data
 from napari_gui import imshow
 
 
-if __name__ == '__main__':
-    # starting
-    application = QApplication(sys.argv)
+# starting
+application = QApplication(sys.argv)
 
-    # show rgb image
-    image = data.astronaut()
-    viewer = imshow(image, {})
+# show rgb image
+image = data.astronaut()
+viewer = imshow(image, {})
 
-    sys.exit(application.exec_())
+sys.exit(application.exec_())

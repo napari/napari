@@ -10,12 +10,11 @@ from skimage.color import rgb2gray
 from napari_gui import imshow
 
 
-if __name__ == '__main__':
-    # starting
-    application = QApplication(sys.argv)
+# starting
+application = QApplication(sys.argv)
 
-    # show grayscale image
-    image = rgb2gray(data.astronaut())
-    viewer = imshow(image, {})
+# show grayscale image
+image = rgb2gray(data.astronaut())
+viewer = imshow(image, {})
 
-    sys.exit(application.exec_())
+sys.exit(application.exec_())

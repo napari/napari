@@ -1,5 +1,5 @@
 """
-This example shows one 4-D image layer using the add_image API
+Display one 4-D image layer using the add_image API
 """
 
 import sys
@@ -11,14 +11,13 @@ from skimage.color import rgb2gray
 from napari_gui import Window, Viewer
 
 
-if __name__ == '__main__':
-    # starting
-    application = QApplication(sys.argv)
+# starting
+application = QApplication(sys.argv)
 
-    # create the viewer and window
-    viewer = Viewer()
-    window = Window(viewer)
-    # add the image
-    viewer.add_image(np.random.rand(500, 500, 20, 10), {})
+# create the viewer and window
+viewer = Viewer()
+window = Window(viewer)
+# add the image
+viewer.add_image(np.random.rand(500, 500, 20, 10), {})
 
-    sys.exit(application.exec_())
+sys.exit(application.exec_())
