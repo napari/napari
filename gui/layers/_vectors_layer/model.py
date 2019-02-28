@@ -22,7 +22,6 @@ from vispy.util.event import Event
 from .view import QtVectorsLayer
 from .view import QtVectorsControls
 
-import cv2
 
 @add_to_viewer
 class Vectors(Layer):
@@ -259,8 +258,8 @@ class Vectors(Layer):
 
         # pixel midpoints are the first x-values of positions
         midpt = np.zeros((xdim * ydim, 2), dtype=np.float32)
-        midpt[:, 0] = pos[0::2, 0]
-        midpt[:, 1] = pos[0::2, 1]
+        midpt[:, 0] = pos[0::2, 0]+(stride_x-1)/2
+        midpt[:, 1] = pos[0::2, 1]+(stride_y-1)/2
 
         # rotate coordinates about midpoint to represent angle and length
         pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 0]
@@ -346,6 +345,8 @@ class Vectors(Layer):
         elif self._data_type == 'matrix':
             self._kernel = self._kernel_dict[avg_kernel]
             tempdat = self._original_data
+            range_x = tempdat.shape[0]
+            range_y = tempdat.shape[1]
             x = self._kernel[0]
             y = self._kernel[1]
             x_offset = int((x - 1) / 2)
@@ -353,7 +354,18 @@ class Vectors(Layer):
 
             # if we allow a cv2 dependency:
             # averaging calculation is done using cv2.blur
-            self._vectors = self._check_vector_type(cv2.blur(tempdat, (x, y))[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
+            # self._vectors = self._check_vector_type(cv2.blur(tempdat, (x, y))[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
+
+            kernel_mat = np.ones(shape=(x, y, 2))
+            output_mat = np.zeros_like(tempdat)
+            for i in range(x_offset, range_x-x_offset):
+                for j in range(y_offset, range_y-y_offset):
+                    region = tempdat[i-x_offset:i+x_offset+1, j-y_offset:j+y_offset+1]
+                    mean_region_x = np.mean(region[:, :, 0]*kernel_mat[:, :, 0])
+                    mean_region_y = np.mean(region[:, :, 1]*kernel_mat[:, :, 1])
+                    output_mat[i, j, 0] = mean_region_x
+                    output_mat[i, j, 1] = mean_region_y
+            self._vectors = self._check_vector_type(output_mat[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
 
     @property
     def width(self) -> Union[int, float]:
