@@ -18,12 +18,15 @@ import numpy as np
 import time
 
 """
-Example script that creates a napari window and populates it with a random image
+Example script that creates a napari window and populates 
+    it with a random image
 
 Uses pyqtSignal and Slots to communicate between processes
 
 Uses QRunnable so that timing thread is separate from UI thread
 """
+
+
 class MainWindow(QWidget):
 
     def __init__(self, window):
@@ -31,7 +34,7 @@ class MainWindow(QWidget):
         self.win = window
         self.viewer = self.win.viewer
 
-        image_random = np.random.rand(512,512)
+        image_random = np.random.rand(512, 512)
         self.layer1 = self.viewer.add_image(image_random, {})
 
         self.win.show()
@@ -63,16 +66,16 @@ class NewImageSender(QObject, QRunnable):
 
     new_image = pyqtSignal(np.ndarray)
 
-    data = np.random.rand(512,512)
+    data = np.random.rand(512, 512)
 
     def emit_image_sequence(self, num_images: int = 5, time_delay: float = 5):
         for k in range(0, num_images):
-            self.data = np.random.rand(512,512)
+            self.data = np.random.rand(512, 512)
             self.new_image.emit(self.data)
             time.sleep(time_delay)
 
     def start(self):
-        self.p = ProcessRunnable(target=self.emit_image_sequence, args=(10,1))
+        self.p = ProcessRunnable(target=self.emit_image_sequence, args=(10, 1))
         self.p.start()
 
 
@@ -86,7 +89,7 @@ if __name__ == '__main__':
     custom_window = MainWindow(win)
     sender = NewImageSender()
 
-    #connect signals
+    # connect signals
     custom_window.make_connection(sender)
 
     sender.start()

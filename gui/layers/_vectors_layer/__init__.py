@@ -9,3 +9,4 @@
 # python_version  :3.6
 
 from .model import Vectors
+from .model import InvalidDataFormatError

@@ -34,8 +34,8 @@ class TestVectorsLayer(unittest.TestCase):
         :return:
         """
 
-        N=10
-        M=5
+        N = 10
+        M = 5
         pos = np.zeros(shape=(N, M, 2), dtype=np.float32)
         try:
             self.viewer.add_vectors(pos)
@@ -49,7 +49,7 @@ class TestVectorsLayer(unittest.TestCase):
         :return:
         """
 
-        N=10
+        N = 10
         pos = np.zeros(shape=(N, 4), dtype=np.float32)
         try:
             self.viewer.add_vectors(pos)
@@ -62,8 +62,8 @@ class TestVectorsLayer(unittest.TestCase):
         test data of improper shape
         :return:
         """
-        N=10
-        M=5
+        N = 10
+        M = 5
         pos = np.zeros(shape=(N, M, 4), dtype=np.float32)
         try:
             self.viewer.add_vectors(pos)
@@ -78,7 +78,7 @@ class TestVectorsLayer(unittest.TestCase):
         test data of vispy-coordinate shape (not allowed)
         :return:
         """
-        N=10
+        N = 10
         pos = np.zeros(shape=(N, 2), dtype=np.float32)
         try:
             self.viewer.add_vectors(pos)
@@ -93,7 +93,7 @@ class TestVectorsLayer(unittest.TestCase):
         test replacing vector data after layer construction
         :return:
         """
-        N=10
+        N = 10
         pos = np.zeros(shape=(N, 4), dtype=np.float32)
         pos2 = np.zeros(shape=(N, N, 2), dtype=np.float32)
         try:
@@ -147,18 +147,18 @@ class TestVectorsLayer(unittest.TestCase):
         :return:
         """
         def testfunc(input):
-            layer.vectors = np.zeros(shape=(5,5,2), dtype=np.uint8)
+            layer.vectors = np.zeros(shape=(5, 5, 2), dtype=np.uint8)
             return input
 
         pos = np.zeros(shape=(10, 10, 2), dtype=np.float32)
         try:
             layer = self.viewer.add_vectors(pos)
-            self.assertEqual(layer._current_shape, (10,10,2))
+            self.assertEqual(layer._current_shape, (10, 10, 2))
 
             layer.length_bind_to(testfunc)
             layer.length = 1
 
-            self.assertEqual(layer._current_shape, (5,5,2))
+            self.assertEqual(layer._current_shape, (5, 5, 2))
         except Exception as ex:
             self.fail("exception thrown when : "+str(ex))
         return None

@@ -48,7 +48,7 @@ class Vectors(Layer):
 
     averaging : str
         kernel over which to average from one of _kernel_dict
-        averaging.setter adjusts the underlying data and must be implemented per use case
+        averaging.setter adjusts the underlying data
         subscribe an observer by registering it with "averaging_bind_to"
 
     width : int
@@ -56,7 +56,7 @@ class Vectors(Layer):
 
     length : int or float
         length of the line
-        length.setter adjusts the underlying data and must be implemented per use case
+        length.setter adjusts the underlying data
         subscribe an observer by registering it with "length_bind_to"
 
     color : str
@@ -72,34 +72,34 @@ class Vectors(Layer):
 
     Attributes
     ----------
-        Private
-        -------
-        _kernel_dict
-        _kernel
-        _data_types
-        _data_type
-        _width
-        _color
-        _colors
-        _connector_types
-        _connector
-        _avg_dims
-        _averaging
-        _length
-        _avg_observers
-        _len_observers
-        _need_display_update
-        _need_visual_update
-        _raw_dat
-        _original_data
-        _current_shape
-        _vectors
-        _mode
-        _mode_history
-        
-        Public
-        -------
-        name
+    Private attributes
+    -------
+    _kernel_dict
+    _kernel
+    _data_types
+    _data_type
+    _width
+    _color
+    _colors
+    _connector_types
+    _connector
+    _avg_dims
+    _averaging
+    _length
+    _avg_observers
+    _len_observers
+    _need_display_update
+    _need_visual_update
+    _raw_dat
+    _original_data
+    _current_shape
+    _vectors
+    _mode
+    _mode_history
+
+    Public attributes
+    -------
+    name
 
 
     See vispy's line visual docs for more details:
@@ -165,8 +165,7 @@ class Vectors(Layer):
         self._qt_properties = QtVectorsLayer(self)
         self._qt_controls = QtVectorsControls(self)
 
-
-    #====================== Property getter and setters =======================================
+    # ====================== Property getter and setters =====================
     @property
     def _original_data(self) -> np.ndarray:
         return self._raw_dat
@@ -174,7 +173,8 @@ class Vectors(Layer):
     @_original_data.setter
     def _original_data(self, dat: np.ndarray):
         """
-        Must preserve data used at construction. Specifically for default averaging/length adjustments
+        Must preserve data used at construction. Specifically for default
+            averaging/length adjustments
         averaging/length adjustments recalculate the underlying data
         :param dat: updated only at construction
         :return:
@@ -191,7 +191,8 @@ class Vectors(Layer):
         """
         Can accept two data types:
             1) (N, 4) array with elements (x, y, u, v),
-                where x-y are position (center) and u-v are x-y projections of the vector
+                where x-y are position (center) and u-v are x-y projections of
+                    the vector
             2) (N, M, 2) array with elements (u, v)
                 where u-v are x-y projections of the vector
                 vector position is one per-pixel in the NxM array
@@ -222,7 +223,9 @@ class Vectors(Layer):
             self._data_type = self._data_types[0]
 
         else:
-            raise InvalidDataFormatError("Vector data of shape %s is not supported" % str(vectors.shape))
+            raise InvalidDataFormatError(
+                "Vector data of shape %s is not supported" %
+                str(vectors.shape))
 
         return coord_list
 
@@ -262,18 +265,22 @@ class Vectors(Layer):
         midpt[:, 1] = pos[0::2, 1]+(stride_y-1)/2
 
         # rotate coordinates about midpoint to represent angle and length
-        pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 0]
-        pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 1]
-        pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 0]
-        pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * (self._length/2) * vect.reshape((xdim*ydim, 2))[:, 1]
+        pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * (self._length/2) * \
+                       vect.reshape((xdim*ydim, 2))[:, 0]
+        pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * (self._length/2) * \
+                       vect.reshape((xdim*ydim, 2))[:, 1]
+        pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * (self._length/2) * \
+                       vect.reshape((xdim*ydim, 2))[:, 0]
+        pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * (self._length/2) * \
+                       vect.reshape((xdim*ydim, 2))[:, 1]
 
         return pos
 
     def _convert_proj_to_coordinates(self, vect) -> np.ndarray:
         """
-        To convert a list of coordinates of shape (x-center, y-center, x-proj, y-proj)
-            into a position list of coordinates
-        Every input coordinate of (N,4) results in two output coordinates of (N,2)
+        To convert a list of coordinates of shape
+            (x-center, y-center, x-proj, y-proj) into a list of coordinates
+        Input coordinate of (N,4) becomes two output coordinates of (N,2)
 
         :param vect: np.ndarray of shape (N, 4)
         :return: position list of shape (2*N, 2) for vispy
@@ -324,7 +331,8 @@ class Vectors(Layer):
     def averaging_bind_to(self, callback):
         '''
         register an observer to be notified upon changes to averaging
-        Removes the default method for averaging if an external method is registered
+        Removes the default method for averaging if an external method
+            is registered
         :param callback: function to call upon averaging changes
         :return:
         '''
@@ -340,7 +348,7 @@ class Vectors(Layer):
         :return:
         '''
         if self._data_type == 'projection':
-            # default averaging is supported only for 'matrix' type data formats
+            # default averaging is supported only for 'matrix' dataTypes
             return None
         elif self._data_type == 'matrix':
             self._kernel = self._kernel_dict[avg_kernel]
@@ -354,18 +362,23 @@ class Vectors(Layer):
 
             # if we allow a cv2 dependency:
             # averaging calculation is done using cv2.blur
-            # self._vectors = self._check_vector_type(cv2.blur(tempdat, (x, y))[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
+            # self._vectors = self._check_vector_type(
+            #     cv2.blur(tempdat, (x, y))
+            #     [x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
 
             kernel_mat = np.ones(shape=(x, y, 2))
             output_mat = np.zeros_like(tempdat)
             for i in range(x_offset, range_x-x_offset):
                 for j in range(y_offset, range_y-y_offset):
-                    region = tempdat[i-x_offset:i+x_offset+1, j-y_offset:j+y_offset+1]
+                    region = tempdat[i-x_offset:i+x_offset+1,
+                             j-y_offset:j+y_offset+1]
                     mean_region_x = np.mean(region[:, :, 0]*kernel_mat[:, :, 0])
                     mean_region_y = np.mean(region[:, :, 1]*kernel_mat[:, :, 1])
                     output_mat[i, j, 0] = mean_region_x
                     output_mat[i, j, 1] = mean_region_y
-            self._vectors = self._check_vector_type(output_mat[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
+
+            self._vectors = self._check_vector_type(
+                output_mat[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
 
     @property
     def width(self) -> Union[int, float]:
@@ -474,19 +487,18 @@ class Vectors(Layer):
 
         self.events.mode(mode=mode)
 
-    # =========================== Napari Layer ABC methods =====================
+    # =========================== Napari Layer ABC methods ===================
     @property
     def data(self) -> np.ndarray:
         """
 
-        :return: coordinates of line vertices via the property (and not the private)
+        :return: coordinates of line vertices
         """
         return self.vectors
 
     @data.setter
     def data(self, data: np.ndarray) -> None:
         """
-        Set the data via the property, which calls reformatters (and not by altering the private)
         :param data:
         :return:
         """
@@ -495,7 +507,7 @@ class Vectors(Layer):
 
     def _get_shape(self):
         if len(self.vectors) == 0:
-            return np.ones(self.vectors.shape,dtype=int)
+            return np.ones(self.vectors.shape, dtype=int)
         else:
             return np.max(self.vectors, axis=0) + 1
 
@@ -556,7 +568,7 @@ class Vectors(Layer):
         if len(vectors) > 0:
             matches = np.equal(
                 vectors[:, 2:],
-                np.broadcast_to(indices[2:], (len(vectors),len(indices) - 2) )
+                np.broadcast_to(indices[2:], (len(vectors), len(indices) - 2))
             )
 
             matches = np.all(matches, axis=1)

@@ -23,8 +23,9 @@ Each vector position is defined by an (x, y, x-proj, y-proj) element
     where x-proj and y-proj are the vector projections at each center
 
 '''
-class vector_window_example(QWidget):
 
+
+class VectorWindowExample(QWidget):
 
     def __init__(self, window):
         super().__init__()
@@ -32,16 +33,16 @@ class vector_window_example(QWidget):
         self.viewer = self.win.viewer
 
         # sample vector coord-like data
-        N=1000
-        pos = np.zeros((N, 4), dtype=np.float32)
-        phi_space = np.linspace(0, 4*np.pi, N)
-        radius_space = np.linspace(0, 100, N)
+        n = 1000
+        pos = np.zeros((n, 4), dtype=np.float32)
+        phi_space = np.linspace(0, 4*np.pi, n)
+        radius_space = np.linspace(0, 100, n)
 
-        #assign x-y position
+        # assign x-y position
         pos[:, 0] = radius_space*np.cos(phi_space)
         pos[:, 1] = radius_space*np.sin(phi_space)
 
-        #assign x-y projection
+        # assign x-y projection
         pos[:, 2] = radius_space*np.cos(phi_space)
         pos[:, 3] = radius_space*np.sin(phi_space)
 
@@ -57,6 +58,6 @@ if __name__ == '__main__':
     viewer = Viewer()
     win = Window(Viewer(), show=False)
 
-    multi_win = vector_window_example(win)
+    multi_win = VectorWindowExample(win)
 
     sys.exit(application.exec_())

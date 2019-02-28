@@ -25,16 +25,15 @@ class open_multi(QWidget):
         self.win = window
         self.viewer = self.win.viewer
 
-        image_random = np.random.rand(512,512)
+        image_random = np.random.rand(512, 512)
 
         self.viewer.add_image(image_random, {})
         self.viewer.add_image(data.astronaut(), {})
 
         self.win.show()
 
-
     def add_another_image(self):
-        image_random = np.random.rand(512,512)
+        image_random = np.random.rand(512, 512)
         self.viewer.add_image(image_random, {})
         self.win.show()
 

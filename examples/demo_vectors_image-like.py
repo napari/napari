@@ -23,8 +23,8 @@ Each vector position is defined by an (x-proj, y-proj) element
     where each vector is centered on a pixel of the NxM grid
 '''
 
-class vector_window_example(QWidget):
 
+class VectorWindowExample(QWidget):
 
     def __init__(self, window):
         super().__init__()
@@ -33,14 +33,14 @@ class vector_window_example(QWidget):
 
         # sample vector image-like data
         # 50x25 grid of slanted lines
-        N = 50
-        M = 25
-        pos = np.zeros(shape=(N, M, 2), dtype=np.float32)
-        rand1 = np.random.random_sample(N*M)
-        rand2 = np.random.random_sample(N*M)
+        n = 50
+        m = 25
+        pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
+        rand1 = np.random.random_sample(n*m)
+        rand2 = np.random.random_sample(n*m)
         # assign projections for each vector
-        pos[:, :, 0] = rand1.reshape((N,M))
-        pos[:, :, 1] = rand2.reshape((N,M))
+        pos[:, :, 0] = rand1.reshape((n, m))
+        pos[:, :, 1] = rand2.reshape((n, m))
 
         self.viewer.add_vectors(pos)
 
@@ -54,6 +54,6 @@ if __name__ == '__main__':
     viewer = Viewer()
     win = Window(Viewer(), show=False)
 
-    multi_win = vector_window_example(win)
+    multi_win = VectorWindowExample(win)
 
     sys.exit(application.exec_())

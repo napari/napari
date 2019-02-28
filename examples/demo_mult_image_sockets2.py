@@ -24,6 +24,8 @@ Uses pyqtSignal and Slots to communicate between processes
 
 Uses QRunnable so that timing thread is separate from UI thread
 """
+
+
 class MainWindow(QWidget):
 
     def __init__(self, window):
@@ -31,7 +33,7 @@ class MainWindow(QWidget):
         self.win = window
         self.viewer = self.win.viewer
 
-        image_random = np.random.rand(512,512)
+        image_random = np.random.rand(512, 512)
         vect_random = np.random.rand(2, 4)
         self.layer1 = self.viewer.add_image(image_random, {})
         self.layer2 = self.viewer.add_vectors(vect_random)
@@ -55,6 +57,7 @@ class MainWindow(QWidget):
             print('connecting VectorSender to window slot')
             signal.new_vector.connect(self.update_vectors)
 
+
 class ProcessRunnable(QRunnable):
     def __init__(self, target, args):
         QRunnable.__init__(self)
@@ -72,16 +75,18 @@ class NewImageSender(QObject, QRunnable):
 
     new_image = pyqtSignal(np.ndarray)
 
-    data = np.random.rand(512,512)
+    data = np.random.rand(512, 512)
+
+    p = None
 
     def emit_image_sequence(self, num_images: int = 5, time_delay: float = 5):
         for k in range(0, num_images):
-            self.data = np.random.rand(512,512)
+            self.data = np.random.rand(512, 512)
             self.new_image.emit(self.data)
             time.sleep(time_delay)
 
     def start(self):
-        self.p = ProcessRunnable(target=self.emit_image_sequence, args=(10,1))
+        self.p = ProcessRunnable(target=self.emit_image_sequence, args=(10, 1))
         self.p.start()
 
 
@@ -90,6 +95,8 @@ class NewVectorSender(QObject, QRunnable):
     new_vector = pyqtSignal(np.ndarray)
 
     pos = np.random.rand(2, 4)
+
+    p = None
 
     def emit_vector_stream(self, time_delay: float = 0.01):
         while True:
@@ -115,6 +122,7 @@ class NewVectorSender(QObject, QRunnable):
         self.p = ProcessRunnable(target=self.emit_vector_stream, args=())
         self.p.start()
 
+
 if __name__ == '__main__':
     # starting
     application = QApplication(sys.argv)
@@ -126,7 +134,7 @@ if __name__ == '__main__':
     newim = NewImageSender()
     newvect = NewVectorSender()
 
-    #connect signals
+    # connect signals
     custom_window.make_connection(newim)
     custom_window.make_connection(newvect)
 

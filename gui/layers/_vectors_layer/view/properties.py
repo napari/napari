@@ -23,11 +23,12 @@ class QtVectorsLayer(QtLayer):
         face_comboBox = QComboBox()
         colors = self.layer._colors
         for c in colors:
-           face_comboBox.addItem(c)
+            face_comboBox.addItem(c)
         index = face_comboBox.findText(self.layer.color, Qt.MatchFixedString)
         if index >= 0:
-           face_comboBox.setCurrentIndex(index)
-        face_comboBox.activated[str].connect(lambda text=face_comboBox: self.changeFaceColor(text))
+            face_comboBox.setCurrentIndex(index)
+        face_comboBox.activated[str].connect(
+            lambda text=face_comboBox: self.changeFaceColor(text))
         self.grid_layout.addWidget(QLabel('color:'), 3, 0)
         self.grid_layout.addWidget(face_comboBox, 3, 1)
 
@@ -44,10 +45,12 @@ class QtVectorsLayer(QtLayer):
         avg_dims = self.layer._avg_dims
         for avg in avg_dims:
             averaging_combobox.addItem(avg)
-        index = averaging_combobox.findText(self.layer.averaging, Qt.MatchFixedString)
+        index = averaging_combobox.findText(
+            self.layer.averaging, Qt.MatchFixedString)
         if index >= 0:
             averaging_combobox.setCurrentIndex(index)
-            averaging_combobox.activated[str].connect(lambda text=averaging_combobox: self.changeAvgType(text))
+            averaging_combobox.activated[str].connect(
+                lambda text=averaging_combobox: self.changeAvgType(text))
 
         self.grid_layout.addWidget(QLabel('averaging:'), 5, 0)
         self.grid_layout.addWidget(averaging_combobox, 5, 1)
