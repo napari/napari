@@ -24,4 +24,4 @@ layer.clim = [0.25, .75]
 # change the colormap
 layer.colormap = 'gray'
 
-sys.exit(application.exec_())
+sys.exit(application.exec())

@@ -27,4 +27,4 @@ markers = np.array([[200, 200, 0, 0], [50, 150, 0, 0], [100, 400, 1, 0],
 viewer.add_markers(markers, size=[10, 10, 6, 0], face_color='blue',
                    n_dimensional=True)
 
-sys.exit(application.exec_())
+sys.exit(application.exec())

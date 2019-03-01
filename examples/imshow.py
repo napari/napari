@@ -17,4 +17,4 @@ application = QApplication(sys.argv)
 image = rgb2gray(data.astronaut())
 viewer = imshow(image, {})
 
-sys.exit(application.exec_())
+sys.exit(application.exec())

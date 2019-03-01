@@ -21,4 +21,4 @@ viewer.add_image(rgb2gray(data.astronaut()), {})
 # add the second image
 viewer.add_image(data.camera(), {})
 
-sys.exit(application.exec_())
+sys.exit(application.exec())

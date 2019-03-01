@@ -19,4 +19,4 @@ viewer = imshow(image, {})
 # show the second image
 viewer.add_image(data.camera(), {})
 
-sys.exit(application.exec_())
+sys.exit(application.exec())

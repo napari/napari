@@ -25,4 +25,4 @@ markers = np.array([[100, 100], [200, 200], [333, 111]])
 size = np.array([10, 20, 20])
 viewer.add_markers(markers, size=size)
 
-sys.exit(application.exec_())
+sys.exit(application.exec())

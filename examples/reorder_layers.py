@@ -31,6 +31,6 @@ viewer.layers.swap(0, 2)
 # Swap the coins and moon
 viewer.layers.swap(0, 3)
 # Remove the camera
-viewer.layers.pop(1)
+viewer.layers.remove(viewer.layers[1])
 
-sys.exit(application.exec_())
+sys.exit(application.exec())
