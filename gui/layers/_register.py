@@ -109,3 +109,5 @@ def add_to_viewer(cls=None, *, name=None, doc=None):
 
     def inner(cls):
         return _register(cls, name=name, doc=doc)
+
+    return inner

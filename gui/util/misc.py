@@ -1,5 +1,9 @@
 """Miscellaneous utility functions.
 """
+import __main__
+
+
+INTERACTIVE = not hasattr(__main__, '__file__')
 
 
 def is_multichannel(meta):
@@ -99,41 +103,3 @@ def compute_max_shape(shapes, max_dims=None):
                 if dim_len > max_shape[dim]:
                     max_shape[dim] = dim_len
     return tuple(max_shape)
-
-
-_app = None
-_windows = []
-
-
-def imshow(image, meta=None, multichannel=None, **kwargs):
-    """Displays an image.
-
-    Parameters
-    ----------
-    image : np.ndarray
-        Image data.
-    meta : dict, optional
-        Image metadata.
-    multichannel : bool, optional
-        Whether the image is multichannel. Guesses if None.
-    **kwargs : dict
-        Parameters that will be translated to metadata.
-
-    Returns
-    -------
-    window: Window
-        Window object.
-    """
-    from ..components import Window, Viewer, QtApplication
-
-    meta = guess_metadata(image, meta, multichannel, kwargs)
-
-    global _app
-    _app = _app or QtApplication.instance() or QtApplication([])
-
-    window = Window(Viewer(), show=False)
-    _windows.append(window)
-    layer = window.viewer.add_image(image, meta)
-    window.show()
-
-    return window.viewer

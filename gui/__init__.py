@@ -1,4 +1,3 @@
-from .util.misc import imshow
 from .components import Window, Viewer
 
 from ._version import get_versions

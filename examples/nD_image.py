@@ -18,6 +18,6 @@ application = QApplication(sys.argv)
 viewer = Viewer()
 window = Window(viewer)
 # add the image
-viewer.add_image(np.random.rand(500, 500, 20, 10), {})
+viewer.add_image(np.random.rand(500, 500, 20, 10))
 
 sys.exit(application.exec())

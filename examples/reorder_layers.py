@@ -18,13 +18,13 @@ application = QApplication(sys.argv)
 viewer = Viewer()
 window = Window(viewer)
 # add the first image
-viewer.add_image(rgb2gray(data.astronaut()), {})
+viewer.add_image(rgb2gray(data.astronaut()))
 # add the second image
-viewer.add_image(data.camera(), {})
+viewer.add_image(data.camera())
 # add the third image
-viewer.add_image(data.coins(), {})
+viewer.add_image(data.coins())
 # add the fourth image
-viewer.add_image(data.moon(), {})
+viewer.add_image(data.moon())
 
 # Swap the astronaut and coins
 viewer.layers.swap(0, 2)

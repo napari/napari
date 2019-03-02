@@ -1,5 +1,5 @@
 """
-Display two image layers using the add_image API
+Display a single image layer using the add_image API
 """
 
 import sys
@@ -16,9 +16,7 @@ application = QApplication(sys.argv)
 # create the viewer and window
 viewer = Viewer()
 window = Window(viewer)
-# add the first image
+# add the image
 viewer.add_image(rgb2gray(data.astronaut()))
-# add the second image
-viewer.add_image(data.camera(), {})
 
 sys.exit(application.exec())

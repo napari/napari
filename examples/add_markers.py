@@ -19,7 +19,7 @@ application = QApplication(sys.argv)
 viewer = Viewer()
 window = Window(viewer)
 # add the image
-viewer.add_image(rgb2gray(data.astronaut()), {})
+viewer.add_image(rgb2gray(data.astronaut()))
 # add the markers
 markers = np.array([[100, 100], [200, 200], [333, 111]])
 size = np.array([10, 20, 20])
