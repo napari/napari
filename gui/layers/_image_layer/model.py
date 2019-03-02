@@ -58,6 +58,7 @@ AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
                        list(color.get_colormaps())}
 
 
+
 @add_to_viewer
 class Image(Layer):
     """Image layer.
@@ -70,6 +71,8 @@ class Image(Layer):
         Image metadata.
     multichannel : bool, optional
         Whether the image is multichannel. Guesses if None.
+    name : str, keyword-only
+        Name of the layer.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
@@ -78,9 +81,14 @@ class Image(Layer):
     default_cmap = 'magma'
     default_interpolation = 'nearest'
 
-    def __init__(self, image, meta=None, multichannel=None, **kwargs):
+    def __init__(self, image, meta=None, multichannel=None, *, name=None, **kwargs):
+        try:
+            name = meta['name']
+        except KeyError:
+            pass
+        
         self.visual = ImageNode(None, method='auto')
-        super().__init__(self.visual)
+        super().__init__(self.visual, name)
 
         meta = guess_metadata(image, meta, multichannel, kwargs)
 
@@ -93,8 +101,6 @@ class Image(Layer):
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
-
-        self.name = 'image'
 
         self._clim_range = self._clim_range_default()
         self._node.clim = [np.min(self.image), np.max(self.image)]

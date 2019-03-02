@@ -20,9 +20,9 @@ class QtLayersList(QScrollArea):
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
 
-        self.layers.events.add_item.connect(self._add)
-        self.layers.events.remove_item.connect(self._remove)
-        self.layers.events.reorder.connect(self._reorder)
+        self.layers.changed.added.connect(self._add)
+        self.layers.changed.removed.connect(self._remove)
+        self.layers.changed.reordered.connect(self._reorder)
 
     def _add(self, event):
         """Inserts a layer widget at a specific index

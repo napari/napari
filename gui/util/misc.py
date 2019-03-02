@@ -1,9 +1,5 @@
 """Miscellaneous utility functions.
 """
-import __main__
-
-
-INTERACTIVE = not hasattr(__main__, '__file__')
 
 
 def is_multichannel(meta):
