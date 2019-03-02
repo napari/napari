@@ -1,5 +1,6 @@
 """Miscellaneous utility functions.
 """
+import inspect
 
 
 def is_multichannel(meta):
@@ -99,3 +100,13 @@ def compute_max_shape(shapes, max_dims=None):
                 if dim_len > max_shape[dim]:
                     max_shape[dim] = dim_len
     return tuple(max_shape)
+
+
+def formatdoc(obj):
+    """Substitute globals and locals into an object's docstring."""
+    frame = inspect.currentframe().f_back
+    try:
+        obj.__doc__ = obj.__doc__.format(**{**frame.f_globals, **frame.f_locals})
+        return obj
+    finally:
+        del frame
