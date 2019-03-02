@@ -58,7 +58,6 @@ AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
                        list(color.get_colormaps())}
 
 
-
 @add_to_viewer
 class Image(Layer):
     """Image layer.

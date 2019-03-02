@@ -9,7 +9,6 @@ from ...util.list import ListModel
 from .view import QtLayersPanel
 
 
-
 def _add(event):
     """Callback when an item is added to set its order and viewer.
     """

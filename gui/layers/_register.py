@@ -39,7 +39,6 @@ class CallDefault(inspect.Parameter):
 class CallSignature(inspect.Signature):
     _parameter_cls = CallDefault
 
-
     def __str__(self):
         """do not render separators
 
@@ -89,7 +88,6 @@ class CallSignature(inspect.Signature):
             rendered += ' -> {}'.format(anno)
 
         return rendered
-
 
 
 def create_func(cls, name=None, doc=None):
