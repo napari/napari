@@ -1,12 +1,12 @@
 <h1> !!!This repo is under development and NOT stable!!! </h1>
 
 # napari
-[![License](https://img.shields.io/pypi/l/napari-gui.svg)](https://github.com/Napari/napari-gui/raw/master/LICENSE)
-[![Build Status](https://api.cirrus-ci.com/github/Napari/napari-gui.svg)](https://cirrus-ci.com/Napari/napari-gui)
+[![License](https://img.shields.io/pypi/l/napari-gui.svg)](https://github.com/napari/napari/raw/master/LICENSE)
+[![Build Status](https://api.cirrus-ci.com/github/Napari/napari-gui.svg)](https://cirrus-ci.com/napari/napari)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-gui.svg)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/napari-gui.svg)](https://pypi.org/project/napari-gui)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/napari-gui.svg)](https://pypistats.org/packages/napari-gui)
-[![Development Status](https://img.shields.io/pypi/status/napari-gui.svg)](https://github.com/Napari/napari-gui)
+[![Development Status](https://img.shields.io/pypi/status/napari-gui.svg)](https://github.com/napari/napari)
 
 ---
 
@@ -33,4 +33,4 @@ $ sudo apt install libgl1-mesa-glx
 
 ## Contributing
 
-Contributions are encouraged! Please read [our guide](https://github.com/Napari/napari-gui/blob/master/CONTRIBUTING.md) to get started.
+Contributions are encouraged! Please read [our guide](https://github.com/napari/napari/blob/master/CONTRIBUTING.md) to get started.
