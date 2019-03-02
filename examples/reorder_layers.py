@@ -26,10 +26,6 @@ viewer.add_image(data.coins())
 # add the fourth image
 viewer.add_image(data.moon())
 
-# Swap the astronaut and coins
-viewer.layers.swap(0, 2)
-# Swap the coins and moon
-viewer.layers.swap(0, 3)
 # Remove the camera
 viewer.layers.remove(viewer.layers[1])
 
