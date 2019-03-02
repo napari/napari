@@ -12,8 +12,6 @@
 
 napari is a fast multi-dimensional image viewer for Python.
 
-It is designed to integrate with other [Napari plugins](https://github.com/topics/napari-plugin) while also serving as a stand-alone package.
-
 This project is in the **pre-alpha** stage; **expect breaking changes** to be made from patch to patch.
 
 ## Installation
