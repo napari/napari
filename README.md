@@ -1,6 +1,6 @@
 <h1> !!!This repo is under development and NOT stable!!! </h1>
 
-# napari-gui
+# napari
 [![License](https://img.shields.io/pypi/l/napari-gui.svg)](https://github.com/Napari/napari-gui/raw/master/LICENSE)
 [![Build Status](https://api.cirrus-ci.com/github/Napari/napari-gui.svg)](https://cirrus-ci.com/Napari/napari-gui)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-gui.svg)](https://python.org)
@@ -10,15 +10,15 @@
 
 ---
 
-Napari GUI is a high-performance, multi-dimensional image viewing tool and the official front-end of the [Napari](https://github.com/Napari) ecosytem.
+napari is a fast multi-dimensional image viewer for Python.
+
 It is designed to integrate with other [Napari plugins](https://github.com/topics/napari-plugin) while also serving as a stand-alone package.
 
 This project is in the **pre-alpha** stage; **expect breaking changes** to be made from patch to patch.
 
 ## Installation
 
-Napari GUI can be installed on most operating systems with `pip install napari-gui`.
-It will fall under the `napari_gui` namespace.
+napari can be installed on most operating systems with `pip install napari`.
 
 ### Downloading OpenGL
 
@@ -29,8 +29,8 @@ Windows and Linux users may need to install the [Mesa OpenGL](https://www.mesa3d
 Linux users can complete the installation process from the command line:
 
 ```sh
-$ sudo apt-get update
-$ sudo apt-get install libgl1-mesa-glx
+$ sudo apt update
+$ sudo apt install libgl1-mesa-glx
 ```
 
 ## Contributing
