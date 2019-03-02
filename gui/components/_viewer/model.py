@@ -41,7 +41,7 @@ class Viewer:
         self._interactive = True
         self._top = None
 
-        self._qt = QtViewer(self)
+        self._qt = None #QtViewer(self)
 
     @property
     def _canvas(self):

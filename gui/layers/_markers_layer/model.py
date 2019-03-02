@@ -282,7 +282,7 @@ class Markers(Layer):
             self.status = mode
             self._mode = mode
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
         self.events.mode(mode=mode)
 

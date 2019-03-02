@@ -5,7 +5,15 @@ from copy import copy
 
 from vispy.util.event import EmitterGroup, Event
 
-from .view import QtDims
+#from .view import QtDims
+
+from enum import Enum
+
+
+class Mode(Enum):
+     Display = 0
+     Slice = 1
+     Project = 2
 
 
 class Dims:
@@ -28,15 +36,9 @@ class Dims:
     def __init__(self, viewer):
 
         self.viewer = viewer
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   update_slider=Event)
-        # TODO: allow arbitrary display axis setting
-        # self.y_axis = 0  # typically the y-axis
-        # self.x_axis = 1  # typically the x-axis
 
-        # TODO: wrap indices in custom data structure
-        self.indices = [slice(None), slice(None)]
+        self.point = []
+        self.mode  = []
 
         self._max_dims = 0
         self._max_shape = tuple()
@@ -49,7 +51,32 @@ class Dims:
         self._recalc_max_dims = False
         self._recalc_max_shape = False
 
-        self._qt = QtDims(self)
+        self._qt = None #QtDims(self)
+
+
+
+
+    def set_point(self, axis, value):
+        self._ensure_correct_lengths(axis)
+        self.point[axis] = value
+        self._need_redraw = True
+        self._update()
+
+    def set_mode(self, axis, mode):
+        self._ensure_correct_lengths(axis)
+        self.mode[axis]=mode
+        self._need_redraw = True
+        self._update()
+
+    def _ensure_correct_lengths(self, axis):
+        if axis >= len(self.mode):
+            self.point.extend([0.0]*(1+ axis - len(self.mode)))
+            self.mode.extend([Mode.Slice] * (1 + axis - len(self.mode)))
+
+    @property
+    def arrayslice(self):
+        return
+
 
     @property
     def max_dims(self):
@@ -86,10 +113,7 @@ class Dims:
             self.events.update_slider(dim=dim, dim_len=dim_len,
                                       max_dims=max_dims)
 
-    def _slider_value_changed(self, value, axis):
-        self.indices[axis] = value
-        self._need_redraw = True
-        self._update()
+
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
