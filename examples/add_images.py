@@ -17,7 +17,7 @@ application = QApplication(sys.argv)
 viewer = Viewer()
 window = Window(viewer)
 # add the first image
-viewer.add_image(rgb2gray(data.astronaut()), {})
+viewer.add_image(rgb2gray(data.astronaut()))
 # add the second image
 viewer.add_image(data.camera(), {})
 

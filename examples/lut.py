@@ -9,15 +9,18 @@ from PyQt5.QtWidgets import QApplication
 
 from skimage import data
 from skimage.color import rgb2gray
-from napari_gui import imshow
+from napari_gui import Window, Viewer
 
 
 # starting
 application = QApplication(sys.argv)
 
 # show grayscale image
+viewer = Viewer()
+window = Window(viewer)
+# add the image
 image = rgb2gray(data.astronaut())
-viewer = imshow(image, {})
+viewer.add_image(image)
 layer = viewer.layers[0]
 # change the clims
 layer.clim = [0.25, .75]
