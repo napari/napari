@@ -97,7 +97,7 @@ class List(list):
             When the index is out of bounds.
         KeyError
             When the key is otherwise invalid.
-        """ 
+        """
         if not isinstance(key, int):
             raise TypeError(f'expected int; got {type(key)}')
 

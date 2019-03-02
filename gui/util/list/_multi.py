@@ -49,5 +49,5 @@ class MultiIndexList(List):
         if can_iter:
             for i in indices:
                 super().__delitem__(i)
-        else:        
+        else:
             super().__delitem__(indices)
