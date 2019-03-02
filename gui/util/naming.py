@@ -12,14 +12,14 @@ numbered_patt = re.compile(r'(?<!\d)(?:\d+|)$')
 
 def _inc_name_count_sub(match):
     count = match.group(0)
-    
+
     try:
         count = int(count)
     except ValueError:  # not an int
         count = f'{sep}{start}'
     else:
         count = f'{count + 1}'
-        
+
     return count
 
 

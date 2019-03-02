@@ -72,11 +72,11 @@ class Layer(VisualWrapper, ABC):
     def __repr__(self):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
-        
+
     @classmethod
     def _basename(cls):
         return f'{cls.__name__} 0'
-        
+
     @property
     def name(self):
         """str: Layer's unique name.
@@ -87,13 +87,13 @@ class Layer(VisualWrapper, ABC):
     def name(self, name):
         if not name:
             name = self._basename()
-        
+
         if self.viewer:
             name = self.viewer.layers._coerce_name(name, self)
-            
+
         self._name = name
         self.events.name()
-        
+
     @property
     @abstractmethod
     def data(self):

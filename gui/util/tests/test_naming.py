@@ -16,7 +16,7 @@ def test_re_other_digs():
 def test_re_no_space():
     assert numbered_patt.search('layer7').group(0) == '7'
 
-    
+
 def test_re_first_dig():
     assert numbered_patt.search('42').group(0) == '42'
 

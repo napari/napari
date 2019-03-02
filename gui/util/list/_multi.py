@@ -8,9 +8,9 @@ class MultiIndexList(List):
     def __prsitem__(self, keys):
         if not isinstance(keys, tuple):
             return super().__prsitem__(keys)
-            
+
         indices = []
-        
+
         for key in keys:
             i = self.__prsitem__(key)
             can_iter = isinstance(i, Iterable)
@@ -18,15 +18,15 @@ class MultiIndexList(List):
                 indices.extend(i)
             else:
                 indices.append(i)
-                
+
         # TODO: how to handle duplicates?
-                
+
         return indices
-    
+
     def __setitem__(self, key, value):
         indices = self.__prsitem__(key)
         can_iter = isinstance(indices, Iterable)
-        
+
         if can_iter:
             if hasattr(value, '__getitem__') and hasattr(value, '__len__'):
                 # value is a vector
@@ -41,11 +41,11 @@ class MultiIndexList(List):
                     super().__setitem__(i, value)
         else:
             super().__setitem__(indices, value)
-            
+
     def __delitem__(self, key):
         indices = self.__prsitem__(key)
         can_iter = isinstance(indices, Iterable)
-        
+
         if can_iter:
             for i in indices:
                 super().__delitem__(i)

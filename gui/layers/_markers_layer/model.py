@@ -77,7 +77,7 @@ class Markers(Layer):
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
             self._status = self._mode
-            
+
             # update flags
             self._need_display_update = False
             self._need_visual_update = False

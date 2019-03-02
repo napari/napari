@@ -34,22 +34,22 @@ class ListModel(MultiIndexList, TypedList):
     def __setitem__(self, query, values):
         indices = tuple(self.__prsitem__(query))
         new_indices = tuple(values)
-        
+
         if sorted(indices) != sorted(self.index(v) for v in new_indices):
             raise TypeError('must be a reordering of indices; '
                             'setting of list items not allowed')
-        
+
         super().__setitem__(indices, new_indices)
         self.changed.reordered()
 
     def insert(self, index, object):
         super().insert(index, object)
         self.changed.added(item=object, index=self.__locitem__(index))
-        
+
     def append(self, object):
         super(TypedList, self).append(object)
         self.changed.added(item=object, index=len(self) - 1)
-        
+
     def pop(self, key):
         obj = super().pop(key)
         self.changed.removed(item=obj)

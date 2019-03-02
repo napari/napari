@@ -39,7 +39,7 @@ class CallDefault(inspect.Parameter):
 class CallSignature(inspect.Signature):
     _parameter_cls = CallDefault
 
-    
+
     def __str__(self):
         """do not render separators
 

@@ -18,26 +18,26 @@ class List(list):
             return True
         except ValueError:
             return False
-        
+
     def __iter__(self):
         for i in range(len(self)):
             yield self[i]
-        
+
     def __getitem__(self, key):
         indices = self.__prsitem__(key)
         can_iter = isinstance(indices, Iterable)
-        
+
         if can_iter:
             return self.__newlike__(super(List, self).__getitem__(i) for i in indices)
-            
+
         return super().__getitem__(indices)
-    
+
     def __setitem__(self, key, value):
         super().__setitem__(self.__locitem__(key), value)
-        
+
     def __delitem__(self, key):
         super().remove(key)
-        
+
     def __prsitem__(self, key):
         """Parse a key into list indices.
         
@@ -57,25 +57,25 @@ class List(list):
             start = key.start
             stop = key.stop
             step = key.step
-            
+
             if start is not None:
                 try:
                     start = self.__locitem__(start)
                 except IndexError:
                     if start != len(self):
                         raise
-            
+
             if stop is not None:
                 try:
                     stop = self.__locitem__(stop)
                 except IndexError:
                     if stop != len(self):
                         raise
-            
+
             return range(*slice(start, stop, step).indices(len(self)))
         else:
             return self.__locitem__(key)
-        
+
     def __locitem__(self, key):
         """Parse a key into a list index.
         
@@ -100,15 +100,15 @@ class List(list):
         """ 
         if not isinstance(key, int):
             raise TypeError(f'expected int; got {type(key)}')
-        
+
         if key < 0:
             key += len(self)
-            
+
         if not (0 <= key < len(self)):
             raise IndexError(f'expected index to be in [0, {len(self)}); got {key}')
-            
+
         return key
-    
+
     def __newlike__(self, iterable):
         """Create a new instance from an iterable with the same properties as this one.
         
@@ -124,22 +124,22 @@ class List(list):
         """
         cls = type(self)
         return cls(iterable)
-        
+
     def copy(self):
         return self.__newlike__(self)
-        
+
     def count(self, key):
         super().count(self.__locitem__(key))
-    
+
     def extend(self, iterable):
         for e in iterable:
             self.append(e)
-            
+
     def insert(self, index, object):
         super().insert(self.__locitem__(index), object)
-        
+
     def pop(self, index):
         return super().pop(self.__locitem__(index))
-        
+
     def remove(self, object):
         self.pop(self.__locitem__(object))

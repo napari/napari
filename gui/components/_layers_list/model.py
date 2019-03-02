@@ -45,7 +45,7 @@ def _reorder(event):
     canvas._draw_order.clear()
     canvas.update()
 
-        
+
 class LayersList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
@@ -135,7 +135,7 @@ class LayersList(ListModel):
                 continue
             if l.name == name:
                 name = inc_name_count(name)
-            
+
         return name
 
     def _move_layers(self, index, insert):
