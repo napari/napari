@@ -82,11 +82,10 @@ class Image(Layer):
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta=None, multichannel=None, *, name=None, **kwargs):
-        try:
-            name = meta['name']
-        except KeyError:
-            pass
-        
+        if name is None and meta is not None:
+            if 'name' in meta:
+                name = meta['name']
+
         self.visual = ImageNode(None, method='auto')
         super().__init__(self.visual, name)
 
