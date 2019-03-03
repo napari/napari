@@ -17,6 +17,11 @@ class QtDims(QWidget):
         self.setLayout(layout)
         self.setFixedHeight(0)
 
+        for axis in range(0,dims.max_dims):
+            update_slider(axis, )
+
+
+
     def _axis_to_row(self, axis, max_dims):
         message = f'axis {axis} out of bounds for {max_dims} dims'
 
@@ -32,7 +37,7 @@ class QtDims(QWidget):
 
         return axis - 2
 
-    def update_slider(self, event):
+    def update_slider(self, axis, max_axis_length, max_dims):
         """Updates a slider for the given axis or creates
         it if it does not already exist.
 
@@ -48,9 +53,7 @@ class QtDims(QWidget):
         slider : PyQt5.QSlider or None
             Updated slider, if it exists.
         """
-        axis = event.dim
-        max_axis_length = event.dim_len
-        max_dims = event.max_dims
+
 
         grid = self.layout()
         row = self._axis_to_row(axis, max_dims)
@@ -85,5 +88,17 @@ class QtDims(QWidget):
         slider.valueChanged.connect(lambda value:
                                     self._slider_value_changed(value, axis))
         slider.setMaximum(max_axis_length - 1)
+
         self.setFixedHeight((max_dims-2)*self.SLIDERHEIGHT)
         return slider
+
+
+    #EVENTS:
+
+    def update_slider(self, event):
+
+        axis = event.dim
+        max_axis_length = event.dim_len
+        max_dims = event.max_dims
+
+        self.update_slider(axis, max_axis_length, max_dims)

@@ -19,11 +19,6 @@ class Mode(Enum):
 class Dims:
     """Dimensions object containing the dimension sliders
 
-    Parameters
-    ----------
-    viewer : Viewer
-        Parent viewer.
-
     Attributes
     ----------
     indices : list
@@ -33,15 +28,23 @@ class Dims:
     max_shape : tuple of int
         Maximum shape of the contained layers.
     """
-    def __init__(self, viewer):
+    def __init__(self, max_dims):
 
-        self.viewer = viewer
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   update_slider=Event)
+
+
+        self.viewer = None
+
+        self._max_dims = max_dims
+        self._max_shape = tuple()
 
         self.point = []
         self.mode  = []
 
-        self._max_dims = 0
-        self._max_shape = tuple()
+        self.set_point(max_dims-1,0)
+
 
         # update flags
         self._child_layer_changed = False
@@ -90,6 +93,10 @@ class Dims:
         """
         return self._max_shape
 
+
+    def _slider_value_changed(self, value, axis):
+        self.set_point(axis, value)
+
     def _update_sliders(self):
         """Updates the sliders according to the contained images.
         """
@@ -110,7 +117,8 @@ class Dims:
                 dim_len = max_shape[dim]
             except IndexError:
                 dim_len = 0
-            self.events.update_slider(dim=dim, dim_len=dim_len,
+            self.events.update_slider(dim=dim,
+                                      dim_len=dim_len,
                                       max_dims=max_dims)
 
 
