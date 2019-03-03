@@ -1,6 +1,6 @@
 ---
 name: "\U0001F41B Bug Report"
-about: Submit a bug report to help us improve napari-gui
+about: Submit a bug report to help us improve napari
 
 ---
 
@@ -24,7 +24,7 @@ Steps to reproduce the behavior:
 
 ## Environment
 
- - napari-gui Version (e.g., 1.0):
+ - napari Version (e.g., 1.0):
  - OS (e.g., Linux):
  - Python version:
  - Any other relevant information:
