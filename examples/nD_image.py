@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication
 import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-from napari_gui import Window, Viewer
+from napari import Window, Viewer
 
 
 # starting

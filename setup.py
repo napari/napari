@@ -5,11 +5,11 @@ GUI component of Napari.
 """
 
 MIN_PY_VER = '3.6'
-DISTNAME = 'napari-gui'
-DESCRIPTION = 'GUI component of Napari.'
+DISTNAME = 'napari'
+DESCRIPTION = 'n-dimensional array viewer in Python.'
 LONG_DESCRIPTION = __doc__
 LICENSE = 'BSD 3-Clause'
-DOWNLOAD_URL = 'https://github.com/Napari/napari-gui'
+DOWNLOAD_URL = 'https://github.com/napari/napari'
 
 CLASSIFIERS = [
     'Development Status :: 2 - Pre-Alpha',
@@ -56,16 +56,14 @@ PACKAGES = [package for package in find_packages()
 
 
 with open(osp.join('requirements', 'default.txt')) as f:
-    requirements = [l.strip() for l in f.readlines() if l]
+    requirements = [line.strip() for line in f
+                    if line and not line.startswith('#')]
 
 
 INSTALL_REQUIRES = []
 REQUIRES = []
 
 for l in requirements:
-    if l.startswith('#'):  # it's a comment
-        requirements.remove(l)
-
     sep = l.split(' #')
     INSTALL_REQUIRES.append(sep[0].strip())
     if len(sep) == 2:

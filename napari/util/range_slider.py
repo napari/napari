@@ -1,5 +1,5 @@
 """
-Range slider, extended QWidget slider for napari-gui.
+Range slider, extended QWidget slider for napari.
 """
 
 from PyQt5 import QtCore, QtGui, QtWidgets
