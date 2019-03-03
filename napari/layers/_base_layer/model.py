@@ -11,19 +11,31 @@ from .._visual_wrapper import VisualWrapper
 class Layer(VisualWrapper, ABC):
     """Base layer class.
 
+    Parameters
+    ----------
+    central_node : vispy.scene.visuals.VisualNode
+        Visual node that controls all others.
+    name : str, optional
+        Name of the layer. If not provided, is automatically generated
+        from `cls._basename()`
+
+    Notes
+    -----
     Must define the following:
-        * ``_get_shape()``: called by ``shape`` property
-        * ``_refresh()``: called by ``refresh`` method
-        * ``data`` property (setter & getter)
+        * `_get_shape()`: called by `shape` property
+        * `_refresh()`: called by `refresh` method
+        * `data` property (setter & getter)
 
     May define the following:
-        * ``_set_view_slice(indices)``: called to set currently viewed slice
-        * ``_after_set_viewer()``: called after the viewer is set
-        * ``_qt_properties``: QtWidget inserted into the layer list GUI
-        * ``_qt_controls``: QtWidget inserted into the controls panel GUI
+        * `_set_view_slice(indices)`: called to set currently viewed slice
+        * `_after_set_viewer()`: called after the viewer is set
+        * `_qt_properties`: QtWidget inserted into the layer list GUI
+        * `_qt_controls`: QtWidget inserted into the controls panel GUI
+        * `_basename()`: base/default name of the layer
 
     Attributes
     ----------
+    name
     ndim
     shape
     selected
@@ -34,13 +46,12 @@ class Layer(VisualWrapper, ABC):
     refresh()
         Refresh the current view.
     """
-    def __init__(self, central_node):
+    def __init__(self, central_node, name=None):
         super().__init__(central_node)
         self._selected = False
         self._viewer = None
         self._qt_properties = None
         self._qt_controls = None
-        self.name = 'layer'
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -49,7 +60,39 @@ class Layer(VisualWrapper, ABC):
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    select=Event,
-                                   deselect=Event)
+                                   deselect=Event,
+                                   name=Event)
+        self.name = name
+
+    def __str__(self):
+        """Return self.name
+        """
+        return self.name
+
+    def __repr__(self):
+        cls = type(self)
+        return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+
+    @classmethod
+    def _basename(cls):
+        return f'{cls.__name__} 0'
+
+    @property
+    def name(self):
+        """str: Layer's unique name.
+        """
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if not name:
+            name = self._basename()
+
+        if self.viewer:
+            name = self.viewer.layers._coerce_name(name, self)
+
+        self._name = name
+        self.events.name()
 
     @property
     @abstractmethod

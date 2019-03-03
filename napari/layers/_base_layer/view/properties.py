@@ -21,9 +21,11 @@ class QtLayer(QFrame):
 
     def __init__(self, layer):
         super().__init__()
+
         self.layer = layer
-        self.layer.events.select.connect(self._on_select)
-        self.layer.events.deselect.connect(self._on_deselect)
+        layer.events.select.connect(self._on_select)
+        layer.events.deselect.connect(self._on_deselect)
+        layer.events.name.connect(self._on_layer_name_change)
 
         self.setObjectName('layer')
         self.layer.selected = True
@@ -43,8 +45,8 @@ class QtLayer(QFrame):
         textbox.setToolTip('Layer name')
         textbox.setFixedWidth(80)
         textbox.setAcceptDrops(False)
-        textbox.editingFinished.connect(
-            lambda text=textbox: self.changeText(text))
+        textbox.editingFinished.connect(self.changeText)
+        self.nameTextBox = textbox
         self.grid_layout.addWidget(textbox, 0, 1)
 
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
@@ -94,8 +96,8 @@ class QtLayer(QFrame):
         else:
             self.layer.visible = False
 
-    def changeText(self, text):
-        self.layer.name = text.text()
+    def changeText(self):
+        self.layer.name = self.nameTextBox.text()
 
     def changeBlending(self, text):
         self.layer.blending = text
@@ -168,3 +170,7 @@ class QtLayer(QFrame):
 
     def update(self):
         return
+
+    def _on_layer_name_change(self, event):
+        with self.layer.events.blocker(self._on_layer_name_change):
+            self.nameTextBox.setText(self.layer.name)
