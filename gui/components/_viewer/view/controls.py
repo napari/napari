@@ -14,8 +14,8 @@ class QtControls(QStackedWidget):
         self.addWidget(self.empty_widget)
         self.display(None)
 
-        self.viewer.layers.events.add_item.connect(self._add)
-        self.viewer.layers.events.remove_item.connect(self._remove)
+        self.viewer.layers.changed.added.connect(self._add)
+        self.viewer.layers.changed.removed.connect(self._remove)
 
     def display(self, layer):
         if layer is None or layer._qt_controls is None:

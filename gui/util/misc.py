@@ -1,6 +1,7 @@
 """Miscellaneous utility functions.
 """
 from numpy import multiply, all, array
+import inspect
 
 def inside_triangles(triangles):
     """Checks which triangles contain the origin
@@ -173,39 +174,11 @@ def compute_max_shape(shapes, max_dims=None):
     return tuple(max_shape)
 
 
-_app = None
-_windows = []
-
-
-def imshow(image, meta=None, multichannel=None, **kwargs):
-    """Displays an image.
-
-    Parameters
-    ----------
-    image : np.ndarray
-        Image data.
-    meta : dict, optional
-        Image metadata.
-    multichannel : bool, optional
-        Whether the image is multichannel. Guesses if None.
-    **kwargs : dict
-        Parameters that will be translated to metadata.
-
-    Returns
-    -------
-    window: Window
-        Window object.
-    """
-    from ..components import Window, Viewer, QtApplication
-
-    meta = guess_metadata(image, meta, multichannel, kwargs)
-
-    global _app
-    _app = _app or QtApplication.instance() or QtApplication([])
-
-    window = Window(Viewer(), show=False)
-    _windows.append(window)
-    layer = window.viewer.add_image(image, meta)
-    window.show()
-
-    return window.viewer
+def formatdoc(obj):
+    """Substitute globals and locals into an object's docstring."""
+    frame = inspect.currentframe().f_back
+    try:
+        obj.__doc__ = obj.__doc__.format(**{**frame.f_globals, **frame.f_locals})
+        return obj
+    finally:
+        del frame
