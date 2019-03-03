@@ -44,16 +44,14 @@ class Shapes(Layer):
 
     def __init__(self, points=None, lines=None, paths=None, rectangles=None,
                  ellipses=None, polygons=None, edge_width=1, edge_color='black',
-                 face_color='white'):
+                 face_color='white', *, name=None):
 
         visual = VisualNode([Markers(), Line(), Mesh(), Mesh()])
 
-        super().__init__(visual)
+        super().__init__(visual, name)
 
         # Freeze refreshes
         with self.freeze_refresh():
-            self.name = 'shapes'
-
             # Save the shape data
             self._data = ShapesData(lines=lines, paths=paths, rectangles=rectangles,
                                     ellipses=ellipses, polygons=polygons,
