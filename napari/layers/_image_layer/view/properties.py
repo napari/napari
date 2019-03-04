@@ -7,12 +7,14 @@ class QtImageLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
+        self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.interpolation.connect(self._on_interpolation_change)
+
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
             comboBox.addItem(cmap)
         index = comboBox.findText('hot', Qt.MatchFixedString)
-        if index >= 0:
-            comboBox.setCurrentIndex(index)
+        comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
             lambda text=comboBox: self.changeColor(text))
         self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
@@ -23,10 +25,10 @@ class QtImageLayer(QtLayer):
             interp_comboBox.addItem(interp)
         index = interp_comboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString)
-        if index >= 0:
-            interp_comboBox.setCurrentIndex(index)
+        interp_comboBox.setCurrentIndex(index)
         interp_comboBox.activated[str].connect(
             lambda text=interp_comboBox: self.changeInterpolation(text))
+        self.interpComboBox = interp_comboBox
         self.grid_layout.addWidget(QLabel('interpolation:'), 4, 0)
         self.grid_layout.addWidget(interp_comboBox, 4, 1)
 
@@ -37,3 +39,12 @@ class QtImageLayer(QtLayer):
 
     def changeInterpolation(self, text):
         self.layer.interpolation = text
+
+    def _on_interpolation_change(self, event):
+        with self.layer.events.blocker(self._on_interpolation_change):
+            index = self.interpComboBox.findText(
+                self.layer.interpolation, Qt.MatchFixedString)
+            self.interpComboBox.setCurrentIndex(index)
+
+    def _on_colormap_change(self, event):
+        return

@@ -1,6 +1,6 @@
 """
-Add four image layers using the add_image API and then reorder them using the
-layers swap method and remove one using the layers pop method
+Display multiple image layers using the add_image API and then reorder them
+using the layers swap method and remove one
 """
 
 import sys

@@ -13,6 +13,8 @@ from ...util.interpolation import (interpolation_names,
 from ...util.misc import guess_metadata
 
 from vispy import color
+from vispy.util.event import Event
+
 from ..colormaps import matplotlib_colormaps
 
 from .._register import add_to_viewer
@@ -85,8 +87,12 @@ class Image(Layer):
             if 'name' in meta:
                 name = meta['name']
 
-        self.visual = ImageNode(None, method='auto')
-        super().__init__(self.visual, name)
+        visual = ImageNode(None, method='auto')
+        super().__init__(visual, name)
+
+        self.events.add(clim=Event,
+                        colormap=Event,
+                        interpolation=Event)
 
         meta = guess_metadata(image, meta, multichannel, kwargs)
 
@@ -247,6 +253,7 @@ class Image(Layer):
     @colormap.setter
     def colormap(self, colormap):
         self.cmap = colormap
+        self.events.colormap()
 
     @property
     def colormaps(self):
@@ -267,6 +274,7 @@ class Image(Layer):
         self._clim_msg = f'{clim[0]: 0.3}, {clim[1]: 0.3}'
         self.status = self._clim_msg
         self._node.clim = clim
+        self.events.clim()
 
     @property
     def cmap(self):
@@ -314,6 +322,7 @@ class Image(Layer):
     @interpolation.setter
     def interpolation(self, interpolation):
         self.interpolation_index = _name_to_index(interpolation)
+        self.events.interpolation()
 
     @property
     def interpolation_functions(self):

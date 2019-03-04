@@ -26,6 +26,9 @@ class QtLayer(QFrame):
         layer.events.select.connect(self._on_select)
         layer.events.deselect.connect(self._on_deselect)
         layer.events.name.connect(self._on_layer_name_change)
+        layer.events.blending.connect(self._on_blending_change)
+        layer.events.opacity.connect(self._on_opacity_change)
+        layer.events.visible.connect(self._on_visible_change)
 
         self.setObjectName('layer')
         self.layer.selected = True
@@ -37,6 +40,7 @@ class QtLayer(QFrame):
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
+        self.visibleCheckBox = cb
         self.grid_layout.addWidget(cb, 0, 0)
 
         textbox = QLineEdit(self)
@@ -59,17 +63,18 @@ class QtLayer(QFrame):
         sld.setValue(self.layer.opacity*100)
         sld.valueChanged[int].connect(
             lambda value=sld: self.changeOpacity(value))
+        self.opacitySilder = sld
         self.grid_layout.addWidget(sld, 1, 1)
 
         blend_comboBox = QComboBox()
         for blend in self.layer._blending_modes:
             blend_comboBox.addItem(blend)
         index = blend_comboBox.findText(
-            self.layer._blending, Qt.MatchFixedString)
-        if index >= 0:
-            blend_comboBox.setCurrentIndex(index)
+            self.layer.blending, Qt.MatchFixedString)
+        blend_comboBox.setCurrentIndex(index)
         blend_comboBox.activated[str].connect(
             lambda text=blend_comboBox: self.changeBlending(text))
+        self.blendComboBox = blend_comboBox
         self.grid_layout.addWidget(QLabel('blending:'), 2, 0)
         self.grid_layout.addWidget(blend_comboBox, 2, 1)
 
@@ -88,7 +93,8 @@ class QtLayer(QFrame):
         self.setStyleSheet(self.unselectedStylesheet)
 
     def changeOpacity(self, value):
-        self.layer.opacity = value/100
+        with self.layer.events.blocker(self._on_opacity_change):
+            self.layer.opacity = value/100
 
     def changeVisible(self, state):
         if state == Qt.Checked:
@@ -168,9 +174,20 @@ class QtLayer(QFrame):
     def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)
 
-    def update(self):
-        return
-
     def _on_layer_name_change(self, event):
         with self.layer.events.blocker(self._on_layer_name_change):
             self.nameTextBox.setText(self.layer.name)
+
+    def _on_opacity_change(self, event):
+        with self.layer.events.blocker(self._on_opacity_change):
+            self.opacitySilder.setValue(self.layer.opacity*100)
+
+    def _on_blending_change(self, event):
+        with self.layer.events.blocker(self._on_blending_change):
+            index = self.blendComboBox.findText(
+                self.layer.blending, Qt.MatchFixedString)
+            self.blendComboBox.setCurrentIndex(index)
+
+    def _on_visible_change(self, event):
+        with self.layer.events.blocker(self._on_visible_change):
+            self.visibleCheckBox.setChecked(self.layer.visible)

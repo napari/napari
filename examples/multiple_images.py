@@ -1,5 +1,5 @@
 """
-Display two image layers using the add_image API
+Display multiple image layers using the add_image API
 """
 
 import sys
@@ -19,6 +19,10 @@ window = Window(viewer)
 # add the first image
 viewer.add_image(rgb2gray(data.astronaut()))
 # add the second image
-viewer.add_image(data.camera(), {})
+viewer.add_image(data.camera())
+# add the third image
+viewer.add_image(data.coins())
+# add the fourth image
+viewer.add_image(data.moon())
 
 sys.exit(application.exec())
