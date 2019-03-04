@@ -5,6 +5,6 @@ from PyQt5.QtWidgets import QApplication
 
 @contextmanager
 def app_context():
-    app = QApplication(sys.argv)
+    app = QApplication.instance() or QApplication(sys.argv)
     yield
     app.exec()
