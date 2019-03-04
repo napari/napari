@@ -13,7 +13,7 @@ class QtImageLayer(QtLayer):
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
             comboBox.addItem(cmap)
-        index = comboBox.findText('hot', Qt.MatchFixedString)
+        index = comboBox.findText('magma', Qt.MatchFixedString)
         comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
             lambda text=comboBox: self.changeColor(text))
