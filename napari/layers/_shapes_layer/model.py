@@ -101,6 +101,7 @@ class Shapes(Layer):
             self._ready_to_create = False
             self._creating = False
             self._create_coord = [None, None]
+            self._prefixed_size = np.array([10, 10])
 
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
@@ -1133,19 +1134,26 @@ class Shapes(Layer):
             pass
         elif self.mode == 'add_rectangle':
             # Finish drawing a rectangle
-            self._ready_to_create = False
-            self._create_coord = [None, None]
-            self._is_moving = False
-            self._selected_shapes = []
-            self._drag_start = None
-            self._drag_box = None
-            self._fixed_vertex = None
-            self._selected_vertex = [None, None]
-            self._hover_shapes = [None, None]
-            self._creating = False
-            self.data.select_box([])
-            self._unselect()
-            shape = self._shape_at(coord)
+            if self._ready_to_create:
+                shape = np.array([[self._create_coord-self._prefixed_size/2,
+                                   self._create_coord+self._prefixed_size/2]])
+                self.add_shapes(rectangles = shape)
+                self._ready_to_create = False
+                shape = [self.data.count-1, None]
+            else:
+                self._ready_to_create = False
+                self._create_coord = [None, None]
+                self._is_moving = False
+                self._selected_shapes = []
+                self._drag_start = None
+                self._drag_box = None
+                self._fixed_vertex = None
+                self._selected_vertex = [None, None]
+                self._hover_shapes = [None, None]
+                self._creating = False
+                self.data.select_box([])
+                self._unselect()
+                shape = self._shape_at(coord)
             self.status = self.get_message(coord, shape)
         else:
             raise ValueError("Mode not recongnized")
