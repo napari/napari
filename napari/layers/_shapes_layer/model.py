@@ -741,7 +741,7 @@ class Shapes(Layer):
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
         if self._highlight and len(self._selected_shapes) > 0:
-            if self.mode == 'select':
+            if self.mode == 'select' or self.mode == 'add_rectangle':
                 inds = list(range(0,8))
                 inds.append(9)
                 box = self.data.selected_box[inds]
@@ -829,8 +829,8 @@ class Shapes(Layer):
         """
         index = self._selected_shapes
         vertex = self._selected_vertex[1]
-        if len(index) > 0:
-            if self.mode == 'select':
+        if self.mode == 'select' or self.mode == 'add_rectangle':
+            if len(index) > 0:
                 self._is_moving=True
                 if vertex is None:
                     #Check where dragging box from to move whole object
@@ -846,7 +846,10 @@ class Shapes(Layer):
                     if self._fixed_vertex is None:
                         self._fixed_index = np.mod(vertex+4,8)
                         self._fixed_vertex = box[self._fixed_index]
-                        self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
+                        if np.any(box[4]-box[0] == np.zeros(2)):
+                            self._aspect_ratio = 1
+                        else:
+                            self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
 
                     size = box[np.mod(self._fixed_index+4,8)] - box[self._fixed_index]
                     offset = box[-1] - box[-2]
@@ -917,19 +920,26 @@ class Shapes(Layer):
 
                     self.data.rotate_shapes(angle, center=self._fixed_vertex, index=index)
                     self.refresh()
-            elif self.mode == 'direct':
+            else:
+                self._is_selecting=True
+                if self._drag_start is None:
+                    self._drag_start = coord
+                self._drag_box = np.array([self._drag_start, coord])
+                self._set_highlight()
+        elif self.mode == 'direct':
+            if len(index) > 0:
                 if vertex is not None:
                     self._is_moving=True
                     index = self._selected_vertex[0]
                     vertices = self.data.vertices[self.data.index == index]
                     vertices[vertex] = coord
                     self.edit_shape(index, vertices)
-        else:
-            self._is_selecting=True
-            if self._drag_start is None:
-                self._drag_start = coord
-            self._drag_box = np.array([self._drag_start, coord])
-            self._set_highlight()
+            else:
+                self._is_selecting=True
+                if self._drag_start is None:
+                    self._drag_start = coord
+                self._drag_box = np.array([self._drag_start, coord])
+                self._set_highlight()
 
     def _select(self):
         if (self._selected_shapes == self._selected_shapes_stored and
@@ -987,27 +997,21 @@ class Shapes(Layer):
             shape = self._shape_at(coord)
         elif self.mode == 'add_rectangle':
             # If ready to create rectangle start making one
-            if self._ready_to_create:
-                if np.all(self._create_coord != coord):
-                    shape = np.array([[self._create_coord, coord]])
-                    print(shape)
-                    self.add_shapes(rectangles = shape)
-                    self._ready_to_create = False
-                    self._selected_shapes = [self.data.count-1]
-                    self._creating = True
+            if self._ready_to_create and np.all(self._create_coord != coord):
+                shape = np.array([[self._create_coord, coord]])
+                self.add_shapes(rectangles = shape)
+                self._ready_to_create = False
+                self._selected_shapes = [self.data.count-1]
+                self.data.select_box(self._selected_shapes[0])
+                ind = np.all(self.data.selected_box==coord, axis=1).nonzero()[0][0]
+                self._selected_vertex = [self._selected_shapes[0], ind]
+                self._hover_shapes = [self._selected_shapes[0], ind]
+                self._creating = True
+                self._select()
             # While drawing a rectangle or doing nothing
-            if self._creating:
-                if event.is_dragging:
-                    # Drag any selected shapes
-                    self._move(coord)
-                elif self._is_moving:
-                    pass
-                elif self._is_selecting:
-                    pass
-                else:
-                    # Highlight boxes if hover over any
-                    self._hover_shapes = self._shape_at(coord)
-                    self._select()
+            if self._creating and event.is_dragging:
+                # Drag any selected shapes
+                self._move(coord)
                 shape = self._hover_shapes
             else:
                 shape = self._shape_at(coord)
@@ -1133,9 +1137,16 @@ class Shapes(Layer):
             self._create_coord = [None, None]
             self._is_moving = False
             self._selected_shapes = []
+            self._drag_start = None
+            self._drag_box = None
+            self._fixed_vertex = None
+            self._selected_vertex = [None, None]
+            self._hover_shapes = [None, None]
             self._creating = False
             self.data.select_box([])
             self._unselect()
+            shape = self._shape_at(coord)
+            self.status = self.get_message(coord, shape)
         else:
             raise ValueError("Mode not recongnized")
 
