@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-# title           : properties.py
-# description     :qt vectors layer
-# author          :bryant.chhun
-# date            :1/16/19
-# version         :0.0
-# usage           :
-# notes           :
-# python_version  :3.6
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QComboBox, QSpinBox

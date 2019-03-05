@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-# title           : properties.py
-# description     :class Vectors layer that defines properties
-# author          :bryant.chhun
-# date            :1/16/19
-# version         :0.0
-# usage           :
-# notes           :
-# python_version  :3.6
 
 from typing import Union
 
@@ -14,7 +5,7 @@ import numpy as np
 
 from .._base_layer import Layer
 from .._register import add_to_viewer
-from gui._vispy.scene.visuals import Line as LinesNode
+from ..._vispy.scene.visuals import Line as LinesNode
 from vispy.color import get_color_names
 
 from vispy.util.event import Event
