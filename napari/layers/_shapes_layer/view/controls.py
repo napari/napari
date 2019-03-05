@@ -15,20 +15,20 @@ class QtShapesControls(QFrame):
 
         self.select_button = QtSelectButton(layer)
         self.direct_button = QtDirectButton(layer)
-        self.addition_button = QtAdditionButton(layer)
         self.panzoom_button = QtPanZoomButton(layer)
+        self.rectangle_button = QtRectangleButton(layer)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.direct_button)
-        self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
+        self.button_group.addButton(self.rectangle_button)
 
         layout = QVBoxLayout()
         layout.addWidget(self.select_button)
         layout.addWidget(self.direct_button)
-        layout.addWidget(self.addition_button)
         layout.addWidget(self.panzoom_button)
+        layout.addWidget(self.rectangle_button)
         layout.addStretch(0)
         self.setLayout(layout)
         self.setMouseTracking(True)
@@ -38,14 +38,14 @@ class QtShapesControls(QFrame):
 
     def set_mode(self, event):
         mode = event.mode
-        if mode == 'add':
-            self.addition_button.setChecked(True)
-        elif mode == 'select':
+        if mode == 'select':
             self.select_button.setChecked(True)
         elif mode == 'direct':
             self.direct_button.setChecked(True)
         elif mode == 'pan/zoom':
             self.panzoom_button.setChecked(True)
+        elif mode == 'add_rectangle':
+            self.rectangle_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -102,14 +102,14 @@ class QtDirectButton(QRadioButton):
             if bool:
                 self.layer.mode = 'direct'
 
-class QtAdditionButton(QRadioButton):
+class QtRectangleButton(QRadioButton):
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
-        self.setToolTip('Addition mode')
+        self.setToolTip('Add rectangles')
         self.setChecked(False)
-        styleSheet = button_style('add')
+        styleSheet = button_style('rectangle')
         self.setStyleSheet(styleSheet)
         self.toggled.connect(lambda state=self: self._set_mode(state))
         self.setFixedWidth(28)
@@ -117,7 +117,7 @@ class QtAdditionButton(QRadioButton):
     def _set_mode(self, bool):
         with self.layer.events.mode.blocker(self._set_mode):
             if bool:
-                self.layer.mode = 'add'
+                self.layer.mode = 'add_rectangle'
 
 
 def button_style(name):

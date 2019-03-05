@@ -98,6 +98,10 @@ class Shapes(Layer):
             self._drag_box = None
             self._mouse_coord = [0, 0]
 
+            self._ready_to_create = False
+            self._creating = False
+            self._create_coord = [None, None]
+
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
             self._status = self._mode
@@ -190,13 +194,7 @@ class Shapes(Layer):
         if mode == self.mode:
             return
         old_mode = self.mode
-        if mode == 'add':
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
-            self.status = mode
-            self._mode = mode
-        elif mode == 'select':
+        if mode == 'select':
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
@@ -212,6 +210,12 @@ class Shapes(Layer):
             self.cursor = 'standard'
             self.interactive = True
             self.help = ''
+            self.status = mode
+            self._mode = mode
+        elif mode == 'add_rectangle':
+            self.cursor = 'cross'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom'
             self.status = mode
             self._mode = mode
         else:
@@ -978,18 +982,35 @@ class Shapes(Layer):
                 self._hover_shapes = self._shape_at(coord)
                 self._select()
             shape = self._hover_shapes
-        elif self.mode == 'add':
-            # Add mode not yet implemented
-            self._selected_shapes = []
-            self.data.select_box([])
-            self._unselect()
-            shape = self._shape_at(coord)
         elif self.mode == 'pan/zoom':
-            # If in pan/zoom mode unselect all
-            self._selected_shapes = []
-            self.data.select_box([])
-            self._unselect()
+            # If in pan/zoom mode just look at coord all
             shape = self._shape_at(coord)
+        elif self.mode == 'add_rectangle':
+            # If ready to create rectangle start making one
+            if self._ready_to_create:
+                if np.all(self._create_coord != coord):
+                    shape = np.array([[self._create_coord, coord]])
+                    print(shape)
+                    self.add_shapes(rectangles = shape)
+                    self._ready_to_create = False
+                    self._selected_shapes = [self.data.count-1]
+                    self._creating = True
+            # While drawing a rectangle or doing nothing
+            if self._creating:
+                if event.is_dragging:
+                    # Drag any selected shapes
+                    self._move(coord)
+                elif self._is_moving:
+                    pass
+                elif self._is_selecting:
+                    pass
+                else:
+                    # Highlight boxes if hover over any
+                    self._hover_shapes = self._shape_at(coord)
+                    self._select()
+                shape = self._hover_shapes
+            else:
+                shape = self._shape_at(coord)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1041,12 +1062,13 @@ class Shapes(Layer):
                         self._selected_shapes = []
                 self._select()
                 self.status = self.get_message(coord, shape)
-        elif self.mode == 'add':
-            # Add mode not yet implemented
-            pass
         elif self.mode == 'pan/zoom':
             # If in pan/zoom mode do nothing
             pass
+        elif self.mode == 'add_rectangle':
+            # Start drawing a rectangle
+            self._ready_to_create = True
+            self._create_coord = coord
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1102,12 +1124,18 @@ class Shapes(Layer):
             self._hover_shapes = shape
             self._select()
             self.status = self.get_message(coord, shape)
-        elif self.mode == 'add':
-            # Add mode not yet implemented
-            pass
         elif self.mode == 'pan/zoom':
             # If in pan/zoom mode do nothing
             pass
+        elif self.mode == 'add_rectangle':
+            # Finish drawing a rectangle
+            self._ready_to_create = False
+            self._create_coord = [None, None]
+            self._is_moving = False
+            self._selected_shapes = []
+            self._creating = False
+            self.data.select_box([])
+            self._unselect()
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1130,8 +1158,8 @@ class Shapes(Layer):
                     if box is not None:
                         self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
                     self._move(self._mouse_coord)
-            elif event.key == 'a':
-                self.mode = 'add'
+            elif event.key == 'r':
+                self.mode = 'add_rectangle'
             elif event.key == 'd':
                 self.mode = 'direct'
             elif event.key == 's':
