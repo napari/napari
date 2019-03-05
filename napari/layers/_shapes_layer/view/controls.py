@@ -18,6 +18,7 @@ class QtShapesControls(QFrame):
         self.panzoom_button = QtModeButton(layer, 'zoom', 'Pan/zoom mode', mode='pan/zoom')
         self.rectangle_button = QtModeButton(layer, 'rectangle', 'Add rectangles', mode='add_rectangle')
         self.ellipse_button = QtModeButton(layer, 'ellipse', 'Add ellipses', mode='add_ellipse')
+        self.line_button = QtModeButton(layer, 'line', 'Add lines', mode='add_line')
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -25,13 +26,15 @@ class QtShapesControls(QFrame):
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.rectangle_button)
         self.button_group.addButton(self.ellipse_button)
+        self.button_group.addButton(self.line_button)
 
         layout = QVBoxLayout()
+        layout.addWidget(self.panzoom_button)
         layout.addWidget(self.select_button)
         layout.addWidget(self.direct_button)
-        layout.addWidget(self.panzoom_button)
         layout.addWidget(self.rectangle_button)
         layout.addWidget(self.ellipse_button)
+        layout.addWidget(self.line_button)
         layout.addStretch(0)
         self.setLayout(layout)
         self.setMouseTracking(True)
@@ -53,6 +56,8 @@ class QtShapesControls(QFrame):
             self.rectangle_button.setChecked(True)
         elif mode == 'add_ellipse':
             self.ellipse_button.setChecked(True)
+        elif mode == 'add_line':
+            self.line_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
 
