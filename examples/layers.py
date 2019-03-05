@@ -3,40 +3,25 @@ Display multiple image layers using the add_image API and then reorder them
 using the layers swap method and remove one
 """
 
-import sys
-from PyQt5.QtWidgets import QApplication
-
 from skimage import data
 from skimage.color import rgb2gray
 from napari import Window, Viewer
+from napari.util import app_context
 
 
-# starting
-application = QApplication(sys.argv)
+with app_context():
+    # create the viewer and window
+    viewer = Viewer()
+    window = Window(viewer)
 
-# create the viewer and window
-viewer = Viewer()
-window = Window(viewer)
-# add the first image
-viewer.add_image(rgb2gray(data.astronaut()))
-viewer.layers[-1].name = 'astronaut'
-# add the second image
-viewer.add_image(data.camera())
-viewer.layers[-1].name = 'photographer'
-# add the third image
-viewer.add_image(data.coins())
-viewer.layers[-1].name = 'coins'
-# add the fourth image
-viewer.add_image(data.moon())
-viewer.layers[-1].name = 'moon'
+    # add the images
+    viewer.add_image(rgb2gray(data.astronaut()), name='astronaut')
+    viewer.add_image(data.camera(), name='photographer')
+    viewer.add_image(data.coins(), name='coins')
+    viewer.add_image(data.moon(), name='moon')
 
-# remove the coins
-viewer.layers.remove('coins')
+    # remove the coins
+    viewer.layers.remove('coins')
 
-# swap the order of camera and moon
-viewer.layers['photographer', 'moon'] = viewer.layers['moon', 'photographer']
-
-# turn off the visibility of the photographer
-#viewer.layers['photographer'].visible = False
-
-sys.exit(application.exec())
+    # swap the order of photographer and moon
+    viewer.layers['photographer', 'moon'] = viewer.layers['moon', 'photographer']
