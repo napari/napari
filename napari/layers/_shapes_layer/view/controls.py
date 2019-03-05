@@ -13,25 +13,30 @@ class QtShapesControls(QFrame):
         self.layer = layer
         self.layer.events.mode.connect(self.set_mode)
 
-        self.select_button = QtSelectButton(layer)
-        self.direct_button = QtDirectButton(layer)
-        self.panzoom_button = QtPanZoomButton(layer)
-        self.rectangle_button = QtRectangleButton(layer)
+        self.select_button = QtModeButton(layer, 'select', 'Select mode')
+        self.direct_button = QtModeButton(layer, 'direct', 'Direct select mode')
+        self.panzoom_button = QtModeButton(layer, 'zoom', 'Pan/zoom mode', mode='pan/zoom')
+        self.rectangle_button = QtModeButton(layer, 'rectangle', 'Add rectangles', mode='add_rectangle')
+        self.ellipse_button = QtModeButton(layer, 'ellipse', 'Add ellipses', mode='add_ellipse')
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.direct_button)
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.rectangle_button)
+        self.button_group.addButton(self.ellipse_button)
 
         layout = QVBoxLayout()
         layout.addWidget(self.select_button)
         layout.addWidget(self.direct_button)
         layout.addWidget(self.panzoom_button)
         layout.addWidget(self.rectangle_button)
+        layout.addWidget(self.ellipse_button)
         layout.addStretch(0)
         self.setLayout(layout)
         self.setMouseTracking(True)
+
+        self.panzoom_button.setChecked(True)
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer.mode
@@ -46,36 +51,24 @@ class QtShapesControls(QFrame):
             self.panzoom_button.setChecked(True)
         elif mode == 'add_rectangle':
             self.rectangle_button.setChecked(True)
+        elif mode == 'add_ellipse':
+            self.ellipse_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
 
 
-class QtPanZoomButton(QRadioButton):
-    def __init__(self, layer):
+class QtModeButton(QRadioButton):
+    def __init__(self, layer, button_name, tool_tip, mode=None):
         super().__init__()
 
+        if mode is None:
+            self.mode = button_name
+        else:
+            self.mode = mode
         self.layer = layer
-        self.setToolTip('Pan/zoom mode')
-        self.setChecked(True)
-        styleSheet = button_style('zoom')
-        self.setStyleSheet(styleSheet)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
-            if bool:
-                self.layer.mode = 'pan/zoom'
-
-
-class QtSelectButton(QRadioButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setToolTip('Select mode')
+        self.setToolTip(tool_tip)
         self.setChecked(False)
-        styleSheet = button_style('select')
+        styleSheet = button_style(button_name)
         self.setStyleSheet(styleSheet)
         self.toggled.connect(lambda state=self: self._set_mode(state))
         self.setFixedWidth(28)
@@ -83,41 +76,7 @@ class QtSelectButton(QRadioButton):
     def _set_mode(self, bool):
         with self.layer.events.mode.blocker(self._set_mode):
             if bool:
-                self.layer.mode = 'select'
-
-class QtDirectButton(QRadioButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setToolTip('Direct select mode')
-        self.setChecked(False)
-        styleSheet = button_style('direct')
-        self.setStyleSheet(styleSheet)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
-            if bool:
-                self.layer.mode = 'direct'
-
-class QtRectangleButton(QRadioButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setToolTip('Add rectangles')
-        self.setChecked(False)
-        styleSheet = button_style('rectangle')
-        self.setStyleSheet(styleSheet)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
-            if bool:
-                self.layer.mode = 'add_rectangle'
+                self.layer.mode = self.mode
 
 
 def button_style(name):
