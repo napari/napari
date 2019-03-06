@@ -32,6 +32,20 @@ Make the development version available globally:
 $ pip install -e .
 ```
 
+## Building the dev-docs
+
+Go to documentation source
+```sh
+$ cd docs/source
+```
+
+Build the docs with help of given Makefile
+```sh
+$ make html
+```
+
+Then you can find the built docs in `docs/source/_build/html`
+
 ## Making changes
 
 Create a new feature branch:
@@ -43,6 +57,13 @@ $ git checkout master -b your-branch-name
 You can view them with:
 ```sh
 $ git status
+```
+
+If you are changing anything with files and folder structure, 
+remember to update doctree
+```sh
+$ cd docs
+$ sphinx-apidoc -f -P -F -o source ../napari
 ```
 
 Add and commit your changed files:
