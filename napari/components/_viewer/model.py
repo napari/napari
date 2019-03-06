@@ -1,8 +1,7 @@
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from vispy.util.event import EmitterGroup, Event
-
+from ...util.event import EmitterGroup, Event
 from .view import QtViewer
 
 

@@ -3,8 +3,7 @@ from contextlib import contextmanager
 
 import weakref
 
-from vispy.util.event import Event
-
+from ...util.event import EmitterGroup, Event
 from ._visual_wrapper import VisualWrapper
 
 
