@@ -41,7 +41,8 @@ class QtImageLayer(QtLayer):
         self.layer.interpolation = text
 
     def _on_interpolation_change(self, event):
-        with self.layer.events.interpolation.blocker(self._on_interpolation_change):
+        with self.layer.events.interpolation.blocker(
+            self._on_interpolation_change):
             index = self.interpComboBox.findText(
                 self.layer.interpolation, Qt.MatchFixedString)
             self.interpComboBox.setCurrentIndex(index)

@@ -20,8 +20,10 @@ with app_context():
     viewer.add_image(data.coins(), name='coins')
     viewer.add_image(data.moon(), name='moon')
 
+    layers = viewer.layers
+
     # remove the coins
-    viewer.layers.remove('coins')
+    layers.remove('coins')
 
     # swap the order of photographer and moon
-    viewer.layers['photographer', 'moon'] = viewer.layers['moon', 'photographer']
+    layers['photographer', 'moon'] = layers['moon', 'photographer']
