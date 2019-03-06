@@ -198,13 +198,13 @@ class Shapes(Layer):
         if mode == 'select':
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = 'hold <space> to pan/zoom, press <delete> to remove selected'
             self.status = mode
             self._mode = mode
         elif mode == 'direct':
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = 'hold <space> to pan/zoom, press <delete> to remove selected'
             self.status = mode
             self._mode = mode
         elif mode == 'pan/zoom':
@@ -1295,6 +1295,9 @@ class Shapes(Layer):
                 self.mode = 'select'
             elif event.key == 'z':
                 self.mode = 'pan/zoom'
+            elif event.key == 'Backspace':
+                if self.mode == 'select' or self.mode == 'direct':
+                    self.remove_shapes(self._selected_shapes)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
