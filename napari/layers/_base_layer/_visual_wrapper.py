@@ -1,6 +1,7 @@
 # TODO: create & use our own transform class
 from vispy.visuals.transforms import STTransform
 from vispy.gloo import get_state_presets
+from ...util.event import EmitterGroup, Event
 
 
 class VisualWrapper:
@@ -35,6 +36,11 @@ class VisualWrapper:
     def __init__(self, central_node):
         self._node = central_node
         self._blending = 'translucent'
+        self.events = EmitterGroup(source=self,
+                                   auto_connect=True,
+                                   blending=Event,
+                                   opacity=Event,
+                                   visible=Event)
 
     _blending_modes = set(get_state_presets().keys())
 
@@ -88,6 +94,7 @@ class VisualWrapper:
                              f'got {opacity}')
 
         self._node.opacity = opacity
+        self.events.opacity()
 
     @property
     def blending(self):
@@ -117,6 +124,7 @@ class VisualWrapper:
                              f'got {blending}')
         self._node.set_gl_state(blending)
         self._blending = blending
+        self.events.blending()
 
     @property
     def visible(self):
@@ -127,6 +135,7 @@ class VisualWrapper:
     @visible.setter
     def visible(self, visibility):
         self._node.visible = visibility
+        self.events.visible()
 
     @property
     def scale(self):

@@ -9,6 +9,7 @@ class QtImageControls(QWidget):
         super().__init__()
 
         self.layer = layer
+        self.layer.events.clim.connect(self.clim_slider_update)
 
         # Create clim slider
         self.climSlider = QVRangeSlider(slider_range=[0, 1, 0.0001],
@@ -34,7 +35,7 @@ class QtImageControls(QWidget):
                 layer.clim = [cmin, cmax]
                 layer._qt_controls.clim_slider_update()
 
-    def clim_slider_update(self):
+    def clim_slider_update(self, event):
         valmin, valmax = self.layer._clim_range
         cmin, cmax = self.layer.clim
         slidermin = (cmin - valmin)/(valmax - valmin)
