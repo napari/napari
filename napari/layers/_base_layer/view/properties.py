@@ -175,19 +175,19 @@ class QtLayer(QFrame):
         self.setExpanded(not self.expanded)
 
     def _on_layer_name_change(self, event):
-        with self.layer.events.name.blocker(self._on_layer_name_change):
+        with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
 
     def _on_opacity_change(self, event):
-        with self.layer.events.opacity.blocker(self._on_opacity_change):
+        with self.layer.events.opacity.blocker():
             self.opacitySilder.setValue(self.layer.opacity*100)
 
     def _on_blending_change(self, event):
-        with self.layer.events.blending.blocker(self._on_blending_change):
+        with self.layer.events.blending.blocker():
             index = self.blendComboBox.findText(
                 self.layer.blending, Qt.MatchFixedString)
             self.blendComboBox.setCurrentIndex(index)
 
     def _on_visible_change(self, event):
-        with self.layer.events.visible.blocker(self._on_visible_change):
+        with self.layer.events.visible.blocker():
             self.visibleCheckBox.setChecked(self.layer.visible)
