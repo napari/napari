@@ -1,4 +1,4 @@
-from vispy.util.event import EmitterGroup
+from ...util.event import EmitterGroup
 
 from ._multi import MultiIndexList
 from ._typed import TypedList
