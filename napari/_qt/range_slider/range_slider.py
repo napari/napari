@@ -37,7 +37,7 @@ class QRangeSlider(QtWidgets.QWidget):
         self.start_pos = None
         self.display_min = None
         self.display_max = None
-        self.setEnabled(False)
+        self.setEnabled(True)
 
         if slider_range:
             self.setRange(slider_range)

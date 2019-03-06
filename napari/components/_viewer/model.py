@@ -1,8 +1,7 @@
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from vispy.util.event import EmitterGroup, Event
-
+from ...util.event import EmitterGroup, Event
 from .view import QtViewer
 
 
@@ -201,3 +200,16 @@ class Viewer:
             self.interactive = True
             self._top = None
         self._canvas.native.setFocus()
+
+
+    def _calc_max_dims(self):
+        """Calculates the number of maximum dimensions in the contained images.
+        """
+        max_dims = 0
+
+        for layer in self.viewer.layers:
+            dims = layer.ndim
+            if dims > max_dims:
+                max_dims = dims
+
+        return max_dims

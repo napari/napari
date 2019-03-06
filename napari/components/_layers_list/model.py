@@ -1,7 +1,6 @@
 import weakref
 from collections.abc import Iterable, Sequence
 
-from vispy.util.event import EmitterGroup, Event
 from ...layers import Layer
 
 from ...util.naming import inc_name_count
