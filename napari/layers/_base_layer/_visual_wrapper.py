@@ -1,7 +1,7 @@
 # TODO: create & use our own transform class
 from vispy.visuals.transforms import STTransform
 from vispy.gloo import get_state_presets
-from vispy.util.event import EmitterGroup, Event
+from ...util.event import EmitterGroup, Event
 
 
 class VisualWrapper:

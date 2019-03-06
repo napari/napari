@@ -32,8 +32,8 @@ with app_context():
     layer.name = 'spots'
 
     # change the layer visibility
-    #layer.visible = False
-    #layer.visible = True
+    layer.visible = False
+    layer.visible = True
 
     # change the layer selection
     layer.selected = False
@@ -43,7 +43,7 @@ with app_context():
     layer._qt_properties.setExpanded(True)
 
     # change the layer opacity
-    #layer.opacity = 0.9
+    layer.opacity = 0.9
 
     # change the layer blending mode
     layer.blending = 'opaque'
@@ -59,10 +59,10 @@ with app_context():
     layer.symbol = 'cross'
 
     # change the layer marker n_dimensional status
-    #layer.n_dimensional = True
+    layer.n_dimensional = True
 
     # change the layer marker size
-    #layer.size = 20
+    layer.size = 20
 
     # change the layer mode
     layer.mode = 'add'

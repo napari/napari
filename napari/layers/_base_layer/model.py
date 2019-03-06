@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import weakref
 
-from ...util.event import EmitterGroup, Event
+from ...util.event import Event
 from ._visual_wrapper import VisualWrapper
 
 

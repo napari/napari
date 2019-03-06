@@ -101,17 +101,17 @@ class QtMarkersLayer(QtLayer):
             self.layer.n_dimensional = False
 
     def _on_n_dim_change(self, event):
-        with self.layer.events.blocker(self._on_n_dim_change):
+        with self.layer.events.n_dimensional.blocker(self._on_n_dim_change):
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_symbol_change(self, event):
-        with self.layer.events.blocker(self._on_symbol_change):
+        with self.layer.events.symbol.blocker(self._on_symbol_change):
             index = self.symbolComboBox.findText(
                 self.layer.symbol, Qt.MatchFixedString)
             self.symbolComboBox.setCurrentIndex(index)
 
     def _on_size_change(self, event):
-        with self.layer.events.blocker(self._on_size_change):
+        with self.layer.events.size.blocker(self._on_size_change):
             value = self.layer.size
             if isinstance(value, Iterable):
                 if isinstance(value, list):
@@ -120,13 +120,13 @@ class QtMarkersLayer(QtLayer):
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event):
-        with self.layer.events.blocker(self._on_edge_color_change):
+        with self.layer.events.edge_color.blocker(self._on_edge_color_change):
             index = self.edgeComboBox.findText(
                 self.layer.edge_color, Qt.MatchFixedString)
             self.edgeComboBox.setCurrentIndex(index)
 
     def _on_face_color_change(self, event):
-        with self.layer.events.blocker(self._on_face_color_change):
+        with self.layer.events.face_color.blocker(self._on_face_color_change):
             index = self.faceComboBox.findText(
                 self.layer.face_color, Qt.MatchFixedString)
             self.faceComboBox.setCurrentIndex(index)
