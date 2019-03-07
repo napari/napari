@@ -204,10 +204,10 @@ class Dims(Component) :
         """
         if nb_dimensions<self.nb_dimensions:
             self.range = self.range[:nb_dimensions]
-            self.point = self.range[:nb_dimensions]
-            self.interval = self.range[:nb_dimensions]
-            self.mode = self.range[:nb_dimensions]
-            self.display = self.range[:nb_dimensions]
+            self.point = self.point[:nb_dimensions]
+            self.interval = self.interval[:nb_dimensions]
+            self.mode = self.mode[:nb_dimensions]
+            self.display = self.display[:nb_dimensions]
 
             # First we notify listeners that the number of dimensions have changed:
             self._notify_listeners(source=self, type=DimsEvent.NbDimChange)

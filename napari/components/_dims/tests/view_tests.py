@@ -22,6 +22,7 @@ dims.set_point(2,50)
 
 # defines a axis change listener:
 def listener_axis(source, axis):
+    pass
     print((source, axis))
 
 # adds listener to model:
@@ -46,6 +47,10 @@ widget.show()
 def myloop():
     for i in range(0, 1000):
         dims.set_point(0, i % 100)
+
+        #print(widget.sliders[0])
+        print(widget.layout().itemAt(0))
+
         sleep(0.1)
 
         if i % 50 == 0:

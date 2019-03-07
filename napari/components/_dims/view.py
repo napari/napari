@@ -9,7 +9,7 @@ from napari.components._dims.model import DimsMode, DimsEvent
 
 class QtDims(QWidget):
 
-    _slider_height = 19
+    _slider_height = 22
 
     # Qt Signals for sending events to Qt thread
     update_axis = pyqtSignal(int)
@@ -23,8 +23,8 @@ class QtDims(QWidget):
 
         self.dims = dims
 
-        self.setFixedHeight(32)
-        self.setFixedWidth(512)
+
+        self.setMinimumWidth(512)
 
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -67,7 +67,13 @@ class QtDims(QWidget):
 
     def update_slider(self, axis: int):
 
+        if axis>=self.num_sliders:
+            return
+
         slider = self.sliders[axis]
+
+        if slider is None:
+            return
 
         if axis<self.dims.nb_dimensions:
             if self.dims.get_mode(axis)==DimsMode.Point:
