@@ -276,7 +276,7 @@ class Image(Layer):
                                                list(self._colormaps.keys()))
             self._colormaps[name] = colormap
         else:
-            warn('invalid value for colormap: ', colormap)
+            warn(f'invalid value for colormap: {colormap}')
             name = self.colormap_name
         self.colormap_name = name
         self._node.cmap = self._colormaps[name]
