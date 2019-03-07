@@ -2,6 +2,24 @@ from napari.components import Dims
 from napari.components._dims.model import Mode
 
 
+def test_range():
+    """
+    Tests mode initialisation:
+    """
+    dims = Dims(2)
+
+
+    dims.set_range(3, (0,1000,0.1))
+
+    print(dims.range)
+
+    assert dims.nb_dimensions == 4
+
+    assert dims.range[0] == (None,None,None)
+    assert dims.range[1] == (None,None,None)
+    assert dims.range[2] == (None,None,None)
+    assert dims.range[3] == (0,1000,0.1)
+
 def test_mode():
     """
     Tests mode initialisation:

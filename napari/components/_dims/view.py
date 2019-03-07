@@ -2,7 +2,9 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
 from typing import Union
 
+from napari._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
 from napari.components import Dims
+from napari.components._dims.model import Mode
 
 
 class QtDims(QWidget):
@@ -18,12 +20,15 @@ class QtDims(QWidget):
 
         self.dims = dims
 
+        self.setFixedHeight(32)
+        self.setFixedWidth(512)
+
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-        self.setFixedHeight(0)
+        #self.setFixedHeight(0)
 
-        for axis in range(0,dims.nb_dimensions):
+        for axis in range(0, dims.nb_dimensions):
             self.get_or_create_slider(axis)
 
 
@@ -57,11 +62,12 @@ class QtDims(QWidget):
 
         while axis>=self.num_sliders:
             new_slider_axis = self.num_sliders
-            slider = self.create_slider_widget()
+            #slider = self._create_slider_widget()
+
+            slider = self._create_range_slider_widget(new_slider_axis)
+            #slider = self._create_slider_widget(new_slider_axis)
             grid.addWidget(slider, new_slider_axis, 0)
             self.sliders.append(slider)
-
-            slider.valueChanged.connect(lambda value: self.dims.set_point(new_slider_axis, value))
 
         #slider.setMaximum(max_axis_length - 1)
 
@@ -71,12 +77,24 @@ class QtDims(QWidget):
 
 
     def update_slider(self, axis: int):
+        pass
+
         slider = self.sliders[axis]
-        slider.setValue(self.dims.get_point(axis))
+
+        if hasattr(slider,'collapsed'):
+            if self.dims.get_mode(axis)==Mode.Point:
+                slider.collapsed = True
+                slider.setValue(self.dims.get_point(axis))
+            elif self.dims.get_mode(axis)==Mode.Interval:
+                slider.collapsed = False
+                slider.setValues(self.dims.get_interval(axis))
+        else:
+            slider.setValue(self.dims.get_point(axis))
 
 
 
-    def create_slider_widget(self):
+
+    def _create_slider_widget(self, axis):
         slider = QSlider(Qt.Horizontal)
         slider.setFocusPolicy(Qt.StrongFocus)
         slider.setMinimum(0)
@@ -86,8 +104,59 @@ class QtDims(QWidget):
         # tick_interval = int(max(8,max_axis_length/8))
         # slider.setTickInterval(tick_interval)
         slider.setSingleStep(1)
+
+        def value_change_listener(value):
+            self.dims.set_mode(axis, Mode.Point)
+            self.dims.set_point(axis, value)
+
+        slider.valueChanged.connect(value_change_listener)
+
         return slider
 
+    def _create_range_slider_widget(self, axis):
+
+        range = self.dims.get_range(axis)
+        interval = self.dims.get_interval(axis)
+
+        if range is None or range == (None, None, None):
+            range = (0,100,1)
+        if interval is None or interval == (None, None):
+            interval = (0,100)
+
+
+        slider = QHRangeSlider(slider_range=range,
+                               values=interval,
+                               parent=self)
+
+        slider.default_collapse_logic=False
+        slider.setFocusPolicy(Qt.StrongFocus)
+
+        # notify of changes while sliding:
+        slider.setEmitWhileMoving(True)
+
+        # allows range slider to collapse to a single knob:
+        slider.collapsable = True
+
+        # and sets it in the correct state:
+        slider.collapsed = self.dims.get_mode(axis)==Mode.Point
+
+        # Listener to be used for sending events back to model:
+        def slider_change_listener(min, max):
+            if slider.collapsed:
+                self.dims.set_point(axis, min)
+            elif not slider.collapsed:
+                self.dims.set_interval(axis, (min, max))
+
+        # linking the listener to the slider:
+        slider.rangeChanged.connect(slider_change_listener)
+
+        # Listener to be used for sending events back to model:
+        def collapse_change_listener(collapsed):
+            self.dims.set_mode(axis, Mode.Point if collapsed else Mode.Interval)
+
+        slider.collapsedChanged.connect(collapse_change_listener)
+
+        return slider
 
 
     #

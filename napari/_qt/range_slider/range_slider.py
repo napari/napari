@@ -10,6 +10,7 @@ class QRangeSlider(QtWidgets.QWidget):
     QRangeSlider class, super class for QVRangeSlider and QHRangeSlider.
     """
     rangeChanged = QtCore.pyqtSignal(float, float)
+    collapsedChanged = QtCore.pyqtSignal(bool)
 
     def __init__(self, slider_range, values, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -23,6 +24,7 @@ class QRangeSlider(QtWidgets.QWidget):
         self.setMouseTracking(False)
         self.single_step = 0.0
 
+        self.default_collapse_logic = True
         self.collapsable = True
         self.collapsed = False
         self.prev_moving = None
@@ -42,11 +44,11 @@ class QRangeSlider(QtWidgets.QWidget):
         if slider_range:
             self.setRange(slider_range)
         else:
-            self.setRange([0.0, 1.0, 0.01])
+            self.setRange((0.0, 1.0, 0.01))
         if values:
             self.setValues(values)
         else:
-            self.setValues([0.3, 0.6])
+            self.setValues((0.3, 0.6))
 
     def emitRange(self):
         change_min = self.old_scale_min != self.scale_min
@@ -58,6 +60,9 @@ class QRangeSlider(QtWidgets.QWidget):
             # For debug purposes
             # if False:
             #     print("Range change:", self.scale_min, self.scale_max)
+
+    def emitCollapse(self, collapsed_state):
+        self.collapsedChanged.emit(collapsed_state)
 
     def getValues(self):
         """Values of the range bar.
@@ -74,13 +79,30 @@ class QRangeSlider(QtWidgets.QWidget):
 
         Parameters
         ----------
-        values : 2-tuple of int
+        values : 2-tuple of float/ints
             Start and end of the range.
         """
-        self.scale_min, self.scale_max = values
+        if values is not None:
+            self.scale_min, self.scale_max = values
+            if self.scale_min is None:
+                self.scale_min = self.start
+            if self.scale_max is None:
+                self.scale_max = self.end
+        else:
+            self.scale_min = self.start
+            self.scale_max = self.end
         self.emitRange()
         self.updateDisplayValues()
         self.update()
+
+    def setValue(self, value):
+        """Set values of the range bar.
+
+        Parameters
+        ----------
+        values : single float/int value --  for use when collapsed
+        """
+        self.setValues((value, value))
 
     def mouseMoveEvent(self, event):
         if self.enabled:
@@ -160,26 +182,36 @@ class QRangeSlider(QtWidgets.QWidget):
                         # print("not collapsed")
                         self.collapse()
                         self.collapsed = True
+                    self.emitCollapse(self.collapsed)
 
             self.start_display_min = self.display_min
             self.start_display_max = self.display_max
             self.start_pos = pos
 
     def collapse(self):
-        self.bc_min, self.bc_max = self.scale_min, self.scale_max
-        self.setValues([(self.scale_max+self.scale_min)/2,
-                       (self.scale_max+self.scale_min)/2])
+        if self.default_collapse_logic:
+            self.bc_min, self.bc_max = self.scale_min, self.scale_max
+            min_value = (self.scale_max+self.scale_min)/2
+            max_value = (self.scale_max+self.scale_min)/2
+            self.setValues((min_value,max_value))
+        else:
+            #self.setValues((self.scale_min, self.scale_max))
+            self.update()
 
     def expand(self):
-        min_value = self.scale_min - (self.bc_max - self.bc_min)/2
-        max_value = self.scale_min + (self.bc_max - self.bc_min)/2
-        if min_value < self.start:
-            min_value = self.start
-            max_value = min_value + self.bc_max - self.bc_min
-        elif max_value > self.end:
-            max_value = self.end
-            min_value = max_value - (self.bc_max - self.bc_min)
-        self.setValues([min_value, max_value])
+        if self.default_collapse_logic:
+            min_value = self.scale_min - (self.bc_max - self.bc_min)/2
+            max_value = self.scale_min + (self.bc_max - self.bc_min)/2
+            if min_value < self.start:
+               min_value = self.start
+               max_value = min_value + self.bc_max - self.bc_min
+            elif max_value > self.end:
+               max_value = self.end
+               min_value = max_value - (self.bc_max - self.bc_min)
+            self.setValues((min_value, max_value))
+        else:
+            #self.setValues((self.scale_min, self.scale_max))
+            self.update()
 
     def mouseReleaseEvent(self, event):
         if self.enabled:
@@ -191,10 +223,8 @@ class QRangeSlider(QtWidgets.QWidget):
         self.updateDisplayValues()
 
     def setRange(self, slider_range):
-        self.start = slider_range[0]
-        self.scale = slider_range[1] - slider_range[0]
-        self.single_step = slider_range[2]
-        self.end = slider_range[1]
+        self.start, self.end, self.single_step = slider_range
+        self.scale = self.end  - self.start
 
     def setEmitWhileMoving(self, flag):
         if flag:

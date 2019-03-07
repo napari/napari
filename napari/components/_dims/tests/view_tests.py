@@ -7,6 +7,7 @@ import threading
 from PyQt5.QtWidgets import QApplication
 
 from napari.components import Dims
+from napari.components._dims.model import Mode
 from napari.components._dims.view import QtDims
 
 # starts the QT event loop
@@ -15,6 +16,9 @@ app = QApplication(sys.argv)
 # Instanciates a dimensions model:
 dims = Dims(3)
 
+dims.set_mode(0, Mode.Point)
+dims.set_point(1,50)
+dims.set_point(2,50)
 
 # defines a model listener:
 def listener(source, axis):

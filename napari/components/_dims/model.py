@@ -1,6 +1,6 @@
 from math import inf
 
-from typing import Union
+from typing import Union, Tuple
 
 from napari.components.component import Component
 from ...util.misc import (compute_max_shape as _compute_max_shape,
@@ -9,8 +9,8 @@ from enum import Enum
 
 
 class Mode(Enum):
-     Point = 0
-     Interval = 1
+      Point = 0
+      Interval = 1
 
 
 class Dims(Component) :
@@ -21,13 +21,14 @@ class Dims(Component) :
         Dimensions object modelling multi-dimensional slicing, cropping, and displaying in Napari
         Parameters
         ----------
-        init_max_dims :
+        init_max_dims : initial number of dimensions
         """
         super().__init__()
 
 
         self.viewer = None
 
+        self.range    = []
         self.point    = []
         self.interval = []
         self.mode     = []
@@ -35,12 +36,35 @@ class Dims(Component) :
 
         self._ensure_axis_present(init_max_dims-1)
 
-    def set_point(self, axis: int, value: Union[int,float]):
-        """
 
+    def set_range(self, axis: int, range: Tuple[Union[int,float]]):
+        """
+        Sets the range (min, max, step) for a given axis (dimension)
         Parameters
         ----------
-        axis :
+        axis : dimension index
+        range : (min, max, step) tuple
+        """
+        self._ensure_axis_present(axis)
+        if self.range[axis] != range:
+            self.range[axis] = range
+            self._notify_listeners(source=self, axis=axis)
+
+    def get_range(self, axis):
+        """
+        Returns the point at which this dimension is sliced
+        Parameters
+        ----------
+        axis : dimension index
+        """
+        return self.range[axis]
+
+    def set_point(self, axis: int, value: Union[int,float]):
+        """
+        Sets thepoint at which to slice this dimension
+        Parameters
+        ----------
+        axis : dimension index
         value :
         """
         self._ensure_axis_present(axis)
@@ -50,20 +74,20 @@ class Dims(Component) :
 
     def get_point(self, axis):
         """
-
+        Returns the point at which this dimension is sliced
         Parameters
         ----------
-        axis :
+        axis : dimension index
         """
         return self.point[axis]
 
-    def set_interval(self, axis: int, interval: tuple):
+    def set_interval(self, axis: int, interval: Tuple[Union[int, float]]):
         """
-
+        Sets the interval used for cropping and projecting this dimension
         Parameters
         ----------
-        axis :
-        minmax :
+        axis : dimension index
+        interval : (min, max) tuple
         """
         self._ensure_axis_present(axis)
         if self.interval[axis] != interval:
@@ -75,17 +99,17 @@ class Dims(Component) :
 
         Parameters
         ----------
-        axis :
+        axis : dimension index
         """
         return self.interval[axis]
 
     def set_mode(self, axis: int, mode:Mode):
         """
-
+        Sets the mode: Point or Interval
         Parameters
         ----------
-        axis :
-        mode :
+        axis : dimension index
+        mode : Point or Interval
         """
         self._ensure_axis_present(axis)
         if self.mode[axis]!=mode:
@@ -94,20 +118,20 @@ class Dims(Component) :
 
     def get_mode(self, axis):
         """
-
+        Returns the mode for a given axis
         Parameters
         ----------
-        axis :
+        axis : dimension index
         """
         return self.mode[axis]
 
     def set_display(self, axis: int, display:bool):
         """
-
+        Sets the display boolean flag for a given axis
         Parameters
         ----------
-        axis :
-        mode :
+        axis : dimension index
+        display : True for display, False for slice or project...
         """
         self._ensure_axis_present(axis)
         if self.display[axis]!=display:
@@ -116,10 +140,10 @@ class Dims(Component) :
 
     def get_display(self, axis):
         """
-
+        retruns the display boolean flag for a given axis
         Parameters
         ----------
-        axis :
+        axis : dimension index
         """
         return self.display[axis]
 
@@ -132,6 +156,7 @@ class Dims(Component) :
         """
         if axis >= self.nb_dimensions:
             margin_length = 1+ axis - self.nb_dimensions
+            self.range.extend([(None,None,None)] * (margin_length))
             self.point.extend([0.0]*(margin_length))
             self.interval.extend([None] * (margin_length))
             self.mode.extend([None] * (margin_length))
