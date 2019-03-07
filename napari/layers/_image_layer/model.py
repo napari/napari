@@ -1,8 +1,10 @@
+from warnings import warn
+
 import numpy as np
-from numpy import clip, integer, ndarray, append, insert, delete, empty
+from numpy import clip, integer, ndarray
 from copy import copy
 
-from vispy import color
+import vispy.color
 
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
@@ -40,9 +42,9 @@ def vispy_or_mpl_colormap(name):
     KeyError
         If no colormap with that name is found within vispy or matplotlib.
     """
-    vispy_cmaps = color.get_colormaps()
+    vispy_cmaps = vispy.color.get_colormaps()
     if name in vispy_cmaps:
-        cmap = color.get_colormap(name)
+        cmap = vispy.color.get_colormap(name)
     else:
         try:
             mpl_cmap = getattr(cm, name)
@@ -50,13 +52,13 @@ def vispy_or_mpl_colormap(name):
             raise KeyError(f'Colormap "{name}" not found in either vispy '
                            'or matplotlib.')
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
-        cmap = color.Colormap(mpl_colors)
+        cmap = vispy.color.Colormap(mpl_colors)
     return cmap
 
 
 AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
                        for k in matplotlib_colormaps +
-                       list(color.get_colormaps())}
+                       list(vispy.color.get_colormaps())}
 
 
 @add_to_viewer
@@ -81,7 +83,8 @@ class Image(Layer):
     default_colormap = 'magma'
     default_interpolation = 'nearest'
 
-    def __init__(self, image, meta=None, multichannel=None, *, name=None, **kwargs):
+    def __init__(self, image, meta=None, multichannel=None, *, name=None,
+                 **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -97,8 +100,9 @@ class Image(Layer):
 
         self._image = image
         self._meta = meta
-        self.colormap = self.default_colormap
-        self.interpolation = self.default_interpolation
+        self.colormap_name = Image.default_colormap
+        self.colormap = Image.default_colormap
+        self.interpolation = Image.default_interpolation
         self._interpolation_names = interpolation_names
 
         # update flags
@@ -247,16 +251,26 @@ class Image(Layer):
     def colormap(self):
         """string or ColorMap: Colormap to use for luminance images.
         """
-        return self._node.cmap
+        return self.colormap_name, self._node.cmap
 
     @colormap.setter
     def colormap(self, colormap):
-        try:
-            cmap = self._colormaps[colormap]
-        except KeyError:
-            pass
-
-        self._node.cmap = cmap
+        name = '[unnamed colormap]'
+        if isinstance(colormap, str):
+            name = colormap
+        elif isinstance(colormap, tuple):
+            name, cmap = colormap
+            self._colormaps[name] = cmap
+        elif isinstance(colormap, dict):
+            self._colormaps.update(colormap)
+            name = list(colormap)[0]  # first key in dict
+        elif isinstance(colormap, vispy.color.Colormap):
+            self._colormaps[name] = colormap
+        else:
+            warn('invalid value for colormap: ', colormap)
+            name = self.colormap_name
+        self.colormap_name = name
+        self._node.cmap = self._colormaps[name]
         self.events.colormap()
 
     @property
