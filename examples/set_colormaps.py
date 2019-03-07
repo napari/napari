@@ -18,14 +18,17 @@ blue = vispy.color.Colormap([[0., 0., 0.], [0., 0., 1.]])
 with napari.util.app_context():
     v = napari.Viewer()
 
-    rlayer = v.add_image(rch)
+    rlayer = v.add_image(rch, name='red channel')
     rlayer.blending = 'additive'
-    rlayer.Colormap = 'red', red
-    glayer = v.add_image(gch)
+    rlayer.colormap = 'red', red
+    glayer = v.add_image(gch, name='green channel')
     glayer.blending = 'additive'
     glayer.colormap = green  # this will appear as [unnamed colormap]
-    blayer = v.add_image(bch)
+    blayer = v.add_image(bch, name='blue channel')
     blayer.blending = 'additive'
     blayer.colormap = {'blue': blue}
+
+    # set the blayer property widget to be expanded
+    blayer._qt_properties.setExpanded(True)
 
     w = napari.Window(v)
