@@ -13,6 +13,7 @@ class QtImageLayer(QtLayer):
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
             comboBox.addItem(cmap)
+        comboBox._allitems = set(self.layer.colormaps)
         index = comboBox.findText('magma', Qt.MatchFixedString)
         comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
@@ -48,6 +49,9 @@ class QtImageLayer(QtLayer):
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_colormap_change(self, event):
-        if self.layer.colormap_name != self.colormap_combobox.currentText():
-            self.colormap_combobox.setCurrentText(self.layer.colormap_name)
-        return
+        name = self.layer.colormap_name
+        if name not in self.colormap_combobox._allitems:
+            self.colormap_combobox._allitems.add(name)
+            self.colormap_combobox.addItem(name)
+        if name != self.colormap_combobox.currentText():
+            self.colormap_combobox.setCurrentText(name)
