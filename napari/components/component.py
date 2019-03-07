@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from contextlib import contextmanager
 
 
@@ -7,21 +9,21 @@ class Component:
     def __init__(self):
         super().__init__()
 
-        self._listeners = []
+        self._listeners = defaultdict(list)
         self._ignore_notifications = False
 
 
-    def add_listener(self, listener):
-        self._listeners.append(listener)
+    def add_listener(self, type, listener):
+        self._listeners[type].append(listener)
 
 
-    def remove_listener(self, listener):
-        self._listeners.remove(listener)
+    def remove_listener(self, type, listener):
+        self._listeners[type].remove(listener)
 
 
-    def _notify_listeners(self, **kwargs):
+    def _notify_listeners(self, type, **kwargs):
         if not self._ignore_notifications:
-            for listener in self._listeners:
+            for listener in self._listeners[type]:
                 listener(**kwargs)
 
     @contextmanager

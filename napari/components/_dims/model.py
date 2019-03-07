@@ -8,9 +8,14 @@ from ...util.misc import (compute_max_shape as _compute_max_shape,
 from enum import Enum
 
 
-class Mode(Enum):
+class DimsMode(Enum):
       Point = 0
       Interval = 1
+
+
+class DimsEvent(Enum):
+      AxisChange = 0
+      NbDimChange = 1
 
 
 class Dims(Component) :
@@ -37,6 +42,24 @@ class Dims(Component) :
         self._ensure_axis_present(init_max_dims-1)
 
 
+    @property
+    def nb_dimensions(self):
+        """
+        Returns the number of dimensions
+        Returns numebr of dimensions
+        -------
+
+        """
+        return len(self.point)
+
+    @nb_dimensions.setter
+    def nb_dimensions(self, nb_dimensions):
+        if self.nb_dimensions < nb_dimensions:
+            self._ensure_axis_present(nb_dimensions-1)
+        elif self.nb_dimensions > nb_dimensions:
+            self._trim_nb_dimensions(nb_dimensions)
+
+
     def set_range(self, axis: int, range: Tuple[Union[int,float]]):
         """
         Sets the range (min, max, step) for a given axis (dimension)
@@ -48,7 +71,7 @@ class Dims(Component) :
         self._ensure_axis_present(axis)
         if self.range[axis] != range:
             self.range[axis] = range
-            self._notify_listeners(source=self, axis=axis)
+            self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
 
     def get_range(self, axis):
         """
@@ -70,7 +93,7 @@ class Dims(Component) :
         self._ensure_axis_present(axis)
         if self.point[axis] != value:
             self.point[axis] = value
-            self._notify_listeners(source=self, axis=axis)
+            self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
 
     def get_point(self, axis):
         """
@@ -92,7 +115,7 @@ class Dims(Component) :
         self._ensure_axis_present(axis)
         if self.interval[axis] != interval:
             self.interval[axis] = interval
-            self._notify_listeners(source=self, axis=axis)
+            self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
 
     def get_interval(self, axis):
         """
@@ -103,7 +126,7 @@ class Dims(Component) :
         """
         return self.interval[axis]
 
-    def set_mode(self, axis: int, mode:Mode):
+    def set_mode(self, axis: int, mode:DimsMode):
         """
         Sets the mode: Point or Interval
         Parameters
@@ -114,7 +137,7 @@ class Dims(Component) :
         self._ensure_axis_present(axis)
         if self.mode[axis]!=mode:
             self.mode[axis] = mode
-            self._notify_listeners(source=self, axis=axis)
+            self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
 
     def get_mode(self, axis):
         """
@@ -136,7 +159,7 @@ class Dims(Component) :
         self._ensure_axis_present(axis)
         if self.display[axis]!=display:
             self.display[axis] = display
-            self._notify_listeners(source=self, axis=axis)
+            self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
 
     def get_display(self, axis):
         """
@@ -147,20 +170,48 @@ class Dims(Component) :
         """
         return self.display[axis]
 
+
     def _ensure_axis_present(self, axis: int):
         """
         Makes sure that the given axis is in the dimension model
-        Parameters
+        Parameters.
         ----------
         axis : axis index
         """
         if axis >= self.nb_dimensions:
+            old_nb_dimensions = self.nb_dimensions
             margin_length = 1+ axis - self.nb_dimensions
             self.range.extend([(None,None,None)] * (margin_length))
             self.point.extend([0.0]*(margin_length))
             self.interval.extend([None] * (margin_length))
             self.mode.extend([None] * (margin_length))
             self.display.extend([False] * (margin_length))
+
+            # First we notify listeners that the number of dimensions have changed:
+            self._notify_listeners(source=self, type=DimsEvent.NbDimChange)
+
+            # Then we notify listeners of which dimensions have been affected.
+            for axis_changed in range(old_nb_dimensions-1, self.nb_dimensions):
+                self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
+
+
+    def _trim_nb_dimensions(self, nb_dimensions):
+        """
+        This internal method is used to trim the number of axis.
+        Parameters
+        ----------
+        nb_dimensions : new number of dimensions, must be less that
+        """
+        if nb_dimensions<self.nb_dimensions:
+            self.range = self.range[:nb_dimensions]
+            self.point = self.range[:nb_dimensions]
+            self.interval = self.range[:nb_dimensions]
+            self.mode = self.range[:nb_dimensions]
+            self.display = self.range[:nb_dimensions]
+
+            # First we notify listeners that the number of dimensions have changed:
+            self._notify_listeners(source=self, type=DimsEvent.NbDimChange)
+
 
     @property
     def slice_and_project(self):
@@ -179,7 +230,7 @@ class Dims(Component) :
 
         for  (mode, display, point, interval) in zip(self.mode, self.display, self.point, self.interval):
 
-            if mode   == Mode.Point or mode is None:
+            if mode   == DimsMode.Point or mode is None:
                 if display:
                     # no slicing, cropping or projection:
                     project_list.append(False)
@@ -188,7 +239,7 @@ class Dims(Component) :
                     # slice:
                     project_list.append(False)
                     slice_list.append(slice(round(point)))
-            elif mode == Mode.Interval:
+            elif mode == DimsMode.Interval:
                 if display:
                     # crop for display:
                     project_list.append(False)
@@ -211,15 +262,6 @@ class Dims(Component) :
 
 
 
-    @property
-    def nb_dimensions(self):
-        """
-        Returns the number of dimensions
-        Returns numebr of dimensions
-        -------
-
-        """
-        return len(self.point)
 
 
 

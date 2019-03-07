@@ -1,5 +1,5 @@
 from napari.components import Dims
-from napari.components._dims.model import Mode
+from napari.components._dims.model import DimsMode, DimsEvent
 
 
 def test_range():
@@ -26,7 +26,7 @@ def test_mode():
     """
     dims = Dims(2)
 
-    dims.set_mode(3, Mode.Interval)
+    dims.set_mode(3, DimsMode.Interval)
 
     print(dims.mode)
 
@@ -35,7 +35,7 @@ def test_mode():
     assert dims.mode[0] is None
     assert dims.mode[1] is None
     assert dims.mode[2] is None
-    assert dims.mode[3] == Mode.Interval
+    assert dims.mode[3] == DimsMode.Interval
 
 
 def test_point():
@@ -95,15 +95,16 @@ def test_display():
     assert dims.display[3]
 
 
+
 def test_slice_and_project():
     dims = Dims(2)
 
     dims.set_point(3, 2.5)
 
-    dims.set_mode(0, Mode.Point)
-    dims.set_mode(1, Mode.Point)
-    dims.set_mode(2, Mode.Interval)
-    dims.set_mode(3, Mode.Interval)
+    dims.set_mode(0, DimsMode.Point)
+    dims.set_mode(1, DimsMode.Point)
+    dims.set_mode(2, DimsMode.Interval)
+    dims.set_mode(3, DimsMode.Interval)
 
     print(dims.slice_and_project)
 
@@ -118,3 +119,61 @@ def test_slice_and_project():
     assert projectit[1] == False
     assert projectit[2] == True
     assert projectit[3] == True
+
+def test_add_remove_dims():
+    dims = Dims(2)
+    assert dims.nb_dimensions == 2
+
+    dims.set_num_dimensions(10)
+    assert dims.nb_dimensions == 10
+
+    dims.set_num_dimensions(5)
+    assert dims.nb_dimensions == 5
+
+    dims.set_mode(5, DimsMode.Point)
+    assert dims.nb_dimensions == 6
+
+
+_axis_change_counter =0
+_nbdims_change_counter =0
+
+def test_listeners():
+    global _axis_change_counter
+    global _nbdims_change_counter
+
+    dims = Dims(2)
+
+    def axischange(source, axis):
+        print("Change in axis %d " % axis)
+        global _axis_change_counter
+
+        _axis_change_counter=_axis_change_counter+1
+
+    dims.add_listener(DimsEvent.AxisChange, axischange)
+
+    def nbdimschange(source):
+        print("Change in number of dimensions %d " % source.nb_dimensions)
+        global _nbdims_change_counter
+
+        _nbdims_change_counter=_nbdims_change_counter+1
+
+    dims.add_listener(DimsEvent.NbDimChange, nbdimschange)
+
+    assert _axis_change_counter == 0
+    assert _nbdims_change_counter == 0
+
+    dims.set_num_dimensions(10)
+    print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
+    assert _nbdims_change_counter==1
+
+    dims.set_num_dimensions(5)
+    print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
+    assert _nbdims_change_counter == 2
+
+    # dims.set_point(0,0)
+    # print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
+    # assert _axis_change_counter == 1
+
+
+
+
