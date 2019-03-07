@@ -24,6 +24,13 @@ from .view import QtImageLayer
 from .view import QtImageControls
 
 
+def _increment_unnamed_colormap(name, names):
+    if name == '[unnamed colormap]':
+        past_names = [n for n in name if n.startswith('[unnamed colormap')]
+        name = f'[unnamed colormap {len(past_names)}]'
+    return name
+
+
 def vispy_or_mpl_colormap(name):
     """Try to get a colormap from vispy, or convert an mpl one to vispy format.
 
@@ -265,6 +272,8 @@ class Image(Layer):
             self._colormaps.update(colormap)
             name = list(colormap)[0]  # first key in dict
         elif isinstance(colormap, vispy.color.Colormap):
+            name = _increment_unnamed_colormap(name,
+                                               list(self._colormaps.keys()))
             self._colormaps[name] = colormap
         else:
             warn('invalid value for colormap: ', colormap)
