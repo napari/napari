@@ -26,7 +26,8 @@ from .view import QtImageControls
 
 def _increment_unnamed_colormap(name, names):
     if name == '[unnamed colormap]':
-        past_names = [n for n in name if n.startswith('[unnamed colormap')]
+        past_names = [n for n in names
+                      if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
     return name
 
