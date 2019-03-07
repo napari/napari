@@ -152,6 +152,11 @@ class QtDims(QWidget):
 
         # Listener to be used for sending events back to model:
         def collapse_change_listener(collapsed):
+            if collapsed:
+                interval = self.dims.get_interval(axis)
+                if interval is not None:
+                    min, max = interval
+                    self.dims.set_point(axis, (max+min)/2)
             self.dims.set_mode(axis, Mode.Point if collapsed else Mode.Interval)
 
         slider.collapsedChanged.connect(collapse_change_listener)
