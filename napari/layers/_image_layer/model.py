@@ -78,7 +78,7 @@ class Image(Layer):
     """
     _colormaps = AVAILABLE_COLORMAPS
 
-    default_cmap = 'magma'
+    default_colormap = 'magma'
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta=None, multichannel=None, *, name=None, **kwargs):
@@ -97,8 +97,8 @@ class Image(Layer):
 
         self._image = image
         self._meta = meta
-        self.cmap = Image.default_cmap
-        self.interpolation = Image.default_interpolation
+        self.colormap = self.default_colormap
+        self.interpolation = self.default_interpolation
         self._interpolation_names = interpolation_names
 
         # update flags
@@ -247,18 +247,23 @@ class Image(Layer):
     def colormap(self):
         """string or ColorMap: Colormap to use for luminance images.
         """
-        return self.cmap
+        return self._node.cmap
 
     @colormap.setter
     def colormap(self, colormap):
-        self.cmap = colormap
+        try:
+            cmap = self._colormaps[colormap]
+        except KeyError:
+            pass
+
+        self._node.cmap = cmap
         self.events.colormap()
 
     @property
     def colormaps(self):
         """tuple of str: names of available colormaps.
         """
-        return tuple(AVAILABLE_COLORMAPS.keys())
+        return tuple(self._colormaps.keys())
 
     # wrap visual properties:
     @property
@@ -274,21 +279,6 @@ class Image(Layer):
         self.status = self._clim_msg
         self._node.clim = clim
         self.events.clim()
-
-    @property
-    def cmap(self):
-        """string or ColorMap: Colormap to use for luminance images.
-        """
-        return self._node.cmap
-
-    @cmap.setter
-    def cmap(self, cmap):
-        try:
-            cmap = Image._colormaps[cmap]
-        except KeyError:
-            pass
-
-        self._node.cmap = cmap
 
     @property
     def method(self):
