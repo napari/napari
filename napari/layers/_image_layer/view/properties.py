@@ -19,6 +19,7 @@ class QtImageLayer(QtLayer):
             lambda text=comboBox: self.changeColor(text))
         self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
         self.grid_layout.addWidget(comboBox, 3, 1)
+        self.colormap_combobox = comboBox
 
         interp_comboBox = QComboBox()
         for interp in self.layer._interpolation_names:
@@ -47,4 +48,6 @@ class QtImageLayer(QtLayer):
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_colormap_change(self, event):
+        if self.layer.colormap_name != self.colormap_combobox.currentText():
+            self.colormap_combobox.setCurrentText(self.layer.colormap_name)
         return
