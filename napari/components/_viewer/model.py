@@ -1,8 +1,7 @@
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from vispy.util.event import EmitterGroup, Event
-
+from ...util.event import EmitterGroup, Event
 from .view import QtViewer
 
 
@@ -128,7 +127,7 @@ class Viewer:
         """
         self.camera.set_range()
 
-    def screenshot(self, region=None, size=None, bgcolor=None, crop=None):
+    def screenshot(self, region=None, size=None, bgcolor=None):
         """Render the scene to an offscreen buffer and return the image array.
 
         Parameters
@@ -144,18 +143,14 @@ class Viewer:
             from the native canvas resolution.
         bgcolor : instance of Color | None
             The background color to use.
-        crop : array-like | None
-            If specified it determines the pixels read from the framebuffer.
-            In the format (x, y, w, h), relative to the region being rendered.
+
         Returns
         -------
         image : array
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
-
         """
-        return self._canvas.render(region=None, size=None, bgcolor=None,
-                                   crop=None)
+        return self._canvas.render(region, size, bgcolor)
 
     def add_layer(self, layer):
         """Adds a layer to the viewer.
