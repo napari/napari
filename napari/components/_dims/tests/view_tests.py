@@ -22,7 +22,7 @@ dims.set_point(2,50)
 
 # defines a axis change listener:
 def listener_axis(event):
-    print(event.axis)
+    print("axis %d changed from: %s" % (event.axis, event.source))
 
 # connects listener to model:
 dims.changed.axis.connect(listener_axis)
@@ -47,7 +47,7 @@ def myloop():
         dims.set_point(0, i % 100)
 
         #print(widget.sliders[0])
-        print(widget.layout().itemAt(0))
+        #print(widget.layout().itemAt(0))
 
         sleep(0.1)
 
