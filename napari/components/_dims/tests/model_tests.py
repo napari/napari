@@ -170,9 +170,9 @@ def test_listeners():
     print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
     assert _nbdims_change_counter == 2
 
-    # dims.set_point(0,0)
-    # print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
-    # assert _axis_change_counter == 1
+    dims.set_point(0,0)
+    print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
+    assert _axis_change_counter == 9
 
 
 

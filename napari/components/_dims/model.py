@@ -190,7 +190,7 @@ class Dims(Component) :
 
             # Then we notify listeners of which dimensions have been affected.
             for axis_changed in range(old_nb_dimensions-1, self.num_dimensions):
-                self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
+                self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis_changed)
 
 
     def _trim_nb_dimensions(self, nb_dimensions):
