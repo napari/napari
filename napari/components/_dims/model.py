@@ -31,8 +31,6 @@ class Dims(Component) :
         super().__init__()
 
 
-        self.viewer = None
-
         self.range    = []
         self.point    = []
         self.interval = []
@@ -43,7 +41,7 @@ class Dims(Component) :
 
 
     @property
-    def nb_dimensions(self):
+    def num_dimensions(self):
         """
         Returns the number of dimensions
         Returns numebr of dimensions
@@ -52,12 +50,12 @@ class Dims(Component) :
         """
         return len(self.point)
 
-    @nb_dimensions.setter
-    def nb_dimensions(self, nb_dimensions):
-        if self.nb_dimensions < nb_dimensions:
-            self._ensure_axis_present(nb_dimensions-1)
-        elif self.nb_dimensions > nb_dimensions:
-            self._trim_nb_dimensions(nb_dimensions)
+    @num_dimensions.setter
+    def num_dimensions(self, num_dimensions):
+        if self.num_dimensions < num_dimensions:
+            self._ensure_axis_present(num_dimensions - 1)
+        elif self.num_dimensions > num_dimensions:
+            self._trim_nb_dimensions(num_dimensions)
 
 
     def set_range(self, axis: int, range: Tuple[Union[int,float]]):
@@ -178,9 +176,9 @@ class Dims(Component) :
         ----------
         axis : axis index
         """
-        if axis >= self.nb_dimensions:
-            old_nb_dimensions = self.nb_dimensions
-            margin_length = 1+ axis - self.nb_dimensions
+        if axis >= self.num_dimensions:
+            old_nb_dimensions = self.num_dimensions
+            margin_length = 1+ axis - self.num_dimensions
             self.range.extend([(None,None,None)] * (margin_length))
             self.point.extend([0.0]*(margin_length))
             self.interval.extend([None] * (margin_length))
@@ -191,7 +189,7 @@ class Dims(Component) :
             self._notify_listeners(source=self, type=DimsEvent.NbDimChange)
 
             # Then we notify listeners of which dimensions have been affected.
-            for axis_changed in range(old_nb_dimensions-1, self.nb_dimensions):
+            for axis_changed in range(old_nb_dimensions-1, self.num_dimensions):
                 self._notify_listeners(source=self, type=DimsEvent.AxisChange, axis=axis)
 
 
@@ -202,7 +200,7 @@ class Dims(Component) :
         ----------
         nb_dimensions : new number of dimensions, must be less that
         """
-        if nb_dimensions<self.nb_dimensions:
+        if nb_dimensions<self.num_dimensions:
             self.range = self.range[:nb_dimensions]
             self.point = self.point[:nb_dimensions]
             self.interval = self.interval[:nb_dimensions]

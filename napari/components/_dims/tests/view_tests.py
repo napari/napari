@@ -22,7 +22,6 @@ dims.set_point(2,50)
 
 # defines a axis change listener:
 def listener_axis(source, axis):
-    pass
     print((source, axis))
 
 # adds listener to model:
@@ -30,7 +29,6 @@ dims.add_listener(DimsEvent.AxisChange, listener_axis)
 
 # defines a axis change listener:
 def listener_dbdim(source):
-    pass
     print(source)
 
 # adds listener to model:
@@ -54,10 +52,13 @@ def myloop():
         sleep(0.1)
 
         if i % 50 == 0:
-            dims.nb_dimensions = 3+int(i//50)
+            dims.num_dimensions = 3 + int(i // 50)
 
         if i>100 and i % 150 == 0:
-            dims.nb_dimensions = dims.nb_dimensions-1
+            dims.num_dimensions = dims.num_dimensions - 1
+
+        if not widget.isVisible():
+            return
 
 
 # starts the thread for the loop:
