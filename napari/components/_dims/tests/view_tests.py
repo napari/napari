@@ -7,7 +7,7 @@ import threading
 from PyQt5.QtWidgets import QApplication
 
 from napari.components import Dims
-from napari.components._dims.model import DimsMode, DimsEvent
+from napari.components._dims.model import DimsMode
 from napari.components._dims.view import QtDims
 
 # starts the QT event loop
@@ -21,18 +21,18 @@ dims.set_point(1,50)
 dims.set_point(2,50)
 
 # defines a axis change listener:
-def listener_axis(source, axis):
-    print((source, axis))
+def listener_axis(event):
+    print(event.axis)
 
-# adds listener to model:
-dims.add_listener(DimsEvent.AxisChange, listener_axis)
+# connects listener to model:
+dims.changed.axis.connect(listener_axis)
 
 # defines a axis change listener:
-def listener_dbdim(source):
-    print(source)
+def listener_nbdim(event):
+    print("dims changed from: "+str(event.source))
 
-# adds listener to model:
-dims.add_listener(DimsEvent.NbDimChange, listener_dbdim)
+# connects listener to model:
+dims.changed.nbdims.connect(listener_nbdim)
 
 # creates a widget to view (and control) the model:
 widget = QtDims(dims)

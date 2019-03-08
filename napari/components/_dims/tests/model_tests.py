@@ -1,5 +1,5 @@
 from napari.components import Dims
-from napari.components._dims.model import DimsMode, DimsEvent
+from napari.components._dims.model import DimsMode
 
 
 def test_range():
@@ -143,21 +143,21 @@ def test_listeners():
 
     dims = Dims(2)
 
-    def axischange(source, axis):
-        print("Change in axis %d " % axis)
+    def axischange(event):
+        print("Change in axis %d " % event.axis)
         global _axis_change_counter
 
         _axis_change_counter=_axis_change_counter+1
 
-    dims.add_listener(DimsEvent.AxisChange, axischange)
+    dims.changed.axis.connect(axischange)
 
-    def nbdimschange(source):
-        print("Change in number of dimensions %d " % source.num_dimensions)
+    def nbdimschange(event):
+        print("Change in number of dimensions %d " % event.source.num_dimensions)
         global _nbdims_change_counter
 
         _nbdims_change_counter=_nbdims_change_counter+1
 
-    dims.add_listener(DimsEvent.NbDimChange, nbdimschange)
+    dims.changed.nbdims.connect(nbdimschange)
 
     assert _axis_change_counter == 0
     assert _nbdims_change_counter == 0

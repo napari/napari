@@ -4,7 +4,7 @@ from typing import Union
 
 from napari._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
 from napari.components import Dims
-from napari.components._dims.model import DimsMode, DimsEvent
+from napari.components._dims.model import DimsMode
 
 
 class QtDims(QWidget):
@@ -47,17 +47,17 @@ class QtDims(QWidget):
         # thread. This is all about changing thread context for thread-safety purposes
 
         # axis change listener
-        def update_axis(source, axis):
-            self.update_axis.emit(axis)
-        self.dims.add_listener(DimsEvent.AxisChange, update_axis)
+        def update_axis(event):
+            self.update_axis.emit(event.axis)
+        self.dims.changed.axis.connect(update_axis)
 
         # What to do with the axis change events in terms of UI calls to the widget
         self.update_axis.connect(self._update_slider)
 
         # nb dims change listener
-        def update_nbdim(source):
+        def update_nbdim(event):
             self.update_nbdims.emit()
-        self.dims.add_listener(DimsEvent.NbDimChange, update_nbdim)
+        self.dims.changed.nbdims.connect(update_nbdim)
 
         # What to do with the nb dims change events in terms of UI calls to the widget
         self.update_nbdims.connect(self._update_nb_sliders)
