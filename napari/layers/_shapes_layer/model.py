@@ -364,6 +364,7 @@ class Shapes(Layer):
         if self.mode == 'select' or self.mode == 'direct':
             to_delete = copy(self._selected_shapes)
             self._selected_shapes = []
+            self._hover_shapes = [None, None]
             self.remove_shapes(to_delete)
 
     def edit_shape(self, index, vertices):
