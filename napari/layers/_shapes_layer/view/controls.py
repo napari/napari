@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame
+from PyQt5.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame, QPushButton
 
 from os.path import join
 from ....resources import resources_dir
@@ -19,6 +19,7 @@ class QtShapesControls(QFrame):
         self.rectangle_button = QtModeButton(layer, 'rectangle', 'Add rectangles', mode='add_rectangle')
         self.ellipse_button = QtModeButton(layer, 'ellipse', 'Add ellipses', mode='add_ellipse')
         self.line_button = QtModeButton(layer, 'line', 'Add lines', mode='add_line')
+        self.delete_button = QtDeleteButton(layer)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -35,6 +36,7 @@ class QtShapesControls(QFrame):
         layout.addWidget(self.rectangle_button)
         layout.addWidget(self.ellipse_button)
         layout.addWidget(self.line_button)
+        layout.addWidget(self.delete_button)
         layout.addStretch(0)
         self.setLayout(layout)
         self.setMouseTracking(True)
@@ -82,6 +84,29 @@ class QtModeButton(QRadioButton):
         with self.layer.events.mode.blocker(self._set_mode):
             if bool:
                 self.layer.mode = self.mode
+
+
+class QtDeleteButton(QPushButton):
+    def __init__(self, layer):
+        super().__init__()
+
+        path_delete = join(resources_dir, 'icons', 'delete.png')
+
+        self.layer = layer
+        self.setIcon(QIcon(path_delete))
+        self.setFixedWidth(28)
+        self.setFixedHeight(28)
+        self.setToolTip('Delete selected')
+        self.setChecked(False)
+        self.setStyleSheet(styleSheet)
+        self.clicked.connect(self.layer.remove_selected)
+
+
+styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
+                QPushButton:pressed {background-color:rgb(0, 153, 255);
+                border-radius: 3px;}
+                QPushButton:hover {background-color:rgb(0, 153, 255);
+                border-radius: 3px;}"""
 
 
 def button_style(name):

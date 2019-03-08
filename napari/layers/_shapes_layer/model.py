@@ -6,6 +6,7 @@ from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
 from ...util import is_permutation, inside_boxes, inside_triangles
+from ...util.event import Event
 from .._base_layer import Layer
 from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Mesh
@@ -14,7 +15,6 @@ from ..._vispy.scene.visuals import Line
 from ..._vispy.scene.visuals import Compound as VisualNode
 from .utils import ShapesData
 from vispy.color import get_color_names, Color
-from vispy.util.event import Event
 
 from .view import QtShapesLayer
 from .view import QtShapesControls
@@ -356,6 +356,15 @@ class Shapes(Layer):
             self.show_objects = np.delete(self.show_objects, index, axis=0)
         self._show_meshes = self._show_meshes[faces_indices!=index]
         self._mesh_color_array = self._mesh_color_array[faces_indices!=index]
+
+    def remove_selected(self):
+        """ Removes any currently selected shapes if in `select` or `direct`
+        mode
+        """
+        if self.mode == 'select' or self.mode == 'direct':
+            to_delete = copy(self._selected_shapes)
+            self._selected_shapes = []
+            self.remove_shapes(to_delete)
 
     def edit_shape(self, index, vertices):
         """Replaces the current vertices of the selected shape with new ones
@@ -1296,8 +1305,7 @@ class Shapes(Layer):
             elif event.key == 'z':
                 self.mode = 'pan/zoom'
             elif event.key == 'Backspace':
-                if self.mode == 'select' or self.mode == 'direct':
-                    self.remove_shapes(self._selected_shapes)
+                self.remove_selected()
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
