@@ -38,7 +38,7 @@ class Viewer:
         self._interactive = True
         self._top = None
 
-        self._qt = None #QtViewer(self)
+        self._qt = QtViewer(self)
 
     @property
     def _canvas(self):
@@ -196,13 +196,16 @@ class Viewer:
             self._top = None
         self._canvas.native.setFocus()
 
+    def _on_layers_change(self, event):
+        self.dims.num_dimensions = self._calc_max_dims()
+
 
     def _calc_max_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
         """
         max_dims = 0
 
-        for layer in self.viewer.layers:
+        for layer in self.layers:
             dims = layer.ndim
             if dims > max_dims:
                 max_dims = dims

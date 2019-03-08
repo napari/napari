@@ -1,29 +1,47 @@
 # This is in interactive test
-
-import sys
-from time import sleep
-
-import threading
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QSplitter, QRadioButton, QWidget, QGridLayout, QVBoxLayout
+from skimage import data
+from skimage.color import rgb2gray
 
 from napari import Viewer
 from napari.components import Dims
-from napari.components._dims.model import DimsMode
+
 from napari.components._dims.view import QtDims
+from napari.util import app_context
 
-# starts the QT event loop
-from napari.components._viewer.view import QtViewer
+class QtViewerDummy(QWidget):
 
-app = QApplication(sys.argv)
+    def __init__(self, viewer, parent = None):
+        super().__init__(parent=parent)
+
+        self.viewer = viewer
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        self.setLayout(layout)
+
+        self.dimsview = QtDims(self.viewer.dims, parent=self)
+        self.dimsview.setMinimumHeight(100)
+        self.layout().addWidget(self.dimsview)
+        self.layout().addWidget(QRadioButton())
 
 
-viewer  = Viewer()
+with app_context():
 
-# creates a widget to view (and control) the model:
-widget = QtViewer(viewer)
+    viewer  = Viewer()
 
-# makes the view visible on the desktop:
-widget.show()
+    viewer.add_image(rgb2gray(data.astronaut()))
+    viewer.add_image(rgb2gray(data.coins()))
 
-# Start the QT event loop.
-sys.exit(app.exec())
+    print(viewer.dims.num_dimensions)
+
+    # creates a widget to view (and control) the model:
+    widget = QtViewerDummy(viewer)
+
+    #widget = QtDims(Dims(10))
+
+    # makes the view visible on the desktop:
+    #widget.setGeometry(200, 200, 200, 20)
+    widget.show()
+
+

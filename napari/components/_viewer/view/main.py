@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
+from napari.components._dims.view import QtDims
 from .controls import QtControls
 
 from os.path import join
@@ -36,7 +37,12 @@ class QtViewer(QSplitter):
         center = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.canvas.native)
-        layout.addWidget(self.viewer.dims._qt)
+
+        dimsview = QtDims(self.viewer.dims)
+        dimsview.setFixedHeight(100)
+
+        layout.addWidget(dimsview)
+
         center.setLayout(layout)
 
         # Add controls, center, and layerlist
@@ -45,7 +51,7 @@ class QtViewer(QSplitter):
         self.addWidget(center)
         self.addWidget(self.viewer.layers._qt)
 
-        viewer.dims._qt.setFixedHeight(0)
+
 
         self._cursors = {
                 'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),

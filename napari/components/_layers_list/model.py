@@ -94,8 +94,8 @@ class LayersList(ListModel):
             return
 
         if prev is not None:
-            self.changed.added.disconnect(prev.dims._on_layers_change)
-            self.changed.removed.disconnect(prev.dims._on_layers_change)
+            self.changed.added.disconnect(prev._on_layers_change)
+            self.changed.removed.disconnect(prev._on_layers_change)
             self.changed.added.disconnect(prev._update_layer_selection)
             self.changed.removed.disconnect(prev._update_layer_selection)
             self.changed.reordered.disconnect(prev._update_layer_selection)
@@ -104,8 +104,8 @@ class LayersList(ListModel):
             layer.viewer = viewer
 
         if viewer is not None:
-            self.changed.added.connect(viewer.dims._on_layers_change)
-            self.changed.removed.connect(viewer.dims._on_layers_change)
+            self.changed.added.connect(viewer._on_layers_change)
+            self.changed.removed.connect(viewer._on_layers_change)
             self.changed.added.connect(viewer._update_layer_selection)
             self.changed.removed.connect(viewer._update_layer_selection)
             self.changed.reordered.connect(viewer._update_layer_selection)

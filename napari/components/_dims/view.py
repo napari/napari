@@ -1,10 +1,10 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
+from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout, QRadioButton
 from typing import Union
 
 from napari._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
-from napari.components import Dims
-from napari.components._dims.model import DimsMode
+
+from napari.components._dims.model import DimsMode, Dims
 
 
 class QtDims(QWidget):
@@ -21,24 +21,24 @@ class QtDims(QWidget):
     # list of sliders
     sliders = []
 
-    def __init__(self, dims: Dims):
+    def __init__(self, dims: Dims, parent = None):
         """
         Constructor for Dims View
         Parameters
         ----------
         dims : dims object
         """
-        super().__init__()
+        super().__init__(parent=parent)
 
         self.dims = dims
 
 
         self.setMinimumWidth(512)
+        self.setMinimumHeight(self._slider_height)
 
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-        #self.setFixedHeight(0)
 
         self._set_num_sliders(dims.num_dimensions)
 
@@ -127,9 +127,10 @@ class QtDims(QWidget):
 
             slider = self._create_range_slider_widget(new_slider_axis)
             #slider = self._create_slider_widget(new_slider_axis)
-            self.layout().addWidget(slider, new_slider_axis, 0)
+            #self.layout().addWidget(slider, new_slider_axis, 0)
+            self.layout().addWidget(QRadioButton())
             self.sliders.append(slider)
-            self.setFixedHeight(self.num_sliders * self._slider_height)
+            self.setMinimumHeight(self.num_sliders * self._slider_height)
 
     def _trim_sliders(self, number_of_sliders):
         """

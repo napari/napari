@@ -173,10 +173,12 @@ class Image(Layer):
             self._need_display_update = False
 
             self.viewer.dims._child_layer_changed = True
-            self.viewer.dims._update()
+            #self.viewer.dims._update()
 
             self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.dims.indices)
+
+            slicespec, projectspec = self.viewer.dims.slice_and_project
+            self._set_view_slice(slicespec)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -369,7 +371,7 @@ class Image(Layer):
         pos = transform.map(position)
         pos = [clip(pos[1], 0, self.shape[0]-1), clip(pos[0], 0,
                                                       self.shape[1]-1)]
-        coord = copy(indices)
+        coord = list(copy(indices))
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
         value = self._slice_image(coord)
@@ -392,5 +394,6 @@ class Image(Layer):
         """
         if event.pos is None:
             return
-        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
+        slicespec, projectspec  = self.viewer.dims.slice_and_project
+        coord, value, msg = self.get_value(event.pos, slicespec)
         self.status = msg

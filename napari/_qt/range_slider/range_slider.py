@@ -2,10 +2,11 @@
 Range slider, extended QWidget slider for napari.
 """
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QWidget
 
 
-class QRangeSlider(QtWidgets.QWidget):
+class QRangeSlider(QWidget):
     """
     QRangeSlider class, super class for QVRangeSlider and QHRangeSlider.
     """
@@ -13,7 +14,7 @@ class QRangeSlider(QtWidgets.QWidget):
     collapsedChanged = QtCore.pyqtSignal(bool)
 
     def __init__(self, slider_range, values, parent=None):
-        QtWidgets.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
         self.bar_width = 16
         self.slider_width = 2
         self.emit_while_moving = 0
