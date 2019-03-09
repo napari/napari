@@ -776,9 +776,7 @@ class Shapes(Layer):
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
         if self._highlight and len(self._selected_shapes) > 0:
-            if (self.mode == 'select' or self.mode == 'add_rectangle' or
-            self.mode == 'add_ellipse' or self.mode == 'add_line' or
-            self.mode == 'add_path' or self.mode == 'add_polygon'):
+            if self.mode == 'select':
                 inds = list(range(0,8))
                 inds.append(9)
                 box = self.data.selected_box[inds]
@@ -794,9 +792,15 @@ class Shapes(Layer):
                                                    symbol='square', scaling=True)
                 self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
                                                    color=edge_color, width=1)
-            elif self.mode == 'direct':
+            elif (self.mode == 'direct' or self.mode == 'add_path' or
+                  self.mode == 'add_polygon' or self.mode == 'add_rectangle' or
+                  self.mode == 'add_ellipse' or self.mode == 'add_line'):
                 inds = np.isin(self.data.index, self._selected_shapes)
                 vertices = self.data.vertices[inds]
+                # If currently adding path don't show box over last vertex
+                if self.mode == 'add_path':
+                    vertices = vertices[:-1]
+
                 if self._hover_shapes[0] is None:
                     face_color = 'white'
                 elif self._hover_shapes[1] is None:
@@ -867,8 +871,7 @@ class Shapes(Layer):
         index = self._selected_shapes
         vertex = self._selected_vertex[1]
         if (self.mode == 'select' or self.mode == 'add_rectangle' or
-        self.mode == 'add_ellipse' or self.mode == 'add_line' or
-        self.mode == 'add_path' or self.mode == 'add_polygon'):
+        self.mode == 'add_ellipse' or self.mode == 'add_line'):
             if len(index) > 0:
                 self._is_moving=True
                 if vertex is None:
@@ -965,7 +968,8 @@ class Shapes(Layer):
                     self._drag_start = coord
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
-        elif self.mode == 'direct':
+        elif (self.mode == 'direct' or self.mode == 'add_path' or
+              self.mode == 'add_polygon'):
             if len(index) > 0:
                 if vertex is not None:
                     self._is_moving=True
@@ -995,6 +999,27 @@ class Shapes(Layer):
             self._selected_shapes_stored = []
             self._hover_shapes_stored = [None, None]
             self._set_highlight()
+
+    def _finish_drawing(self):
+        index = self._selected_vertex[0]
+        self._ready_to_create = False
+        self._create_coord = [None, None]
+        self._is_moving = False
+        self._selected_shapes = []
+        self._drag_start = None
+        self._drag_box = None
+        self._fixed_vertex = None
+        self._selected_vertex = [None, None]
+        self._hover_shapes = [None, None]
+        self.data.select_box([])
+        if self.mode == 'add_path' and self._creating is True:
+            vertices = self.data.vertices[self.data.index==index]
+            if len(vertices) <= 2:
+                self.remove_shapes(index=index)
+            else:
+                self.edit_shape(index, vertices[:-1])
+        self._creating = False
+        self._unselect()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -1051,9 +1076,29 @@ class Shapes(Layer):
             self._ready_to_create = True
             self._create_coord = coord
         elif self.mode == 'add_path':
-            # Start drawing an ellipse
-            self._ready_to_create = True
-            self._create_coord = coord
+            if self._creating is False:
+                # Start drawing a path
+                shape = np.array([[coord, coord]])
+                self.add_shapes(paths = shape)
+                self._ready_to_create = False
+                self._selected_shapes = [self.data.count-1]
+                #self.data.select_box(self._selected_shapes[0])
+                #ind = np.all(self.data.selected_box==coord, axis=1).nonzero()[0][0]
+                ind = 1
+                self._selected_vertex = [self._selected_shapes[0], ind]
+                self._hover_shapes = [self._selected_shapes[0], ind]
+                self._creating = True
+                self._select()
+            else:
+                # Add to an existing path
+                index = self._selected_vertex[0]
+                vertices = self.data.vertices[self.data.index==index]
+                vertices = np.concatenate((vertices, [coord]), axis=0)
+                self.edit_shape(self._selected_vertex[0], vertices)
+                # Change the selected vertex
+                self._selected_vertex[1] = self._selected_vertex[1]+1
+                self._hover_shapes[1] = self._hover_shapes[1]+1
+            self.status = self.get_message(coord, self._hover_shapes)
         elif self.mode == 'add_polygon':
             # Start drawing a line
             self._ready_to_create = True
@@ -1120,7 +1165,7 @@ class Shapes(Layer):
                 self._hover_shapes = [self._selected_shapes[0], ind]
                 self._creating = True
                 self._select()
-            # While drawing a rectangle or doing nothing
+            # While drawing a shape or doing nothing
             if self._creating and event.is_dragging:
                 # Drag any selected shapes
                 self._move(coord)
@@ -1128,20 +1173,8 @@ class Shapes(Layer):
             else:
                 shape = self._shape_at(coord)
         elif self.mode == 'add_path':
-            # If ready to create rectangle start making one
-            if self._ready_to_create and np.all(self._create_coord != coord):
-                shape = np.array([[self._create_coord, coord]])
-                self.add_shapes(lines = shape)
-                self._ready_to_create = False
-                self._selected_shapes = [self.data.count-1]
-                self.data.select_box(self._selected_shapes[0])
-                ind = np.all(self.data.selected_box==coord, axis=1).nonzero()[0][0]
-                self._selected_vertex = [self._selected_shapes[0], ind]
-                self._hover_shapes = [self._selected_shapes[0], ind]
-                self._creating = True
-                self._select()
             # While drawing a rectangle or doing nothing
-            if self._creating and event.is_dragging:
+            if self._creating:
                 # Drag any selected shapes
                 self._move(coord)
                 shape = self._hover_shapes
@@ -1244,66 +1277,11 @@ class Shapes(Layer):
                 self._ready_to_create = False
                 shape = [self.data.count-1, None]
             else:
-                self._ready_to_create = False
-                self._create_coord = [None, None]
-                self._is_moving = False
-                self._selected_shapes = []
-                self._drag_start = None
-                self._drag_box = None
-                self._fixed_vertex = None
-                self._selected_vertex = [None, None]
-                self._hover_shapes = [None, None]
-                self._creating = False
-                self.data.select_box([])
-                self._unselect()
+                self._finish_drawing()
                 shape = self._shape_at(coord)
             self.status = self.get_message(coord, shape)
-        elif self.mode == 'add_path':
-            # Finish drawing an ellipse
-            if self._ready_to_create:
-                shape = np.array([[self._create_coord-self._prefixed_size/2,
-                                   self._create_coord+self._prefixed_size/2]])
-                self.add_shapes(lines = shape)
-                self._ready_to_create = False
-                shape = [self.data.count-1, None]
-            else:
-                self._ready_to_create = False
-                self._create_coord = [None, None]
-                self._is_moving = False
-                self._selected_shapes = []
-                self._drag_start = None
-                self._drag_box = None
-                self._fixed_vertex = None
-                self._selected_vertex = [None, None]
-                self._hover_shapes = [None, None]
-                self._creating = False
-                self.data.select_box([])
-                self._unselect()
-                shape = self._shape_at(coord)
-            self.status = self.get_message(coord, shape)
-        elif self.mode == 'add_polygon':
-            # Finish drawing a line
-            if self._ready_to_create:
-                shape = np.array([[self._create_coord-self._prefixed_size/2,
-                                   self._create_coord+self._prefixed_size/2]])
-                self.add_shapes(lines = shape)
-                self._ready_to_create = False
-                shape = [self.data.count-1, None]
-            else:
-                self._ready_to_create = False
-                self._create_coord = [None, None]
-                self._is_moving = False
-                self._selected_shapes = []
-                self._drag_start = None
-                self._drag_box = None
-                self._fixed_vertex = None
-                self._selected_vertex = [None, None]
-                self._hover_shapes = [None, None]
-                self._creating = False
-                self.data.select_box([])
-                self._unselect()
-                shape = self._shape_at(coord)
-            self.status = self.get_message(coord, shape)
+        elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
+            pass
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1344,6 +1322,8 @@ class Shapes(Layer):
                 self.mode = 'pan/zoom'
             elif event.key == 'Backspace':
                 self.remove_selected()
+            elif event.key == 'Escape':
+                self._finish_drawing()
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.

@@ -528,7 +528,9 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
         full_path = np.concatenate((path, [path[0]]),axis=0)
         full_normals = np.concatenate((normals, [normals[0]]),axis=0)
         miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
-        miters = np.array([miters[i]/np.dot(miters[i], full_normals[i]) for i in range(len(full_path))])
+        miters = np.array([miters[i]/np.dot(miters[i], full_normals[i])
+                          if np.dot(miters[i], full_normals[i]) != 0 else np.array([0, 0])
+                          for i in range(len(full_path))])
     else:
         full_path = np.concatenate((path, [path[-2]]),axis=0)
         normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(path))]
@@ -537,7 +539,9 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
         full_path = path
         full_normals = np.concatenate(([normals[0]], normals),axis=0)
         miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
-        miters = np.array([miters[i]/np.dot(miters[i], full_normals[i]) for i in range(len(full_path))])
+        miters = np.array([miters[i]/np.dot(miters[i], full_normals[i])
+                          if np.dot(miters[i], full_normals[i]) != 0 else np.array([0, 0])
+                          for i in range(len(full_path))])
     miter_lengths = np.linalg.norm(miters,axis=1)
     miters = 0.5*miters
     vertex_offsets = []
@@ -629,5 +633,8 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
 def segment_normal(a, b):
     d = b-a
     normal = np.array([d[1], -d[0]])
-    unit = normal/np.linalg.norm(normal)
-    return unit
+    norm = np.linalg.norm(normal)
+    if norm==0:
+        return np.array([1, 0])
+    else:
+        return normal/norm
