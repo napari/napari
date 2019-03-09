@@ -19,6 +19,8 @@ class QtShapesControls(QFrame):
         self.rectangle_button = QtModeButton(layer, 'rectangle', 'Add rectangles', mode='add_rectangle')
         self.ellipse_button = QtModeButton(layer, 'ellipse', 'Add ellipses', mode='add_ellipse')
         self.line_button = QtModeButton(layer, 'line', 'Add lines', mode='add_line')
+        self.path_button = QtModeButton(layer, 'path', 'Add paths', mode='add_path')
+        self.polygon_button = QtModeButton(layer, 'polygon', 'Add polygons', mode='add_polygon')
         self.delete_button = QtDeleteButton(layer)
 
         self.button_group = QButtonGroup(self)
@@ -28,6 +30,8 @@ class QtShapesControls(QFrame):
         self.button_group.addButton(self.rectangle_button)
         self.button_group.addButton(self.ellipse_button)
         self.button_group.addButton(self.line_button)
+        self.button_group.addButton(self.path_button)
+        self.button_group.addButton(self.polygon_button)
 
         layout = QVBoxLayout()
         layout.addWidget(self.panzoom_button)
@@ -36,6 +40,8 @@ class QtShapesControls(QFrame):
         layout.addWidget(self.rectangle_button)
         layout.addWidget(self.ellipse_button)
         layout.addWidget(self.line_button)
+        layout.addWidget(self.path_button)
+        layout.addWidget(self.polygon_button)
         layout.addWidget(self.delete_button)
         layout.addStretch(0)
         self.setLayout(layout)
@@ -60,6 +66,10 @@ class QtShapesControls(QFrame):
             self.ellipse_button.setChecked(True)
         elif mode == 'add_line':
             self.line_button.setChecked(True)
+        elif mode == 'add_path':
+            self.path_button.setChecked(True)
+        elif mode == 'add_polygon':
+            self.polygon_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
 
