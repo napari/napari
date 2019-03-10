@@ -1,4 +1,4 @@
-from . import Window, Viewer
+from .components import Window, Viewer
 
 
 class ViewerApp:
@@ -12,14 +12,16 @@ class ViewerApp:
         Arrays to render as image layers, keyed by layer name.
     """
     def __init__(self, *images, **named_images):
-        v = Viewer()
-        for image in images:
-            v.add_image(image)
-        for name, image in named_images.items():
-            v.add_image(image, name=name)
-        self.viewer_widget = v
-        self.window = Window(v)
+        self.viewer_widget = Viewer()
+        self.window = Window(self.viewer_widget)
         self.layers = self.viewer_widget.layers
+        for image in images:
+            self.add_image(image)
+        for name, image in named_images.items():
+            self.add_image(image, name=name)
 
     def add_layer(self, layer):
         self.viewer_widget.add_layer(layer)
+
+    def remove_layer(self, layer_id):
+        self.viewer_widget.layers.remove(layer_id)
