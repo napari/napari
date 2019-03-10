@@ -1,5 +1,5 @@
 from napari.components import Dims
-from napari.components._dims.model import DimsMode
+from napari.components._dims.dims import DimsMode
 
 
 def test_range():
@@ -99,26 +99,32 @@ def test_display():
 def test_slice_and_project():
     dims = Dims(2)
 
-    dims.set_point(3, 2.5)
-
     dims.set_mode(0, DimsMode.Point)
     dims.set_mode(1, DimsMode.Point)
     dims.set_mode(2, DimsMode.Interval)
     dims.set_mode(3, DimsMode.Interval)
 
+    dims.set_display(1, True)
+    dims.set_display(3, True)
+
+    dims.set_point(0, 1.234)
+    dims.set_point(3, 2.5)
+    dims.set_interval(2, (1,2))
+    dims.set_interval(3, (3,6))
+
     print(dims.slice_and_project)
 
     (sliceit, projectit) = dims.slice_and_project
 
-    assert sliceit[0] == slice(None, 0, None)
-    assert sliceit[1] == slice(None, 0, None)
-    assert sliceit[2] == slice(None, None, None)
-    assert sliceit[3] == slice(None, None, None)
+    assert sliceit[0] == 1
+    assert sliceit[1] == None
+    assert sliceit[2] == slice(1, 2)
+    assert sliceit[3] == slice(3, 6)
 
     assert projectit[0] == False
     assert projectit[1] == False
     assert projectit[2] == True
-    assert projectit[3] == True
+    assert projectit[3] == False
 
 def test_add_remove_dims():
     dims = Dims(2)

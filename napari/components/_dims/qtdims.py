@@ -4,7 +4,7 @@ from typing import Union
 
 from napari._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
 
-from napari.components._dims.model import DimsMode, Dims
+from napari.components._dims.dims import DimsMode, Dims
 
 
 class QtDims(QWidget):
@@ -28,37 +28,58 @@ class QtDims(QWidget):
         """
         super().__init__(parent=parent)
 
+
+        # We keep a reference to the view:
         self.dims = dims
 
         # list of sliders
         self.sliders = []
 
+        # adjust this widget initial geometry hints:
         self.setMinimumWidth(512)
         self.setMinimumHeight(self._slider_height)
 
+        # Initialises the layout:
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setColumnStretch(1, 1)
+        #layout.setColumnStretch(1, 1)
         self.setLayout(layout)
 
+
+        # First we need to make sure that the current state of the model is correctly
+        # reflected in the view. This is important because in the general case,
+        # we might not have model and view synced if changes have occured before
+        # the view is initialised with the model.
+
+        # First we set the dimenions of the view with respect to the model:
         self._set_num_sliders(dims.num_dimensions)
+
+        # Then we set the mode fopr each slider:
+
+        for axis in range(0, dims.num_dimensions):
+            slider = self.sliders[axis]
+            if self.dims.get_mode(axis)==DimsMode.Point:
+                slider.collapse()
+            else:
+                slider.expand()
+
 
         # The next lines connect events coming from the model to the Qt event system:
         # We need to go through Qt signals so that these events are run in the Qt event loop
         # thread. This is all about changing thread context for thread-safety purposes
 
         # axis change listener
-        def update_axis(event):
+        def update_axis_listener(event):
             self.update_axis.emit(event.axis)
-        self.dims.changed.axis.connect(update_axis)
+        self.dims.changed.axis.connect(update_axis_listener)
 
         # What to do with the axis change events in terms of UI calls to the widget
         self.update_axis.connect(self._update_slider)
 
         # nb dims change listener
-        def update_nbdim(event):
+        def update_nbdim_listener(event):
             self.update_nbdims.emit()
-        self.dims.changed.nbdims.connect(update_nbdim)
+        self.dims.changed.nbdims.connect(update_nbdim_listener)
 
         # What to do with the nb dims change events in terms of UI calls to the widget
         self.update_nbdims.connect(self._update_nb_sliders)
@@ -73,29 +94,34 @@ class QtDims(QWidget):
         """
         return len(self.sliders)
 
-    def _update_slider(self, index: int):
+    def _update_slider(self, slider_index: int):
         """
         Updates everything for a given slider
         Parameters
         ----------
-        index : slider index (corresponds to axis index)
+        slider_index : slider index (corresponds to axis index)
 
         """
-        if index>=self.num_sliders:
+        if slider_index>=self.num_sliders:
             return
 
-        slider = self.sliders[index]
+        slider = self.sliders[slider_index]
 
         if slider is None:
             return
 
-        if index<self.dims.num_dimensions:
-            if self.dims.get_mode(index)==DimsMode.Point:
+        if slider_index<self.dims.num_dimensions:
+
+            mode = self.dims.get_mode(slider_index)
+            if mode ==DimsMode.Point:
                 slider.collapsed = True
-                slider.setValue(self.dims.get_point(index))
-            elif self.dims.get_mode(index)==DimsMode.Interval:
+                slider.setValue(self.dims.get_point(slider_index))
+            elif mode ==DimsMode.Interval:
                 slider.collapsed = False
-                slider.setValues(self.dims.get_interval(index))
+                slider.setValues(self.dims.get_interval(slider_index))
+            slider_range = self.dims.get_range(slider_index)
+            if (slider_range is not None) and (slider_range != (None, None, None)) :
+                slider.setRange(slider_range)
 
     def _update_nb_sliders(self):
         """
@@ -128,9 +154,9 @@ class QtDims(QWidget):
 
             slider = self._create_range_slider_widget(new_slider_axis)
             #slider = self._create_slider_widget(new_slider_axis)
-            self.layout().addWidget(QRadioButton(), new_slider_axis, 0)
-            self.layout().addWidget(slider, new_slider_axis, 1)
-            self.layout().setRowMinimumHeight(new_slider_axis, self._slider_height)
+            #self.layout().addWidget(QRadioButton(), new_slider_axis, 0)
+            self.layout().addWidget(slider, new_slider_axis, 0)
+            #self.layout().setRowMinimumHeight(new_slider_axis, self._slider_height)
             self.sliders.append(slider)
             self.setMinimumHeight(self.num_sliders * self._slider_height)
 

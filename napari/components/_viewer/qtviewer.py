@@ -3,11 +3,11 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-from napari.components._dims.view import QtDims
-from .controls import QtControls
+from napari.components._dims.qtdims import QtDims
+from .qtcontrols import QtControls
 
 from os.path import join
-from ....resources import resources_dir
+from napari.resources import resources_dir
 path_cursor = join(resources_dir, 'icons', 'cursor_disabled.png')
 
 
@@ -17,6 +17,7 @@ class QtViewer(QSplitter):
         super().__init__()
 
         self.viewer = viewer
+        self.viewer._qtviewer = self
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -39,8 +40,6 @@ class QtViewer(QSplitter):
         layout.addWidget(self.canvas.native)
 
         dimsview = QtDims(self.viewer.dims)
-        dimsview.setFixedHeight(100)
-
         layout.addWidget(dimsview)
 
         center.setLayout(layout)
@@ -98,3 +97,29 @@ class QtViewer(QSplitter):
         layer = self.viewer._top
         if layer is not None:
             layer.on_key_release(event)
+
+
+    def screenshot(self, region=None, size=None, bgcolor=None):
+        """Render the scene to an offscreen buffer and return the image array.
+
+        Parameters
+        ----------
+        region : tuple | None
+            Specifies the region of the canvas to render. Format is
+            (x, y, w, h). By default, the entire canvas is rendered.
+        size : tuple | None
+            Specifies the size of the image array to return. If no size is
+            given, then the size of the *region* is used, multiplied by the
+            pixel scaling factor of the canvas (see `pixel_scale`). This
+            argument allows the scene to be rendered at resolutions different
+            from the native canvas resolution.
+        bgcolor : instance of Color | None
+            The background color to use.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        return self.canvas.render(region, size, bgcolor)

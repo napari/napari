@@ -123,6 +123,14 @@ class Layer(VisualWrapper, ABC):
         return self._get_shape()
 
     @property
+    def range(self):
+        """tuple of int: Shape of the data.
+        """
+        #TODO: later we need this to depend on the layer transform
+        shape = self._get_shape()
+        return [(0,max,1) for max in shape]
+
+    @property
     def selected(self):
         """boolean: Whether this layer is selected or not.
         """
@@ -157,7 +165,7 @@ class Layer(VisualWrapper, ABC):
             parent = None
         else:
             self._viewer = weakref.ref(viewer)
-            parent = viewer._view.scene
+            parent = viewer._qtviewer.canvas.scene
 
         self._parent = parent
         self._after_set_viewer(prev)

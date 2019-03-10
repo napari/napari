@@ -178,11 +178,9 @@ class QRangeSlider(QWidget):
                     if self.collapsed:
                         # print("collapsed already")
                         self.expand()
-                        self.collapsed = False
                     else:
                         # print("not collapsed")
                         self.collapse()
-                        self.collapsed = True
                     self.emitCollapse(self.collapsed)
 
             self.start_display_min = self.display_min
@@ -198,6 +196,7 @@ class QRangeSlider(QWidget):
         else:
             #self.setValues((self.scale_min, self.scale_max))
             self.update()
+        self.collapsed = True
 
     def expand(self):
         if self.default_collapse_logic:
@@ -213,6 +212,7 @@ class QRangeSlider(QWidget):
         else:
             #self.setValues((self.scale_min, self.scale_max))
             self.update()
+        self.collapsed = False
 
     def mouseReleaseEvent(self, event):
         if self.enabled:

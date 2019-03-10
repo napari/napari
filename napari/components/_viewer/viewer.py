@@ -1,23 +1,14 @@
+from math import inf
+
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
 from ...util.event import EmitterGroup, Event
-from .view import QtViewer
+
 
 
 class Viewer:
-    """Viewer containing the rendered scene, layers, and controlling elements
-    including dimension sliders, and control bars for color limits.
 
-    Attributes
-    ----------
-    window : Window
-        Parent window.
-    layers : LayersList
-        List of contained layers.
-    camera : vispy.scene.Camera
-        Viewer camera.
-    """
 
     def __init__(self):
         super().__init__()
@@ -29,7 +20,13 @@ class Viewer:
                                    status=Event,
                                    help=Event,
                                    active_markers=Event)
+
+
         self.dims = Dims()
+
+        self.dims.changed.axis.connect(self._update_layers)
+
+
         self.layers = LayersList(self)
 
         self._status = 'Ready'
@@ -38,21 +35,9 @@ class Viewer:
         self._interactive = True
         self._top = None
 
-        self._qt = QtViewer(self)
-
-    @property
-    def _canvas(self):
-        return self._qt.canvas
-
-    @property
-    def _view(self):
-        return self._qt.view
-
-    @property
-    def camera(self):
-        """vispy.scene.Camera: Viewer camera.
-        """
-        return self._view.camera
+        ## TODO: this should be eventually removed!
+        ## initialised by QtViewer when it is contrsucted by the model
+        self._qtviewer = None
 
     @property
     def status(self):
@@ -123,32 +108,9 @@ class Viewer:
     def reset_view(self):
         """Resets the camera's view.
         """
-        self.camera.set_range()
+        self._qtviewer.view.camera.set_range()
 
-    def screenshot(self, region=None, size=None, bgcolor=None):
-        """Render the scene to an offscreen buffer and return the image array.
 
-        Parameters
-        ----------
-        region : tuple | None
-            Specifies the region of the canvas to render. Format is
-            (x, y, w, h). By default, the entire canvas is rendered.
-        size : tuple | None
-            Specifies the size of the image array to return. If no size is
-            given, then the size of the *region* is used, multiplied by the
-            pixel scaling factor of the canvas (see `pixel_scale`). This
-            argument allows the scene to be rendered at resolutions different
-            from the native canvas resolution.
-        bgcolor : instance of Color | None
-            The background color to use.
-
-        Returns
-        -------
-        image : array
-            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
-            upper-left corner of the rendered region.
-        """
-        return self._canvas.render(region, size, bgcolor)
 
     def add_layer(self, layer):
         """Adds a layer to the viewer.
@@ -169,18 +131,21 @@ class Viewer:
             empty_markers = empty((0, self.dims.num_dimensions))
         self.add_markers(empty_markers)
 
-    def _update_layers(self):
+    def _update_layers(self, axis):
         """Updates the contained layers.
         """
+        self.dims._set_2d_viewing()
         slicespec, projectspec = self.dims.slice_and_project
+
         for layer in self.layers:
+            print(slicespec)
             layer._set_view_slice(slicespec)
 
     def _update_layer_selection(self, event):
         # iteration goes backwards to find top most selected layer if any
         for layer in self.layers[::-1]:
             if layer.selected:
-                self._qt.control_panel.display(layer)
+                self._qtviewer.control_panel.display(layer)
                 self.status = layer.status
                 self.help = layer.help
                 self.cursor = layer.cursor
@@ -188,19 +153,34 @@ class Viewer:
                 self._top = layer
                 break
         else:
-            self._qt.control_panel.display(None)
+            self._qtviewer.control_panel.display(None)
             self.status = 'Ready'
             self.help = ''
             self.cursor = 'standard'
             self.interactive = True
             self._top = None
-        self._canvas.native.setFocus()
+        self._qtviewer.canvas.native.setFocus()
 
     def _on_layers_change(self, event):
-        self.dims.num_dimensions = self._calc_max_dims()
+        self.dims.num_dimensions = self._calc_layers_num_dims()
+        self.dims.set_all_ranges(self._calc_layers_ranges())
 
 
-    def _calc_max_dims(self):
+    def _calc_layers_ranges(self):
+        """Calculates the range along each axis from all present layers.
+        """
+
+        nbdims = self._calc_layers_num_dims()
+
+        ranges = [(inf, -inf, inf)]*nbdims
+
+        for layer in self.layers:
+            layer_range = layer.range
+            ranges = [ (min(a,b),max(c,d), min(e,f)) for (a,c,e),(b,d,f) in zip(ranges,layer_range)]
+
+        return ranges
+
+    def _calc_layers_num_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
         """
         max_dims = 0

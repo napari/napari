@@ -5,8 +5,8 @@ from time import sleep
 import threading
 
 from napari.components import Dims
-from napari.components._dims.model import DimsMode
-from napari.components._dims.view import QtDims
+from napari.components._dims.dims import DimsMode
+from napari.components._dims.qtdims import QtDims
 from napari.util import app_context
 
 with app_context():
@@ -20,7 +20,10 @@ with app_context():
 
     # defines a axis change listener:
     def listener_axis(event):
-        print("axis %d changed from: %s" % (event.axis, event.source))
+        axis = event.axis
+        slicespec, projectspec = dims.slice_and_project
+        print("axis: %d changed, slice: %s, project: %s" % (axis, slicespec[axis], projectspec[axis]))
+        print("dims: %s" % event.source)
 
     # connects listener to model:
     dims.changed.axis.connect(listener_axis)
@@ -60,6 +63,7 @@ with app_context():
 
 
     # starts the thread for the loop:
-    threading.Thread(target=myloop).start()
+    #threading.Thread(target=myloop).start()
+
 
 
