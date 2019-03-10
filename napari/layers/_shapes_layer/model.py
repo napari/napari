@@ -356,8 +356,8 @@ class Shapes(Layer):
     def remove_shapes(self, index=True):
         """Remove shapes specified in index.
         """
-        self._selected_shapes = []
         if index==True:
+            self._selected_shapes = []
             self.data.remove_all_shapes()
             self._show_meshes = np.empty((0), dtype=bool)
             self._mesh_color_array =  np.empty((0, 4))
@@ -379,6 +379,11 @@ class Shapes(Layer):
         faces_indices = self.data._mesh_faces_index[:, 0]
         self.data.remove_one_shape(index, renumber=renumber)
         if renumber:
+            if index in self._selected_shapes:
+                self._selected_shapes.remove(index)
+            selected_shapes = np.array(self._selected_shapes)
+            selected_shapes[selected_shapes>index] = selected_shapes[selected_shapes>index]-1
+            self._selected_shapes = selected_shapes.tolist()
             z_order = self._z_order[self._z_order!=index]
             z_order[z_order>index] = z_order[z_order>index]-1
             self._z_order = z_order
@@ -1151,22 +1156,48 @@ class Shapes(Layer):
                 self._select()
                 self.status = self.get_message(coord, shape)
         elif self.mode == 'vertex_remove':
-            if not self._is_moving and not self._is_selecting:
+            if self._hover_shapes[1] is not None:
+                # have clicked on a current vertex so remove
+                index = self._hover_shapes[0]
+                vertex = self._hover_shapes[1]
+                object_type = self.data.id[index]
+                if object_type == self.data.objects.index('ellipse'):
+                    # Removing vertex from ellipse not implemented
+                    return
+                vertices = self.data.vertices[self.data.index==index]
+                if len(vertices) <= 2:
+                    # If only 2 vertices present, remove whole shape
+                    with self.freeze_refresh():
+                        self.remove_shapes(index=index)
+                else:
+                    if (object_type == self.data.objects.index('polygon') and
+                        len(vertices) == 3):
+                        self.data.id[index] = self.data.objects.index('path')
+                    # Remove clicked on vertex
+                    vertices = np.delete(vertices, vertex, axis=0)
+                    with self.freeze_refresh():
+                        self.edit_shape(index, vertices)
                 shape = self._shape_at(coord)
-                self._selected_vertex = shape
-                if self._selected_vertex[1] is None:
-                    if shift and shape[0] is not None:
-                        if shape[0] in self._selected_shapes:
-                            self._selected_shapes.remove(shape[0])
-                        else:
-                            self._selected_shapes.append(shape[0])
-                    elif shape[0] is not None:
-                        if shape[0] not in self._selected_shapes:
-                            self._selected_shapes = [shape[0]]
-                    else:
-                        self._selected_shapes = []
-                self._select()
+                self._hover_shapes = shape
+                self.refresh()
                 self.status = self.get_message(coord, shape)
+            else:
+                if not self._is_moving and not self._is_selecting:
+                    shape = self._shape_at(coord)
+                    self._selected_vertex = shape
+                    if self._selected_vertex[1] is None:
+                        if shift and shape[0] is not None:
+                            if shape[0] in self._selected_shapes:
+                                self._selected_shapes.remove(shape[0])
+                            else:
+                                self._selected_shapes.append(shape[0])
+                        elif shape[0] is not None:
+                            if shape[0] not in self._selected_shapes:
+                                self._selected_shapes = [shape[0]]
+                        else:
+                            self._selected_shapes = []
+                    self._select()
+                    self.status = self.get_message(coord, shape)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1340,27 +1371,15 @@ class Shapes(Layer):
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             pass
         elif (self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
-            shape = self._shape_at(coord)
-            if not self._is_moving and not self._is_selecting and not shift:
-                if shape[0] is not None:
-                    self._selected_shapes = [shape[0]]
-                    self.data.select_box(self._selected_shapes)
-                else:
-                    self._selected_shapes = []
-                    self.data.select_box(self._selected_shapes)
-            elif self._is_selecting:
+            if self._is_selecting:
                 self._selected_shapes = self._shapes_in_box(self._drag_box)
                 self.data.select_box(self._selected_shapes)
                 self._is_selecting=False
                 self._set_highlight()
-            self._is_moving = False
-            self._drag_start = None
-            self._drag_box = None
-            self._fixed_vertex = None
-            self._selected_vertex = [None, None]
-            self._hover_shapes = shape
-            self._select()
-            self.status = self.get_message(coord, shape)
+                self._is_moving = False
+                self._drag_start = None
+                self._drag_box = None
+                self._fixed_vertex = None
         else:
             raise ValueError("Mode not recongnized")
 
