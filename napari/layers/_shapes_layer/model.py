@@ -272,9 +272,7 @@ class Shapes(Layer):
               old_mode == 'vertex_remove' or old_mode == 'direct'):
               pass
         else:
-            self._selected_shapes = []
-            self.data.select_box([])
-            self._unselect()
+            self._finish_drawing()
         self.refresh()
 
     def _get_shape(self):
