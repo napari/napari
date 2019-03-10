@@ -1083,7 +1083,7 @@ class Shapes(Layer):
             if self._creating is False:
                 # Start drawing a path
                 shape = np.array([[coord, coord]])
-                self.add_shapes(paths = shape)
+                self.add_shapes(paths = shape, thickness=self.edge_width)
                 self._selected_shapes = [self.data.count-1]
                 ind = 1
                 self._selected_vertex = [self._selected_shapes[0], ind]
@@ -1149,11 +1149,11 @@ class Shapes(Layer):
             if self._ready_to_create and np.all(self._create_coord != coord):
                 shape = np.array([[self._create_coord, coord]])
                 if self.mode == 'add_rectangle':
-                    self.add_shapes(rectangles = shape)
+                    self.add_shapes(rectangles = shape, thickness=self.edge_width)
                 elif self.mode == 'add_ellipse':
-                    self.add_shapes(ellipses = shape)
+                    self.add_shapes(ellipses = shape, thickness=self.edge_width)
                 elif self.mode == 'add_line':
-                    self.add_shapes(lines = shape)
+                    self.add_shapes(lines = shape, thickness=self.edge_width)
                 else:
                     raise ValueError("Mode not recongnized")
                 self._ready_to_create = False
@@ -1246,11 +1246,11 @@ class Shapes(Layer):
                 shape = np.array([[self._create_coord-self._prefixed_size/2,
                                    self._create_coord+self._prefixed_size/2]])
                 if self.mode == 'add_rectangle':
-                    self.add_shapes(rectangles = shape)
+                    self.add_shapes(rectangles = shape, thickness=self.edge_width)
                 elif self.mode == 'add_ellipse':
-                    self.add_shapes(ellipses = shape)
+                    self.add_shapes(ellipses = shape, thickness=self.edge_width)
                 elif self.mode == 'add_line':
-                    self.add_shapes(lines = shape)
+                    self.add_shapes(lines = shape, thickness=self.edge_width)
                 else:
                     raise ValueError("Mode not recongnized")
                 self._ready_to_create = False
