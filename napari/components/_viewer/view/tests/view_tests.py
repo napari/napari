@@ -43,5 +43,3 @@ with app_context():
     # makes the view visible on the desktop:
     #widget.setGeometry(200, 200, 200, 20)
     widget.show()
-
-

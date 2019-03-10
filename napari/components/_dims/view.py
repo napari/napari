@@ -18,8 +18,6 @@ class QtDims(QWidget):
     update_axis = pyqtSignal(int)
     update_nbdims = pyqtSignal()
 
-    # list of sliders
-    sliders = []
 
     def __init__(self, dims: Dims, parent = None):
         """
@@ -32,12 +30,15 @@ class QtDims(QWidget):
 
         self.dims = dims
 
+        # list of sliders
+        self.sliders = []
 
         self.setMinimumWidth(512)
         self.setMinimumHeight(self._slider_height)
 
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setColumnStretch(1, 1)
         self.setLayout(layout)
 
         self._set_num_sliders(dims.num_dimensions)
@@ -127,8 +128,9 @@ class QtDims(QWidget):
 
             slider = self._create_range_slider_widget(new_slider_axis)
             #slider = self._create_slider_widget(new_slider_axis)
-            #self.layout().addWidget(slider, new_slider_axis, 0)
-            self.layout().addWidget(QRadioButton())
+            self.layout().addWidget(QRadioButton(), new_slider_axis, 0)
+            self.layout().addWidget(slider, new_slider_axis, 1)
+            self.layout().setRowMinimumHeight(new_slider_axis, self._slider_height)
             self.sliders.append(slider)
             self.setMinimumHeight(self.num_sliders * self._slider_height)
 
@@ -202,5 +204,3 @@ class QtDims(QWidget):
         slider.collapsedChanged.connect(collapse_change_listener)
 
         return slider
-
-
