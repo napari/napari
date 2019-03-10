@@ -19,6 +19,7 @@ class ViewerApp:
             v.add_image(image, name=name)
         self.viewer_widget = v
         self.window = Window(v)
+        self.layers = self.viewer_widget.layers
 
     def add_layer(self, layer):
         self.viewer_widget.add_layer(layer)
