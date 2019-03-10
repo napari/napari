@@ -245,7 +245,9 @@ class Dims(Component):
                 if display:
                     # no slicing, cropping or projection:
                     project_list.append(False)
-                    slice_list.append(slice(None))
+                    slice_point = round(point)
+                    slice_point = 1 if slice_point==0 else slice_point
+                    slice_list.append(slice(0,slice_point))
                 else:
                     # slice:
                     project_list.append(False)
