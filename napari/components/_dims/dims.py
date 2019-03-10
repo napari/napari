@@ -1,3 +1,5 @@
+import numpy
+from copy import copy
 from enum import Enum
 from typing import Union, Tuple, Iterable, Sequence
 
@@ -66,8 +68,13 @@ class Dims(Component):
         ----------
         ranges : tuple or
         """
+        nb_dim = len(all_ranges)
+        modified_dims = self._ensure_axis_present(nb_dim-1, no_event=True)
         self.range=all_ranges
-        self.changed.axis(axis=None)
+
+        self.changed.nbdims()
+        for axis_changed in modified_dims:
+            self.changed.axis(axis=axis_changed)
 
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """
@@ -184,7 +191,13 @@ class Dims(Component):
         """
         return self.display[axis]
 
-    def _ensure_axis_present(self, axis: int):
+    @property
+    def displayed_dimensions(self):
+        displayed_one_hot = copy(self.display)
+        displayed_one_hot =  [False if elem is None else elem for elem in displayed_one_hot]
+        return numpy.nonzero(list(displayed_one_hot))[0]
+
+    def _ensure_axis_present(self, axis: int, no_event = None):
         """
         Makes sure that the given axis is in the dimension model
         Parameters.
@@ -200,12 +213,17 @@ class Dims(Component):
             self.mode.extend([DimsMode.Interval] * (margin_length))
             self.display.extend([False] * (margin_length))
 
-            # First we notify listeners that the number of dimensions have changed:
-            self.changed.nbdims()
+            if not no_event:
+                # First we notify listeners that the number of dimensions have changed:
+                self.changed.nbdims()
 
-            # Then we notify listeners of which dimensions have been affected.
-            for axis_changed in range(old_nb_dimensions - 1, self.num_dimensions):
-                self.changed.axis(axis=axis_changed)
+                # Then we notify listeners of which dimensions have been affected.
+                for axis_changed in range(old_nb_dimensions - 1, self.num_dimensions):
+                    self.changed.axis(axis=axis_changed)
+
+            return list(range(old_nb_dimensions, 1 + axis))
+
+        return []
 
     def _trim_nb_dimensions(self, nb_dimensions: int):
         """

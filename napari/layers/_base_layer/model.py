@@ -234,15 +234,17 @@ class Layer(VisualWrapper, ABC):
         if self.viewer is not None:
             self.refresh()
 
-    def _set_view_slice(self, indices):
-        """Called whenever the sliders change. Sets the current view given a
-        specific slice to view.
+    @abstractmethod
+    def _set_view_specifications(self, indices, projections):
+        """Sets the slice to be used by this layer.
 
         Parameters
         ----------
         indices : sequence of int or slice
             Indices that make up the slice.
         """
+        raise NotImplementedError()
+
 
     def refresh(self):
         """Fully refreshes the layer. If layer is frozen refresh will not occur
@@ -256,6 +258,7 @@ class Layer(VisualWrapper, ABC):
         self._freeze = True
         yield
         self._freeze = False
+
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

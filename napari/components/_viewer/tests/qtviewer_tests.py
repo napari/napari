@@ -1,7 +1,9 @@
 # This is in interactive test
+import numpy
 from PyQt5.QtWidgets import QSplitter, QRadioButton, QWidget, QGridLayout, QVBoxLayout
 from skimage import data
 from skimage.color import rgb2gray
+from skimage.data import binary_blobs
 
 from napari import Viewer
 from napari.components import Dims
@@ -40,8 +42,13 @@ with app_context():
     print(astronaut.shape)
     print(coins.shape)
 
-    viewer.add_image(astronaut)
-    viewer.add_image(coins)
+    #viewer.add_image(astronaut)
+    #viewer.add_image(coins)
+
+    dataset = numpy.random.rand(10, 10, 512, 512)
+    #dataset = numpy.stack([binary_blobs(128, n_dim=3, blob_size_fraction=0.1, volume_fraction=f) for f in numpy.linspace(0.05, 0.5, 10)])
+    viewer.add_image(dataset)
+
 
     print(viewer.dims.num_dimensions)
 

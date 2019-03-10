@@ -292,7 +292,7 @@ class Markers(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_slice(self.viewer.dims.indices)
+            self._set_view_specifications(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -359,7 +359,7 @@ class Markers(Layer):
 
         return selection
 
-    def _set_view_slice(self, indices):
+    def _set_view_specifications(self, indices):
         """Sets the view given the indices to slice with.
 
         Parameters

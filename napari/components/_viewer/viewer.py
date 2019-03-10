@@ -135,11 +135,11 @@ class Viewer:
         """Updates the contained layers.
         """
         self.dims._set_2d_viewing()
-        slicespec, projectspec = self.dims.slice_and_project
+        slices, projections = self.dims.slice_and_project
 
         for layer in self.layers:
-            print(slicespec)
-            layer._set_view_slice(slicespec)
+            print(slices)
+            layer._set_view_specifications(slices, projections)
 
     def _update_layer_selection(self, event):
         # iteration goes backwards to find top most selected layer if any
@@ -162,9 +162,7 @@ class Viewer:
         self._qtviewer.canvas.native.setFocus()
 
     def _on_layers_change(self, event):
-        self.dims.num_dimensions = self._calc_layers_num_dims()
         self.dims.set_all_ranges(self._calc_layers_ranges())
-
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.

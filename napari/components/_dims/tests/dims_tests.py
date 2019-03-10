@@ -94,6 +94,9 @@ def test_display():
     assert dims.display[2]
     assert dims.display[3]
 
+    assert (dims.displayed_dimensions == [2,3]).all()
+
+
 
 
 def test_slice_and_project():

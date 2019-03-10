@@ -186,10 +186,10 @@ class QtDims(QWidget):
         range = self.dims.get_range(axis)
         interval = self.dims.get_interval(axis)
 
-        if range is None or range == (None, None, None):
-            range = (0,100,1)
-        if interval is None or interval == (None, None):
-            interval = (0,100)
+        #if range is None or range == (None, None, None):
+        #    range = (0,100,1)
+        #if interval is None or interval == (None, None):
+        #    interval = (0,100)
 
 
         slider = QHRangeSlider(slider_range=range,
