@@ -21,6 +21,8 @@ class QtShapesControls(QFrame):
         self.line_button = QtModeButton(layer, 'line', 'Add lines', mode='add_line')
         self.path_button = QtModeButton(layer, 'path', 'Add paths', mode='add_path')
         self.polygon_button = QtModeButton(layer, 'polygon', 'Add polygons', mode='add_polygon')
+        self.vertex_insert_button = QtModeButton(layer, 'vertex_insert', 'Insert vertex')
+        self.vertex_remove_button = QtModeButton(layer, 'vertex_remove', 'Remove vertex')
         self.delete_button = QtDeleteButton(layer)
 
         self.button_group = QButtonGroup(self)
@@ -32,11 +34,15 @@ class QtShapesControls(QFrame):
         self.button_group.addButton(self.line_button)
         self.button_group.addButton(self.path_button)
         self.button_group.addButton(self.polygon_button)
+        self.button_group.addButton(self.vertex_insert_button)
+        self.button_group.addButton(self.vertex_remove_button)
 
         layout = QVBoxLayout()
         layout.addWidget(self.panzoom_button)
         layout.addWidget(self.select_button)
         layout.addWidget(self.direct_button)
+        layout.addWidget(self.vertex_insert_button)
+        layout.addWidget(self.vertex_remove_button)
         layout.addWidget(self.rectangle_button)
         layout.addWidget(self.ellipse_button)
         layout.addWidget(self.line_button)
@@ -70,6 +76,10 @@ class QtShapesControls(QFrame):
             self.path_button.setChecked(True)
         elif mode == 'add_polygon':
             self.polygon_button.setChecked(True)
+        elif mode == 'vertex_insert':
+            self.vertex_insert_button.setChecked(True)
+        elif mode == 'vertex_remove':
+            self.vertex_remove_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
 

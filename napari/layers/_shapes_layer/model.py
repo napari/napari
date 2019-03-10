@@ -243,6 +243,18 @@ class Shapes(Layer):
             self.help = 'hold <space> to pan/zoom'
             self.status = mode
             self._mode = mode
+        elif mode == 'vertex_insert':
+            self.cursor = 'cross'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom'
+            self.status = mode
+            self._mode = mode
+        elif mode == 'vertex_remove':
+            self.cursor = 'cross'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom'
+            self.status = mode
+            self._mode = mode
         else:
             raise ValueError("Mode not recongnized")
 
@@ -794,7 +806,8 @@ class Shapes(Layer):
                                                    color=edge_color, width=1)
             elif (self.mode == 'direct' or self.mode == 'add_path' or
                   self.mode == 'add_polygon' or self.mode == 'add_rectangle' or
-                  self.mode == 'add_ellipse' or self.mode == 'add_line'):
+                  self.mode == 'add_ellipse' or self.mode == 'add_line' or
+                  self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
                 inds = np.isin(self.data.index, self._selected_shapes)
                 vertices = self.data.vertices[inds]
                 # If currently adding path don't show box over last vertex
@@ -1102,6 +1115,10 @@ class Shapes(Layer):
                 self._selected_vertex[1] = self._selected_vertex[1]+1
                 self._hover_shapes[1] = self._hover_shapes[1]+1
             self.status = self.get_message(coord, self._hover_shapes)
+        elif self.mode == 'vertex_insert':
+            pass
+        elif self.mode == 'vertex_remove':
+            pass
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1179,6 +1196,10 @@ class Shapes(Layer):
                 shape = self._hover_shapes
             else:
                 shape = self._shape_at(coord)
+        elif self.mode == 'vertex_insert':
+            shape = self._shape_at(coord)
+        elif self.mode == 'vertex_remove':
+            shape = self._shape_at(coord)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1261,6 +1282,10 @@ class Shapes(Layer):
             self.status = self.get_message(coord, shape)
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             pass
+        elif self.mode == 'vertex_insert':
+            pass
+        elif self.mode == 'vertex_remove':
+            pass
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1299,6 +1324,10 @@ class Shapes(Layer):
                 self.mode = 'select'
             elif event.key == 'z':
                 self.mode = 'pan/zoom'
+            elif event.key == 'i':
+                self.mode = 'vertex_insert'
+            elif event.key == 'x':
+                self.mode = 'vertex_remove'
             elif event.key == 'Backspace':
                 self.remove_selected()
             elif event.key == 'Escape':
