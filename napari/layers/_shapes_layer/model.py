@@ -259,10 +259,18 @@ class Shapes(Layer):
             raise ValueError("Mode not recongnized")
 
         self.events.mode(mode=mode)
-        if mode == 'direct' and old_mode == 'select':
+        if old_mode == 'select' and (mode == 'direct' or
+                                     mode == 'vertex_insert' or
+                                     mode == 'vertex_remove'):
             self.data.select_box([])
-        elif mode == 'select' and old_mode == 'direct':
+        elif mode == 'select' and (old_mode == 'direct' or
+                                   old_mode == 'vertex_insert' or
+                                   old_mode == 'vertex_remove'):
             self.data.select_box(self._selected_shapes)
+        elif (mode == 'vertex_insert' or mode == 'vertex_remove' or
+              mode == 'direct') and (old_mode == 'vertex_insert' or
+              old_mode == 'vertex_remove' or old_mode == 'direct'):
+              pass
         else:
             self._selected_shapes = []
             self.data.select_box([])
@@ -690,7 +698,8 @@ class Shapes(Layer):
                 matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()
                 if len(matches[0]) > 0:
                     return [self._selected_shapes[0], matches[0][-1]]
-            elif self.mode == 'direct':
+            elif (self.mode == 'direct' or self.mode == 'vertex_insert' or
+                  self.mode == 'vertex_remove'):
                 # Check if inside vertex of shape
                 inds = np.isin(self.data.index, self._selected_shapes)
                 vertices = self.data.vertices[inds]
@@ -996,6 +1005,15 @@ class Shapes(Layer):
                     self._drag_start = coord
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
+        elif self.mode == 'vertex_insert' or self.mode == 'vertex_remove':
+            if len(index) > 0:
+                pass
+            else:
+                self._is_selecting=True
+                if self._drag_start is None:
+                    self._drag_start = coord
+                self._drag_box = np.array([self._drag_start, coord])
+                self._set_highlight()
 
     def _select(self):
         if (self._selected_shapes == self._selected_shapes_stored and
@@ -1116,9 +1134,39 @@ class Shapes(Layer):
                 self._hover_shapes[1] = self._hover_shapes[1]+1
             self.status = self.get_message(coord, self._hover_shapes)
         elif self.mode == 'vertex_insert':
-            pass
+            if not self._is_moving and not self._is_selecting:
+                shape = self._shape_at(coord)
+                self._selected_vertex = shape
+                if self._selected_vertex[1] is None:
+                    if shift and shape[0] is not None:
+                        if shape[0] in self._selected_shapes:
+                            self._selected_shapes.remove(shape[0])
+                        else:
+                            self._selected_shapes.append(shape[0])
+                    elif shape[0] is not None:
+                        if shape[0] not in self._selected_shapes:
+                            self._selected_shapes = [shape[0]]
+                    else:
+                        self._selected_shapes = []
+                self._select()
+                self.status = self.get_message(coord, shape)
         elif self.mode == 'vertex_remove':
-            pass
+            if not self._is_moving and not self._is_selecting:
+                shape = self._shape_at(coord)
+                self._selected_vertex = shape
+                if self._selected_vertex[1] is None:
+                    if shift and shape[0] is not None:
+                        if shape[0] in self._selected_shapes:
+                            self._selected_shapes.remove(shape[0])
+                        else:
+                            self._selected_shapes.append(shape[0])
+                    elif shape[0] is not None:
+                        if shape[0] not in self._selected_shapes:
+                            self._selected_shapes = [shape[0]]
+                    else:
+                        self._selected_shapes = []
+                self._select()
+                self.status = self.get_message(coord, shape)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1196,10 +1244,19 @@ class Shapes(Layer):
                 shape = self._hover_shapes
             else:
                 shape = self._shape_at(coord)
-        elif self.mode == 'vertex_insert':
-            shape = self._shape_at(coord)
-        elif self.mode == 'vertex_remove':
-            shape = self._shape_at(coord)
+        elif (self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
+            if event.is_dragging:
+                # Drag any selecteion region
+                self._move(coord)
+            elif self._is_moving:
+                pass
+            elif self._is_selecting:
+                pass
+            else:
+                # Highlight boxes if hover over any
+                self._hover_shapes = self._shape_at(coord)
+                self._select()
+            shape = self._hover_shapes
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1282,10 +1339,28 @@ class Shapes(Layer):
             self.status = self.get_message(coord, shape)
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             pass
-        elif self.mode == 'vertex_insert':
-            pass
-        elif self.mode == 'vertex_remove':
-            pass
+        elif (self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
+            shape = self._shape_at(coord)
+            if not self._is_moving and not self._is_selecting and not shift:
+                if shape[0] is not None:
+                    self._selected_shapes = [shape[0]]
+                    self.data.select_box(self._selected_shapes)
+                else:
+                    self._selected_shapes = []
+                    self.data.select_box(self._selected_shapes)
+            elif self._is_selecting:
+                self._selected_shapes = self._shapes_in_box(self._drag_box)
+                self.data.select_box(self._selected_shapes)
+                self._is_selecting=False
+                self._set_highlight()
+            self._is_moving = False
+            self._drag_start = None
+            self._drag_box = None
+            self._fixed_vertex = None
+            self._selected_vertex = [None, None]
+            self._hover_shapes = shape
+            self._select()
+            self.status = self.get_message(coord, shape)
         else:
             raise ValueError("Mode not recongnized")
 
