@@ -1012,12 +1012,16 @@ class Shapes(Layer):
         self._selected_vertex = [None, None]
         self._hover_shapes = [None, None]
         self.data.select_box([])
-        if self.mode == 'add_path' and self._creating is True:
+        if self._creating is True and self.mode == 'add_path':
             vertices = self.data.vertices[self.data.index==index]
             if len(vertices) <= 2:
                 self.remove_shapes(index=index)
             else:
                 self.edit_shape(index, vertices[:-1])
+        if self._creating is True and self.mode == 'add_polygon':
+            vertices = self.data.vertices[self.data.index==index]
+            if len(vertices) <= 2:
+                self.remove_shapes(index=index)
         self._creating = False
         self._unselect()
 
@@ -1075,23 +1079,22 @@ class Shapes(Layer):
             # Start drawing a rectangle / ellipse / line
             self._ready_to_create = True
             self._create_coord = coord
-        elif self.mode == 'add_path':
+        elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             if self._creating is False:
                 # Start drawing a path
                 shape = np.array([[coord, coord]])
                 self.add_shapes(paths = shape)
-                self._ready_to_create = False
                 self._selected_shapes = [self.data.count-1]
-                #self.data.select_box(self._selected_shapes[0])
-                #ind = np.all(self.data.selected_box==coord, axis=1).nonzero()[0][0]
                 ind = 1
                 self._selected_vertex = [self._selected_shapes[0], ind]
                 self._hover_shapes = [self._selected_shapes[0], ind]
                 self._creating = True
                 self._select()
             else:
-                # Add to an existing path
+                # Add to an existing path or polygon
                 index = self._selected_vertex[0]
+                if self.mode == 'add_polygon':
+                    self.data.id[index] = self.data.objects.index('polygon')
                 vertices = self.data.vertices[self.data.index==index]
                 vertices = np.concatenate((vertices, [coord]), axis=0)
                 self.edit_shape(self._selected_vertex[0], vertices)
@@ -1099,10 +1102,6 @@ class Shapes(Layer):
                 self._selected_vertex[1] = self._selected_vertex[1]+1
                 self._hover_shapes[1] = self._hover_shapes[1]+1
             self.status = self.get_message(coord, self._hover_shapes)
-        elif self.mode == 'add_polygon':
-            # Start drawing a line
-            self._ready_to_create = True
-            self._create_coord = coord
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1172,29 +1171,9 @@ class Shapes(Layer):
                 shape = self._hover_shapes
             else:
                 shape = self._shape_at(coord)
-        elif self.mode == 'add_path':
-            # While drawing a rectangle or doing nothing
+        elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
+            # While drawing a path or doing nothing
             if self._creating:
-                # Drag any selected shapes
-                self._move(coord)
-                shape = self._hover_shapes
-            else:
-                shape = self._shape_at(coord)
-        elif self.mode == 'add_polygon':
-            # If ready to create rectangle start making one
-            if self._ready_to_create and np.all(self._create_coord != coord):
-                shape = np.array([[self._create_coord, coord]])
-                self.add_shapes(lines = shape)
-                self._ready_to_create = False
-                self._selected_shapes = [self.data.count-1]
-                self.data.select_box(self._selected_shapes[0])
-                ind = np.all(self.data.selected_box==coord, axis=1).nonzero()[0][0]
-                self._selected_vertex = [self._selected_shapes[0], ind]
-                self._hover_shapes = [self._selected_shapes[0], ind]
-                self._creating = True
-                self._select()
-            # While drawing a rectangle or doing nothing
-            if self._creating and event.is_dragging:
                 # Drag any selected shapes
                 self._move(coord)
                 shape = self._hover_shapes

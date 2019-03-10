@@ -517,8 +517,10 @@ class ShapesData():
             if fill_vertices is not None and fill_faces is not None:
                 self._append_meshes(fill_vertices, fill_faces, index=index + [0])
             else:
-                vertices, faces = PolygonData(vertices=points).triangulate()
-                self._append_meshes(vertices, faces.astype(np.uint32), index=index + [0])
+                if len(points) > 2:
+                    vertices, faces = PolygonData(vertices=points).triangulate()
+                    if len(faces) > 0:
+                        self._append_meshes(vertices, faces.astype(np.uint32), index=index + [0])
 
 def path_triangulate(path, closed=False, limit=5, bevel=False):
     if closed:
