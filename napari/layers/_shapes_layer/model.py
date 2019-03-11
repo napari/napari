@@ -137,7 +137,7 @@ class Shapes(Layer):
         if self._apply_all:
             index = True
         else:
-            index = self._selected_shapes
+            index = self.selected_shapes
         self.set_thickness(index=index, thickness=self._edge_width)
 
 
@@ -154,7 +154,7 @@ class Shapes(Layer):
         if self._apply_all:
             index = True
         else:
-            index = self._selected_shapes
+            index = self.selected_shapes
         self.set_color(index=index, edge_color=self._edge_color)
 
     @property
@@ -170,7 +170,7 @@ class Shapes(Layer):
         if self._apply_all:
             index = True
         else:
-            index = self._selected_shapes
+            index = self.selected_shapes
         self.set_color(index=index, face_color=self._face_color)
 
     @property
@@ -183,6 +183,18 @@ class Shapes(Layer):
     @apply_all.setter
     def apply_all(self, apply_all):
         self._apply_all = apply_all
+
+    @property
+    def selected_shapes(self):
+        """list: list of currently selected shapes
+        """
+
+        return self._selected_shapes
+
+    @selected_shapes.setter
+    def selected_shapes(self, selected_shapes):
+        self._selected_shapes = selected_shapes
+        self.data.select_box(self._selected_shapes)
 
     @property
     def z_order(self):
@@ -284,17 +296,9 @@ class Shapes(Layer):
             raise ValueError("Mode not recongnized")
 
         self.events.mode(mode=mode)
-        if old_mode == 'select' and (mode == 'direct' or
-                                     mode == 'vertex_insert' or
-                                     mode == 'vertex_remove'):
-            self.data.select_box([])
-        elif mode == 'select' and (old_mode == 'direct' or
-                                   old_mode == 'vertex_insert' or
-                                   old_mode == 'vertex_remove'):
-            self.data.select_box(self._selected_shapes)
-        elif (mode == 'vertex_insert' or mode == 'vertex_remove' or
-              mode == 'direct') and (old_mode == 'vertex_insert' or
-              old_mode == 'vertex_remove' or old_mode == 'direct'):
+        if (mode == 'vertex_insert' or mode == 'vertex_remove' or
+              mode == 'direct' or mode == 'select') and (old_mode == 'vertex_insert' or
+              old_mode == 'vertex_remove' or old_mode == 'direct' or old_mode == 'select'):
               pass
         else:
             self._finish_drawing()
@@ -380,7 +384,7 @@ class Shapes(Layer):
         """Remove shapes specified in index.
         """
         if index==True:
-            self._selected_shapes = []
+            self.selected_shapes = []
             self.data.remove_all_shapes()
             self._show_meshes = np.empty((0), dtype=bool)
             self._mesh_color_array =  np.empty((0, 4))
@@ -402,11 +406,12 @@ class Shapes(Layer):
         faces_indices = self.data._mesh_faces_index[:, 0]
         self.data.remove_one_shape(index, renumber=renumber)
         if renumber:
-            if index in self._selected_shapes:
-                self._selected_shapes.remove(index)
-            selected_shapes = np.array(self._selected_shapes)
+            if index in self.selected_shapes:
+                self.selected_shapes.remove(index)
+                self.data.select_box(self.selected_shapes)
+            selected_shapes = np.array(self.selected_shapes)
             selected_shapes[selected_shapes>index] = selected_shapes[selected_shapes>index]-1
-            self._selected_shapes = selected_shapes.tolist()
+            self.selected_shapes = selected_shapes.tolist()
             z_order = self._z_order[self._z_order!=index]
             z_order[z_order>index] = z_order[z_order>index]-1
             self._z_order = z_order
@@ -422,8 +427,8 @@ class Shapes(Layer):
         mode
         """
         if self.mode == 'select' or self.mode == 'direct':
-            to_delete = copy(self._selected_shapes)
-            self._selected_shapes = []
+            to_delete = copy(self.selected_shapes)
+            self.selected_shapes = []
             self._hover_shapes = [None, None]
             self.remove_shapes(to_delete)
 
@@ -711,7 +716,7 @@ class Shapes(Layer):
             Indices to check if shape at.
         """
         # Check selected shapes
-        if len(self._selected_shapes) > 0:
+        if len(self.selected_shapes) > 0:
             if self.mode == 'select':
                 # Check if inside vertex of bounding box or rotation handle
                 inds = list(range(0,8))
@@ -725,11 +730,11 @@ class Shapes(Layer):
                 # Check if any matching vertices
                 matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()
                 if len(matches[0]) > 0:
-                    return [self._selected_shapes[0], matches[0][-1]]
+                    return [self.selected_shapes[0], matches[0][-1]]
             elif (self.mode == 'direct' or self.mode == 'vertex_insert' or
                   self.mode == 'vertex_remove'):
                 # Check if inside vertex of shape
-                inds = np.isin(self.data.index, self._selected_shapes)
+                inds = np.isin(self.data.index, self.selected_shapes)
                 vertices = self.data.vertices[inds]
                 distances = abs(vertices - indices[:2])
 
@@ -795,10 +800,10 @@ class Shapes(Layer):
         self._update()
 
     def _set_highlight(self):
-        if self._highlight and (self._hover_shapes[0] is not None or len(self._selected_shapes)>0):
+        if self._highlight and (self._hover_shapes[0] is not None or len(self.selected_shapes)>0):
             # show outlines hover shape or any selected shapes
-            if len(self._selected_shapes)>0:
-                index = copy(self._selected_shapes)
+            if len(self.selected_shapes)>0:
+                index = copy(self.selected_shapes)
                 if self._hover_shapes[0] is not None:
                     if self._hover_shapes[0] in index:
                         pass
@@ -824,7 +829,7 @@ class Shapes(Layer):
         else:
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
-        if self._highlight and len(self._selected_shapes) > 0:
+        if self._highlight and len(self.selected_shapes) > 0:
             if self.mode == 'select':
                 inds = list(range(0,8))
                 inds.append(9)
@@ -845,7 +850,7 @@ class Shapes(Layer):
                   self.mode == 'add_polygon' or self.mode == 'add_rectangle' or
                   self.mode == 'add_ellipse' or self.mode == 'add_line' or
                   self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
-                inds = np.isin(self.data.index, self._selected_shapes)
+                inds = np.isin(self.data.index, self.selected_shapes)
                 vertices = self.data.vertices[inds]
                 # If currently adding path don't show box over last vertex
                 if self.mode == 'add_path':
@@ -918,7 +923,7 @@ class Shapes(Layer):
         coord : sequence of two int
             Position of mouse cursor in data.
         """
-        index = self._selected_shapes
+        index = self.selected_shapes
         vertex = self._selected_vertex[1]
         if (self.mode == 'select' or self.mode == 'add_rectangle' or
         self.mode == 'add_ellipse' or self.mode == 'add_line'):
@@ -1044,11 +1049,11 @@ class Shapes(Layer):
                 self._set_highlight()
 
     def _select(self):
-        if (self._selected_shapes == self._selected_shapes_stored and
+        if (self.selected_shapes == self._selected_shapes_stored and
             self._hover_shapes == self._hover_shapes_stored):
             return
         self._highlight = True
-        self._selected_shapes_stored = copy(self._selected_shapes)
+        self._selected_shapes_stored = copy(self.selected_shapes)
         self._hover_shapes_stored = copy(self._hover_shapes)
         self._set_highlight()
 
@@ -1064,13 +1069,12 @@ class Shapes(Layer):
         self._ready_to_create = False
         self._create_coord = [None, None]
         self._is_moving = False
-        self._selected_shapes = []
+        self.selected_shapes = []
         self._drag_start = None
         self._drag_box = None
         self._fixed_vertex = None
         self._selected_vertex = [None, None]
         self._hover_shapes = [None, None]
-        self.data.select_box([])
         if self._creating is True and self.mode == 'add_path':
             vertices = self.data.vertices[self.data.index==index]
             if len(vertices) <= 2:
@@ -1101,19 +1105,17 @@ class Shapes(Layer):
                 self._selected_vertex = shape
                 if self._selected_vertex[1] is None:
                     if shift and shape[0] is not None:
-                        if shape[0] in self._selected_shapes:
-                            self._selected_shapes.remove(shape[0])
-                            self.data.select_box(self._selected_shapes)
+                        if shape[0] in self.selected_shapes:
+                            self.selected_shapes.remove(shape[0])
+                            self.data.select_box(self.selected_shapes)
                         else:
-                            self._selected_shapes.append(shape[0])
-                            self.data.select_box(self._selected_shapes)
+                            self.selected_shapes.append(shape[0])
+                            self.data.select_box(self.selected_shapes)
                     elif shape[0] is not None:
-                        if shape[0] not in self._selected_shapes:
-                            self._selected_shapes = [shape[0]]
-                            self.data.select_box(self._selected_shapes)
+                        if shape[0] not in self.selected_shapes:
+                            self.selected_shapes = [shape[0]]
                     else:
-                        self._selected_shapes = []
-                        self.data.select_box(self._selected_shapes)
+                        self.selected_shapes = []
                 self._select()
                 self.status = self.get_message(coord, shape)
         elif self.mode == 'direct':
@@ -1122,15 +1124,17 @@ class Shapes(Layer):
                 self._selected_vertex = shape
                 if self._selected_vertex[1] is None:
                     if shift and shape[0] is not None:
-                        if shape[0] in self._selected_shapes:
-                            self._selected_shapes.remove(shape[0])
+                        if shape[0] in self.selected_shapes:
+                            self.selected_shapes.remove(shape[0])
+                            self.data.select_box(self.selected_shapes)
                         else:
-                            self._selected_shapes.append(shape[0])
+                            self.selected_shapes.append(shape[0])
+                            self.data.select_box(self.selected_shapes)
                     elif shape[0] is not None:
-                        if shape[0] not in self._selected_shapes:
-                            self._selected_shapes = [shape[0]]
+                        if shape[0] not in self.selected_shapes:
+                            self.selected_shapes = [shape[0]]
                     else:
-                        self._selected_shapes = []
+                        self.selected_shapes = []
                 self._select()
                 self.status = self.get_message(coord, shape)
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
@@ -1143,10 +1147,10 @@ class Shapes(Layer):
                 # Start drawing a path
                 shape = np.array([[coord, coord]])
                 self.add_shapes(paths = shape, thickness=self.edge_width)
-                self._selected_shapes = [self.data.count-1]
+                self.selected_shapes = [self.data.count-1]
                 ind = 1
-                self._selected_vertex = [self._selected_shapes[0], ind]
-                self._hover_shapes = [self._selected_shapes[0], ind]
+                self._selected_vertex = [self.selected_shapes[0], ind]
+                self._hover_shapes = [self.selected_shapes[0], ind]
                 self._creating = True
                 self._select()
             else:
@@ -1162,13 +1166,13 @@ class Shapes(Layer):
                 self.edit_shape(self._selected_vertex[0], vertices)
             self.status = self.get_message(coord, self._hover_shapes)
         elif self.mode == 'vertex_insert':
-            if len(self._selected_shapes) == 0:
+            if len(self.selected_shapes) == 0:
                 #If none selected return immediately
                 return
 
             all_lines = np.empty((0, 2, 2))
             all_lines_shape = np.empty((0, 2), dtype=int)
-            for shape in self._selected_shapes:
+            for shape in self.selected_shapes:
                 object_type = self.data.id[shape]
                 if object_type == self.data.objects.index('ellipse'):
                     # Adding vertex to ellipse not implemented
@@ -1292,11 +1296,10 @@ class Shapes(Layer):
                 else:
                     raise ValueError("Mode not recongnized")
                 self._ready_to_create = False
-                self._selected_shapes = [self.data.count-1]
-                self.data.select_box(self._selected_shapes[0])
+                self.selected_shapes = [self.data.count-1]
                 ind = np.all(self.data.selected_box==coord, axis=1).nonzero()[0][0]
-                self._selected_vertex = [self._selected_shapes[0], ind]
-                self._hover_shapes = [self._selected_shapes[0], ind]
+                self._selected_vertex = [self.selected_shapes[0], ind]
+                self._hover_shapes = [self.selected_shapes[0], ind]
                 self._creating = True
                 self._select()
             # While drawing a shape or doing nothing
@@ -1338,14 +1341,11 @@ class Shapes(Layer):
             shape = self._shape_at(coord)
             if not self._is_moving and not self._is_selecting and not shift:
                 if shape[0] is not None:
-                    self._selected_shapes = [shape[0]]
-                    self.data.select_box(self._selected_shapes)
+                    self.selected_shapes = [shape[0]]
                 else:
-                    self._selected_shapes = []
-                    self.data.select_box(self._selected_shapes)
+                    self.selected_shapes = []
             elif self._is_selecting:
-                self._selected_shapes = self._shapes_in_box(self._drag_box)
-                self.data.select_box(self._selected_shapes)
+                self.selected_shapes = self._shapes_in_box(self._drag_box)
                 self._is_selecting=False
                 self._set_highlight()
             self._is_moving = False
@@ -1360,14 +1360,11 @@ class Shapes(Layer):
             shape = self._shape_at(coord)
             if not self._is_moving and not self._is_selecting and not shift:
                 if shape[0] is not None:
-                    self._selected_shapes = [shape[0]]
-                    self.data.select_box(self._selected_shapes)
+                    self.selected_shapes = [shape[0]]
                 else:
-                    self._selected_shapes = []
-                    self.data.select_box(self._selected_shapes)
+                    self.selected_shapes = []
             elif self._is_selecting:
-                self._selected_shapes = self._shapes_in_box(self._drag_box)
-                self.data.select_box(self._selected_shapes)
+                self.selected_shapes = self._shapes_in_box(self._drag_box)
                 self._is_selecting=False
                 self._set_highlight()
             self._is_moving = False
@@ -1447,8 +1444,7 @@ class Shapes(Layer):
             elif event.key == 'a':
                 if (self.mode == 'direct' or self.mode == 'select' or
                     self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
-                    self._selected_shapes = list(range(self.data.count))
-                    self.data.select_box(self._selected_shapes)
+                    self.selected_shapes = list(range(self.data.count))
                     self._set_highlight()
             elif event.key == 'Backspace':
                 self.remove_selected()
