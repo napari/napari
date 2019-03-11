@@ -1,6 +1,7 @@
 """Miscellaneous utility functions.
 """
 from numpy import multiply, all, array
+import numpy as np
 import inspect
 
 def inside_triangles(triangles):
@@ -45,6 +46,42 @@ def inside_boxes(boxes):
     c4 = BCBM <= BCBC
 
     return all(array([c1, c2, c3, c4]), axis=0)
+
+
+def point_to_lines(point, lines):
+    """Calculate the distance between a point and line segments. First calculates
+    the distance to the infinite line, then checks if the projected point lies
+    between the line segment endpoints. If not, calculates distance to the endpoints
+    Parameters
+    ----------
+    point : np.ndarray
+        1x2 array of point should be checked
+    lines : np.ndarray
+        Nx2x2 array of line segments
+    """
+
+    # shift and normalize vectors
+    lines_vectors = lines[:,1] - lines[:,0]
+    point_vectors = point - lines[:,0]
+    end_point_vectors = point - lines[:,1]
+    norm_lines = np.linalg.norm(lines_vectors, axis=1, keepdims=True)
+    unit_lines = lines_vectors / norm_lines
+
+    # calculate distance to line
+    line_dist = abs(np.cross(unit_lines, point_vectors))
+
+    # calculate scale
+    line_loc = (unit_lines*point_vectors).sum(axis=1)/norm_lines.squeeze()
+
+    # for points not falling inside segment calculate distance to appropriate endpoint
+    line_dist[line_loc<0] = np.linalg.norm(point_vectors[line_loc<0], axis=1)
+    line_dist[line_loc>1] = np.linalg.norm(end_point_vectors[line_loc>1], axis=1)
+
+    # calculate closet line
+    ind = np.argmin(line_dist)
+
+    return ind, line_loc[ind]
+
 
 def is_permutation(ar, N):
     """Checks is an array is a permutation of the intergers 0, ... N-1
