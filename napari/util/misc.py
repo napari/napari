@@ -65,6 +65,8 @@ def point_to_lines(point, lines):
     point_vectors = point - lines[:,0]
     end_point_vectors = point - lines[:,1]
     norm_lines = np.linalg.norm(lines_vectors, axis=1, keepdims=True)
+    reject = (norm_lines==0).squeeze()
+    norm_lines[reject] = 1
     unit_lines = lines_vectors / norm_lines
 
     # calculate distance to line
@@ -76,6 +78,8 @@ def point_to_lines(point, lines):
     # for points not falling inside segment calculate distance to appropriate endpoint
     line_dist[line_loc<0] = np.linalg.norm(point_vectors[line_loc<0], axis=1)
     line_dist[line_loc>1] = np.linalg.norm(end_point_vectors[line_loc>1], axis=1)
+    line_dist[reject] = np.linalg.norm(point_vectors[reject], axis=1)
+    line_loc[reject] = 0.5
 
     # calculate closet line
     ind = np.argmin(line_dist)
