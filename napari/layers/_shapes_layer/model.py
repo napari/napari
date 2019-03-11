@@ -1452,6 +1452,12 @@ class Shapes(Layer):
                 self.mode = 'vertex_insert'
             elif event.key == 'x':
                 self.mode = 'vertex_remove'
+            elif event.key == 'a':
+                if (self.mode == 'direct' or self.mode == 'select' or
+                    self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
+                    self._selected_shapes = list(range(self.data.count))
+                    self.data.select_box(self._selected_shapes)
+                    self._set_highlight()
             elif event.key == 'Backspace':
                 self.remove_selected()
             elif event.key == 'Escape':
