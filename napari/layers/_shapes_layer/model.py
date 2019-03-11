@@ -1162,54 +1162,54 @@ class Shapes(Layer):
                 self.edit_shape(self._selected_vertex[0], vertices)
             self.status = self.get_message(coord, self._hover_shapes)
         elif self.mode == 'vertex_insert':
-            shape = self._shape_at(coord)
-            index = shape[0]
-            if index is not None and index in self._selected_shapes:
-                # have clicked on a selected shape
-                vertex = shape[1]
-                object_type = self.data.id[index]
+            if len(self._selected_shapes) == 0:
+                #If none selected return immediately
+                return
+
+            all_lines = np.empty((0, 2, 2))
+            all_lines_shape = np.empty((0, 2), dtype=int)
+            for shape in self._selected_shapes:
+                object_type = self.data.id[shape]
                 if object_type == self.data.objects.index('ellipse'):
                     # Adding vertex to ellipse not implemented
-                    return
-                if object_type == self.data.objects.index('line'):
-                        object_type = self.data.objects.index('path')
-                        self.data.id[index] = object_type
-                vertices = self.data.vertices[self.data.index==index]
-                # Find which edge new vertex should inserted along
-                closed = object_type != self.data.objects.index('path')
-                n = len(vertices)
-                if closed:
-                    lines = np.array([[vertices[i], vertices[np.mod(i+1, n)]] for i in range(n)])
+                    pass
                 else:
-                    lines = np.array([[vertices[i], vertices[i+1]] for i in range(n-1)])
-                ind, loc = point_to_lines(coord, lines)
-                ind = ind + 1
-                if closed is False and ind == 1 and loc < 0:
-                    ind = 0
-                vertices = np.insert(vertices, ind, [coord], axis=0)
-                with self.freeze_refresh():
-                    self.edit_shape(index, vertices)
-                shape = self._shape_at(coord)
-                self._hover_shapes = shape
-                self.refresh()
-                self.status = self.get_message(coord, shape)
-            else:
-                if not self._is_moving and not self._is_selecting:
-                    shape = self._shape_at(coord)
-                    self._selected_vertex = shape
-                    if self._selected_vertex[1] is None:
-                        if shift and shape[0] is not None:
-                            if shape[0] in self._selected_shapes:
-                                self._selected_shapes.remove(shape[0])
-                            else:
-                                self._selected_shapes.append(shape[0])
-                        elif shape[0] is not None:
-                            if shape[0] not in self._selected_shapes:
-                                self._selected_shapes = [shape[0]]
-                        else:
-                            self._selected_shapes = []
-                    self._select()
-                    self.status = self.get_message(coord, shape)
+                    vertices = self.data.vertices[self.data.index==shape]
+                    # Find which edge new vertex should inserted along
+                    closed = object_type != self.data.objects.index('path')
+                    n = len(vertices)
+                    if closed:
+                        lines = np.array([[vertices[i], vertices[np.mod(i+1, n)]] for i in range(n)])
+                    else:
+                        lines = np.array([[vertices[i], vertices[i+1]] for i in range(n-1)])
+                    all_lines = np.concatenate((all_lines, lines), axis=0)
+                    indices = np.array([np.repeat(shape, len(lines)), list(range(len(lines)))]).T
+                    all_lines_shape = np.concatenate((all_lines_shape, indices), axis=0)
+            if len(all_lines) == 0:
+                # No appropriate shapes found
+                return
+
+            ind, loc = point_to_lines(coord, all_lines)
+            index = all_lines_shape[ind][0]
+            ind = all_lines_shape[ind][1]+1
+            object_type = self.data.id[shape]
+            if object_type == self.data.objects.index('line'):
+                # Adding vertex to path turns it into line
+                object_type = self.data.objects.index('path')
+                self.data.id[index] = object_type
+            closed = object_type != self.data.objects.index('path')
+            vertices = self.data.vertices[self.data.index==index]
+
+            if closed is False and ind == 1 and loc < 0:
+                ind = 0
+
+            vertices = np.insert(vertices, ind, [coord], axis=0)
+            with self.freeze_refresh():
+                self.edit_shape(index, vertices)
+            shape = self._shape_at(coord)
+            self._hover_shapes = shape
+            self.refresh()
+            self.status = self.get_message(coord, shape)
         elif self.mode == 'vertex_remove':
             shape = self._shape_at(coord)
             if shape[1] is not None:
@@ -1237,22 +1237,6 @@ class Shapes(Layer):
                 self._hover_shapes = shape
                 self.refresh()
                 self.status = self.get_message(coord, shape)
-            else:
-                if not self._is_moving and not self._is_selecting:
-                    self._selected_vertex = shape
-                    if self._selected_vertex[1] is None:
-                        if shift and shape[0] is not None:
-                            if shape[0] in self._selected_shapes:
-                                self._selected_shapes.remove(shape[0])
-                            else:
-                                self._selected_shapes.append(shape[0])
-                        elif shape[0] is not None:
-                            if shape[0] not in self._selected_shapes:
-                                self._selected_shapes = [shape[0]]
-                        else:
-                            self._selected_shapes = []
-                    self._select()
-                    self.status = self.get_message(coord, shape)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1331,17 +1315,8 @@ class Shapes(Layer):
             else:
                 shape = self._shape_at(coord)
         elif (self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
-            if event.is_dragging:
-                # Drag any selecteion region
-                self._move(coord)
-            elif self._is_moving:
-                pass
-            elif self._is_selecting:
-                pass
-            else:
-                # Highlight boxes if hover over any
-                self._hover_shapes = self._shape_at(coord)
-                self._select()
+            self._hover_shapes = self._shape_at(coord)
+            self._select()
             shape = self._hover_shapes
         else:
             raise ValueError("Mode not recongnized")
@@ -1426,15 +1401,7 @@ class Shapes(Layer):
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             pass
         elif (self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
-            if self._is_selecting:
-                self._selected_shapes = self._shapes_in_box(self._drag_box)
-                self.data.select_box(self._selected_shapes)
-                self._is_selecting=False
-                self._set_highlight()
-                self._is_moving = False
-                self._drag_start = None
-                self._drag_box = None
-                self._fixed_vertex = None
+            pass
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1473,7 +1440,7 @@ class Shapes(Layer):
                 self.mode = 'select'
             elif event.key == 'z':
                 self.mode = 'pan/zoom'
-            elif event.key == 'i':
+            elif event.key == 'v':
                 self.mode = 'vertex_insert'
             elif event.key == 'x':
                 self.mode = 'vertex_remove'
