@@ -62,6 +62,7 @@ class Shapes(Layer):
             self._mesh_color_array = np.empty((len(self.data._mesh_faces), 4))
             self._edge_color_array = np.empty((self.data.count, 4))
             self._face_color_array = np.empty((self.data.count, 4))
+            self.apply_all = True
             self.edge_width = edge_width
             self.edge_color = edge_color
             self.face_color = face_color
@@ -133,7 +134,12 @@ class Shapes(Layer):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-        self.set_thickness(thickness=self._edge_width)
+        if self._apply_all:
+            index = True
+        else:
+            index = self._selected_shapes
+        self.set_thickness(index=index, thickness=self._edge_width)
+
 
     @property
     def edge_color(self):
@@ -145,7 +151,11 @@ class Shapes(Layer):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
-        self.set_color(edge_color=self._edge_color)
+        if self._apply_all:
+            index = True
+        else:
+            index = self._selected_shapes
+        self.set_color(index=index, edge_color=self._edge_color)
 
     @property
     def face_color(self):
@@ -157,7 +167,22 @@ class Shapes(Layer):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
-        self.set_color(face_color=self._face_color)
+        if self._apply_all:
+            index = True
+        else:
+            index = self._selected_shapes
+        self.set_color(index=index, face_color=self._face_color)
+
+    @property
+    def apply_all(self):
+        """bool: whether to apply gui manipulations to all shapes or just selected
+        """
+
+        return self._apply_all
+
+    @apply_all.setter
+    def apply_all(self, apply_all):
+        self._apply_all = apply_all
 
     @property
     def z_order(self):

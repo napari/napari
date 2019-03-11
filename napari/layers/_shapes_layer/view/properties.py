@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QComboBox, QSlider
+from PyQt5.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
 from collections import Iterable
 import numpy as np
 from ..._base_layer import QtLayer
@@ -51,6 +51,14 @@ class QtShapesLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
         self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
+        apply_cb = QCheckBox()
+        apply_cb.setToolTip('Apply to all')
+        apply_cb.setChecked(self.layer.apply_all)
+        apply_cb.stateChanged.connect(lambda state=apply_cb:
+                                     self.change_apply(state))
+        self.grid_layout.addWidget(QLabel('apply_all:'), 6, 0)
+        self.grid_layout.addWidget(apply_cb, 6, 1)
+
         self.setExpanded(False)
 
     def changeFaceColor(self, text):
@@ -61,3 +69,9 @@ class QtShapesLayer(QtLayer):
 
     def changeWidth(self, value):
         self.layer.edge_width = value
+
+    def change_apply(self, state):
+        if state == Qt.Checked:
+            self.layer.apply_all = True
+        else:
+            self.layer.apply_all = False
