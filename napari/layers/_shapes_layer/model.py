@@ -1203,9 +1203,11 @@ class Shapes(Layer):
                 self.data.id[index] = object_type
             closed = object_type != self.data.objects.index('path')
             vertices = self.data.vertices[self.data.index==index]
-
-            if closed is False and ind == 1 and loc < 0:
-                ind = 0
+            if closed is not True:
+                if int(ind) == 1 and loc < 0:
+                    ind = 0
+                elif int(ind) == len(vertices)-1 and loc > 1:
+                    ind = ind + 1
 
             vertices = np.insert(vertices, ind, [coord], axis=0)
             with self.freeze_refresh():
