@@ -51,13 +51,25 @@ class QtShapesLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
         self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
+        rearrange_comboBox = QComboBox()
+        options = (['select', 'move_to_front', 'move_to_back',
+                    'move_forward', 'move_backward'])
+        for o in options:
+            rearrange_comboBox.addItem(o)
+        rearrange_comboBox.setCurrentIndex(0)
+        rearrange_comboBox.activated[str].connect(
+            lambda text=rearrange_comboBox: self.changeRearrange(text))
+        self.rearrange_cb = rearrange_comboBox
+        self.grid_layout.addWidget(QLabel('rearrange:'), 6, 0)
+        self.grid_layout.addWidget(rearrange_comboBox, 6, 1)
+
         apply_cb = QCheckBox()
         apply_cb.setToolTip('Apply to all')
         apply_cb.setChecked(self.layer.apply_all)
         apply_cb.stateChanged.connect(lambda state=apply_cb:
                                      self.change_apply(state))
-        self.grid_layout.addWidget(QLabel('apply_all:'), 6, 0)
-        self.grid_layout.addWidget(apply_cb, 6, 1)
+        self.grid_layout.addWidget(QLabel('apply_all:'), 7, 0)
+        self.grid_layout.addWidget(apply_cb, 7, 1)
 
         self.setExpanded(False)
 
@@ -69,6 +81,28 @@ class QtShapesLayer(QtLayer):
 
     def changeWidth(self, value):
         self.layer.edge_width = value
+
+    def changeRearrange(self, text):
+        if text == 'select':
+            return
+            
+        _selected_shapes = self.layer._selected_shapes
+        if len(_selected_shapes) == 0:
+            self.rearrange_cb.setCurrentIndex(0)
+            return
+
+        if text == 'move_to_front':
+            self.layer.move_to_front(_selected_shapes)
+            self.rearrange_cb.setCurrentIndex(0)
+        elif text == 'move_to_back':
+            self.layer.move_to_back(_selected_shapes)
+            self.rearrange_cb.setCurrentIndex(0)
+        elif text == 'move_forward':
+            self.layer.move_forward(_selected_shapes)
+            self.rearrange_cb.setCurrentIndex(0)
+        elif text == 'move_backward':
+            self.layer.move_backward(_selected_shapes)
+            self.rearrange_cb.setCurrentIndex(0)
 
     def change_apply(self, state):
         if state == Qt.Checked:
