@@ -541,7 +541,7 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
 
     miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
     miters = np.array([miters[i]/np.dot(miters[i], full_normals[i])
-                      if np.dot(miters[i], full_normals[i]) != 0 else np.array([0, 0])
+                      if np.dot(miters[i], full_normals[i]) != 0 else full_normals[i]
                       for i in range(len(full_path))])
     miter_lengths = np.linalg.norm(miters,axis=1)
     miters = 0.5*miters
