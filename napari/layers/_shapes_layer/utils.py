@@ -522,7 +522,7 @@ class ShapesData():
                     if len(faces) > 0:
                         self._append_meshes(vertices, faces.astype(np.uint32), index=index + [0])
 
-def path_triangulate(path, closed=False, limit=4, bevel=False):
+def path_triangulate(path, closed=False, limit=3, bevel=False):
 
     # Remove any equal adjacent points
     if len(path) > 2:
@@ -580,8 +580,8 @@ def path_triangulate(path, closed=False, limit=4, bevel=False):
                 central_path.append(full_path[i])
         elif i==len(full_path)-1:
             if closed:
-                a = vertex_offsets[m+1] - full_path[i-1]
-                b = vertex_offsets[1] - full_path[i-1]
+                a = vertex_offsets[m+1]
+                b = vertex_offsets[1]
                 ray = full_path[i] - full_path[i-1]
                 if np.cross(a,ray)*np.cross(b,ray)>0:
                     faces.append([m, m+1, 1])
@@ -594,8 +594,8 @@ def path_triangulate(path, closed=False, limit=4, bevel=False):
                 vertex_offsets.append(miters[i])
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
-                a = vertex_offsets[m+1] - full_path[i-1]
-                b = vertex_offsets[m+3] - full_path[i-1]
+                a = vertex_offsets[m+1]
+                b = vertex_offsets[m+3]
                 ray = full_path[i] - full_path[i-1]
                 if np.cross(a,ray)*np.cross(b,ray)>0:
                     faces.append([m, m+1, m+3])
@@ -613,10 +613,10 @@ def path_triangulate(path, closed=False, limit=4, bevel=False):
             central_path.append(full_path[i])
             central_path.append(full_path[i])
             central_path.append(full_path[i])
-            a = vertex_offsets[m+1] - full_path[i-1]
-            b = vertex_offsets[m+3] - full_path[i-1]
+            a = vertex_offsets[m+1]
+            b = vertex_offsets[m+3]
             ray = full_path[i] - full_path[i-1]
-            if np.cross(a,ray)*np.cross(b,ray)<0:
+            if np.cross(a,ray)*np.cross(b,ray)>0:
                 faces.append([m, m+1, m+3])
                 faces.append([m, m+2, m+3])
             else:
@@ -629,8 +629,8 @@ def path_triangulate(path, closed=False, limit=4, bevel=False):
             vertex_offsets.append(miters[i])
             central_path.append(full_path[i])
             central_path.append(full_path[i])
-            a = vertex_offsets[m+1] - full_path[i-1]
-            b = vertex_offsets[m+3] - full_path[i-1]
+            a = vertex_offsets[m+1]
+            b = vertex_offsets[m+3]
             ray = full_path[i] - full_path[i-1]
             if np.cross(a,ray)*np.cross(b,ray)>0:
                 faces.append([m, m+1, m+3])
