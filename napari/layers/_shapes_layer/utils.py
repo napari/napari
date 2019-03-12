@@ -523,20 +523,29 @@ class ShapesData():
                         self._append_meshes(vertices, faces.astype(np.uint32), index=index + [0])
 
 def path_triangulate(path, closed=False, limit=4, bevel=False):
+
+    # Remove any equal adjacent points
+    if len(path) > 2:
+        clean_path = np.array([p for i, p in enumerate(path) if i==0 or not np.all(p == path[i-1])])
+    else:
+        clean_path = path
+
     if closed:
-        full_path = np.concatenate(([path[-1]], path, [path[0]]),axis=0)
-        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(path))]
-        path_length = [np.linalg.norm(full_path[i]-full_path[i+1]) for i in range(len(path))]
+        if np.all(clean_path[0] == clean_path[-1]) and len(clean_path)>2:
+            clean_path = clean_path[:-1]
+        full_path = np.concatenate(([clean_path[-1]], clean_path, [clean_path[0]]),axis=0)
+        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(clean_path))]
+        path_length = [np.linalg.norm(full_path[i]-full_path[i+1]) for i in range(len(clean_path))]
         normals=np.array(normals)
-        full_path = np.concatenate((path, [path[0]]),axis=0)
+        full_path = np.concatenate((clean_path, [clean_path[0]]),axis=0)
         full_normals = np.concatenate((normals, [normals[0]]),axis=0)
     else:
-        full_path = np.concatenate((path, [path[-2]]),axis=0)
-        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(path))]
-        path_length = [np.linalg.norm(full_path[i]-full_path[i+1]) for i in range(len(path))]
+        full_path = np.concatenate((clean_path, [clean_path[-2]]),axis=0)
+        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(clean_path))]
+        path_length = [np.linalg.norm(full_path[i]-full_path[i+1]) for i in range(len(clean_path))]
         normals[-1] = -normals[-1]
         normals=np.array(normals)
-        full_path = path
+        full_path = clean_path
         full_normals = np.concatenate(([normals[0]], normals),axis=0)
 
     miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
