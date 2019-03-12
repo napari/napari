@@ -66,6 +66,7 @@ class Shapes(Layer):
             self.edge_width = edge_width
             self.edge_color = edge_color
             self.face_color = face_color
+            self.opacity = 1
 
             self._show_meshes = np.ones(len(self.data._mesh_faces), dtype=bool)
             self.show_objects = np.ones((self.data.count, 2), dtype=bool)
@@ -174,6 +175,27 @@ class Shapes(Layer):
         else:
             index = self.selected_shapes
         self.set_color(index=index, face_color=self._face_color)
+
+    @property
+    def opacity(self):
+        """float: Opacity value between 0.0 and 1.0.
+        """
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, opacity):
+        if not 0.0 <= opacity <= 1.0:
+            raise ValueError('opacity must be between 0.0 and 1.0; '
+                             f'got {opacity}')
+
+        self._opacity = opacity
+        if self._apply_all:
+            index = True
+        else:
+            index = self.selected_shapes
+        self.set_opacity(index=index, opacity=opacity)
+        self.refresh()
+        self.events.opacity()
 
     @property
     def apply_all(self):
@@ -656,6 +678,32 @@ class Shapes(Layer):
         else:
             self.show_objects[index, object_type] = True
         self.refresh()
+
+    def set_opacity(self, index=True, opacity=1):
+        if type(opacity) is list:
+            if index is True:
+                for i, op in enumerate(opacity):
+                    self._face_color_array[i, 3] = op
+                    self._edge_color_array[i, 3] = op
+                for i in range(len(self.data._mesh_faces_index)):
+                    self._mesh_color_array[i] = self._face_color_array[self.data._mesh_faces_index[i, 0]]
+            else:
+                assert(type(index) is list and len(opacity)==len(index))
+                for i, ind in enumerate(index):
+                    indices = self.data._select_meshes(ind, self.data._mesh_faces_index)
+                    self._face_color_array[ind, 3] = op[i]
+                    self._edge_color_array[ind, 3] = op[i]
+                    self._mesh_color_array[indices] = op[i]
+        else:
+            indices = self.data._select_meshes(index, self.data._mesh_faces_index)
+            self._mesh_color_array[indices, 3] = opacity
+            if index is True:
+                for i in range(self.data.count):
+                    self._face_color_array[i, 3] = opacity
+                    self._edge_color_array[i, 3] = opacity
+            else:
+                self._face_color_array[index, 3] = opacity
+                self._edge_color_array[index, 3] = opacity
 
     def set_color(self, index=True, edge_color=False, face_color=False):
         if face_color is False:
