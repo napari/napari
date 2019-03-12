@@ -522,7 +522,7 @@ class ShapesData():
                     if len(faces) > 0:
                         self._append_meshes(vertices, faces.astype(np.uint32), index=index + [0])
 
-def path_triangulate(path, closed=False, limit=5, bevel=False):
+def path_triangulate(path, closed=False, limit=4, bevel=False):
     if closed:
         full_path = np.concatenate(([path[-1]], path, [path[0]]),axis=0)
         normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(path))]
@@ -607,7 +607,7 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
             a = vertex_offsets[m+1] - full_path[i-1]
             b = vertex_offsets[m+3] - full_path[i-1]
             ray = full_path[i] - full_path[i-1]
-            if np.cross(a,ray)*np.cross(b,ray)>0:
+            if np.cross(a,ray)*np.cross(b,ray)<0:
                 faces.append([m, m+1, m+3])
                 faces.append([m, m+2, m+3])
             else:
@@ -630,6 +630,7 @@ def path_triangulate(path, closed=False, limit=5, bevel=False):
                 faces.append([m, m+1, m+3])
                 faces.append([m+1, m+2, m+3])
             m = m + 2
+
     return np.array(central_path), np.array(vertex_offsets), np.array(faces)
 
 def segment_normal(a, b):
