@@ -1,6 +1,5 @@
 """Miscellaneous utility functions.
 """
-from numpy import multiply, all, array
 import numpy as np
 import inspect
 
@@ -20,7 +19,7 @@ def inside_triangles(triangles):
     s_AC = -AC[:,0]*triangles[:,0,1] + AC[:,1]*triangles[:,0,0] >= 0
     s_BC = -BC[:,0]*triangles[:,1,1] + BC[:,1]*triangles[:,1,0] >= 0
 
-    return all(array([s_AB != s_AC, s_AB == s_BC]), axis=0)
+    return np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
 
 def inside_boxes(boxes):
     """Checks which boxes contain the origin
@@ -35,17 +34,17 @@ def inside_boxes(boxes):
     BC = boxes[:,6] - boxes[:,4]
     BM = boxes[:,6]
 
-    ABAM = multiply(AB, AM).sum(1)
-    ABAB = multiply(AB, AB).sum(1)
-    BCBM = multiply(BC, BM).sum(1)
-    BCBC = multiply(BC, BC).sum(1)
+    ABAM = np.multiply(AB, AM).sum(1)
+    ABAB = np.multiply(AB, AB).sum(1)
+    BCBM = np.multiply(BC, BM).sum(1)
+    BCBC = np.multiply(BC, BC).sum(1)
 
     c1 = 0 <= ABAM
     c2 = ABAM <= ABAB
     c3 = 0 <= BCBM
     c4 = BCBM <= BCBC
 
-    return all(array([c1, c2, c3, c4]), axis=0)
+    return np.all(np.array([c1, c2, c3, c4]), axis=0)
 
 
 def point_to_lines(point, lines):

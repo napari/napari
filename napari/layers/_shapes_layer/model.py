@@ -112,6 +112,8 @@ class Shapes(Layer):
             self._qt_properties = QtShapesLayer(self)
             self._qt_controls = QtShapesControls(self)
 
+            self.events.deselect.connect(lambda x: self._finish_drawing())
+
     @property
     def data(self):
         """ShapesData: object with shapes data
