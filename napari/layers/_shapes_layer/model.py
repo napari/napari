@@ -86,6 +86,7 @@ class Shapes(Layer):
             self._highlight_thickness = 0.5
             self._selected_shapes = []
             self._selected_shapes_stored = []
+            self._selected_shapes_history = []
             self._hover_shapes = [None, None]
             self._hover_shapes_stored = [None, None]
 
@@ -775,10 +776,12 @@ class Shapes(Layer):
                 distances = abs(box - indices[:2])
 
                 # Get the vertex sizes
-                sizes = self._vertex_size
+                transform = self.viewer._canvas.scene.node_transform(self._node)
+                rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
+                sizes = self._vertex_size*rescale/2
 
                 # Check if any matching vertices
-                matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()
+                matches = np.all(distances <=  sizes, axis=1).nonzero()
                 if len(matches[0]) > 0:
                     return [self.selected_shapes[0], matches[0][-1]]
             elif (self.mode == 'direct' or self.mode == 'vertex_insert' or
@@ -789,10 +792,12 @@ class Shapes(Layer):
                 distances = abs(vertices - indices[:2])
 
                 # Get the vertex sizes
-                sizes = self._vertex_size
+                transform = self.viewer._canvas.scene.node_transform(self._node)
+                rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
+                sizes = self._vertex_size*rescale/2
 
                 # Check if any matching vertices
-                matches = np.all(distances <=  self._vertex_size/2, axis=1).nonzero()[0]
+                matches = np.all(distances <=  sizes, axis=1).nonzero()[0]
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
                     shape = self.data.index[index]
@@ -891,11 +896,11 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                self._node._subvisuals[0].set_data(box, size=8, face_color=face_color,
-                                                   edge_color=edge_color, edge_width=1,
-                                                   symbol='square', scaling=True)
+                self._node._subvisuals[0].set_data(box, size=self._vertex_size, face_color=face_color,
+                                                   edge_color=edge_color, edge_width=1.5,
+                                                   symbol='square', scaling=False)
                 self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
-                                                   color=edge_color, width=1)
+                                                   color=edge_color, width=1.5)
             elif (self.mode == 'direct' or self.mode == 'add_path' or
                   self.mode == 'add_polygon' or self.mode == 'add_rectangle' or
                   self.mode == 'add_ellipse' or self.mode == 'add_line' or
@@ -913,16 +918,16 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                self._node._subvisuals[0].set_data(vertices, size=8, face_color=face_color,
-                                                   edge_color=edge_color, edge_width=1,
-                                                   symbol='square', scaling=True)
+                self._node._subvisuals[0].set_data(vertices, size=self._vertex_size, face_color=face_color,
+                                                   edge_color=edge_color, edge_width=1.5,
+                                                   symbol='square', scaling=False)
                 self._node._subvisuals[1].set_data(pos=None, width=0)
         elif self._is_selecting:
             box = self.data._expand_box(self._drag_box)
             edge_color = self._highlight_color
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
             self._node._subvisuals[1].set_data(pos=box[[0, 2, 4, 6, 0]],
-                                               color=edge_color, width=1)
+                                               color=edge_color, width=1.5)
         else:
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
             self._node._subvisuals[1].set_data(pos=None, width=0)
@@ -1463,6 +1468,7 @@ class Shapes(Layer):
             if event.key == ' ':
                 if self.mode != 'pan/zoom':
                     self._mode_history = self.mode
+                    self._selected_shapes_history = copy(self.selected_shapes)
                     self.mode = 'pan/zoom'
                 else:
                     self._mode_history = 'pan/zoom'
@@ -1497,7 +1503,7 @@ class Shapes(Layer):
                 if (self.mode == 'direct' or self.mode == 'select' or
                     self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
                     self.selected_shapes = list(range(self.data.count))
-                    self._set_highlight()
+                    self._select()
             elif event.key == 'Backspace':
                 self.remove_selected()
             elif event.key == 'Escape':
@@ -1509,6 +1515,8 @@ class Shapes(Layer):
         if event.key == ' ':
             if self._mode_history != 'pan/zoom':
                 self.mode = self._mode_history
+                self.selected_shapes = self._selected_shapes_history
+                self._select()
         elif event.key == 'Shift':
             self._fixed_aspect = False
             if self._is_moving:
