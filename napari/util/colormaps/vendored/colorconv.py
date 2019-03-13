@@ -754,7 +754,7 @@ def lab2xyz(lab, illuminant="D65", observer="2"):
 
     arr = _prepare_colorarray(lab).copy()
 
-    L, a, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+    L, a, b = arr[..., 0], arr[..., 1], arr[..., 2]
     y = (L + 16.) / 116.
     x = (a / 500.) + y
     z = y - (b / 200.)
@@ -764,7 +764,7 @@ def lab2xyz(lab, illuminant="D65", observer="2"):
         warn('Color data out of range: Z < 0 in %s pixels' % invalid[0].size)
         z[invalid] = 0
 
-    out = np.dstack([x, y, z])
+    out = np.stack([x, y, z], axis=-1)
 
     mask = out > 0.2068966
     out[mask] = np.power(out[mask], 3.)
@@ -994,7 +994,7 @@ def luv2xyz(luv, illuminant="D65", observer="2"):
     z = ((a - 4) * c - 15 * a * b * y) / (12 * b)
     x = -(c / b + 3. * z)
 
-    return np.concatenate([q[..., np.newaxis] for q in [x, y, z]], axis=-1)
+    return np.stack([x, y, z], axis=-1)
 
 
 def rgb2luv(rgb):

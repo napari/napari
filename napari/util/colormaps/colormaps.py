@@ -11,6 +11,24 @@ with open(_matplotlib_list_file) as fin:
     matplotlib_colormaps = [line.rstrip() for line in fin]
 
 
+def _all_rgb():
+    """Return all 256**3 valid rgb tuples."""
+    base = np.arange(256, dtype=np.uint8)
+    r, g, b = np.meshgrid(base, base, base, indexing='ij')
+    return np.stack((r, g, b), axis=-1).reshape((-1, 3))
+
+
+# obtained with colorconv.rgb2luv(_all_rgb().reshape((-1, 256, 3)))
+LUVMIN = np.array([0., -83.07790815, -134.09790293])
+LUVMAX = np.array([100., 175.01447356, 107.39905336])
+LUVRNG = LUVMAX - LUVMIN
+
+# obtained with colorconv.rgb2lab(_all_rgb().reshape((-1, 256, 3)))
+LABMIN = np.array([0., -86.18302974, -107.85730021])
+LABMAX = np.array([100., 98.23305386, 94.47812228])
+LABRNG = LABMAX - LABMIN
+
+
 def _validate_rgb(colors, *, tolerance=0.):
     """Return the subset of colors that is in [0, 1] for all channels.
 
@@ -75,6 +93,38 @@ def _low_discrepancy(dim, n):
     n = np.reshape(np.arange(n), (n, 1))
     pts = (0.5 + (n * g[:dim])) % 1
     return pts
+
+
+def _color_random(n, *, colorspace='lab', tolerance=0.0):
+    """Generate n random RGB colors uniformly from LAB or LUV space.
+
+    Parameters
+    ----------
+    n : int
+        Number of colors to generate.
+    colorspace : {'lab', 'luv'}
+        The colorspace from which to get random colors.
+    tolerance : float
+        How much margin to allow for out-of-range RGB values (these are
+        clipped to be in-range).
+
+    Returns
+    -------
+    rgb : array of float, shape (n, 3)
+        RGB colors chosen uniformly at random from LUV colorspace.
+    """
+    factor = 6  # about 1/5 of random LUV tuples are inside the space
+    expand_factor = 2
+    rgb = np.zeros((0, 3))
+    while len(rgb) < n:
+        random = _low_discrepancy(3, n * factor)
+        if colorspace == 'luv':
+            raw_rgb = colorconv.luv2rgb(random * LUVRNG + LUVMIN)
+        else:  # 'lab' by default
+            raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
+        rgb = _validate_rgb(raw_rgb, tolerance=tolerance)
+        factor *= expand_factor
+    return rgb[:n]
 
 
 def label_colormap(labels):
