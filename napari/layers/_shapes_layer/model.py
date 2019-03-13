@@ -502,6 +502,7 @@ class Shapes(Layer):
         color_array = np.repeat([ec], new_faces, axis=0)
         color_array[self.data._mesh_faces_index[-new_faces:,2]==0] = fc
         self._mesh_color_array = np.concatenate((self._mesh_color_array, color_array), axis=0)
+        self.data.select_box(self.selected_shapes)
         self.z_order = self._z_order
 
     def scale_shapes(self, scale, vertex=-2, index=True):
