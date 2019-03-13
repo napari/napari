@@ -147,7 +147,13 @@ def label_colormap(labels):
     0 always maps to fully transparent.
     """
     unique_labels = np.unique(labels)
+    n = len(unique_labels)
     max_label = np.max(unique_labels)
     unique_labels_float = unique_labels / max_label
     midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
     control_points = np.concatenate(([-np.eps], midpoints, [1+np.eps]))
+    colors = np.concatenate((_color_random(n), np.ones((n, 1))), axis=1)
+    colors[0, :] = 0  # ensure alpha is 0 for label 0
+    cmap = vispy.color.Colormap(colors=colors, controls=control_points,
+                                interpolation='nearest')
+    return cmap
