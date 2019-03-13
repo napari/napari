@@ -291,7 +291,7 @@ class ShapesData():
         self.vertices[indices] = self.vertices[indices] + shift
 
     def transform_shapes(self, transform, index=True):
-        """Perfroms an affine transform on selected shapes
+        """Perfroms a linear transform on selected shapes
         Parameters
         ----------
         transform : np.ndarray
@@ -306,12 +306,15 @@ class ShapesData():
 
         self._mesh_vertices[indices] = np.matmul(self._mesh_vertices[indices], A)
         self._mesh_vertices_centers[indices] = np.matmul(self._mesh_vertices_centers[indices], A)
-        x = self._mesh_vertices_offsets[indices]
-        original_norms = np.expand_dims(np.linalg.norm(x, axis=1), axis=1)
-        offsets = np.matmul(x, A)
-        transform_norms = np.expand_dims(np.linalg.norm(offsets, axis=1), axis=1)
-        transform_norms[transform_norms==0]=1
-        self._mesh_vertices_offsets[indices] = offsets/transform_norms*original_norms
+        offsets = self._mesh_vertices_offsets[indices]
+        offsets = np.matmul(offsets, A)
+        #rescale = [np.linalg.norm(np.matmul([1, 0], A)), np.linalg.norm(np.matmul([0, 1], A))]
+        #rescale = np.linalg.norm(A, 'fro')/np.sqrt(2)
+        #rescale = np.sqrt(abs(np.linalg.det(A)))
+        rescale = 1
+        #rescale = [1, 1]
+        print(rescale)
+        self._mesh_vertices_offsets[indices] = offsets/rescale
 
         boxes = np.matmul(self.boxes[index], A)
         if type(index) is list:
