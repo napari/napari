@@ -306,15 +306,14 @@ class ShapesData():
 
         self._mesh_vertices[indices] = np.matmul(self._mesh_vertices[indices], A)
         self._mesh_vertices_centers[indices] = np.matmul(self._mesh_vertices_centers[indices], A)
-        offsets = self._mesh_vertices_offsets[indices]
-        offsets = np.matmul(offsets, A)
-        #rescale = [np.linalg.norm(np.matmul([1, 0], A)), np.linalg.norm(np.matmul([0, 1], A))]
-        #rescale = np.linalg.norm(A, 'fro')/np.sqrt(2)
-        #rescale = np.sqrt(abs(np.linalg.det(A)))
-        rescale = 1
-        #rescale = [1, 1]
-        print(rescale)
-        self._mesh_vertices_offsets[indices] = offsets/rescale
+        orig_offsets = self._mesh_vertices_offsets[indices]
+        orig_norm_offsets = np.linalg.norm(orig_offsets, axis=1, keepdims=True)
+        offsets = np.matmul(orig_offsets, A)
+        transformed_norm_offsets = np.linalg.norm(offsets, axis=1, keepdims=True)
+        orig_norm_offsets[transformed_norm_offsets==0] = 1
+        transformed_norm_offsets[transformed_norm_offsets==0] = 1
+        rescale = orig_norm_offsets/transformed_norm_offsets
+        self._mesh_vertices_offsets[indices] = offsets*rescale
 
         boxes = np.matmul(self.boxes[index], A)
         if type(index) is list:
