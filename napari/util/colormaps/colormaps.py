@@ -66,7 +66,7 @@ def _validate_rgb(colors, *, tolerance=0.):
     return filtered_colors
 
 
-def _low_discrepancy(dim, n):
+def _low_discrepancy(dim, n, seed=0.5):
     """Generate a 1d, 2d, or 3d low discrepancy sequence of coordinates.
 
     Parameters
@@ -75,6 +75,8 @@ def _low_discrepancy(dim, n):
         The dimensionality of the sequence.
     n : int
         How many points to generate.
+    seed : float or array of float, shape (dim,)
+        The seed from which to start the quasirandom sequence.
 
     Returns
     -------
@@ -88,38 +90,43 @@ def _low_discrepancy(dim, n):
     phi1 = 1.6180339887498948482
     phi2 = 1.32471795724474602596
     phi3 = 1.22074408460575947536
+    seed = np.broadcast_to(seed, (1, dim))
     phi = np.array([phi1, phi2, phi3])
     g = 1 / phi
     n = np.reshape(np.arange(n), (n, 1))
-    pts = (0.5 + (n * g[:dim])) % 1
+    pts = (seed + (n * g[:dim])) % 1
     return pts
 
 
-def _color_random(n, *, colorspace='lab', tolerance=0.0):
+def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     """Generate n random RGB colors uniformly from LAB or LUV space.
 
     Parameters
     ----------
     n : int
         Number of colors to generate.
-    colorspace : {'lab', 'luv'}
+    colorspace : str, one of {'lab', 'luv', 'rgb'}
         The colorspace from which to get random colors.
     tolerance : float
         How much margin to allow for out-of-range RGB values (these are
         clipped to be in-range).
+    seed : float or array of float, shape (3,)
+        Value from which to start the quasirandom sequence.
 
     Returns
     -------
     rgb : array of float, shape (n, 3)
-        RGB colors chosen uniformly at random from LUV colorspace.
+        RGB colors chosen uniformly at random from given colorspace.
     """
     factor = 6  # about 1/5 of random LUV tuples are inside the space
     expand_factor = 2
     rgb = np.zeros((0, 3))
     while len(rgb) < n:
-        random = _low_discrepancy(3, n * factor)
+        random = _low_discrepancy(3, n * factor, seed=seed)
         if colorspace == 'luv':
             raw_rgb = colorconv.luv2rgb(random * LUVRNG + LUVMIN)
+        elif colorspace == 'rgb':
+            raw_rgb = random
         else:  # 'lab' by default
             raw_rgb = colorconv.lab2rgb(random * LABRNG + LABMIN)
         rgb = _validate_rgb(raw_rgb, tolerance=tolerance)
@@ -151,9 +158,11 @@ def label_colormap(labels):
     max_label = np.max(unique_labels)
     unique_labels_float = unique_labels / max_label
     midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
-    control_points = np.concatenate(([-np.eps], midpoints, [1+np.eps]))
-    colors = np.concatenate((_color_random(n), np.ones((n, 1))), axis=1)
+    eps = np.finfo(midpoints.dtype).eps
+    control_points = np.concatenate(([0.], midpoints, [1.]))
+    # make sure to add an alpha channel to the colors
+    colors = np.concatenate((_color_random(n), np.full((n, 1), 0.7)), axis=1)
     colors[0, :] = 0  # ensure alpha is 0 for label 0
     cmap = vispy.color.Colormap(colors=colors, controls=control_points,
-                                interpolation='nearest')
+                                interpolation='zero')
     return cmap
