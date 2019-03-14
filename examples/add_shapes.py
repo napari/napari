@@ -23,6 +23,8 @@ with app_context():
                         80], [105,  90]]])
     points = np.array([[100, 100], [200, 200], [333, 111]])
     polygons = [points+[-22,101], points-[140, -33], points+[19,-21]]
+    shapes = [{'shape_type': 'polygon', 'data': p} for p in polygons]
+    #viewer.add_shapes(shapes, name='shapes')
     viewer.add_shapes(polygons=polygons)
     viewer.layers[-1].edge_width = 10
     viewer.layers[-1].edge_color = 'coral'
