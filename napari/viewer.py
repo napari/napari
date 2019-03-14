@@ -30,7 +30,25 @@ class ViewerApp:
                            name=name)
 
     def add_layer(self, layer):
+        """Add a napari Layer object to the viewer.
+
+        Simple wrapper around `napari.Viewer.add_layer`. The layer becomes the
+        top layer in the viewer.
+
+        Parameters
+        ----------
+        layer : napari.layers.BaseLayer
+            A layer to add to the viewer.
+        """
         self.viewer_widget.add_layer(layer)
 
     def remove_layer(self, layer_id):
+        """Remove a layer from the viewer.
+
+        Parameters
+        ----------
+        layer_id : int or str
+            Either the layer number (0 being the bottom-most layer) or the
+            layer name of the layer to be removed.
+        """
         self.viewer_widget.layers.remove(layer_id)
