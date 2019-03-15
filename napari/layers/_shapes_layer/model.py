@@ -27,16 +27,50 @@ class Shapes(Layer):
     """Shapes layer.
     Parameters
     ----------
-    shapes : list
-        List of dictionaries, where each dictionary corresponds to one shape
-        and has the keys corresponding to the keyword args of the Shapes class.
-        `shape_type` and `data` are required. `edge_width`, `edge_color`,
-        `face_color`, and `z_order` are optional.
+    data : np.array | list
+        List of Shape objects of list of np.array of data or np.array. Each
+        element of the list (or now of the np.array) corresponds to one shape.
+        If a list of Shape objects is passed the other shape specific keyword
+        arguments are ignored.
+    shape_type : string | list
+        String of shape shape_type, must be one of "{'line', 'rectangle', 'ellipse',
+        'path', 'polygon'}". If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    edge_width : float | list
+        thickness of lines and edges. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    edge_color : str | tuple | list
+        If string can be any color name recognized by vispy or hex value if
+        starting with `#`. If array-like must be 1-dimensional array with 3 or
+        4 elements. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    face_color : str | tuple | list
+        If string can be any color name recognized by vispy or hex value if
+        starting with `#`. If array-like must be 1-dimensional array with 3 or
+        4 elements. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    z_order : int | list
+        Specifier of z order priority. Shapes with higher z order are displayed
+        ontop of others. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
     name : str, keyword-only
         Name of the layer.
     """
 
-    def __init__(self, shapes, *, name=None):
+    _colors = get_color_names()
+    _vertex_size = 10
+    _highlight_color = (0, 0.6, 1)
+    _highlight_thickness = 0.5
+    _rotion_handle_length = 20
+    _prefixed_size = np.array([10, 10])
+
+    def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
+                 face_color='white', z_order=0, *, name=None):
 
         visual = VisualNode([Markers(), Line(), Mesh(), Mesh()])
 
@@ -44,25 +78,25 @@ class Shapes(Layer):
 
         # Freeze refreshes
         with self.freeze_refresh():
-            # Save the style params
-            self.data = ShapesList([Shape(**s) for s in shapes])
-            self._colors = get_color_names()
+            # Add the shape data
+            self.data = ShapesList(data, shape_type=shape_type,
+                                   edge_width=edge_width,
+                                   edge_color=edge_color,
+                                   face_color=face_color,
+                                   z_order=z_order)
+
             self.apply_all = True
             self.edge_width = 1
             self.edge_color = 'black'
             self.face_color = 'white'
-            #self.opacity = 1
-
-            self._vertex_size = 10
+            self.z_order = z_order
+            self.opacity = 1
 
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
 
             self._highlight = True
-            self._highlight_color = (0, 0.6, 1)
-            self._highlight_thickness = 0.5
-            self._rotion_handle_length = 20
             self._selected_shapes = []
             self._selected_shapes_stored = []
             self._selected_shapes_history = []
@@ -84,7 +118,6 @@ class Shapes(Layer):
             self._ready_to_create = False
             self._creating = False
             self._create_coord = [None, None]
-            self._prefixed_size = np.array([10, 10])
 
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
@@ -478,13 +511,13 @@ class Shapes(Layer):
         if self._creating is True and self.mode == 'add_path':
             vertices = self.data._vertices[self.data._index==index]
             if len(vertices) <= 2:
-                self.data.remove_one(index)
+                self.data.remove(index)
             else:
                 self.data.edit(index, vertices[:-1])
         if self._creating is True and self.mode == 'add_polygon':
             vertices = self.data._vertices[self.data._index==index]
             if len(vertices) <= 2:
-                self.data.remove_one(index)
+                self.data.remove(index)
         self._creating = False
         self._unselect()
         self.refresh()
@@ -611,7 +644,7 @@ class Shapes(Layer):
         self.selected_shapes = []
         self._selected_box = self.select_box([])
         for index in to_delete:
-            self.data.remove_one(index)
+            self.data.remove(index)
         self._hover_shapes = [None, None]
         self.refresh()
 
@@ -1029,10 +1062,11 @@ class Shapes(Layer):
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             if self._creating is False:
                 # Start drawing a path
-                shape = np.array([coord, coord])
-                self.data.add(Shape('path', shape, edge_width=self.edge_width,
-                                    edge_color=self.edge_color,
-                                    face_color=self.face_color))
+                data = np.array([coord, coord])
+                self.data.add(data, shape_type='path',
+                              edge_width=self.edge_width,
+                              edge_color=self.edge_color,
+                              face_color=self.face_color)
                 self.selected_shapes = [len(self.data.shapes)-1]
                 ind = 1
                 self._selected_vertex = [self.selected_shapes[0], ind]
@@ -1178,20 +1212,22 @@ class Shapes(Layer):
             # If ready to create rectangle, ellipse or line start making one
             if self._ready_to_create and np.all(self._create_coord != coord):
                 if self.mode == 'add_rectangle':
-                    shape = np.array([self._create_coord, coord])
-                    self.data.add(Shape('rectangle', shape, edge_width=self.edge_width,
-                                        edge_color=self.edge_color,
-                                        face_color=self.face_color))
+                    data = np.array([self._create_coord, coord])
+                    self.data.add(data, shape_type='rectangle',
+                                  edge_width=self.edge_width,
+                                  edge_color=self.edge_color,
+                                  face_color=self.face_color)
                 elif self.mode == 'add_ellipse':
-                    shape = np.array([self._create_coord, abs(coord - self._create_coord)])
-                    self.data.add(Shape('ellipse', shape, edge_width=self.edge_width,
-                                        edge_color=self.edge_color,
-                                        face_color=self.face_color))
+                    data = np.array([self._create_coord, abs(coord - self._create_coord)])
+                    self.data.add(data, shape_type='ellipse', edge_width=self.edge_width,
+                                  edge_color=self.edge_color,
+                                  face_color=self.face_color)
                 elif self.mode == 'add_line':
-                    shape = np.array([self._create_coord, coord])
-                    self.data.add(Shape('line', shape, edge_width=self.edge_width,
-                                        edge_color=self.edge_color,
-                                        face_color=self.face_color))
+                    data = np.array([self._create_coord, coord])
+                    self.data.add(data, shape_type='line',
+                                  edge_width=self.edge_width,
+                                  edge_color=self.edge_color,
+                                  face_color=self.face_color)
                 else:
                     raise ValueError("Mode not recongnized")
                 self._ready_to_create = False
@@ -1280,22 +1316,25 @@ class Shapes(Layer):
             # Finish drawing a rectangle, ellipse or line
             if self._ready_to_create:
                 if self.mode == 'add_rectangle':
-                    shape = np.array([self._create_coord-self._prefixed_size/2,
+                    data = np.array([self._create_coord-self._prefixed_size/2,
                                       self._create_coord+self._prefixed_size/2])
-                    self.data.add(Shape('rectangle', shape, edge_width=self.edge_width,
-                                        edge_color=self.edge_color,
-                                        face_color=self.face_color))
+                    self.data.add(data, shape_type='rectangle',
+                                  edge_width=self.edge_width,
+                                  edge_color=self.edge_color,
+                                  face_color=self.face_color)
                 elif self.mode == 'add_ellipse':
                     shape = np.array([self._create_coord, self._prefixed_size/2])
-                    self.data.add(Shape('ellipse', shape, edge_width=self.edge_width,
-                                        edge_color=self.edge_color,
-                                        face_color=self.face_color))
+                    self.data.add(data, shape_type='ellipse',
+                                  edge_width=self.edge_width,
+                                  edge_color=self.edge_color,
+                                  face_color=self.face_color)
                 elif self.mode == 'add_line':
                     shape = np.array([self._create_coord-self._prefixed_size/2,
                                       self._create_coord+self._prefixed_size/2])
-                    self.data.add(Shape('line', shape, edge_width=self.edge_width,
-                                        edge_color=self.edge_color,
-                                        face_color=self.face_color))
+                    self.data.add(data, shape_type='line',
+                                  edge_width=self.edge_width,
+                                  edge_color=self.edge_color,
+                                  face_color=self.face_color)
                 else:
                     raise ValueError("Mode not recongnized")
                 self._ready_to_create = False

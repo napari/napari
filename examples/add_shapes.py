@@ -26,9 +26,11 @@ with app_context():
 
     #viewer.add_shapes(polygons=polygons, ellipses=ellipses)
 
-    shapes = [{'shape_type': 'polygon', 'data': p, 'face_color': 'coral'} for p in polygons]
+    viewer.add_shapes(polygons, shape_type='polygon', edge_width=5, edge_color = 'coral')
 
-    viewer.add_shapes(shapes)
+    #shapes = [{'shape_type': 'polygon', 'data': p, 'face_color': 'coral'} for p in polygons]
+
+    #viewer.add_shapes(shapes)
     #
     # # primary path
     # # if ShapeList or list ->

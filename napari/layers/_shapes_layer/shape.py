@@ -9,11 +9,11 @@ class Shape():
     """Class for a single shape
     Parameters
     ----------
+    data : np.ndarray
+        Nx2 array of vertices.
     shape_type : string
         String of shape shape_type, must be one of "{'line', 'rectangle', 'ellipse',
         'path', 'polygon'}".
-    data : np.ndarray
-        Nx2 array of vertices.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -31,7 +31,7 @@ class Shape():
     _ellipse_segments = 100
     _shape_types = ['line', 'rectangle', 'ellipse', 'path', 'polygon']
 
-    def __init__(self, shape_type, data, edge_width=1, edge_color='black',
+    def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
                  face_color='white', z_order=0):
 
         self._face_vertices = np.empty((0, 2)) # Mx2 array of vertices of faces
@@ -57,7 +57,7 @@ class Shape():
 
     @shape_type.setter
     def shape_type(self, shape_type):
-        if shape_type not in ['line', 'rectangle', 'ellipse', 'path', 'polygon']:
+        if shape_type not in self._shape_types:
             raise ValueError("""shape_type not recognized, must be one of
                              "{'line', 'rectangle', 'ellipse', 'path',
                              'polygon'}"
@@ -285,13 +285,3 @@ class Shape():
             self.shift(-center)
             self.transform(transform)
             self.shift(-center)
-
-    def to_dict(self):
-        """dict: Shape object represented as a dictionary. With the following
-        keys, `shape_type`, `data`, `edge_width`, `edge_color`, `face_color`,
-        and `z_order`.
-        """
-        d = {'shape_type': self.shape_type, 'data': self.data, 'edge_width':self.edge_width,
-             'edge_color': self.edge_color.rgba, 'face_color': self.face_color.rgba,
-             'z_order': self.z_order}
-        return d

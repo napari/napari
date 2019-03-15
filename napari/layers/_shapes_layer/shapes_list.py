@@ -6,12 +6,42 @@ class ShapesList():
     """List of shapes class.
     Parameters
     ----------
-    shapes : list | Shape
-        Either of list of Shape objects or a single Shape object
+    data : np.array | list | Shape
+        List of Shape objects of list of np.array of data or np.array. Each
+        element of the list (or now of the np.array) corresponds to one shape.
+        If a list of Shape objects is passed the other shape specific keyword
+        arguments are ignored.
+    shape_type : string | list
+        String of shape shape_type, must be one of "{'line', 'rectangle', 'ellipse',
+        'path', 'polygon'}". If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    edge_width : float | list
+        thickness of lines and edges. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    edge_color : str | tuple | list
+        If string can be any color name recognized by vispy or hex value if
+        starting with `#`. If array-like must be 1-dimensional array with 3 or
+        4 elements. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    face_color : str | tuple | list
+        If string can be any color name recognized by vispy or hex value if
+        starting with `#`. If array-like must be 1-dimensional array with 3 or
+        4 elements. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
+    z_order : int | list
+        Specifier of z order priority. Shapes with higher z order are displayed
+        ontop of others. If a list is supplied it must be the same length as
+        the length of `data` and each element will be applied to each shape otherwise
+        the same value will be used for all shapes.
     """
     _mesh_types = ['face', 'edge']
 
-    def __init__(self, shapes):
+    def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
+                 face_color='white', z_order=0):
 
         self.shapes = []
         self._vertices = np.empty((0, 2)) # Array of M vertices from all N shapes
@@ -25,16 +55,75 @@ class ShapesList():
         self._mesh_triangles_colors = np.empty((0, 4)) #Px4 array of rgba mesh triangle colors
         self._mesh_triangles_z_order = np.empty((0), dtype=int) #Length P array of mesh triangle z_order
 
-        if type(shapes) is list:
-            for s in shapes:
-                self.add(s)
-        else:
-            self.add(shapes)
+        if type(data) is Shape:
+            # If a single shape has been passed
+            self.add(data)
+        elif len(data) > 0:
+            if type(data[0]) is Shape:
+                # If list of shapes has been passed
+                for d in data:
+                    self.add(d)
+            elif np.array(data[0]).ndim == 1:
+                # If a single array for a shape has been passed
+                self.add(data, shape_type=shape_type, edge_width=edge_width,
+                         edge_color=edge_color, face_color=face_color,
+                         z_order=z_order)
+            else:
+                # If list of arrays has been passed
+                for i, d in enumerate(data):
+                    if type(shape_type) is list or type(shape_type) is np.ndarray:
+                        st = shape_type[i]
+                    else:
+                        st = shape_type
+                    if type(edge_width) is list or type(edge_width) is np.ndarray:
+                        ew = edge_width[i]
+                    else:
+                        ew = edge_width
+                    if type(edge_color) is list or type(edge_color) is np.ndarray:
+                        if np.isscalar(edge_color[i]):
+                            ec = edge_color
+                        else:
+                            ec = edge_color[i]
+                    else:
+                        ec = edge_color
+                    if type(face_color) is list or type(face_color) is np.ndarray:
+                        if np.isscalar(face_color[i]):
+                            fc = face_color
+                        else:
+                            fc = face_color[i]
+                    else:
+                        fc = face_color
+                    if type(z_order) is list or type(z_order) is np.ndarray:
+                        z = z_order[i]
+                    else:
+                        z = z_order
+                    self.add(d, shape_type=st, edge_width=ew, edge_color=ec,
+                             face_color=fc, z_order=z)
 
-    def add(self, shape, shape_index=None):
+    def add(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
+                 face_color='white', z_order=0, shape_index=None):
         """Adds a single Shape object
         Parameters
         ----------
+        data : np.ndarray | Shape
+            Nx2 array of vertices or instance of the Shape class. If a Shape is passed
+            the other parameters are ignored.
+        shape_type : string
+            String of shape shape_type, must be one of "{'line', 'rectangle', 'ellipse',
+            'path', 'polygon'}".
+        edge_width : float
+            thickness of lines and edges.
+        edge_color : str | tuple
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3 or
+            4 elements.
+        face_color : str | tuple
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3 or
+            4 elements.
+        z_order : int
+            Specifier of z order priority. Shapes with higher z order are displayed
+            ontop of others.
         shape : Shape
             An instance of the Shape class
         shape_index : None | int
@@ -42,6 +131,13 @@ class ShapesList():
             conjunction with `remove` when renumber is `False`. If None, then
             appends a new shape to end of shapes list
         """
+        if type(data) is Shape:
+            shape = data
+        else:
+            shape = Shape(data, shape_type=shape_type, edge_width=edge_width,
+                         edge_color=edge_color, face_color=face_color,
+                         z_order=z_order)
+
         if shape_index is None:
             shape_index = len(self.shapes)
             self.shapes.append(shape)
@@ -87,20 +183,6 @@ class ShapesList():
         order = np.repeat(shape.z_order, len(triangles))
         self._mesh_triangles_z_order = np.append(self._mesh_triangles_z_order, order, axis=0)
 
-    def set(self, shapes):
-        """Removes all shapes and then adds in the new ones
-        Parameters
-        ----------
-        shapes : list | Shape
-            Either of list of Shape objects or a single Shape object
-        """
-        self.remove_all()
-        if type(shapes) is list:
-            for s in shapes:
-                self.add(s)
-        else:
-            self.add(shapes)
-
     def remove_all(self):
         """Removes all shapes
         """
@@ -116,7 +198,7 @@ class ShapesList():
         self._mesh_triangles_colors = np.empty((0, 4))
         self._mesh_triangles_z_order = np.empty((0), dtype=int)
 
-    def remove_one(self, index, renumber=True):
+    def remove(self, index, renumber=True):
         """Removes a single shape located at index.
         Parameters
         ----------
@@ -211,7 +293,7 @@ class ShapesList():
         """
         self.shapes[index].data = data
         shape = self.shapes[index]
-        self.remove_one(index, renumber=False)
+        self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
 
     def update_edge_width(self, index, edge_width):
@@ -336,3 +418,15 @@ class ShapesList():
         """
         self.shapes[index].transform(transform)
         self._update_mesh_vertices(index, edge=True, face=True)
+
+    def to_list(self, shape_type=None):
+        if shape_type is None:
+            data = [s.data for s in self.shapes]
+        elif shape_type not in Shape._shape_types:
+            raise ValueError("""shape_type not recognized, must be one of
+                         "{'line', 'rectangle', 'ellipse', 'path',
+                         'polygon'}"
+                         """)
+        else:
+            data = [s.data for s in self.shapes if s.shape_type == shapes_type]
+        return data
