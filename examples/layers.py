@@ -17,7 +17,7 @@ with app_context():
                        moon=data.moon())
 
     # remove the coins layer
-    viewer.remove_layer('coins')
+    viewer.layers.remove('coins')
 
     # swap the order of astronaut and moon
     viewer.layers['astronaut', 'moon'] = viewer.layers['moon', 'astronaut']
