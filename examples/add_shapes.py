@@ -23,8 +23,29 @@ with app_context():
                         80], [105,  90]]])
     points = np.array([[100, 100], [200, 200], [333, 111]])
     polygons = [points+[-22,101], points-[140, -33], points+[19,-21]]
-    shapes = [{'shape_type': 'polygon', 'data': p} for p in polygons]
-    #viewer.add_shapes(shapes, name='shapes')
-    viewer.add_shapes(polygons=polygons)
+
+    viewer.add_shapes(polygons=polygons, ellipses=ellipses)
+
+    # shapes = [{'shape_type': 'polygon', 'data': p, 'color': 'red'} for p in polygons]
+    #
+    # viewer.add_shapes(shapes)
+    #
+    # # primary path
+    # # if ShapeList or list ->
+    # viewer.add_shapes(ShapeList(Shape, Shape, Shape, ...))
+    # viewer.add_shapes([Shape, Shape, Shape, ...])
+    #
+    # # convienience
+    # # if dict ->
+    # viewer.add_shapes(type='rectangle', data=np.array([[10, 10], [10, 10]]))
+    # viewer.add_shapes(type=['rectangle','polygon'], data=[np.array([[10,10],[10,10]]), np.array([10,20,30])])
+    #
+    # # converters (to be added down the road)
+    # viewer.add_shapes_from_geojson({...})
+    # viewer.add_shapes_from_shapely(...)
+    #
+    # viewer.add_shapes(shape_type='rectangle', data=np.array([[10, 10], [10, 10]]), 'color'='red')
+
+
     viewer.layers[-1].edge_width = 10
     viewer.layers[-1].edge_color = 'coral'

@@ -156,6 +156,29 @@ class ShapesList():
             self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0] = self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0]-1
             self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index,0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index,0]-1
 
+    def _select_meshes(self, index, meshes, object_type=None):
+        if object_type is None:
+            if index is True:
+                indices = [i for i in range(len(meshes))]
+            elif isinstance(index, (list, np.ndarray)):
+                indices = [i for i, x in enumerate(meshes) if x[0] in index]
+            elif np.isscalar(index):
+                indices = meshes[:,0] == index
+                indices = np.where(indices)[0]
+            else:
+                indices = []
+        else:
+            if index is True:
+                indices = meshes[:,2]==object_type
+            elif isinstance(index, (list, np.ndarray)):
+                indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1]==object_type]
+            elif np.isscalar(index):
+                indices = np.all(meshes == [index, object_type], axis=1)
+                indices = np.where(indices)[0]
+            else:
+                indices = []
+        return indices
+
     def _update_mesh_vertices(self, index, edge=False, face=False):
         """Updates the mesh vertex data for a single shape located at index.
         Parameters
