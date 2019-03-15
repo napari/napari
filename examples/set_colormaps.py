@@ -5,7 +5,7 @@ Add named or unnamed vispy colormaps to existing layers.
 import numpy as np
 import vispy.color
 from skimage import data
-import napari.util
+import napari
 
 histo = data.astronaut() / 255
 
@@ -16,7 +16,7 @@ green = vispy.color.Colormap([[0., 0., 0.], [0., 1., 0.]])
 blue = vispy.color.Colormap([[0., 0., 0.], [0., 0., 1.]])
 
 with napari.util.app_context():
-    v = napari.Viewer()
+    v = napari.ViewerApp()
 
     rlayer = v.add_image(rch, name='red channel')
     rlayer.blending = 'additive'
@@ -30,5 +30,3 @@ with napari.util.app_context():
 
     # set the blayer property widget to be expanded
     blayer._qt_properties.setExpanded(True)
-
-    w = napari.Window(v)
