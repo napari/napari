@@ -24,11 +24,11 @@ with app_context():
     points = np.array([[100, 100], [200, 200], [333, 111]])
     polygons = [points+[-22,101], points-[140, -33], points+[19,-21]]
 
-    viewer.add_shapes(polygons=polygons, ellipses=ellipses)
+    #viewer.add_shapes(polygons=polygons, ellipses=ellipses)
 
-    # shapes = [{'shape_type': 'polygon', 'data': p, 'color': 'red'} for p in polygons]
-    #
-    # viewer.add_shapes(shapes)
+    shapes = [{'shape_type': 'polygon', 'data': p, 'face_color': 'coral'} for p in polygons]
+
+    viewer.add_shapes(shapes)
     #
     # # primary path
     # # if ShapeList or list ->
@@ -47,5 +47,5 @@ with app_context():
     # viewer.add_shapes(shape_type='rectangle', data=np.array([[10, 10], [10, 10]]), 'color'='red')
 
 
-    viewer.layers[-1].edge_width = 10
-    viewer.layers[-1].edge_color = 'coral'
+    # viewer.layers[-1].edge_width = 10
+    # viewer.layers[-1].edge_color = 'coral'

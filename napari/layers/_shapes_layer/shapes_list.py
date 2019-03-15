@@ -6,11 +6,8 @@ class ShapesList():
     """List of shapes class.
     Parameters
     ----------
-    shapes : list
-        List of dictionaries, where each dictionary corresponds to one shape
-        and has the keys corresponding to the keyword args of the Shapes class.
-        `shape_type` and `data` are required. `edge_width`, `edge_color`,
-        `face_color`, and `z_order` are optional.
+    shapes : list | Shape
+        Either of list of Shape objects or a single Shape object
     """
     _mesh_types = ['face', 'edge']
 
@@ -28,25 +25,23 @@ class ShapesList():
         self._mesh_triangles_colors = np.empty((0, 4)) #Px4 array of rgba mesh triangle colors
         self._mesh_triangles_z_order = np.empty((0), dtype=int) #Length P array of mesh triangle z_order
 
-        for s in shapes:
-            self.add_shape(s)
+        if type(shapes) is list:
+            for s in shapes:
+                self.add(s)
+        else:
+            self.add(shapes)
 
-    def add_shape(self, shape, shape_index=None):
-        """Adds a single dictionary representing a shape object or a Shape
+    def add(self, shape, shape_index=None):
+        """Adds a single Shape object
         Parameters
         ----------
-        shape_dictionary : Shape | dict
-            Either an instance of the Shape class or a dictionary that has the
-            keyword arguments corresponding to the Shape class constructor. In
-            this case, `shape_type` and `data` are required and `edge_width`,
-            `edge_color`, `face_color`, and `z_order` are optional.
+        shape : Shape
+            An instance of the Shape class
         shape_index : None | int
-            If None, then index of shape if the equal to the number of shapes
-            in the list
+            If int then edits the shape date at current index. To be used in
+            conjunction with `remove` when renumber is `False`. If None, then
+            appends a new shape to end of shapes list
         """
-        if type(shape) is dict:
-            shape = Shape(**shape)
-
         if shape_index is None:
             shape_index = len(self.shapes)
             self.shapes.append(shape)
@@ -92,21 +87,21 @@ class ShapesList():
         order = np.repeat(shape.z_order, len(triangles))
         self._mesh_triangles_z_order = np.append(self._mesh_triangles_z_order, order, axis=0)
 
-    def set_shapes(self, shapes):
+    def set(self, shapes):
         """Removes all shapes and then adds in the new ones
         Parameters
         ----------
-        shapes : list
-            List of dictionaries, where each dictionary corresponds to one shape
-            and has the keys corresponding to the keyword args of the Shapes class.
-            `shape_type` and `data` are required. `edge_width`, `edge_color`,
-            `face_color`, and `z_order` are optional.
+        shapes : list | Shape
+            Either of list of Shape objects or a single Shape object
         """
-        self.remove_all_shapes()
-        for s in shapes:
-            self.add_shape(s)
+        self.remove_all()
+        if type(shapes) is list:
+            for s in shapes:
+                self.add(s)
+        else:
+            self.add(shapes)
 
-    def remove_all_shapes(self):
+    def remove_all(self):
         """Removes all shapes
         """
         self.shapes = []
@@ -121,7 +116,7 @@ class ShapesList():
         self._mesh_triangles_colors = np.empty((0, 4))
         self._mesh_triangles_z_order = np.empty((0), dtype=int)
 
-    def remove_one_shape(self, index, renumber=True):
+    def remove_one(self, index, renumber=True):
         """Removes a single shape located at index.
         Parameters
         ----------
@@ -132,26 +127,28 @@ class ShapesList():
             expectation is that this shape is being immediately readded to the
             list using `add_shape`.
         """
-        self._vertices = self._vertices[self._index!=index]
-        self._index = self._index[self._index!=index]
+        indices = self._index != index
+        self._vertices = self._vertices[indices]
+        self._index = self._index[indices]
 
         # Remove triangles
-        indices = self._mesh_triangles_index[:, 0] == index
-        self._mesh_triangles = np.delete(self._mesh_triangles, indices, axis=0)
-        self._mesh_triangles_colors = np.delete(self._mesh_triangles_colors, indices, axis=0)
+        indices = self._mesh_triangles_index[:, 0] != index
+        self._mesh_triangles = self._mesh_triangles[indices]
+        self._mesh_triangles_colors = self._mesh_triangles_colors[indices]
         # Need to fix z_order here!!!!!!
-        self._mesh_triangles_z_order = np.delete(self._mesh_triangles_z_order, indices, axis=0)
-        self._mesh_triangles_index = np.delete(self._mesh_triangles_index, indices, axis=0)
+        self._mesh_triangles_z_order = self._mesh_triangles_z_order[indices]
+        self._mesh_triangles_index = self._mesh_triangles_index[indices]
 
         # Remove vertices
-        indices = self._mesh_vertices_index[:, 0] == index
-        self._mesh_vertices_index = np.delete(self._mesh_vertices_index, indices, axis=0)
-        self._mesh_vertices = np.delete(self._mesh_vertices, indices, axis=0)
+        indices = self._mesh_vertices_index[:, 0] != index
+        self._mesh_vertices = self._mesh_vertices[indices]
+        self._mesh_vertices_index = self._mesh_vertices_index[indices]
+        indices = np.where(np.invert(indices))[0]
         self._mesh_triangles[self._mesh_triangles>indices[0]] = self._mesh_triangles[self._mesh_triangles>indices[0]] - len(indices)
 
         if renumber:
             del self.shapes[index]
-            del self._z_order[index]
+            self._z_order = np.delete(self._z_order, index)
             self._index[self._index>index] = self._index[self._index>index]-1
             self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0] = self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0]-1
             self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index,0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index,0]-1
@@ -180,7 +177,8 @@ class ShapesList():
         return indices
 
     def _update_mesh_vertices(self, index, edge=False, face=False):
-        """Updates the mesh vertex data for a single shape located at index.
+        """Updates the mesh vertex data and vertex data for a single shape
+        located at index.
         Parameters
         ----------
         index : int
@@ -189,6 +187,7 @@ class ShapesList():
             Bool to indicate whether to update mesh vertices corresponding to edges
         face : bool
             Bool to indicate whether to update mesh vertices corresponding to faces
+            and to update the underlying shape vertices
         """
         if edge:
             indices = np.all(self._mesh_vertices_index == [index, 1], axis=1)
@@ -198,6 +197,8 @@ class ShapesList():
         if face:
             indices = np.all(self._mesh_vertices_index == [index, 0], axis=1)
             self._mesh_vertices[indices] = self.shapes[index]._face_vertices
+            indices = self._index == index
+            self._vertices[indices] = self.shapes[index].data
 
     def edit(self, index, data):
         """Updates the z order of a single shape located at index.
@@ -210,8 +211,8 @@ class ShapesList():
         """
         self.shapes[index].data = data
         shape = self.shapes[index]
-        self.remove_one_shape(index, renumber=False)
-        self.add_shape(shape)
+        self.remove_one(index, renumber=False)
+        self.add(shape, shape_index=index)
 
     def update_edge_width(self, index, edge_width):
         """Updates the edge width of a single shape located at index.
@@ -322,4 +323,16 @@ class ShapesList():
             length 2 list specifying coordinate of center of flip axes.
         """
         self.shapes[index].flip(axis, center=center)
+        self._update_mesh_vertices(index, edge=True, face=True)
+
+    def transform(self, index, transform):
+        """Perfroms a linear transform on a single shape located at index
+        Parameters
+        ----------
+        index : int
+            Location in list of the shape to be changed.
+        transform : np.ndarray
+            2x2 array specifying linear transform.
+        """
+        self.shapes[index].transform(transform)
         self._update_mesh_vertices(index, edge=True, face=True)

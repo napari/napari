@@ -81,7 +81,7 @@ def point_to_lines(point, lines):
     ind = np.argmin(line_dist)
 
     return ind, line_loc[ind]
-    
+
 def create_box(data):
     """Finds the bounding box of the shape
     """
@@ -93,12 +93,36 @@ def create_box(data):
     bl = np.array([min_val[0], max_val[1]])
     return np.array([tl, (tl+tr)/2, tr, (tr+br)/2, br, (br+bl)/2, bl, (bl+tl)/2, (tl+tr+br+bl)/4])
 
+def expand_box(data):
+    """Expands four corner rectangle into bounding box
+    """
+    return np.array([data[0], (data[0]+data[1])/2, data[1], (data[1]+data[2])/2,
+                    data[2], (data[2]+data[3])/2, data[3], (data[3]+data[0])/2,
+                    data.mean(axis=0)])
+
+def expand_rectangle(data):
+    """Expands two corners into four corner rectangle
+    """
+    min_val = [data[:,0].min(axis=0), data[:,1].min(axis=0)]
+    max_val = [data[:,0].max(axis=0), data[:,1].max(axis=0)]
+    tl = np.array([min_val[0], min_val[1]])
+    tr = np.array([max_val[0], min_val[1]])
+    br = np.array([max_val[0], max_val[1]])
+    bl = np.array([min_val[0], max_val[1]])
+    return np.array([tl, tr, br, bl])
+
+def expand_ellipse(data):
+    """Expands a center and radius into four corner rectangle
+    """
+    data = np.array([data[0]+data[1], data[0]-data[1]])
+    return expand_rectangle(data)
+
 def generate_ellipse(corners, num_segments):
     center = corners.mean(axis=0)
     xr = abs((corners[0][0] + corners[3][0])/2 - center[0])
     yr = abs((corners[0][1] + corners[1][1])/2 - center[1])
 
-    vertices = np.empty((num_segments + 1, 2), dshape_type=np.float32)
+    vertices = np.empty((num_segments + 1, 2), dtype=np.float32)
     theta = np.linspace(0, np.deg2rad(360), num_segments)
 
     vertices[1:, 0] = center[0] + xr * np.cos(theta)

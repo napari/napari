@@ -3,7 +3,7 @@ from vispy.geometry import PolygonData
 from vispy.color import Color
 from copy import copy
 
-from .shape_utils import triangulate_path, create_box, generate_ellipse
+from .shape_utils import triangulate_path, create_box, generate_ellipse, expand_ellipse, expand_rectangle, expand_box
 
 class Shape():
     """Class for a single shape
@@ -78,9 +78,11 @@ class Shape():
                                  expects two end vertices""")
             else:
                 # For line connect two points
-                self._set_meshes(data, fill=False)
+                self._set_meshes(data, fill=False, closed=False)
                 self._box = create_box(data)
         elif self.shape_type == 'rectangle':
+            if len(data) == 2:
+                data = expand_rectangle(data)
             if len(data) != 4:
                 raise ValueError("""Data shape does not match a rectangle.
                                  Rectangle expects four corner vertices""")
@@ -89,8 +91,10 @@ class Shape():
                 fill_triangles = np.array([[0, 1, 2], [0, 2, 3]])
                 self._set_meshes(data, fill_vertices=data,
                                   fill_triangles=fill_triangles)
-                self._box = data
+                self._box = expand_box(data)
         elif self.shape_type == 'ellipse':
+            if len(data) == 2:
+                data = expand_ellipse(data)
             if len(data) != 4:
                 raise ValueError("""Data shape does not match an ellipse.
                                  Ellipse expects four corner vertices""")
@@ -101,14 +105,14 @@ class Shape():
                 fill_triangles[-1, 2] = 1
                 self._set_meshes(points[1:-1], fill_vertices=points,
                                   fill_triangles=fill_triangles)
-                self._box = data
+                self._box = expand_box(data)
         elif self.shape_type == 'path':
             if len(data) < 2:
                 raise ValueError("""Data shape does not match a path. Path
                                  expects at least two vertices""")
             else:
                 # For path connect every all data
-                self._set_meshes(data, fill=False)
+                self._set_meshes(data, fill=False, closed=False)
                 self._box = create_box(data)
         elif self.shape_type == 'polygon':
             if len(data) < 2:
@@ -196,7 +200,7 @@ class Shape():
         self._edge_vertices = np.matmul(self._edge_vertices, A)
 
         norm_offsets = np.linalg.norm(self._edge_offsets, axis=1, keepdims=True)
-        offsets = np.matmul((self._edge_offsets, A))
+        offsets = np.matmul(self._edge_offsets, A)
         transformed_norm_offsets = np.linalg.norm(offsets, axis=1, keepdims=True)
         norm_offsets[transformed_norm_offsets==0] = 1
         transformed_norm_offsets[transformed_norm_offsets==0] = 1
