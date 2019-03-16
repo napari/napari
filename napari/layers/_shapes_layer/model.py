@@ -587,7 +587,9 @@ class Shapes(Layer):
         if not isinstance(scale, (list, np.ndarray)):
             scale = [scale, scale]
         box = self._selected_box - center
-        box = box*scale
+        box = np.array(box*scale)
+        if not np.all(box[1] == box[9]):
+            box[9] = box[1] + (box[9]-box[1])/np.linalg.norm(box[9]-box[1])*self._rotion_handle_length
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
@@ -601,6 +603,8 @@ class Shapes(Layer):
         """
         box = self._selected_box - center
         box = np.matmul(box, transform.T)
+        if not np.all(box[1] == box[9]):
+            box[9] = box[1] + (box[9]-box[1])/np.linalg.norm(box[9]-box[1])*self._rotion_handle_length
         self._selected_box = box + center
 
     def _shape_at(self, indices):
