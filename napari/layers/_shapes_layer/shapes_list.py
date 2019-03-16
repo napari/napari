@@ -406,7 +406,9 @@ class ShapesList():
             length 2 list specifying coordinate of center of scaling.
         """
         self.shapes[index].scale(scale, center=center)
-        self._update_mesh_vertices(index, edge=True, face=True)
+        shape = self.shapes[index]
+        self.remove(index, renumber=False)
+        self.add(shape, shape_index=index)
 
     def rotate(self, index, angle, center=None):
         """Perfroms a rotation on a single shape located at index
@@ -447,7 +449,9 @@ class ShapesList():
             2x2 array specifying linear transform.
         """
         self.shapes[index].transform(transform)
-        self._update_mesh_vertices(index, edge=True, face=True)
+        shape = self.shapes[index]
+        self.remove(index, renumber=False)
+        self.add(shape, shape_index=index)
 
     def to_list(self, shape_type=None):
         if shape_type is None:

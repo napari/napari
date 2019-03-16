@@ -1,6 +1,7 @@
 """
-Display one markers layer ontop of one image layer using the add_markers and
-add_image APIs
+Display one shapes layer ontop of one image layer using the add_shapes and
+add_image APIs. When the window is closed it will print the coordinates of
+your shapes.
 """
 
 import numpy as np
@@ -37,3 +38,7 @@ with app_context():
     layer =  viewer.layers[-1]
     layer.edge_width = 5
     layer.opacity = 0.75
+
+# Print the shape coordinate data
+print("your shapes are at:")
+print(layer.data.to_list())

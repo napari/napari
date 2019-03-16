@@ -208,19 +208,19 @@ class Shape():
         transform : np.ndarray
             2x2 array specifying linear transform.
         """
-        A = transform.T
-        self._face_vertices = np.matmul(self._face_vertices, A)
-        self._edge_vertices = np.matmul(self._edge_vertices, A)
+        self._box = np.matmul(self._box, transform.T)
+        self._data = np.matmul(self._data, transform.T)
+        self._face_vertices = np.matmul(self._face_vertices, transform.T)
 
-        norm_offsets = np.linalg.norm(self._edge_offsets, axis=1, keepdims=True)
-        offsets = np.matmul(self._edge_offsets, A)
-        transformed_norm_offsets = np.linalg.norm(offsets, axis=1, keepdims=True)
-        norm_offsets[transformed_norm_offsets==0] = 1
-        transformed_norm_offsets[transformed_norm_offsets==0] = 1
-        self._edge_offsets = offsets/transformed_norm_offsets*norm_offsets
+        if self.shape_type == 'path' or self.shape_type == 'line':
+            closed = False
+        else:
+            closed = True
 
-        self._box = np.matmul(self._box, A)
-        self._data = np.matmul(self._data, A)
+        centers, offsets, triangles = triangulate_path(self._data, closed=closed)
+        self._edge_vertices = centers
+        self._edge_offsets = offsets
+        self._edge_triangles = triangles
 
     def shift(self, shift):
         """Perfroms a 2D shift on the shape
