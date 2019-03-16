@@ -52,7 +52,7 @@ class Shapes(Layer):
         4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape otherwise
         the same value will be used for all shapes.
-    z_order : int | list
+    z_index : int | list
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape otherwise
@@ -69,7 +69,7 @@ class Shapes(Layer):
     _prefixed_size = np.array([10, 10])
 
     def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', z_order=0, *, name=None):
+                 face_color='white', z_index=0, *, name=None):
 
         visual = VisualNode([Markers(), Line(), Mesh(), Mesh()])
 
@@ -82,7 +82,7 @@ class Shapes(Layer):
                                    edge_width=edge_width,
                                    edge_color=edge_color,
                                    face_color=face_color,
-                                   z_order=z_order)
+                                   z_index=z_index)
 
             self.apply_all = True
             if np.isscalar(edge_width):
@@ -101,7 +101,7 @@ class Shapes(Layer):
                 self._face_color = 'black'
             self._opacity = 1
 
-            self.z_order = z_order
+            #self.z_index = z_index
 
             # update flags
             self._need_display_update = False
@@ -253,27 +253,27 @@ class Shapes(Layer):
         self._selected_box = self.select_box(selected_shapes)
 
     # @property
-    # def z_order(self):
+    # def z_index(self):
     #     """list: list of z order of objects. If there are N objects it
     #     must be a permutation of 0,...,N-1
     #     """
     #
-    #     return self._z_order
+    #     return self._z_index
     #
-    # @z_order.setter
-    # def z_order(self, z_order):
-    #     ## Check z_order is a permutation of 0,...,N-1
-    #     if not is_permutation(z_order, len(self.data.shapes)):
-    #         raise ValueError('z_order is not permutation')
+    # @z_index.setter
+    # def z_index(self, z_index):
+    #     ## Check z_index is a permutation of 0,...,N-1
+    #     if not is_permutation(z_index, len(self.data.shapes)):
+    #         raise ValueError('z_index is not permutation')
     #
-    #     self._z_order = np.array(z_order)
+    #     self._z_index = np.array(z_index)
     #
-    #     if len(self._z_order) == 0:
-    #         self._z_order_faces = np.empty((0), dtype=int)
+    #     if len(self._z_index) == 0:
+    #         self._z_index_faces = np.empty((0), dtype=int)
     #     else:
     #         _, idx = np.unique(self.data._mesh_triangles_index[:,0], return_index=True)
-    #         z_order_faces = [np.arange(idx[z], idx[z]+self._face_counts[z]) for z in self._z_order]
-    #         self._z_order_faces = np.concatenate(z_order_faces)
+    #         z_index_faces = [np.arange(idx[z], idx[z]+self._face_counts[z]) for z in self._z_index]
+    #         self._z_index_faces = np.concatenate(z_index_faces)
     #     self.refresh()
 
     @property
@@ -389,8 +389,8 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        faces = self.data._mesh_triangles
-        colors = self.data._mesh_triangles_colors
+        faces = self.data._mesh_triangles[::-1]
+        colors = self.data._mesh_triangles_colors[::-1]
         vertices = self.data._mesh_vertices
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
@@ -555,6 +555,49 @@ class Shapes(Layer):
         self._hover_shapes = [None, None]
         self.refresh()
 
+    def _rotate_box(self, angle, center=[0, 0]):
+        """Perfroms a rotation on the selected box
+        Parameters
+        ----------
+        angle : float
+            angle specifying rotation of shapes in degrees.
+        center : list
+            coordinates of center of rotation.
+        """
+        theta = np.radians(angle)
+        transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
+        box = self._selected_box - center
+        box = np.matmul(box, transform.T)
+        self._selected_box = box + center
+
+    def _scale_box(self, scale, center=[0, 0]):
+        """Perfroms a scaling on the selected box
+        Parameters
+        ----------
+        scale : float, list
+            scalar or list specifying rescaling of shape.
+        center : list
+            coordinates of center of rotation.
+        """
+        if not isinstance(scale, (list, np.ndarray)):
+            scale = [scale, scale]
+        box = self._selected_box - center
+        box = box*scale
+        self._selected_box = box + center
+
+    def _transform_box(self, transform, center=[0, 0]):
+        """Perfroms a linear transformation on the selected box
+        Parameters
+        ----------
+        transform : np.ndarray
+            2x2 array specifying linear transform.
+        center : list
+            coordinates of center of rotation.
+        """
+        box = self._selected_box - center
+        box = np.matmul(box, transform.T)
+        self._selected_box = box + center
+
     def _shape_at(self, indices):
         """Determines if any shapes at given indices by looking inside triangle
         meshes.
@@ -607,7 +650,7 @@ class Shapes(Layer):
 
         if len(shapes) > 0:
             indices = shapes[:, 0]
-            # z_list = self._z_order.tolist()
+            # z_list = self._z_index.tolist()
             # order_indices = np.array([z_list.index(m) for m in indices])
             # ordered_shapes = indices[np.argsort(order_indices)]
             ordered_shapes = indices
@@ -670,108 +713,65 @@ class Shapes(Layer):
                 msg = msg + ', vertex ' + str(value[1])
         return msg
 
-    def _rotate_box(self, angle, center=[0, 0]):
-        """Perfroms a rotation on the selected box
-        Parameters
-        ----------
-        angle : float
-            angle specifying rotation of shapes in degrees.
-        center : list
-            coordinates of center of rotation.
-        """
-        theta = np.radians(angle)
-        transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
-        box = self._selected_box - center
-        box = np.matmul(box, transform.T)
-        self._selected_box = box + center
-
-    def _scale_box(self, scale, center=[0, 0]):
-        """Perfroms a scaling on the selected box
-        Parameters
-        ----------
-        scale : float, list
-            scalar or list specifying rescaling of shape.
-        center : list
-            coordinates of center of rotation.
-        """
-        if not isinstance(scale, (list, np.ndarray)):
-            scale = [scale, scale]
-        box = self._selected_box - center
-        box = box*scale
-        self._selected_box = box + center
-
-    def _transform_box(self, transform, center=[0, 0]):
-        """Perfroms a linear transformation on the selected box
-        Parameters
-        ----------
-        transform : np.ndarray
-            2x2 array specifying linear transform.
-        center : list
-            coordinates of center of rotation.
-        """
-        box = self._selected_box - center
-        box = np.matmul(box, transform.T)
-        self._selected_box = box + center
-
     # def move_forward(self, index):
     #     if type(index) is list:
-    #         z_order = self._z_order.tolist()
-    #         indices = [z_order.index(i) for i in index]
+    #         z_index = self._z_index.tolist()
+    #         indices = [z_index.index(i) for i in index]
     #         for i in np.sort(indices):
-    #             self._move_one_forward(z_order[i])
+    #             self._move_one_forward(z_index[i])
     #     else:
     #         self._move_one_forward(index)
-    #     self.z_order = self._z_order
+    #     self.z_index = self._z_index
     #
     # def move_backward(self, index):
     #     if type(index) is list:
-    #         z_order = self._z_order.tolist()
-    #         indices = [z_order.index(i) for i in index]
+    #         z_index = self._z_index.tolist()
+    #         indices = [z_index.index(i) for i in index]
     #         for i in np.sort(indices)[::-1]:
-    #             self._move_one_backward(z_order[i])
+    #             self._move_one_backward(z_index[i])
     #     else:
     #         self._move_one_backward(index)
-    #     self.z_order = self._z_order
+    #     self.z_index = self._z_index
     #
     # def move_to_front(self, index):
     #     if type(index) is list:
-    #         z_order = self._z_order.tolist()
-    #         indices = [z_order.index(i) for i in index]
+    #         z_index = self._z_index.tolist()
+    #         indices = [z_index.index(i) for i in index]
     #         for i in np.sort(indices)[::-1]:
-    #             self._move_one_to_front(z_order[i])
+    #             self._move_one_to_front(z_index[i])
     #     else:
     #         self._move_one_to_front(index)
-    #     self.z_order = self._z_order
+    #     self.z_index = self._z_index
     #
     # def move_to_back(self, index):
     #     if type(index) is list:
-    #         z_order = self._z_order.tolist()
-    #         indices = [z_order.index(i) for i in index]
+    #         z_index = self._z_index.tolist()
+    #         indices = [z_index.index(i) for i in index]
     #         for i in np.sort(indices):
-    #             self._move_one_to_back(z_order[i])
+    #             self._move_one_to_back(z_index[i])
     #     else:
     #         self._move_one_to_back(index)
-    #     self.z_order = self._z_order
+    #     self.z_index = self._z_index
     #
     # def _move_one_forward(self, index):
-    #     ind = self._z_order.tolist().index(index)
+    #     ind = self._z_index.tolist().index(index)
     #     if ind != 0:
-    #         self._z_order[ind] = self._z_order[ind-1]
-    #         self._z_order[ind-1] = index
+    #         self._z_index[ind] = self._z_index[ind-1]
+    #         self._z_index[ind-1] = index
     #
     # def _move_one_backward(self, index):
-    #     ind = self._z_order.tolist().index(index)
-    #     if ind != len(self._z_order)-1:
-    #         self._z_order[ind] = self._z_order[ind+1]
-    #         self._z_order[ind+1] = index
+    #     ind = self._z_index.tolist().index(index)
+    #     if ind != len(self._z_index)-1:
+    #         self._z_index[ind] = self._z_index[ind+1]
+    #         self._z_index[ind+1] = index
     #
     # def _move_one_to_front(self, index):
-    #     self._z_order[1:] = self._z_order[self._z_order!=index]
-    #     self._z_order[0] = index
+    #     self._z_index[1:] = self._z_index[self._z_index!=index]
+    #     self._z_index[0] = index
     #
     # def _move_one_to_back(self, index):
-    #     self._z_order[:-1] = self._z_order[self._z_order!=index]
-    #     self._z_order[-1] = index
+    #     self._z_index[:-1] = self._z_index[self._z_index!=index]
+    #     self._z_index[-1] = index
 
     def _move(self, coord):
         """Moves object at given mouse position
@@ -1239,13 +1239,13 @@ class Shapes(Layer):
                                   edge_color=self.edge_color,
                                   face_color=self.face_color)
                 elif self.mode == 'add_ellipse':
-                    shape = np.array([self._create_coord, self._prefixed_size/2])
+                    data = np.array([self._create_coord, self._prefixed_size/2])
                     self.data.add(data, shape_type='ellipse',
                                   edge_width=self.edge_width,
                                   edge_color=self.edge_color,
                                   face_color=self.face_color)
                 elif self.mode == 'add_line':
-                    shape = np.array([self._create_coord-self._prefixed_size/2,
+                    data = np.array([self._create_coord-self._prefixed_size/2,
                                       self._create_coord+self._prefixed_size/2])
                     self.data.add(data, shape_type='line',
                                   edge_width=self.edge_width,

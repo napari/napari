@@ -26,7 +26,7 @@ class Shape():
         4 elements.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
-    z_order : int
+    z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     """
@@ -34,7 +34,7 @@ class Shape():
     _shape_types = ['line', 'rectangle', 'ellipse', 'path', 'polygon']
 
     def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', opacity=1, z_order=0):
+                 face_color='white', opacity=1, z_index=0):
 
         self._face_vertices = np.empty((0, 2)) # Mx2 array of vertices of faces
         self._face_triangles = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form triangles for faces
@@ -49,7 +49,7 @@ class Shape():
         self.edge_color = edge_color
         self.face_color = face_color
         self.opacity = opacity
-        self.z_order = z_order
+        self.z_index = z_index
 
     @property
     def shape_type(self):
@@ -173,15 +173,15 @@ class Shape():
         self._opacity = opacity
 
     @property
-    def z_order(self):
+    def z_index(self):
         """int: z order priority of shape. Shapes with higher z order displayed
         ontop of others.
         """
-        return self._z_order
+        return self._z_index
 
-    @z_order.setter
-    def z_order(self, z_order):
-        self._z_order = z_order
+    @z_index.setter
+    def z_index(self, z_index):
+        self._z_index = z_index
 
     def _set_meshes(self, points, closed=True, fill=True, edge=True,
                      fill_vertices=None, fill_triangles=None):
