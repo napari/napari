@@ -20,7 +20,6 @@ from vispy.color import get_color_names, Color
 from .view import QtShapesLayer
 from .view import QtShapesControls
 from .shapes_list import ShapesList
-from .shape import Shape
 
 @add_to_viewer
 class Shapes(Layer):
@@ -86,11 +85,23 @@ class Shapes(Layer):
                                    z_order=z_order)
 
             self.apply_all = True
-            self.edge_width = 1
-            self.edge_color = 'black'
-            self.face_color = 'white'
+            if np.isscalar(edge_width):
+                self._edge_width = edge_width
+            else:
+                self._edge_width = 1
+
+            if type(edge_color) is str:
+                self._edge_color = edge_color
+            else:
+                self._edge_color = 'black'
+
+            if type(face_color) is str:
+                self._face_color = face_color
+            else:
+                self._face_color = 'black'
+            self._opacity = 1
+
             self.z_order = z_order
-            self.opacity = 1
 
             # update flags
             self._need_display_update = False
@@ -123,7 +134,11 @@ class Shapes(Layer):
             self._mode_history = self._mode
             self._status = self._mode
 
-            self.events.add(mode=Event)
+            self.events.add(mode=Event,
+                            edge_width=Event,
+                            edge_color=Event,
+                            face_color=Event)
+
             self._qt_properties = QtShapesLayer(self)
             self._qt_controls = QtShapesControls(self)
 
@@ -138,84 +153,64 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._data = data
-
         self.refresh()
 
     @property
     def edge_width(self):
         """int: width of edges in px
         """
-
         return self._edge_width
 
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-        # if self._apply_all:
-        #     index = True
-        # else:
-        #     index = self.selected_shapes
-        # self.set_thickness(index=index, thickness=self._edge_width)
-
+        self.set_edge_width(edge_width)
+        self.events.edge_width()
 
     @property
     def edge_color(self):
         """Color, ColorArray: color of edges and lines
         """
-
         return self._edge_color
 
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
-        # if self._apply_all:
-        #     index = True
-        # else:
-        #     index = self.selected_shapes
-        # self.set_color(index=index, edge_color=self._edge_color)
+        self.set_edge_color(edge_color)
+        self.events.edge_color()
 
     @property
     def face_color(self):
         """Color, ColorArray: color of faces
         """
-
         return self._face_color
 
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
-        # if self._apply_all:
-        #     index = True
-        # else:
-        #     index = self.selected_shapes
-        # self.set_color(index=index, face_color=self._face_color)
+        self.set_face_color(face_color)
+        self.events.face_color()
 
-    # @property
-    # def opacity(self):
-    #     """float: Opacity value between 0.0 and 1.0.
-    #     """
-    #     return self._opacity
-    #
-    # @opacity.setter
-    # def opacity(self, opacity):
-    #     if not 0.0 <= opacity <= 1.0:
-    #         raise ValueError('opacity must be between 0.0 and 1.0; '
-    #                          f'got {opacity}')
-    #
-    #     self._opacity = opacity
-    #     if self._apply_all:
-    #         index = True
-    #     else:
-    #         index = self.selected_shapes
-    #     self.set_opacity(index=index, opacity=opacity)
-    #     self.refresh()
-    #     self.events.opacity()
+    @property
+    def opacity(self):
+        """float: Opacity value between 0.0 and 1.0.
+        """
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, opacity):
+        if not 0.0 <= opacity <= 1.0:
+            raise ValueError('opacity must be between 0.0 and 1.0; '
+                             f'got {opacity}')
+
+        self._opacity = opacity
+        self.set_opacity(opacity)
+        self.events.opacity()
 
     @property
     def apply_all(self):
         """bool: whether to apply gui manipulations to all shapes or just selected
         """
-
         return self._apply_all
 
     @apply_all.setter
@@ -226,7 +221,6 @@ class Shapes(Layer):
     def selected_shapes(self):
         """list: list of currently selected shapes
         """
-
         return self._selected_shapes
 
     @selected_shapes.setter
@@ -637,6 +631,42 @@ class Shapes(Layer):
                 msg = msg + ', vertex ' + str(value[1])
         return msg
 
+    def set_edge_width(self, edge_width):
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_edge_width(i, edge_width)
+        self.refresh()
+
+    def set_edge_color(self, edge_color):
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_edge_color(i, edge_color)
+        self.refresh()
+
+    def set_face_color(self, face_color):
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_face_color(i, face_color)
+        self.refresh()
+
+    def set_opacity(self, opacity):
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_opacity(i, opacity)
+        self.refresh()
+
     def remove_selected(self):
         """ Removes any currently selected shapes
         """
@@ -765,99 +795,6 @@ class Shapes(Layer):
     # def _move_one_to_back(self, index):
     #     self._z_order[:-1] = self._z_order[self._z_order!=index]
     #     self._z_order[-1] = index
-    #
-    # def set_thickness(self, index=True, thickness=1):
-    #     if isinstance(thickness, (list, np.ndarray)):
-    #         if index is True:
-    #             self.data._thickness = thickness
-    #         else:
-    #             self.data._thickness[index] = thickness
-    #     else:
-    #         if index is True:
-    #             self.data._thickness = np.repeat(thickness, len(self.data._thickness))
-    #         elif isinstance(index, (list, np.ndarray)):
-    #             self.data._thickness[index] = np.repeat(thickness, len(index))
-    #         else:
-    #             self.data._thickness[index] = thickness
-    #     self.data.update_thickness(index)
-    #     self.refresh()
-    #
-    # def set_opacity(self, index=True, opacity=1):
-    #     if type(opacity) is list:
-    #         if index is True:
-    #             for i, op in enumerate(opacity):
-    #                 self._face_color_array[i, 3] = op
-    #                 self._edge_color_array[i, 3] = op
-    #             for i in range(len(self.data._mesh_triangles_index)):
-    #                 self._mesh_color_array[i] = self._face_color_array[self.data._mesh_triangles_index[i, 0]]
-    #         else:
-    #             assert(type(index) is list and len(opacity)==len(index))
-    #             for i, ind in enumerate(index):
-    #                 indices = self.data._select_meshes(ind, self.data._mesh_triangles_index)
-    #                 self._face_color_array[ind, 3] = op[i]
-    #                 self._edge_color_array[ind, 3] = op[i]
-    #                 self._mesh_color_array[indices] = op[i]
-    #     else:
-    #         indices = self.data._select_meshes(index, self.data._mesh_triangles_index)
-    #         self._mesh_color_array[indices, 3] = opacity
-    #         if index is True:
-    #             for i in range(len(self.data.shapes)):
-    #                 self._face_color_array[i, 3] = opacity
-    #                 self._edge_color_array[i, 3] = opacity
-    #         else:
-    #             self._face_color_array[index, 3] = opacity
-    #             self._edge_color_array[index, 3] = opacity
-    #
-    # def set_color(self, index=True, edge_color=False, face_color=False):
-    #     if face_color is False:
-    #         pass
-    #     else:
-    #         if type(face_color) is list:
-    #             if index is True:
-    #                 for i, col in enumerate(face_color):
-    #                     self._face_color_array[i] = Color(col).rgba
-    #                 for i in range(len(self.data._mesh_triangles_index)):
-    #                     if self.data._mesh_triangles_index[i, 2] == 0:
-    #                         self._mesh_color_array[i] = self._face_color_array[self.data._mesh_triangles_index[i, 0]]
-    #             else:
-    #                 assert(type(index) is list and len(face_color)==len(index))
-    #                 for i, ind in enumerate(index):
-    #                     indices = self.data._select_meshes(ind, self.data._mesh_triangles_index, 0)
-    #                     self._face_color_array[ind] = Color(face_color[i]).rgba
-    #                     self._mesh_color_array[indices] = self._face_color_array[ind]
-    #         else:
-    #             indices = self.data._select_meshes(index, self.data._mesh_triangles_index, 0)
-    #             self._mesh_color_array[indices] = Color(face_color).rgba
-    #             if index is True:
-    #                 for i in range(len(self.data.shapes)):
-    #                     self._face_color_array[i] = Color(face_color).rgba
-    #             else:
-    #                 self._face_color_array[index] = Color(face_color).rgba
-    #     if edge_color is False:
-    #         pass
-    #     else:
-    #         if type(edge_color) is list:
-    #             if index is True:
-    #                 for i, col in enumerate(edge_color):
-    #                     self._edge_color_array[i] = Color(col).rgba
-    #                 for i in range(len(self.data._mesh_triangles_index)):
-    #                     if self.data._mesh_triangles_index[i, 2] == 1:
-    #                         self._mesh_color_array[i] = self._edge_color_array[self.data._mesh_triangles_index[i, 0]]
-    #             else:
-    #                 assert(type(index) is list and len(face_color)==len(index))
-    #                 for i, ind in enumerate(index):
-    #                     indices = self.data._select_meshes(ind, self.data._mesh_triangles_index, 1)
-    #                     self._edge_color_array[ind] = Color(edge_color[i]).rgba
-    #                     self._mesh_color_array[indices] = self._edge_color_array[ind]
-    #         else:
-    #             indices = self.data._select_meshes(index, self.data._mesh_triangles_index, 1)
-    #             self._mesh_color_array[indices] = Color(edge_color).rgba
-    #             if index is True:
-    #                 for i in range(len(self.data.shapes)):
-    #                     self._edge_color_array[i] = Color(edge_color).rgba
-    #             else:
-    #                 self._edge_color_array[index] = Color(edge_color).rgba
-    #     self.refresh()
 
     def _move(self, coord):
         """Moves object at given mouse position

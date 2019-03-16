@@ -338,6 +338,24 @@ class ShapesList():
         indices = np.all(self._mesh_triangles_index == [index, 0], axis=1)
         self._mesh_triangles_colors[indices] = self.shapes[index].face_color.rgba
 
+    def update_opacity(self, index, opacity):
+        """Updates the face color of a single shape located at index.
+        Parameters
+        ----------
+        index : int
+            Location in list of the shape to be changed.
+        opacity : float
+            Opacity, must be between 0 and 1
+        """
+        color = self.shapes[index].edge_color.rgba
+        color[3] = opacity
+        self.shapes[index].edge_color = color
+        color = self.shapes[index].face_color.rgba
+        color[3] = opacity
+        self.shapes[index].face_color = color
+        indices = self._mesh_triangles_index == index
+        self._mesh_triangles_colors[indices, 3] = opacity
+
     def update_z_order(self, index, z_order):
         """Updates the z order of a single shape located at index.
         Parameters
