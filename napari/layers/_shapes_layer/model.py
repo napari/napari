@@ -64,7 +64,7 @@ class Shapes(Layer):
     _colors = get_color_names()
     _vertex_size = 10
     _highlight_color = (0, 0.6, 1)
-    _highlight_thickness = 0.5
+    _highlight_width = 1.5
     _rotion_handle_length = 20
     _prefixed_size = np.array([10, 10])
 
@@ -164,7 +164,13 @@ class Shapes(Layer):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-        self.set_edge_width(edge_width)
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_edge_width(i, edge_width)
+        self.refresh()
         self.events.edge_width()
 
     @property
@@ -176,7 +182,13 @@ class Shapes(Layer):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
-        self.set_edge_color(edge_color)
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_edge_color(i, edge_color)
+        self.refresh()
         self.events.edge_color()
 
     @property
@@ -188,7 +200,13 @@ class Shapes(Layer):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
-        self.set_face_color(face_color)
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_face_color(i, face_color)
+        self.refresh()
         self.events.face_color()
 
     @property
@@ -204,7 +222,13 @@ class Shapes(Layer):
                              f'got {opacity}')
 
         self._opacity = opacity
-        self.set_opacity(opacity)
+        if self._apply_all:
+            index = list(range(len(self.data.shapes)))
+        else:
+            index = self.selected_shapes
+        for i in index:
+            self.data.update_opacity(i, opacity)
+        self.refresh()
         self.events.opacity()
 
     @property
@@ -408,13 +432,21 @@ class Shapes(Layer):
                     else:
                         index.append(self._hover_shapes[0])
                 index.sort()
+                meshes = self.data._mesh_triangles_index
+                faces_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1]==1]
+                meshes = self.data._mesh_vertices_index
+                vertices_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1]==1]
             else:
                 index = self._hover_shapes[0]
+                faces_indices = np.all(self.data._mesh_triangles_index == [index, 1], axis=1)
+                faces_indices = np.where(faces_indices)[0]
+                vertices_indices = np.all(self.data._mesh_vertices_index == [index, 1], axis=1)
+                vertices_indices = np.where(vertices_indices)[0]
 
-            faces_indices = self.data._select_meshes(index, self.data._mesh_triangles_index, 1)
-            vertices_indices = self.data._select_meshes(index, self.data._mesh_vertices_index, 1)
-            vertices = self.data._mesh_vertices[vertices_indices]
+            vertices = (self.data._mesh_vertices_centers[vertices_indices] +
+                        self._highlight_width*self.data._mesh_vertices_offsets[vertices_indices])
             faces = self.data._mesh_triangles[faces_indices]
+
             if type(index) is list:
                 faces_index = self.data._mesh_triangles_index[faces_indices][:,0]
                 starts = np.unique(self.data._mesh_vertices_index[vertices_indices][:,0], return_index=True)[1]
@@ -514,6 +546,13 @@ class Shapes(Layer):
                 self.data.remove(index)
         self._creating = False
         self._unselect()
+        self.refresh()
+
+    def remove_selected(self):
+        for index in self.selected_shapes:
+            self.data.remove(index)
+        self.selected_shapes = []
+        self._hover_shapes = [None, None]
         self.refresh()
 
     def _shape_at(self, indices):
@@ -631,110 +670,48 @@ class Shapes(Layer):
                 msg = msg + ', vertex ' + str(value[1])
         return msg
 
-    def set_edge_width(self, edge_width):
-        if self._apply_all:
-            index = list(range(len(self.data.shapes)))
-        else:
-            index = self.selected_shapes
-        for i in index:
-            self.data.update_edge_width(i, edge_width)
-        self.refresh()
-
-    def set_edge_color(self, edge_color):
-        if self._apply_all:
-            index = list(range(len(self.data.shapes)))
-        else:
-            index = self.selected_shapes
-        for i in index:
-            self.data.update_edge_color(i, edge_color)
-        self.refresh()
-
-    def set_face_color(self, face_color):
-        if self._apply_all:
-            index = list(range(len(self.data.shapes)))
-        else:
-            index = self.selected_shapes
-        for i in index:
-            self.data.update_face_color(i, face_color)
-        self.refresh()
-
-    def set_opacity(self, opacity):
-        if self._apply_all:
-            index = list(range(len(self.data.shapes)))
-        else:
-            index = self.selected_shapes
-        for i in index:
-            self.data.update_opacity(i, opacity)
-        self.refresh()
-
-    def remove_selected(self):
-        """ Removes any currently selected shapes
-        """
-        to_delete = copy(self.selected_shapes)
-        self.selected_shapes = []
-        self._selected_box = self.select_box([])
-        for index in to_delete:
-            self.data.remove(index)
-        self._hover_shapes = [None, None]
-        self.refresh()
-
-    def shift_selected(self, shift):
-        """Perfroms an 2D shift on selected shapes
-        Parameters
-        ----------
-        shift : np.ndarray
-            length 2 array specifying shift of shapes.
-        """
-        for index in self.selected_shapes:
-            self.data.shift(index, shift)
-        self._selected_box = self.select_box(self.selected_shapes)
-        self.refresh()
-
-    def scale_selected(self, scale, vertex=-2):
-        """Perfroms a scaling on selected shapes
-        Parameters
-        ----------
-        scale : float, list
-            scalar or list specifying rescaling of shapes in 2D.
-        vertex : int
-            coordinate of bounding box to use as center of scaling.
-        """
-        center = self._selected_box[vertex]
-        for index in self.selected_shapes:
-            self.data.scale(index, scale, center=center)
-        self._selected_box = self.select_box(self.selected_shapes)
-        self.refresh()
-
-    def rotate_selected(self, angle, vertex=-2):
-        """Perfroms a rotation on selected shapes
+    def _rotate_box(self, angle, center=[0, 0]):
+        """Perfroms a rotation on the selected box
         Parameters
         ----------
         angle : float
             angle specifying rotation of shapes in degrees.
-        vertex : int
-            coordinate of bounding box to use as center of rotation.
+        center : list
+            coordinates of center of rotation.
         """
-        center = self._selected_box[vertex]
-        for index in self.selected_shapes:
-            self.data.rotate(index, angle, center=center)
-        self._selected_box = self.select_box(self.selected_shapes)
-        self.refresh()
+        theta = np.radians(angle)
+        transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
+        box = self._selected_box - center
+        box = np.matmul(box, transform.T)
+        self._selected_box = box + center
 
-    def flip_selected(self, axis, vertex=-2):
-        """Perfroms a flip on selected shapes
+    def _scale_box(self, scale, center=[0, 0]):
+        """Perfroms a scaling on the selected box
         Parameters
         ----------
-        axis : int
-            integer specifying axis of flip. `0` flips horizontal, `1` flips
-            vertical.
-        vertex : int
-            coordinate of bounding box to use as center of flip axes.
+        scale : float, list
+            scalar or list specifying rescaling of shape.
+        center : list
+            coordinates of center of rotation.
         """
-        center = self._selected_box[vertex]
-        for index in self.selected_shapes:
-            self.data.flip(index, axis, center=center)
-        self._selected_box = self.select_box(self.selected_shapes)
-        self.refresh()
+        if not isinstance(scale, (list, np.ndarray)):
+            scale = [scale, scale]
+        box = self._selected_box - center
+        box = box*scale
+        self._selected_box = box + center
+
+    def _transform_box(self, transform, center=[0, 0]):
+        """Perfroms a linear transformation on the selected box
+        Parameters
+        ----------
+        transform : np.ndarray
+            2x2 array specifying linear transform.
+        center : list
+            coordinates of center of rotation.
+        """
+        box = self._selected_box - center
+        box = np.matmul(box, transform.T)
+        self._selected_box = box + center
 
     # def move_forward(self, index):
     #     if type(index) is list:
@@ -816,7 +793,10 @@ class Shapes(Layer):
                         self._drag_start = coord - center
                     center = self._selected_box[-1]
                     shift = coord - center - self._drag_start
-                    self.shift_selected(shift)
+                    for index in self.selected_shapes:
+                        self.data.shift(index, shift)
+                    self._selected_box = self._selected_box + shift
+                    self.refresh()
                 elif vertex < 8:
                     #Corner / edge vertex is being dragged so resize object
                     box = self._selected_box
@@ -867,8 +847,7 @@ class Shapes(Layer):
                     if angle == 0:
                         for index in self.selected_shapes:
                             self.data.scale(index, scale, center=self._fixed_vertex)
-                        self._selected_box = self.select_box(self.selected_shapes)
-
+                        self._scale_box(scale, center=self._fixed_vertex)
                     else:
                         rotation = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
                         scale_tranform = np.array([[scale[0], 0], [0, scale[1]]])
@@ -878,7 +857,7 @@ class Shapes(Layer):
                             self.data.shift(index, -self._fixed_vertex)
                             self.data.transform(index, transform)
                             self.data.shift(index, self._fixed_vertex)
-                        self._selected_box = self.select_box(self.selected_shapes)
+                        self._transform_box(transform, center=self._fixed_vertex)
                     self.refresh()
                 elif vertex==8:
                     #Rotation handle is being dragged so rotate object
@@ -902,7 +881,7 @@ class Shapes(Layer):
 
                     for index in self.selected_shapes:
                         self.data.rotate(index, angle, center=self._fixed_vertex)
-                    self._selected_box = self.select_box(self.selected_shapes)
+                    self._rotate_box(angle, center=self._fixed_vertex)
                     self.refresh()
             else:
                 self._is_selecting=True

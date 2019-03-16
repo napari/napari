@@ -24,6 +24,8 @@ class Shape():
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3 or
         4 elements.
+    opacity : float
+        Opacity of the shape, must be between 0 and 1.
     z_order : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
@@ -32,7 +34,7 @@ class Shape():
     _shape_types = ['line', 'rectangle', 'ellipse', 'path', 'polygon']
 
     def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', z_order=0):
+                 face_color='white', opacity=1, z_order=0):
 
         self._face_vertices = np.empty((0, 2)) # Mx2 array of vertices of faces
         self._face_triangles = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form triangles for faces
@@ -46,6 +48,7 @@ class Shape():
         self.edge_width = edge_width
         self.edge_color = edge_color
         self.face_color = face_color
+        self.opacity = opacity
         self.z_order = z_order
 
     @property
@@ -160,6 +163,16 @@ class Shape():
         self._face_color = Color(face_color)
 
     @property
+    def opacity(self):
+        """float: opacity of shape
+        """
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, opacity):
+        self._opacity = opacity
+
+    @property
     def z_order(self):
         """int: z order priority of shape. Shapes with higher z order displayed
         ontop of others.
@@ -253,12 +266,11 @@ class Shape():
             length 2 list specifying coordinate of center of rotation.
         """
         theta = np.radians(angle)
+        transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
         if center is None:
-            transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
             self.transform(transform)
         else:
             self.shift(-center)
-            transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
             self.transform(transform)
             self.shift(center)
 

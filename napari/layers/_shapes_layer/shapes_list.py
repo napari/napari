@@ -32,6 +32,10 @@ class ShapesList():
         4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape otherwise
         the same value will be used for all shapes.
+    opacity : float | list
+        Opacity of the shape, must be between 0 and 1. If a list is supplied it
+        must be the same length as the length of `data` and each element will
+        be applied to each shape otherwise the same value will be used for all shapes.
     z_order : int | list
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others. If a list is supplied it must be the same length as
@@ -41,7 +45,7 @@ class ShapesList():
     _mesh_types = ['face', 'edge']
 
     def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', z_order=0):
+                 face_color='white', opacity=1, z_order=0):
 
         self.shapes = []
         self._vertices = np.empty((0, 2)) # Array of M vertices from all N shapes
@@ -49,6 +53,8 @@ class ShapesList():
         self._z_order = np.empty((0), dtype=int) # Length N array of z_order of each shape
 
         self._mesh_vertices = np.empty((0, 2)) # Mx2 array of vertices of triangles
+        self._mesh_vertices_centers = np.empty((0, 2)) # Mx2 array of vertices of triangles
+        self._mesh_vertices_offsets = np.empty((0, 2)) # Mx2 array of vertices of triangles
         self._mesh_vertices_index = np.empty((0, 2), dtype=int) #Mx2 array of shape index and types of vertex (face / edge)
         self._mesh_triangles = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form a triangle
         self._mesh_triangles_index = np.empty((0, 2), dtype=int) #Px2 array of shape index and types of triangle (face / edge)
@@ -67,7 +73,7 @@ class ShapesList():
                 # If a single array for a shape has been passed
                 self.add(data, shape_type=shape_type, edge_width=edge_width,
                          edge_color=edge_color, face_color=face_color,
-                         z_order=z_order)
+                         opacity=opacity, z_order=z_order)
             else:
                 # If list of arrays has been passed
                 for i, d in enumerate(data):
@@ -97,11 +103,15 @@ class ShapesList():
                         z = z_order[i]
                     else:
                         z = z_order
+                    if type(opacity) is list or type(opacity) is np.ndarray:
+                        o = opacity[i]
+                    else:
+                        o = opacity
                     self.add(d, shape_type=st, edge_width=ew, edge_color=ec,
-                             face_color=fc, z_order=z)
+                             face_color=fc, opacity=o, z_order=z)
 
     def add(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', z_order=0, shape_index=None):
+                 face_color='white', opacity=1, z_order=0, shape_index=None):
         """Adds a single Shape object
         Parameters
         ----------
@@ -121,6 +131,8 @@ class ShapesList():
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3 or
             4 elements.
+        opacity : float
+            Opacity of the shape, must be between 0 and 1.
         z_order : int
             Specifier of z order priority. Shapes with higher z order are displayed
             ontop of others.
@@ -136,7 +148,7 @@ class ShapesList():
         else:
             shape = Shape(data, shape_type=shape_type, edge_width=edge_width,
                          edge_color=edge_color, face_color=face_color,
-                         z_order=z_order)
+                         opacity=opacity, z_order=z_order)
 
         if shape_index is None:
             shape_index = len(self.shapes)
@@ -153,6 +165,10 @@ class ShapesList():
         m = len(self._mesh_vertices)
         vertices = shape._edge_vertices + shape.edge_width*shape._edge_offsets
         self._mesh_vertices = np.append(self._mesh_vertices, vertices, axis=0)
+        vertices = shape._edge_vertices
+        self._mesh_vertices_centers = np.append(self._mesh_vertices_centers, vertices, axis=0)
+        vertices = shape._edge_offsets
+        self._mesh_vertices_offsets = np.append(self._mesh_vertices_offsets, vertices, axis=0)
         index = np.repeat([[shape_index, 1]], len(vertices), axis=0)
         self._mesh_vertices_index = np.append(self._mesh_vertices_index, index, axis=0)
 
@@ -160,8 +176,10 @@ class ShapesList():
         self._mesh_triangles = np.append(self._mesh_triangles, triangles, axis=0)
         index = np.repeat([[shape_index, 1]], len(triangles), axis=0)
         self._mesh_triangles_index = np.append(self._mesh_triangles_index, index, axis=0)
-        color = np.repeat([shape.edge_color.rgba], len(triangles), axis=0)
-        self._mesh_triangles_colors = np.append(self._mesh_triangles_colors, color, axis=0)
+        color = shape.edge_color.rgba
+        color[3] = color[3]*shape.opacity
+        color_array = np.repeat([color], len(triangles), axis=0)
+        self._mesh_triangles_colors = np.append(self._mesh_triangles_colors, color_array, axis=0)
         # Need to fix z_order here!!!!!!
         order = np.repeat(shape.z_order, len(triangles))
         self._mesh_triangles_z_order = np.append(self._mesh_triangles_z_order, order, axis=0)
@@ -170,6 +188,10 @@ class ShapesList():
         m = len(self._mesh_vertices)
         vertices = shape._face_vertices
         self._mesh_vertices = np.append(self._mesh_vertices, vertices, axis=0)
+        vertices = shape._face_vertices
+        self._mesh_vertices_centers = np.append(self._mesh_vertices_centers, vertices, axis=0)
+        vertices = np.zeros(shape._face_vertices.shape)
+        self._mesh_vertices_offsets = np.append(self._mesh_vertices_offsets, vertices, axis=0)
         index = np.repeat([[shape_index, 0]], len(vertices), axis=0)
         self._mesh_vertices_index = np.append(self._mesh_vertices_index, index, axis=0)
 
@@ -177,8 +199,10 @@ class ShapesList():
         self._mesh_triangles = np.append(self._mesh_triangles, triangles, axis=0)
         index = np.repeat([[shape_index, 0]], len(triangles), axis=0)
         self._mesh_triangles_index = np.append(self._mesh_triangles_index, index, axis=0)
-        color = np.repeat([shape.face_color.rgba], len(triangles), axis=0)
-        self._mesh_triangles_colors = np.append(self._mesh_triangles_colors, color, axis=0)
+        color = shape.face_color.rgba
+        color[3] = color[3]*shape.opacity
+        color_array = np.repeat([color], len(triangles), axis=0)
+        self._mesh_triangles_colors = np.append(self._mesh_triangles_colors, color_array, axis=0)
         # Need to fix z_order here!!!!!!
         order = np.repeat(shape.z_order, len(triangles))
         self._mesh_triangles_z_order = np.append(self._mesh_triangles_z_order, order, axis=0)
@@ -192,6 +216,8 @@ class ShapesList():
         self._z_order = np.empty((0), dtype=int)
 
         self._mesh_vertices = np.empty((0, 2))
+        self._mesh_vertices_centers = np.empty((0, 2))
+        self._mesh_vertices_offsets = np.empty((0, 2))
         self._mesh_vertices_index = np.empty((0, 2), dtype=int)
         self._mesh_triangles = np.empty((0, 3), dtype=np.uint32)
         self._mesh_triangles_index = np.empty((0, 2), dtype=int)
@@ -224,6 +250,8 @@ class ShapesList():
         # Remove vertices
         indices = self._mesh_vertices_index[:, 0] != index
         self._mesh_vertices = self._mesh_vertices[indices]
+        self._mesh_vertices_centers = self._mesh_vertices_centers[indices]
+        self._mesh_vertices_offsets = self._mesh_vertices_offsets[indices]
         self._mesh_vertices_index = self._mesh_vertices_index[indices]
         indices = np.where(np.invert(indices))[0]
         self._mesh_triangles[self._mesh_triangles>indices[0]] = self._mesh_triangles[self._mesh_triangles>indices[0]] - len(indices)
@@ -234,29 +262,6 @@ class ShapesList():
             self._index[self._index>index] = self._index[self._index>index]-1
             self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0] = self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0]-1
             self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index,0] = self._mesh_vertices_index[self._mesh_vertices_index[:,0]>index,0]-1
-
-    def _select_meshes(self, index, meshes, object_type=None):
-        if object_type is None:
-            if index is True:
-                indices = [i for i in range(len(meshes))]
-            elif isinstance(index, (list, np.ndarray)):
-                indices = [i for i, x in enumerate(meshes) if x[0] in index]
-            elif np.isscalar(index):
-                indices = meshes[:,0] == index
-                indices = np.where(indices)[0]
-            else:
-                indices = []
-        else:
-            if index is True:
-                indices = meshes[:,2]==object_type
-            elif isinstance(index, (list, np.ndarray)):
-                indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1]==object_type]
-            elif np.isscalar(index):
-                indices = np.all(meshes == [index, object_type], axis=1)
-                indices = np.where(indices)[0]
-            else:
-                indices = []
-        return indices
 
     def _update_mesh_vertices(self, index, edge=False, face=False):
         """Updates the mesh vertex data and vertex data for a single shape
@@ -274,11 +279,14 @@ class ShapesList():
         if edge:
             indices = np.all(self._mesh_vertices_index == [index, 1], axis=1)
             self._mesh_vertices[indices] = (self.shapes[index]._edge_vertices +
-            self.shapes[index].edge_width*self.shapes[index]._edge_offsets)
+                self.shapes[index].edge_width*self.shapes[index]._edge_offsets)
+            self._mesh_vertices_centers[indices] = self.shapes[index]._edge_vertices
+            self._mesh_vertices_offsets[indices] = self.shapes[index]._edge_offsets
 
         if face:
             indices = np.all(self._mesh_vertices_index == [index, 0], axis=1)
             self._mesh_vertices[indices] = self.shapes[index]._face_vertices
+            self._mesh_vertices_centers[indices] = self.shapes[index]._face_vertices
             indices = self._index == index
             self._vertices[indices] = self.shapes[index].data
 
@@ -321,7 +329,9 @@ class ShapesList():
         """
         self.shapes[index].edge_color = edge_color
         indices = np.all(self._mesh_triangles_index == [index, 1], axis=1)
-        self._mesh_triangles_colors[indices] = self.shapes[index].edge_color.rgba
+        color = self.shapes[index].edge_color.rgba
+        color[3] = color[3]*self.shapes[index].opacity
+        self._mesh_triangles_colors[indices] = color
 
     def update_face_color(self, index, face_color):
         """Updates the face color of a single shape located at index.
@@ -336,7 +346,9 @@ class ShapesList():
         """
         self.shapes[index].face_color = face_color
         indices = np.all(self._mesh_triangles_index == [index, 0], axis=1)
-        self._mesh_triangles_colors[indices] = self.shapes[index].face_color.rgba
+        color = self.shapes[index].face_color.rgba
+        color[3] = color[3]*self.shapes[index].opacity
+        self._mesh_triangles_colors[indices] = color
 
     def update_opacity(self, index, opacity):
         """Updates the face color of a single shape located at index.
@@ -347,14 +359,14 @@ class ShapesList():
         opacity : float
             Opacity, must be between 0 and 1
         """
+        self.shapes[index].opacity = opacity
+        indices = np.all(self._mesh_triangles_index == [index, 1], axis=1)
         color = self.shapes[index].edge_color.rgba
-        color[3] = opacity
-        self.shapes[index].edge_color = color
+        self._mesh_triangles_colors[indices, 3] = color[3]*opacity
+
+        indices = np.all(self._mesh_triangles_index == [index, 0], axis=1)
         color = self.shapes[index].face_color.rgba
-        color[3] = opacity
-        self.shapes[index].face_color = color
-        indices = self._mesh_triangles_index == index
-        self._mesh_triangles_colors[indices, 3] = opacity
+        self._mesh_triangles_colors[indices, 3] = color[3]*opacity
 
     def update_z_order(self, index, z_order):
         """Updates the z order of a single shape located at index.
