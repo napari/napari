@@ -33,7 +33,7 @@ class ShapesList():
         the length of `data` and each element will be applied to each shape otherwise
         the same value will be used for all shapes.
     opacity : float | list
-        Opacity of the shape, must be between 0 and 1. If a list is supplied it
+        Opacity of the shapes, must be between 0 and 1. If a list is supplied it
         must be the same length as the length of `data` and each element will
         be applied to each shape otherwise the same value will be used for all shapes.
     z_index : int | list

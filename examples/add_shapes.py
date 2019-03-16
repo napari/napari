@@ -15,39 +15,25 @@ with app_context():
     viewer = Viewer()
     window = Window(viewer)
     # add the image
-    viewer.add_image(data.camera())
-    viewer.layers[0].visible = False
+    viewer.add_image(data.camera(), name='astronaut')
+    viewer.layers[0].colormap = 'gray'
 
-    # add the shapes
-    ellipses = np.array([[[195, 180], [ 45, 130]], [[295,  80], [395, 380]], [[ 95,
-                        80], [105,  90]]])
-    points = np.array([[100, 100], [200, 200], [333, 111]])
-    polygons = [points+[-22,101], points-[140, -33], points+[19,-21]]
+    # create a list of polygons
+    polygons = ([np.array([[ 13,  11], [113, 111], [246,  22]]),
+                 np.array([[ 60, 505], [ 71, 402], [ 42, 383], [ 95, 251],
+                           [ 59, 212], [137, 131], [187, 126], [204, 191],
+                           [248, 171], [260, 211], [243, 273], [225, 264],
+                           [173, 430], [160, 512]]),
+                 np.array([[382, 310], [381, 229], [401, 209], [411, 221],
+                           [411, 258], [412, 300], [435, 306], [434, 268],
+                           [454, 265], [461, 298], [461, 307], [507, 307],
+                           [510, 349], [369, 352], [366, 330], [366, 330]])])
 
-    #viewer.add_shapes(polygons=polygons, ellipses=ellipses)
+    # add polygons
+    viewer.add_shapes(polygons, shape_type='polygon', edge_width=1,
+                      edge_color='coral', face_color='royalblue')
 
-    viewer.add_shapes(polygons, shape_type='polygon', edge_width=5, edge_color = 'coral')
-
-    #shapes = [{'shape_type': 'polygon', 'data': p, 'face_color': 'coral'} for p in polygons]
-
-    #viewer.add_shapes(shapes)
-    #
-    # # primary path
-    # # if ShapeList or list ->
-    # viewer.add_shapes(ShapeList(Shape, Shape, Shape, ...))
-    # viewer.add_shapes([Shape, Shape, Shape, ...])
-    #
-    # # convienience
-    # # if dict ->
-    # viewer.add_shapes(type='rectangle', data=np.array([[10, 10], [10, 10]]))
-    # viewer.add_shapes(type=['rectangle','polygon'], data=[np.array([[10,10],[10,10]]), np.array([10,20,30])])
-    #
-    # # converters (to be added down the road)
-    # viewer.add_shapes_from_geojson({...})
-    # viewer.add_shapes_from_shapely(...)
-    #
-    # viewer.add_shapes(shape_type='rectangle', data=np.array([[10, 10], [10, 10]]), 'color'='red')
-
-
-    # viewer.layers[-1].edge_width = 10
-    # viewer.layers[-1].edge_color = 'coral'
+    # change some properties of the layer
+    layer =  viewer.layers[-1]
+    layer.edge_width = 5
+    layer.opacity = 0.75

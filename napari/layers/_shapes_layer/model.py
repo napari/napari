@@ -52,6 +52,8 @@ class Shapes(Layer):
         4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape otherwise
         the same value will be used for all shapes.
+    opacity : float | list
+        Opacity of the shapes, must be between 0 and 1.
     z_index : int | list
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others. If a list is supplied it must be the same length as
@@ -69,7 +71,7 @@ class Shapes(Layer):
     _prefixed_size = np.array([10, 10])
 
     def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', z_index=0, *, name=None):
+                 face_color='white', opacity=1, z_index=0, *, name=None):
 
         visual = VisualNode([Markers(), Line(), Mesh(), Mesh()])
 
@@ -82,9 +84,10 @@ class Shapes(Layer):
                                    edge_width=edge_width,
                                    edge_color=edge_color,
                                    face_color=face_color,
+                                   opacity=opacity,
                                    z_index=z_index)
 
-            self.apply_all = True
+            self._apply_all = True
             if np.isscalar(edge_width):
                 self._edge_width = edge_width
             else:
@@ -99,7 +102,7 @@ class Shapes(Layer):
                 self._face_color = face_color
             else:
                 self._face_color = 'black'
-            self._opacity = 1
+            self._opacity = opacity
 
             #self.z_index = z_index
 
@@ -137,7 +140,8 @@ class Shapes(Layer):
             self.events.add(mode=Event,
                             edge_width=Event,
                             edge_color=Event,
-                            face_color=Event)
+                            face_color=Event,
+                            apply_all=Event)
 
             self._qt_properties = QtShapesLayer(self)
             self._qt_controls = QtShapesControls(self)
@@ -240,6 +244,7 @@ class Shapes(Layer):
     @apply_all.setter
     def apply_all(self, apply_all):
         self._apply_all = apply_all
+        self.events.apply_all()
 
     @property
     def selected_shapes(self):
@@ -982,7 +987,8 @@ class Shapes(Layer):
                 self.data.add(data, shape_type='path',
                               edge_width=self.edge_width,
                               edge_color=self.edge_color,
-                              face_color=self.face_color)
+                              face_color=self.face_color,
+                              opacity=self.opacity)
                 self.selected_shapes = [len(self.data.shapes)-1]
                 ind = 1
                 self._selected_vertex = [self.selected_shapes[0], ind]
@@ -1132,18 +1138,22 @@ class Shapes(Layer):
                     self.data.add(data, shape_type='rectangle',
                                   edge_width=self.edge_width,
                                   edge_color=self.edge_color,
-                                  face_color=self.face_color)
+                                  face_color=self.face_color,
+                                  opacity=self.opacity)
                 elif self.mode == 'add_ellipse':
                     data = np.array([self._create_coord, abs(coord - self._create_coord)])
-                    self.data.add(data, shape_type='ellipse', edge_width=self.edge_width,
+                    self.data.add(data, shape_type='ellipse',
+                                  edge_width=self.edge_width,
                                   edge_color=self.edge_color,
-                                  face_color=self.face_color)
+                                  face_color=self.face_color,
+                                  opacity=self.opacity)
                 elif self.mode == 'add_line':
                     data = np.array([self._create_coord, coord])
                     self.data.add(data, shape_type='line',
                                   edge_width=self.edge_width,
                                   edge_color=self.edge_color,
-                                  face_color=self.face_color)
+                                  face_color=self.face_color,
+                                  opacity=self.opacity)
                 else:
                     raise ValueError("Mode not recongnized")
                 self._ready_to_create = False
@@ -1237,20 +1247,23 @@ class Shapes(Layer):
                     self.data.add(data, shape_type='rectangle',
                                   edge_width=self.edge_width,
                                   edge_color=self.edge_color,
-                                  face_color=self.face_color)
+                                  face_color=self.face_color,
+                                  opacity=self.opacity)
                 elif self.mode == 'add_ellipse':
                     data = np.array([self._create_coord, self._prefixed_size/2])
                     self.data.add(data, shape_type='ellipse',
                                   edge_width=self.edge_width,
                                   edge_color=self.edge_color,
-                                  face_color=self.face_color)
+                                  face_color=self.face_color,
+                                  opacity=self.opacity)
                 elif self.mode == 'add_line':
                     data = np.array([self._create_coord-self._prefixed_size/2,
                                       self._create_coord+self._prefixed_size/2])
                     self.data.add(data, shape_type='line',
                                   edge_width=self.edge_width,
                                   edge_color=self.edge_color,
-                                  face_color=self.face_color)
+                                  face_color=self.face_color,
+                                  opacity=self.opacity)
                 else:
                     raise ValueError("Mode not recongnized")
                 self._ready_to_create = False
