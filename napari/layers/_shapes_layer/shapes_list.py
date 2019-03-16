@@ -206,7 +206,7 @@ class ShapesList():
         # Need to fix z_index here!!!!!!
         order = np.repeat(shape.z_index, len(triangles))
         self._mesh_triangles_z_index = np.append(self._mesh_triangles_z_index, order, axis=0)
-        
+
     def remove_all(self):
         """Removes all shapes
         """
@@ -458,5 +458,5 @@ class ShapesList():
                          'polygon'}"
                          """)
         else:
-            data = [s.data for s in self.shapes if s.shape_type == shapes_type]
+            data = [s.data for s in self.shapes if s.shape_type == shape_type]
         return data
