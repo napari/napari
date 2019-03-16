@@ -217,7 +217,12 @@ class Shape():
         else:
             closed = True
 
-        centers, offsets, triangles = triangulate_path(self._data, closed=closed)
+        if self.shape_type == 'ellipse':
+            points = generate_ellipse(self._data, self._ellipse_segments)[1:-1]
+        else:
+            points = self._data
+            
+        centers, offsets, triangles = triangulate_path(points, closed=closed)
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
