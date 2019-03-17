@@ -2,7 +2,7 @@ import numpy as np
 from copy import copy
 from .shape import Shape
 
-class ShapesList():
+class ShapeList():
     """List of shapes class.
     Parameters
     ----------

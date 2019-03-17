@@ -17,7 +17,7 @@ from vispy.color import get_color_names, Color
 
 from .view import QtShapesLayer
 from .view import QtShapesControls
-from .shapes_list import ShapesList
+from .shape_list import ShapeList
 from .shape_util import create_box, inside_boxes, inside_triangles, point_to_lines
 
 @add_to_viewer
@@ -79,12 +79,12 @@ class Shapes(Layer):
         # Freeze refreshes
         with self.freeze_refresh():
             # Add the shape data
-            self.data = ShapesList(data, shape_type=shape_type,
-                                   edge_width=edge_width,
-                                   edge_color=edge_color,
-                                   face_color=face_color,
-                                   opacity=opacity,
-                                   z_index=z_index)
+            self.data = ShapeList(data, shape_type=shape_type,
+                                  edge_width=edge_width,
+                                  edge_color=edge_color,
+                                  face_color=face_color,
+                                  opacity=opacity,
+                                  z_index=z_index)
 
             self._apply_all = True
             if np.isscalar(edge_width):
