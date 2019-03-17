@@ -119,18 +119,30 @@ def expand_ellipse(data):
 
 def generate_ellipse(corners, num_segments):
     center = corners.mean(axis=0)
-    xr = abs((corners[0][0] + corners[3][0])/2 - center[0])
-    yr = abs((corners[0][1] + corners[1][1])/2 - center[1])
+    adjusted = corners - center
 
-    vertices = np.empty((num_segments + 1, 2), dtype=np.float32)
+    vec = adjusted[1] - adjusted[0]
+    len_vec = np.linalg.norm(vec)
+    if len_vec > 0:
+        # rotate to be axis aligned
+        norm_vec = vec/len_vec
+        transform = np.array([[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]])
+        adjusted = np.matmul(adjusted, transform)
+    else:
+        transform = np.eye(2)
+
+    radii = abs(adjusted[0])
+    vertices = np.zeros((num_segments + 1, 2), dtype=np.float32)
     theta = np.linspace(0, np.deg2rad(360), num_segments)
+    vertices[1:, 0] = radii[0] * np.cos(theta)
+    vertices[1:, 1] = radii[1] * np.sin(theta)
 
-    vertices[1:, 0] = center[0] + xr * np.cos(theta)
-    vertices[1:, 1] = center[1] + yr * np.sin(theta)
+    if len_vec > 0:
+        # rotate back
+        vertices = np.matmul(vertices, transform.T)
 
-    # set center point to first vertex
-    vertices[0] = np.float32([center[0], center[1]])
-    return vertices
+    # Shift back to center
+    return vertices + center
 
 def triangulate_path(path, closed=False, limit=3, bevel=False):
     # Remove any equal adjacent points

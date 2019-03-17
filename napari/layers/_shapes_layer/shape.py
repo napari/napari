@@ -218,7 +218,7 @@ class Shape():
             closed = True
 
         if self.shape_type == 'ellipse':
-            points = generate_ellipse(self._data, self._ellipse_segments)[1:-1]
+            points = self._face_vertices[1:-1]
         else:
             points = self._data
 
