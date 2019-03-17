@@ -845,6 +845,12 @@ class Shapes(Layer):
                     # prvent box from dissappearing if shrunk near 0
                     scale[scale==0]=1
 
+                    # prevent box from shrinking below a threshold size
+                    transform = self.viewer._canvas.scene.node_transform(self._node)
+                    rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
+                    threshold = self._vertex_size*rescale/8
+                    scale[abs(scale*size)<threshold] = 1
+
                     # check orientation of box
                     angle = -np.arctan2(offset[0], -offset[1])
                     if angle == 0:
