@@ -812,10 +812,6 @@ class Shapes(Layer):
                     if self._fixed_vertex is None:
                         self._fixed_index = np.mod(vertex+4,8)
                         self._fixed_vertex = box[self._fixed_index]
-                        if np.any(box[4]-box[0] == np.zeros(2)):
-                            self._aspect_ratio = 1
-                        else:
-                            self._aspect_ratio = (box[4][1]-box[0][1])/(box[4][0]-box[0][0])
 
                     size = box[np.mod(self._fixed_index+4,8)] - box[self._fixed_index]
                     offset = box[-1] - box[-2]
@@ -1299,10 +1295,12 @@ class Shapes(Layer):
                     self._mode_history = 'pan/zoom'
             elif event.key == 'Shift':
                 self._fixed_aspect = True
+                box = self._selected_box
+                if box is not None and not np.any(box[4]-box[0] == np.zeros(2)):
+                    self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
+                else:
+                    self._aspect_ratio = 1
                 if self._is_moving:
-                    box = self._selected_box
-                    if box is not None:
-                        self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
                     self._move(self._mouse_coord)
             elif event.key == 'r':
                 self.mode = 'add_rectangle'
@@ -1345,7 +1343,4 @@ class Shapes(Layer):
         elif event.key == 'Shift':
             self._fixed_aspect = False
             if self._is_moving:
-                box = self._selected_box
-                if box is not None:
-                    self._aspect_ratio = abs((box[4][1]-box[0][1])/(box[4][0]-box[0][0]))
                 self._move(self._mouse_coord)
