@@ -44,7 +44,7 @@ class Shape():
         self._box = np.empty((9, 2)) # 8 vertex bounding box and center point
 
         self.shape_type = shape_type
-        self.data = data
+        self.data = np.array(data)
         self.edge_width = edge_width
         self.edge_color = edge_color
         self.face_color = face_color
@@ -221,7 +221,7 @@ class Shape():
             points = generate_ellipse(self._data, self._ellipse_segments)[1:-1]
         else:
             points = self._data
-            
+
         centers, offsets, triangles = triangulate_path(points, closed=closed)
         self._edge_vertices = centers
         self._edge_offsets = offsets

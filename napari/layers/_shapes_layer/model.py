@@ -131,7 +131,6 @@ class Shapes(Layer):
 
             self._ready_to_create = False
             self._creating = False
-            self._create_coord = [None, None]
 
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
@@ -531,7 +530,6 @@ class Shapes(Layer):
     def _finish_drawing(self):
         index = self._selected_vertex[0]
         self._ready_to_create = False
-        self._create_coord = [None, None]
         self._is_moving = False
         self.selected_shapes = []
         self._drag_start = None
@@ -979,7 +977,41 @@ class Shapes(Layer):
               self.mode == 'add_line'):
             # Start drawing a rectangle / ellipse / line
             self._ready_to_create = True
-            self._create_coord = coord
+            # If ready to create rectangle, ellipse or line start making one
+            transform = self.viewer._canvas.scene.node_transform(self._node)
+            rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
+            size = self._vertex_size*rescale/4
+            if self.mode == 'add_rectangle':
+                data = np.array([coord, coord+size])
+                self.data.add(data, shape_type='rectangle',
+                              edge_width=self.edge_width,
+                              edge_color=self.edge_color,
+                              face_color=self.face_color,
+                              opacity=self.opacity)
+            elif self.mode == 'add_ellipse':
+                data = np.array([coord+size/2, [size, size]])
+                self.data.add(data, shape_type='ellipse',
+                              edge_width=self.edge_width,
+                              edge_color=self.edge_color,
+                              face_color=self.face_color,
+                              opacity=self.opacity)
+            elif self.mode == 'add_line':
+                data = np.array([coord, coord+size])
+                self.data.add(data, shape_type='line',
+                              edge_width=self.edge_width,
+                              edge_color=self.edge_color,
+                              face_color=self.face_color,
+                              opacity=self.opacity)
+            else:
+                raise ValueError("Mode not recongnized")
+            self._ready_to_create = False
+            self.selected_shapes = [len(self.data.shapes)-1]
+            ind = 4
+            self._selected_vertex = [self.selected_shapes[0], ind]
+            self._hover_shapes = [self.selected_shapes[0], ind]
+            self._creating = True
+            self._select()
+            self.refresh()
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             if self._creating is False:
                 # Start drawing a path
@@ -1035,7 +1067,6 @@ class Shapes(Layer):
             if len(all_lines) == 0:
                 # No appropriate shapes found
                 return
-
             ind, loc = point_to_lines(coord, all_lines)
             index = all_lines_shape[ind][0]
             ind = all_lines_shape[ind][1]+1
@@ -1131,39 +1162,6 @@ class Shapes(Layer):
             shape = self._hover_shapes
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
               self.mode == 'add_line'):
-            # If ready to create rectangle, ellipse or line start making one
-            if self._ready_to_create and np.all(self._create_coord != coord):
-                if self.mode == 'add_rectangle':
-                    data = np.array([self._create_coord, coord])
-                    self.data.add(data, shape_type='rectangle',
-                                  edge_width=self.edge_width,
-                                  edge_color=self.edge_color,
-                                  face_color=self.face_color,
-                                  opacity=self.opacity)
-                elif self.mode == 'add_ellipse':
-                    data = np.array([self._create_coord, abs(coord - self._create_coord)])
-                    self.data.add(data, shape_type='ellipse',
-                                  edge_width=self.edge_width,
-                                  edge_color=self.edge_color,
-                                  face_color=self.face_color,
-                                  opacity=self.opacity)
-                elif self.mode == 'add_line':
-                    data = np.array([self._create_coord, coord])
-                    self.data.add(data, shape_type='line',
-                                  edge_width=self.edge_width,
-                                  edge_color=self.edge_color,
-                                  face_color=self.face_color,
-                                  opacity=self.opacity)
-                else:
-                    raise ValueError("Mode not recongnized")
-                self._ready_to_create = False
-                self.selected_shapes = [len(self.data.shapes)-1]
-                ind = np.all(self._selected_box==coord, axis=1).nonzero()[0][0]
-                self._selected_vertex = [self.selected_shapes[0], ind]
-                self._hover_shapes = [self.selected_shapes[0], ind]
-                self._creating = True
-                self._select()
-                self.refresh()
             # While drawing a shape or doing nothing
             if self._creating and event.is_dragging:
                 # Drag any selected shapes
@@ -1239,39 +1237,8 @@ class Shapes(Layer):
             self.status = self.get_message(coord, shape)
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
              self.mode == 'add_line'):
-            # Finish drawing a rectangle, ellipse or line
-            if self._ready_to_create:
-                if self.mode == 'add_rectangle':
-                    data = np.array([self._create_coord-self._prefixed_size/2,
-                                      self._create_coord+self._prefixed_size/2])
-                    self.data.add(data, shape_type='rectangle',
-                                  edge_width=self.edge_width,
-                                  edge_color=self.edge_color,
-                                  face_color=self.face_color,
-                                  opacity=self.opacity)
-                elif self.mode == 'add_ellipse':
-                    data = np.array([self._create_coord, self._prefixed_size/2])
-                    self.data.add(data, shape_type='ellipse',
-                                  edge_width=self.edge_width,
-                                  edge_color=self.edge_color,
-                                  face_color=self.face_color,
-                                  opacity=self.opacity)
-                elif self.mode == 'add_line':
-                    data = np.array([self._create_coord-self._prefixed_size/2,
-                                      self._create_coord+self._prefixed_size/2])
-                    self.data.add(data, shape_type='line',
-                                  edge_width=self.edge_width,
-                                  edge_color=self.edge_color,
-                                  face_color=self.face_color,
-                                  opacity=self.opacity)
-                else:
-                    raise ValueError("Mode not recongnized")
-                self._ready_to_create = False
-                shape = [len(self.data.shapes)-1, None]
-                self.refresh()
-            else:
-                self._finish_drawing()
-                shape = self._shape_at(coord)
+            self._finish_drawing()
+            shape = self._shape_at(coord)
             self.status = self.get_message(coord, shape)
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             pass
