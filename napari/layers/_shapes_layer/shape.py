@@ -3,7 +3,7 @@ from vispy.geometry import PolygonData
 from vispy.color import Color
 from copy import copy
 
-from .shape_utils import triangulate_path, create_box, generate_ellipse, expand_ellipse, expand_rectangle, expand_box
+from .shape_util import triangulate_path, create_box, generate_ellipse, expand_ellipse, expand_rectangle, expand_box
 
 class Shape():
     """Class for a single shape

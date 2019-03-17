@@ -6,7 +6,6 @@ from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
 from ...util import is_permutation
-from .shape_utils import create_box, inside_boxes, inside_triangles, point_to_lines
 from ...util.event import Event
 from .._base_layer import Layer
 from .._register import add_to_viewer
@@ -14,12 +13,12 @@ from ..._vispy.scene.visuals import Mesh
 from ..._vispy.scene.visuals import Markers
 from ..._vispy.scene.visuals import Line
 from ..._vispy.scene.visuals import Compound as VisualNode
-from .utils import ShapesData
 from vispy.color import get_color_names, Color
 
 from .view import QtShapesLayer
 from .view import QtShapesControls
 from .shapes_list import ShapesList
+from .shape_util import create_box, inside_boxes, inside_triangles, point_to_lines
 
 @add_to_viewer
 class Shapes(Layer):
@@ -841,9 +840,6 @@ class Shapes(Layer):
                         new = copy(coord)
                         dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
                         scale = np.array([dist_perp, 1])
-
-                    # prvent box from dissappearing if shrunk near 0
-                    scale[scale==0]=1
 
                     # prevent box from shrinking below a threshold size
                     transform = self.viewer._canvas.scene.node_transform(self._node)
