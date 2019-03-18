@@ -18,9 +18,6 @@ class QtImageLayer(QtLayer):
     def changeColor(self):
         self.layer.new_colormap()
 
-    def changeColor(self, text):
-        self.layer.colormap = text
-
     def changeInterpolation(self, text):
         self.layer.interpolation = text
 
