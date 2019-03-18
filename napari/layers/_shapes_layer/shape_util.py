@@ -1,22 +1,31 @@
 import numpy as np
 
+
 def inside_triangles(triangles):
     """Checks which triangles contain the origin
     Parameters
     ----------
-    boxes : np.ndarray
+    triangles : np.ndarray
         Nx3x2 array of N triangles that should be checked
+    Returns
+    -------
+    inside : np.ndarray
+        Length N boolean array with `True` values for trinagles containg the
+        origin
     """
 
-    AB = triangles[:,1,:] - triangles[:,0,:]
-    AC = triangles[:,2,:] - triangles[:,0,:]
-    BC = triangles[:,2,:] - triangles[:,1,:]
+    AB = triangles[:, 1, :] - triangles[:, 0, :]
+    AC = triangles[:, 2, :] - triangles[:, 0, :]
+    BC = triangles[:, 2, :] - triangles[:, 1, :]
 
-    s_AB = -AB[:,0]*triangles[:,0,1] + AB[:,1]*triangles[:,0,0] >= 0
-    s_AC = -AC[:,0]*triangles[:,0,1] + AC[:,1]*triangles[:,0,0] >= 0
-    s_BC = -BC[:,0]*triangles[:,1,1] + BC[:,1]*triangles[:,1,0] >= 0
+    s_AB = -AB[:, 0]*triangles[:, 0, 1] + AB[:, 1]*triangles[:, 0, 0] >= 0
+    s_AC = -AC[:, 0]*triangles[:, 0, 1] + AC[:, 1]*triangles[:, 0, 0] >= 0
+    s_BC = -BC[:, 0]*triangles[:, 1, 1] + BC[:, 1]*triangles[:, 1, 0] >= 0
 
-    return np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
+    inside = np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
+
+    return inside
+
 
 def inside_boxes(boxes):
     """Checks which boxes contain the origin
@@ -24,12 +33,16 @@ def inside_boxes(boxes):
     ----------
     boxes : np.ndarray
         Nx8x2 array of N boxes that should be checked
+    Returns
+    -------
+    inside : np.ndarray
+        Length N boolean array with `True` values for boxes containg the origin
     """
 
-    AB = boxes[:,0] - boxes[:,6]
-    AM = boxes[:,0]
-    BC = boxes[:,6] - boxes[:,4]
-    BM = boxes[:,6]
+    AB = boxes[:, 0] - boxes[:, 6]
+    AM = boxes[:, 0]
+    BC = boxes[:, 6] - boxes[:, 4]
+    BM = boxes[:, 6]
 
     ABAM = np.multiply(AB, AM).sum(1)
     ABAB = np.multiply(AB, AB).sum(1)
@@ -41,27 +54,39 @@ def inside_boxes(boxes):
     c3 = 0 <= BCBM
     c4 = BCBM <= BCBC
 
-    return np.all(np.array([c1, c2, c3, c4]), axis=0)
+    inside = np.all(np.array([c1, c2, c3, c4]), axis=0)
+
+    return inside
 
 
 def point_to_lines(point, lines):
-    """Calculate the distance between a point and line segments. First calculates
-    the distance to the infinite line, then checks if the projected point lies
-    between the line segment endpoints. If not, calculates distance to the endpoints
+    """Calculate the distance between a point and line segments and returns the
+    index of the closest line. First calculates the distance to the infinite
+    line, then checks if the projected point lies between the line segment
+    endpoints. If not, calculates distance to the endpoints
     Parameters
     ----------
     point : np.ndarray
         1x2 array of point should be checked
     lines : np.ndarray
         Nx2x2 array of line segments
+    Returns
+    -------
+    index : int
+        Integer index of the closest line
+    location : float
+        Normalized location of intersection of the distance normal to the line
+        closest. Less than 0 means an intersection before the line segment
+        starts. Between 0 and 1 means an intersection inside the line segment.
+        Greater than 1 means an intersection after the line segment ends
     """
 
     # shift and normalize vectors
-    lines_vectors = lines[:,1] - lines[:,0]
-    point_vectors = point - lines[:,0]
-    end_point_vectors = point - lines[:,1]
+    lines_vectors = lines[:, 1] - lines[:, 0]
+    point_vectors = point - lines[:, 0]
+    end_point_vectors = point - lines[:, 1]
     norm_lines = np.linalg.norm(lines_vectors, axis=1, keepdims=True)
-    reject = (norm_lines==0).squeeze()
+    reject = (norm_lines == 0).squeeze()
     norm_lines[reject] = 1
     unit_lines = lines_vectors / norm_lines
 
@@ -71,16 +96,20 @@ def point_to_lines(point, lines):
     # calculate scale
     line_loc = (unit_lines*point_vectors).sum(axis=1)/norm_lines.squeeze()
 
-    # for points not falling inside segment calculate distance to appropriate endpoint
-    line_dist[line_loc<0] = np.linalg.norm(point_vectors[line_loc<0], axis=1)
-    line_dist[line_loc>1] = np.linalg.norm(end_point_vectors[line_loc>1], axis=1)
+    # for points not falling inside segment calculate distance to appropriate
+    # endpoint
+    line_dist[line_loc < 0] = np.linalg.norm(point_vectors[line_loc < 0],
+                                             axis=1)
+    line_dist[line_loc > 1] = np.linalg.norm(end_point_vectors[line_loc > 1],
+                                             axis=1)
     line_dist[reject] = np.linalg.norm(point_vectors[reject], axis=1)
     line_loc[reject] = 0.5
 
     # calculate closet line
-    ind = np.argmin(line_dist)
+    index = np.argmin(line_dist)
+    location = line_loc[index]
 
-    return ind, line_loc[ind]
+    return index, location
 
 
 def create_box(data):
