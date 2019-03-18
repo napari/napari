@@ -57,6 +57,13 @@ class Markers(Layer):
                  scaling=True, n_dimensional=False, *, name=None):
         super().__init__(MarkersNode(), name)
 
+        self.events.add(mode=Event,
+                        size=Event,
+                        face_color=Event,
+                        edge_color=Event,
+                        symbol=Event,
+                        n_dimensional=Event)
+
         # Freeze refreshes
         with self.freeze_refresh():
             # Save the marker coordinates
@@ -82,7 +89,6 @@ class Markers(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            self.events.add(mode=Event)
             self._qt_properties = QtMarkersLayer(self)
             self._qt_controls = QtMarkersControls(self)
 
@@ -128,6 +134,7 @@ class Markers(Layer):
     @n_dimensional.setter
     def n_dimensional(self, n_dimensional: bool) -> None:
         self._n_dimensional = n_dimensional
+        self.events.n_dimensional()
 
         self.refresh()
 
@@ -140,6 +147,7 @@ class Markers(Layer):
     @symbol.setter
     def symbol(self, symbol: str) -> None:
         self._symbol = symbol
+        self.events.symbol()
 
         self.refresh()
 
@@ -161,6 +169,8 @@ class Markers(Layer):
             except:
                 raise ValueError("Size is not compatible for broadcasting")
         self._size_original = size
+        self.events.size()
+
         self.refresh()
 
     @property
@@ -204,6 +214,7 @@ class Markers(Layer):
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
         self._edge_color = edge_color
+        self.events.edge_color()
 
         self.refresh()
 
@@ -217,6 +228,7 @@ class Markers(Layer):
     @face_color.setter
     def face_color(self, face_color: str) -> None:
         self._face_color = face_color
+        self.events.face_color()
 
         self.refresh()
 

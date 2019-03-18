@@ -58,7 +58,7 @@ class QtPanZoomButton(QRadioButton):
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
+        with self.layer.events.mode.blocker():
             if bool:
                 self.layer.mode = 'pan/zoom'
 
@@ -76,7 +76,7 @@ class QtSelectButton(QRadioButton):
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
+        with self.layer.events.mode.blocker():
             if bool:
                 self.layer.mode = 'select'
 
@@ -94,7 +94,7 @@ class QtAdditionButton(QRadioButton):
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
+        with self.layer.events.mode.blocker():
             if bool:
                 self.layer.mode = 'add'
 
