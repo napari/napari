@@ -20,9 +20,9 @@ with app_context():
     viewer.layers[0].colormap = 'gray'
 
     # create a list of polygons
-    polygons = ([np.array([[ 13,  11], [113, 111], [246,  22]]),
-                 np.array([[ 60, 505], [ 71, 402], [ 42, 383], [ 95, 251],
-                           [ 59, 212], [137, 131], [187, 126], [204, 191],
+    polygons = ([np.array([[13,  11], [113, 111], [246, 22]]),
+                 np.array([[60, 505], [71, 402], [42, 383], [95, 251],
+                           [59, 212], [137, 131], [187, 126], [204, 191],
                            [248, 171], [260, 211], [243, 273], [225, 264],
                            [173, 430], [160, 512]]),
                  np.array([[382, 310], [381, 229], [401, 209], [411, 221],
@@ -35,12 +35,12 @@ with app_context():
                       edge_color='coral', face_color='royalblue')
 
     # change some properties of the layer
-    layer =  viewer.layers[-1]
+    layer = viewer.layers[-1]
     layer.edge_width = 5
     layer.opacity = 0.75
 
     # add an ellipse to the layer
-    ellipse = np.array([[222,  59], [289, 110], [243, 170], [176, 119]])
+    ellipse = np.array([[222, 59], [289, 110], [243, 170], [176, 119]])
     layer.data.add(ellipse, shape_type='ellipse', edge_width=5,
                    edge_color='coral', face_color='purple',
                    opacity=0.75)

@@ -95,6 +95,7 @@ class QtViewer(QSplitter):
         if layer is not None:
             layer.on_key_release(event)
 
+
 def viewbox_key_event(event):
     """ViewBox key event handler
     Parameters

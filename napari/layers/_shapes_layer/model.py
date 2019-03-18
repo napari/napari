@@ -1,23 +1,21 @@
-from typing import Union
-from collections import Iterable
-
 import numpy as np
-from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
 from ...util.event import Event
 from .._base_layer import Layer
 from .._register import add_to_viewer
+
 from ..._vispy.scene.visuals import Mesh
 from ..._vispy.scene.visuals import Markers
 from ..._vispy.scene.visuals import Line
 from ..._vispy.scene.visuals import Compound as VisualNode
-from vispy.color import get_color_names, Color
+from vispy.color import get_color_names
 
 from .view import QtShapesLayer
 from .view import QtShapesControls
 from .shape_list import ShapeList
-from .shape_util import create_box, inside_boxes, inside_triangles, point_to_lines
+from .shape_util import create_box, inside_triangles, point_to_lines
+
 
 @add_to_viewer
 class Shapes(Layer):
@@ -176,7 +174,7 @@ class Shapes(Layer):
 
     @property
     def edge_color(self):
-        """Color, ColorArray: color of edges and lines
+        """str: color of edges and lines
         """
         return self._edge_color
 
@@ -194,7 +192,7 @@ class Shapes(Layer):
 
     @property
     def face_color(self):
-        """Color, ColorArray: color of faces
+        """str: color of faces
         """
         return self._face_color
 
