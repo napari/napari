@@ -527,7 +527,8 @@ class Shapes(Layer):
         self.refresh()
 
     def remove_selected(self):
-        for index in self.selected_shapes:
+        to_remove = np.sort(self.selected_shapes)[::-1]
+        for index in to_remove:
             self.data.remove(index)
         self.selected_shapes = []
         self._hover_shapes = [None, None]

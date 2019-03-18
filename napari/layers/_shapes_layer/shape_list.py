@@ -251,9 +251,11 @@ class ShapeList():
         self._mesh_vertices_offsets = self._mesh_vertices_offsets[indices]
         self._mesh_vertices_index = self._mesh_vertices_index[indices]
         indices = np.where(np.invert(indices))[0]
-        self._mesh_triangles[self._mesh_triangles>indices[0]] = self._mesh_triangles[self._mesh_triangles>indices[0]] - len(indices)
+        if len(indices) > 0:
+            self._mesh_triangles[self._mesh_triangles>indices[0]] = self._mesh_triangles[self._mesh_triangles>indices[0]] - len(indices)
 
         if renumber:
+            print
             del self.shapes[index]
             self._z_index = np.delete(self._z_index, index)
             self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0] = self._mesh_triangles_index[self._mesh_triangles_index[:,0]>index,0]-1
