@@ -1,7 +1,4 @@
-from PyQt5.QtWidgets import QHBoxLayout, QWidget
-from PyQt5.QtCore import QSize
-
-from ....util.range_slider import QVRangeSlider
+from PyQt5.QtWidgets import QWidget
 
 
 class QtImageControls(QWidget):
@@ -11,6 +8,3 @@ class QtImageControls(QWidget):
         self.layer = layer
 
         self.setMouseTracking(True)
-
-    def mouseMoveEvent(self, event):
-        self.layer.status = self.layer._clim_msg

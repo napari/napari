@@ -38,7 +38,8 @@ class Labels(Layer):
             if 'name' in meta:
                 name = meta['name']
 
-        self._image = label_image
+        self._raw_image = label_image
+        self._image = label_image / np.max(label_image)
         self._meta = meta
         self.colormap = colormaps.label_colormap(label_image)
         self.interpolation = 'nearest'
@@ -136,7 +137,7 @@ class Labels(Layer):
             except TypeError:
                 pass
 
-        return self.image[tuple(indices)]
+        return self._raw_image[tuple(indices)]
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -189,8 +190,8 @@ class Labels(Layer):
         ----------
         coord : sequence of int
             Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
+        label : int
+            Value of the label image at the coord.
         msg : string
             String containing a message that can be used as
             a status update.
@@ -202,20 +203,9 @@ class Labels(Layer):
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        value = self._slice_image(coord)
-        msg = f'{coord}, {self.name}' + ', value '
-        if isinstance(value, ndarray):
-            if isinstance(value[0], integer):
-                msg = msg + str(value)
-            else:
-                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
-                msg = msg + v_str
-        else:
-            if isinstance(value, integer):
-                msg = msg + str(value)
-            else:
-                msg = msg + f'{value:0.3}'
-        return coord, value, msg
+        label = self._slice_image(coord)
+        msg = f'{coord}, {self.name}, label {label}'
+        return coord, label, msg
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
