@@ -7,16 +7,14 @@ import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
 from skimage.segmentation import slic
-from napari import Window, Viewer
+from napari import ViewerApp
 from napari.util import app_context
 
 
 with app_context():
-    viewer = Viewer()
-    window = Window(viewer)
-    # add the image
     astro = data.astronaut()
-    viewer.add_image(astro, multichannel=True)
+    # initialise viewer with astro image
+    viewer = ViewerApp(astro, multichannel=True)
     # add the labels
     labels = slic(astro, multichannel=True)
     label_layer = viewer.add_labels(labels)
