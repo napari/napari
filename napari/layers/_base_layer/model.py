@@ -3,8 +3,8 @@ from contextlib import contextmanager
 
 import weakref
 
-from ...util.event import EmitterGroup, Event
-from .._visual_wrapper import VisualWrapper
+from ...util.event import Event
+from ._visual_wrapper import VisualWrapper
 
 
 class Layer(VisualWrapper, ABC):
@@ -56,11 +56,9 @@ class Layer(VisualWrapper, ABC):
         self._help = ''
         self._cursor = 'standard'
         self._interactive = True
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   select=Event,
-                                   deselect=Event,
-                                   name=Event)
+        self.events.add(select=Event,
+                        deselect=Event,
+                        name=Event)
         self.name = name
 
     def __str__(self):
