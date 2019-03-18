@@ -711,24 +711,6 @@ class Shapes(Layer):
             self.data.update_z_index(index, new_z_index)
         self.refresh()
 
-    def move_forward(self):
-        if len(self.selected_shapes) == 0:
-            return
-        for index in self.selected_shapes:
-            current = self.data._z_index[index]
-            new_z_index = min(self.data._z_index[self.data._z_index>current], default=current)
-            self.data.update_z_index(index, new_z_index + 1)
-        self.refresh()
-
-    def move_backward(self):
-        if len(self.selected_shapes) == 0:
-            return
-        for index in self.selected_shapes:
-            current = self.data._z_index[index]
-            new_z_index = max(self.data._z_index[self.data._z_index<current], default=current)
-            self.data.update_z_index(index, new_z_index-1)
-        self.refresh()
-
     def _move(self, coord):
         """Moves object at given mouse position
         and set of indices.

@@ -3,7 +3,9 @@ from vispy.geometry import PolygonData
 from vispy.color import Color
 from copy import copy
 
-from .shape_util import triangulate_path, create_box, generate_ellipse, expand_ellipse, expand_rectangle, expand_box
+from .shape_util import (triangulate_path, triangulate_ellipse,
+                        center_radii_to_corners, find_corners,
+                        rectangle_to_box, create_box)
 
 class Shape():
     """Class for a single shape
@@ -30,7 +32,6 @@ class Shape():
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     """
-    _ellipse_segments = 100
     _shape_types = ['line', 'rectangle', 'ellipse', 'path', 'polygon']
 
     def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
@@ -85,7 +86,7 @@ class Shape():
                 self._box = create_box(data)
         elif self.shape_type == 'rectangle':
             if len(data) == 2:
-                data = expand_rectangle(data)
+                data = find_corners(data)
             if len(data) != 4:
                 raise ValueError("""Data shape does not match a rectangle.
                                  Rectangle expects four corner vertices""")
@@ -94,21 +95,19 @@ class Shape():
                 fill_triangles = np.array([[0, 1, 2], [0, 2, 3]])
                 self._set_meshes(data, fill_vertices=data,
                                   fill_triangles=fill_triangles)
-                self._box = expand_box(data)
+                self._box = rectangle_to_box(data)
         elif self.shape_type == 'ellipse':
             if len(data) == 2:
-                data = expand_ellipse(data)
+                data = center_radii_to_corners(data[0], data[1])
             if len(data) != 4:
                 raise ValueError("""Data shape does not match an ellipse.
                                  Ellipse expects four corner vertices""")
             else:
                 # Build boundary vertices with num_segments
-                points = generate_ellipse(data, self._ellipse_segments)
-                fill_triangles = np.array([[0, i+1, i+2] for i in range(self._ellipse_segments)])
-                fill_triangles[-1, 2] = 1
-                self._set_meshes(points[1:-1], fill_vertices=points,
-                                  fill_triangles=fill_triangles)
-                self._box = expand_box(data)
+                vertices, trinalges = triangulate_ellipse(data)
+                self._set_meshes(vertices[1:-1], fill_vertices=vertices,
+                                  fill_triangles=trinalges)
+                self._box = rectangle_to_box(data)
         elif self.shape_type == 'path':
             if len(data) < 2:
                 raise ValueError("""Data shape does not match a path. Path

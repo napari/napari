@@ -82,42 +82,125 @@ def point_to_lines(point, lines):
 
     return ind, line_loc[ind]
 
+
 def create_box(data):
-    """Finds the bounding box of the shape
+    """Creates the axis aligned bounding box of a list of points
+    Parameters
+    ----------
+    data : np.array
+        Nx2 array of points whose bounding box is to be found
+    Returns
+    -------
+    box : np.array
+        9x2 array of corners of the bounding box. The first 8 points are
+        the corners and midpoints of the box. The last point is the center
+        of the box
     """
-    min_val = [data[:,0].min(axis=0), data[:,1].min(axis=0)]
-    max_val = [data[:,0].max(axis=0), data[:,1].max(axis=0)]
+    min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
+    max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
     tl = np.array([min_val[0], min_val[1]])
     tr = np.array([max_val[0], min_val[1]])
     br = np.array([max_val[0], max_val[1]])
     bl = np.array([min_val[0], max_val[1]])
-    return np.array([tl, (tl+tr)/2, tr, (tr+br)/2, br, (br+bl)/2, bl, (bl+tl)/2, (tl+tr+br+bl)/4])
+    box = np.array([tl, (tl+tr)/2, tr, (tr+br)/2, br, (br+bl)/2, bl, (bl+tl)/2,
+                   (tl+tr+br+bl)/4])
+    return box
 
-def expand_box(data):
-    """Expands four corner rectangle into bounding box
+
+def rectangle_to_box(data):
+    """Converts the four corners of a rectangle into a bounding box like
+    representation. If the rectangle is not axis aligned the resulting box
+    representation will not be axis aligned either
+    Parameters
+    ----------
+    data : np.array
+        4x2 array of corner points to be converted to a box like representation
+    Returns
+    -------
+    box : np.array
+        9x2 array of corners of the bounding box. The first 8 points are
+        the corners and midpoints of the box. The last point is the center
+        of the box
     """
-    return np.array([data[0], (data[0]+data[1])/2, data[1], (data[1]+data[2])/2,
+    if not np.all(data.shape == (4, 2)):
+        raise ValueError("""Data shape does not match expected `[4, 2]`
+                         shape specifying corners for the rectangle""")
+    box = np.array([data[0], (data[0]+data[1])/2, data[1], (data[1]+data[2])/2,
                     data[2], (data[2]+data[3])/2, data[3], (data[3]+data[0])/2,
                     data.mean(axis=0)])
+    return box
 
-def expand_rectangle(data):
-    """Expands two corners into four corner rectangle
+
+def find_corners(data):
+    """Finds the four corners of the bounding box definied by an array of
+    points
+    Parameters
+    ----------
+    data : np.array
+        Nx2 array of points whose bounding box is to be found
+    Returns
+    -------
+    corners : np.array
+        4x2 array of corners of the boudning box
     """
-    min_val = [data[:,0].min(axis=0), data[:,1].min(axis=0)]
-    max_val = [data[:,0].max(axis=0), data[:,1].max(axis=0)]
+    min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
+    max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
     tl = np.array([min_val[0], min_val[1]])
     tr = np.array([max_val[0], min_val[1]])
     br = np.array([max_val[0], max_val[1]])
     bl = np.array([min_val[0], max_val[1]])
-    return np.array([tl, tr, br, bl])
+    corners = np.array([tl, tr, br, bl])
+    return corners
 
-def expand_ellipse(data):
-    """Expands a center and radius into four corner rectangle
+
+def center_radii_to_corners(center, radii):
+    """Expands a center and radii into a four corner rectangle
+    Parameters
+    ----------
+    center : np.array | list
+        Length 2 array or list of the center coordinates
+    radii : np.array | list
+        Length 2 array or list of the two radii
+    Returns
+    -------
+    corners : np.array
+        4x2 array of corners of the boudning box
     """
-    data = np.array([data[0]+data[1], data[0]-data[1]])
-    return expand_rectangle(data)
+    data = np.array([center+radii, center-radii])
+    corners = expand_rectangle(data)
+    return corners
 
-def generate_ellipse(corners, num_segments):
+
+def triangulate_ellipse(corners, num_segments=100):
+    """Determines the triangulation of a path. The resulting `offsets` can
+    mulitplied by a `width` scalar and be added to the resulting `centers`
+    to generate the vertices of the triangles for the triangulation, i.e.
+    `vertices = centers + width*offsets`. Using the `centers` and `offsets`
+    representation thus allows for the computed triangulation to be
+    independent of the line width.
+    Parameters
+    ----------
+    corners : np.array
+        4x2 array of four bounding corners of the ellipse. The ellipse will
+        still be computed properly even if the rectangle determined by the
+        corners is not axis aligned
+    num_segments : int
+        Integer determining the number of segments to use when triangulating
+        the ellipse
+    Returns
+    -------
+    vertices : np.array
+        Mx2 array coordinates of vertices for triangulating an ellipse.
+        Includes the center vertex of the ellipse, followed by `num_segments`
+        vertices around the boundary of the ellipse
+    triangles : np.array
+        Px2 array of the indices of the vertices for the triangles of the
+        triangulation. Has length given by `num_segments`
+    """
+    if not np.all(corners.shape == (4, 2)):
+        raise ValueError("""Data shape does not match expected `[4, 2]`
+                         shape specifying corners for the ellipse""")
+
     center = corners.mean(axis=0)
     adjusted = corners - center
 
@@ -126,7 +209,8 @@ def generate_ellipse(corners, num_segments):
     if len_vec > 0:
         # rotate to be axis aligned
         norm_vec = vec/len_vec
-        transform = np.array([[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]])
+        transform = np.array([[norm_vec[0], -norm_vec[1]],
+                             [norm_vec[1], norm_vec[0]]])
         adjusted = np.matmul(adjusted, transform)
     else:
         transform = np.eye(2)
@@ -142,38 +226,81 @@ def generate_ellipse(corners, num_segments):
         vertices = np.matmul(vertices, transform.T)
 
     # Shift back to center
-    return vertices + center
+    vertices = vertices + center
+
+    triangles = np.array([[0, i+1, i+2] for i in range(num_segments)])
+    triangles[-1, 2] = 1
+
+    return vertices, triangles
+
 
 def triangulate_path(path, closed=False, limit=3, bevel=False):
+    """Determines the triangulation of a path. The resulting `offsets` can
+    mulitplied by a `width` scalar and be added to the resulting `centers`
+    to generate the vertices of the triangles for the triangulation, i.e.
+    `vertices = centers + width*offsets`. Using the `centers` and `offsets`
+    representation thus allows for the computed triangulation to be
+    independent of the line width.
+    Parameters
+    ----------
+    path : np.array
+        Nx2 array of central coordinates of path to be triangulated
+    closed : bool
+        Bool which determines is the path is closed or not
+    limit : float
+        Miter limit which determines when to switch from a miter join to a
+        bevel join
+    bevel : bool
+        Bool which if True causes a bevel join to always be used. If False
+        a bevel join will only be used when the miter limit is exceeded
+    Returns
+    -------
+    centers : np.array
+        Mx2 array central coordinates of path trinagles.
+    offsets : np.array
+        Mx2 array of the offests to the central coordinates that need to
+        be scaled by the line width and then added to the centers to
+        generate the actual vertices of the triangulation
+    triangles : np.array
+        Px3 array of the indices of the vertices that will form the
+        triangles of the triangulation
+    """
     # Remove any equal adjacent points
     if len(path) > 2:
-        clean_path = np.array([p for i, p in enumerate(path) if i==0 or not np.all(p == path[i-1])])
+        clean_path = np.array([p for i, p in enumerate(path) if i == 0 or
+                              not np.all(p == path[i-1])])
     else:
         clean_path = path
 
     if closed:
-        if np.all(clean_path[0] == clean_path[-1]) and len(clean_path)>2:
+        if np.all(clean_path[0] == clean_path[-1]) and len(clean_path) > 2:
             clean_path = clean_path[:-1]
-        full_path = np.concatenate(([clean_path[-1]], clean_path, [clean_path[0]]),axis=0)
-        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(clean_path))]
-        path_length = [np.linalg.norm(full_path[i]-full_path[i+1]) for i in range(len(clean_path))]
-        normals=np.array(normals)
-        full_path = np.concatenate((clean_path, [clean_path[0]]),axis=0)
-        full_normals = np.concatenate((normals, [normals[0]]),axis=0)
+        full_path = np.concatenate(([clean_path[-1]], clean_path,
+                                    [clean_path[0]]), axis=0)
+        normals = ([segment_normal(full_path[i], full_path[i+1]) for i in
+                   range(len(clean_path))])
+        path_length = ([np.linalg.norm(full_path[i]-full_path[i+1]) for i in
+                       range(len(clean_path))])
+        normals = np.array(normals)
+        full_path = np.concatenate((clean_path, [clean_path[0]]), axis=0)
+        full_normals = np.concatenate((normals, [normals[0]]), axis=0)
     else:
-        full_path = np.concatenate((clean_path, [clean_path[-2]]),axis=0)
-        normals = [segment_normal(full_path[i], full_path[i+1]) for i in range(len(clean_path))]
-        path_length = [np.linalg.norm(full_path[i]-full_path[i+1]) for i in range(len(clean_path))]
+        full_path = np.concatenate((clean_path, [clean_path[-2]]), axis=0)
+        normals = ([segment_normal(full_path[i], full_path[i+1]) for i in
+                   range(len(clean_path))])
+        path_length = ([np.linalg.norm(full_path[i]-full_path[i+1]) for i in
+                       range(len(clean_path))])
         normals[-1] = -normals[-1]
-        normals=np.array(normals)
+        normals = np.array(normals)
         full_path = clean_path
-        full_normals = np.concatenate(([normals[0]], normals),axis=0)
+        full_normals = np.concatenate(([normals[0]], normals), axis=0)
 
-    miters = np.array([full_normals[i:i+2].mean(axis=0) for i in range(len(full_path))])
+    miters = np.array([full_normals[i:i+2].mean(axis=0) for i in
+                      range(len(full_path))])
     miters = np.array([miters[i]/np.dot(miters[i], full_normals[i])
-                      if np.dot(miters[i], full_normals[i]) != 0 else full_normals[i]
-                      for i in range(len(full_path))])
-    miter_lengths = np.linalg.norm(miters,axis=1)
+                      if np.dot(miters[i], full_normals[i]) != 0
+                      else full_normals[i] for i in range(len(full_path))])
+    miter_lengths = np.linalg.norm(miters, axis=1)
     miters = 0.5*miters
     vertex_offsets = []
     central_path = []
@@ -181,9 +308,9 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
     m = 0
 
     for i in range(len(full_path)):
-        if i==0:
-            if (bevel or miter_lengths[i]>limit) and closed:
-                offset = np.array([miters[i,1], -miters[i,0]])
+        if i == 0:
+            if (bevel or miter_lengths[i] > limit) and closed:
+                offset = np.array([miters[i, 1], -miters[i, 0]])
                 offset = 0.5*offset/np.linalg.norm(offset)
                 flip = np.sign(np.dot(offset, full_normals[i]))
                 vertex_offsets.append(offset)
@@ -193,18 +320,18 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
                 triangles.append([0, 1, 2])
-                m=m+1
+                m = m+1
             else:
                 vertex_offsets.append(-miters[i])
                 vertex_offsets.append(miters[i])
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
-        elif i==len(full_path)-1:
+        elif i == len(full_path)-1:
             if closed:
                 a = vertex_offsets[m+1]
                 b = vertex_offsets[1]
                 ray = full_path[i] - full_path[i-1]
-                if np.cross(a,ray)*np.cross(b,ray)>0:
+                if np.cross(a, ray)*np.cross(b, ray) > 0:
                     triangles.append([m, m+1, 1])
                     triangles.append([m, 0, 1])
                 else:
@@ -218,14 +345,14 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
                 a = vertex_offsets[m+1]
                 b = vertex_offsets[m+3]
                 ray = full_path[i] - full_path[i-1]
-                if np.cross(a,ray)*np.cross(b,ray)>0:
+                if np.cross(a, ray)*np.cross(b, ray) > 0:
                     triangles.append([m, m+1, m+3])
                     triangles.append([m, m+2, m+3])
                 else:
                     triangles.append([m, m+1, m+3])
                     triangles.append([m+1, m+2, m+3])
-        elif (bevel or miter_lengths[i]>limit):
-            offset = np.array([miters[i,1], -miters[i,0]])
+        elif (bevel or miter_lengths[i] > limit):
+            offset = np.array([miters[i, 1], -miters[i, 0]])
             offset = 0.5*offset/np.linalg.norm(offset)
             flip = np.sign(np.dot(offset, full_normals[i]))
             vertex_offsets.append(offset)
@@ -237,7 +364,7 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
             a = vertex_offsets[m+1]
             b = vertex_offsets[m+3]
             ray = full_path[i] - full_path[i-1]
-            if np.cross(a,ray)*np.cross(b,ray)>0:
+            if np.cross(a, ray)*np.cross(b, ray) > 0:
                 triangles.append([m, m+1, m+3])
                 triangles.append([m, m+2, m+3])
             else:
@@ -253,21 +380,39 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
             a = vertex_offsets[m+1]
             b = vertex_offsets[m+3]
             ray = full_path[i] - full_path[i-1]
-            if np.cross(a,ray)*np.cross(b,ray)>0:
+            if np.cross(a, ray)*np.cross(b, ray) > 0:
                 triangles.append([m, m+1, m+3])
                 triangles.append([m, m+2, m+3])
             else:
                 triangles.append([m, m+1, m+3])
                 triangles.append([m+1, m+2, m+3])
             m = m + 2
+    centers = np.array(central_path)
+    offsets = np.array(vertex_offsets)
+    triangles = np.array(triangles)
 
-    return np.array(central_path), np.array(vertex_offsets), np.array(triangles)
+    return centers, offsets, triangles
+
 
 def segment_normal(a, b):
+    """Determines the unit normal of the vector from a to b.
+    Parameters
+    ----------
+    a : np.array
+        Length 2 array of first point
+    b : np.array
+        Length 2 array of second point
+    Returns
+    -------
+    unit_norm : np.array
+        Length the unit normal of the vector from a to b. If a == b,
+        then return [1, 0]
+    """
     d = b-a
     normal = np.array([d[1], -d[0]])
     norm = np.linalg.norm(normal)
-    if norm==0:
-        return np.array([1, 0])
+    if norm == 0:
+        unit_norm = np.array([1, 0])
     else:
-        return normal/norm
+        unit_norm = normal/norm
+    return unit_norm

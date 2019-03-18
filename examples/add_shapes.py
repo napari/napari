@@ -42,7 +42,7 @@ with app_context():
     # add an ellipse to the layer
     ellipse = np.array([[222,  59], [289, 110], [243, 170], [176, 119]])
     layer.data.add(ellipse, shape_type='ellipse', edge_width=5,
-                   edge_color='royalblue', face_color='coral',
+                   edge_color='coral', face_color='purple',
                    opacity=0.75)
     layer.refresh()
 

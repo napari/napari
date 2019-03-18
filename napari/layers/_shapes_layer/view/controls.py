@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame, QPushButton
+from PyQt5.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
+                             QPushButton)
 
 from os.path import join
 from ....resources import resources_dir
@@ -14,15 +15,25 @@ class QtShapesControls(QFrame):
         self.layer.events.mode.connect(self.set_mode)
 
         self.select_button = QtModeButton(layer, 'select', 'Select mode')
-        self.direct_button = QtModeButton(layer, 'direct', 'Direct select mode')
-        self.panzoom_button = QtModeButton(layer, 'zoom', 'Pan/zoom mode', mode='pan/zoom')
-        self.rectangle_button = QtModeButton(layer, 'rectangle', 'Add rectangles', mode='add_rectangle')
-        self.ellipse_button = QtModeButton(layer, 'ellipse', 'Add ellipses', mode='add_ellipse')
-        self.line_button = QtModeButton(layer, 'line', 'Add lines', mode='add_line')
-        self.path_button = QtModeButton(layer, 'path', 'Add paths', mode='add_path')
-        self.polygon_button = QtModeButton(layer, 'polygon', 'Add polygons', mode='add_polygon')
-        self.vertex_insert_button = QtModeButton(layer, 'vertex_insert', 'Insert vertex')
-        self.vertex_remove_button = QtModeButton(layer, 'vertex_remove', 'Remove vertex')
+        self.direct_button = QtModeButton(layer, 'direct',
+                                          'Direct select mode')
+        self.panzoom_button = QtModeButton(layer, 'zoom', 'Pan/zoom mode',
+                                           mode='pan/zoom')
+        self.rectangle_button = QtModeButton(layer, 'rectangle',
+                                             'Add rectangles',
+                                             mode='add_rectangle')
+        self.ellipse_button = QtModeButton(layer, 'ellipse', 'Add ellipses',
+                                           mode='add_ellipse')
+        self.line_button = QtModeButton(layer, 'line', 'Add lines',
+                                        mode='add_line')
+        self.path_button = QtModeButton(layer, 'path', 'Add paths',
+                                        mode='add_path')
+        self.polygon_button = QtModeButton(layer, 'polygon', 'Add polygons',
+                                           mode='add_polygon')
+        self.vertex_insert_button = QtModeButton(layer, 'vertex_insert',
+                                                 'Insert vertex')
+        self.vertex_remove_button = QtModeButton(layer, 'vertex_remove',
+                                                 'Remove vertex')
         self.delete_button = QtDeleteButton(layer)
 
         self.button_group = QButtonGroup(self)

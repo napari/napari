@@ -26,7 +26,8 @@ class QtShapesLayer(QtLayer):
                 value = np.asarray(value)
             value = value.mean()
         sld.setValue(int(value))
-        sld.valueChanged[int].connect(lambda value=sld: self.changeWidth(value))
+        sld.valueChanged[int].connect(lambda value=sld:
+                                      self.changeWidth(value))
         self.widthSlider = sld
         self.grid_layout.addWidget(QLabel('width:'), 3, 0)
         self.grid_layout.addWidget(sld, 3, 1)
@@ -39,8 +40,8 @@ class QtShapesLayer(QtLayer):
             self.layer.face_color, Qt.MatchFixedString)
         if index >= 0:
             face_comboBox.setCurrentIndex(index)
-        face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.changeFaceColor(text))
+        face_comboBox.activated[str].connect(lambda text=face_comboBox:
+                                             self.changeFaceColor(text))
         self.faceComboBox = face_comboBox
         self.grid_layout.addWidget(QLabel('face_color:'), 4, 0)
         self.grid_layout.addWidget(face_comboBox, 4, 1)
@@ -53,30 +54,29 @@ class QtShapesLayer(QtLayer):
             self.layer.edge_color, Qt.MatchFixedString)
         if index >= 0:
             edge_comboBox.setCurrentIndex(index)
-        edge_comboBox.activated[str].connect(
-            lambda text=edge_comboBox: self.changeEdgeColor(text))
+        edge_comboBox.activated[str].connect(lambda text=edge_comboBox:
+                                             self.changeEdgeColor(text))
         self.edgeComboBox = edge_comboBox
         self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
         self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
-        rearrange_comboBox = QComboBox()
-        options = (['select', 'move_to_front', 'move_to_back',
-                    'move_forward', 'move_backward'])
+        rearrange_cb = QComboBox()
+        options = (['select', 'move_to_front', 'move_to_back'])
         for o in options:
-            rearrange_comboBox.addItem(o)
-        rearrange_comboBox.setCurrentIndex(0)
-        rearrange_comboBox.activated[str].connect(
-            lambda text=rearrange_comboBox: self.changeRearrange(text))
-        self.rearrangeComboBox = rearrange_comboBox
+            rearrange_cb.addItem(o)
+        rearrange_cb.setCurrentIndex(0)
+        rearrange_cb.activated[str].connect(lambda text=rearrange_cb:
+                                            self.changeRearrange(text))
+        self.rearrangeComboBox = rearrange_cb
         self.grid_layout.addWidget(QLabel('rearrange:'), 6, 0)
-        self.grid_layout.addWidget(rearrange_comboBox, 6, 1)
+        self.grid_layout.addWidget(rearrange_cb, 6, 1)
 
         apply_cb = QCheckBox()
         apply_cb.setToolTip('Apply to all')
         apply_cb.setChecked(self.layer.apply_all)
         apply_cb.stateChanged.connect(lambda state=apply_cb:
-                                     self.change_apply(state))
-        self.applyComboBox = apply_cb
+                                      self.change_apply(state))
+        self.applyCheckBox = apply_cb
         self.grid_layout.addWidget(QLabel('apply_all:'), 7, 0)
         self.grid_layout.addWidget(apply_cb, 7, 1)
 
@@ -99,10 +99,6 @@ class QtShapesLayer(QtLayer):
             self.layer.move_to_front()
         elif text == 'move_to_back':
             self.layer.move_to_back()
-        elif text == 'move_forward':
-            self.layer.move_forward()
-        elif text == 'move_backward':
-            self.layer.move_backward()
         self.rearrangeComboBox.setCurrentIndex(0)
 
     def change_apply(self, state):
@@ -118,14 +114,14 @@ class QtShapesLayer(QtLayer):
 
     def _on_edge_color_change(self, event):
         with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(
-                self.layer.edge_color, Qt.MatchFixedString)
+            index = self.edgeComboBox.findText(self.layer.edge_color,
+                                               Qt.MatchFixedString)
             self.edgeComboBox.setCurrentIndex(index)
 
     def _on_face_color_change(self, event):
         with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(
-                self.layer.face_color, Qt.MatchFixedString)
+            index = self.faceComboBox.findText(self.layer.face_color,
+                                               Qt.MatchFixedString)
             self.faceComboBox.setCurrentIndex(index)
 
     def _on_apply_all_change(self, event):
