@@ -255,30 +255,6 @@ class Shapes(Layer):
         self._selected_shapes = selected_shapes
         self._selected_box = self.select_box(selected_shapes)
 
-    # @property
-    # def z_index(self):
-    #     """list: list of z order of objects. If there are N objects it
-    #     must be a permutation of 0,...,N-1
-    #     """
-    #
-    #     return self._z_index
-    #
-    # @z_index.setter
-    # def z_index(self, z_index):
-    #     ## Check z_index is a permutation of 0,...,N-1
-    #     if not is_permutation(z_index, len(self.data.shapes)):
-    #         raise ValueError('z_index is not permutation')
-    #
-    #     self._z_index = np.array(z_index)
-    #
-    #     if len(self._z_index) == 0:
-    #         self._z_index_faces = np.empty((0), dtype=int)
-    #     else:
-    #         _, idx = np.unique(self.data._mesh_triangles_index[:,0], return_index=True)
-    #         z_index_faces = [np.arange(idx[z], idx[z]+self._face_counts[z]) for z in self._z_index]
-    #         self._z_index_faces = np.concatenate(z_index_faces)
-    #     self.refresh()
-
     @property
     def mode(self):
         """None, str: Interactive mode
@@ -392,8 +368,8 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        faces = self.data._mesh_triangles[::-1]
-        colors = self.data._mesh_triangles_colors[::-1]
+        faces = self.data._mesh_triangles[self.data._mesh_triangles_z_order]
+        colors = self.data._mesh_triangles_colors[self.data._mesh_triangles_z_order]
         vertices = self.data._mesh_vertices
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
@@ -656,10 +632,9 @@ class Shapes(Layer):
 
         if len(shapes) > 0:
             indices = shapes[:, 0]
-            # z_list = self._z_index.tolist()
-            # order_indices = np.array([z_list.index(m) for m in indices])
-            # ordered_shapes = indices[np.argsort(order_indices)]
-            ordered_shapes = indices
+            z_list = self.data._z_order.tolist()
+            order_indices = np.array([z_list.index(m) for m in indices])
+            ordered_shapes = indices[np.argsort(order_indices)]
             return [ordered_shapes[0], None]
         else:
             return [None, None]
@@ -719,65 +694,39 @@ class Shapes(Layer):
                 msg = msg + ', vertex ' + str(value[1])
         return msg
 
-    # def move_forward(self, index):
-    #     if type(index) is list:
-    #         z_index = self._z_index.tolist()
-    #         indices = [z_index.index(i) for i in index]
-    #         for i in np.sort(indices):
-    #             self._move_one_forward(z_index[i])
-    #     else:
-    #         self._move_one_forward(index)
-    #     self.z_index = self._z_index
-    #
-    # def move_backward(self, index):
-    #     if type(index) is list:
-    #         z_index = self._z_index.tolist()
-    #         indices = [z_index.index(i) for i in index]
-    #         for i in np.sort(indices)[::-1]:
-    #             self._move_one_backward(z_index[i])
-    #     else:
-    #         self._move_one_backward(index)
-    #     self.z_index = self._z_index
-    #
-    # def move_to_front(self, index):
-    #     if type(index) is list:
-    #         z_index = self._z_index.tolist()
-    #         indices = [z_index.index(i) for i in index]
-    #         for i in np.sort(indices)[::-1]:
-    #             self._move_one_to_front(z_index[i])
-    #     else:
-    #         self._move_one_to_front(index)
-    #     self.z_index = self._z_index
-    #
-    # def move_to_back(self, index):
-    #     if type(index) is list:
-    #         z_index = self._z_index.tolist()
-    #         indices = [z_index.index(i) for i in index]
-    #         for i in np.sort(indices):
-    #             self._move_one_to_back(z_index[i])
-    #     else:
-    #         self._move_one_to_back(index)
-    #     self.z_index = self._z_index
-    #
-    # def _move_one_forward(self, index):
-    #     ind = self._z_index.tolist().index(index)
-    #     if ind != 0:
-    #         self._z_index[ind] = self._z_index[ind-1]
-    #         self._z_index[ind-1] = index
-    #
-    # def _move_one_backward(self, index):
-    #     ind = self._z_index.tolist().index(index)
-    #     if ind != len(self._z_index)-1:
-    #         self._z_index[ind] = self._z_index[ind+1]
-    #         self._z_index[ind+1] = index
-    #
-    # def _move_one_to_front(self, index):
-    #     self._z_index[1:] = self._z_index[self._z_index!=index]
-    #     self._z_index[0] = index
-    #
-    # def _move_one_to_back(self, index):
-    #     self._z_index[:-1] = self._z_index[self._z_index!=index]
-    #     self._z_index[-1] = index
+    def move_to_front(self):
+        if len(self.selected_shapes) == 0:
+            return
+        new_z_index = max(self.data._z_index) + 1
+        for index in self.selected_shapes:
+            self.data.update_z_index(index, new_z_index)
+        self.refresh()
+
+    def move_to_back(self):
+        if len(self.selected_shapes) == 0:
+            return
+        new_z_index = min(self.data._z_index) - 1
+        for index in self.selected_shapes:
+            self.data.update_z_index(index, new_z_index)
+        self.refresh()
+
+    def move_forward(self):
+        if len(self.selected_shapes) == 0:
+            return
+        for index in self.selected_shapes:
+            current = self.data._z_index[index]
+            new_z_index = min(self.data._z_index[self.data._z_index>current], default=current)
+            self.data.update_z_index(index, new_z_index + 1)
+        self.refresh()
+
+    def move_backward(self):
+        if len(self.selected_shapes) == 0:
+            return
+        for index in self.selected_shapes:
+            current = self.data._z_index[index]
+            new_z_index = max(self.data._z_index[self.data._z_index<current], default=current)
+            self.data.update_z_index(index, new_z_index-1)
+        self.refresh()
 
     def _move(self, coord):
         """Moves object at given mouse position
@@ -983,27 +932,31 @@ class Shapes(Layer):
             transform = self.viewer._canvas.scene.node_transform(self._node)
             rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
             size = self._vertex_size*rescale/4
+            new_z_index = max(self.data._z_index) + 1
             if self.mode == 'add_rectangle':
                 data = np.array([coord, coord+size])
                 self.data.add(data, shape_type='rectangle',
                               edge_width=self.edge_width,
                               edge_color=self.edge_color,
                               face_color=self.face_color,
-                              opacity=self.opacity)
+                              opacity=self.opacity,
+                              z_index=new_z_index)
             elif self.mode == 'add_ellipse':
                 data = np.array([coord+size/2, [size, size]])
                 self.data.add(data, shape_type='ellipse',
                               edge_width=self.edge_width,
                               edge_color=self.edge_color,
                               face_color=self.face_color,
-                              opacity=self.opacity)
+                              opacity=self.opacity,
+                              z_index=new_z_index)
             elif self.mode == 'add_line':
                 data = np.array([coord, coord+size])
                 self.data.add(data, shape_type='line',
                               edge_width=self.edge_width,
                               edge_color=self.edge_color,
                               face_color=self.face_color,
-                              opacity=self.opacity)
+                              opacity=self.opacity,
+                              z_index=new_z_index)
             else:
                 raise ValueError("Mode not recongnized")
             self._ready_to_create = False
@@ -1018,11 +971,13 @@ class Shapes(Layer):
             if self._creating is False:
                 # Start drawing a path
                 data = np.array([coord, coord])
+                new_z_index = max(self.data._z_index) + 1
                 self.data.add(data, shape_type='path',
                               edge_width=self.edge_width,
                               edge_color=self.edge_color,
                               face_color=self.face_color,
-                              opacity=self.opacity)
+                              opacity=self.opacity,
+                              z_index=new_z_index)
                 self.selected_shapes = [len(self.data.shapes)-1]
                 ind = 1
                 self._selected_vertex = [self.selected_shapes[0], ind]

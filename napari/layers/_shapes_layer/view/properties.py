@@ -95,23 +95,15 @@ class QtShapesLayer(QtLayer):
         if text == 'select':
             return
 
-        _selected_shapes = self.layer._selected_shapes
-        if len(_selected_shapes) == 0:
-            self.rearrangeComboBox.setCurrentIndex(0)
-            return
-
         if text == 'move_to_front':
-            self.layer.move_to_front(_selected_shapes)
-            self.rearrangeComboBox.setCurrentIndex(0)
+            self.layer.move_to_front()
         elif text == 'move_to_back':
-            self.layer.move_to_back(_selected_shapes)
-            self.rearrangeComboBox.setCurrentIndex(0)
+            self.layer.move_to_back()
         elif text == 'move_forward':
-            self.layer.move_forward(_selected_shapes)
-            self.rearrangeComboBox.setCurrentIndex(0)
+            self.layer.move_forward()
         elif text == 'move_backward':
-            self.layer.move_backward(_selected_shapes)
-            self.rearrangeComboBox.setCurrentIndex(0)
+            self.layer.move_backward()
+        self.rearrangeComboBox.setCurrentIndex(0)
 
     def change_apply(self, state):
         if state == Qt.Checked:

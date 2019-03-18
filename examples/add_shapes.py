@@ -40,12 +40,13 @@ with app_context():
     layer.opacity = 0.75
 
     # add an ellipse to the layer
-    #ellipse = np.array([[222,  59], [50, 50]])
     ellipse = np.array([[222,  59], [289, 110], [243, 170], [176, 119]])
     layer.data.add(ellipse, shape_type='ellipse', edge_width=5,
                    edge_color='royalblue', face_color='coral',
                    opacity=0.75)
     layer.refresh()
+
+    layer._qt_properties.setExpanded(True)
 
 # Print the shape coordinate data
 print("your shapes are at:")
