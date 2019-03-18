@@ -1,21 +1,20 @@
 import numpy as np
-from vispy.geometry import PolygonData
 from vispy.color import Color
-from copy import copy
 
-from .shape_util import (triangulate_path, triangulate_ellipse,
-                        center_radii_to_corners, find_corners,
-                        rectangle_to_box, create_box)
+from .shape_util import (triangulate_edge, triangulate_ellipse,
+                         triangulate_face, center_radii_to_corners,
+                         find_corners, rectangle_to_box, create_box)
+
 
 class Shape():
     """Class for a single shape
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of vertices.
+        Nx2 array of vertices specifying the shape.
     shape_type : string
-        String of shape shape_type, must be one of "{'line', 'rectangle', 'ellipse',
-        'path', 'polygon'}".
+        String of shape shape_type, must be one of "{'line', 'rectangle',
+        'ellipse', 'path', 'polygon'}".
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -31,18 +30,59 @@ class Shape():
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+
+    Attributes
+    ----------
+    data : np.ndarray
+        Nx2 array of vertices specifying the shape.
+    shape_type : string
+        String of shape shape_type, must be one of "{'line', 'rectangle',
+        'ellipse', 'path', 'polygon'}".
+    edge_width : float
+        thickness of lines and edges.
+    edge_color : ColorArray
+        Color of the shape edge
+    face_color : ColorArray
+        Color of the shape face
+    opacity : float
+        Opacity of the shape, must be between 0 and 1.
+    z_index : int
+        Specifier of z order priority. Shapes with higher z order are displayed
+        ontop of others.
+    _box : np.ndarray
+        9x2 array of corners of the bounding box. The first 8 points are
+        the corners and midpoints of the box. The last point is the center
+        of the box
+    _face_vertices : np.ndarray
+        Qx2 array of vertices of all triangles for the shape face
+    _face_triangles : np.ndarray
+        Px3 array of vertex indices that form the triangles for the shape face
+    _edge_vertices : np.ndarray
+        Rx2 array of centers of vertices of triangles for the shape edge.
+        These values should be added to the scaled `_edge_offsets` to get the
+        actual vertex positions. The scaling corresponds to the width of the
+        edge
+    _edge_offsets : np.ndarray
+        Sx2 array of offsets of vertices of triangles for the shape edge. For
+        These values should be scaled and added to the `_edge_vertices` to get
+        the actual vertex positions. The scaling corresponds to the width of
+        the edge
+    _edge_triangles : np.ndarray
+        Tx3 array of vertex indices that form the triangles for the shape edge
+    _shape_types : list
+        List of the supported shape types
     """
     _shape_types = ['line', 'rectangle', 'ellipse', 'path', 'polygon']
 
-    def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', opacity=1, z_index=0):
+    def __init__(self, data, shape_type='rectangle', edge_width=1,
+                 edge_color='black', face_color='white', opacity=1, z_index=0):
 
-        self._face_vertices = np.empty((0, 2)) # Mx2 array of vertices of faces
-        self._face_triangles = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form triangles for faces
-        self._edge_vertices = np.empty((0, 2)) # Mx2 array of vertices of edges
-        self._edge_offsets = np.empty((0, 2)) # Mx2 array of vertex offsets of edges
-        self._edge_triangles = np.empty((0, 3), dtype=np.uint32) # Px3 array of vertex indices that form triangles for edges
-        self._box = np.empty((9, 2)) # 8 vertex bounding box and center point
+        self._face_vertices = np.empty((0, 2))
+        self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._edge_vertices = np.empty((0, 2))
+        self._edge_offsets = np.empty((0, 2))
+        self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
+        self._box = np.empty((9, 2))
 
         self.shape_type = shape_type
         self.data = np.array(data)
@@ -82,7 +122,7 @@ class Shape():
                                  expects two end vertices""")
             else:
                 # For line connect two points
-                self._set_meshes(data, fill=False, closed=False)
+                self._set_meshes(data, face=False, closed=False)
                 self._box = create_box(data)
         elif self.shape_type == 'rectangle':
             if len(data) == 2:
@@ -92,9 +132,9 @@ class Shape():
                                  Rectangle expects four corner vertices""")
             else:
                 # Add four boundary lines and then two triangles for each
-                fill_triangles = np.array([[0, 1, 2], [0, 2, 3]])
-                self._set_meshes(data, fill_vertices=data,
-                                  fill_triangles=fill_triangles)
+                self._set_meshes(data, face=False)
+                self._face_vertices = data
+                self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
                 self._box = rectangle_to_box(data)
         elif self.shape_type == 'ellipse':
             if len(data) == 2:
@@ -105,8 +145,9 @@ class Shape():
             else:
                 # Build boundary vertices with num_segments
                 vertices, trinalges = triangulate_ellipse(data)
-                self._set_meshes(vertices[1:-1], fill_vertices=vertices,
-                                  fill_triangles=trinalges)
+                self._set_meshes(vertices[1:-1], face=False)
+                self._face_vertices = vertices
+                self._face_triangles = trinalges
                 self._box = rectangle_to_box(data)
         elif self.shape_type == 'path':
             if len(data) < 2:
@@ -114,12 +155,12 @@ class Shape():
                                  expects at least two vertices""")
             else:
                 # For path connect every all data
-                self._set_meshes(data, fill=False, closed=False)
+                self._set_meshes(data, face=False, closed=False)
                 self._box = create_box(data)
         elif self.shape_type == 'polygon':
             if len(data) < 2:
-                raise ValueError("""Data shape does not match a polygon. Polygon
-                                 expects at least two vertices""")
+                raise ValueError("""Data shape does not match a polygon.
+                                 Polygon expects at least two vertices""")
             else:
                 self._set_meshes(data)
                 self._box = create_box(data)
@@ -182,26 +223,35 @@ class Shape():
     def z_index(self, z_index):
         self._z_index = z_index
 
-    def _set_meshes(self, points, closed=True, fill=True, edge=True,
-                     fill_vertices=None, fill_triangles=None):
+    def _set_meshes(self, data, closed=True, face=True, edge=True):
+        """Sets the face and edge meshes from a set of points.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Nx2 array specifying the shape to be triangulated
+        closed : bool
+            Bool which determines if the edge is closed or not
+        face : bool
+            Bool which determines if the face need to be traingulated
+        edge : bool
+            Bool which determines if the edge need to be traingulated
+        """
         if edge:
-            centers, offsets, triangles = triangulate_path(points, closed=closed)
+            centers, offsets, triangles = triangulate_edge(data, closed=closed)
             self._edge_vertices = centers
             self._edge_offsets = offsets
             self._edge_triangles = triangles
-        if fill:
-            if fill_vertices is None or fill_triangles is None:
-                if len(points) > 2:
-                    vertices, faces = PolygonData(vertices=points).triangulate()
-                    if len(faces) > 0:
-                        self._face_vertices = vertices
-                        self._face_triangles = faces.astype(np.uint32)
-            else:
-                self._face_vertices = fill_vertices
-                self._face_triangles = fill_triangles
+        if face:
+            if len(data) > 2:
+                vertices, triangles = triangulate_face(data)
+                if len(triangles) > 0:
+                    self._face_vertices = vertices
+                    self._face_triangles = triangles
 
     def transform(self, transform):
         """Perfroms a linear transform on the shape
+
         Parameters
         ----------
         transform : np.ndarray
@@ -228,6 +278,7 @@ class Shape():
 
     def shift(self, shift):
         """Perfroms a 2D shift on the shape
+
         Parameters
         ----------
         shift : np.ndarray
@@ -242,6 +293,7 @@ class Shape():
 
     def scale(self, scale, center=None):
         """Perfroms a scaling on the shape
+
         Parameters
         ----------
         scale : float, list
@@ -262,6 +314,7 @@ class Shape():
 
     def rotate(self, angle, center=None):
         """Perfroms a rotation on the shape
+
         Parameters
         ----------
         angle : float
@@ -270,7 +323,8 @@ class Shape():
             length 2 list specifying coordinate of center of rotation.
         """
         theta = np.radians(angle)
-        transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
+        transform = np.array([[np.cos(theta), np.sin(theta)],
+                             [-np.sin(theta), np.cos(theta)]])
         if center is None:
             self.transform(transform)
         else:
@@ -280,6 +334,7 @@ class Shape():
 
     def flip(self, axis, center=None):
         """Perfroms an vertical flip on the shape
+
         Parameters
         ----------
         axis : int

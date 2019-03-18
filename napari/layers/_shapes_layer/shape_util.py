@@ -1,4 +1,5 @@
 import numpy as np
+from vispy.geometry import PolygonData
 
 
 def inside_triangles(triangles):
@@ -279,7 +280,29 @@ def triangulate_ellipse(corners, num_segments=100):
     return vertices, triangles
 
 
-def triangulate_path(path, closed=False, limit=3, bevel=False):
+def triangulate_face(data):
+    """Determines the triangulation of the face of a shape.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Nx2 array of vertices of shape to be triangulated
+
+    Returns
+    -------
+    vertices : np.ndarray
+        Mx2 array vertices of the trinagles.
+    triangles : np.ndarray
+        Px3 array of the indices of the vertices that will form the
+        triangles of the triangulation
+    """
+    vertices, triangles = PolygonData(vertices=data).triangulate()
+    triangles = triangles.astype(np.uint32)
+
+    return vertices, triangles
+
+
+def triangulate_edge(path, closed=False, limit=3, bevel=False):
     """Determines the triangulation of a path. The resulting `offsets` can
     mulitplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
@@ -292,7 +315,7 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
     path : np.ndarray
         Nx2 array of central coordinates of path to be triangulated
     closed : bool
-        Bool which determines is the path is closed or not
+        Bool which determines if the path is closed or not
     limit : float
         Miter limit which determines when to switch from a miter join to a
         bevel join
