@@ -3,34 +3,6 @@
 import numpy as np
 import inspect
 
-def is_permutation(ar, N):
-    """Checks is an array is a permutation of the intergers 0, ... N-1
-    Parameters
-    ----------
-    ar : list or np.ndarray
-        Array that should be checked
-    N : int
-        Integer defining length of target permutation
-    """
-    # Check if array is corret length
-    if len(ar) != N:
-        return False
-
-    appears = [False for n in range(N)]
-
-    for i in ar:
-        # Check if element is in bounds
-        if i < 0 or i > N-1:
-            return False
-
-        # Check if element has appeared
-        if appears[i]:
-            return False
-        else:
-            appears[i] = True
-
-    # If successfully passed through list
-    return True
 
 def is_multichannel(meta):
     """Determines if an image is RGB after checking its metadata.

@@ -5,7 +5,6 @@ import numpy as np
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from ...util import is_permutation
 from ...util.event import Event
 from .._base_layer import Layer
 from .._register import add_to_viewer

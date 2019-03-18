@@ -3,10 +3,12 @@ import numpy as np
 
 def inside_triangles(triangles):
     """Checks which triangles contain the origin
+
     Parameters
     ----------
     triangles : np.ndarray
         Nx3x2 array of N triangles that should be checked
+
     Returns
     -------
     inside : np.ndarray
@@ -29,10 +31,12 @@ def inside_triangles(triangles):
 
 def inside_boxes(boxes):
     """Checks which boxes contain the origin
+
     Parameters
     ----------
     boxes : np.ndarray
         Nx8x2 array of N boxes that should be checked
+
     Returns
     -------
     inside : np.ndarray
@@ -64,12 +68,14 @@ def point_to_lines(point, lines):
     index of the closest line. First calculates the distance to the infinite
     line, then checks if the projected point lies between the line segment
     endpoints. If not, calculates distance to the endpoints
+
     Parameters
     ----------
     point : np.ndarray
         1x2 array of point should be checked
     lines : np.ndarray
         Nx2x2 array of line segments
+
     Returns
     -------
     index : int
@@ -114,13 +120,15 @@ def point_to_lines(point, lines):
 
 def create_box(data):
     """Creates the axis aligned bounding box of a list of points
+
     Parameters
     ----------
-    data : np.array
+    data : np.ndarray
         Nx2 array of points whose bounding box is to be found
+
     Returns
     -------
-    box : np.array
+    box : np.ndarray
         9x2 array of corners of the bounding box. The first 8 points are
         the corners and midpoints of the box. The last point is the center
         of the box
@@ -140,13 +148,15 @@ def rectangle_to_box(data):
     """Converts the four corners of a rectangle into a bounding box like
     representation. If the rectangle is not axis aligned the resulting box
     representation will not be axis aligned either
+
     Parameters
     ----------
-    data : np.array
+    data : np.ndarray
         4x2 array of corner points to be converted to a box like representation
+
     Returns
     -------
-    box : np.array
+    box : np.ndarray
         9x2 array of corners of the bounding box. The first 8 points are
         the corners and midpoints of the box. The last point is the center
         of the box
@@ -163,13 +173,15 @@ def rectangle_to_box(data):
 def find_corners(data):
     """Finds the four corners of the bounding box definied by an array of
     points
+
     Parameters
     ----------
-    data : np.array
+    data : np.ndarray
         Nx2 array of points whose bounding box is to be found
+
     Returns
     -------
-    corners : np.array
+    corners : np.ndarray
         4x2 array of corners of the boudning box
     """
     min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
@@ -184,15 +196,17 @@ def find_corners(data):
 
 def center_radii_to_corners(center, radii):
     """Expands a center and radii into a four corner rectangle
+
     Parameters
     ----------
-    center : np.array | list
+    center : np.ndarray | list
         Length 2 array or list of the center coordinates
-    radii : np.array | list
+    radii : np.ndarray | list
         Length 2 array or list of the two radii
+
     Returns
     -------
-    corners : np.array
+    corners : np.ndarray
         4x2 array of corners of the boudning box
     """
     data = np.array([center+radii, center-radii])
@@ -207,22 +221,24 @@ def triangulate_ellipse(corners, num_segments=100):
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
     independent of the line width.
+
     Parameters
     ----------
-    corners : np.array
+    corners : np.ndarray
         4x2 array of four bounding corners of the ellipse. The ellipse will
         still be computed properly even if the rectangle determined by the
         corners is not axis aligned
     num_segments : int
         Integer determining the number of segments to use when triangulating
         the ellipse
+
     Returns
     -------
-    vertices : np.array
+    vertices : np.ndarray
         Mx2 array coordinates of vertices for triangulating an ellipse.
         Includes the center vertex of the ellipse, followed by `num_segments`
         vertices around the boundary of the ellipse
-    triangles : np.array
+    triangles : np.ndarray
         Px2 array of the indices of the vertices for the triangles of the
         triangulation. Has length given by `num_segments`
     """
@@ -270,9 +286,10 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
     independent of the line width.
+
     Parameters
     ----------
-    path : np.array
+    path : np.ndarray
         Nx2 array of central coordinates of path to be triangulated
     closed : bool
         Bool which determines is the path is closed or not
@@ -282,15 +299,16 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
     bevel : bool
         Bool which if True causes a bevel join to always be used. If False
         a bevel join will only be used when the miter limit is exceeded
+
     Returns
     -------
-    centers : np.array
+    centers : np.ndarray
         Mx2 array central coordinates of path trinagles.
-    offsets : np.array
+    offsets : np.ndarray
         Mx2 array of the offests to the central coordinates that need to
         be scaled by the line width and then added to the centers to
         generate the actual vertices of the triangulation
-    triangles : np.array
+    triangles : np.ndarray
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
@@ -425,15 +443,17 @@ def triangulate_path(path, closed=False, limit=3, bevel=False):
 
 def segment_normal(a, b):
     """Determines the unit normal of the vector from a to b.
+
     Parameters
     ----------
-    a : np.array
+    a : np.ndarray
         Length 2 array of first point
-    b : np.array
+    b : np.ndarray
         Length 2 array of second point
+
     Returns
     -------
-    unit_norm : np.array
+    unit_norm : np.ndarray
         Length the unit normal of the vector from a to b. If a == b,
         then return [1, 0]
     """
