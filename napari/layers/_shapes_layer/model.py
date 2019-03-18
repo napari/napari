@@ -933,7 +933,7 @@ class Shapes(Layer):
             transform = self.viewer._canvas.scene.node_transform(self._node)
             rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
             size = self._vertex_size*rescale/4
-            new_z_index = max(self.data._z_index) + 1
+            new_z_index = max(self.data._z_index, default=-1) + 1
             if self.mode == 'add_rectangle':
                 data = np.array([coord, coord+size])
                 self.data.add(data, shape_type='rectangle',
@@ -972,7 +972,7 @@ class Shapes(Layer):
             if self._creating is False:
                 # Start drawing a path
                 data = np.array([coord, coord])
-                new_z_index = max(self.data._z_index) + 1
+                new_z_index = max(self.data._z_index, default=-1) + 1
                 self.data.add(data, shape_type='path',
                               edge_width=self.edge_width,
                               edge_color=self.edge_color,
