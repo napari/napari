@@ -5,10 +5,7 @@ from ...util.event import Event
 from .._base_layer import Layer
 from .._register import add_to_viewer
 
-from ..._vispy.scene.visuals import Mesh
-from ..._vispy.scene.visuals import Markers
-from ..._vispy.scene.visuals import Line
-from ..._vispy.scene.visuals import Compound as VisualNode
+from ..._vispy.scene.visuals import Mesh, Markers, Line, Compound
 from vispy.color import get_color_names
 
 from .view import QtShapesLayer
@@ -28,33 +25,33 @@ class Shapes(Layer):
         If a list of Shape objects is passed the other shape specific keyword
         arguments are ignored.
     shape_type : string | list
-        String of shape shape_type, must be one of "{'line', 'rectangle', 'ellipse',
-        'path', 'polygon'}". If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape otherwise
-        the same value will be used for all shapes.
+        String of shape shape_type, must be one of "{'line', 'rectangle',
+        'ellipse', 'path', 'polygon'}". If a list is supplied it must be the
+        same length as the length of `data` and each element will be applied to
+        each shape otherwise the same value will be used for all shapes.
     edge_width : float | list
-        thickness of lines and edges. If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape otherwise
-        the same value will be used for all shapes.
+        thickness of lines and edges. If a list is supplied it must be the same
+        length as the length of `data` and each element will be applied to each
+        shape otherwise the same value will be used for all shapes.
     edge_color : str | tuple | list
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3 or
         4 elements. If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape otherwise
-        the same value will be used for all shapes.
+        the length of `data` and each element will be applied to each shape
+        otherwise the same value will be used for all shapes.
     face_color : str | tuple | list
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3 or
         4 elements. If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape otherwise
-        the same value will be used for all shapes.
+        the length of `data` and each element will be applied to each shape
+        otherwise the same value will be used for all shapes.
     opacity : float | list
         Opacity of the shapes, must be between 0 and 1.
     z_index : int | list
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others. If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape otherwise
-        the same value will be used for all shapes.
+        the length of `data` and each element will be applied to each shape
+        otherwise the same value will be used for all shapes.
     name : str, keyword-only
         Name of the layer.
     """
@@ -66,10 +63,11 @@ class Shapes(Layer):
     _rotion_handle_length = 20
     _prefixed_size = np.array([10, 10])
 
-    def __init__(self, data, shape_type='rectangle', edge_width=1, edge_color='black',
-                 face_color='white', opacity=1, z_index=0, *, name=None):
+    def __init__(self, data, shape_type='rectangle', edge_width=1,
+                 edge_color='black', face_color='white', opacity=1, z_index=0,
+                 *, name=None):
 
-        visual = VisualNode([Markers(), Line(), Mesh(), Mesh()])
+        visual = Compound([Markers(), Line(), Mesh(), Mesh()])
 
         super().__init__(visual, name)
 
@@ -100,8 +98,6 @@ class Shapes(Layer):
                 self._face_color = 'black'
             self._opacity = opacity
 
-            #self.z_index = z_index
-
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
@@ -119,13 +115,11 @@ class Shapes(Layer):
             self._fixed_aspect = False
             self._selected_vertex = [None, None]
             self._aspect_ratio = 1
-            self._is_moving=False
+            self._is_moving = False
             self._fixed_index = 0
             self._is_selecting = False
             self._drag_box = None
             self._mouse_coord = [0, 0]
-
-            self._ready_to_create = False
             self._creating = False
 
             self._mode = 'pan/zoom'
@@ -232,7 +226,8 @@ class Shapes(Layer):
 
     @property
     def apply_all(self):
-        """bool: whether to apply gui manipulations to all shapes or just selected
+        """bool: whether to apply a manipulation to all shapes or just the
+        selected ones
         """
         return self._apply_all
 
@@ -302,13 +297,13 @@ class Shapes(Layer):
         elif mode == 'add_path':
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = 'hold <space> to pan/zoom, press <esc> to finish drawing'
             self.status = mode
             self._mode = mode
         elif mode == 'add_polygon':
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = 'hold <space> to pan/zoom, press <esc> to finish drawing'
             self.status = mode
             self._mode = mode
         elif mode == 'vertex_insert':
@@ -330,7 +325,7 @@ class Shapes(Layer):
         if (mode == 'vertex_insert' or mode == 'vertex_remove' or
               mode == 'direct' or mode == 'select') and (old_mode == 'vertex_insert' or
               old_mode == 'vertex_remove' or old_mode == 'direct' or old_mode == 'select'):
-              pass
+            pass
         else:
             self._finish_drawing()
         self.refresh()
@@ -398,9 +393,9 @@ class Shapes(Layer):
         return box
 
     def _set_highlight(self):
-        if self._highlight and (self._hover_shapes[0] is not None or len(self.selected_shapes)>0):
+        if self._highlight and (self._hover_shapes[0] is not None or len(self.selected_shapes) > 0):
             # show outlines hover shape or any selected shapes
-            if len(self.selected_shapes)>0:
+            if len(self.selected_shapes) > 0:
                 index = copy(self.selected_shapes)
                 if self._hover_shapes[0] is not None:
                     if self._hover_shapes[0] in index:
@@ -409,9 +404,9 @@ class Shapes(Layer):
                         index.append(self._hover_shapes[0])
                 index.sort()
                 meshes = self.data._mesh_triangles_index
-                faces_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1]==1]
+                faces_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1] == 1]
                 meshes = self.data._mesh_vertices_index
-                vertices_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1]==1]
+                vertices_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1] == 1]
             else:
                 index = self._hover_shapes[0]
                 faces_indices = np.all(self.data._mesh_triangles_index == [index, 1], axis=1)
@@ -424,10 +419,10 @@ class Shapes(Layer):
             faces = self.data._mesh_triangles[faces_indices]
 
             if type(index) is list:
-                faces_index = self.data._mesh_triangles_index[faces_indices][:,0]
-                starts = np.unique(self.data._mesh_vertices_index[vertices_indices][:,0], return_index=True)[1]
+                faces_index = self.data._mesh_triangles_index[faces_indices][:, 0]
+                starts = np.unique(self.data._mesh_vertices_index[vertices_indices][:, 0], return_index=True)[1]
                 for i, ind in enumerate(index):
-                    faces[faces_index==ind] = faces[faces_index==ind] - vertices_indices[starts[i]] + starts[i]
+                    faces[faces_index == ind] = faces[faces_index == ind] - vertices_indices[starts[i]] + starts[i]
             else:
                 faces = faces - vertices_indices[0]
             self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
@@ -437,7 +432,7 @@ class Shapes(Layer):
 
         if self._highlight and len(self.selected_shapes) > 0:
             if self.mode == 'select':
-                inds = list(range(0,8))
+                inds = list(range(0, 8))
                 inds.append(9)
                 box = self._selected_box[inds]
                 if self._hover_shapes[0] is None:
@@ -447,9 +442,12 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                self._node._subvisuals[0].set_data(box, size=self._vertex_size, face_color=face_color,
-                                                   edge_color=edge_color, edge_width=1.5,
-                                                   symbol='square', scaling=False)
+                self._node._subvisuals[0].set_data(box, size=self._vertex_size,
+                                                   face_color=face_color,
+                                                   edge_color=edge_color,
+                                                   edge_width=1.5,
+                                                   symbol='square',
+                                                   scaling=False)
                 self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
                                                    color=edge_color, width=1.5)
             elif (self.mode == 'direct' or self.mode == 'add_path' or
@@ -469,9 +467,13 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                self._node._subvisuals[0].set_data(vertices, size=self._vertex_size, face_color=face_color,
-                                                   edge_color=edge_color, edge_width=1.5,
-                                                   symbol='square', scaling=False)
+                self._node._subvisuals[0].set_data(vertices,
+                                                   size=self._vertex_size,
+                                                   face_color=face_color,
+                                                   edge_color=edge_color,
+                                                   edge_width=1.5,
+                                                   symbol='square',
+                                                   scaling=False)
                 self._node._subvisuals[1].set_data(pos=None, width=0)
         elif self._is_selecting:
             box = create_box(self._drag_box)
@@ -485,7 +487,7 @@ class Shapes(Layer):
 
     def _select(self):
         if (self.selected_shapes == self._selected_shapes_stored and
-            self._hover_shapes == self._hover_shapes_stored):
+                self._hover_shapes == self._hover_shapes_stored):
             return
         self._highlight = True
         self._selected_shapes_stored = copy(self.selected_shapes)
@@ -501,7 +503,6 @@ class Shapes(Layer):
 
     def _finish_drawing(self):
         index = self._selected_vertex[0]
-        self._ready_to_create = False
         self._is_moving = False
         self.selected_shapes = []
         self._drag_start = None
@@ -510,13 +511,13 @@ class Shapes(Layer):
         self._selected_vertex = [None, None]
         self._hover_shapes = [None, None]
         if self._creating is True and self.mode == 'add_path':
-            vertices = self.data._vertices[self.data._index==index]
+            vertices = self.data._vertices[self.data._index == index]
             if len(vertices) <= 2:
                 self.data.remove(index)
             else:
                 self.data.edit(index, vertices[:-1])
         if self._creating is True and self.mode == 'add_polygon':
-            vertices = self.data._vertices[self.data._index==index]
+            vertices = self.data._vertices[self.data._index == index]
             if len(vertices) <= 2:
                 self.data.remove(index)
         self._creating = False
@@ -586,19 +587,19 @@ class Shapes(Layer):
         self._selected_box = box + center
 
     def _shape_at(self, indices):
-        """Determines if any shapes at given indices by looking inside triangle
+        """Determines if any shapes at given coord by looking inside triangle
         meshes.
 
         Parameters
         ----------
-        indices : sequence of int
-            Indices to check if shape at.
+        coord : sequence of float
+            Image coordinates to check if any shapes are at.
         """
         # Check selected shapes
         if len(self.selected_shapes) > 0:
             if self.mode == 'select':
                 # Check if inside vertex of bounding box or rotation handle
-                inds = list(range(0,8))
+                inds = list(range(0, 8))
                 inds.append(9)
                 box = self._selected_box[inds]
                 distances = abs(box - indices[:2])
@@ -610,7 +611,7 @@ class Shapes(Layer):
                 sizes = self._vertex_size*rescale.mean()/2
 
                 # Check if any matching vertices
-                matches = np.all(distances <=  sizes, axis=1).nonzero()
+                matches = np.all(distances <= sizes, axis=1).nonzero()
                 if len(matches[0]) > 0:
                     return [self.selected_shapes[0], matches[0][-1]]
             elif (self.mode == 'direct' or self.mode == 'vertex_insert' or
@@ -627,7 +628,7 @@ class Shapes(Layer):
                 sizes = self._vertex_size*rescale.mean()/2
 
                 # Check if any matching vertices
-                matches = np.all(distances <=  sizes, axis=1).nonzero()[0]
+                matches = np.all(distances <= sizes, axis=1).nonzero()[0]
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
                     shape = self.data._index[index]
@@ -636,7 +637,8 @@ class Shapes(Layer):
 
         # Check if mouse inside shape
         triangles = self.data._mesh_vertices[self.data._mesh_triangles]
-        shapes = self.data._mesh_triangles_index[inside_triangles(triangles - indices[:2])]
+        inside = inside_triangles(triangles - indices[:2])
+        shapes = self.data._mesh_triangles_index[inside]
 
         if len(shapes) > 0:
             indices = shapes[:, 0]
@@ -959,8 +961,6 @@ class Shapes(Layer):
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
               self.mode == 'add_line'):
             # Start drawing a rectangle / ellipse / line
-            self._ready_to_create = True
-            # If ready to create rectangle, ellipse or line start making one
             transform = self.viewer._canvas.scene.node_transform(self._node)
             rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
             size = self._vertex_size*rescale.mean()/4
@@ -991,7 +991,6 @@ class Shapes(Layer):
                               z_index=new_z_index)
             else:
                 raise ValueError("Mode not recongnized")
-            self._ready_to_create = False
             self.selected_shapes = [len(self.data.shapes)-1]
             ind = 4
             self._selected_vertex = [self.selected_shapes[0], ind]
