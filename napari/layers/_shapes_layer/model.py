@@ -122,6 +122,7 @@ class Shapes(Layer):
             self._fixed_index = 0
             self._is_selecting = False
             self._drag_box = None
+            self._drag_box_stored = None
             self._mouse_coord = [0, 0]
             self._creating = False
 
@@ -358,6 +359,7 @@ class Shapes(Layer):
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
+
         Parameters
         ----------
         indices : sequence of int or slice
@@ -372,7 +374,7 @@ class Shapes(Layer):
             self._node._subvisuals[3].set_data(vertices=vertices, faces=faces,
                                                face_colors=colors)
         self._need_visual_update = True
-        self._set_highlight()
+        self._set_highlight(force=True)
         self._update()
 
     def select_box(self, index=True):
@@ -395,7 +397,26 @@ class Shapes(Layer):
             box = np.append(box, [rot], axis=0)
         return box
 
-    def _set_highlight(self):
+    def _set_highlight(self, force=False):
+        """Renders highlights of shapes including boundaries, vertices,
+        bounding boxes, and the drag selection box when appropriate
+
+        Parameters
+        ----------
+        force : bool
+            Forces a redraw to occur.
+        """
+        # Check if any shape or vertex ids have changed since last call
+        if (self.selected_shapes == self._selected_shapes_stored and
+                self._hover_shape == self._hover_shape_stored and
+                self._hover_vertex == self._hover_vertex_stored and
+                np.all(self._drag_box == self._drag_box_stored)) and not force:
+            return
+        self._selected_shapes_stored = copy(self.selected_shapes)
+        self._hover_shape_stored = copy(self._hover_shape)
+        self._hover_vertex_stored = copy(self._hover_vertex)
+        self._drag_box_stored = copy(self._drag_box)
+
         if self._hover_shape is not None or len(self.selected_shapes) > 0:
             # show outlines hover shape or any selected shapes
             if len(self.selected_shapes) > 0:
@@ -488,18 +509,8 @@ class Shapes(Layer):
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
             self._node._subvisuals[1].set_data(pos=None, width=0)
 
-    def _select(self):
-        if (self.selected_shapes == self._selected_shapes_stored and
-                self._hover_shape == self._hover_shape_stored and
-                self._hover_vertex == self._hover_vertex_stored):
-            return
-        self._selected_shapes_stored = copy(self.selected_shapes)
-        self._hover_shape_stored = copy(self._hover_shape)
-        self._hover_vertex_stored = copy(self._hover_vertex)
-        self._set_highlight()
-
     def _finish_drawing(self):
-        """Resets variables involed in shape drawing so that a new shape can
+        """Resets properties involed in shape drawing so that a new shape can
         then be drawn
         """
         index = copy(self._moving_shape)
@@ -952,7 +963,7 @@ class Shapes(Layer):
                             self.selected_shapes = [shape]
                     else:
                         self.selected_shapes = []
-                self._select()
+                self._set_highlight()
                 self.status = self.get_message(coord, shape, vertex)
         elif self.mode == 'direct':
             if not self._is_moving and not self._is_selecting:
@@ -974,7 +985,7 @@ class Shapes(Layer):
                             self.selected_shapes = [shape]
                     else:
                         self.selected_shapes = []
-                self._select()
+                self._set_highlight()
                 self.status = self.get_message(coord, shape, vertex)
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
               self.mode == 'add_line'):
@@ -1016,7 +1027,7 @@ class Shapes(Layer):
             self._hover_shape = self.selected_shapes[0]
             self._hover_vertex = ind
             self._creating = True
-            self._select()
+            self._set_highlight()
             self.refresh()
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             if self._creating is False:
@@ -1036,7 +1047,7 @@ class Shapes(Layer):
                 self._hover_shape = self.selected_shapes[0]
                 self._hover_vertex = ind
                 self._creating = True
-                self._select()
+                self._set_highlight()
             else:
                 # Add to an existing path or polygon
                 index = self._moving_shape
@@ -1166,7 +1177,7 @@ class Shapes(Layer):
             else:
                 # Highlight boxes if hover over any
                 self._hover_shape, self._hover_vertex = self._shape_at(coord)
-                self._select()
+                self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
         elif self.mode == 'direct':
@@ -1180,7 +1191,7 @@ class Shapes(Layer):
             else:
                 # Highlight boxes if hover over any
                 self._hover_shape, self._hover_vertex = self._shape_at(coord)
-                self._select()
+                self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
@@ -1204,7 +1215,7 @@ class Shapes(Layer):
                 shape, vertex = self._shape_at(coord)
         elif (self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
             self._hover_shape, self._hover_vertex = self._shape_at(coord)
-            self._select()
+            self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
         else:
@@ -1246,7 +1257,7 @@ class Shapes(Layer):
             self._moving_vertex = None
             self._hover_shape = shape
             self._hover_vertex = shape
-            self._select()
+            self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
         elif self.mode == 'direct':
             shape, vertex = self._shape_at(coord)
@@ -1267,7 +1278,7 @@ class Shapes(Layer):
             self._moving_vertex = None
             self._hover_shape = shape
             self._hover_vertex = shape
-            self._select()
+            self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
                 self.mode == 'add_line'):
@@ -1337,7 +1348,7 @@ class Shapes(Layer):
                         self.mode == 'vertex_insert' or
                         self.mode == 'vertex_remove'):
                     self.selected_shapes = list(range(len(self.data.shapes)))
-                    self._select()
+                    self._set_highlight()
             elif event.key == 'Backspace':
                 self.remove_selected()
             elif event.key == 'Escape':
@@ -1355,7 +1366,7 @@ class Shapes(Layer):
             if self._mode_history != 'pan/zoom':
                 self.mode = self._mode_history
                 self.selected_shapes = self._selected_shapes_history
-                self._select()
+                self._set_highlight()
         elif event.key == 'Shift':
             self._fixed_aspect = False
             if self._is_moving:
