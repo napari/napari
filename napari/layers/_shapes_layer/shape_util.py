@@ -31,7 +31,7 @@ def inside_triangles(triangles):
 
 
 def inside_boxes(boxes):
-    """Checks which boxes contain the origin
+    """Checks which boxes contain the origin. Boxes need not be axis aligned
 
     Parameters
     ----------

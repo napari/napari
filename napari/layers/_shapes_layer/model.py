@@ -341,7 +341,7 @@ class Shapes(Layer):
     @selected_shapes.setter
     def selected_shapes(self, selected_shapes):
         self._selected_shapes = selected_shapes
-        self._selected_box = self.select_box(selected_shapes)
+        self._selected_box = self.bounding_box(selected_shapes)
 
     @property
     def mode(self):
@@ -470,7 +470,7 @@ class Shapes(Layer):
         self._set_highlight(force=True)
         self._update()
 
-    def select_box(self, index):
+    def bounding_box(self, index):
         """Creates the bounding box around a shape or list of shapes. If a
         single shape is passed then the boudning box will be inherited from
         that shapes bounding box. If multiple shapes are passed it will be
@@ -509,7 +509,6 @@ class Shapes(Layer):
                 transform = scene.node_transform(self._node)
                 rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
                 r = self._rotation_handle_length*rescale.mean()
-                print(rescale, r)
                 rot = rot-r*(box[6] - box[0])/length_box
             box = np.append(box, [rot], axis=0)
 
@@ -709,7 +708,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[1] == box[9]):
-            scene = self.viewer._canvas.scene.node_transform(self._node)
+            transform = self.viewer._canvas.scene.node_transform(self._node)
             rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
             r = self._rotation_handle_length*rescale.mean()
             box[9] = box[1] + r*(box[9]-box[1])/np.linalg.norm(box[9]-box[1])
@@ -728,7 +727,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.matmul(box, transform.T)
         if not np.all(box[1] == box[9]):
-            scene = self.viewer._canvas.scene.node_transform(self._node)
+            transform = self.viewer._canvas.scene.node_transform(self._node)
             rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
             r = self._rotation_handle_length*rescale.mean()
             box[9] = box[1] + r*(box[9]-box[1])/np.linalg.norm(box[9]-box[1])
@@ -824,15 +823,16 @@ class Shapes(Layer):
         triangles = self.data._mesh_vertices[self.data._mesh_triangles]
 
         # check if triangle corners are inside box
-        points_inside = np.empty(triangles.shape[:-1], dtype=bool)
+        inside = np.empty(triangles.shape[:-1], dtype=bool)
         for i in range(3):
-            inside = ([box[1] >= triangles[:, 0, :], triangles[:, i, :] >= box[0]])
-            points_inside[:, i] = np.all(np.concatenate(inside, axis=1), axis=1)
+            below_top = box[1] >= triangles[:, i, :]
+            above_bottom = triangles[:, i, :] >= box[0]
+            inside[:, i] = np.logical_and(below_top, above_bottom)
 
         # check if triangle edges intersect box edges
         # NOT IMPLEMENTED
 
-        inside = np.any(points_inside, axis=1)
+        inside = np.any(inside, axis=1)
         shapes = self.data._mesh_triangles_index[inside, 0]
         shapes = np.unique(shapes).tolist()
 
@@ -1056,7 +1056,7 @@ class Shapes(Layer):
                         vertices[vertex] = coord
                         self.data.edit(index, vertices)
                         shapes = self.selected_shapes
-                        self._selected_box = self.select_box(shapes)
+                        self._selected_box = self.bounding_box(shapes)
                         self.refresh()
             else:
                 self._is_selecting = True
@@ -1099,11 +1099,11 @@ class Shapes(Layer):
                         if shape in self.selected_shapes:
                             self.selected_shapes.remove(shape)
                             shapes = self.selected_shapes
-                            self._selected_box = self.select_box(shapes)
+                            self._selected_box = self.bounding_box(shapes)
                         else:
                             self.selected_shapes.append(shape)
                             shapes = self.selected_shapes
-                            self._selected_box = self.select_box(shapes)
+                            self._selected_box = self.bounding_box(shapes)
                     elif shape is not None:
                         if shape not in self.selected_shapes:
                             self.selected_shapes = [shape]
@@ -1121,11 +1121,11 @@ class Shapes(Layer):
                         if shape in self.selected_shapes:
                             self.selected_shapes.remove(shape)
                             shapes = self.selected_shapes
-                            self._selected_box = self.select_box(shapes)
+                            self._selected_box = self.bounding_box(shapes)
                         else:
                             self.selected_shapes.append(shape)
                             shapes = self.selected_shapes
-                            self._selected_box = self.select_box(shapes)
+                            self._selected_box = self.bounding_box(shapes)
                     elif shape is not None:
                         if shape not in self.selected_shapes:
                             self.selected_shapes = [shape]
@@ -1205,7 +1205,7 @@ class Shapes(Layer):
                 self._moving_vertex = self._moving_vertex + 1
                 self._hover_vertex = self._hover_vertex + 1
                 self.data.edit(index, vertices)
-                self._selected_box = self.select_box(self.selected_shapes)
+                self._selected_box = self.bounding_box(self.selected_shapes)
             self.status = self.get_message(coord, self._hover_shape,
                                            self._hover_vertex)
         elif self.mode == 'vertex_insert':
@@ -1248,6 +1248,10 @@ class Shapes(Layer):
                 # Adding vertex to path turns it into line
                 object_type = 'path'
                 self.data.shapes[index].shape_type = object_type
+            elif object_type == 'rectangle':
+                # Adding vertex to rectangle turns it into a polygon
+                object_type = 'polygon'
+                self.data.shapes[index].shape_type = object_type
             closed = object_type != 'path'
             vertices = self.data._vertices[self.data._index == index]
             if closed is not True:
@@ -1259,7 +1263,7 @@ class Shapes(Layer):
             vertices = np.insert(vertices, ind, [coord], axis=0)
             with self.freeze_refresh():
                 self.data.edit(index, vertices)
-                self._selected_box = self.select_box(self.selected_shapes)
+                self._selected_box = self.bounding_box(self.selected_shapes)
             shape, vertex = self._shape_at(coord)
             self._hover_shape = shape
             self._hover_vertex = vertex
@@ -1278,16 +1282,22 @@ class Shapes(Layer):
                 if len(vertices) <= 2:
                     # If only 2 vertices present, remove whole shape
                     with self.freeze_refresh():
-                        self.remove_shapes(index=index)
+                        self.data.remove(index)
+                elif object_type == 'polygon' and len(vertices) == 3:
+                    # If only 3 vertices of a polygon present remove
+                    with self.freeze_refresh():
+                        self.data.remove(index)
                 else:
-                    if object_type == 'polygon' and len(vertices) == 3:
-                        self.data.shapes[index].shape_type = 'path'
+                    if object_type == 'rectangle':
+                        # Deleting vertex from a rectangle creates a polygon
+                        object_type = 'polygon'
+                        self.data.shapes[index].shape_type = object_type
                     # Remove clicked on vertex
                     vertices = np.delete(vertices, vertex, axis=0)
                     with self.freeze_refresh():
                         self.data.edit(index, vertices)
                         shapes = self.selected_shapes
-                        self._selected_box = self.select_box(shapes)
+                        self._selected_box = self.bounding_box(shapes)
                 shape, vertex = self._shape_at(coord)
                 self._hover_shape = shape
                 self._hover_vertex = vertex
