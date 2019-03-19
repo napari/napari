@@ -1,4 +1,4 @@
-# Contributing to napari-gui
+# Contributing to napari
 
 We welcome your contributions! Please see the provided steps below and never hesitate to contact us.
 
@@ -6,20 +6,20 @@ If you are a new user, we recommend checking out the detailed [Github Guides](ht
 
 ## Setting up a development installation
 
-In order to make changes to `napari-gui`, you will need to [fork](https://guides.github.com/activities/forking/#fork) the
-[repository](https://github.com/Napari/napari-gui).
+In order to make changes to `napari`, you will need to [fork](https://guides.github.com/activities/forking/#fork) the
+[repository](https://github.com/napari/napari).
 
 If you are not familiar with `git`, we recommend reading up on [this guide](https://guides.github.com/introduction/git-handbook/#basic-git).
 
 Clone the forked repository to your local machine and change directories:
 ```sh
-$ git clone https://github.com/your-username/napari-gui.git
-$ cd napari-gui
+$ git clone https://github.com/your-username/napari.git
+$ cd napari
 ```
 
-Set the `upstream` remote to the base `napari-gui` repository:
+Set the `upstream` remote to the base `napari` repository:
 ```sh
-$ git add upstream https://github.com/Napari/napari-gui.git
+$ git add upstream https://github.com/napari/napari.git
 ```
 
 Install the required dependencies:
@@ -32,6 +32,20 @@ Make the development version available globally:
 $ pip install -e .
 ```
 
+## Building the dev-docs
+
+Go to documentation source
+```sh
+$ cd docs/source
+```
+
+Build the docs with help of given Makefile
+```sh
+$ make html
+```
+
+Then you can find the built docs in `docs/source/_build/html`
+
 ## Making changes
 
 Create a new feature branch:
@@ -43,6 +57,13 @@ $ git checkout master -b your-branch-name
 You can view them with:
 ```sh
 $ git status
+```
+
+If you are changing anything with files and folder structure, 
+remember to update doctree
+```sh
+$ cd docs
+$ sphinx-apidoc -f -P -F -o source ../napari
 ```
 
 Add and commit your changed files:
@@ -89,11 +110,11 @@ Update your remote branch:
 $ git push -u origin your-branch-name
 ```
 
-You can then make a [pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari-gui`'s `master` branch.
+You can then make a [pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `master` branch.
 
 ## Questions, comments, and feedback
 
 If you have questions, comments, suggestions for improvement, or any other inquiries
-regarding the project, feel free to open an [issue](https://github.com/Napari/napari-gui/issues).
+regarding the project, feel free to open an [issue](https://github.com/napari/napari/issues).
 
 Issues and pull-requests are written in [Markdown](https://guides.github.com/features/mastering-markdown/#what). You can find a comprehensive guide [here](https://guides.github.com/features/mastering-markdown/#syntax).

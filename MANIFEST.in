@@ -1,4 +1,4 @@
 include versioneer.py
-include napari_gui/_version.py
-recursive-include napari_gui/resources *.png *.jpeg *.jpg *.svg
-include napari_gui/layers/matplotlib_cmaps.txt
+include napari/_version.py
+recursive-include napari/resources *.png *.jpeg *.jpg *.svg
+include napari/util/colormaps/matplotlib_cmaps.txt

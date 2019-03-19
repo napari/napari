@@ -70,7 +70,7 @@ task:
 
   check_script:
     - pip list
-    - python -c "import napari_gui; print(napari_gui.__version__)"
+    - python -c "import napari; print(napari.__version__)"
 
   test_script:
     - pytest -v
