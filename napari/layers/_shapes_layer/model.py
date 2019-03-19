@@ -140,7 +140,7 @@ class Shapes(Layer):
     _vertex_size : float
         Size of the vertices of the shapes and boudning box in Canvas
         coordinates.
-    _rotion_handle_length : float
+    _rotation_handle_length : float
         Length of the rotation handle of the boudning box in Canvas
         coordinates.
     _highlight_color : list
@@ -151,7 +151,7 @@ class Shapes(Layer):
 
     _colors = get_color_names()
     _vertex_size = 10
-    _rotion_handle_length = 20
+    _rotation_handle_length = 20
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
@@ -357,16 +357,15 @@ class Shapes(Layer):
         if mode == 'select':
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = """hold <space> to pan/zoom, press <delete> to remove
-                        selected"""
+            self.help = ('hold <space> to pan/zoom, '
+                         'press <delete> to remove selected')
             self.status = mode
             self._mode = mode
         elif mode == 'direct':
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = """hold <space> to pan/zoom, press <delete> to remove
-                        selected
-                        """
+            self.help = ('hold <space> to pan/zoom, '
+                         'press <delete> to remove selected')
             self.status = mode
             self._mode = mode
         elif mode == 'pan/zoom':
@@ -396,17 +395,15 @@ class Shapes(Layer):
         elif mode == 'add_path':
             self.cursor = 'cross'
             self.interactive = False
-            self.help = """hold <space> to pan/zoom, press <esc> to finish
-                        drawing
-                        """
+            self.help = ('hold <space> to pan/zoom, '
+                         'press <esc> to finish drawing')
             self.status = mode
             self._mode = mode
         elif mode == 'add_polygon':
             self.cursor = 'cross'
             self.interactive = False
-            self.help = """hold <space> to pan/zoom, press <esc> to finish
-                        drawing
-                        """
+            self.help = ('hold <space> to pan/zoom, '
+                         'press <esc> to finish drawing')
             self.status = mode
             self._mode = mode
         elif mode == 'vertex_insert':
@@ -508,7 +505,11 @@ class Shapes(Layer):
             rot = box[1]
             length_box = np.linalg.norm(box[6] - box[0])
             if length_box > 0:
-                r = self._rotion_handle_length
+                scene = self.viewer._canvas.scene
+                transform = scene.node_transform(self._node)
+                rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+                r = self._rotation_handle_length*rescale.mean()
+                print(rescale, r)
                 rot = rot-r*(box[6] - box[0])/length_box
             box = np.append(box, [rot], axis=0)
 
@@ -708,7 +709,9 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[1] == box[9]):
-            r = self._rotion_handle_length
+            scene = self.viewer._canvas.scene.node_transform(self._node)
+            rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+            r = self._rotation_handle_length*rescale.mean()
             box[9] = box[1] + r*(box[9]-box[1])/np.linalg.norm(box[9]-box[1])
         self._selected_box = box + center
 
@@ -725,7 +728,9 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.matmul(box, transform.T)
         if not np.all(box[1] == box[9]):
-            r = self._rotion_handle_length
+            scene = self.viewer._canvas.scene.node_transform(self._node)
+            rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+            r = self._rotation_handle_length*rescale.mean()
             box[9] = box[1] + r*(box[9]-box[1])/np.linalg.norm(box[9]-box[1])
         self._selected_box = box + center
 
