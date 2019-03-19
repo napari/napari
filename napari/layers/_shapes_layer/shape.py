@@ -271,7 +271,7 @@ class Shape():
         else:
             points = self._data
 
-        centers, offsets, triangles = triangulate_path(points, closed=closed)
+        centers, offsets, triangles = triangulate_edge(points, closed=closed)
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
