@@ -130,7 +130,7 @@ def create_box(data):
     Returns
     -------
     box : np.ndarray
-        9x2 array of corners of the bounding box. The first 8 points are
+        9x2 array of vertices of the bounding box. The first 8 points are
         the corners and midpoints of the box. The last point is the center
         of the box
     """
@@ -158,7 +158,7 @@ def rectangle_to_box(data):
     Returns
     -------
     box : np.ndarray
-        9x2 array of corners of the bounding box. The first 8 points are
+        9x2 array of vertices of the bounding box. The first 8 points are
         the corners and midpoints of the box. The last point is the center
         of the box
     """

@@ -17,6 +17,7 @@ from .shape_util import create_box, inside_triangles, point_to_lines
 @add_to_viewer
 class Shapes(Layer):
     """Shapes layer.
+
     Parameters
     ----------
     data : np.array | list
@@ -54,14 +55,105 @@ class Shapes(Layer):
         otherwise the same value will be used for all shapes.
     name : str, keyword-only
         Name of the layer.
+
+    Attributes
+    ----------
+    data : ShapeList
+        Object containing all the shape data.
+    edge_width : float
+        thickness of lines and edges.
+    edge_color : str
+        Color of the shape edge.
+    face_color : str
+        Color of the shape face.
+    opacity : float
+        Opacity value between 0.0 and 1.0.
+    apply_all : bool
+        Bool that determines whether to apply a manipulation to all shapes or
+        just the selected ones.
+    selected_shapes : list
+        List of currently selected shapes.
+    mode : str
+        Interactive mode.
+    _mode_history : str
+        Interactive mode captured on press of <space>.
+    _selected_shapes_history : list
+        List of currently selected captured on press of <space>.
+    _selected_shapes_stored : list
+        List of selected previously displayed. Used to prevent rerendering the
+        same highlighted shapes when no data has changed.
+    _selected_box : None | np.ndarray
+        `None` if no shapes are selected, otherwise a 10x2 array of vertices of
+        the bounding box. The first 8 points are the corners and midpoints of
+        the box. The 9th point is the center of the box, and the last point is
+        the location of the rotation handle that can be used to rotate the box.
+    _hover_shape : None | int
+        Index of any shape currently hovered over if any. `None` otherwise.
+    _hover_shape_stored : None | int
+        Index of any shape previously displayed as hovered over if any. `None`
+        otherwise. Used to prevent rerendering the same highlighted shapes when
+        no data has changed.
+    _hover_vertex : None | int
+        Index of any vertex currently hovered over if any. `None` otherwise.
+    _hover_vertex_stored : None | int
+        Index of any vertex previously displayed as hovered over if any. `None`
+        otherwise. Used to prevent rerendering the same highlighted shapes when
+        no data has changed.
+    _moving_shape : None | int
+        Index of any shape currently being moved if any. `None` otherwise.
+    _moving_vertex : None | int
+        Index of any vertex currently being moved if any. `None` otherwise.
+    _drag_start : None | np.ndarray
+        If a drag has been started and is in progress then a length 2 array of
+        the initial coordinates of the drag. `None` otherwise.
+    _drag_box : None | np.ndarray
+        If a drag box is being created to select shapes then this is a 2x2
+        array of the two extreme corners of the drag. `None` otherwise.
+    _drag_box_stored : None | np.ndarray
+        If a drag box is being created to select shapes then this is a 2x2
+        array of the two extreme corners of the drag that have previously been
+        rendered. `None` otherwise. Used to prevent rerendering the same
+        drag box when no data has changed.
+    _is_moving : bool
+        Bool indicating if any shapes are currently being moved.
+    _is_selecting : bool
+        Bool indicating if a drag box is currently being created in order to
+        select shapes.
+    _is_creating : bool
+        Bool indicating if any shapes are currently being created.
+    _fixed_aspect : bool
+        Bool indicating if aspect ratio of shapes should be preserved on
+        resizing.
+    _aspect_ratio : float
+        Value of aspect ratio to be preserved if `_fixed_aspect` is `True`.
+    _fixed_vertex : None | np.ndarray
+        If a scaling or rotation is in progress then a length 2 array of the
+        coordinates that are remaining fixed during the move. `None` otherwise.
+    _fixed_index : int
+        If a scaling or rotation is in progress then the index of the vertex of
+        the boudning box that is remaining fixed during the move. `None`
+        otherwise.
+    _cursor_coord : np.ndarray
+        Length 2 array of the current cursor position in Image coordinates.
+    _colors : list
+        List of supported vispy color names.
+    _vertex_size : float
+        Size of the vertices of the shapes and boudning box in Canvas
+        coordinates.
+    _rotion_handle_length : float
+        Length of the rotation handle of the boudning box in Canvas
+        coordinates.
+    _highlight_color : list
+        Length 3 list of color used to highlight shapes and the bounding box.
+    _highlight_width : float
+        Width of the edges used to highlight shapes.
     """
 
     _colors = get_color_names()
     _vertex_size = 10
+    _rotion_handle_length = 20
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
-    _rotion_handle_length = 20
-    _prefixed_size = np.array([10, 10])
 
     def __init__(self, data, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=1, z_index=0,
@@ -123,8 +215,8 @@ class Shapes(Layer):
             self._is_selecting = False
             self._drag_box = None
             self._drag_box_stored = None
-            self._mouse_coord = [0, 0]
-            self._creating = False
+            self._cursor_coord = np.array([0, 0])
+            self._is_creating = False
 
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
@@ -143,7 +235,7 @@ class Shapes(Layer):
 
     @property
     def data(self):
-        """ShapesData: object with shapes data
+        """ShapeList: object containing all the shape data
         """
         return self._data
 
@@ -154,7 +246,7 @@ class Shapes(Layer):
 
     @property
     def edge_width(self):
-        """int: width of edges in px
+        """float: width of edges in px
         """
         return self._edge_width
 
@@ -253,7 +345,7 @@ class Shapes(Layer):
 
     @property
     def mode(self):
-        """None, str: Interactive mode
+        """str: Interactive mode
         """
         return self._mode
 
@@ -265,13 +357,16 @@ class Shapes(Layer):
         if mode == 'select':
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, press <delete> to remove selected'
+            self.help = """hold <space> to pan/zoom, press <delete> to remove
+                        selected"""
             self.status = mode
             self._mode = mode
         elif mode == 'direct':
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, press <delete> to remove selected'
+            self.help = """hold <space> to pan/zoom, press <delete> to remove
+                        selected
+                        """
             self.status = mode
             self._mode = mode
         elif mode == 'pan/zoom':
@@ -301,13 +396,17 @@ class Shapes(Layer):
         elif mode == 'add_path':
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, press <esc> to finish drawing'
+            self.help = """hold <space> to pan/zoom, press <esc> to finish
+                        drawing
+                        """
             self.status = mode
             self._mode = mode
         elif mode == 'add_polygon':
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, press <esc> to finish drawing'
+            self.help = """hold <space> to pan/zoom, press <esc> to finish
+                        drawing
+                        """
             self.status = mode
             self._mode = mode
         elif mode == 'vertex_insert':
@@ -326,15 +425,16 @@ class Shapes(Layer):
             raise ValueError("Mode not recongnized")
 
         self.events.mode(mode=mode)
-        if (mode == 'vertex_insert' or mode == 'vertex_remove' or
-              mode == 'direct' or mode == 'select') and (old_mode == 'vertex_insert' or
-              old_mode == 'vertex_remove' or old_mode == 'direct' or old_mode == 'select'):
-            pass
-        else:
+        if not ((mode == 'vertex_insert' or mode == 'vertex_remove' or
+                mode == 'direct' or mode == 'select') and
+                (old_mode == 'vertex_insert' or old_mode == 'vertex_remove' or
+                old_mode == 'direct' or old_mode == 'select')):
             self._finish_drawing()
         self.refresh()
 
     def _get_shape(self):
+        """Determines the shape of the vertex data.
+        """
         if len(self.data._vertices) == 0:
             return [1, 1]
         else:
@@ -345,7 +445,7 @@ class Shapes(Layer):
         """
         if self._need_display_update:
             self._need_display_update = False
-            self._set_view_slice(self.viewer.dims.indices)
+            self._set_view_slice()
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -357,16 +457,12 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
+    def _set_view_slice(self):
+        """Sets the shape mesh data to the view.
         """
-        faces = self.data._mesh_triangles[self.data._mesh_triangles_z_order]
-        colors = self.data._mesh_triangles_colors[self.data._mesh_triangles_z_order]
+        z_order = self.data._mesh_triangles_z_order
+        faces = self.data._mesh_triangles[z_order]
+        colors = self.data._mesh_triangles_colors[z_order]
         vertices = self.data._mesh_vertices
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
@@ -377,24 +473,45 @@ class Shapes(Layer):
         self._set_highlight(force=True)
         self._update()
 
-    def select_box(self, index=True):
-        if index is True:
-            box = create_box(self.data._vertices)
-        elif isinstance(index, (list, np.ndarray)):
+    def select_box(self, index):
+        """Creates the bounding box around a shape or list of shapes. If a
+        single shape is passed then the boudning box will be inherited from
+        that shapes bounding box. If multiple shapes are passed it will be
+        computed directly.
+
+        Parameters
+        ----------
+        index : int | list
+            Index of a single shape, or a list of shapes around which to
+            construct the bounding box
+
+        Returns
+        ----------
+        box : np.ndarray
+            10x2 array of vertices of the bounding box. The first 8 points are
+            the corners and midpoints of the box. The 9th point is the center
+            of the box, and the last point is the location of the rotation
+            handle that can be used to rotate the box
+        """
+        if isinstance(index, (list, np.ndarray)):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
                 box = copy(self.data.shapes[index[0]]._box)
             else:
-                box = create_box(self.data._vertices[np.isin(self.data._index, index)])
+                indices = np.isin(self.data._index, index)
+                box = create_box(self.data._vertices[indices])
         else:
             box = copy(self.data.shapes[index]._box)
+
         if box is not None:
             rot = box[1]
             length_box = np.linalg.norm(box[6] - box[0])
             if length_box > 0:
-                rot = rot-self._rotion_handle_length*(box[6] - box[0])/length_box
+                r = self._rotion_handle_length
+                rot = rot-r*(box[6] - box[0])/length_box
             box = np.append(box, [rot], axis=0)
+
         return box
 
     def _set_highlight(self, force=False):
@@ -404,7 +521,7 @@ class Shapes(Layer):
         Parameters
         ----------
         force : bool
-            Forces a redraw to occur.
+            Bool that forces a redraw to occur when `True`
         """
         # Check if any shape or vertex ids have changed since last call
         if (self.selected_shapes == self._selected_shapes_stored and
@@ -428,25 +545,33 @@ class Shapes(Layer):
                         index.append(self._hover_shape)
                 index.sort()
                 meshes = self.data._mesh_triangles_index
-                faces_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1] == 1]
+                faces_indices = ([i for i, x in enumerate(meshes) if x[0] in
+                                 index and x[1] == 1])
                 meshes = self.data._mesh_vertices_index
-                vertices_indices = [i for i, x in enumerate(meshes) if x[0] in index and x[1] == 1]
+                vertices_indices = ([i for i, x in enumerate(meshes) if x[0] in
+                                    index and x[1] == 1])
             else:
                 index = self._hover_shape
-                faces_indices = np.all(self.data._mesh_triangles_index == [index, 1], axis=1)
+                faces_indices = np.all(self.data._mesh_triangles_index ==
+                                       [index, 1], axis=1)
                 faces_indices = np.where(faces_indices)[0]
-                vertices_indices = np.all(self.data._mesh_vertices_index == [index, 1], axis=1)
+                vertices_indices = np.all(self.data._mesh_vertices_index ==
+                                          [index, 1], axis=1)
                 vertices_indices = np.where(vertices_indices)[0]
 
+            offsets = self.data._mesh_vertices_offsets[vertices_indices]
             vertices = (self.data._mesh_vertices_centers[vertices_indices] +
-                        self._highlight_width*self.data._mesh_vertices_offsets[vertices_indices])
+                        self._highlight_width*offsets)
             faces = self.data._mesh_triangles[faces_indices]
 
             if type(index) is list:
-                faces_index = self.data._mesh_triangles_index[faces_indices][:, 0]
-                starts = np.unique(self.data._mesh_vertices_index[vertices_indices][:, 0], return_index=True)[1]
+                face_ind = self.data._mesh_triangles_index[faces_indices][:, 0]
+                inds = self.data._mesh_vertices_index[vertices_indices][:, 0]
+                starts = np.unique(inds, return_index=True)[1]
                 for i, ind in enumerate(index):
-                    faces[faces_index == ind] = faces[faces_index == ind] - vertices_indices[starts[i]] + starts[i]
+                    indices = face_ind == ind
+                    adjust_index = starts[i] - vertices_indices[starts[i]]
+                    faces[indices] = faces[indices] + adjust_index
             else:
                 faces = faces - vertices_indices[0]
             self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
@@ -472,12 +597,14 @@ class Shapes(Layer):
                                                    edge_width=1.5,
                                                    symbol='square',
                                                    scaling=False)
-                self._node._subvisuals[1].set_data(pos=box[[1, 2, 4, 6, 0, 1, 8]],
+                keep_inds = [1, 2, 4, 6, 0, 1, 8]
+                self._node._subvisuals[1].set_data(pos=box[keep_inds],
                                                    color=edge_color, width=1.5)
             elif (self.mode == 'direct' or self.mode == 'add_path' or
                   self.mode == 'add_polygon' or self.mode == 'add_rectangle' or
                   self.mode == 'add_ellipse' or self.mode == 'add_line' or
-                  self.mode == 'vertex_insert' or self.mode == 'vertex_remove'):
+                  self.mode == 'vertex_insert' or
+                  self.mode == 'vertex_remove'):
                 inds = np.isin(self.data._index, self.selected_shapes)
                 vertices = self.data._vertices[inds]
                 # If currently adding path don't show box over last vertex
@@ -523,17 +650,17 @@ class Shapes(Layer):
         self._moving_vertex = None
         self._hover_shape = None
         self._hover_vertex = None
-        if self._creating is True and self.mode == 'add_path':
+        if self._is_creating is True and self.mode == 'add_path':
             vertices = self.data._vertices[self.data._index == index]
             if len(vertices) <= 2:
                 self.data.remove(index)
             else:
                 self.data.edit(index, vertices[:-1])
-        if self._creating is True and self.mode == 'add_polygon':
+        if self._is_creating is True and self.mode == 'add_polygon':
             vertices = self.data._vertices[self.data._index == index]
             if len(vertices) <= 2:
                 self.data.remove(index)
-        self._creating = False
+        self._is_creating = False
         self.refresh()
 
     def remove_selected(self):
@@ -543,10 +670,10 @@ class Shapes(Layer):
         for index in to_remove:
             self.data.remove(index)
         self.selected_shapes = []
-        shape, vertex = self._shape_at(self._mouse_coord)
+        shape, vertex = self._shape_at(self._cursor_coord)
         self._hover_shape = shape
         self._hover_vertex = vertex
-        self.status = self.get_message(self._mouse_coord, shape, vertex)
+        self.status = self.get_message(self._cursor_coord, shape, vertex)
         self.refresh()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -675,6 +802,19 @@ class Shapes(Layer):
             return None, None
 
     def _shapes_in_box(self, box):
+        """Determines which shapes, if any, are inside an axis aligned box
+
+        Parameters
+        ----------
+        box : np.ndarray
+            2x2 array of two corners that will be used to create an axis
+            aligned box.
+
+        Returns
+        ----------
+        shapes : list
+            List of shapes that are inside the box.
+        """
         box = create_box(box)[[0, 4]]
         triangles = self.data._mesh_vertices[self.data._mesh_triangles]
 
@@ -689,8 +829,9 @@ class Shapes(Layer):
 
         inside = np.any(points_inside, axis=1)
         shapes = self.data._mesh_triangles_index[inside, 0]
+        shapes = np.unique(shapes).tolist()
 
-        return np.unique(shapes).tolist()
+        return shapes
 
     def _get_coord(self, position):
         """Converts the position of the cursor in canvas coordinates to image
@@ -710,7 +851,7 @@ class Shapes(Layer):
         pos = transform.map(position)
         pos = [pos[1], pos[0]]
         coord = np.array([pos[1], pos[0]])
-        self._mouse_coord = coord
+        self._cursor_coord = coord
         return coord
 
     def get_message(self, coord, shape, vertex):
@@ -1026,11 +1167,11 @@ class Shapes(Layer):
             self._moving_vertex = ind
             self._hover_shape = self.selected_shapes[0]
             self._hover_vertex = ind
-            self._creating = True
+            self._is_creating = True
             self._set_highlight()
             self.refresh()
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
-            if self._creating is False:
+            if self._is_creating is False:
                 # Start drawing a path
                 data = np.array([coord, coord])
                 new_z_index = max(self.data._z_index, default=-1) + 1
@@ -1046,7 +1187,7 @@ class Shapes(Layer):
                 self._moving_vertex = ind
                 self._hover_shape = self.selected_shapes[0]
                 self._hover_vertex = ind
-                self._creating = True
+                self._is_creating = True
                 self._set_highlight()
             else:
                 # Add to an existing path or polygon
@@ -1197,7 +1338,7 @@ class Shapes(Layer):
         elif (self.mode == 'add_rectangle' or self.mode == 'add_ellipse' or
               self.mode == 'add_line'):
             # While drawing a shape or doing nothing
-            if self._creating and event.is_dragging:
+            if self._is_creating and event.is_dragging:
                 # Drag any selected shapes
                 self._move(coord)
                 shape = self._hover_shape
@@ -1206,7 +1347,7 @@ class Shapes(Layer):
                 shape, vertex = self._shape_at(coord)
         elif (self.mode == 'add_path' or self.mode == 'add_polygon'):
             # While drawing a path or doing nothing
-            if self._creating:
+            if self._is_creating:
                 # Drag any selected shapes
                 self._move(coord)
                 shape = self._hover_shape
@@ -1322,7 +1463,7 @@ class Shapes(Layer):
                 else:
                     self._aspect_ratio = 1
                 if self._is_moving:
-                    self._move(self._mouse_coord)
+                    self._move(self._cursor_coord)
             elif event.key == 'r':
                 self.mode = 'add_rectangle'
             elif event.key == 'e':
@@ -1370,4 +1511,4 @@ class Shapes(Layer):
         elif event.key == 'Shift':
             self._fixed_aspect = False
             if self._is_moving:
-                self._move(self._mouse_coord)
+                self._move(self._cursor_coord)
