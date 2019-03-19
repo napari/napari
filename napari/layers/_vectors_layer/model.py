@@ -8,11 +8,7 @@ from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Line as LinesNode
 from vispy.color import get_color_names
 
-from vispy.util.event import Event
-
 from .view import QtVectorsLayer
-from .view import QtVectorsControls
-
 
 @add_to_viewer
 class Vectors(Layer):
@@ -102,7 +98,6 @@ class Vectors(Layer):
         self, vectors,
             width=1,
             color='red',
-            connector='segments',
             averaging='1x1',
             length=1):
 
@@ -119,7 +114,7 @@ class Vectors(Layer):
         self._kernel = self._kernel_dict['1x1']
 
         # Store underlying data model
-        self._data_types = ('matrix', 'projection')
+        self._data_types = ('image', 'coords')
         self._data_type = None
 
         # Save the line style params
@@ -127,7 +122,7 @@ class Vectors(Layer):
         self._color = color
         self._colors = get_color_names()
         self._connector_types = ['segments']
-        self._connector = connector
+        self._connector = self._connector_types[0]
 
         # averaging and length attributes
         self._avg_dims = ['1x1', '3x3', '5x5', '7x7', '9x9', '11x11']
@@ -144,17 +139,13 @@ class Vectors(Layer):
         self._raw_dat = None
         self._original_data = vectors
         self._current_shape = vectors.shape
-        self._vectors = self._check_vector_type(vectors)
+        self._vectors = self._convert_to_vector_type(vectors)
         self.averaging_bind_to(self._default_avg)
         self.length_bind_to(self._default_length)
 
-        self._mode = 'pan/zoom'
-        self._mode_history = self._mode
-
         self.name = 'vectors'
-        self.events.add(mode=Event)
+        # self.events.add(mode=Event)
         self._qt_properties = QtVectorsLayer(self)
-        self._qt_controls = QtVectorsControls(self)
 
     # ====================== Property getter and setters =====================
     @property
@@ -192,12 +183,12 @@ class Vectors(Layer):
         """
         self._original_data = vectors
 
-        self._vectors = self._check_vector_type(vectors)
+        self._vectors = self._convert_to_vector_type(vectors)
 
         self.viewer._child_layer_changed = True
         self._refresh()
 
-    def _check_vector_type(self, vectors):
+    def _convert_to_vector_type(self, vectors):
         """
         Check on input data for proper shape and dtype
         :param vectors: ndarray
@@ -205,12 +196,12 @@ class Vectors(Layer):
         """
         if vectors.shape[-1] == 4 and len(vectors.shape) == 2:
             self._current_shape = vectors.shape
-            coord_list = self._convert_proj_to_coordinates(vectors)
+            coord_list = self._convert_coords_to_coordinates(vectors)
             self._data_type = self._data_types[1]
 
         elif vectors.shape[-1] == 2 and len(vectors.shape) == 3:
             self._current_shape = vectors.shape
-            coord_list = self._convert_matrix_to_coordinates(vectors)
+            coord_list = self._convert_image_to_coordinates(vectors)
             self._data_type = self._data_types[0]
 
         else:
@@ -220,7 +211,7 @@ class Vectors(Layer):
 
         return coord_list
 
-    def _convert_matrix_to_coordinates(self, vect) -> np.ndarray:
+    def _convert_image_to_coordinates(self, vect) -> np.ndarray:
         """
         To convert an image-like array with elements (x-proj, y-proj) into a
             position list of coordinates
@@ -267,7 +258,7 @@ class Vectors(Layer):
 
         return pos
 
-    def _convert_proj_to_coordinates(self, vect) -> np.ndarray:
+    def _convert_coords_to_coordinates(self, vect) -> np.ndarray:
         """
         To convert a list of coordinates of shape
             (x-center, y-center, x-proj, y-proj) into a list of coordinates
@@ -338,10 +329,10 @@ class Vectors(Layer):
         :param avg_kernel: kernel over which to compute average
         :return:
         '''
-        if self._data_type == 'projection':
+        if self._data_type == 'coords':
             # default averaging is supported only for 'matrix' dataTypes
             return None
-        elif self._data_type == 'matrix':
+        elif self._data_type == 'image':
             self._kernel = self._kernel_dict[avg_kernel]
             tempdat = self._original_data
             range_x = tempdat.shape[0]
@@ -350,12 +341,6 @@ class Vectors(Layer):
             y = self._kernel[1]
             x_offset = int((x - 1) / 2)
             y_offset = int((y - 1) / 2)
-
-            # if we allow a cv2 dependency:
-            # averaging calculation is done using cv2.blur
-            # self._vectors = self._check_vector_type(
-            #     cv2.blur(tempdat, (x, y))
-            #     [x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
 
             kernel_mat = np.ones(shape=(x, y, 2))
             output_mat = np.zeros_like(tempdat)
@@ -368,7 +353,7 @@ class Vectors(Layer):
                     output_mat[i, j, 0] = mean_region_x
                     output_mat[i, j, 1] = mean_region_y
 
-            self._vectors = self._check_vector_type(
+            self._vectors = self._convert_to_vector_type(
                 output_mat[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
 
     @property
@@ -426,11 +411,11 @@ class Vectors(Layer):
         :return:
         '''
 
-        if self._data_type == 'projection':
+        if self._data_type == 'coords':
             return None
-        elif self._data_type == 'matrix':
+        elif self._data_type == 'image':
             self._length = newlen
-            self._vectors = self._check_vector_type(self._original_data)
+            self._vectors = self._convert_to_vector_type(self._original_data)
 
     @property
     def color(self) -> str:
@@ -442,41 +427,6 @@ class Vectors(Layer):
     def color(self, color: str) -> None:
         self._color = color
         self._refresh()
-
-    @property
-    def connector(self):
-        """
-        line connector.  One of _connector.types = "strip", "segments"
-        or can receive an ndarray.
-        :return: connector parameter
-        """
-        return self._connector
-
-    @connector.setter
-    def connector(self, connector_type: Union[str, np.ndarray]):
-        self._connector = connector_type
-        self._refresh()
-
-    @property
-    def mode(self):
-        """None, str: Interactive mode
-        """
-        return self._mode
-
-    @mode.setter
-    def mode(self, mode):
-        if mode == self.mode:
-            return
-        if mode == 'pan/zoom':
-            self.cursor = 'standard'
-            self.interactive = True
-            self.help = ''
-            self.status = mode
-            self._mode = mode
-        else:
-            raise ValueError("Mode not recongnized")
-
-        self.events.mode(mode=mode)
 
     # =========================== Napari Layer ABC methods ===================
     @property
@@ -528,7 +478,8 @@ class Vectors(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        in_slice_vectors, matches = self._slice_vectors(indices)
+        
+        in_slice_vectors = self.vectors
 
         # Display vectors if there are any in this slice
         if len(in_slice_vectors) > 0:
@@ -541,68 +492,11 @@ class Vectors(Layer):
             data[::-1],
             width=self.width,
             color=self.color,
-            connect=self.connector)
+            connect=self._connector)
         self._need_visual_update = True
         self._update()
 
-    def _slice_vectors(self, indices):
-        """Determines the slice of markers given the indices.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-        # Get a list of the vectors for the vectors in this slice
-
-        vectors = self.vectors
-        if len(vectors) > 0:
-            matches = np.equal(
-                vectors[:, 2:],
-                np.broadcast_to(indices[2:], (len(vectors), len(indices) - 2))
-            )
-
-            matches = np.all(matches, axis=1)
-
-            in_slice_vectors = vectors[matches, :2]
-            return in_slice_vectors, matches
-        else:
-            return [], []
-
     # ========================= Napari Layer ABC CONTROL methods =====================
-
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-        """
-        if event.native.isAutoRepeat():
-            return
-        else:
-            if event.key == ' ':
-                if self.mode != 'pan/zoom':
-                    self._mode_history = self.mode
-                    self.mode = 'pan/zoom'
-                else:
-                    self._mode_history = 'pan/zoom'
-            elif event.key == 'Shift':
-                if self.mode == 'add':
-                    self.cursor = 'forbidden'
-            elif event.key == 'a':
-                self.mode = 'add'
-            elif event.key == 's':
-                self.mode = 'select'
-            elif event.key == 'z':
-                self.mode = 'pan/zoom'
-
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
-        """
-        if event.key == ' ':
-            if self._mode_history != 'pan/zoom':
-                self.mode = self._mode_history
-        elif event.key == 'Shift':
-            if self.mode == 'add':
-                self.cursor = 'cross'
-
 
 class InvalidDataFormatError(Exception):
     """

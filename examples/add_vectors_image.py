@@ -6,33 +6,28 @@ Each vector position is defined by an (x-proj, y-proj) element
     where each vector is centered on a pixel of the NxM grid
 """
 
-import sys
-from PyQt5.QtWidgets import QApplication
-from napari_gui import Window, Viewer
+from napari import ViewerApp
+from napari.util import app_context
 
 import numpy as np
 
-# starting
-application = QApplication(sys.argv)
+with app_context():
+    # create the viewer and window
+    viewer = ViewerApp()
 
-# create the viewer and window
-viewer = Viewer()
-win = Window(viewer)
+    # sample vector image-like data
+    # 50x25 grid of slanted lines
+    n = 50
+    m = 25
+    pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
+    rand1 = np.random.random_sample(n * m)
+    rand2 = np.random.random_sample(n * m)
 
-# sample vector image-like data
-# 50x25 grid of slanted lines
-n = 50
-m = 25
-pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
-rand1 = np.random.random_sample(n * m)
-rand2 = np.random.random_sample(n * m)
+    # assign projections for each vector
+    pos[:, :, 0] = rand1.reshape((n, m))
+    pos[:, :, 1] = rand2.reshape((n, m))
 
-# assign projections for each vector
-pos[:, :, 0] = rand1.reshape((n, m))
-pos[:, :, 1] = rand2.reshape((n, m))
+    # add the vectors
+    viewer.add_vectors(pos)
 
-# add the vectors
-viewer.add_vectors(pos)
-
-sys.exit(application.exec_())
 
