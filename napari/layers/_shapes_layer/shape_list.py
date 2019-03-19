@@ -327,6 +327,7 @@ class ShapeList():
             indices = self._mesh_triangles_index[:, 0] > index
             self._mesh_triangles_index[indices, 0] = (
                 self._mesh_triangles_index[indices, 0] - 1)
+            indices = self._mesh_vertices_index[:, 0] > index
             self._mesh_vertices_index[indices, 0] = (
                 self._mesh_vertices_index[indices, 0] - 1)
             self._update_z_order()

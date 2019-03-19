@@ -528,11 +528,13 @@ class Shapes(Layer):
         for index in to_remove:
             self.data.remove(index)
         self.selected_shapes = []
-        self._hover_shapes = [None, None]
+        self._hover_shapes = self._shape_at(self._mouse_coord)
+        self.status = self.get_message(self._mouse_coord, self._hover_shapes)
         self.refresh()
 
     def _rotate_box(self, angle, center=[0, 0]):
         """Perfroms a rotation on the selected box
+
         Parameters
         ----------
         angle : float
@@ -541,13 +543,15 @@ class Shapes(Layer):
             coordinates of center of rotation.
         """
         theta = np.radians(angle)
-        transform = np.array([[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]])
+        transform = np.array([[np.cos(theta), np.sin(theta)],
+                             [-np.sin(theta), np.cos(theta)]])
         box = self._selected_box - center
         box = np.matmul(box, transform.T)
         self._selected_box = box + center
 
     def _scale_box(self, scale, center=[0, 0]):
         """Perfroms a scaling on the selected box
+
         Parameters
         ----------
         scale : float, list
@@ -560,11 +564,13 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[1] == box[9]):
-            box[9] = box[1] + (box[9]-box[1])/np.linalg.norm(box[9]-box[1])*self._rotion_handle_length
+            r = self._rotion_handle_length
+            box[9] = box[1] + (box[9]-box[1])/np.linalg.norm(box[9]-box[1])*r
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
         """Perfroms a linear transformation on the selected box
+
         Parameters
         ----------
         transform : np.ndarray
@@ -575,12 +581,14 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.matmul(box, transform.T)
         if not np.all(box[1] == box[9]):
-            box[9] = box[1] + (box[9]-box[1])/np.linalg.norm(box[9]-box[1])*self._rotion_handle_length
+            r = self._rotion_handle_length
+            box[9] = box[1] + (box[9]-box[1])/np.linalg.norm(box[9]-box[1])*r
         self._selected_box = box + center
 
     def _shape_at(self, indices):
         """Determines if any shapes at given indices by looking inside triangle
         meshes.
+
         Parameters
         ----------
         indices : sequence of int
@@ -596,9 +604,10 @@ class Shapes(Layer):
                 distances = abs(box - indices[:2])
 
                 # Get the vertex sizes
-                transform = self.viewer._canvas.scene.node_transform(self._node)
-                rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
-                sizes = self._vertex_size*rescale/2
+                scene = self.viewer._canvas.scene
+                transform = scene.node_transform(self._node)
+                rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+                sizes = self._vertex_size*rescale.mean()/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <=  sizes, axis=1).nonzero()
@@ -612,9 +621,10 @@ class Shapes(Layer):
                 distances = abs(vertices - indices[:2])
 
                 # Get the vertex sizes
-                transform = self.viewer._canvas.scene.node_transform(self._node)
-                rescale = (transform.map([1, 1])[:2] - transform.map([0, 0])[:2]).mean()
-                sizes = self._vertex_size*rescale/2
+                scene = self.viewer._canvas.scene
+                transform = scene.node_transform(self._node)
+                rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+                sizes = self._vertex_size*rescale.mean()/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <=  sizes, axis=1).nonzero()[0]
@@ -644,7 +654,8 @@ class Shapes(Layer):
         # check if triangle corners are inside box
         points_inside = np.empty(triangles.shape[:-1], dtype=bool)
         for i in range(3):
-            points_inside[:, i] = np.all(np.concatenate(([box[1] >= triangles[:,0,:], triangles[:,i,:] >= box[0]]), axis=1), axis=1)
+            inside = ([box[1] >= triangles[:, 0, :], triangles[:, i, :] >= box[0]])
+            points_inside[:, i] = np.all(np.concatenate(inside, axis=1), axis=1)
 
         # check if triangle edges intersect box edges
         # NOT IMPLEMENTED
@@ -654,28 +665,37 @@ class Shapes(Layer):
 
         return np.unique(shapes).tolist()
 
-    def _get_coord(self, position, indices):
-        max_shape = self.viewer.dims.max_shape
+    def _get_coord(self, position):
+        """Converts the position of the cursor in canvas coordinates to image
+        coordinates
+
+        Parameters
+        ----------
+        position : sequence of int
+            Position of mouse cursor in canvas coordinates.
+        Returns
+        ----------
+        coord : sequence of float
+            Position of mouse cursor in image coordinates.
+        """
         transform = self.viewer._canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [pos[1], pos[0]]
-        coord = copy(indices)
-        coord[0] = pos[1]
-        coord[1] = pos[0]
-        self._mouse_coord = np.array(coord)
-        return self._mouse_coord
+        coord = np.array([pos[1], pos[0]])
+        self._mouse_coord = coord
+        return coord
 
     def get_message(self, coord, value):
-        """Returns coordinate and value string for given mouse coordinates
-        and value.
+        """Generates a string based on the coordinates and information about
+        what shapes are hovered over
 
         Parameters
         ----------
         coord : sequence of int
             Position of mouse cursor in image coordinates.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
-
+        value : sequence of int or None
+            First value is the shape index or None. Second value is the vertex
+            index or None.
         Returns
         ----------
         msg : string
@@ -692,6 +712,8 @@ class Shapes(Layer):
         return msg
 
     def move_to_front(self):
+        """Moves selected objects to be displayed in front of all others.
+        """
         if len(self.selected_shapes) == 0:
             return
         new_z_index = max(self.data._z_index) + 1
@@ -700,6 +722,8 @@ class Shapes(Layer):
         self.refresh()
 
     def move_to_back(self):
+        """Moves selected objects to be displayed behind all others.
+        """
         if len(self.selected_shapes) == 0:
             return
         new_z_index = min(self.data._z_index) - 1
@@ -717,11 +741,11 @@ class Shapes(Layer):
         """
         vertex = self._selected_vertex[1]
         if (self.mode == 'select' or self.mode == 'add_rectangle' or
-        self.mode == 'add_ellipse' or self.mode == 'add_line'):
+                self.mode == 'add_ellipse' or self.mode == 'add_line'):
             if len(self.selected_shapes) > 0:
-                self._is_moving=True
+                self._is_moving = True
                 if vertex is None:
-                    #Check where dragging box from to move whole object
+                    # Check where dragging box from to move whole object
                     if self._drag_start is None:
                         center = self._selected_box[-1]
                         self._drag_start = coord - center
@@ -732,13 +756,14 @@ class Shapes(Layer):
                     self._selected_box = self._selected_box + shift
                     self.refresh()
                 elif vertex < 8:
-                    #Corner / edge vertex is being dragged so resize object
+                    # Corner / edge vertex is being dragged so resize object
                     box = self._selected_box
                     if self._fixed_vertex is None:
-                        self._fixed_index = np.mod(vertex+4,8)
+                        self._fixed_index = np.mod(vertex+4, 8)
                         self._fixed_vertex = box[self._fixed_index]
 
-                    size = box[np.mod(self._fixed_index+4,8)] - box[self._fixed_index]
+                    size = (box[np.mod(self._fixed_index+4, 8)] -
+                            box[self._fixed_index])
                     offset = box[-1] - box[-2]
                     offset = offset/np.linalg.norm(offset)
                     offset_perp = np.array([offset[1], -offset[0]])
@@ -752,12 +777,15 @@ class Shapes(Layer):
                                 ratio = 1
                             else:
                                 ratio = abs((new - fixed)[1]/(new - fixed)[0])
-                            if ratio>self._aspect_ratio:
-                                new[1] = fixed[1]+(new[1]-fixed[1])*self._aspect_ratio/ratio
+                            if ratio > self._aspect_ratio:
+                                r = self._aspect_ratio/ratio
+                                new[1] = fixed[1]+(new[1]-fixed[1])*r
                             else:
-                                new[0] = fixed[0]+(new[0]-fixed[0])*ratio/self._aspect_ratio
+                                r = ratio/self._aspect_ratio
+                                new[0] = fixed[0]+(new[0]-fixed[0])*r
                         dist = np.dot(new-fixed, offset)/np.dot(size, offset)
-                        dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
+                        dist_perp = (np.dot(new-fixed, offset_perp) /
+                                     np.dot(size, offset_perp))
                         scale = np.array([dist_perp, dist])
                     elif np.mod(self._fixed_index, 4) == 1:
                         # top selected
@@ -769,11 +797,13 @@ class Shapes(Layer):
                         # side selected
                         fixed = self._fixed_vertex
                         new = copy(coord)
-                        dist_perp = np.dot(new-fixed, offset_perp)/np.dot(size, offset_perp)
+                        dist_perp = (np.dot(new-fixed, offset_perp) /
+                                     np.dot(size, offset_perp))
                         scale = np.array([dist_perp, 1])
 
                     # prevent box from shrinking below a threshold size
-                    transform = self.viewer._canvas.scene.node_transform(self._node)
+                    scene = self.viewer._canvas.scene
+                    transform = scene.node_transform(self._node)
                     rescale = (transform.map([1, 1])[:2] -
                                transform.map([0, 0][:2]))
                     threshold = self._vertex_size*rescale.mean()/8
@@ -878,8 +908,7 @@ class Shapes(Layer):
             Vispy event
         """
         position = event.pos
-        indices = self.viewer.dims.indices
-        coord = self._get_coord(position, indices)
+        coord = self._get_coord(position)
         shift = 'Shift' in event.modifiers
 
         if self.mode == 'pan/zoom':
@@ -1098,8 +1127,7 @@ class Shapes(Layer):
         if event.pos is None:
             return
         position = event.pos
-        indices = self.viewer.dims.indices
-        coord = self._get_coord(position, indices)
+        coord = self._get_coord(position)
 
         if self.mode == 'pan/zoom':
             # If in pan/zoom mode just look at coord all
@@ -1165,8 +1193,7 @@ class Shapes(Layer):
             Vispy event
         """
         position = event.pos
-        indices = self.viewer.dims.indices
-        coord = self._get_coord(position, indices)
+        coord = self._get_coord(position)
         shift = 'Shift' in event.modifiers
 
         if self.mode == 'pan/zoom':
