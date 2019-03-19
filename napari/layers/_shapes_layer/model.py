@@ -102,7 +102,6 @@ class Shapes(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            self._highlight = True
             self._selected_shapes = []
             self._selected_shapes_stored = []
             self._selected_shapes_history = []
@@ -397,7 +396,7 @@ class Shapes(Layer):
         return box
 
     def _set_highlight(self):
-        if self._highlight and (self._hover_shape is not None or len(self.selected_shapes) > 0):
+        if self._hover_shape is not None or len(self.selected_shapes) > 0:
             # show outlines hover shape or any selected shapes
             if len(self.selected_shapes) > 0:
                 index = copy(self.selected_shapes)
@@ -434,7 +433,7 @@ class Shapes(Layer):
         else:
             self._node._subvisuals[2].set_data(vertices=None, faces=None)
 
-        if self._highlight and len(self.selected_shapes) > 0:
+        if len(self.selected_shapes) > 0:
             if self.mode == 'select':
                 inds = list(range(0, 8))
                 inds.append(9)
@@ -494,21 +493,10 @@ class Shapes(Layer):
                 self._hover_shape == self._hover_shape_stored and
                 self._hover_vertex == self._hover_vertex_stored):
             return
-        self._highlight = True
         self._selected_shapes_stored = copy(self.selected_shapes)
         self._hover_shape_stored = copy(self._hover_shape)
         self._hover_vertex_stored = copy(self._hover_vertex)
         self._set_highlight()
-
-    def _unselect(self):
-        """Unselects
-        """
-        if self._highlight:
-            self._highlight = False
-            self._selected_shapes_stored = []
-            self._hover_shape_stored = None
-            self._hover_vertex_stored = None
-            self._set_highlight()
 
     def _finish_drawing(self):
         """Resets variables involed in shape drawing so that a new shape can
@@ -535,7 +523,6 @@ class Shapes(Layer):
             if len(vertices) <= 2:
                 self.data.remove(index)
         self._creating = False
-        self._unselect()
         self.refresh()
 
     def remove_selected(self):
