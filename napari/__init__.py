@@ -1,4 +1,5 @@
 from .components import Window, Viewer
+from .viewer import ViewerApp
 
 from ._version import get_versions
 __version__ = get_versions()['version']
