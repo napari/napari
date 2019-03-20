@@ -8,8 +8,14 @@ from napari.components._dims.dims import DimsMode, Dims
 
 
 class QtDims(QWidget):
-    """
-        Qt View for Dims model.
+    """Qt View for Dims model.
+
+    Parameters
+    ----------
+    dims : Dims
+        Dims object to be passed to Qt object
+    parent : QWidget, optional
+        QWidget that will be the parent of this widget
     """
 
     _slider_height = 22
@@ -20,12 +26,7 @@ class QtDims(QWidget):
 
 
     def __init__(self, dims: Dims, parent = None):
-        """
-        Constructor for Dims View
-        Parameters
-        ----------
-        dims : dims object
-        """
+
         super().__init__(parent=parent)
 
 
@@ -46,15 +47,15 @@ class QtDims(QWidget):
         self.setLayout(layout)
 
 
-        # First we need to make sure that the current state of the model is correctly
-        # reflected in the view. This is important because in the general case,
-        # we might not have model and view synced if changes have occured before
-        # the view is initialised with the model.
+        # First we need to make sure that the current state of the model is
+        # correctly reflected in the view. This is important because in the
+        # general case, we might not have model and view synced if changes have
+        # occured before the view is initialised with the model.
 
         # First we set the dimenions of the view with respect to the model:
         self._set_num_sliders(dims.num_dimensions)
 
-        # Then we set the mode fopr each slider:
+        # Then we set the mode fop each slider:
 
         for axis in range(0, dims.num_dimensions):
             slider = self.sliders[axis]
@@ -64,16 +65,18 @@ class QtDims(QWidget):
                 slider.expand()
 
 
-        # The next lines connect events coming from the model to the Qt event system:
-        # We need to go through Qt signals so that these events are run in the Qt event loop
-        # thread. This is all about changing thread context for thread-safety purposes
+        # The next lines connect events coming from the model to the Qt event
+        # system: We need to go through Qt signals so that these events are run
+        # in the Qt event loop thread. This is all about changing thread
+        # context for thread-safety purposes
 
         # axis change listener
         def update_axis_listener(event):
             self.update_axis.emit(event.axis)
         self.dims.changed.axis.connect(update_axis_listener)
 
-        # What to do with the axis change events in terms of UI calls to the widget
+        # What to do with the axis change events in terms of UI calls to the
+        # widget
         self.update_axis.connect(self._update_slider)
 
         # nb dims change listener
@@ -81,7 +84,8 @@ class QtDims(QWidget):
             self.update_nbdims.emit()
         self.dims.changed.nbdims.connect(update_nbdim_listener)
 
-        # What to do with the nb dims change events in terms of UI calls to the widget
+        # What to do with the nb dims change events in terms of UI calls to the
+        # widget
         self.update_nbdims.connect(self._update_nb_sliders)
 
     @property
@@ -120,7 +124,7 @@ class QtDims(QWidget):
                 slider.collapsed = False
                 slider.setValues(self.dims.get_interval(slider_index))
             slider_range = self.dims.get_range(slider_index)
-            if (slider_range is not None) and (slider_range != (None, None, None)) :
+            if (slider_range is not None) and (slider_range != (None, None, None)):
                 slider.setRange(slider_range)
 
     def _update_nb_sliders(self):

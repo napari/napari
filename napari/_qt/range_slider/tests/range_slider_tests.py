@@ -2,10 +2,6 @@
  Interactive test for range slider.
 """
 
-import sys
-
-from PyQt5.QtWidgets import QApplication
-
 # starts the QT event loop
 from napari._qt.range_slider.range_slider import QVRangeSlider
 from napari.util import app_context
@@ -34,4 +30,3 @@ with app_context():
 
     # makes the widget visible on the desktop:
     widget.show()
-

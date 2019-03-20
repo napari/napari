@@ -101,7 +101,8 @@ class QRangeSlider(QWidget):
 
         Parameters
         ----------
-        values : single float or int value --  for use when collapsed
+        value : float | int
+            Value to used when collapsed
         """
         self.setValues((value, value))
 

@@ -65,7 +65,7 @@ class Dims(Component):
             self._trim_nb_dimensions(num_dimensions)
 
     def set_all_ranges(self, all_ranges: Sequence[Union[int, float]]):
-        """ Sets ranges for all dimensions
+        """Sets ranges for all dimensions
 
         Parameters
         ----------
@@ -156,21 +156,29 @@ class Dims(Component):
             self.changed.axis(axis=axis)
 
     def get_interval(self, axis: int):
-        """
+        """Returns interval for this dimension
 
         Parameters
         ----------
-        axis : dimension index
+        axis : int
+            Dimension index
+
+        Returns
+        ----------
+        interval : tuple
+            Interval specified with (min, max)
         """
         return self.interval[axis]
 
     def set_mode(self, axis: int, mode: DimsMode):
-        """
-        Sets the mode: Point or Interval
+        """Sets the mode: Point or Interval
+
         Parameters
         ----------
-        axis : dimension index
+        axis : int
+            Dimension index
         mode : Point or Interval
+            Whether dimension is in the Point or Interval mode
         """
         self._ensure_axis_present(axis)
         if self.mode[axis] != mode:
@@ -178,26 +186,36 @@ class Dims(Component):
             self.changed.axis(axis=axis)
 
     def get_mode(self, axis: int):
-        """
-        Returns the mode for a given axis
+        """Returns the mode for a given axis
+
         Parameters
         ----------
-        axis : dimension index
+        axis : int
+            Dimension index
+
+        Returns
+        ----------
+        mode : Point or Interval
+            Whether dimension is in the Point or Interval mode
         """
         return self.mode[axis]
 
     def _set_2d_viewing(self):
+        """Sets the 2d viewing
+        """
         self.display = [False] * len(self.display)
         self.display[-1] = True
         self.display[-2] = True
 
     def set_display(self, axis: int, display: bool):
-        """
-        Sets the display boolean flag for a given axis
+        """Sets the display boolean flag for a given axis
+
         Parameters
         ----------
-        axis : dimension index
-        display : True for display, False for slice or project...
+        axis : int
+            Dimension index
+        display : bool
+            Bool which is `True` for display and `False` for slice or project.
         """
         self._ensure_axis_present(axis)
         if self.display[axis] != display:
@@ -205,26 +223,46 @@ class Dims(Component):
             self.changed.axis(axis=axis)
 
     def get_display(self, axis: int):
-        """
-        retruns the display boolean flag for a given axis
+        """Returns the display boolean flag for a given axis
+
         Parameters
         ----------
-        axis : dimension index
+        axis : int
+            Dimension index
+
+        Returns
+        ----------
+        display : bool
+            Bool which is `True` for display and `False` for slice or project.
         """
         return self.display[axis]
 
     @property
     def displayed_dimensions(self):
+        """Returns the displayed dimensions
+
+        Returns
+        -------
+        dimensions : np.ndarray
+            Displayed dimensions
+        """
         displayed_one_hot = copy(self.display)
-        displayed_one_hot =  [False if elem is None else elem for elem in displayed_one_hot]
+        displayed_one_hot =  ([False if elem is None else elem for elem in
+                              displayed_one_hot])
         return numpy.nonzero(list(displayed_one_hot))[0]
 
     def _ensure_axis_present(self, axis: int, no_event = None):
-        """
-        Makes sure that the given axis is in the dimension model
-        Parameters.
+        """Makes sure that the given axis is in the dimension model
+
+        Parameters
         ----------
-        axis : axis index
+        axis : int
+            Dimension index
+
+        Returns
+        -------
+        dimensions : list
+            List of axes
         """
         if axis >= self.num_dimensions:
             old_nb_dimensions = self.num_dimensions
@@ -248,11 +286,12 @@ class Dims(Component):
         return []
 
     def _trim_nb_dimensions(self, nb_dimensions: int):
-        """
-        This internal method is used to trim the number of axis.
+        """This internal method is used to trim the number of axis.
+
         Parameters
         ----------
-        nb_dimensions : new number of dimensions, must be less that
+        nb_dimensions : int
+            The new number of dimensions
         """
         if nb_dimensions < self.num_dimensions:
             self.range = self.range[:nb_dimensions]
@@ -261,19 +300,20 @@ class Dims(Component):
             self.mode = self.mode[:nb_dimensions]
             self.display = self.display[:nb_dimensions]
 
-            # First we notify listeners that the number of dimensions have changed:
+            # Notify listeners that the number of dimensions have changed:
             self.changed.nbdims()
 
     @property
     def slice_and_project(self):
-        """
-        Returns the slice and project tuples that specify how to slice and project arrays.
-        Returns (slice, project)
+        """Returns the slice and project tuples that specify how to slice and
+        project arrays.
+
+        Returns
         -------
-
-        Parameters
-        ----------
-
+        slice : tuple
+            The slice tuple
+        project : tuple
+            The projection tuple
         """
 
         slice_list = []

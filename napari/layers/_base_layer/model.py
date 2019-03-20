@@ -259,7 +259,6 @@ class Layer(VisualWrapper, ABC):
         yield
         self._freeze = False
 
-
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
