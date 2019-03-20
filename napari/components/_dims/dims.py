@@ -3,8 +3,7 @@ from copy import copy
 from enum import Enum
 from typing import Union, Tuple, Iterable, Sequence
 
-from napari.components.component import Component
-from napari.util.event import EmitterGroup
+from ...util.event import EmitterGroup
 
 
 class DimsMode(Enum):
@@ -12,17 +11,17 @@ class DimsMode(Enum):
     Interval = 1
 
 
-class Dims(Component):
+class Dims():
+    """Dimensions object modeling multi-dimensional slicing, cropping, and
+    displaying in Napari
 
+    Parameters
+    ----------
+    init_max_dims : int, optional
+        Initial number of dimensions
+    """
     def __init__(self, init_max_dims=0):
-        """Dimensions object modeling multi-dimensional slicing, cropping, and
-        displaying in Napari
 
-        Parameters
-        ----------
-        init_max_dims : int, optional
-            Initial number of dimensions
-        """
         super().__init__()
 
         # Events:

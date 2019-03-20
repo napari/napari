@@ -8,7 +8,8 @@ from ...util.event import EmitterGroup, Event
 
 
 class Viewer:
-
+    """Viewer object
+    """
 
     def __init__(self):
         super().__init__()
