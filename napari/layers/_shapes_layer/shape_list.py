@@ -323,6 +323,8 @@ class ShapeList():
 
         if renumber:
             del self.shapes[index]
+            indices = self._index > index
+            self._index[indices] = self._index[indices] - 1
             self._z_index = np.delete(self._z_index, index)
             indices = self._mesh_triangles_index[:, 0] > index
             self._mesh_triangles_index[indices, 0] = (

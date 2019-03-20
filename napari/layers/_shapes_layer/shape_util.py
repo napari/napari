@@ -64,6 +64,196 @@ def inside_boxes(boxes):
     return inside
 
 
+def triangles_intersect_box(triangles, corners):
+    """Determines which triangles intersect an axis aligned box.
+
+    Parameters
+    ----------
+    triangles : np.ndarray
+        Nx3x2 array of vertices of triangles to be tested
+    corners : np.ndarray
+        2x2 array specifying corners of a box
+
+    Returns
+    -------
+    intersects : np.ndarray
+        Length N boolean array with `True` values for triangles intersecting
+        the box
+    """
+
+    vertices_inside = triangle_vertices_inside_box(triangles, corners)
+    edge_intersects = triangle_edges_intersect_box(triangles, corners)
+
+    intersects = np.logical_or(vertices_inside, edge_intersects)
+
+    return intersects
+
+
+def triangle_vertices_inside_box(triangles, corners):
+    """Determines which triangles have vertices inside an axis aligned box.
+
+    Parameters
+    ----------
+    triangles : np.ndarray
+        Nx3x2 array of vertices of triangles to be tested
+    corners : np.ndarray
+        2x2 array specifying corners of a box
+
+    Returns
+    -------
+    inside : np.ndarray
+        Length N boolean array with `True` values for triangles with
+        vertices inside the box
+    """
+    box = create_box(corners)[[0, 4]]
+
+    vertices_inside = np.empty(triangles.shape[:-1], dtype=bool)
+    for i in range(3):
+        # check if each triangle vertex is inside the box
+        below_top = np.all(box[1] >= triangles[:, i, :], axis=1)
+        above_bottom = np.all(triangles[:, i, :] >= box[0], axis=1)
+        vertices_inside[:, i] = np.logical_and(below_top, above_bottom)
+
+    inside = np.any(vertices_inside, axis=1)
+
+    return inside
+
+
+def triangle_edges_intersect_box(triangles, corners):
+    """Determines which triangles have edges that intersect the edges of an
+    axis aligned box.
+
+    Parameters
+    ----------
+    triangles : np.ndarray
+        Nx3x2 array of vertices of triangles to be tested
+    corners : np.ndarray
+        2x2 array specifying corners of a box
+
+    Returns
+    -------
+    intersects : np.ndarray
+        Length N boolean array with `True` values for triangles with
+        edges that intersect the edges of the box.
+    """
+    box = create_box(corners)[[0, 2, 4, 6]]
+
+    intersects = np.zeros([len(triangles), 12], dtype=bool)
+    for i in range(3):
+        # check if each triangle edge
+        p1 = triangles[:, i, :]
+        q1 = triangles[:, np.mod(i+1, 3), :]
+
+        for j in range(4):
+            # Check the four edges of the box
+            p2 = box[j]
+            q2 = box[np.mod(j+1, 3)]
+            intersects[:, i*3+j] = ([lines_intersect(p1[k], q1[k], p2, q2)
+                                    for k in range(len(p1))])
+
+    return np.any(intersects, axis=1)
+
+
+def lines_intersect(p1, q1, p2, q2):
+    """Determines if line segment p1q1 intersects line segment p2q2
+
+    Parameters
+    -------
+    p1 : np.ndarray
+        Length 2 array of first point of first line segment
+    q1 : np.ndarray
+        Length 2 array of second point of first line segment
+    p2 : np.ndarray
+        Length 2 array of first point of second line segment
+    q2 : np.ndarray
+        Length 2 array of second point of second line segment
+
+    Returns
+    -------
+    intersects : bool
+        Bool indicating if line segment p1q1 intersects line segment p2q2
+    """
+    # Determine four orientations
+    o1 = orientation(p1, q1, p2)
+    o2 = orientation(p1, q1, q2)
+    o3 = orientation(p2, q2, p1)
+    o4 = orientation(p2, q2, q1)
+
+    # Test general case
+    if (o1 != o2) and (o3 != o4):
+        return True
+
+    # Test special cases
+    # p1, q1 and p2 are colinear and p2 lies on segment p1q1
+    if o1 == 0 and on_segment(p1, p2, q1):
+        return True
+
+    # p1, q1 and q2 are colinear and q2 lies on segment p1q1
+    if o2 == 0 and on_segment(p1, q2, q1):
+        return True
+
+    # p2, q2 and p1 are colinear and p1 lies on segment p2q2
+    if o3 == 0 and on_segment(p2, p1, q2):
+        return True
+
+    # p2, q2 and q1 are colinear and q1 lies on segment p2q2
+    if o4 == 0 and on_segment(p2, q1, q2):
+        return True
+
+    # Doesn't fall into any special cases
+    return False
+
+
+def on_segment(p, q, r):
+    """Checks if q is on the segment from p to r
+
+    Parameters
+    -------
+    p : np.ndarray
+        Length 2 array of first point of segment
+    q : np.ndarray
+        Length 2 array of point to check if on segment
+    r : np.ndarray
+        Length 2 array of second point of segment
+
+    Returns
+    -------
+    on : bool
+        Bool indicating if q is on segment from p to r
+    """
+    if (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and
+            q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1])):
+        on = True
+    else:
+        on = False
+
+    return on
+
+
+def orientation(p, q, r):
+    """Determines oritentation of ordered triplet (p, q, r)
+
+    Parameters
+    -------
+    p : np.ndarray
+        Length 2 array of first point of triplet
+    q : np.ndarray
+        Length 2 array of second point of triplet
+    r : np.ndarray
+        Length 2 array of third point of triplet
+
+    Returns
+    -------
+    val : int
+        One of (-1, 0, 1). 0 if p, q, r are colinear, 1 if clockwise, and -1
+        if counterclockwise.
+    """
+    val = (q[1] - p[1])*(r[0] - q[0]) - (q[0] - p[0])*(r[1] - q[1])
+    val = np.sign(val)
+
+    return val
+
+
 def point_to_lines(point, lines):
     """Calculate the distance between a point and line segments and returns the
     index of the closest line. First calculates the distance to the infinite
@@ -73,7 +263,7 @@ def point_to_lines(point, lines):
     Parameters
     ----------
     point : np.ndarray
-        1x2 array of point should be checked
+        1x2 array of specifying the point
     lines : np.ndarray
         Nx2x2 array of line segments
 
@@ -211,7 +401,7 @@ def center_radii_to_corners(center, radii):
         4x2 array of corners of the boudning box
     """
     data = np.array([center+radii, center-radii])
-    corners = expand_rectangle(data)
+    corners = find_corners(data)
     return corners
 
 
