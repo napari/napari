@@ -15,11 +15,13 @@ class DimsMode(Enum):
 class Dims(Component):
 
     def __init__(self, init_max_dims=0):
-        """
-        Dimensions object modelling multi-dimensional slicing, cropping, and displaying in Napari
+        """Dimensions object modeling multi-dimensional slicing, cropping, and
+        displaying in Napari
+
         Parameters
         ----------
-        init_max_dims : initial number of dimensions
+        init_max_dims : int, optional
+            Initial number of dimensions
         """
         super().__init__()
 
@@ -46,11 +48,12 @@ class Dims(Component):
 
     @property
     def num_dimensions(self):
-        """
-        Returns the number of dimensions
-        Returns numebr of dimensions
-        -------
+        """Returns the number of dimensions
 
+        Returns
+        -------
+        num_dims : int
+            Number of dimensions
         """
         return len(self.point)
 
@@ -62,11 +65,12 @@ class Dims(Component):
             self._trim_nb_dimensions(num_dimensions)
 
     def set_all_ranges(self, all_ranges: Sequence[Union[int, float]]):
-        """
-        Sets ranges for all dimensions
+        """ Sets ranges for all dimensions
+
         Parameters
         ----------
-        ranges : tuple or
+        ranges : tuple
+            Ranges of all dimensions
         """
         nb_dim = len(all_ranges)
         modified_dims = self._ensure_axis_present(nb_dim-1, no_event=True)
@@ -77,12 +81,14 @@ class Dims(Component):
             self.changed.axis(axis=axis_changed)
 
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
-        """
-        Sets the range (min, max, step) for a given axis (dimension)
+        """Sets the range (min, max, step) for a given axis (dimension)
+
         Parameters
         ----------
-        axis : dimension index
-        range : (min, max, step) tuple
+        axis : int
+            Dimension index
+        range : tuple
+            Range specified as (min, max, step)
         """
         self._ensure_axis_present(axis)
         if self.range[axis] != range:
@@ -90,21 +96,29 @@ class Dims(Component):
             self.changed.axis(axis=axis)
 
     def get_range(self, axis: int):
-        """
-        Returns the point at which this dimension is sliced
+        """Returns the point at which this dimension is sliced
+
         Parameters
         ----------
-        axis : dimension index
+        axis : int
+            Dimension index
+
+        Returns
+        ----------
+        range : tuple
+            Range specified as (min, max, step)
         """
         return self.range[axis]
 
     def set_point(self, axis: int, value: Union[int, float]):
-        """
-        Sets thepoint at which to slice this dimension
+        """Sets the point at which to slice this dimension
+
         Parameters
         ----------
-        axis : dimension index
-        value :
+        axis : int
+            Dimension index
+        value : int or float
+            Value of the point
         """
         self._ensure_axis_present(axis)
         if self.point[axis] != value:
@@ -112,21 +126,29 @@ class Dims(Component):
             self.changed.axis(axis=axis)
 
     def get_point(self, axis: int):
-        """
-        Returns the point at which this dimension is sliced
+        """Returns the point at which this dimension is sliced
+
         Parameters
         ----------
-        axis : dimension index
+        axis : int
+            Dimension index
+
+        Returns
+        ----------
+        value : int or float
+            Value of the point
         """
         return self.point[axis]
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
-        """
-        Sets the interval used for cropping and projecting this dimension
+        """Sets the interval used for cropping and projecting this dimension
+
         Parameters
         ----------
-        axis : dimension index
-        interval : (min, max) tuple
+        axis : int
+            Dimension index
+        interval : tuple
+            Interval specified with (min, max)
         """
         self._ensure_axis_present(axis)
         if self.interval[axis] != interval:
@@ -290,5 +312,3 @@ class Dims(Component):
         project_tuple = tuple(project_list)
 
         return slice_tuple, project_tuple
-
-

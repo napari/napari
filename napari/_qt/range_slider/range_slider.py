@@ -80,7 +80,7 @@ class QRangeSlider(QWidget):
 
         Parameters
         ----------
-        values : 2-tuple of float/ints
+        values : 2-tuple of float or int
             Start and end of the range.
         """
         if values is not None:
@@ -101,7 +101,7 @@ class QRangeSlider(QWidget):
 
         Parameters
         ----------
-        values : single float/int value --  for use when collapsed
+        values : single float or int value --  for use when collapsed
         """
         self.setValues((value, value))
 
