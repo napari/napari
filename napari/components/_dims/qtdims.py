@@ -73,7 +73,7 @@ class QtDims(QWidget):
         # axis change listener
         def update_axis_listener(event):
             self.update_axis.emit(event.axis)
-        self.dims.changed.axis.connect(update_axis_listener)
+        self.dims.events.axis.connect(update_axis_listener)
 
         # What to do with the axis change events in terms of UI calls to the
         # widget
@@ -82,7 +82,7 @@ class QtDims(QWidget):
         # nb dims change listener
         def update_nbdim_listener(event):
             self.update_nbdims.emit()
-        self.dims.changed.nbdims.connect(update_nbdim_listener)
+        self.dims.events.nbdims.connect(update_nbdim_listener)
 
         # What to do with the nb dims change events in terms of UI calls to the
         # widget

@@ -56,7 +56,7 @@ class LayersList(ListModel):
     ----------
     viewer : Viewer
         Parent viewer.
-    changed : vispy.util.event.EmitterGroup
+    events : vispy.util.event.EmitterGroup
         Event hooks:
             * added(item, index): whenever an item is added
             * removed(item): whenever an item is removed
@@ -67,9 +67,9 @@ class LayersList(ListModel):
                          lookup={str: lambda q, e: q == e.name})
         self._viewer = None
 
-        self.changed.added.connect(_add)
-        self.changed.removed.connect(_remove)
-        self.changed.reordered.connect(_reorder)
+        self.events.added.connect(_add)
+        self.events.removed.connect(_remove)
+        self.events.reordered.connect(_reorder)
 
         # property setting - happens last
         self.viewer = viewer
@@ -94,21 +94,21 @@ class LayersList(ListModel):
             return
 
         if prev is not None:
-            self.changed.added.disconnect(prev._on_layers_change)
-            self.changed.removed.disconnect(prev._on_layers_change)
-            self.changed.added.disconnect(prev._update_layer_selection)
-            self.changed.removed.disconnect(prev._update_layer_selection)
-            self.changed.reordered.disconnect(prev._update_layer_selection)
+            self.events.added.disconnect(prev._on_layers_change)
+            self.events.removed.disconnect(prev._on_layers_change)
+            self.events.added.disconnect(prev._update_layer_selection)
+            self.events.removed.disconnect(prev._update_layer_selection)
+            self.events.reordered.disconnect(prev._update_layer_selection)
 
         for layer in self:
             layer.viewer = viewer
 
         if viewer is not None:
-            self.changed.added.connect(viewer._on_layers_change)
-            self.changed.removed.connect(viewer._on_layers_change)
-            self.changed.added.connect(viewer._update_layer_selection)
-            self.changed.removed.connect(viewer._update_layer_selection)
-            self.changed.reordered.connect(viewer._update_layer_selection)
+            self.events.added.connect(viewer._on_layers_change)
+            self.events.removed.connect(viewer._on_layers_change)
+            self.events.added.connect(viewer._update_layer_selection)
+            self.events.removed.connect(viewer._update_layer_selection)
+            self.events.reordered.connect(viewer._update_layer_selection)
             viewer = weakref.ref(viewer)
 
         self._viewer = viewer

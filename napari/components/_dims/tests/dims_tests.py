@@ -141,7 +141,7 @@ def test_add_remove_dims():
 
     dims.set_mode(5, DimsMode.Point)
     assert dims.num_dimensions == 6
-
+z
 
 _axis_change_counter =0
 _nbdims_change_counter =0
@@ -158,7 +158,7 @@ def test_listeners():
 
         _axis_change_counter=_axis_change_counter+1
 
-    dims.changed.axis.connect(axischange)
+    dims.events.axis.connect(axischange)
 
     def nbdimschange(event):
         print("Change in number of dimensions %d " % event.source.num_dimensions)
@@ -166,7 +166,7 @@ def test_listeners():
 
         _nbdims_change_counter=_nbdims_change_counter+1
 
-    dims.changed.nbdims.connect(nbdimschange)
+    dims.events.nbdims.connect(nbdimschange)
 
     assert _axis_change_counter == 0
     assert _nbdims_change_counter == 0
@@ -182,7 +182,3 @@ def test_listeners():
     dims.set_point(0,0)
     print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
     assert _axis_change_counter == 9
-
-
-
-

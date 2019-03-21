@@ -26,14 +26,14 @@ with app_context():
         print("dims: %s" % event.source)
 
     # connects listener to model:
-    dims.changed.axis.connect(listener_axis)
+    dims.events.axis.connect(listener_axis)
 
     # defines a axis change listener:
     def listener_nbdim(event):
         print("dims changed from: "+str(event.source))
 
     # connects listener to model:
-    dims.changed.nbdims.connect(listener_nbdim)
+    dims.events.nbdims.connect(listener_nbdim)
 
     # creates a widget to view (and control) the model:
     widget = QtDims(dims)
@@ -64,6 +64,3 @@ with app_context():
 
     # starts the thread for the loop:
     #threading.Thread(target=myloop).start()
-
-
-

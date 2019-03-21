@@ -25,7 +25,7 @@ class Viewer:
 
         self.dims = Dims()
 
-        self.dims.changed.axis.connect(self._update_layers)
+        self.dims.events.axis.connect(self._update_layers)
 
 
         self.layers = LayersList(self)
