@@ -1,6 +1,6 @@
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QComboBox, QSpinBox
+from PyQt5.QtWidgets import QLabel, QComboBox, QDoubleSpinBox, QSpinBox
 
 from ..._base_layer import QtLayer
 
@@ -47,7 +47,8 @@ class QtVectorsLayer(QtLayer):
         self.grid_layout.addWidget(averaging_combobox, 5, 1)
 
         # line length
-        length_field = QSpinBox()
+        length_field = QDoubleSpinBox()
+        length_field.setSingleStep(0.1)
         value = self.layer.length
         length_field.setValue(value)
         length_field.valueChanged.connect(self.changeLength)
@@ -69,4 +70,4 @@ class QtVectorsLayer(QtLayer):
         self.layer.width = value
     
     def changeLength(self, value):
-        self.layer.length = int(value)
+        self.layer.length = value
