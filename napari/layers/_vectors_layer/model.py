@@ -231,7 +231,6 @@ class Vectors(Layer):
         # stride is used during averaging and length adjustment
         stride_x = self._kernel[0]
         stride_y = self._kernel[1]
-        print('stride = %s, %s' % (stride_x, stride_y))
 
         # create empty vector of necessary shape
         # every "pixel" has 2 coordinates
@@ -261,7 +260,6 @@ class Vectors(Layer):
                        vect.reshape((xdim*ydim, 2))[:, 0]
         pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * (self._length/2) * \
                        vect.reshape((xdim*ydim, 2))[:, 1]
-        print(midpt[:,0])
 
 
         return pos
@@ -342,6 +340,11 @@ class Vectors(Layer):
             return None
         elif self._data_type == 'image':
             self._kernel = self._kernel_dict[avg_kernel]
+
+            if self._kernel == (1, 1):
+                self.vectors = self._original_data
+                return None
+
             tempdat = self._original_data
             range_x = tempdat.shape[0]
             range_y = tempdat.shape[1]
@@ -350,19 +353,12 @@ class Vectors(Layer):
             x_offset = int((x - 1) / 2)
             y_offset = int((y - 1) / 2)
 
-            kernel_mat = np.ones(shape=(x, y, 2))
             output_mat = np.zeros_like(tempdat)
-            for i in range(x_offset, range_x-x_offset):
-                for j in range(y_offset, range_y-y_offset):
-                    region = tempdat[i-x_offset:i+x_offset+1,
-                             j-y_offset:j+y_offset+1]
-                    mean_region_x = np.mean(region[:, :, 0]*kernel_mat[:, :, 0])
-                    mean_region_y = np.mean(region[:, :, 1]*kernel_mat[:, :, 1])
-                    output_mat[i, j, 0] = mean_region_x
-                    output_mat[i, j, 1] = mean_region_y
+            for (i, j, k), element in np.ndenumerate(tempdat[x_offset:range_x-x_offset:x, y_offset:range_y-y_offset:y]):
+                output_mat[i, j, 0] = np.sum(tempdat[i:i + x, j:j + y, 0]) / (x+y)
+                output_mat[i, j, 1] = np.sum(tempdat[i:i + x, j:j + y, 1]) / (x+y)
 
-            self._vectors = self._convert_to_vector_type(
-                output_mat[x_offset:-x_offset - 1:x, y_offset:-y_offset - 1:y])
+            self.vectors = output_mat
 
     @property
     def width(self) -> Union[int, float]:
