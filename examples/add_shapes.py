@@ -16,8 +16,8 @@ with app_context():
     viewer = ViewerApp()
 
     # add the image
-    viewer.add_image(data.camera(), name='astronaut')
-    viewer.layers[0].colormap = 'gray'
+    layer = viewer.add_image(data.camera(), name='photographer')
+    layer.colormap = 'gray'
 
     # create a list of polygons
     polygons = ([np.array([[13,  11], [113, 111], [246, 22]]),
@@ -31,11 +31,11 @@ with app_context():
                            [510, 349], [369, 352], [366, 330], [366, 330]])])
 
     # add polygons
-    viewer.add_shapes(polygons, shape_type='polygon', edge_width=1,
-                      edge_color='coral', face_color='royalblue')
+    layer = viewer.add_shapes(polygons, shape_type='polygon', edge_width=1,
+                      edge_color='coral', face_color='royalblue',
+                      name='shapes')
 
     # change some properties of the layer
-    layer = viewer.layers[-1]
     layer.edge_width = 5
     layer.opacity = 0.75
 
