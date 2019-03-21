@@ -1,10 +1,9 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout, QRadioButton
+from PyQt5.QtWidgets import QWidget, QGridLayout, QRadioButton
 from typing import Union
 
-from napari._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
-
-from napari.components._dims.dims import DimsMode, Dims
+from ..._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
+from .dims import DimsMode, Dims
 
 
 class QtDims(QWidget):
@@ -16,19 +15,24 @@ class QtDims(QWidget):
         Dims object to be passed to Qt object
     parent : QWidget, optional
         QWidget that will be the parent of this widget
+
+    Attributes
+    ----------
+    dims : Dims
+        Dims object
+    sliders : list
+        List of slider widgets
     """
 
-    _slider_height = 22
+    _slider_height = 27
 
     # Qt Signals for sending events to Qt thread
     update_axis = pyqtSignal(int)
     update_ndims = pyqtSignal()
 
-
     def __init__(self, dims: Dims, parent = None):
 
         super().__init__(parent=parent)
-
 
         # We keep a reference to the view:
         self.dims = dims
@@ -38,7 +42,7 @@ class QtDims(QWidget):
 
         # adjust this widget initial geometry hints:
         self.setMinimumWidth(512)
-        self.setMinimumHeight(self._slider_height)
+        self.setMinimumHeight(0)
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -53,17 +57,17 @@ class QtDims(QWidget):
         # occured before the view is initialised with the model.
 
         # First we set the dimenions of the view with respect to the model:
-        self._set_num_sliders(dims.num_dimensions)
+        self._set_nsliders(dims.ndims)
 
         # Then we set the mode fop each slider:
-
-        for axis in range(0, dims.num_dimensions):
+        for axis in range(0, dims.ndims):
             slider = self.sliders[axis]
             if self.dims.get_mode(axis)==DimsMode.Point:
                 slider.collapse()
+                print('adasd')
             else:
                 slider.expand()
-
+            slider.collapse()
 
         # The next lines connect events coming from the model to the Qt event
         # system: We need to go through Qt signals so that these events are run
@@ -79,34 +83,36 @@ class QtDims(QWidget):
         # widget
         self.update_axis.connect(self._update_slider)
 
-        # nb dims change listener
-        def update_nbdim_listener(event):
+        # ndims change listener
+        def update_ndims_listener(event):
             self.update_ndims.emit()
-        self.dims.events.ndims.connect(update_nbdim_listener)
+        self.dims.events.ndims.connect(update_ndims_listener)
 
-        # What to do with the nb dims change events in terms of UI calls to the
+        # What to do with the ndims change events in terms of UI calls to the
         # widget
-        self.update_ndims.connect(self._update_nb_sliders)
+        self.update_ndims.connect(self._update_nsliders)
+
 
     @property
-    def num_sliders(self):
-        """
-        Returns the number of sliders displayed
+    def nsliders(self):
+        """Returns the number of sliders displayed
+
         Returns
         -------
-        output: number of sliders displayed
+        nsliders: int
+            Number of sliders displayed
         """
         return len(self.sliders)
 
     def _update_slider(self, slider_index: int):
         """
         Updates everything for a given slider
+
         Parameters
         ----------
         slider_index : slider index (corresponds to axis index)
-
         """
-        if slider_index>=self.num_sliders:
+        if slider_index>=self.nsliders:
             return
 
         slider = self.sliders[slider_index]
@@ -114,35 +120,35 @@ class QtDims(QWidget):
         if slider is None:
             return
 
-        if slider_index<self.dims.num_dimensions:
+        if slider_index<self.dims.ndims:
 
             mode = self.dims.get_mode(slider_index)
             if mode ==DimsMode.Point:
-                slider.collapsed = True
+                slider.collapse()
                 slider.setValue(self.dims.get_point(slider_index))
             elif mode ==DimsMode.Interval:
-                slider.collapsed = False
+                slider.expand()
                 slider.setValues(self.dims.get_interval(slider_index))
             slider_range = self.dims.get_range(slider_index)
             if (slider_range is not None) and (slider_range != (None, None, None)):
                 slider.setRange(slider_range)
 
-    def _update_nb_sliders(self):
+    def _update_nsliders(self):
         """
 
         """
-        self._set_num_sliders(self.dims.num_dimensions)
+        self._set_nsliders(self.dims.ndims)
 
-    def _set_num_sliders(self, new_number_of_sliders):
+    def _set_nsliders(self, new_number_of_sliders):
         """
         Sets the number of sliders displayed
         Parameters
         ----------
         new_number_of_sliders :
         """
-        if self.num_sliders < new_number_of_sliders:
+        if self.nsliders < new_number_of_sliders:
             self._create_sliders(new_number_of_sliders)
-        elif self.num_sliders > new_number_of_sliders:
+        elif self.nsliders > new_number_of_sliders:
             self._trim_sliders(new_number_of_sliders)
 
     def _create_sliders(self, number_of_sliders):
@@ -152,17 +158,12 @@ class QtDims(QWidget):
         ----------
         number_of_sliders : new number of sliders
         """
-        while number_of_sliders>self.num_sliders:
-            new_slider_axis = self.num_sliders
-            #slider = self._create_slider_widget()
-
+        while number_of_sliders>self.nsliders:
+            new_slider_axis = self.nsliders
             slider = self._create_range_slider_widget(new_slider_axis)
-            #slider = self._create_slider_widget(new_slider_axis)
-            #self.layout().addWidget(QRadioButton(), new_slider_axis, 0)
             self.layout().addWidget(slider, new_slider_axis, 0)
-            #self.layout().setRowMinimumHeight(new_slider_axis, self._slider_height)
             self.sliders.append(slider)
-            self.setMinimumHeight(self.num_sliders * self._slider_height)
+            self.setMinimumHeight(self.nsliders * self._slider_height)
 
     def _trim_sliders(self, number_of_sliders):
         """
@@ -171,7 +172,7 @@ class QtDims(QWidget):
         ----------
         number_of_sliders : new number of sliders
         """
-        while number_of_sliders < self.num_sliders:
+        while number_of_sliders < self.nsliders:
             slider = self.sliders.pop()
             self.layout().removeWidget(slider)
             slider.deleteLater()
@@ -190,17 +191,11 @@ class QtDims(QWidget):
         range = self.dims.get_range(axis)
         interval = self.dims.get_interval(axis)
 
-        #if range is None or range == (None, None, None):
-        #    range = (0,100,1)
-        #if interval is None or interval == (None, None):
-        #    interval = (0,100)
-
-
         slider = QHRangeSlider(slider_range=range,
                                values=interval,
                                parent=self)
 
-        slider.default_collapse_logic=False
+        #slider.default_collapse_logic=False
         slider.setFocusPolicy(Qt.StrongFocus)
 
         # notify of changes while sliding:
@@ -210,7 +205,10 @@ class QtDims(QWidget):
         slider.collapsable = True
 
         # and sets it in the correct state:
-        slider.collapsed = self.dims.get_mode(axis) == DimsMode.Point
+        if self.dims.get_mode(axis) == DimsMode.Point:
+            slider.collapse()
+        else:
+            slider.expand()
 
         # Listener to be used for sending events back to model:
         def slider_change_listener(min, max):

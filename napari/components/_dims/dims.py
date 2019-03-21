@@ -333,12 +333,12 @@ class Dims():
             List of axes
         """
         if axis >= self.ndims:
-            old_nb_dimensions = self.ndims
+            old_ndims = self.ndims
             margin_length = 1 + axis - self.ndims
-            self.range.extend([(None, None, None)] * (margin_length))
+            self.range.extend([(0.0, 1.0, 0.01)] * (margin_length))
             self.point.extend([0.0] * (margin_length))
-            self.interval.extend([None] * (margin_length))
-            self.mode.extend([DimsMode.Interval] * (margin_length))
+            self.interval.extend([(0.3, 0.7)] * (margin_length))
+            self.mode.extend([DimsMode.Point] * (margin_length))
             self.display.extend([False] * (margin_length))
 
             if not no_event:
@@ -346,10 +346,10 @@ class Dims():
                 self.events.ndims()
 
                 # Then we notify listeners of which dimensions have been affected.
-                for axis_changed in range(old_nb_dimensions - 1, self.ndims):
+                for axis_changed in range(old_ndims - 1, self.ndims):
                     self.events.axis(axis=axis_changed)
 
-            return list(range(old_nb_dimensions, 1 + axis))
+            return list(range(old_ndims, 1 + axis))
 
         return []
 

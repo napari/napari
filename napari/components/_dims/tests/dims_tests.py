@@ -13,7 +13,7 @@ def test_range():
 
     print(dims.range)
 
-    assert dims.num_dimensions == 4
+    assert dims.ndims == 4
 
     assert dims.range[0] == (None,None,None)
     assert dims.range[1] == (None,None,None)
@@ -30,7 +30,7 @@ def test_mode():
 
     print(dims.mode)
 
-    assert dims.num_dimensions == 4
+    assert dims.ndims == 4
 
     assert dims.mode[0] is None
     assert dims.mode[1] is None
@@ -48,7 +48,7 @@ def test_point():
 
     print(dims.point)
 
-    assert dims.num_dimensions == 4
+    assert dims.ndims == 4
 
     assert dims.point[0] == 0.0
     assert dims.point[1] == 0.0
@@ -66,7 +66,7 @@ def test_interval():
 
     print(dims.interval)
 
-    assert dims.num_dimensions == 4
+    assert dims.ndims == 4
 
     assert dims.interval[0] == None
     assert dims.interval[1] == None
@@ -87,7 +87,7 @@ def test_display():
 
     print(dims.interval)
 
-    assert dims.num_dimensions == 4
+    assert dims.ndims == 4
 
     assert not dims.display[0]
     assert not dims.display[1]
@@ -131,17 +131,16 @@ def test_slice_and_project():
 
 def test_add_remove_dims():
     dims = Dims(2)
-    assert dims.num_dimensions == 2
+    assert dims.ndims == 2
 
-    dims.num_dimensions = 10
-    assert dims.num_dimensions == 10
+    dims.ndims = 10
+    assert dims.ndims == 10
 
-    dims.num_dimensions = 5
-    assert dims.num_dimensions == 5
+    dims.ndims = 5
+    assert dims.ndims == 5
 
     dims.set_mode(5, DimsMode.Point)
-    assert dims.num_dimensions == 6
-z
+    assert dims.ndims == 6
 
 _axis_change_counter =0
 _ndims_change_counter =0
@@ -161,7 +160,7 @@ def test_listeners():
     dims.events.axis.connect(axischange)
 
     def ndimschange(event):
-        print("Change in number of dimensions %d " % event.source.num_dimensions)
+        print("Change in number of dimensions %d " % event.source.ndims)
         global _ndims_change_counter
 
         _ndims_change_counter=_ndims_change_counter+1
@@ -171,11 +170,11 @@ def test_listeners():
     assert _axis_change_counter == 0
     assert _ndims_change_counter == 0
 
-    dims.num_dimensions = 10
+    dims.ndims = 10
     print("acc=%d ncc=%d" % (_axis_change_counter, _ndims_change_counter))
     assert _ndims_change_counter==1
 
-    dims.num_dimensions = 5
+    dims.ndims = 5
     print("acc=%d ncc=%d" % (_axis_change_counter, _ndims_change_counter))
     assert _ndims_change_counter == 2
 

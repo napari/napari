@@ -19,7 +19,6 @@ with app_context():
     # allows range slider to collapse to a single knob:
     widget.collapsable = True
 
-
     # listener for change events:
     def slider_changed(slidermin, slidermax):
         print((slidermin, slidermax))

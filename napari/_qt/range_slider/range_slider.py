@@ -49,7 +49,7 @@ class QRangeSlider(QWidget):
         if values:
             self.setValues(values)
         else:
-            self.setValues((0.3, 0.6))
+            self.setValues((0.3, 0.7))
 
     def emitRange(self):
         change_min = self.old_scale_min != self.scale_min

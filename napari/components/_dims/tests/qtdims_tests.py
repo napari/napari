@@ -14,9 +14,9 @@ with app_context():
     # Instanciates a dimensions model:
     dims = Dims(3)
 
-    dims.set_mode(0, DimsMode.Point)
-    dims.set_point(1,50)
-    dims.set_point(2,50)
+    # dims.set_mode(0, DimsMode.Point)
+    # dims.set_point(1,50)
+    # dims.set_point(2,50)
 
     # defines a axis change listener:
     def listener_axis(event):
@@ -29,11 +29,11 @@ with app_context():
     dims.events.axis.connect(listener_axis)
 
     # defines a axis change listener:
-    def listener_nbdim(event):
+    def listener_ndim(event):
         print("dims changed from: "+str(event.source))
 
     # connects listener to model:
-    dims.events.ndims.connect(listener_nbdim)
+    dims.events.ndims.connect(listener_ndim)
 
     # creates a widget to view (and control) the model:
     widget = QtDims(dims)
@@ -53,10 +53,10 @@ with app_context():
             sleep(0.1)
 
             if i % 50 == 0:
-                dims.num_dimensions = 3 + int(i // 50)
+                dims.ndims = 3 + int(i // 50)
 
             if i>100 and i % 150 == 0:
-                dims.num_dimensions = dims.num_dimensions - 1
+                dims.ndims = dims.ndims - 1
 
             if not widget.isVisible():
                 return
