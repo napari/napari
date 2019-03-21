@@ -141,7 +141,7 @@ class QtMoveBackButton(QPushButton):
     def __init__(self, layer):
         super().__init__()
 
-        path_move = join(resources_dir, 'icons', 'move_to_back_off.png')
+        path_move = join(resources_dir, 'icons', 'move_back.png')
 
         self.layer = layer
         self.setIcon(QIcon(path_move))
@@ -156,7 +156,7 @@ class QtMoveFrontButton(QPushButton):
     def __init__(self, layer):
         super().__init__()
 
-        path_move = join(resources_dir, 'icons', 'move_to_front_off.png')
+        path_move = join(resources_dir, 'icons', 'move_front.png')
 
         self.layer = layer
         self.setIcon(QIcon(path_move))
