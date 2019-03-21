@@ -33,7 +33,7 @@ with app_context():
         print("dims changed from: "+str(event.source))
 
     # connects listener to model:
-    dims.events.nbdims.connect(listener_nbdim)
+    dims.events.ndims.connect(listener_nbdim)
 
     # creates a widget to view (and control) the model:
     widget = QtDims(dims)

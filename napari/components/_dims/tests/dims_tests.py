@@ -144,11 +144,11 @@ def test_add_remove_dims():
 z
 
 _axis_change_counter =0
-_nbdims_change_counter =0
+_ndims_change_counter =0
 
 def test_listeners():
     global _axis_change_counter
-    global _nbdims_change_counter
+    global _ndims_change_counter
 
     dims = Dims(2)
 
@@ -160,25 +160,25 @@ def test_listeners():
 
     dims.events.axis.connect(axischange)
 
-    def nbdimschange(event):
+    def ndimschange(event):
         print("Change in number of dimensions %d " % event.source.num_dimensions)
-        global _nbdims_change_counter
+        global _ndims_change_counter
 
-        _nbdims_change_counter=_nbdims_change_counter+1
+        _ndims_change_counter=_ndims_change_counter+1
 
-    dims.events.nbdims.connect(nbdimschange)
+    dims.events.ndims.connect(ndimschange)
 
     assert _axis_change_counter == 0
-    assert _nbdims_change_counter == 0
+    assert _ndims_change_counter == 0
 
     dims.num_dimensions = 10
-    print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
-    assert _nbdims_change_counter==1
+    print("acc=%d ncc=%d" % (_axis_change_counter, _ndims_change_counter))
+    assert _ndims_change_counter==1
 
     dims.num_dimensions = 5
-    print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
-    assert _nbdims_change_counter == 2
+    print("acc=%d ncc=%d" % (_axis_change_counter, _ndims_change_counter))
+    assert _ndims_change_counter == 2
 
     dims.set_point(0,0)
-    print("acc=%d ncc=%d" % (_axis_change_counter, _nbdims_change_counter))
+    print("acc=%d ncc=%d" % (_axis_change_counter, _ndims_change_counter))
     assert _axis_change_counter == 9

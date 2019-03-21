@@ -22,7 +22,7 @@ class QtDims(QWidget):
 
     # Qt Signals for sending events to Qt thread
     update_axis = pyqtSignal(int)
-    update_nbdims = pyqtSignal()
+    update_ndims = pyqtSignal()
 
 
     def __init__(self, dims: Dims, parent = None):
@@ -81,12 +81,12 @@ class QtDims(QWidget):
 
         # nb dims change listener
         def update_nbdim_listener(event):
-            self.update_nbdims.emit()
-        self.dims.events.nbdims.connect(update_nbdim_listener)
+            self.update_ndims.emit()
+        self.dims.events.ndims.connect(update_nbdim_listener)
 
         # What to do with the nb dims change events in terms of UI calls to the
         # widget
-        self.update_nbdims.connect(self._update_nb_sliders)
+        self.update_ndims.connect(self._update_nb_sliders)
 
     @property
     def num_sliders(self):

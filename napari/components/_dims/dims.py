@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 from copy import copy
 from enum import Enum
 from typing import Union, Tuple, Iterable, Sequence
@@ -24,21 +24,30 @@ class Dims():
     ----------
     events : EmitterGroup
         Event emitter group
-    range :
-    point :
-    interval :
-    mode :
-    display :
+    range : list
+        List of tuples (min, max, step), one for each dimension
+    point : list
+        List of floats, one for each dimension
+    interval : list
+        List of tuples (min, max), one for each dimension
+    mode : list
+        List of DimsMode, one for each dimension
+    display : list
+        List of bool indicating if dimension displayed or not, one for each
+        dimension
+    ndims : int
+        Number of dimensions
+    displayed : np.ndarray
+        Array of the displayed dimensions
     """
     def __init__(self, init_ndims=0):
-
         super().__init__()
 
         # Events:
         self.events = EmitterGroup(source=self,
                                     auto_connect=True,
                                     axis=None,
-                                    nbdims=None)
+                                    ndims=None)
 
         self.range = []
         self.point = []
@@ -56,36 +65,36 @@ class Dims():
                          str(self.display)])
 
     @property
-    def num_dimensions(self):
+    def ndims(self):
         """Returns the number of dimensions
 
         Returns
         -------
-        num_dims : int
+        ndims : int
             Number of dimensions
         """
         return len(self.point)
 
-    @num_dimensions.setter
-    def num_dimensions(self, num_dimensions):
-        if self.num_dimensions < num_dimensions:
-            self._ensure_axis_present(num_dimensions - 1)
-        elif self.num_dimensions > num_dimensions:
-            self._trim_nb_dimensions(num_dimensions)
+    @ndims.setter
+    def ndims(self, ndims):
+        if self.ndims < ndims:
+            self._ensure_axis_present(ndims - 1)
+        elif self.ndims > ndims:
+            self._trim_ndims(ndims)
 
     @property
-    def displayed_dimensions(self):
+    def displayed(self):
         """Returns the displayed dimensions
 
         Returns
         -------
-        dimensions : np.ndarray
+        displayed : np.ndarray
             Displayed dimensions
         """
         displayed_one_hot = copy(self.display)
         displayed_one_hot =  ([False if elem is None else elem for elem in
                               displayed_one_hot])
-        return numpy.nonzero(list(displayed_one_hot))[0]
+        return np.nonzero(list(displayed_one_hot))[0]
 
     @property
     def slice_and_project(self):
@@ -145,11 +154,11 @@ class Dims():
         ranges : tuple
             Ranges of all dimensions
         """
-        nb_dim = len(all_ranges)
-        modified_dims = self._ensure_axis_present(nb_dim-1, no_event=True)
+        ndim = len(all_ranges)
+        modified_dims = self._ensure_axis_present(ndim-1, no_event=True)
         self.range=all_ranges
 
-        self.events.nbdims()
+        self.events.ndims()
         for axis_changed in modified_dims:
             self.events.axis(axis=axis_changed)
 
@@ -323,9 +332,9 @@ class Dims():
         dimensions : list
             List of axes
         """
-        if axis >= self.num_dimensions:
-            old_nb_dimensions = self.num_dimensions
-            margin_length = 1 + axis - self.num_dimensions
+        if axis >= self.ndims:
+            old_nb_dimensions = self.ndims
+            margin_length = 1 + axis - self.ndims
             self.range.extend([(None, None, None)] * (margin_length))
             self.point.extend([0.0] * (margin_length))
             self.interval.extend([None] * (margin_length))
@@ -334,30 +343,30 @@ class Dims():
 
             if not no_event:
                 # First we notify listeners that the number of dimensions have changed:
-                self.events.nbdims()
+                self.events.ndims()
 
                 # Then we notify listeners of which dimensions have been affected.
-                for axis_changed in range(old_nb_dimensions - 1, self.num_dimensions):
+                for axis_changed in range(old_nb_dimensions - 1, self.ndims):
                     self.events.axis(axis=axis_changed)
 
             return list(range(old_nb_dimensions, 1 + axis))
 
         return []
 
-    def _trim_nb_dimensions(self, nb_dimensions: int):
+    def _trim_ndims(self, ndims: int):
         """This internal method is used to trim the number of axis.
 
         Parameters
         ----------
-        nb_dimensions : int
+        ndims : int
             The new number of dimensions
         """
-        if nb_dimensions < self.num_dimensions:
-            self.range = self.range[:nb_dimensions]
-            self.point = self.point[:nb_dimensions]
-            self.interval = self.interval[:nb_dimensions]
-            self.mode = self.mode[:nb_dimensions]
-            self.display = self.display[:nb_dimensions]
+        if ndims < self.ndims:
+            self.range = self.range[:ndims]
+            self.point = self.point[:ndims]
+            self.interval = self.interval[:ndims]
+            self.mode = self.mode[:ndims]
+            self.display = self.display[:ndims]
 
             # Notify listeners that the number of dimensions have changed:
-            self.events.nbdims()
+            self.events.ndims()
