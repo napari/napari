@@ -34,6 +34,9 @@ class QtShapesControls(QFrame):
                                                  'Insert vertex')
         self.vertex_remove_button = QtModeButton(layer, 'vertex_remove',
                                                  'Remove vertex')
+
+        self.move_front_button = QtMoveFrontButton(layer)
+        self.move_back_button = QtMoveBackButton(layer)
         self.delete_button = QtDeleteButton(layer)
 
         self.button_group = QButtonGroup(self)
@@ -59,6 +62,8 @@ class QtShapesControls(QFrame):
         layout.addWidget(self.line_button)
         layout.addWidget(self.path_button)
         layout.addWidget(self.polygon_button)
+        layout.addWidget(self.move_front_button)
+        layout.addWidget(self.move_back_button)
         layout.addWidget(self.delete_button)
         layout.addStretch(0)
         self.setLayout(layout)
@@ -128,9 +133,38 @@ class QtDeleteButton(QPushButton):
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Delete selected')
-        self.setChecked(False)
         self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layer.remove_selected)
+
+
+class QtMoveBackButton(QPushButton):
+    def __init__(self, layer):
+        super().__init__()
+
+        path_move = join(resources_dir, 'icons', 'move_to_back_off.png')
+
+        self.layer = layer
+        self.setIcon(QIcon(path_move))
+        self.setFixedWidth(28)
+        self.setFixedHeight(28)
+        self.setToolTip('Move to back')
+        self.setStyleSheet(styleSheet)
+        self.clicked.connect(self.layer.move_to_back)
+
+
+class QtMoveFrontButton(QPushButton):
+    def __init__(self, layer):
+        super().__init__()
+
+        path_move = join(resources_dir, 'icons', 'move_to_front_off.png')
+
+        self.layer = layer
+        self.setIcon(QIcon(path_move))
+        self.setFixedWidth(28)
+        self.setFixedHeight(28)
+        self.setToolTip('Move to front')
+        self.setStyleSheet(styleSheet)
+        self.clicked.connect(self.layer.move_to_front)
 
 
 styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}

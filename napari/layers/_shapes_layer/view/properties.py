@@ -60,25 +60,14 @@ class QtShapesLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
         self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
-        rearrange_cb = QComboBox()
-        options = (['select', 'move_to_front', 'move_to_back'])
-        for o in options:
-            rearrange_cb.addItem(o)
-        rearrange_cb.setCurrentIndex(0)
-        rearrange_cb.activated[str].connect(lambda text=rearrange_cb:
-                                            self.changeRearrange(text))
-        self.rearrangeComboBox = rearrange_cb
-        self.grid_layout.addWidget(QLabel('rearrange:'), 6, 0)
-        self.grid_layout.addWidget(rearrange_cb, 6, 1)
-
         apply_cb = QCheckBox()
         apply_cb.setToolTip('Apply to all')
         apply_cb.setChecked(self.layer.apply_all)
         apply_cb.stateChanged.connect(lambda state=apply_cb:
                                       self.change_apply(state))
         self.applyCheckBox = apply_cb
-        self.grid_layout.addWidget(QLabel('apply_all:'), 7, 0)
-        self.grid_layout.addWidget(apply_cb, 7, 1)
+        self.grid_layout.addWidget(QLabel('apply_all:'), 6, 0)
+        self.grid_layout.addWidget(apply_cb, 6, 1)
 
         self.setExpanded(False)
 
@@ -90,16 +79,6 @@ class QtShapesLayer(QtLayer):
 
     def changeWidth(self, value):
         self.layer.edge_width = value
-
-    def changeRearrange(self, text):
-        if text == 'select':
-            return
-
-        if text == 'move_to_front':
-            self.layer.move_to_front()
-        elif text == 'move_to_back':
-            self.layer.move_to_back()
-        self.rearrangeComboBox.setCurrentIndex(0)
 
     def change_apply(self, state):
         if state == Qt.Checked:
