@@ -94,12 +94,13 @@ class Vectors(Layer):
     http://vispy.org/visuals.html
     """
 
-    def __init__(
-        self, vectors,
-            width=1,
-            color='red',
-            averaging='1x1',
-            length=1):
+    def __init__(self,
+                 vectors,
+                 width=1,
+                 color='red',
+                 averaging='1x1',
+                 length=1,
+                 name=None):
 
         visual = LinesNode()
         super().__init__(visual)
@@ -140,10 +141,14 @@ class Vectors(Layer):
         self._original_data = vectors
         self._current_shape = vectors.shape
         self._vectors = self._convert_to_vector_type(vectors)
+        # self.vectors = vectors
         self.averaging_bind_to(self._default_avg)
         self.length_bind_to(self._default_length)
 
-        self.name = 'vectors'
+        if name is None:
+            self.name = 'vectors'
+        else:
+            self.name = name
         # self.events.add(mode=Event)
         self._qt_properties = QtVectorsLayer(self)
 
@@ -226,6 +231,7 @@ class Vectors(Layer):
         # stride is used during averaging and length adjustment
         stride_x = self._kernel[0]
         stride_y = self._kernel[1]
+        print('stride = %s, %s' % (stride_x, stride_y))
 
         # create empty vector of necessary shape
         # every "pixel" has 2 coordinates
@@ -233,8 +239,8 @@ class Vectors(Layer):
 
         # create coordinate spacing for x-y
         # double the num of elements by doubling x sampling
-        xspace = np.linspace(0, stride_x*xdim, 2 * xdim)
-        yspace = np.linspace(0, stride_y*ydim, ydim)
+        xspace = np.linspace(0, stride_x*xdim, 2 * xdim, endpoint=False)
+        yspace = np.linspace(0, stride_y*ydim, ydim, endpoint=False)
         xv, yv = np.meshgrid(xspace, yspace)
 
         # assign coordinates (pos) to all pixels
@@ -255,6 +261,8 @@ class Vectors(Layer):
                        vect.reshape((xdim*ydim, 2))[:, 0]
         pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * (self._length/2) * \
                        vect.reshape((xdim*ydim, 2))[:, 1]
+        print(midpt[:,0])
+
 
         return pos
 
