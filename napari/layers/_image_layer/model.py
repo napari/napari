@@ -214,12 +214,12 @@ class Image(Layer):
 
         sliced_image = self.image[tuple(indices)]
 
-        if projections is not None:
-            projection_axis = np.nonzero(list(projections))[0]
-
-            if len(projection_axis) != 0:
-                projected_image = np.max(sliced_image, axis=tuple(projection_axis))
-                return projected_image
+        # if projections is not None:
+        #     projection_axis = np.nonzero(list(projections))[0]
+        #
+        #     if len(projection_axis) != 0:
+        #         projected_image = np.max(sliced_image, axis=tuple(projection_axis))
+        #         return projected_image
 
         return sliced_image
 
@@ -237,8 +237,6 @@ class Image(Layer):
 
         self._need_visual_update = True
         self._update()
-
-
 
     @property
     def multichannel(self):
@@ -357,7 +355,7 @@ class Image(Layer):
     def _clim_range_default(self):
         return [np.min(self.image), np.max(self.image)]
 
-    def get_value(self, position, slices, projections, displayed):
+    def get_value(self, position, slices, projections):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
@@ -385,7 +383,7 @@ class Image(Layer):
         coord = list(copy(slices))
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        value = self._slice_and_project_image(coord,projections)
+        value = self._slice_and_project_image(coord, projections)[0]
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):
@@ -406,7 +404,5 @@ class Image(Layer):
         if event.pos is None:
             return
         slices, projections  = self.viewer.dims.slice_and_project
-        displayed = self.viewer.dims.displayed_dimensions
-
-        coord, value, msg = self.get_value(event.pos, slices, projections, displayed)
+        coord, value, msg = self.get_value(event.pos, slices, projections)
         self.status = msg

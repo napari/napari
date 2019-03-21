@@ -64,10 +64,8 @@ class QtDims(QWidget):
             slider = self.sliders[axis]
             if self.dims.get_mode(axis)==DimsMode.Point:
                 slider.collapse()
-                print('adasd')
             else:
                 slider.expand()
-            slider.collapse()
 
         # The next lines connect events coming from the model to the Qt event
         # system: We need to go through Qt signals so that these events are run

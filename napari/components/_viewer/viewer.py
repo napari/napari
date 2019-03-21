@@ -111,8 +111,6 @@ class Viewer:
         """
         self._qtviewer.view.camera.set_range()
 
-
-
     def add_layer(self, layer):
         """Adds a layer to the viewer.
 
@@ -126,10 +124,10 @@ class Viewer:
             self.reset_view()
 
     def _new_markers(self):
-        if self.dims.num_dimensions == 0:
+        if self.dims.ndims == 0:
             empty_markers = empty((0, 2))
         else:
-            empty_markers = empty((0, self.dims.num_dimensions))
+            empty_markers = empty((0, self.dims.ndims))
         self.add_markers(empty_markers)
 
     def _update_layers(self, axis):
@@ -139,7 +137,6 @@ class Viewer:
         slices, projections = self.dims.slice_and_project
 
         for layer in self.layers:
-            print(slices)
             layer._set_view_specifications(slices, projections)
 
     def _update_layer_selection(self, event):
@@ -169,13 +166,13 @@ class Viewer:
         """Calculates the range along each axis from all present layers.
         """
 
-        nbdims = self._calc_layers_num_dims()
+        ndims = self._calc_layers_num_dims()
 
-        ranges = [(inf, -inf, inf)]*nbdims
+        ranges = [(inf, -inf, inf)]*ndims
 
         for layer in self.layers:
             layer_range = layer.range
-            ranges = [ (min(a,b),max(c,d), min(e,f)) for (a,c,e),(b,d,f) in zip(ranges,layer_range)]
+            ranges = [(min(a,b),max(c,d), min(e,f)) for (a,c,e),(b,d,f) in zip(ranges,layer_range)]
 
         return ranges
 
