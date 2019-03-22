@@ -354,7 +354,7 @@ class Vectors(Layer):
             x_offset = int((x - 1) / 2)
             y_offset = int((y - 1) / 2)
 
-            kernel = np.ones(shape=(x, y))/9
+            kernel = np.ones(shape=(x, y)) / (x*y)
 
             output_mat = np.zeros_like(tempdat)
             output_mat_x = signal.convolve2d(tempdat[:, :, 0], kernel, mode='same', boundary='wrap')
