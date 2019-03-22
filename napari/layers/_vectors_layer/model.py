@@ -2,6 +2,7 @@
 from typing import Union
 
 import numpy as np
+import scipy.signal as signal
 
 from .._base_layer import Layer
 from .._register import add_to_viewer
@@ -300,11 +301,11 @@ class Vectors(Layer):
     
     @averaging.setter
     def averaging(self, averaging: str):
-        '''
+        """
         Calculates an average vector over a kernel
         :param averaging: one of "_avg_dims" above
         :return:
-        '''
+        """
         self._averaging = averaging
         self._kernel = self._kernel_dict[averaging]
 
@@ -317,24 +318,24 @@ class Vectors(Layer):
         self._refresh()
 
     def averaging_bind_to(self, callback):
-        '''
+        """
         register an observer to be notified upon changes to averaging
         Removes the default method for averaging if an external method
             is registered
         :param callback: function to call upon averaging changes
         :return:
-        '''
+        """
         if self._default_avg in self._avg_observers:
             self._avg_observers.remove(self._default_avg)
         self._avg_observers.append(callback)
 
     def _default_avg(self, avg_kernel: str):
-        '''
+        """
         Default method for calculating average
         Implemented ONLY for image-like vector data
         :param avg_kernel: kernel over which to compute average
         :return:
-        '''
+        """
         if self._data_type == 'coords':
             # default averaging is supported only for 'matrix' dataTypes
             return None
@@ -353,12 +354,16 @@ class Vectors(Layer):
             x_offset = int((x - 1) / 2)
             y_offset = int((y - 1) / 2)
 
-            output_mat = np.zeros_like(tempdat)
-            for (i, j, k), element in np.ndenumerate(tempdat[x_offset:range_x-x_offset:x, y_offset:range_y-y_offset:y]):
-                output_mat[i, j, 0] = np.sum(tempdat[i:i + x, j:j + y, 0]) / (x+y)
-                output_mat[i, j, 1] = np.sum(tempdat[i:i + x, j:j + y, 1]) / (x+y)
+            kernel = np.ones(shape=(x, y))/9
 
-            self.vectors = output_mat
+            output_mat = np.zeros_like(tempdat)
+            output_mat_x = signal.convolve2d(tempdat[:, :, 0], kernel, mode='same', boundary='wrap')
+            output_mat_y = signal.convolve2d(tempdat[:, :, 1], kernel, mode='same', boundary='wrap')
+
+            output_mat[:, :, 0] = output_mat_x
+            output_mat[:, :, 1] = output_mat_y
+
+            self.vectors = output_mat[x_offset:range_x-x_offset:x, y_offset:range_y-y_offset:y]
 
     @property
     def width(self) -> Union[int, float]:
@@ -382,7 +387,7 @@ class Vectors(Layer):
     def length(self, length: Union[int, float]):
         """
         Change the length of all lines
-        :param magnitude: length multiplicative factor
+        :param length: length multiplicative factor
         :return: None
         """
         self._length = length
@@ -396,24 +401,24 @@ class Vectors(Layer):
         self._refresh()
 
     def length_bind_to(self, callback):
-        '''
+        """
         register an observer to be notified upon changes to length
         Removes the default method for length if an external method is registered
         :param callback: function to call upon length changes
         :return:
-        '''
+        """
         if self._default_length in self._len_observers:
             self._len_observers.remove(self._default_length)
             print('removing default length')
         self._len_observers.append(callback)
 
     def _default_length(self, newlen: int):
-        '''
+        """
         Default method for calculating vector lengths
         Implemented ONLY for image-like vector data
         :param newlen: new length
         :return:
-        '''
+        """
 
         if self._data_type == 'coords':
             return None
@@ -501,6 +506,7 @@ class Vectors(Layer):
         self._update()
 
     # ========================= Napari Layer ABC CONTROL methods =====================
+
 
 class InvalidDataFormatError(Exception):
     """
