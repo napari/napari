@@ -92,7 +92,7 @@ class ShapeList():
     """
     _mesh_types = ['face', 'edge']
 
-    def __init__(self, data, shape_type='rectangle', edge_width=1,
+    def __init__(self, data, *, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=1, z_index=0):
 
         self.shapes = []

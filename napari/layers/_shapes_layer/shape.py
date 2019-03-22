@@ -74,7 +74,7 @@ class Shape():
     """
     _shape_types = ['line', 'rectangle', 'ellipse', 'path', 'polygon']
 
-    def __init__(self, data, shape_type='rectangle', edge_width=1,
+    def __init__(self, data, *, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=1, z_index=0):
 
         self._face_vertices = np.empty((0, 2))

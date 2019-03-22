@@ -32,8 +32,8 @@ with app_context():
 
     # add polygons
     layer = viewer.add_shapes(polygons, shape_type='polygon', edge_width=1,
-                      edge_color='coral', face_color='royalblue',
-                      name='shapes')
+                              edge_color='coral', face_color='royalblue',
+                              name='shapes')
 
     # change some properties of the layer
     layer.selected_shapes = list(range(len(layer.data.shapes)))

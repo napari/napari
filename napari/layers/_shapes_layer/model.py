@@ -155,9 +155,9 @@ class Shapes(Layer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
-    def __init__(self, data, shape_type='rectangle', edge_width=1,
+    def __init__(self, data, *, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=1, z_index=0,
-                 *, name=None):
+                 name=None):
 
         visual = Compound([Markers(), Line(), Mesh(), Mesh()])
 
