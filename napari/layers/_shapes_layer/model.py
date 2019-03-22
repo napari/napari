@@ -479,10 +479,8 @@ class Shapes(Layer):
             rot = box[1]
             length_box = np.linalg.norm(box[6] - box[0])
             if length_box > 0:
-                scene = self.viewer._canvas.scene
-                transform = scene.node_transform(self._node)
-                rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-                r = self._rotation_handle_length*rescale.mean()
+                rescale = self._get_rescale()
+                r = self._rotation_handle_length*rescale
                 rot = rot-r*(box[6] - box[0])/length_box
             box = np.append(box, [rot], axis=0)
 
@@ -571,6 +569,8 @@ class Shapes(Layer):
                                                    edge_width=1.5,
                                                    symbol='square',
                                                    scaling=False)
+                # Use a subset of the vertices of the interaction_box to plot
+                # the line around the edge
                 keep_inds = [1, 2, 4, 6, 0, 1, 8]
                 self._node._subvisuals[1].set_data(pos=box[keep_inds],
                                                    color=edge_color, width=1.5)
@@ -602,7 +602,10 @@ class Shapes(Layer):
             box = create_box(self._drag_box)
             edge_color = self._highlight_color
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
-            self._node._subvisuals[1].set_data(pos=box[[0, 2, 4, 6, 0]],
+            # Use a subset of the vertices of the interaction_box to plot
+            # the line around the edge
+            keep_inds = [0, 2, 4, 6, 0]
+            self._node._subvisuals[1].set_data(pos=box[keep_inds],
                                                color=edge_color, width=1.5)
         else:
             self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
@@ -678,9 +681,8 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[1] == box[9]):
-            transform = self.viewer._canvas.scene.node_transform(self._node)
-            rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-            r = self._rotation_handle_length*rescale.mean()
+            rescale = self._get_rescale()
+            r = self._rotation_handle_length*rescale
             box[9] = box[1] + r*(box[9]-box[1])/np.linalg.norm(box[9]-box[1])
         self._selected_box = box + center
 
@@ -697,9 +699,8 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = box @ transform.T
         if not np.all(box[1] == box[9]):
-            transform = self.viewer._canvas.scene.node_transform(self._node)
-            rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-            r = self._rotation_handle_length*rescale.mean()
+            rescale = self._get_rescale()
+            r = self._rotation_handle_length*rescale
             box[9] = box[1] + r*(box[9]-box[1])/np.linalg.norm(box[9]-box[1])
         self._selected_box = box + center
 
@@ -731,10 +732,8 @@ class Shapes(Layer):
                 distances = abs(box - coord[:2])
 
                 # Get the vertex sizes
-                scene = self.viewer._canvas.scene
-                transform = scene.node_transform(self._node)
-                rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-                sizes = self._vertex_size*rescale.mean()/2
+                rescale = self._get_rescale()
+                sizes = self._vertex_size*rescale/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -747,10 +746,8 @@ class Shapes(Layer):
                 distances = abs(vertices - coord[:2])
 
                 # Get the vertex sizes
-                scene = self.viewer._canvas.scene
-                transform = scene.node_transform(self._node)
-                rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-                sizes = self._vertex_size*rescale.mean()/2
+                rescale = self._get_rescale()
+                sizes = self._vertex_size*rescale/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
@@ -796,6 +793,20 @@ class Shapes(Layer):
 
         return shapes
 
+    def _get_rescale(self):
+        """Get conversion factor from canvas coordinates to image coordinates.
+        Depends on the current zoom level.
+
+        Returns
+        ----------
+        rescale : float
+            Conversion factor from canvas coordinates to image coordinates.
+        """
+        transform = self.viewer._canvas.scene.node_transform(self._node)
+        rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+
+        return rescale.mean()
+
     def _get_coord(self, position):
         """Convert a position in canvas coordinates to image coordinates.
 
@@ -813,6 +824,7 @@ class Shapes(Layer):
         pos = transform.map(position)
         coord = np.array([pos[0], pos[1]])
         self._cursor_coord = coord
+
         return coord
 
     def get_message(self, coord, shape, vertex):
@@ -935,11 +947,8 @@ class Shapes(Layer):
                         scale = np.array([dist_perp, 1])
 
                     # prevent box from shrinking below a threshold size
-                    scene = self.viewer._canvas.scene
-                    transform = scene.node_transform(self._node)
-                    rescale = (transform.map([1, 1])[:2] -
-                               transform.map([0, 0])[:2])
-                    threshold = self._vertex_size*rescale.mean()/8
+                    rescale = self._get_rescale()
+                    threshold = self._vertex_size*rescale/8
                     scale[abs(scale*size) < threshold] = 1
 
                     # check orientation of box
@@ -1092,9 +1101,8 @@ class Shapes(Layer):
                 self.status = self.get_message(coord, shape, vertex)
         elif self.mode in ['add_rectangle', 'add_ellipse', 'add_line']:
             # Start drawing a rectangle / ellipse / line
-            transform = self.viewer._canvas.scene.node_transform(self._node)
-            rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-            size = self._vertex_size*rescale.mean()/4
+            rescale = self._get_rescale()
+            size = self._vertex_size*rescale/4
             new_z_index = max(self.data._z_index, default=-1) + 1
             if self.mode == 'add_rectangle':
                 data = np.array([coord, coord+size])
