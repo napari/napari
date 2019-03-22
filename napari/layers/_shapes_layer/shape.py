@@ -50,9 +50,9 @@ class Shape():
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     _box : np.ndarray
-        9x2 array of vertices of the bounding box. The first 8 points are
-        the corners and midpoints of the box. The last point is the center
-        of the box
+        9x2 array of vertices of the interaction box. The first 8 points are
+        the corners and midpoints of the box in clockwise order starting in the
+        upper-left corner. The last point is the center of the box
     _face_vertices : np.ndarray
         Qx2 array of vertices of all triangles for the shape face
     _face_triangles : np.ndarray

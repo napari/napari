@@ -142,12 +142,12 @@ def triangle_edges_intersect_box(triangles, corners):
     for i in range(3):
         # check if each triangle edge
         p1 = triangles[:, i, :]
-        q1 = triangles[:, np.mod(i+1, 3), :]
+        q1 = triangles[:, (i+1) % 3, :]
 
         for j in range(4):
             # Check the four edges of the box
             p2 = box[j]
-            q2 = box[np.mod(j+1, 3)]
+            q2 = box[(j+1) % 3]
             intersects[:, i*3+j] = ([lines_intersect(p1[k], q1[k], p2, q2)
                                     for k in range(len(p1))])
 
@@ -310,19 +310,19 @@ def point_to_lines(point, lines):
 
 
 def create_box(data):
-    """Creates the axis aligned bounding box of a list of points
+    """Creates the axis aligned interaction box of a list of points
 
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of points whose bounding box is to be found
+        Nx2 array of points whose interaction box is to be found
 
     Returns
     -------
     box : np.ndarray
-        9x2 array of vertices of the bounding box. The first 8 points are
-        the corners and midpoints of the box. The last point is the center
-        of the box
+        9x2 array of vertices of the interaction box. The first 8 points are
+        the corners and midpoints of the box in clockwise order starting in the
+        upper-left corner. The last point is the center of the box
     """
     min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
     max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
@@ -336,7 +336,7 @@ def create_box(data):
 
 
 def rectangle_to_box(data):
-    """Converts the four corners of a rectangle into a bounding box like
+    """Converts the four corners of a rectangle into a interaction box like
     representation. If the rectangle is not axis aligned the resulting box
     representation will not be axis aligned either
 
@@ -348,9 +348,9 @@ def rectangle_to_box(data):
     Returns
     -------
     box : np.ndarray
-        9x2 array of vertices of the bounding box. The first 8 points are
-        the corners and midpoints of the box. The last point is the center
-        of the box
+        9x2 array of vertices of the interaction box. The first 8 points are
+        the corners and midpoints of the box in clockwise order starting in the
+        upper-left corner. The last point is the center of the box
     """
     if not np.all(data.shape == (4, 2)):
         raise ValueError("""Data shape does not match expected `[4, 2]`
@@ -362,13 +362,13 @@ def rectangle_to_box(data):
 
 
 def find_corners(data):
-    """Finds the four corners of the bounding box definied by an array of
+    """Finds the four corners of the interaction box definied by an array of
     points
 
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of points whose bounding box is to be found
+        Nx2 array of points whose interaction box is to be found
 
     Returns
     -------

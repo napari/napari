@@ -36,8 +36,10 @@ with app_context():
                       name='shapes')
 
     # change some properties of the layer
+    layer.selected_shapes = list(range(len(layer.data.shapes)))
     layer.edge_width = 5
     layer.opacity = 0.75
+    layer.selected_shapes = []
 
     # add an ellipse to the layer
     ellipse = np.array([[222, 59], [289, 110], [243, 170], [176, 119]])
