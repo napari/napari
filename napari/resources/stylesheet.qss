@@ -1,0 +1,85 @@
+QRadioButton {
+    background-color:lightGray;
+    border-radius: 3px;
+}
+
+QRadioButton::indicator {
+    subcontrol-position: center center;
+    subcontrol-origin: content;
+    width: 28px; height: 28px;
+}
+
+QRadioButton::indicator:checked {
+    background-color:rgb(0, 153, 255);
+    border-radius: 3px;
+}
+
+QtPanZoomButton::indicator:checked, QtPanZoomButton::indicator:unchecked {
+    image: url(":/icons/zoom_off.png");
+}
+
+QtPanZoomButton::indicator:unchecked:hover {
+    image: url(":/icons/zoom_on.png");
+}
+
+QtSelectButton::indicator:checked, QtSelectButton::indicator:unchecked {
+    image: url(":/icons/select_off.png");
+}
+
+QtSelectButton::indicator:unchecked:hover {
+    image: url(":/icons/select_on.png");
+}
+
+QtAdditionButton::indicator:checked, QtAdditionButton::indicator:unchecked {
+    image: url(":/icons/add_off.png");
+}
+
+QtAdditionButton::indicator:unchecked:hover {
+    image: url(":/icons/add_on.png");
+}
+
+
+/* ------------------------------------------------------ */
+
+QtLayer > QCheckBox::indicator {
+    width: 18px; height: 18px;
+}
+
+QtLayer > QCheckBox::indicator:checked {
+    image: url(":/icons/eye_on.png");
+}
+
+QtLayer > QLineEdit {
+    background-color: lightGray;
+    border: none;
+}
+
+QtLayer {
+    border: 3px solid lightGray;
+    background-color: lightGray;
+    border-radius: 3px;
+}
+
+QtLayer[selected="true"] {
+    border: 3px solid rgb(0, 153, 255);
+    background-color: lightGray;
+    border-radius: 3px;
+}
+
+
+/* ------------------------------------------------------ */
+
+QPushButton {
+    background-color:lightGray;
+    border-radius: 3px;
+}
+
+QPushButton:pressed {
+    background-color:rgb(0, 153, 255);
+    border-radius: 3px;
+}
+
+QPushButton:hover {
+    background-color:rgb(0, 153, 255);
+    border-radius: 3px;
+}

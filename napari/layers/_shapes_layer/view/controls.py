@@ -126,14 +126,11 @@ class QtDeleteButton(QPushButton):
     def __init__(self, layer):
         super().__init__()
 
-        path_delete = join(resources_dir, 'icons', 'delete.png')
-
         self.layer = layer
-        self.setIcon(QIcon(path_delete))
+        self.setIcon(QIcon(':/icons/delete.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Delete selected')
-        self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layer.remove_selected)
 
 
@@ -141,14 +138,11 @@ class QtMoveBackButton(QPushButton):
     def __init__(self, layer):
         super().__init__()
 
-        path_move = join(resources_dir, 'icons', 'move_back.png')
-
         self.layer = layer
-        self.setIcon(QIcon(path_move))
+        self.setIcon(QIcon(':/icons/move_back.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Move to back')
-        self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layer.move_to_back)
 
 
@@ -156,22 +150,12 @@ class QtMoveFrontButton(QPushButton):
     def __init__(self, layer):
         super().__init__()
 
-        path_move = join(resources_dir, 'icons', 'move_front.png')
-
         self.layer = layer
-        self.setIcon(QIcon(path_move))
+        self.setIcon(QIcon(':/icons/move_front.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Move to front')
-        self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layer.move_to_front)
-
-
-styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
-                QPushButton:pressed {background-color:rgb(0, 153, 255);
-                border-radius: 3px;}
-                QPushButton:hover {background-color:rgb(0, 153, 255);
-                border-radius: 3px;}"""
 
 
 def button_style(name):

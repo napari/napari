@@ -1,0 +1,16 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>icons/add_off.png</file>
+    <file>icons/add_on.png</file>
+    <file>icons/cursor_disabled.png</file>
+    <file>icons/delete.png</file>
+    <file>icons/eye_on.png</file>
+    <file>icons/move_back.png</file>
+    <file>icons/move_front.png</file>
+    <file>icons/new.png</file>
+    <file>icons/select_off.png</file>
+    <file>icons/select_on.png</file>
+    <file>icons/zoom_off.png</file>
+    <file>icons/zoom_on.png</file>
+</qresource>
+</RCC>

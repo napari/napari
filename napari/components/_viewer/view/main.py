@@ -1,19 +1,23 @@
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import QCoreApplication, Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from .controls import QtControls
 
-from os.path import join
+import os.path as osp
 from ....resources import resources_dir
-path_cursor = join(resources_dir, 'icons', 'cursor_disabled.png')
 
 
 class QtViewer(QSplitter):
+    with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
+        default_stylesheet = f.read()
 
     def __init__(self, viewer):
         super().__init__()
+
+        QCoreApplication.setAttribute(Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
+        self.setStyleSheet(self.default_stylesheet)
 
         self.viewer = viewer
 
@@ -50,7 +54,8 @@ class QtViewer(QSplitter):
         viewer.dims._qt.setFixedHeight(0)
 
         self._cursors = {
-                'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
+                'disabled': QCursor(QPixmap(':/icons/cursor_disabled.png')
+                                    .scaled(20, 20)),
                 'cross': Qt.CrossCursor,
                 'forbidden': Qt.ForbiddenCursor,
                 'pointing': Qt.PointingHandCursor,
