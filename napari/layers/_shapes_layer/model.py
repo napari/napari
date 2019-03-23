@@ -461,28 +461,19 @@ class Shapes(Layer):
 
         return box
 
-    def _set_highlight(self, force=False):
-        """Render highlights of shapes including boundaries, vertices,
-        interaction boxes, and the drag selection box when appropriate
+    def _outline_shapes(self):
+        """Draws outlines of any selected shapes including any shape hovered
+        over
 
-        Parameters
+        Returns
         ----------
-        force : bool
-            Bool that forces a redraw to occur when `True`
+        vertices : None | np.ndarray
+            Nx2 array of any vertices of outline or None
+        faces : None | np.ndarray
+            Mx3 array of any indices of vertices for triangles of outline or
+            None
         """
-        # Check if any shape or vertex ids have changed since last call
-        if (self.selected_shapes == self._selected_shapes_stored and
-                self._hover_shape == self._hover_shape_stored and
-                self._hover_vertex == self._hover_vertex_stored and
-                np.all(self._drag_box == self._drag_box_stored)) and not force:
-            return
-        self._selected_shapes_stored = copy(self.selected_shapes)
-        self._hover_shape_stored = copy(self._hover_shape)
-        self._hover_vertex_stored = copy(self._hover_vertex)
-        self._drag_box_stored = copy(self._drag_box)
-
         if self._hover_shape is not None or len(self.selected_shapes) > 0:
-            # show outlines hover shape or any selected shapes
             if len(self.selected_shapes) > 0:
                 index = copy(self.selected_shapes)
                 if self._hover_shape is not None:
@@ -521,11 +512,30 @@ class Shapes(Layer):
                     faces[indices] = faces[indices] + adjust_index
             else:
                 faces = faces - vertices_indices[0]
-            self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
-                                               color=self._highlight_color)
         else:
-            self._node._subvisuals[2].set_data(vertices=None, faces=None)
+            vertices = None
+            faces = None
 
+        return vertices, faces
+
+    def _compute_vertices_and_box(self):
+        """Compute the location and properties of the vertices and box that
+        need to get rendered
+
+        Returns
+        ----------
+        vertices : np.ndarray
+            Nx2 array of any vertices to be rendered as Markers
+        face_color : str
+            String of the face color of the Markers
+        edge_color : str
+            String of the edge color of the Markers and Line for the box
+        pos : np.ndarray
+            Nx2 array of vertices of the box that will be rendered using a
+            Vispy Line
+        width : float
+            Width of the box edge
+        """
         if len(self.selected_shapes) > 0:
             if self.mode == Mode.Select:
                 inds = list(range(0, 8))
@@ -538,17 +548,12 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                self._node._subvisuals[0].set_data(box, size=self._vertex_size,
-                                                   face_color=face_color,
-                                                   edge_color=edge_color,
-                                                   edge_width=1.5,
-                                                   symbol='square',
-                                                   scaling=False)
+                vertices = box
                 # Use a subset of the vertices of the interaction_box to plot
                 # the line around the edge
                 keep_inds = [1, 2, 4, 6, 0, 1, 8]
-                self._node._subvisuals[1].set_data(pos=box[keep_inds],
-                                                   color=edge_color, width=1.5)
+                pos = box[keep_inds]
+                width = 1.5
             elif self.mode in ([Mode.Direct, Mode.AddPath, Mode.AddPolygon,
                                 Mode.AddRectangle, Mode.AddEllipse,
                                 Mode.AddLine, Mode.VertexInsert,
@@ -566,27 +571,69 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                self._node._subvisuals[0].set_data(vertices,
-                                                   size=self._vertex_size,
-                                                   face_color=face_color,
-                                                   edge_color=edge_color,
-                                                   edge_width=1.5,
-                                                   symbol='square',
-                                                   scaling=False)
-                self._node._subvisuals[1].set_data(pos=None, width=0)
+                pos = None
+                width = 0
+            else:
+                vertices = np.empty((0, 2))
+                face_color = 'white'
+                edge_color = 'white'
+                pos = None
+                width = 0
         elif self._is_selecting:
-            box = create_box(self._drag_box)
+            vertices = np.empty((0, 2))
             edge_color = self._highlight_color
-            self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
+            face_color = 'white'
+            box = create_box(self._drag_box)
+            width = 1.5
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
             keep_inds = [0, 2, 4, 6, 0]
-            self._node._subvisuals[1].set_data(pos=box[keep_inds],
-                                               color=edge_color, width=1.5)
+            pos = box[keep_inds]
         else:
-            self._node._subvisuals[0].set_data(np.empty((0, 2)), size=0)
-            self._node._subvisuals[1].set_data(pos=None, width=0)
+            vertices = np.empty((0, 2))
+            face_color = 'white'
+            edge_color = 'white'
+            pos = None
+            width = 0
 
+        return vertices, face_color, edge_color, pos, width
+
+    def _set_highlight(self, force=False):
+        """Render highlights of shapes including boundaries, vertices,
+        interaction boxes, and the drag selection box when appropriate
+
+        Parameters
+        ----------
+        force : bool
+            Bool that forces a redraw to occur when `True`
+        """
+        # Check if any shape or vertex ids have changed since last call
+        if (self.selected_shapes == self._selected_shapes_stored and
+                self._hover_shape == self._hover_shape_stored and
+                self._hover_vertex == self._hover_vertex_stored and
+                np.all(self._drag_box == self._drag_box_stored)) and not force:
+            return
+        self._selected_shapes_stored = copy(self.selected_shapes)
+        self._hover_shape_stored = copy(self._hover_shape)
+        self._hover_vertex_stored = copy(self._hover_vertex)
+        self._drag_box_stored = copy(self._drag_box)
+
+        # Compute the vertices and faces of any shape outlines
+        vertices, faces = self._outline_shapes()
+        self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
+                                           color=self._highlight_color)
+
+        # Compute the location and properties of the vertices and box that
+        # need to get rendered
+        (vertices, face_color, edge_color, pos,
+            width) = self._compute_vertices_and_box()
+        self._node._subvisuals[0].set_data(vertices, size=self._vertex_size,
+                                           face_color=face_color,
+                                           edge_color=edge_color,
+                                           edge_width=1.5, symbol='square',
+                                           scaling=False)
+        self._node._subvisuals[1].set_data(pos=pos, color=edge_color,
+                                           width=width)
     def _finish_drawing(self):
         """Reset properties used in shape drawing so new shapes can be drawn.
         """
@@ -1035,29 +1082,7 @@ class Shapes(Layer):
         if self.mode == Mode.PanZoom:
             # If in pan/zoom mode do nothing
             pass
-        elif self.mode == Mode.Select:
-            if not self._is_moving and not self._is_selecting:
-                shape, vertex = self._shape_at(coord)
-                self._moving_shape = shape
-                self._moving_vertex = vertex
-                if vertex is None:
-                    if shift and shape is not None:
-                        if shape in self.selected_shapes:
-                            self.selected_shapes.remove(shape)
-                            shapes = self.selected_shapes
-                            self._selected_box = self.interaction_box(shapes)
-                        else:
-                            self.selected_shapes.append(shape)
-                            shapes = self.selected_shapes
-                            self._selected_box = self.interaction_box(shapes)
-                    elif shape is not None:
-                        if shape not in self.selected_shapes:
-                            self.selected_shapes = [shape]
-                    else:
-                        self.selected_shapes = []
-                self._set_highlight()
-                self.status = self.get_message(coord, shape, vertex)
-        elif self.mode == Mode.Direct:
+        elif self.mode in [Mode.Select, Mode.Direct]:
             if not self._is_moving and not self._is_selecting:
                 shape, vertex = self._shape_at(coord)
                 self._moving_shape = shape
@@ -1093,8 +1118,6 @@ class Shapes(Layer):
             elif self.mode == Mode.AddLine:
                 data = np.array([coord, coord+size])
                 shape_type = 'line'
-            else:
-                raise ValueError("Mode not recongnized")
             self.data.add(data, shape_type=shape_type,
                           edge_width=self.edge_width,
                           edge_color=self.edge_color,
