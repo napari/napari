@@ -5,7 +5,8 @@ from ...util.event import Event
 from .._base_layer import Layer
 from .._register import add_to_viewer
 
-from ..._vispy.scene.visuals import Mesh, Markers, Line, Compound
+from ..._vispy.scene.visuals import Mesh, Markers, Compound
+from ..._vispy.scene.visuals import Line as VispyLine
 from vispy.color import get_color_names
 
 from .view import QtShapesLayer
@@ -13,6 +14,7 @@ from .view import QtShapesControls
 from .shape_list import ShapeList
 from .shape_util import (create_box, inside_triangles, point_to_lines,
                          triangles_intersect_box)
+from .shape import Rectangle, Ellipse, Line, Path, Polygon
 
 
 @add_to_viewer
@@ -159,7 +161,7 @@ class Shapes(Layer):
                  edge_color='black', face_color='white', opacity=0.7,
                  z_index=0, name=None):
 
-        visual = Compound([Markers(), Line(), Mesh(), Mesh()])
+        visual = Compound([Markers(), VispyLine(), Mesh(), Mesh()])
 
         super().__init__(visual, name)
 
@@ -173,6 +175,9 @@ class Shapes(Layer):
                                   opacity=opacity,
                                   z_index=z_index)
 
+            # The following shape properties are for the new shapes that will
+            # be drawn. Each shape has a corresponding property with the
+            # value for itself
             if np.isscalar(edge_width):
                 self._edge_width = edge_width
             else:
@@ -186,7 +191,7 @@ class Shapes(Layer):
             if type(face_color) is str:
                 self._face_color = face_color
             else:
-                self._face_color = 'black'
+                self._face_color = 'white'
             self._opacity = opacity
 
             # update flags
@@ -1010,17 +1015,19 @@ class Shapes(Layer):
                 if vertex is not None:
                     self._is_moving = True
                     index = self._moving_shape
-                    shape_type = self.data.shapes[index].shape_type
-                    if shape_type == 'ellipse':
+                    shape_type = type(self.data.shapes[index])
+                    if shape_type == Ellipse:
                         # Direct vertex moving of ellipse not implemented
                         pass
                     else:
-                        if shape_type == 'rectangle':
-                            self.data.shapes[index].shape_type = 'polygon'
+                        if shape_type == Rectangle:
+                            new_type = Polygon
+                        else:
+                            new_type = None
                         indices = self.data._index == index
                         vertices = self.data._vertices[indices]
                         vertices[vertex] = coord
-                        self.data.edit(index, vertices)
+                        self.data.edit(index, vertices, new_type=new_type)
                         shapes = self.selected_shapes
                         self._selected_box = self.interaction_box(shapes)
                         self.refresh()
@@ -1162,13 +1169,15 @@ class Shapes(Layer):
                 # Add to an existing path or polygon
                 index = self._moving_shape
                 if self.mode == 'add_polygon':
-                    self.data.shapes[index].shape_type = 'polygon'
+                    new_type = Polygon
+                else:
+                    new_type = None
                 vertices = self.data._vertices[self.data._index == index]
                 vertices = np.concatenate((vertices, [coord]),  axis=0)
                 # Change the selected vertex
                 self._moving_vertex = self._moving_vertex + 1
                 self._hover_vertex = self._hover_vertex + 1
-                self.data.edit(index, vertices)
+                self.data.edit(index, vertices, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_shapes)
             self.status = self.get_message(coord, self._hover_shape,
                                            self._hover_vertex)
@@ -1180,14 +1189,14 @@ class Shapes(Layer):
             all_lines = np.empty((0, 2, 2))
             all_lines_shape = np.empty((0, 2), dtype=int)
             for index in self.selected_shapes:
-                shape_type = self.data.shapes[index].shape_type
-                if shape_type == 'ellipse':
+                shape_type = type(self.data.shapes[index])
+                if shape_type == Ellipse:
                     # Adding vertex to ellipse not implemented
                     pass
                 else:
                     vertices = self.data._vertices[self.data._index == index]
                     # Find which edge new vertex should inserted along
-                    closed = shape_type != 'path'
+                    closed = shape_type != Path
                     n = len(vertices)
                     if closed:
                         lines = np.array([[vertices[i],
@@ -1207,16 +1216,16 @@ class Shapes(Layer):
             ind, loc = point_to_lines(coord, all_lines)
             index = all_lines_shape[ind][0]
             ind = all_lines_shape[ind][1]+1
-            shape_type = self.data.shapes[index].shape_type
-            if shape_type == 'line':
-                # Adding vertex to path turns it into line
-                shape_type = 'path'
-                self.data.shapes[index].shape_type = shape_type
-            elif shape_type == 'rectangle':
+            shape_type = type(self.data.shapes[index])
+            if shape_type == Line:
+                # Adding vertex to line turns it into a path
+                new_type = Path
+            elif shape_type == Rectangle:
                 # Adding vertex to rectangle turns it into a polygon
-                shape_type = 'polygon'
-                self.data.shapes[index].shape_type = shape_type
-            closed = shape_type != 'path'
+                new_type = Polygon
+            else:
+                new_type = None
+            closed = shape_type != Path
             vertices = self.data._vertices[self.data._index == index]
             if closed is not True:
                 if int(ind) == 1 and loc < 0:
@@ -1226,7 +1235,7 @@ class Shapes(Layer):
 
             vertices = np.insert(vertices, ind, [coord], axis=0)
             with self.freeze_refresh():
-                self.data.edit(index, vertices)
+                self.data.edit(index, vertices, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_shapes)
             shape, vertex = self._shape_at(coord)
             self._hover_shape = shape
@@ -1238,28 +1247,37 @@ class Shapes(Layer):
             if vertex is not None:
                 # have clicked on a current vertex so remove
                 index = shape
-                shape_type = self.data.shapes[index].shape_type
-                if shape_type == 'ellipse':
+                shape_type = type(self.data.shapes[index])
+                if shape_type == Ellipse:
                     # Removing vertex from ellipse not implemented
                     return
                 vertices = self.data._vertices[self.data._index == index]
                 if len(vertices) <= 2:
                     # If only 2 vertices present, remove whole shape
                     with self.freeze_refresh():
+                        if index in self.selected_shapes:
+                            self.selected_shapes.remove(index)
                         self.data.remove(index)
-                elif shape_type == 'polygon' and len(vertices) == 3:
+                        shapes = self.selected_shapes
+                        self._selected_box = self.interaction_box(shapes)
+                elif shape_type == Polygon and len(vertices) == 3:
                     # If only 3 vertices of a polygon present remove
                     with self.freeze_refresh():
+                        if index in self.selected_shapes:
+                            self.selected_shapes.remove(index)
                         self.data.remove(index)
+                        shapes = self.selected_shapes
+                        self._selected_box = self.interaction_box(shapes)
                 else:
-                    if shape_type == 'rectangle':
+                    if shape_type == Rectangle:
                         # Deleting vertex from a rectangle creates a polygon
-                        shape_type = 'polygon'
-                        self.data.shapes[index].shape_type = shape_type
+                        new_type = Polygon
+                    else:
+                        new_type = None
                     # Remove clicked on vertex
                     vertices = np.delete(vertices, vertex, axis=0)
                     with self.freeze_refresh():
-                        self.data.edit(index, vertices)
+                        self.data.edit(index, vertices, new_type=new_type)
                         shapes = self.selected_shapes
                         self._selected_box = self.interaction_box(shapes)
                 shape, vertex = self._shape_at(coord)

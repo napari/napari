@@ -1,5 +1,5 @@
 import numpy as np
-from .shape import Shape
+from .shape import Shape, Rectangle, Ellipse, Line, Path, Polygon
 
 
 class ShapeList():
@@ -89,8 +89,13 @@ class ShapeList():
     _mesh_triangles_z_order : np.ndarray
         Length P array of the z order of each triangle. Must be a permutation
         of (0, ..., P-1)
+    _shape_types : dict
+        Dictionary of supported shape types and their corresponding objects.
     """
     _mesh_types = ['face', 'edge']
+
+    _shape_types = ({'rectangle': Rectangle, 'ellipse': Ellipse, 'line': Line,
+                    'path': Path, 'polygon': Polygon})
 
     def __init__(self, data, *, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=1, z_index=0):
@@ -110,11 +115,11 @@ class ShapeList():
         self._mesh_triangles_colors = np.empty((0, 4))
         self._mesh_triangles_z_order = np.empty((0), dtype=int)
 
-        if type(data) is Shape:
+        if issubclass(type(data), Shape):
             # If a single shape has been passed
             self.add(data)
         elif len(data) > 0:
-            if type(data[0]) is Shape:
+            if issubclass(type(data[0]), Shape):
                 # If list of shapes has been passed
                 for d in data:
                     self.add(d)
@@ -194,12 +199,18 @@ class ShapeList():
             conjunction with `remove` when renumber is `False`. If None, then
             appends a new shape to end of shapes list
         """
-        if type(data) is Shape:
+        if issubclass(type(data), Shape):
             shape = data
         else:
-            shape = Shape(data, shape_type=shape_type, edge_width=edge_width,
-                          edge_color=edge_color, face_color=face_color,
-                          opacity=opacity, z_index=z_index)
+            if shape_type in self._shape_types.keys():
+                shape_cls = self._shape_types[shape_type]
+                shape = shape_cls(data, edge_width=edge_width,
+                                  edge_color=edge_color, face_color=face_color,
+                                  opacity=opacity, z_index=z_index)
+            else:
+                raise ValueError("""shape_type not recognized. Must be one of
+                                 "{'line', 'rectangle', 'ellipse', 'path',
+                                 'polygon'}".""")
 
         if shape_index is None:
             shape_index = len(self.shapes)
@@ -378,8 +389,9 @@ class ShapeList():
                                  self._z_order])
             self._mesh_triangles_z_order = np.concatenate(triangles_z_order)
 
-    def edit(self, index, data):
-        """Updates the z order of a single shape located at index.
+    def edit(self, index, data, new_type=None):
+        """Updates the z order of a single shape located at index. If
+        `new_type` is not None then converts the shape type to the new type
 
         Parameters
         ----------
@@ -387,9 +399,30 @@ class ShapeList():
             Location in list of the shape to be changed.
         data : np.ndarray
             Nx2 array of vertices.
+        new_type: None | str | Shape
+            If string , must be one of "{'line', 'rectangle', 'ellipse',
+            'path', 'polygon'}".
         """
-        self.shapes[index].data = data
-        shape = self.shapes[index]
+        if new_type is not None:
+            cur_shape = self.shapes[index]
+            if type(new_type) == str:
+                if new_type in self._shape_types.keys():
+                    shape_cls = self._shape_types[new_type]
+                else:
+                    raise ValueError("""shape_type not recognized. Must be one of
+                                 "{'line', 'rectangle', 'ellipse', 'path',
+                                 'polygon'}".""")
+            else:
+                shape_cls = new_type
+            shape = shape_cls(data, edge_width=cur_shape.edge_width,
+                              edge_color=cur_shape.edge_color,
+                              face_color=cur_shape.face_color,
+                              opacity=cur_shape.opacity,
+                              z_index=cur_shape.z_index)
+        else:
+            shape = self.shapes[index]
+            shape.data = data
+
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
 
@@ -572,11 +605,12 @@ class ShapeList():
         """
         if shape_type is None:
             data = [s.data for s in self.shapes]
-        elif shape_type not in Shape._shape_types:
+        elif shape_type not in self._shape_types.keys():
             raise ValueError("""shape_type not recognized, must be one of
                          "{'line', 'rectangle', 'ellipse', 'path',
                          'polygon'}"
                          """)
         else:
-            data = [s.data for s in self.shapes if s.shape_type == shape_type]
+            cls = self._shape_types[shape_type]
+            data = [s.data for s in self.shapes if type(s) == cls]
         return data
