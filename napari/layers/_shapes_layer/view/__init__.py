@@ -1,2 +1,2 @@
 from .properties import QtShapesLayer
-from .controls import QtShapesControls
+from .controls import QtShapesControls, Mode

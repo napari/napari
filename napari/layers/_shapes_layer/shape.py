@@ -407,6 +407,7 @@ class Ellipse(Shape):
         self._edge_offsets = offsets
         self._edge_triangles = triangles
 
+
 class Line(Shape):
     """Class for a single line segment
 

@@ -1,3 +1,5 @@
+from enum import Enum
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
@@ -7,6 +9,19 @@ from os.path import join
 from ....resources import resources_dir
 
 
+class Mode(Enum):
+    PanZoom = 0
+    Select = 1
+    Direct = 2
+    AddRectangle = 3
+    AddEllipse = 4
+    AddLine = 5
+    AddPath = 6
+    AddPolygon = 7
+    VertexInsert = 8
+    VertexRemove = 9
+
+
 class QtShapesControls(QFrame):
     def __init__(self, layer):
         super().__init__()
@@ -14,25 +29,28 @@ class QtShapesControls(QFrame):
         self.layer = layer
         self.layer.events.mode.connect(self.set_mode)
 
-        self.select_button = QtModeButton(layer, 'select', 'Select mode')
-        self.direct_button = QtModeButton(layer, 'direct',
+        self.select_button = QtModeButton(layer, 'select', Mode.Select,
+                                          'Select mode')
+        self.direct_button = QtModeButton(layer, 'direct', Mode.Direct,
                                           'Direct select mode')
-        self.panzoom_button = QtModeButton(layer, 'zoom', 'Pan/zoom mode',
-                                           mode='pan/zoom')
+        self.panzoom_button = QtModeButton(layer, 'zoom', Mode.PanZoom,
+                                           'Pan/zoom mode')
         self.rectangle_button = QtModeButton(layer, 'rectangle',
-                                             'Add rectangles',
-                                             mode='add_rectangle')
-        self.ellipse_button = QtModeButton(layer, 'ellipse', 'Add ellipses',
-                                           mode='add_ellipse')
-        self.line_button = QtModeButton(layer, 'line', 'Add lines',
-                                        mode='add_line')
-        self.path_button = QtModeButton(layer, 'path', 'Add paths',
-                                        mode='add_path')
-        self.polygon_button = QtModeButton(layer, 'polygon', 'Add polygons',
-                                           mode='add_polygon')
+                                             Mode.AddRectangle,
+                                             'Add rectangles')
+        self.ellipse_button = QtModeButton(layer, 'ellipse', Mode.AddEllipse,
+                                           'Add ellipses')
+        self.line_button = QtModeButton(layer, 'line', Mode.AddLine,
+                                        'Add lines')
+        self.path_button = QtModeButton(layer, 'path', Mode.AddPath,
+                                        'Add paths')
+        self.polygon_button = QtModeButton(layer, 'polygon', Mode.AddPolygon,
+                                           'Add polygons')
         self.vertex_insert_button = QtModeButton(layer, 'vertex_insert',
+                                                 Mode.VertexInsert,
                                                  'Insert vertex')
         self.vertex_remove_button = QtModeButton(layer, 'vertex_remove',
+                                                 Mode.VertexInsert,
                                                  'Remove vertex')
 
         self.move_front_button = QtMoveFrontButton(layer)
@@ -72,42 +90,39 @@ class QtShapesControls(QFrame):
         self.panzoom_button.setChecked(True)
 
     def mouseMoveEvent(self, event):
-        self.layer.status = self.layer.mode
+        self.layer.status = str(self.layer.mode)
 
     def set_mode(self, event):
         mode = event.mode
-        if mode == 'select':
+        if mode == Mode.Select:
             self.select_button.setChecked(True)
-        elif mode == 'direct':
+        elif mode == Mode.Direct:
             self.direct_button.setChecked(True)
-        elif mode == 'pan/zoom':
+        elif mode == Mode.PanZoom:
             self.panzoom_button.setChecked(True)
-        elif mode == 'add_rectangle':
+        elif mode == Mode.AddRectangle:
             self.rectangle_button.setChecked(True)
-        elif mode == 'add_ellipse':
+        elif mode == Mode.AddEllipse:
             self.ellipse_button.setChecked(True)
-        elif mode == 'add_line':
+        elif mode == Mode.AddLine:
             self.line_button.setChecked(True)
-        elif mode == 'add_path':
+        elif mode == Mode.AddPath:
             self.path_button.setChecked(True)
-        elif mode == 'add_polygon':
+        elif mode == Mode.AddPolygon:
             self.polygon_button.setChecked(True)
-        elif mode == 'vertex_insert':
+        elif mode == Mode.VertexInsert:
             self.vertex_insert_button.setChecked(True)
-        elif mode == 'vertex_remove':
+        elif mode == Mode.VertexRemove:
             self.vertex_remove_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
 
 
 class QtModeButton(QRadioButton):
-    def __init__(self, layer, button_name, tool_tip, mode=None):
+    def __init__(self, layer, button_name, mode, tool_tip):
         super().__init__()
 
-        if mode is None:
-            self.mode = button_name
-        else:
-            self.mode = mode
+        self.mode = mode
         self.layer = layer
         self.setToolTip(tool_tip)
         self.setChecked(False)
