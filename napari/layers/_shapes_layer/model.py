@@ -964,6 +964,7 @@ class Shapes(Layer):
         self.selected_shapes = list(range(cur_shapes,
                                     cur_shapes+len(self._clipboard)))
         self.move_to_front()
+        self._copy_shapes()
 
     def _move(self, coord):
         """Moves object at given mouse position and set of indices.
