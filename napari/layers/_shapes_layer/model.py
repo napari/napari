@@ -1,5 +1,5 @@
 import numpy as np
-from copy import copy
+from copy import copy, deepcopy
 from contextlib import contextmanager
 
 from ...util.event import Event
@@ -142,6 +142,8 @@ class Shapes(Layer):
         shapes when they are changed. Blocking this prevents circular loops
         when shapes are selected and the properties are changed based on that
         selection
+    _clipboard : list
+        List of shape objects that are to be used during a copy and paste.
     _colors : list
         List of supported vispy color names.
     _vertex_size : float
@@ -228,6 +230,7 @@ class Shapes(Layer):
             self._cursor_coord = np.array([0, 0])
             self._is_creating = False
             self._update_properties = True
+            self._clipboard = []
 
             self._mode = Mode.PanZoom
             self._mode_history = self._mode
@@ -946,6 +949,22 @@ class Shapes(Layer):
             self.data.update_z_index(index, new_z_index)
         self.refresh()
 
+    def _copy_shapes(self):
+        """Copy selected shapes to clipboard.
+        """
+        self._clipboard = ([deepcopy(self.data.shapes[i]) for i in
+                           self._selected_shapes])
+
+    def _paste_shapes(self):
+        """Paste any shapes from clipboard and then selects them.
+        """
+        cur_shapes = len(self.data.shapes)
+        for s in self._clipboard:
+            self.data.add(s)
+        self.selected_shapes = list(range(cur_shapes,
+                                    cur_shapes+len(self._clipboard)))
+        self.move_to_front()
+
     def _move(self, coord):
         """Moves object at given mouse position and set of indices.
 
@@ -1508,10 +1527,16 @@ class Shapes(Layer):
                 self.mode = Mode.Select
             elif event.key == 'z':
                 self.mode = Mode.PanZoom
-            elif event.key == 'v':
+            elif event.key == 'i':
                 self.mode = Mode.VertexInsert
             elif event.key == 'x':
                 self.mode = Mode.VertexRemove
+            elif event.key == 'c' and 'Control' in event.modifiers:
+                if self.mode in [Mode.Direct, Mode.Select]:
+                    self._copy_shapes()
+            elif event.key == 'v' and 'Control' in event.modifiers:
+                if self.mode in [Mode.Direct, Mode.Select]:
+                    self._paste_shapes()
             elif event.key == 'a':
                 if self.mode in [Mode.Direct, Mode.Select]:
                     self.selected_shapes = list(range(len(self.data.shapes)))
