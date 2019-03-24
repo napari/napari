@@ -45,6 +45,12 @@ class Shape(ABC):
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+    _edge_color_name : str
+        Name of edge color or six digit hex code representing edge color if not
+        recongnized
+    _face_color_name : str
+        Name of edge color or six digit hex code representing face color if not
+        recongnized
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray
@@ -78,6 +84,8 @@ class Shape(ABC):
         self._edge_offsets = np.empty((0, 2))
         self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
+        self._edge_color_name = 'black'
+        self._face_color_name = 'white'
 
         self._closed = False
         self.edge_width = edge_width
@@ -116,6 +124,11 @@ class Shape(ABC):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = Color(edge_color)
+        if type(edge_color) is str:
+            self._edge_color_name = edge_color
+        else:
+            rgb = tuple([int(255*x) for x in self._edge_color.rgba[:3]])
+            self._edge_color_name = '#%02x%02x%02x' % rgb
 
     @property
     def face_color(self):
@@ -126,6 +139,11 @@ class Shape(ABC):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = Color(face_color)
+        if type(face_color) is str:
+            self._face_color_name = face_color
+        else:
+            rgb = tuple([int(255*x) for x in self._face_color.rgba[:3]])
+            self._face_color_name = '#%02x%02x%02x' % rgb
 
     @property
     def opacity(self):

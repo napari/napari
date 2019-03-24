@@ -1,5 +1,6 @@
 import numpy as np
 from copy import copy
+from contextlib import contextmanager
 
 from ...util.event import Event
 from .._base_layer import Layer
@@ -136,6 +137,11 @@ class Shapes(Layer):
         otherwise.
     _cursor_coord : np.ndarray
         Length 2 array of the current cursor position in Image coordinates.
+    _update_properties : bool
+        Bool indicating if properties are to allowed to update the selected
+        shapes when they are changed. Blocking this prevents circular loops
+        when shapes are selected and the properties are changed based on that
+        selection
     _colors : list
         List of supported vispy color names.
     _vertex_size : float
@@ -221,10 +227,12 @@ class Shapes(Layer):
             self._drag_box_stored = None
             self._cursor_coord = np.array([0, 0])
             self._is_creating = False
+            self._update_properties = True
 
             self._mode = Mode.PanZoom
             self._mode_history = self._mode
             self._status = str(self._mode)
+            self._help = 'enter a selection mode to edit shape properties'
 
             self.events.add(mode=Event,
                             edge_width=Event,
@@ -256,10 +264,11 @@ class Shapes(Layer):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-        index = self.selected_shapes
-        for i in index:
-            self.data.update_edge_width(i, edge_width)
-        self.refresh()
+        if self._update_properties is True:
+            index = self.selected_shapes
+            for i in index:
+                self.data.update_edge_width(i, edge_width)
+            self.refresh()
         self.events.edge_width()
 
     @property
@@ -271,10 +280,11 @@ class Shapes(Layer):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
-        index = self.selected_shapes
-        for i in index:
-            self.data.update_edge_color(i, edge_color)
-        self.refresh()
+        if self._update_properties is True:
+            index = self.selected_shapes
+            for i in index:
+                self.data.update_edge_color(i, edge_color)
+            self.refresh()
         self.events.edge_color()
 
     @property
@@ -286,10 +296,11 @@ class Shapes(Layer):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
-        index = self.selected_shapes
-        for i in index:
-            self.data.update_face_color(i, face_color)
-        self.refresh()
+        if self._update_properties is True:
+            index = self.selected_shapes
+            for i in index:
+                self.data.update_face_color(i, face_color)
+            self.refresh()
         self.events.face_color()
 
     @property
@@ -305,10 +316,11 @@ class Shapes(Layer):
                              f'got {opacity}')
 
         self._opacity = opacity
-        index = self.selected_shapes
-        for i in index:
-            self.data.update_opacity(i, opacity)
-        self.refresh()
+        if self._update_properties is True:
+            index = self.selected_shapes
+            for i in index:
+                self.data.update_opacity(i, opacity)
+            self.refresh()
         self.events.opacity()
 
     @property
@@ -321,6 +333,35 @@ class Shapes(Layer):
     def selected_shapes(self, selected_shapes):
         self._selected_shapes = selected_shapes
         self._selected_box = self.interaction_box(selected_shapes)
+
+        # Update properties based on selected shapes
+        face_colors = list(set([self.data.shapes[i]._face_color_name for i in
+                           selected_shapes]))
+        if len(face_colors) == 1:
+            face_color = face_colors[0]
+            with self.block_update_properties():
+                self.face_color = face_color
+
+        edge_colors = list(set([self.data.shapes[i]._edge_color_name for i in
+                           selected_shapes]))
+        if len(edge_colors) == 1:
+            edge_color = edge_colors[0]
+            with self.block_update_properties():
+                self.edge_color = edge_color
+
+        edge_width = list(set([self.data.shapes[i].edge_width for i in
+                          selected_shapes]))
+        if len(edge_width) == 1:
+            edge_width = edge_width[0]
+            with self.block_update_properties():
+                self.edge_width = edge_width
+
+        opacities = list(set([self.data.shapes[i].opacity for i in
+                         selected_shapes]))
+        if len(opacities) == 1:
+            opacity = opacities[0]
+            with self.block_update_properties():
+                self.opacity = opacity
 
     @property
     def mode(self):
@@ -344,7 +385,7 @@ class Shapes(Layer):
         if mode == Mode.PanZoom:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter `select` mode to edit shape properties'
+            self.help = 'enter a selection mode to edit shape properties'
         elif mode in [Mode.Select, Mode.Direct]:
             self.cursor = 'pointing'
             self.interactive = False
@@ -376,6 +417,12 @@ class Shapes(Layer):
         if not (mode in draw_modes and old_mode in draw_modes):
             self._finish_drawing()
         self.refresh()
+
+    @contextmanager
+    def block_update_properties(self):
+        self._update_properties = False
+        yield
+        self._update_properties = True
 
     def _get_shape(self):
         """Determines the shape of the vertex data.
@@ -634,6 +681,7 @@ class Shapes(Layer):
                                            scaling=False)
         self._node._subvisuals[1].set_data(pos=pos, color=edge_color,
                                            width=width)
+
     def _finish_drawing(self):
         """Reset properties used in shape drawing so new shapes can be drawn.
         """

@@ -17,7 +17,7 @@ class QtShapesLayer(QtLayer):
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setFixedWidth(75)
         sld.setMinimum(0)
-        sld.setMaximum(100)
+        sld.setMaximum(40)
         sld.setSingleStep(1)
         value = self.layer.edge_width
         if isinstance(value, Iterable):
@@ -68,12 +68,13 @@ class QtShapesLayer(QtLayer):
         self.layer.edge_color = text
 
     def changeWidth(self, value):
-        self.layer.edge_width = value
+        self.layer.edge_width = float(value)/2
 
     def _on_edge_width_change(self, event):
         with self.layer.events.edge_width.blocker():
             value = self.layer.edge_width
-            self.widthSlider.setValue(int(value))
+            value = np.clip(int(2*value), 0, 40)
+            self.widthSlider.setValue(value)
 
     def _on_edge_color_change(self, event):
         with self.layer.events.edge_color.blocker():
