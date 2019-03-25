@@ -50,7 +50,7 @@ class QtShapesControls(QFrame):
                                                  Mode.VertexInsert,
                                                  'Insert vertex')
         self.vertex_remove_button = QtModeButton(layer, 'vertex_remove',
-                                                 Mode.VertexInsert,
+                                                 Mode.VertexRemove,
                                                  'Remove vertex')
 
         self.move_front_button = QtMoveFrontButton(layer)
