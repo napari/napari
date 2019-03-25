@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from copy import copy, deepcopy
 from contextlib import contextmanager
 
@@ -392,8 +393,9 @@ class Shapes(Layer):
         elif mode in [Mode.Select, Mode.Direct]:
             self.cursor = 'pointing'
             self.interactive = False
+            backspace = 'delete' if sys.platform == 'darwin' else 'backspace'
             self.help = ('hold <space> to pan/zoom, '
-                         'press <delete> to remove selected')
+                         f'press <{backspace}> to remove selected')
         elif mode in [Mode.VertexInsert, Mode.VertexRemove]:
             self.cursor = 'cross'
             self.interactive = False
