@@ -549,9 +549,10 @@ class Shapes(Layer):
                                           [index, 1], axis=1)
                 vertices_indices = np.where(vertices_indices)[0]
 
+            rescale = self._get_rescale()
             offsets = self.data._mesh_vertices_offsets[vertices_indices]
             vertices = (self.data._mesh_vertices_centers[vertices_indices] +
-                        self._highlight_width*offsets)
+                        rescale*self._highlight_width*offsets)
             faces = self.data._mesh_triangles[faces_indices]
 
             if type(index) is list:
