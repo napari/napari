@@ -454,8 +454,13 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_view_slice(self):
+    def _set_view_slice(self, indices=None):
         """Set the shape mesh data to the view.
+
+        Parameters
+        ----------
+        indices : sequence of int or slice
+            Indices to slice with.
         """
         z_order = self.data._mesh_triangles_z_order
         faces = self.data._mesh_triangles[z_order]
