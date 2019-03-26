@@ -16,7 +16,7 @@ from .view import QtShapesControls, Mode
 from .shape_list import ShapeList
 from .shape_util import (create_box, inside_triangles, point_to_lines,
                          triangles_intersect_box)
-from .shape import Rectangle, Ellipse, Line, Path, Polygon
+from .shapes import Rectangle, Ellipse, Line, Path, Polygon
 
 
 @add_to_viewer

@@ -1,5 +1,5 @@
 import numpy as np
-from .shape import Shape, Rectangle, Ellipse, Line, Path, Polygon
+from .shapes import Shape, Rectangle, Ellipse, Line, Path, Polygon
 
 
 class ShapeList():
