@@ -4,13 +4,29 @@
     <file>icons/add_on.png</file>
     <file>icons/cursor_disabled.png</file>
     <file>icons/delete.png</file>
+    <file>icons/direct_off.png</file>
+    <file>icons/direct_on.png</file>
+    <file>icons/ellipse_off.png</file>
+    <file>icons/ellipse_on.png</file>
     <file>icons/eye_on.png</file>
+    <file>icons/line_off.png</file>
+    <file>icons/line_on.png</file>
     <file>icons/move_back.png</file>
     <file>icons/move_front.png</file>
     <file>icons/new_markers.png</file>
     <file>icons/new_shapes.png</file>
+    <file>icons/path_off.png</file>
+    <file>icons/path_on.png</file>
+    <file>icons/polygon_off.png</file>
+    <file>icons/polygon_on.png</file>
+    <file>icons/rectangle_off.png</file>
+    <file>icons/rectangle_on.png</file>
     <file>icons/select_off.png</file>
     <file>icons/select_on.png</file>
+    <file>icons/vertex_insert_off.png</file>
+    <file>icons/vertex_insert_on.png</file>
+    <file>icons/vertex_remove_off.png</file>
+    <file>icons/vertex_remove_on.png</file>
     <file>icons/zoom_off.png</file>
     <file>icons/zoom_on.png</file>
 </qresource>
