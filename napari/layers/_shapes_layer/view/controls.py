@@ -1,5 +1,3 @@
-from enum import Enum
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
@@ -7,19 +5,7 @@ from PyQt5.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
 
 from os.path import join
 from ....resources import resources_dir
-
-
-class Mode(Enum):
-    PAN_ZOOM = 0
-    SELECT = 1
-    DIRECT = 2
-    ADD_RECTANGLE = 3
-    ADD_ELLPISE = 4
-    ADD_LINE = 5
-    ADD_PATH = 6
-    ADD_POLYGON = 7
-    VERTEX_INSERT = 8
-    VERTEX_REMOVE = 9
+from .._constants import Mode
 
 
 class QtShapesControls(QFrame):
