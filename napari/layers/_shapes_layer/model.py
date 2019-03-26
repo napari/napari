@@ -478,7 +478,9 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
-
+        if len(data) == 0:
+            return
+            
         if np.array(data[0]).ndim == 1:
             # If a single array for a shape has been passed
             if shape_type in self.data._types.keys():
