@@ -230,7 +230,7 @@ class Shapes(Layer):
             self._update_properties = True
             self._clipboard = []
 
-            self._mode = Mode.PanZoom
+            self._mode = Mode.PAN_ZOOM
             self._mode_history = self._mode
             self._status = str(self._mode)
             self._help = 'enter a selection mode to edit shape properties'
@@ -366,14 +366,14 @@ class Shapes(Layer):
 
     @property
     def mode(self):
-        """str: Interactive mode. The normal, default mode is PanZoom, which
-        allows for normal interactivity with the canvas. The Select mode allows
-        for entire shapes to be selected, moved and resized. The Direct mode
+        """str: Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas. The SELECT mode allows
+        for entire shapes to be selected, moved and resized. The DIRECT mode
         allows for shapes to be selected and their individual vertices to be
-        moved. The VertexInsert and VertexRemove modes allow for individual
+        moved. The VERTEX_INSERT and VERTEX_REMOVE modes allow for individual
         vertices either to be added to or removed from shapes that are already
         selected. Note that shapes cannot be selected in this mode. The
-        AddRectangle, AddEllipse, AddLine, AddPath, and AddPolygon modes
+        ADD_RECTANGLE, ADD_ELLPISE, ADD_LINE, ADD_PATH, and ADD_POLYGON modes
         all allow for their corresponding shape type to be added.
         """
         return self._mode
@@ -383,25 +383,25 @@ class Shapes(Layer):
         if mode == self._mode:
             return
         old_mode = self._mode
-        if mode == Mode.PanZoom:
+        if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
             self.help = 'enter a selection mode to edit shape properties'
-        elif mode in [Mode.Select, Mode.Direct]:
+        elif mode in [Mode.SELECT, Mode.DIRECT]:
             self.cursor = 'pointing'
             self.interactive = False
             backspace = 'delete' if sys.platform == 'darwin' else 'backspace'
             self.help = ('hold <space> to pan/zoom, '
                          f'press <{backspace}> to remove selected')
-        elif mode in [Mode.VertexInsert, Mode.VertexRemove]:
+        elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-        elif mode in [Mode.AddRectangle, Mode.AddEllipse, Mode.AddLine]:
+        elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE, Mode.ADD_LINE]:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-        elif mode in [Mode.AddPath, Mode.AddPolygon]:
+        elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.cursor = 'cross'
             self.interactive = False
             self.help = ('hold <space> to pan/zoom, '
@@ -412,8 +412,8 @@ class Shapes(Layer):
         self.status = str(mode)
         self._mode = mode
 
-        draw_modes = ([Mode.Select, Mode.Direct, Mode.VertexInsert,
-                      Mode.VertexRemove])
+        draw_modes = ([Mode.SELECT, Mode.DIRECT, Mode.VERTEX_INSERT,
+                      Mode.VERTEX_REMOVE])
 
         self.events.mode(mode=mode)
         if not (mode in draw_modes and old_mode in draw_modes):
@@ -694,7 +694,7 @@ class Shapes(Layer):
             Width of the box edge
         """
         if len(self.selected_shapes) > 0:
-            if self.mode == Mode.Select:
+            if self.mode == Mode.SELECT:
                 inds = list(range(0, 8))
                 inds.append(9)
                 box = self._selected_box[inds]
@@ -711,14 +711,14 @@ class Shapes(Layer):
                 keep_inds = [1, 2, 4, 6, 0, 1, 8]
                 pos = box[keep_inds]
                 width = 1.5
-            elif self.mode in ([Mode.Direct, Mode.AddPath, Mode.AddPolygon,
-                                Mode.AddRectangle, Mode.AddEllipse,
-                                Mode.AddLine, Mode.VertexInsert,
-                                Mode.VertexRemove]):
+            elif self.mode in ([Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON,
+                                Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+                                Mode.ADD_LINE, Mode.VERTEX_INSERT,
+                                Mode.VERTEX_REMOVE]):
                 inds = np.isin(self.data._index, self.selected_shapes)
                 vertices = self.data._vertices[inds]
                 # If currently adding path don't show box over last vertex
-                if self.mode == Mode.AddPath:
+                if self.mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
 
                 if self._hover_shape is None:
@@ -805,13 +805,13 @@ class Shapes(Layer):
         self._moving_vertex = None
         self._hover_shape = None
         self._hover_vertex = None
-        if self._is_creating is True and self.mode == Mode.AddPath:
+        if self._is_creating is True and self.mode == Mode.ADD_PATH:
             vertices = self.data._vertices[self.data._index == index]
             if len(vertices) <= 2:
                 self.data.remove(index)
             else:
                 self.data.edit(index, vertices[:-1])
-        if self._is_creating is True and self.mode == Mode.AddPolygon:
+        if self._is_creating is True and self.mode == Mode.ADD_POLYGON:
             vertices = self.data._vertices[self.data._index == index]
             if len(vertices) <= 2:
                 self.data.remove(index)
@@ -905,7 +905,7 @@ class Shapes(Layer):
         """
         # Check selected shapes
         if len(self.selected_shapes) > 0:
-            if self.mode == Mode.Select:
+            if self.mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
                 inds = list(range(0, 8))
                 inds.append(9)
@@ -920,8 +920,8 @@ class Shapes(Layer):
                 matches = np.all(distances <= sizes, axis=1).nonzero()
                 if len(matches[0]) > 0:
                     return self.selected_shapes[0], matches[0][-1]
-            elif self.mode in ([Mode.Direct, Mode.VertexInsert,
-                                Mode.VertexRemove]):
+            elif self.mode in ([Mode.DIRECT, Mode.VERTEX_INSERT,
+                                Mode.VERTEX_REMOVE]):
                 # Check if inside vertex of shape
                 inds = np.isin(self.data._index, self.selected_shapes)
                 vertices = self.data._vertices[inds]
@@ -1082,8 +1082,8 @@ class Shapes(Layer):
             Position of mouse cursor in image coordinates.
         """
         vertex = self._moving_vertex
-        if self.mode in ([Mode.Select, Mode.AddRectangle, Mode.AddEllipse,
-                         Mode.AddLine]):
+        if self.mode in ([Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+                         Mode.ADD_LINE]):
             if len(self.selected_shapes) > 0:
                 self._is_moving = True
                 if vertex is None:
@@ -1205,14 +1205,14 @@ class Shapes(Layer):
                     self._drag_start = coord
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
-        elif self.mode in [Mode.Direct, Mode.AddPath, Mode.AddPolygon]:
+        elif self.mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
             if len(self.selected_shapes) > 0:
                 if vertex is not None:
                     self._is_moving = True
                     index = self._moving_shape
                     shape_type = type(self.data.shapes[index])
                     if shape_type == Ellipse:
-                        # Direct vertex moving of ellipse not implemented
+                        # DIRECT vertex moving of ellipse not implemented
                         pass
                     else:
                         if shape_type == Rectangle:
@@ -1232,7 +1232,7 @@ class Shapes(Layer):
                     self._drag_start = coord
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
-        elif self.mode in [Mode.VertexInsert, Mode.VertexRemove]:
+        elif self.mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             if len(self.selected_shapes) > 0:
                 pass
             else:
@@ -1254,10 +1254,10 @@ class Shapes(Layer):
         coord = self._get_coord(position)
         shift = 'Shift' in event.modifiers
 
-        if self.mode == Mode.PanZoom:
+        if self.mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
             pass
-        elif self.mode in [Mode.Select, Mode.Direct]:
+        elif self.mode in [Mode.SELECT, Mode.DIRECT]:
             if not self._is_moving and not self._is_selecting:
                 shape, vertex = self._shape_at(coord)
                 self._moving_shape = shape
@@ -1279,18 +1279,19 @@ class Shapes(Layer):
                         self.selected_shapes = []
                 self._set_highlight()
                 self.status = self.get_message(coord, shape, vertex)
-        elif self.mode in [Mode.AddRectangle, Mode.AddEllipse, Mode.AddLine]:
+        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+                            Mode.ADD_LINE]):
             # Start drawing a rectangle / ellipse / line
             rescale = self._get_rescale()
             size = self._vertex_size*rescale/4
             new_z_index = max(self.data._z_index, default=-1) + 1
-            if self.mode == Mode.AddRectangle:
+            if self.mode == Mode.ADD_RECTANGLE:
                 data = np.array([coord, coord+size])
                 shape_type = 'rectangle'
-            elif self.mode == Mode.AddEllipse:
+            elif self.mode == Mode.ADD_ELLPISE:
                 data = np.array([coord+size/2, [size, size]])
                 shape_type = 'ellipse'
-            elif self.mode == Mode.AddLine:
+            elif self.mode == Mode.ADD_LINE:
                 data = np.array([coord, coord+size])
                 shape_type = 'line'
             self.add_shapes(data, shape_type=shape_type,
@@ -1307,7 +1308,7 @@ class Shapes(Layer):
             self._is_creating = True
             self._set_highlight()
             self.refresh()
-        elif self.mode in [Mode.AddPath, Mode.AddPolygon]:
+        elif self.mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             if self._is_creating is False:
                 # Start drawing a path
                 data = np.array([coord, coord])
@@ -1329,7 +1330,7 @@ class Shapes(Layer):
             else:
                 # Add to an existing path or polygon
                 index = self._moving_shape
-                if self.mode == Mode.AddPolygon:
+                if self.mode == Mode.ADD_POLYGON:
                     new_type = Polygon
                 else:
                     new_type = None
@@ -1342,7 +1343,7 @@ class Shapes(Layer):
                 self._selected_box = self.interaction_box(self.selected_shapes)
             self.status = self.get_message(coord, self._hover_shape,
                                            self._hover_vertex)
-        elif self.mode == Mode.VertexInsert:
+        elif self.mode == Mode.VERTEX_INSERT:
             if len(self.selected_shapes) == 0:
                 # If none selected return immediately
                 return
@@ -1403,7 +1404,7 @@ class Shapes(Layer):
             self._hover_vertex = vertex
             self.refresh()
             self.status = self.get_message(coord, shape, vertex)
-        elif self.mode == Mode.VertexRemove:
+        elif self.mode == Mode.VERTEX_REMOVE:
             shape, vertex = self._shape_at(coord)
             if vertex is not None:
                 # have clicked on a current vertex so remove
@@ -1462,10 +1463,10 @@ class Shapes(Layer):
         position = event.pos
         coord = self._get_coord(position)
 
-        if self.mode == Mode.PanZoom:
+        if self.mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode just look at coord all
             shape, vertex = self._shape_at(coord)
-        elif self.mode == Mode.Select:
+        elif self.mode == Mode.SELECT:
             if event.is_dragging:
                 # Drag any selected shapes
                 self._move(coord)
@@ -1479,7 +1480,7 @@ class Shapes(Layer):
                 self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
-        elif self.mode == Mode.Direct:
+        elif self.mode == Mode.DIRECT:
             if event.is_dragging:
                 # Drag any selected shapes
                 self._move(coord)
@@ -1493,7 +1494,8 @@ class Shapes(Layer):
                 self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
-        elif self.mode in [Mode.AddRectangle, Mode.AddEllipse, Mode.AddLine]:
+        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+                            Mode.ADD_LINE]):
             # While drawing a shape or doing nothing
             if self._is_creating and event.is_dragging:
                 # Drag any selected shapes
@@ -1502,7 +1504,7 @@ class Shapes(Layer):
                 vertex = self._hover_vertex
             else:
                 shape, vertex = self._shape_at(coord)
-        elif self.mode in [Mode.AddPath, Mode.AddPolygon]:
+        elif self.mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             # While drawing a path or doing nothing
             if self._is_creating:
                 # Drag any selected shapes
@@ -1511,7 +1513,7 @@ class Shapes(Layer):
                 vertex = self._hover_vertex
             else:
                 shape, vertex = self._shape_at(coord)
-        elif self.mode in [Mode.VertexInsert, Mode.VertexRemove]:
+        elif self.mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self._hover_shape, self._hover_vertex = self._shape_at(coord)
             self._set_highlight()
             shape = self._hover_shape
@@ -1533,10 +1535,10 @@ class Shapes(Layer):
         coord = self._get_coord(position)
         shift = 'Shift' in event.modifiers
 
-        if self.mode == Mode.PanZoom:
+        if self.mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
             pass
-        elif self.mode == Mode.Select:
+        elif self.mode == Mode.SELECT:
             shape, vertex = self._shape_at(coord)
             if not self._is_moving and not self._is_selecting and not shift:
                 if shape is not None:
@@ -1557,7 +1559,7 @@ class Shapes(Layer):
             self._hover_vertex = shape
             self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
-        elif self.mode == Mode.Direct:
+        elif self.mode == Mode.DIRECT:
             shape, vertex = self._shape_at(coord)
             if not self._is_moving and not self._is_selecting and not shift:
                 if shape is not None:
@@ -1578,12 +1580,13 @@ class Shapes(Layer):
             self._hover_vertex = shape
             self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
-        elif self.mode in [Mode.AddRectangle, Mode.AddEllipse, Mode.AddLine]:
+        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+                            Mode.ADD_LINE]):
             self._finish_drawing()
             shape, vertex = self._shape_at(coord)
             self.status = self.get_message(coord, shape, vertex)
-        elif self.mode in ([Mode.AddPath, Mode.AddPolygon, Mode.VertexInsert,
-                            Mode.VertexRemove]):
+        elif self.mode in ([Mode.ADD_PATH, Mode.ADD_POLYGON,
+                            Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]):
             pass
         else:
             raise ValueError("Mode not recongnized")
@@ -1600,12 +1603,12 @@ class Shapes(Layer):
             return
         else:
             if event.key == ' ':
-                if self.mode != Mode.PanZoom:
+                if self.mode != Mode.PAN_ZOOM:
                     self._mode_history = self.mode
                     self._selected_shapes_history = copy(self.selected_shapes)
-                    self.mode = Mode.PanZoom
+                    self.mode = Mode.PAN_ZOOM
                 else:
-                    self._mode_history = Mode.PanZoom
+                    self._mode_history = Mode.PAN_ZOOM
             elif event.key == 'Shift':
                 self._fixed_aspect = True
                 box = self._selected_box
@@ -1620,33 +1623,33 @@ class Shapes(Layer):
                 if self._is_moving:
                     self._move(self._cursor_coord)
             elif event.key == 'r':
-                self.mode = Mode.AddRectangle
+                self.mode = Mode.ADD_RECTANGLE
             elif event.key == 'e':
-                self.mode = Mode.AddEllipse
+                self.mode = Mode.ADD_ELLPISE
             elif event.key == 'l':
-                self.mode = Mode.AddLine
+                self.mode = Mode.ADD_LINE
             elif event.key == 't':
-                self.mode = Mode.AddPath
+                self.mode = Mode.ADD_PATH
             elif event.key == 'p':
-                self.mode = Mode.AddPolygon
+                self.mode = Mode.ADD_POLYGON
             elif event.key == 'd':
-                self.mode = Mode.Direct
+                self.mode = Mode.DIRECT
             elif event.key == 's':
-                self.mode = Mode.Select
+                self.mode = Mode.SELECT
             elif event.key == 'z':
-                self.mode = Mode.PanZoom
+                self.mode = Mode.PAN_ZOOM
             elif event.key == 'i':
-                self.mode = Mode.VertexInsert
+                self.mode = Mode.VERTEX_INSERT
             elif event.key == 'x':
-                self.mode = Mode.VertexRemove
+                self.mode = Mode.VERTEX_REMOVE
             elif event.key == 'c' and 'Control' in event.modifiers:
-                if self.mode in [Mode.Direct, Mode.Select]:
+                if self.mode in [Mode.DIRECT, Mode.SELECT]:
                     self._copy_shapes()
             elif event.key == 'v' and 'Control' in event.modifiers:
-                if self.mode in [Mode.Direct, Mode.Select]:
+                if self.mode in [Mode.DIRECT, Mode.SELECT]:
                     self._paste_shapes()
             elif event.key == 'a':
-                if self.mode in [Mode.Direct, Mode.Select]:
+                if self.mode in [Mode.DIRECT, Mode.SELECT]:
                     self.selected_shapes = list(range(len(self.data.shapes)))
                     self._set_highlight()
             elif event.key == 'Backspace':
@@ -1663,7 +1666,7 @@ class Shapes(Layer):
             Vispy event
         """
         if event.key == ' ':
-            if self._mode_history != Mode.PanZoom:
+            if self._mode_history != Mode.PAN_ZOOM:
                 self.mode = self._mode_history
                 self.selected_shapes = self._selected_shapes_history
                 self._set_highlight()

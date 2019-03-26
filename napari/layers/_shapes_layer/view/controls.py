@@ -10,16 +10,16 @@ from ....resources import resources_dir
 
 
 class Mode(Enum):
-    PanZoom = 0
-    Select = 1
-    Direct = 2
-    AddRectangle = 3
-    AddEllipse = 4
-    AddLine = 5
-    AddPath = 6
-    AddPolygon = 7
-    VertexInsert = 8
-    VertexRemove = 9
+    PAN_ZOOM = 0
+    SELECT = 1
+    DIRECT = 2
+    ADD_RECTANGLE = 3
+    ADD_ELLPISE = 4
+    ADD_LINE = 5
+    ADD_PATH = 6
+    ADD_POLYGON = 7
+    VERTEX_INSERT = 8
+    VERTEX_REMOVE = 9
 
 
 class QtShapesControls(QFrame):
@@ -29,28 +29,28 @@ class QtShapesControls(QFrame):
         self.layer = layer
         self.layer.events.mode.connect(self.set_mode)
 
-        self.select_button = QtModeButton(layer, 'select', Mode.Select,
+        self.select_button = QtModeButton(layer, 'select', Mode.SELECT,
                                           'Select mode')
-        self.direct_button = QtModeButton(layer, 'direct', Mode.Direct,
+        self.direct_button = QtModeButton(layer, 'direct', Mode.DIRECT,
                                           'Direct select mode')
-        self.panzoom_button = QtModeButton(layer, 'zoom', Mode.PanZoom,
+        self.panzoom_button = QtModeButton(layer, 'zoom', Mode.PAN_ZOOM,
                                            'Pan/zoom mode')
         self.rectangle_button = QtModeButton(layer, 'rectangle',
-                                             Mode.AddRectangle,
+                                             Mode.ADD_RECTANGLE,
                                              'Add rectangles')
-        self.ellipse_button = QtModeButton(layer, 'ellipse', Mode.AddEllipse,
+        self.ellipse_button = QtModeButton(layer, 'ellipse', Mode.ADD_ELLPISE,
                                            'Add ellipses')
-        self.line_button = QtModeButton(layer, 'line', Mode.AddLine,
+        self.line_button = QtModeButton(layer, 'line', Mode.ADD_LINE,
                                         'Add lines')
-        self.path_button = QtModeButton(layer, 'path', Mode.AddPath,
+        self.path_button = QtModeButton(layer, 'path', Mode.ADD_PATH,
                                         'Add paths')
-        self.polygon_button = QtModeButton(layer, 'polygon', Mode.AddPolygon,
+        self.polygon_button = QtModeButton(layer, 'polygon', Mode.ADD_POLYGON,
                                            'Add polygons')
         self.vertex_insert_button = QtModeButton(layer, 'vertex_insert',
-                                                 Mode.VertexInsert,
+                                                 Mode.VERTEX_INSERT,
                                                  'Insert vertex')
         self.vertex_remove_button = QtModeButton(layer, 'vertex_remove',
-                                                 Mode.VertexRemove,
+                                                 Mode.VERTEX_REMOVE,
                                                  'Remove vertex')
 
         self.move_front_button = QtMoveFrontButton(layer)
@@ -94,25 +94,25 @@ class QtShapesControls(QFrame):
 
     def set_mode(self, event):
         mode = event.mode
-        if mode == Mode.Select:
+        if mode == Mode.SELECT:
             self.select_button.setChecked(True)
-        elif mode == Mode.Direct:
+        elif mode == Mode.DIRECT:
             self.direct_button.setChecked(True)
-        elif mode == Mode.PanZoom:
+        elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
-        elif mode == Mode.AddRectangle:
+        elif mode == Mode.ADD_RECTANGLE:
             self.rectangle_button.setChecked(True)
-        elif mode == Mode.AddEllipse:
+        elif mode == Mode.ADD_ELLPISE:
             self.ellipse_button.setChecked(True)
-        elif mode == Mode.AddLine:
+        elif mode == Mode.ADD_LINE:
             self.line_button.setChecked(True)
-        elif mode == Mode.AddPath:
+        elif mode == Mode.ADD_PATH:
             self.path_button.setChecked(True)
-        elif mode == Mode.AddPolygon:
+        elif mode == Mode.ADD_POLYGON:
             self.polygon_button.setChecked(True)
-        elif mode == Mode.VertexInsert:
+        elif mode == Mode.VERTEX_INSERT:
             self.vertex_insert_button.setChecked(True)
-        elif mode == Mode.VertexRemove:
+        elif mode == Mode.VERTEX_REMOVE:
             self.vertex_remove_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
