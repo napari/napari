@@ -140,7 +140,7 @@ class Labels(Layer):
             except TypeError:
                 pass
 
-        return self._raw_image[tuple(indices)]
+        return self._image[tuple(indices)]
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
