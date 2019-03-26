@@ -14,8 +14,7 @@ from vispy.color import get_color_names
 from .view import QtShapesLayer
 from .view import QtShapesControls, Mode
 from .shape_list import ShapeList
-from .shape_util import (create_box, inside_triangles, point_to_lines,
-                         triangles_intersect_box)
+from .shape_util import create_box, point_to_lines
 from .shapes import Rectangle, Ellipse, Line, Path, Polygon
 
 
@@ -480,8 +479,8 @@ class Shapes(Layer):
 
         if np.array(data[0]).ndim == 1:
             # If a single array for a shape has been passed
-            if shape_type in self.data._shape_types.keys():
-                shape_cls = self.data._shape_types[shape_type]
+            if shape_type in self.data._types.keys():
+                shape_cls = self.data._types[shape_type]
                 shape = shape_cls(data, edge_width=edge_width,
                                   edge_color=edge_color, face_color=face_color,
                                   opacity=opacity, z_index=z_index)
@@ -525,8 +524,8 @@ class Shapes(Layer):
                 else:
                     o = opacity
 
-                if st in self.data._shape_types.keys():
-                    shape_cls = self.data._shape_types[st]
+                if st in self.data._types.keys():
+                    shape_cls = self.data._types[st]
                     shape = shape_cls(d, edge_width=ew, edge_color=ec,
                                       face_color=fc, opacity=o, z_index=z)
                 else:
@@ -561,10 +560,10 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        z_order = self.data._mesh_triangles_z_order
-        faces = self.data._mesh_triangles[z_order]
-        colors = self.data._mesh_triangles_colors[z_order]
-        vertices = self.data._mesh_vertices
+        z_order = self.data._mesh.triangles_z_order
+        faces = self.data._mesh.triangles[z_order]
+        colors = self.data._mesh.triangles_colors[z_order]
+        vertices = self.data._mesh.vertices
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
         else:
@@ -618,14 +617,14 @@ class Shapes(Layer):
         return box
 
     def _outline_shapes(self):
-        """Draws outlines of any selected shapes including any shape hovered
+        """Finds outlines of any selected shapes including any shape hovered
         over
 
         Returns
         ----------
         vertices : None | np.ndarray
             Nx2 array of any vertices of outline or None
-        faces : None | np.ndarray
+        triangles : None | np.ndarray
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
@@ -638,42 +637,17 @@ class Shapes(Layer):
                     else:
                         index.append(self._hover_shape)
                 index.sort()
-                meshes = self.data._mesh_triangles_index
-                faces_indices = ([i for i, x in enumerate(meshes) if x[0] in
-                                 index and x[1] == 1])
-                meshes = self.data._mesh_vertices_index
-                vertices_indices = ([i for i, x in enumerate(meshes) if x[0] in
-                                    index and x[1] == 1])
             else:
                 index = self._hover_shape
-                faces_indices = np.all(self.data._mesh_triangles_index ==
-                                       [index, 1], axis=1)
-                faces_indices = np.where(faces_indices)[0]
-                vertices_indices = np.all(self.data._mesh_vertices_index ==
-                                          [index, 1], axis=1)
-                vertices_indices = np.where(vertices_indices)[0]
 
+            centers, offsets, triangles = self.data.outline(index)
             rescale = self._get_rescale()
-            offsets = self.data._mesh_vertices_offsets[vertices_indices]
-            vertices = (self.data._mesh_vertices_centers[vertices_indices] +
-                        rescale*self._highlight_width*offsets)
-            faces = self.data._mesh_triangles[faces_indices]
-
-            if type(index) is list:
-                face_ind = self.data._mesh_triangles_index[faces_indices][:, 0]
-                inds = self.data._mesh_vertices_index[vertices_indices][:, 0]
-                starts = np.unique(inds, return_index=True)[1]
-                for i, ind in enumerate(index):
-                    indices = face_ind == ind
-                    adjust_index = starts[i] - vertices_indices[starts[i]]
-                    faces[indices] = faces[indices] + adjust_index
-            else:
-                faces = faces - vertices_indices[0]
+            vertices = centers + rescale*self._highlight_width*offsets
         else:
             vertices = None
-            faces = None
+            triangles = None
 
-        return vertices, faces
+        return vertices, triangles
 
     def _compute_vertices_and_box(self):
         """Compute the location and properties of the vertices and box that
@@ -886,7 +860,7 @@ class Shapes(Layer):
         self._selected_box = box + center
 
     def _shape_at(self, coord):
-        """Determines if any shapes at given coord by looking inside triangle
+        """Determines if any shape at given coord by looking inside triangle
         meshes.
 
         Parameters
@@ -940,40 +914,8 @@ class Shapes(Layer):
                     return shape, index - idx[shape]
 
         # Check if mouse inside shape
-        triangles = self.data._mesh_vertices[self.data._mesh_triangles]
-        inside = inside_triangles(triangles - coord[:2])
-        shapes = self.data._mesh_triangles_index[inside]
-
-        if len(shapes) > 0:
-            indices = shapes[:, 0]
-            z_list = self.data._z_order.tolist()
-            order_indices = np.array([z_list.index(m) for m in indices])
-            ordered_shapes = indices[np.argsort(order_indices)]
-            return ordered_shapes[0], None
-        else:
-            return None, None
-
-    def _shapes_in_box(self, corners):
-        """Determines which shapes, if any, are inside an axis aligned box
-
-        Parameters
-        ----------
-        corners : np.ndarray
-            2x2 array of two corners that will be used to create an axis
-            aligned box.
-
-        Returns
-        ----------
-        shapes : list
-            List of shapes that are inside the box.
-        """
-
-        triangles = self.data._mesh_vertices[self.data._mesh_triangles]
-        intersects = triangles_intersect_box(triangles, corners)
-        shapes = self.data._mesh_triangles_index[intersects, 0]
-        shapes = np.unique(shapes).tolist()
-
-        return shapes
+        shape = self.data.inside(coord)
+        return shape, None
 
     def _get_rescale(self):
         """Get conversion factor from canvas coordinates to image coordinates.
@@ -1546,7 +1488,7 @@ class Shapes(Layer):
                 else:
                     self.selected_shapes = []
             elif self._is_selecting:
-                self.selected_shapes = self._shapes_in_box(self._drag_box)
+                self.selected_shapes = self.data.shapes_in_box(self._drag_box)
                 self._is_selecting = False
                 self._set_highlight()
             self._is_moving = False
@@ -1567,7 +1509,7 @@ class Shapes(Layer):
                 else:
                     self.selected_shapes = []
             elif self._is_selecting:
-                self.selected_shapes = self._shapes_in_box(self._drag_box)
+                self.selected_shapes = self.data.shapes_in_box(self._drag_box)
                 self._is_selecting = False
                 self._set_highlight()
             self._is_moving = False
