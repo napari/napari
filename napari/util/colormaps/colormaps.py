@@ -134,13 +134,15 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(labels):
+def label_colormap(labels, seed=0.5):
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
     ----------
     labels : array of int
         A set of labels or label image.
+    seed : float or array of float, length 3
+        The seed for the low discrepancy sequence generator.
 
     Returns
     -------
@@ -161,7 +163,8 @@ def label_colormap(labels):
     eps = np.finfo(midpoints.dtype).eps
     control_points = np.concatenate(([0.], midpoints, [1.]))
     # make sure to add an alpha channel to the colors
-    colors = np.concatenate((_color_random(n), np.full((n, 1), 0.7)), axis=1)
+    colors = np.concatenate((_color_random(n, seed=seed),
+                             np.full((n, 1), 0.7)), axis=1)
     colors[0, :] = 0  # ensure alpha is 0 for label 0
     cmap = vispy.color.Colormap(colors=colors, controls=control_points,
                                 interpolation='zero')
