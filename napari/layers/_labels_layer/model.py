@@ -38,14 +38,15 @@ class Labels(Layer):
             if 'name' in meta:
                 name = meta['name']
 
+        visual = ImageNode(None, method='auto')
+        super().__init__(visual, name)
+
         self._raw_image = label_image
         self._image = label_image / np.max(label_image)
         self._meta = meta
-        self.colormap = colormaps.label_colormap(label_image)
         self.interpolation = 'nearest'
+        self.colormap = colormaps.label_colormap(label_image)
 
-        visual = ImageNode(None, method='auto', cmap=self.colormap)
-        super().__init__(visual, name)
         self.events.add(colormap=Event, interpolation=Event)
 
         # update flags
@@ -54,6 +55,8 @@ class Labels(Layer):
 
         self._qt_properties = QtImageLayer(self)
         self._qt_controls = QtImageControls(self)
+
+        self._node.clim = [0., 1.]
 
     def new_colormap(self):
         seed = np.random.random((self._image.ndim,))
