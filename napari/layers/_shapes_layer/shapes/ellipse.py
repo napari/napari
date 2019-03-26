@@ -1,7 +1,7 @@
 import numpy as np
 from .shape import Shape
 from ..shape_util import (triangulate_edge, triangulate_ellipse,
-                         center_radii_to_corners, rectangle_to_box)
+                          center_radii_to_corners, rectangle_to_box)
 
 
 class Ellipse(Shape):

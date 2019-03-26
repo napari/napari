@@ -26,10 +26,9 @@ class Shapes(Layer):
     Parameters
     ----------
     data : np.array | list
-        List of Shape objects of list of np.array of data or np.array. Each
-        element of the list (or now of the np.array) corresponds to one shape.
-        If a list of Shape objects is passed the other shape specific keyword
-        arguments are ignored.
+        List of np.array of data or np.array. Each element of the list
+        (or row of a 3D np.array) corresponds to one shape. If a 2D array is
+        passed it corresponds to just a single shape.
     shape_type : string | list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be the
@@ -177,12 +176,10 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the viewer is constructed
         with self.freeze_refresh():
             # Add the shape data
-            self.data = ShapeList(data, shape_type=shape_type,
-                                  edge_width=edge_width,
-                                  edge_color=edge_color,
-                                  face_color=face_color,
-                                  opacity=opacity,
-                                  z_index=z_index)
+            self.data = ShapeList()
+            self.add_shapes(data, shape_type=shape_type, edge_width=edge_width,
+                            edge_color=edge_color, face_color=face_color,
+                            opacity=opacity, z_index=z_index)
 
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
@@ -436,6 +433,108 @@ class Shapes(Layer):
             return [1, 1]
         else:
             return np.max(self.data._vertices, axis=0) + 1
+
+    def add_shapes(self, data, *, shape_type='rectangle', edge_width=1,
+                   edge_color='black', face_color='white', opacity=0.7,
+                   z_index=0):
+        """Add shapes to the current layer.
+
+        Parameters
+        ----------
+        data : np.array | list
+            List of np.array of data or np.array. Each element of the list
+            (or row of a 3D np.array) corresponds to one shape. If a 2D array
+            is passed it corresponds to just a single shape.
+        shape_type : string | list
+            String of shape shape_type, must be one of "{'line', 'rectangle',
+            'ellipse', 'path', 'polygon'}". If a list is supplied it must be
+            the same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        opacity : float | list
+            Opacity of the shapes, must be between 0 and 1.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+
+        if np.array(data[0]).ndim == 1:
+            # If a single array for a shape has been passed
+            if shape_type in self.data._shape_types.keys():
+                shape_cls = self.data._shape_types[shape_type]
+                shape = shape_cls(data, edge_width=edge_width,
+                                  edge_color=edge_color, face_color=face_color,
+                                  opacity=opacity, z_index=z_index)
+            else:
+                raise ValueError("""shape_type not recognized, must be one of
+                                 "{'line', 'rectangle', 'ellipse', 'path',
+                                 'polygon'}"
+                                 """)
+            self.data.add(shape)
+        else:
+            # If list of arrays has been passed
+            for i, d in enumerate(data):
+                if type(shape_type) in (np.ndarray, list):
+                    st = shape_type[i]
+                else:
+                    st = shape_type
+                if type(edge_width) in (np.ndarray, list):
+                    ew = edge_width[i]
+                else:
+                    ew = edge_width
+                if type(edge_color) in (np.ndarray, list):
+                    if np.isscalar(edge_color[i]):
+                        ec = edge_color
+                    else:
+                        ec = edge_color[i]
+                else:
+                    ec = edge_color
+                if type(face_color) in (np.ndarray, list):
+                    if np.isscalar(face_color[i]):
+                        fc = face_color
+                    else:
+                        fc = face_color[i]
+                else:
+                    fc = face_color
+                if type(z_index) in (np.ndarray, list):
+                    z = z_index[i]
+                else:
+                    z = z_index
+                if type(opacity) in (np.ndarray, list):
+                    o = opacity[i]
+                else:
+                    o = opacity
+
+                if st in self.data._shape_types.keys():
+                    shape_cls = self.data._shape_types[st]
+                    shape = shape_cls(d, edge_width=ew, edge_color=ec,
+                                      face_color=fc, opacity=o, z_index=z)
+                else:
+                    raise ValueError("""shape_type not recognized, must be one of
+                                     "{'line', 'rectangle', 'ellipse', 'path',
+                                     'polygon'}"
+                                     """)
+                self.data.add(shape)
 
     def _update(self):
         """Update the underlying visual.
@@ -1194,11 +1293,11 @@ class Shapes(Layer):
             elif self.mode == Mode.AddLine:
                 data = np.array([coord, coord+size])
                 shape_type = 'line'
-            self.data.add(data, shape_type=shape_type,
-                          edge_width=self.edge_width,
-                          edge_color=self.edge_color,
-                          face_color=self.face_color,
-                          opacity=self.opacity, z_index=new_z_index)
+            self.add_shapes(data, shape_type=shape_type,
+                            edge_width=self.edge_width,
+                            edge_color=self.edge_color,
+                            face_color=self.face_color,
+                            opacity=self.opacity, z_index=new_z_index)
             self.selected_shapes = [len(self.data.shapes)-1]
             ind = 4
             self._moving_shape = self.selected_shapes[0]
@@ -1213,12 +1312,12 @@ class Shapes(Layer):
                 # Start drawing a path
                 data = np.array([coord, coord])
                 new_z_index = max(self.data._z_index, default=-1) + 1
-                self.data.add(data, shape_type='path',
-                              edge_width=self.edge_width,
-                              edge_color=self.edge_color,
-                              face_color=self.face_color,
-                              opacity=self.opacity,
-                              z_index=new_z_index)
+                self.add_shapes(data, shape_type='path',
+                                edge_width=self.edge_width,
+                                edge_color=self.edge_color,
+                                face_color=self.face_color,
+                                opacity=self.opacity,
+                                z_index=new_z_index)
                 self.selected_shapes = [len(self.data.shapes)-1]
                 ind = 1
                 self._moving_shape = self.selected_shapes[0]
