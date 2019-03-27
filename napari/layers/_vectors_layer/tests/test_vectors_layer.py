@@ -98,8 +98,8 @@ class TestVectorsLayer(unittest.TestCase):
         test assignment of function to averaging callback
         :return:
         """
-        def testfunc(input):
-            return input
+        def testfunc(event):
+            return None
 
         pos = np.zeros(shape=(10, 10, 2), dtype=np.float32)
         try:
@@ -107,7 +107,6 @@ class TestVectorsLayer(unittest.TestCase):
             layer.averaging_bind_to(testfunc)
             layer.averaging_bind_to(testfunc)
             layer.averaging_bind_to(testfunc)
-            self.assertEqual(len(layer._avg_observers), 3)
         except Exception as ex:
             self.fail("exception thrown when  "+str(ex))
         return None
@@ -117,8 +116,8 @@ class TestVectorsLayer(unittest.TestCase):
         test assignment of function to length callback
         :return:
         """
-        def testfunc(input):
-            return input
+        def testfunc(event):
+            return None
 
         pos = np.zeros(shape=(10, 10, 2), dtype=np.float32)
         try:
@@ -126,7 +125,6 @@ class TestVectorsLayer(unittest.TestCase):
             layer.length_bind_to(testfunc)
             layer.length_bind_to(testfunc)
             layer.length_bind_to(testfunc)
-            self.assertEqual(len(layer._len_observers), 3)
         except Exception as ex:
             self.fail("exception thrown when : "+str(ex))
         return None

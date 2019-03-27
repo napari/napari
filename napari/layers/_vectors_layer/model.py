@@ -7,6 +7,7 @@ import scipy.signal as signal
 from .._base_layer import Layer
 from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Line as LinesNode
+from ...util.event import Event
 from vispy.color import get_color_names
 
 from .view import QtVectorsLayer
@@ -91,8 +92,8 @@ class Vectors(Layer):
 
 
     See vispy's line visual docs for more details:
-    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
-    http://vispy.org/visuals.html
+    http://api.vispy.org/en/latest/scene.html
+    vispy.scene.visuals.Line
     """
 
     def __init__(self,
@@ -103,17 +104,12 @@ class Vectors(Layer):
                  length=1,
                  name=None):
 
-        visual = LinesNode()
+        visual = LinesNode(antialias=True)
         super().__init__(visual)
 
-        # map averaging type to tuple
-        self._kernel_dict = {'1x1': (1, 1),
-                             '3x3': (3, 3),
-                             '5x5': (5, 5),
-                             '7x7': (7, 7),
-                             '9x9': (9, 9),
-                             '11x11': (11, 11)}
-        self._kernel = self._kernel_dict['1x1']
+        # events for non-napari calculations
+        self.events.add(emit_len=Event,
+                        emit_avg=Event)
 
         # Store underlying data model
         self._data_types = ('image', 'coords')
@@ -127,11 +123,9 @@ class Vectors(Layer):
         self._connector = self._connector_types[0]
 
         # averaging and length attributes
-        self._avg_dims = ['1x1', '3x3', '5x5', '7x7', '9x9', '11x11']
         self._averaging = averaging
         self._length = length
-        self._avg_observers = []
-        self._len_observers = []
+        self._kernel = 1
 
         # update flags
         self._need_display_update = False
@@ -140,17 +134,13 @@ class Vectors(Layer):
         # assign vector data and establish default behavior
         self._raw_dat = None
         self._original_data = vectors
-        self._current_shape = vectors.shape
+        self._current_data = vectors
         self._vectors = self._convert_to_vector_type(vectors)
-        # self.vectors = vectors
-        self.averaging_bind_to(self._default_avg)
-        self.length_bind_to(self._default_length)
 
         if name is None:
             self.name = 'vectors'
         else:
             self.name = name
-        # self.events.add(mode=Event)
         self._qt_properties = QtVectorsLayer(self)
 
     # ====================== Property getter and setters =====================
@@ -188,8 +178,9 @@ class Vectors(Layer):
         :return:
         """
         self._original_data = vectors
+        self._current_data = vectors
 
-        self._vectors = self._convert_to_vector_type(vectors)
+        self._vectors = self._convert_to_vector_type(self._current_data)
 
         self.viewer._child_layer_changed = True
         self._refresh()
@@ -200,13 +191,12 @@ class Vectors(Layer):
         :param vectors: ndarray
         :return:
         """
+
         if vectors.shape[-1] == 4 and len(vectors.shape) == 2:
-            self._current_shape = vectors.shape
             coord_list = self._convert_coords_to_coordinates(vectors)
             self._data_type = self._data_types[1]
 
         elif vectors.shape[-1] == 2 and len(vectors.shape) == 3:
-            self._current_shape = vectors.shape
             coord_list = self._convert_image_to_coordinates(vectors)
             self._data_type = self._data_types[0]
 
@@ -230,8 +220,7 @@ class Vectors(Layer):
         ydim = vect.shape[1]
 
         # stride is used during averaging and length adjustment
-        stride_x = self._kernel[0]
-        stride_y = self._kernel[1]
+        stride_x, stride_y = self._kernel, self._kernel
 
         # create empty vector of necessary shape
         # every "pixel" has 2 coordinates
@@ -300,20 +289,17 @@ class Vectors(Layer):
         return self._averaging
     
     @averaging.setter
-    def averaging(self, averaging: str):
+    def averaging(self, value: int):
         """
         Calculates an average vector over a kernel
         :param averaging: one of "_avg_dims" above
         :return:
         """
-        self._averaging = averaging
-        self._kernel = self._kernel_dict[averaging]
+        self._averaging = value
+        self._kernel = value
 
-        if self._default_avg in self._avg_observers:
-            self._default_avg(averaging)
-        else:
-            for callback in self._avg_observers:
-                callback(self._averaging)
+        # emit signal back to qt_properties for averaging
+        self.events.emit_avg()
 
         self._refresh()
 
@@ -325,45 +311,15 @@ class Vectors(Layer):
         :param callback: function to call upon averaging changes
         :return:
         """
-        if self._default_avg in self._avg_observers:
-            self._avg_observers.remove(self._default_avg)
-        self._avg_observers.append(callback)
 
-    def _default_avg(self, avg_kernel: str):
-        """
-        Default method for calculating average
-        Implemented ONLY for image-like vector data
-        :param avg_kernel: kernel over which to compute average
-        :return:
-        """
-        if self._data_type == 'coords':
-            # default averaging is supported only for 'matrix' dataTypes
-            return None
-        elif self._data_type == 'image':
-            self._kernel = self._kernel_dict[avg_kernel]
-
-            if self._kernel == (1, 1):
-                self.vectors = self._original_data
-                return None
-
-            tempdat = self._original_data
-            range_x = tempdat.shape[0]
-            range_y = tempdat.shape[1]
-            x = self._kernel[0]
-            y = self._kernel[1]
-            x_offset = int((x - 1) / 2)
-            y_offset = int((y - 1) / 2)
-
-            kernel = np.ones(shape=(x, y)) / (x*y)
-
-            output_mat = np.zeros_like(tempdat)
-            output_mat_x = signal.convolve2d(tempdat[:, :, 0], kernel, mode='same', boundary='wrap')
-            output_mat_y = signal.convolve2d(tempdat[:, :, 1], kernel, mode='same', boundary='wrap')
-
-            output_mat[:, :, 0] = output_mat_x
-            output_mat[:, :, 1] = output_mat_y
-
-            self.vectors = output_mat[x_offset:range_x-x_offset:x, y_offset:range_y-y_offset:y]
+        # if self._qt_properties._default_avg in self.events.callbacks:
+        try:
+            print("disconnecting default avg callback")
+            self.events.emit_avg.disconnect(self._qt_properties._default_avg)
+        except Exception as ex:
+            print('error disconnecting avg callback: '+str(ex))
+            pass
+        self.events.emit_avg.connect(callback)
 
     @property
     def width(self) -> Union[int, float]:
@@ -392,11 +348,8 @@ class Vectors(Layer):
         """
         self._length = length
 
-        if self._default_length in self._len_observers:
-            self._default_length(length)
-        else:
-            for callback in self._len_observers:
-                callback(self._length)
+        # emit signal back to qt_properties for length
+        self.events.emit_len()
 
         self._refresh()
 
@@ -407,24 +360,13 @@ class Vectors(Layer):
         :param callback: function to call upon length changes
         :return:
         """
-        if self._default_length in self._len_observers:
-            self._len_observers.remove(self._default_length)
-            print('removing default length')
-        self._len_observers.append(callback)
-
-    def _default_length(self, newlen: int):
-        """
-        Default method for calculating vector lengths
-        Implemented ONLY for image-like vector data
-        :param newlen: new length
-        :return:
-        """
-
-        if self._data_type == 'coords':
-            return None
-        elif self._data_type == 'image':
-            self._length = newlen
-            self._vectors = self._convert_to_vector_type(self._original_data)
+        try:
+            print("disconnecting default length callback")
+            self.events.emit_len.disconnect(self._qt_properties._default_length)
+        except Exception as ex:
+            print('error disconnecting length callback: '+str(ex))
+            pass
+        self.events.emit_len.connect(callback)
 
     @property
     def color(self) -> str:
