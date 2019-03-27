@@ -40,7 +40,7 @@ class Labels(Layer):
 
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
-        self.events.add(colormap=Event, interpolation=Event)
+        self.events.add(colormap=Event)
 
         self._raw_image = label_image
         self._image = label_image / np.max(label_image)
