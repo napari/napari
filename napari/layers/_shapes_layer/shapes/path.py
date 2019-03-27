@@ -33,6 +33,7 @@ class Path(Shape):
                          face_color=face_color, opacity=opacity,
                          z_index=z_index)
         self.data = np.array(data)
+        self.name = 'path'
 
     @property
     def data(self):

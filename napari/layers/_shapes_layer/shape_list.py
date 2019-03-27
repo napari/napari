@@ -447,9 +447,13 @@ class ShapeList():
         data : list
             List of shape data where each element of the list is an
             `np.ndarray` corresponding to one shape
+        shape_type : list | str
+            List of shape types where each element of the list is a
+            str corresponding to one shape
         """
         if shape_type is None:
             data = [s.data for s in self.shapes]
+            shape_type = [s.name for s in self.shapes]
         elif shape_type not in self._types.keys():
             raise ValueError("""shape_type not recognized, must be one of
                          "{'line', 'rectangle', 'ellipse', 'path',
@@ -458,7 +462,7 @@ class ShapeList():
         else:
             cls = self._types[shape_type]
             data = [s.data for s in self.shapes if type(s) == cls]
-        return data
+        return data, shape_type
 
     def outline(self, indices):
         """Finds outlines of shapes listed in indices

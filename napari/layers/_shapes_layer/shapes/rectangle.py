@@ -35,6 +35,7 @@ class Rectangle(Shape):
 
         self._closed = True
         self.data = np.array(data)
+        self.name = 'rectangle'
 
     @property
     def data(self):

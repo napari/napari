@@ -2,6 +2,36 @@
 """
 import numpy as np
 import inspect
+import itertools
+
+
+def ensure_iterable(arg, color=False):
+    """Ensure an argument is an iterable. Useful when an input argument
+    can either be a single value or a list. If a color is passed then it
+    will be treated specially to determine if it is iterable.
+    """
+    if is_iterable(arg, color=color):
+        return arg
+    else:
+        return itertools.repeat(arg)
+
+
+def is_iterable(arg, color=False):
+    """Determine if a single argument is an iterable. If a color is being
+    provided and the argument is a 1-D array of length 3 or 4 then the input
+    is taken to not be iterable.
+    """
+    if type(arg) is str:
+        return False
+    elif np.isscalar(arg):
+        return False
+    elif color and isinstance(arg, (list, np.ndarray)):
+        if np.array(arg).ndim == 1 and len(arg) == 3 or len(arg)==4:
+            return False
+        else:
+            return True
+    else:
+        return True
 
 
 def is_multichannel(meta):

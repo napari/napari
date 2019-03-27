@@ -43,14 +43,7 @@ class Mesh():
 
     def __init__(self):
 
-        self.vertices = np.empty((0, 2))
-        self.vertices_centers = np.empty((0, 2))
-        self.vertices_offsets = np.empty((0, 2))
-        self.vertices_index = np.empty((0, 2), dtype=int)
-        self.triangles = np.empty((0, 3), dtype=np.uint32)
-        self.triangles_index = np.empty((0, 2), dtype=int)
-        self.triangles_colors = np.empty((0, 4))
-        self.triangles_z_order = np.empty((0), dtype=int)
+        self.clear()
 
     def clear(self):
         """Resets mesh data

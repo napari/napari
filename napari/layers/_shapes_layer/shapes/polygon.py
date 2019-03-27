@@ -34,6 +34,7 @@ class Polygon(Shape):
                          z_index=z_index)
         self._closed = True
         self.data = np.array(data)
+        self.name = 'polygon'
 
     @property
     def data(self):

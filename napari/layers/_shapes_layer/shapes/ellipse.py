@@ -36,6 +36,7 @@ class Ellipse(Shape):
 
         self._closed = True
         self.data = np.array(data)
+        self.name = 'ellipse'
 
     @property
     def data(self):

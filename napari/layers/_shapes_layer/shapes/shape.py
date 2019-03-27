@@ -39,6 +39,8 @@ class Shape(ABC):
         Color of the shape face
     opacity : float
         Opacity of the shape, must be between 0 and 1.
+    name : str
+        Name of shape type.
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
@@ -90,6 +92,7 @@ class Shape(ABC):
         self.face_color = face_color
         self.opacity = opacity
         self.z_index = z_index
+        self.name = ''
 
     @property
     @abstractmethod

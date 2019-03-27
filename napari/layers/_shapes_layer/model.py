@@ -4,6 +4,7 @@ from copy import copy, deepcopy
 from contextlib import contextmanager
 
 from ...util.event import Event
+from ...util.misc import ensure_iterable
 from .._base_layer import Layer
 from .._register import add_to_viewer
 
@@ -77,6 +78,9 @@ class Shapes(Layer):
         List of currently selected shapes.
     mode : Mode
         Interactive mode.
+
+    Extended Summary
+    ----------
     _mode_history : Mode
         Interactive mode captured on press of <space>.
     _selected_shapes_history : list
@@ -266,7 +270,7 @@ class Shapes(Layer):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-        if self._update_properties is True:
+        if self._update_properties:
             index = self.selected_shapes
             for i in index:
                 self.data.update_edge_width(i, edge_width)
@@ -282,7 +286,7 @@ class Shapes(Layer):
     @edge_color.setter
     def edge_color(self, edge_color):
         self._edge_color = edge_color
-        if self._update_properties is True:
+        if self._update_properties:
             index = self.selected_shapes
             for i in index:
                 self.data.update_edge_color(i, edge_color)
@@ -298,7 +302,7 @@ class Shapes(Layer):
     @face_color.setter
     def face_color(self, face_color):
         self._face_color = face_color
-        if self._update_properties is True:
+        if self._update_properties:
             index = self.selected_shapes
             for i in index:
                 self.data.update_face_color(i, face_color)
@@ -318,7 +322,7 @@ class Shapes(Layer):
                              f'got {opacity}')
 
         self._opacity = opacity
-        if self._update_properties is True:
+        if self._update_properties:
             index = self.selected_shapes
             for i in index:
                 self.data.update_opacity(i, opacity)
@@ -367,15 +371,21 @@ class Shapes(Layer):
 
     @property
     def mode(self):
-        """str: Interactive mode. The normal, default mode is PAN_ZOOM, which
-        allows for normal interactivity with the canvas. The SELECT mode allows
-        for entire shapes to be selected, moved and resized. The DIRECT mode
-        allows for shapes to be selected and their individual vertices to be
-        moved. The VERTEX_INSERT and VERTEX_REMOVE modes allow for individual
+        """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        The SELECT mode allows for entire shapes to be selected, moved and
+        resized.
+
+        The DIRECT mode allows for shapes to be selected and their individual
+        vertices to be moved.
+
+        The VERTEX_INSERT and VERTEX_REMOVE modes allow for individual
         vertices either to be added to or removed from shapes that are already
-        selected. Note that shapes cannot be selected in this mode. The
-        ADD_RECTANGLE, ADD_ELLPISE, ADD_LINE, ADD_PATH, and ADD_POLYGON modes
-        all allow for their corresponding shape type to be added.
+        selected. Note that shapes cannot be selected in this mode.
+
+        The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
+        modes all allow for their corresponding shape type to be added.
         """
         return self._mode
 
@@ -398,7 +408,7 @@ class Shapes(Layer):
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-        elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE, Mode.ADD_LINE]:
+        elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
@@ -480,7 +490,7 @@ class Shapes(Layer):
         """
         if len(data) == 0:
             return
-            
+
         if np.array(data[0]).ndim == 1:
             # If a single array for a shape has been passed
             if shape_type in self.data._types.keys():
@@ -495,48 +505,20 @@ class Shapes(Layer):
                                  """)
             self.data.add(shape)
         else:
-            # If list of arrays has been passed
-            for i, d in enumerate(data):
-                if type(shape_type) in (np.ndarray, list):
-                    st = shape_type[i]
-                else:
-                    st = shape_type
-                if type(edge_width) in (np.ndarray, list):
-                    ew = edge_width[i]
-                else:
-                    ew = edge_width
-                if type(edge_color) in (np.ndarray, list):
-                    if np.isscalar(edge_color[i]):
-                        ec = edge_color
-                    else:
-                        ec = edge_color[i]
-                else:
-                    ec = edge_color
-                if type(face_color) in (np.ndarray, list):
-                    if np.isscalar(face_color[i]):
-                        fc = face_color
-                    else:
-                        fc = face_color[i]
-                else:
-                    fc = face_color
-                if type(z_index) in (np.ndarray, list):
-                    z = z_index[i]
-                else:
-                    z = z_index
-                if type(opacity) in (np.ndarray, list):
-                    o = opacity[i]
-                else:
-                    o = opacity
+            # Turn input arguments into iterables
+            shape_types = ensure_iterable(shape_type)
+            edge_widths = ensure_iterable(edge_width)
+            opacities = ensure_iterable(opacity)
+            z_indices = ensure_iterable(z_index)
+            edge_colors = ensure_iterable(edge_color, color=True)
+            face_colors = ensure_iterable(face_color, color=True)
 
-                if st in self.data._types.keys():
-                    shape_cls = self.data._types[st]
-                    shape = shape_cls(d, edge_width=ew, edge_color=ec,
-                                      face_color=fc, opacity=o, z_index=z)
-                else:
-                    raise ValueError("""shape_type not recognized, must be one of
-                                     "{'line', 'rectangle', 'ellipse', 'path',
-                                     'polygon'}"
-                                     """)
+            for d, st, ew, ec, fc, o, z, in zip(data, shape_types, edge_widths,
+                                                edge_colors, face_colors,
+                                                opacities, z_indices):
+                shape_cls = self.data._types[st]
+                shape = shape_cls(d, edge_width=ew, edge_color=ec,
+                                  face_color=fc, opacity=o, z_index=z)
                 self.data.add(shape)
 
     def _update(self):
@@ -673,6 +655,8 @@ class Shapes(Layer):
         """
         if len(self.selected_shapes) > 0:
             if self.mode == Mode.SELECT:
+                # If in select mode just show the interaction boudning box
+                # including its vertices and the rotation handle
                 box = self._selected_box[BOX_WITH_HANDLE]
                 if self._hover_shape is None:
                     face_color = 'white'
@@ -687,9 +671,10 @@ class Shapes(Layer):
                 pos = box[BOX_LINE_HANDLE]
                 width = 1.5
             elif self.mode in ([Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON,
-                                Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+                                Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                                 Mode.ADD_LINE, Mode.VERTEX_INSERT,
                                 Mode.VERTEX_REMOVE]):
+                # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(self.data._index, self.selected_shapes)
                 vertices = self.data._vertices[inds]
                 # If currently adding path don't show box over last vertex
@@ -706,12 +691,15 @@ class Shapes(Layer):
                 pos = None
                 width = 0
             else:
+                # Otherwise show nothing
                 vertices = np.empty((0, 2))
                 face_color = 'white'
                 edge_color = 'white'
                 pos = None
                 width = 0
         elif self._is_selecting:
+            # If currently dragging a selection box just show an outline of
+            # that box
             vertices = np.empty((0, 2))
             edge_color = self._highlight_color
             face_color = 'white'
@@ -721,6 +709,7 @@ class Shapes(Layer):
             # the line around the edge
             pos = box[BOX_LINE]
         else:
+            # Otherwise show nothing
             vertices = np.empty((0, 2))
             face_color = 'white'
             edge_color = 'white'
@@ -1026,7 +1015,7 @@ class Shapes(Layer):
             Position of mouse cursor in image coordinates.
         """
         vertex = self._moving_vertex
-        if self.mode in ([Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+        if self.mode in ([Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                          Mode.ADD_LINE]):
             if len(self.selected_shapes) > 0:
                 self._is_moving = True
@@ -1223,7 +1212,7 @@ class Shapes(Layer):
                         self.selected_shapes = []
                 self._set_highlight()
                 self.status = self.get_message(coord, shape, vertex)
-        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                             Mode.ADD_LINE]):
             # Start drawing a rectangle / ellipse / line
             rescale = self._get_rescale()
@@ -1232,7 +1221,7 @@ class Shapes(Layer):
             if self.mode == Mode.ADD_RECTANGLE:
                 data = np.array([coord, coord+size])
                 shape_type = 'rectangle'
-            elif self.mode == Mode.ADD_ELLPISE:
+            elif self.mode == Mode.ADD_ELLIPSE:
                 data = np.array([coord+size/2, [size, size]])
                 shape_type = 'ellipse'
             elif self.mode == Mode.ADD_LINE:
@@ -1438,7 +1427,7 @@ class Shapes(Layer):
                 self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
-        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                             Mode.ADD_LINE]):
             # While drawing a shape or doing nothing
             if self._is_creating and event.is_dragging:
@@ -1524,7 +1513,7 @@ class Shapes(Layer):
             self._hover_vertex = shape
             self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
-        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLPISE,
+        elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                             Mode.ADD_LINE]):
             self._finish_drawing()
             shape, vertex = self._shape_at(coord)
@@ -1569,7 +1558,7 @@ class Shapes(Layer):
             elif event.key == 'r':
                 self.mode = Mode.ADD_RECTANGLE
             elif event.key == 'e':
-                self.mode = Mode.ADD_ELLPISE
+                self.mode = Mode.ADD_ELLIPSE
             elif event.key == 'l':
                 self.mode = Mode.ADD_LINE
             elif event.key == 't':

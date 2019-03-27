@@ -2,11 +2,27 @@ from enum import Enum
 
 
 class Mode(Enum):
+    """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
+    allows for normal interactivity with the canvas.
+
+    The SELECT mode allows for entire shapes to be selected, moved and
+    resized.
+
+    The DIRECT mode allows for shapes to be selected and their individual
+    vertices to be moved.
+
+    The VERTEX_INSERT and VERTEX_REMOVE modes allow for individual
+    vertices either to be added to or removed from shapes that are already
+    selected. Note that shapes cannot be selected in this mode.
+
+    The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
+    modes all allow for their corresponding shape type to be added.
+    """
     PAN_ZOOM = 0
     SELECT = 1
     DIRECT = 2
     ADD_RECTANGLE = 3
-    ADD_ELLPISE = 4
+    ADD_ELLIPSE = 4
     ADD_LINE = 5
     ADD_PATH = 6
     ADD_POLYGON = 7

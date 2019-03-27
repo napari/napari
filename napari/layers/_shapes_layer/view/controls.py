@@ -22,7 +22,7 @@ class QtShapesControls(QFrame):
         self.rectangle_button = QtModeButton(layer, 'rectangle',
                                              Mode.ADD_RECTANGLE,
                                              'Add rectangles')
-        self.ellipse_button = QtModeButton(layer, 'ellipse', Mode.ADD_ELLPISE,
+        self.ellipse_button = QtModeButton(layer, 'ellipse', Mode.ADD_ELLIPSE,
                                            'Add ellipses')
         self.line_button = QtModeButton(layer, 'line', Mode.ADD_LINE,
                                         'Add lines')
@@ -86,7 +86,7 @@ class QtShapesControls(QFrame):
             self.panzoom_button.setChecked(True)
         elif mode == Mode.ADD_RECTANGLE:
             self.rectangle_button.setChecked(True)
-        elif mode == Mode.ADD_ELLPISE:
+        elif mode == Mode.ADD_ELLIPSE:
             self.ellipse_button.setChecked(True)
         elif mode == Mode.ADD_LINE:
             self.line_button.setChecked(True)
