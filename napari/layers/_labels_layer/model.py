@@ -122,14 +122,23 @@ class Labels(Layer):
         self._need_display_update = True
         self._update()
 
-    def _slice_image(self, indices):
+    def _slice_image(self, indices, image=None):
         """Determines the slice of image given the indices.
 
         Parameters
         ----------
         indices : sequence of int or slice
             Indices to slice with.
+        image : array, optional
+            The image to slice. Defaults to self._image if None.
+
+        Returns
+        -------
+        sliced : array or value
+            The requested slice.
         """
+        if image is None:
+            image = self._image
         ndim = self.ndim
         indices = list(indices)[:ndim]
 
@@ -142,7 +151,7 @@ class Labels(Layer):
             except TypeError:
                 pass
 
-        return self._image[tuple(indices)]
+        return image[tuple(indices)]
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -208,7 +217,7 @@ class Labels(Layer):
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        label = self._slice_image(coord)
+        label = self._slice_image(coord, image=self._raw_image)
         msg = f'{coord}, {self.name}, label {label}'
         return coord, label, msg
 
