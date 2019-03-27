@@ -59,8 +59,9 @@ class Labels(Layer):
         self._node.clim = [0., 1.]
 
     def new_colormap(self):
-        seed = np.random.random((self._image.ndim,))
+        seed = np.random.random((3,))
         self.colormap = colormaps.label_colormap(self._image, seed=seed)
+        self.events.colormap()
 
     @property
     def image(self):
