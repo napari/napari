@@ -12,8 +12,8 @@ from napari.util import app_context
 with app_context():
     astro = data.astronaut()
     # initialise viewer with astro image
-    viewer = ViewerApp(astro, multichannel=True, name='astronaut')
+    viewer = ViewerApp(astronaut=astro, multichannel=True)
     # add the labels
-    labels = slic(astro, multichannel=True)
+    # we add 1 because SLIC returns labels from 0, which we consider background
+    labels = slic(astro, multichannel=True, compactness=20) + 1
     label_layer = viewer.add_labels(labels, name='SLIC segmentation')
-
