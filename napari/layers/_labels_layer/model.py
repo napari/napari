@@ -1,7 +1,5 @@
-from warnings import warn
-
 import numpy as np
-from numpy import clip, integer, ndarray
+from numpy import clip
 from copy import copy
 
 from .._base_layer import Layer
