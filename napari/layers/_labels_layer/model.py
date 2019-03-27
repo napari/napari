@@ -40,14 +40,14 @@ class Labels(Layer):
 
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
+        self.events.add(colormap=Event, interpolation=Event)
 
         self._raw_image = label_image
         self._image = label_image / np.max(label_image)
         self._meta = meta
         self.interpolation = 'nearest'
+        self.colormap_name = 'random'
         self.colormap = colormaps.label_colormap(label_image)
-
-        self.events.add(colormap=Event, interpolation=Event)
 
         # update flags
         self._need_display_update = False
@@ -57,6 +57,7 @@ class Labels(Layer):
         self._qt_controls = QtImageControls(self)
 
         self._node.clim = [0., 1.]
+        self.events.colormap()
 
     def new_colormap(self):
         seed = np.random.random((3,))

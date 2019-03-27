@@ -22,15 +22,7 @@ class QtImageLayer(QtLayer):
         self.layer.interpolation = text
 
     def _on_interpolation_change(self, event):
-        with self.layer.events.interpolation.blocker():
-            index = self.interpComboBox.findText(
-                self.layer.interpolation, Qt.MatchFixedString)
-            self.interpComboBox.setCurrentIndex(index)
+        pass
 
     def _on_colormap_change(self, event):
-        name = self.layer.colormap_name
-        if name not in self.colormap_combobox._allitems:
-            self.colormap_combobox._allitems.add(name)
-            self.colormap_combobox.addItem(name)
-        if name != self.colormap_combobox.currentText():
-            self.colormap_combobox.setCurrentText(name)
+        self.layer._node.cmap = self.layer.colormap
