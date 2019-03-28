@@ -35,8 +35,8 @@ class Vectors(Layer):
         Is set during layer construction.
         Is NOT updated if data is adjusted by assigning the 'vectors' property
 
-    averaging : str
-        kernel over which to average from one of _kernel_dict
+    averaging : int
+        (int, int) kernel over which to average
         averaging.setter adjusts the underlying data
         subscribe an observer by registering it with "averaging_bind_to"
 
@@ -51,11 +51,6 @@ class Vectors(Layer):
     color : str
         one of "get_color_names" from vispy.color
 
-    conector : str or np.ndarray
-        way to render line between coordinates
-        two built in types: "segment" or "strip"
-        third type is np.ndarray
-
     mode : str
         control panel mode
 
@@ -63,33 +58,23 @@ class Vectors(Layer):
     ----------
     Private attributes
     -------
-    _kernel_dict
-    _kernel
     _data_types
     _data_type
     _width
     _color
     _colors
-    _connector_types
-    _connector
-    _avg_dims
     _averaging
     _length
-    _avg_observers
-    _len_observers
     _need_display_update
     _need_visual_update
     _raw_dat
     _original_data
-    _current_shape
+    _current_data
     _vectors
-    _mode
-    _mode_history
 
     Public attributes
     -------
     name
-
 
     See vispy's line visual docs for more details:
     http://api.vispy.org/en/latest/scene.html
@@ -100,7 +85,7 @@ class Vectors(Layer):
                  vectors,
                  width=1,
                  color='red',
-                 averaging='1x1',
+                 averaging=1,
                  length=1,
                  name=None):
 
@@ -119,13 +104,10 @@ class Vectors(Layer):
         self._width = width
         self._color = color
         self._colors = get_color_names()
-        self._connector_types = ['segments']
-        self._connector = self._connector_types[0]
 
         # averaging and length attributes
         self._averaging = averaging
         self._length = length
-        self._kernel = 1
 
         # update flags
         self._need_display_update = False
@@ -220,7 +202,7 @@ class Vectors(Layer):
         ydim = vect.shape[1]
 
         # stride is used during averaging and length adjustment
-        stride_x, stride_y = self._kernel, self._kernel
+        stride_x, stride_y = self._averaging, self._averaging
 
         # create empty vector of necessary shape
         # every "pixel" has 2 coordinates
@@ -251,7 +233,6 @@ class Vectors(Layer):
         pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * (self._length/2) * \
                        vect.reshape((xdim*ydim, 2))[:, 1]
 
-
         return pos
 
     def _convert_coords_to_coordinates(self, vect) -> np.ndarray:
@@ -281,7 +262,7 @@ class Vectors(Layer):
         return pos
 
     @property
-    def averaging(self) -> str:
+    def averaging(self) -> int:
         """
         Set the kernel over which to average
         :return: string of averaging kernel size
@@ -296,7 +277,7 @@ class Vectors(Layer):
         :return:
         """
         self._averaging = value
-        self._kernel = value
+        # self._kernel = value
 
         # emit signal back to qt_properties for averaging
         self.events.emit_avg()
@@ -311,15 +292,45 @@ class Vectors(Layer):
         :param callback: function to call upon averaging changes
         :return:
         """
-
-        # if self._qt_properties._default_avg in self.events.callbacks:
-        try:
-            print("disconnecting default avg callback")
-            self.events.emit_avg.disconnect(self._qt_properties._default_avg)
-        except Exception as ex:
-            print('error disconnecting avg callback: '+str(ex))
-            pass
+        print("disconnecting default avg callback")
+        self.events.emit_avg.disconnect(self._qt_properties.change_avg)
         self.events.emit_avg.connect(callback)
+
+    def _default_avg(self):
+        """
+        Default method for calculating average
+        Implemented ONLY for image-like vector data
+        :param event_kernel: kernel over which to compute average
+        :return:
+        """
+        if self._data_type == 'coords':
+            # default averaging is supported only for 'matrix' dataTypes
+            return None
+        elif self._data_type == 'image':
+
+            x, y = self._averaging, self._averaging
+
+            if (x,y) == (1, 1):
+                self.vectors = self._original_data
+                return None
+
+            tempdat = self._original_data
+            range_x = tempdat.shape[0]
+            range_y = tempdat.shape[1]
+            x_offset = int((x - 1) / 2)
+            y_offset = int((y - 1) / 2)
+
+            kernel = np.ones(shape=(x, y)) / (x*y)
+
+            output_mat = np.zeros_like(tempdat)
+            output_mat_x = signal.convolve2d(tempdat[:, :, 0], kernel, mode='same', boundary='wrap')
+            output_mat_y = signal.convolve2d(tempdat[:, :, 1], kernel, mode='same', boundary='wrap')
+
+            output_mat[:, :, 0] = output_mat_x
+            output_mat[:, :, 1] = output_mat_y
+
+            self.vectors = output_mat[x_offset:range_x-x_offset:x, y_offset:range_y-y_offset:y]
+            self.length = self._length
 
     @property
     def width(self) -> Union[int, float]:
@@ -360,13 +371,23 @@ class Vectors(Layer):
         :param callback: function to call upon length changes
         :return:
         """
-        try:
-            print("disconnecting default length callback")
-            self.events.emit_len.disconnect(self._qt_properties._default_length)
-        except Exception as ex:
-            print('error disconnecting length callback: '+str(ex))
-            pass
+        print('disconneting default length callback')
+        self.events.emit_len.disconnect(self._qt_properties.change_len)
         self.events.emit_len.connect(callback)
+
+    def _default_length(self):
+        """
+        Default method for calculating vector lengths
+        Implemented ONLY for image-like vector data
+        :param event_len: new length
+        :return:
+        """
+
+        if self._data_type == 'coords':
+            return None
+        elif self._data_type == 'image':
+            # self._length = self.length_field.value()
+            self._vectors = self._convert_to_vector_type(self._current_data)
 
     @property
     def color(self) -> str:
@@ -443,7 +464,7 @@ class Vectors(Layer):
             data[::-1],
             width=self.width,
             color=self.color,
-            connect=self._connector)
+            connect='segments')
         self._need_visual_update = True
         self._update()
 
