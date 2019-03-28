@@ -1,2 +1,1 @@
-from .properties import QtImageLayer
-from .controls import QtImageControls
+from .properties import QtLabelsLayer

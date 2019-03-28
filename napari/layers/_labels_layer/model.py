@@ -10,8 +10,7 @@ from ...util.event import Event
 
 from .._register import add_to_viewer
 
-from .view import QtImageLayer
-from .view import QtImageControls
+from .view import QtLabelsLayer
 
 
 @add_to_viewer
@@ -51,8 +50,7 @@ class Labels(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
-        self._qt_properties = QtImageLayer(self)
-        self._qt_controls = QtImageControls(self)
+        self._qt_properties = QtLabelsLayer(self)
 
         self._node.clim = [0., 1.]
         self.events.colormap()

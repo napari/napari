@@ -8,7 +8,6 @@ from scipy import ndimage as ndi
 from napari import ViewerApp
 from napari.util import app_context
 
-print("click to add markers; close the window when finished.")
 
 with app_context():
     blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)
