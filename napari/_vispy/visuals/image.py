@@ -5,7 +5,6 @@
 from __future__ import division
 
 import numpy as np
-from vispy import scene
 from vispy.color import get_colormap
 from vispy.ext._bundled.six import string_types
 from vispy.gloo import Texture2D, VertexBuffer

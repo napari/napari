@@ -33,7 +33,7 @@ class QtImageControls(QWidget):
                 cmin = valmin+slidermin*(valmax-valmin)
                 cmax = valmin+slidermax*(valmax-valmin)
                 layer.clim = [cmin, cmax]
-                layer._qt_controls.clim_slider_update()
+                layer._qt_controls.clim_slider_update(None)
 
     def clim_slider_update(self, event):
         valmin, valmax = self.layer._clim_range

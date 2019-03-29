@@ -1,5 +1,4 @@
-from numpy import clip, integer, ndarray, append, insert, delete, empty
-from copy import copy
+import numpy as np
 
 from ...util.event import EmitterGroup, Event
 from .view import QtViewer
@@ -20,7 +19,6 @@ class Viewer:
     camera : vispy.scene.Camera
         Viewer camera.
     """
-
     def __init__(self):
         super().__init__()
         from .._layers_list import LayersList
@@ -127,7 +125,7 @@ class Viewer:
         """
         self.camera.set_range()
 
-    def screenshot(self, region=None, size=None, bgcolor=None, crop=None):
+    def screenshot(self, region=None, size=None, bgcolor=None):
         """Render the scene to an offscreen buffer and return the image array.
 
         Parameters
@@ -143,18 +141,14 @@ class Viewer:
             from the native canvas resolution.
         bgcolor : instance of Color | None
             The background color to use.
-        crop : array-like | None
-            If specified it determines the pixels read from the framebuffer.
-            In the format (x, y, w, h), relative to the region being rendered.
+
         Returns
         -------
         image : array
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
-
         """
-        return self._canvas.render(region=None, size=None, bgcolor=None,
-                                   crop=None)
+        return self._canvas.render(region, size, bgcolor)
 
     def add_layer(self, layer):
         """Adds a layer to the viewer.
@@ -170,9 +164,9 @@ class Viewer:
 
     def _new_markers(self):
         if self.dims.max_dims == 0:
-            empty_markers = empty((0, 2))
+            empty_markers = np.empty((0, 2))
         else:
-            empty_markers = empty((0, self.dims.max_dims))
+            empty_markers = np.empty((0, self.dims.max_dims))
         self.add_markers(empty_markers)
 
     def _update_layers(self):
