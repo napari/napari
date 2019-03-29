@@ -26,7 +26,7 @@ def is_iterable(arg, color=False):
     elif np.isscalar(arg):
         return False
     elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and len(arg) == 3 or len(arg)==4:
+        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg)==4):
             return False
         else:
             return True
