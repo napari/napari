@@ -2,7 +2,6 @@ from typing import Union
 from collections import Iterable
 
 import numpy as np
-from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
 from .._base_layer import Layer
@@ -392,15 +391,13 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-        max_shape = self.viewer.dims.max_shape
+        shape = self._get_shape()
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
-                                                     max_shape[1]-1)]
         coord = copy(indices)
-        coord[0] = pos[1]
-        coord[1] = pos[0]
-        return coord
+        coord[0] = pos[0]
+        coord[1] = pos[1]
+        return coord[:len(shape)]
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -436,8 +433,7 @@ class Markers(Layer):
         ----------
         coord : sequence of indices to add marker at
         """
-        self._size = append(self._size, [np.repeat(10, self.ndim)], axis=0)
-        self.data = append(self.data, [coord], axis=0)
+        self.data = np.append(self.data, [coord], axis=0)
         self._selected_markers = len(self.data)-1
 
     def _remove(self):
@@ -445,8 +441,7 @@ class Markers(Layer):
         """
         index = self._selected_markers
         if index is not None:
-            self._size = delete(self._size, index, axis=0)
-            self.data = delete(self.data, index, axis=0)
+            self.data = np.delete(self.data, index, axis=0)
             self._selected_markers = None
 
     def _move(self, coord):
