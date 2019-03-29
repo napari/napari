@@ -44,6 +44,9 @@ class Shape(ABC):
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+
+    Extended Summary
+    ----------
     _edge_color_name : str
         Name of edge color or six digit hex code representing edge color if not
         recongnized

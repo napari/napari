@@ -16,6 +16,9 @@ class ShapeList():
     ----------
     shapes : list
         Length N list of N shape objects
+
+    Extended Summary
+    ----------
     _vertices : np.ndarray
         Mx2 array of all vertices from all shapes
     _index : np.ndarray
