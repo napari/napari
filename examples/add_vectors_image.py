@@ -11,15 +11,6 @@ from napari.util import app_context
 
 import numpy as np
 
-
-def myavgmethod(event):
-    print("custom calculation of average")
-
-
-def mylenmethod(event):
-    print('custom calculation of length')
-
-
 with app_context():
     # create the viewer and window
     viewer = ViewerApp()
@@ -39,7 +30,5 @@ with app_context():
 
     # add the vectors
     vect = viewer.add_vectors(pos)
-    # vect.averaging_bind_to(myavgmethod)
-    # vect.length_bind_to(mylenmethod)
 
 
