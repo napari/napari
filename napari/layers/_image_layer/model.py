@@ -222,7 +222,7 @@ class Image(Layer):
         """
         sliced_image = self._slice_image(indices)
 
-        self._node.set_data(sliced_image)
+        self._node.set_data(np.asarray(sliced_image))
 
         self._need_visual_update = True
         self._update()
