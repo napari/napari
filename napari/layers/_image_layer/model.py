@@ -210,7 +210,9 @@ class Image(Layer):
             except TypeError:
                 pass
 
-        return self.image[tuple(indices)]
+        self._image_view = np.asarray(self.image[tuple(indices)])
+
+        return self._image_view
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -222,7 +224,7 @@ class Image(Layer):
         """
         sliced_image = self._slice_image(indices)
 
-        self._node.set_data(np.asarray(sliced_image))
+        self._node.set_data(sliced_image)
 
         self._need_visual_update = True
         self._update()
@@ -372,7 +374,7 @@ class Image(Layer):
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        value = self._slice_image(coord)
+        value = self._image_view[tuple(coord[:2])]
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):
