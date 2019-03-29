@@ -15,7 +15,10 @@ from .view import QtLabelsLayer
 
 @add_to_viewer
 class Labels(Layer):
-    """Image layer.
+    """Labels (or segmentation) layer.
+
+    An image layer where every pixel contains an integer ID corresponding
+    to the region it belongs to.
 
     Parameters
     ----------
