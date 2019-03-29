@@ -8,6 +8,18 @@ Subpackages
 
     napari.resources.icons
 
+Submodules
+----------
+
+napari.resources.qt module
+--------------------------
+
+.. automodule:: napari.resources.qt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Module contents
 ---------------
 

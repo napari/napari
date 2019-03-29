@@ -29,6 +29,14 @@ napari.util.async\_utils module
     :undoc-members:
     :show-inheritance:
 
+napari.util.event module
+------------------------
+
+.. automodule:: napari.util.event
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 napari.util.example\_data\_utils module
 ---------------------------------------
 
