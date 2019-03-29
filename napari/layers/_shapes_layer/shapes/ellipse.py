@@ -10,7 +10,9 @@ class Ellipse(Shape):
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of vertices specifying the shape.
+        Either a 2x2 array specifying the center and radii of an axis aligned
+        ellipse, or a 4x2 array specifying the four corners of a boudning box
+        that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -53,15 +55,15 @@ class Ellipse(Shape):
                              Ellipse expects four corner vertices""")
         else:
             # Build boundary vertices with num_segments
-            vertices, trinalges = triangulate_ellipse(data)
+            vertices, triangles = triangulate_ellipse(data)
             self._set_meshes(vertices[1:-1], face=False)
             self._face_vertices = vertices
-            self._face_triangles = trinalges
+            self._face_triangles = triangles
             self._box = rectangle_to_box(data)
         self._data = data
 
     def transform(self, transform):
-        """Perfroms a linear transform on the shape
+        """Performs a linear transform on the shape
 
         Parameters
         ----------

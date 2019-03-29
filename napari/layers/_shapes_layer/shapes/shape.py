@@ -196,7 +196,7 @@ class Shape(ABC):
                     self._face_triangles = triangles
 
     def transform(self, transform):
-        """Perfroms a linear transform on the shape
+        """Performs a linear transform on the shape
 
         Parameters
         ----------
@@ -216,7 +216,7 @@ class Shape(ABC):
         self._edge_triangles = triangles
 
     def shift(self, shift):
-        """Perfroms a 2D shift on the shape
+        """Performs a 2D shift on the shape
 
         Parameters
         ----------
@@ -231,7 +231,7 @@ class Shape(ABC):
         self._data = self._data + shift
 
     def scale(self, scale, center=None):
-        """Perfroms a scaling on the shape
+        """Performs a scaling on the shape
 
         Parameters
         ----------
@@ -252,12 +252,12 @@ class Shape(ABC):
             self.shift(center)
 
     def rotate(self, angle, center=None):
-        """Perfroms a rotation on the shape
+        """Performs a rotation on the shape
 
         Parameters
         ----------
         angle : float
-            angle specifying rotation of shape in degrees.
+            angle specifying rotation of shape in degrees. CCW is positive.
         center : list
             length 2 list specifying coordinate of center of rotation.
         """
@@ -272,7 +272,7 @@ class Shape(ABC):
             self.shift(center)
 
     def flip(self, axis, center=None):
-        """Perfroms an vertical flip on the shape
+        """Performs an vertical flip on the shape
 
         Parameters
         ----------
