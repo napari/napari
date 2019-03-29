@@ -93,8 +93,8 @@ class Vectors(Layer):
         super().__init__(visual)
 
         # events for non-napari calculations
-        self.events.add(emit_len=Event,
-                        emit_avg=Event)
+        self.events.add(length=Event,
+                        average=Event)
 
         # Store underlying data model
         self._data_types = ('image', 'coords')
