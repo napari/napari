@@ -36,7 +36,7 @@ class Vectors(Layer):
         Is NOT updated if data is adjusted by assigning the 'vectors' property
 
     averaging : int
-        (int, int) kernel over which to average
+        (int, int) kernel over which to convolve the data
         averaging.setter adjusts the underlying data
         subscribe an observer by registering it with "averaging_bind_to"
 
@@ -123,6 +123,7 @@ class Vectors(Layer):
             self.name = 'vectors'
         else:
             self.name = name
+
         self._qt_properties = QtVectorsLayer(self)
 
     # ====================== Property getter and setters =====================
@@ -277,30 +278,16 @@ class Vectors(Layer):
         :return:
         """
         self._averaging = value
-        # self._kernel = value
 
         # emit signal back to qt_properties for averaging
         self.events.emit_avg()
 
         self._refresh()
 
-    def averaging_bind_to(self, callback):
-        """
-        register an observer to be notified upon changes to averaging
-        Removes the default method for averaging if an external method
-            is registered
-        :param callback: function to call upon averaging changes
-        :return:
-        """
-        print("disconnecting default avg callback")
-        self.events.emit_avg.disconnect(self._qt_properties.change_avg)
-        self.events.emit_avg.connect(callback)
-
     def _default_avg(self):
         """
         Default method for calculating average
         Implemented ONLY for image-like vector data
-        :param event_kernel: kernel over which to compute average
         :return:
         """
         if self._data_type == 'coords':
@@ -364,17 +351,6 @@ class Vectors(Layer):
 
         self._refresh()
 
-    def length_bind_to(self, callback):
-        """
-        register an observer to be notified upon changes to length
-        Removes the default method for length if an external method is registered
-        :param callback: function to call upon length changes
-        :return:
-        """
-        print('disconneting default length callback')
-        self.events.emit_len.disconnect(self._qt_properties.change_len)
-        self.events.emit_len.connect(callback)
-
     def _default_length(self):
         """
         Default method for calculating vector lengths
@@ -386,7 +362,6 @@ class Vectors(Layer):
         if self._data_type == 'coords':
             return None
         elif self._data_type == 'image':
-            # self._length = self.length_field.value()
             self._vectors = self._convert_to_vector_type(self._current_data)
 
     @property
