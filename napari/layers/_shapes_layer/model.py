@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 from copy import copy, deepcopy
 from contextlib import contextmanager
 
@@ -15,7 +14,7 @@ from vispy.color import get_color_names
 from .view import QtShapesLayer
 from .view import QtShapesControls
 from ._constants import (Mode, BOX_LINE_HANDLE, BOX_LINE, BOX_TOP, BOX_CENTER,
-                         BOX_LEN, BOX_HANDLE, BOX_WITH_HANDLE)
+                         BOX_LEN, BOX_HANDLE, BOX_WITH_HANDLE, BACKSPACE)
 from .shape_list import ShapeList
 from .shape_util import create_box, point_to_lines
 from .shapes import Rectangle, Ellipse, Line, Path, Polygon
@@ -401,9 +400,8 @@ class Shapes(Layer):
         elif mode in [Mode.SELECT, Mode.DIRECT]:
             self.cursor = 'pointing'
             self.interactive = False
-            backspace = 'delete' if sys.platform == 'darwin' else 'backspace'
             self.help = ('hold <space> to pan/zoom, '
-                         f'press <{backspace}> to remove selected')
+                         f'press <{BACKSPACE}> to remove selected')
         elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self.cursor = 'cross'
             self.interactive = False

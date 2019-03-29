@@ -1,4 +1,5 @@
 from enum import Enum
+import sys
 
 
 class Mode(Enum):
@@ -37,3 +38,5 @@ BOX_TOP = 1
 BOX_HANDLE = 9
 BOX_CENTER = 8
 BOX_LEN = 8
+
+BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
