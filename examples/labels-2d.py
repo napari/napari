@@ -17,3 +17,4 @@ with app_context():
     # we add 1 because SLIC returns labels from 0, which we consider background
     labels = slic(astro, multichannel=True, compactness=20) + 1
     label_layer = viewer.add_labels(labels, name='SLIC segmentation')
+    print(f'The color of label 5 is {label_layer.label_color(5)}')

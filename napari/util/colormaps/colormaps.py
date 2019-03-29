@@ -134,7 +134,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(labels, seed=0.5):
+def label_colormap(labels, seed=0.5, max_label=None):
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -143,6 +143,8 @@ def label_colormap(labels, seed=0.5):
         A set of labels or label image.
     seed : float or array of float, length 3
         The seed for the low discrepancy sequence generator.
+    max_label : int, optional
+        The maximum label in `labels`. Computed if not given.
 
     Returns
     -------
@@ -159,7 +161,7 @@ def label_colormap(labels, seed=0.5):
     if unique_labels[0] != 0:
         unique_labels = np.concatenate([[0], unique_labels])
     n = len(unique_labels)
-    max_label = np.max(unique_labels)
+    max_label = max_label or np.max(unique_labels)
     unique_labels_float = unique_labels / max_label
     midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
     control_points = np.concatenate(([0.], midpoints, [1.]))
