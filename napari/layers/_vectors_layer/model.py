@@ -1,7 +1,7 @@
 from typing import Union
 
 import numpy as np
-import scipy.signal as signal
+from scipy import signal
 
 from .._base_layer import Layer
 from .._register import add_to_viewer
