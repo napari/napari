@@ -8,6 +8,7 @@ Subpackages
 
     napari.layers._base_layer
     napari.layers._image_layer
+    napari.layers._labels_layer
     napari.layers._markers_layer
     napari.layers._shapes_layer
 

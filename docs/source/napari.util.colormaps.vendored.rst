@@ -36,6 +36,14 @@ napari.util.colormaps.vendored.cm module
     :undoc-members:
     :show-inheritance:
 
+napari.util.colormaps.vendored.colorconv module
+-----------------------------------------------
+
+.. automodule:: napari.util.colormaps.vendored.colorconv
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 napari.util.colormaps.vendored.colors module
 --------------------------------------------
 
