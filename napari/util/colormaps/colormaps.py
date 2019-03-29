@@ -160,7 +160,6 @@ def label_colormap(labels, seed=0.5):
     max_label = np.max(unique_labels)
     unique_labels_float = unique_labels / max_label
     midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
-    eps = np.finfo(midpoints.dtype).eps
     control_points = np.concatenate(([0.], midpoints, [1.]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate((_color_random(n, seed=seed),
