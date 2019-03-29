@@ -759,11 +759,6 @@ def lab2xyz(lab, illuminant="D65", observer="2"):
     x = (a / 500.) + y
     z = y - (b / 200.)
 
-    if np.any(z < 0):
-        invalid = np.nonzero(z < 0)
-        warn('Color data out of range: Z < 0 in %s pixels' % invalid[0].size)
-        z[invalid] = 0
-
     out = np.stack([x, y, z], axis=-1)
 
     mask = out > 0.2068966
