@@ -2,17 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QFrame, QCheckBox)
-from os.path import join
-from ....resources import resources_dir
 
-path_delete = join(resources_dir, 'icons', 'delete.png')
-path_add = join(resources_dir, 'icons', 'add.png')
-
-styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
-                QPushButton:pressed {background-color:rgb(0, 153, 255);
-                border-radius: 3px;}
-                QPushButton:hover {background-color:rgb(0, 153, 255);
-                border-radius: 3px;}"""
+from .... import resources  # noqa
 
 
 class QtLayersButtons(QFrame):
@@ -35,12 +26,11 @@ class QtDeleteButton(QPushButton):
         super().__init__()
 
         self.layers = layers
-        self.setIcon(QIcon(path_delete))
+        self.setIcon(QIcon(':/icons/delete.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Delete layers')
         self.setAcceptDrops(True)
-        self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layers.remove_selected)
 
     def dragEnterEvent(self, event):
@@ -63,9 +53,8 @@ class QtAddButton(QPushButton):
         super().__init__()
 
         self.layers = layers
-        self.setIcon(QIcon(path_add))
+        self.setIcon(QIcon(':icons/add.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Add layer')
-        self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layers.viewer._new_markers)
