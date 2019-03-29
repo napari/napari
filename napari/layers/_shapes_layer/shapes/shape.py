@@ -259,7 +259,7 @@ class Shape(ABC):
         angle : float
             angle specifying rotation of shape in degrees. CCW is positive.
         center : list
-            length 2 list specifying coordinate of center of rotation.
+            length 2 list specifying coordinate of fixed point of the rotation.
         """
         theta = np.radians(angle)
         transform = np.array([[np.cos(theta), np.sin(theta)],
@@ -272,7 +272,7 @@ class Shape(ABC):
             self.shift(center)
 
     def flip(self, axis, center=None):
-        """Performs an vertical flip on the shape
+        """Performs a flip on the shape, either horizontal or vertical.
 
         Parameters
         ----------

@@ -4,12 +4,12 @@ from ..shape_util import create_box
 
 
 class Path(Shape):
-    """Class for a single path
+    """Class for a single path, which is a sequence of line segments.
 
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of vertices specifying the shape.
+        Nx2 array of vertices specifying the path.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
