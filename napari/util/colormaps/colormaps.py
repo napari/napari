@@ -156,6 +156,8 @@ def label_colormap(labels, seed=0.5):
     0 always maps to fully transparent.
     """
     unique_labels = np.unique(labels)
+    if unique_labels[0] != 0:
+        unique_labels = np.concatenate([[0], unique_labels])
     n = len(unique_labels)
     max_label = np.max(unique_labels)
     unique_labels_float = unique_labels / max_label
