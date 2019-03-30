@@ -468,7 +468,6 @@ class Markers(Layer):
             self._move(coord)
         else:
             self._selected_markers = self._select_marker(coord)
-
         self.status = self.get_message(coord, self._selected_markers)
 
     def on_mouse_press(self, event):
@@ -485,7 +484,6 @@ class Markers(Layer):
                 self._remove()
             else:
                 self._add(coord)
-
         self.status = self.get_message(coord, self._selected_markers)
 
     def on_key_press(self, event):

@@ -10,6 +10,7 @@ Subpackages
     napari.layers._image_layer
     napari.layers._labels_layer
     napari.layers._markers_layer
+    napari.layers._shapes_layer
 
 Submodules
 ----------
