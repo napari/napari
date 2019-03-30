@@ -35,6 +35,9 @@ class Labels(Layer):
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
+
+    _brush_shapes = ['circle', 'square']
+
     def __init__(self, label_image, meta=None, *, name=None, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
@@ -42,7 +45,9 @@ class Labels(Layer):
 
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
-        self.events.add(colormap=Event, mode=Event)
+        self.events.add(colormap=Event, mode=Event, n_dimensional=Event,
+                        contiguous=Event, brush_size=Event, brush_shape=Event,
+                        selected_label=Event)
 
         self._raw_image = label_image
         self._max_label = np.max(label_image)
@@ -54,10 +59,19 @@ class Labels(Layer):
                                                  max_label=self._max_label)
 
 
+        self._n_dimensional = False
+        self._contiguous = True
+        self._brush_size = 10
+        self._brush_color = 'white'
+        self._brush_shape = 'circle'
+
+        self._selected_label = 0
+        self._selected_color = None
+
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = str(self._mode)
-        self._help = 'enter a paint mode to edit labels'
+        self._help = 'enter paint or fill mode to edit labels'
 
 
 
@@ -114,6 +128,91 @@ class Labels(Layer):
         self.refresh()
 
     @property
+    def contiguous(self):
+        """ bool: if True, fill changes only pixels of the same label that are
+        contiguous with the one clicked on.
+        """
+        return self._contiguous
+
+    @contiguous.setter
+    def contiguous(self, contiguous):
+        self._contiguous = contiguous
+        self.events.contiguous()
+
+        self.refresh()
+
+    @property
+    def n_dimensional(self):
+        """ bool: if True, edits labels not just in central plane but also
+        in all n dimensions according to specified brush size or fill.
+        """
+        return self._n_dimensional
+
+    @n_dimensional.setter
+    def n_dimensional(self, n_dimensional):
+        self._n_dimensional = n_dimensional
+        self.events.n_dimensional()
+
+        self.refresh()
+
+    @property
+    def brush_size(self):
+        """ float | list: Size of the paint brush. If a float, then if
+        `n_dimensional` is False applies just to the visible dimensions, if
+        `n_dimensional` is True applies to all dimensions. If a list, must be
+        the same length as the number of dimensions of the layer, and size
+        applies to each dimension scaled by the appropriate amount.
+        """
+        return self._brush_size
+
+    @brush_size.setter
+    def brush_size(self, brush_size):
+        self._brush_size = brush_size
+        self.events.brush_size()
+
+        self.refresh()
+
+    @property
+    def brush_shape(self):
+        """ str: Shape of the paint brush, one of "{'square', 'circle'}"
+        """
+        return self._brush_shape
+
+    @brush_shape.setter
+    def brush_shape(self, brush_shape):
+        if brush_shape not in self._brush_shapes:
+            raise ValueError('Brush shape not recognized')
+        self._brush_shape = brush_shape
+        self.events.brush_shape()
+
+        self.refresh()
+
+    @property
+    def selected_label(self):
+        """ int: Index of selected label. If `0` corresponds to the transparent
+        background. If greater than the current maximum label then if used to
+        fill or paint a region this label will be added to the new labels
+        """
+        return self._selected_label
+
+    @selected_label.setter
+    def selected_label(self, selected_label):
+        self._selected_label = selected_label
+        if selected_label == 0:
+            # If background
+            self._selected_color = None
+        elif selected_label <= self._max_label:
+            # If one of the existing labels
+            self._selected_color = self.label_color(selected_label)
+        else:
+            # If a new label make white
+            # NEED TO IMPLEMENT BETTER COLOR SELECTION
+            self._selected_color = [1, 1, 1, 1]
+        self.events.selected_label()
+
+        self.refresh()
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -145,11 +244,22 @@ class Labels(Layer):
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter a selection mode to edit shape properties'
-        elif mode in [Mode.PICK, Mode.PAINT, Mode.FILL]:
+            self.help = 'enter paint or fill mode to edit labels'
+        elif mode == Mode.PICK:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = ('hold <space> to pan/zoom, '
+                         'click to pick a label')
+        elif mode == Mode.PAINT:
+            self.cursor = 'cross'
+            self.interactive = False
+            self.help = ('hold <space> to pan/zoom, '
+                         'drag to paint a label')
+        elif mode == Mode.FILL:
+            self.cursor = 'cross'
+            self.interactive = False
+            self.help = ('hold <space> to pan/zoom, '
+                         'click to fill a label')
         else:
             raise ValueError("Mode not recongnized")
 
