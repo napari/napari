@@ -11,6 +11,14 @@ Subpackages
 Submodules
 ----------
 
+napari.layers.\_base\_layer.\_visual\_wrapper module
+----------------------------------------------------
+
+.. automodule:: napari.layers._base_layer._visual_wrapper
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 napari.layers.\_base\_layer.model module
 ----------------------------------------
 
