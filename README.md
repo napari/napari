@@ -15,9 +15,9 @@
 </p>
 <br>
 
-**napari** is a fast interactive multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images.
+**napari** is a fast interactive multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of `PyQt` (for the GUI), `vispy` (for performant GPU-based rendering), and the scientific Python stack (`numpy`, `scipy`).
 
-We're developing **napari** in the open! But the project is in a **pre-alpha** stage. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code, but expect **breaking changes** from patch to patch.
+We're developing **napari** in the open! But the project is in a **pre-alpha** stage. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code. Expect **breaking changes** from patch to patch.
 
 ## installation
 
@@ -57,7 +57,7 @@ with app_context():
 
 Check out the scripts in the `examples` folder to see some of the functionality we're developing!
 
-For example, you can add multiple images in different layers and adjust them like this:
+For example, you can add multiple images in different layers and adjust them
 
 ```python
 from skimage import data
@@ -77,7 +77,7 @@ with app_context():
 
 ![image](resources/screenshot-layers.png)
 
-And you can add markers on top of an image like this:
+You can add markers on top of an image
 
 ```python
 from skimage import data
@@ -95,16 +95,16 @@ with app_context():
 
 ![image](resources/screenshot-add-markers.png)
 
-napari support bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you retrieve the locations of the markers, including any additional ones you have drawn, by calling:
+napari support bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the markers, including any additional ones you have drawn, by calling
 
-```
+```python
 markers.coords
 >> [[100 100]
     [200 200]
     [333 111]]
 ```
 
-Finally, you can render and quickly browse slices of multi-dimensional arrays like this:
+Finally, you can render and quickly browse slices of multi-dimensional arrays
 
 ```python
 
@@ -124,7 +124,14 @@ with app_context():
 
 ## plans
 
-We're working on several features, including shape-based annotation (for drawing polygons and bounding boxes), region labeling (for defining segmentation), 3D rendering, and support for a plugin ecosystem (for integrating image processing and machine learning tools). See [this issue](https://github.com/napari/napari/issues/141) for some of the key use cases we're trying to enable, and feel free to add comments or ideas!
+We're working on several features, including 
+
+- shape-based annotation (for drawing polygons and bounding boxes)
+- region labeling (for defining segmentation)
+- 3D volumetric rendering
+- support for a plugin ecosystem (for integrating image processing and machine learning tools)
+
+See [this issue](https://github.com/napari/napari/issues/141) for some of the key use cases we're trying to enable, and feel free to add comments or ideas!
 
 ## contributing
 
