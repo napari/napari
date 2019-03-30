@@ -13,8 +13,10 @@ from vispy.color import get_color_names
 
 from .view import QtShapesLayer
 from .view import QtShapesControls
-from ._constants import (Mode, BOX_LINE_HANDLE, BOX_LINE, BOX_TOP, BOX_CENTER,
-                         BOX_LEN, BOX_HANDLE, BOX_WITH_HANDLE, BACKSPACE)
+from ._constants import (Mode, BOX_LINE_HANDLE, BOX_LINE, BOX_TOP_CENTER,
+                         BOX_CENTER, BOX_LEN, BOX_HANDLE, BOX_WITH_HANDLE,
+                         BOX_TOP_LEFT, BOX_BOTTOM_RIGHT, BOX_BOTTOM_LEFT,
+                         BACKSPACE)
 from .shape_list import ShapeList
 from .shape_util import create_box, point_to_lines
 from .shapes import Rectangle, Ellipse, Line, Path, Polygon
@@ -596,12 +598,14 @@ class Shapes(Layer):
             box = copy(self.data.shapes[index]._box)
 
         if box is not None:
-            rot = box[1]
-            length_box = np.linalg.norm(box[6] - box[0])
+            rot = box[BOX_TOP_CENTER]
+            length_box = np.linalg.norm(box[BOX_BOTTOM_LEFT] -
+                                        box[BOX_TOP_LEFT])
             if length_box > 0:
                 rescale = self._get_rescale()
                 r = self._rotation_handle_length*rescale
-                rot = rot-r*(box[6] - box[0])/length_box
+                rot = rot-r*(box[BOX_BOTTOM_LEFT] -
+                             box[BOX_TOP_LEFT])/length_box
             box = np.append(box, [rot], axis=0)
 
         return box
@@ -828,12 +832,12 @@ class Shapes(Layer):
             scale = [scale, scale]
         box = self._selected_box - center
         box = np.array(box*scale)
-        if not np.all(box[BOX_TOP] == box[BOX_HANDLE]):
+        if not np.all(box[BOX_TOP_CENTER] == box[BOX_HANDLE]):
             rescale = self._get_rescale()
             r = self._rotation_handle_length*rescale
-            handle_vec = box[BOX_HANDLE]-box[BOX_TOP]
+            handle_vec = box[BOX_HANDLE]-box[BOX_TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[BOX_HANDLE] = box[BOX_TOP] + r*handle_vec/cur_len
+            box[BOX_HANDLE] = box[BOX_TOP_CENTER] + r*handle_vec/cur_len
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
@@ -848,12 +852,12 @@ class Shapes(Layer):
         """
         box = self._selected_box - center
         box = box @ transform.T
-        if not np.all(box[BOX_TOP] == box[BOX_HANDLE]):
+        if not np.all(box[BOX_TOP_CENTER] == box[BOX_HANDLE]):
             rescale = self._get_rescale()
             r = self._rotation_handle_length*rescale
-            handle_vec = box[BOX_HANDLE]-box[BOX_TOP]
+            handle_vec = box[BOX_HANDLE]-box[BOX_TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[BOX_HANDLE] = box[BOX_TOP] + r*handle_vec/cur_len
+            box[BOX_HANDLE] = box[BOX_TOP_CENTER] + r*handle_vec/cur_len
         self._selected_box = box + center
 
     def _shape_at(self, coord):
@@ -1043,7 +1047,7 @@ class Shapes(Layer):
 
                     size = (box[(self._fixed_index+4) % BOX_LEN] -
                             box[self._fixed_index])
-                    offset = box[-1] - box[-2]
+                    offset = box[BOX_HANDLE] - box[BOX_CENTER]
                     offset = offset/np.linalg.norm(offset)
                     offset_perp = np.array([offset[1], -offset[0]])
 
@@ -1550,7 +1554,7 @@ class Shapes(Layer):
                 self._fixed_aspect = True
                 box = self._selected_box
                 if box is not None:
-                    size = box[4]-box[0]
+                    size = box[BOX_BOTTOM_RIGHT]-box[BOX_TOP_LEFT]
                     if not np.any(size == np.zeros(2)):
                         self._aspect_ratio = abs(size[1] / size[0])
                     else:
