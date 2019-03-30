@@ -11,6 +11,8 @@ from ...util.event import Event
 from .._register import add_to_viewer
 
 from .view import QtLabelsLayer
+from .view import QtLabelsControls
+from ._constants import Mode, BACKSPACE
 
 
 @add_to_viewer
@@ -40,7 +42,7 @@ class Labels(Layer):
 
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
-        self.events.add(colormap=Event)
+        self.events.add(colormap=Event, mode=Event)
 
         self._raw_image = label_image
         self._max_label = np.max(label_image)
@@ -51,11 +53,20 @@ class Labels(Layer):
         self.colormap = colormaps.label_colormap(label_image,
                                                  max_label=self._max_label)
 
+
+        self._mode = Mode.PAN_ZOOM
+        self._mode_history = self._mode
+        self._status = str(self._mode)
+        self._help = 'enter a paint mode to edit labels'
+
+
+
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
 
         self._qt_properties = QtLabelsLayer(self)
+        self._qt_controls = QtLabelsControls(self)
 
         self._node.clim = [0., 1.]
         self.events.colormap()
@@ -100,6 +111,52 @@ class Labels(Layer):
     @data.setter
     def data(self, data):
         self._image, self._meta = data
+        self.refresh()
+
+    @property
+    def mode(self):
+        """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In PICK mode the cursor functions like a color picker, setting the
+        clicked on label to be the curent label. If the background is picked it
+        will select the background label `0`.
+
+        In PAINT mode the cursor functions like a paint brush changing any
+        pixels it brushes over to the current label. If the background label
+        `0` is selected than any pixels will be changed to background and this
+        tool functions like an eraser. The size and shape of the cursor can be
+        adjusted in the properties widget.
+
+        In FILL mode the cursor functions like a fill bucket replacing pixels
+        of the label clicked on with the current label. It can either replace
+        all pixels of that label or just those that are contiguous with the
+        clicked on pixel. If the background label `0` is selected than any
+        pixels will be changed to background and this tool functions like an
+        eraser.
+        """
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
+        if mode == self._mode:
+            return
+        old_mode = self._mode
+        if mode == Mode.PAN_ZOOM:
+            self.cursor = 'standard'
+            self.interactive = True
+            self.help = 'enter a selection mode to edit shape properties'
+        elif mode in [Mode.PICK, Mode.PAINT, Mode.FILL]:
+            self.cursor = 'cross'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom'
+        else:
+            raise ValueError("Mode not recongnized")
+
+        self.status = str(mode)
+        self._mode = mode
+
+        self.events.mode(mode=mode)
         self.refresh()
 
     def _get_shape(self):
