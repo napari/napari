@@ -1118,15 +1118,15 @@ class Shapes(Layer):
                     if self._drag_start is None:
                         self._fixed_vertex = self._selected_box[BOX_CENTER]
                         offset = handle - self._fixed_vertex
-                        self._drag_start = -np.arctan2(offset[0],
-                                                       -offset[1])/np.pi*180
+                        self._drag_start = -np.degrees(np.arctan2(offset[0],
+                                                       -offset[1]))
 
                     new_offset = coord - self._fixed_vertex
-                    new_angle = -np.arctan2(new_offset[0],
-                                            -new_offset[1])/np.pi*180
+                    new_angle = -np.degrees(np.arctan2(new_offset[0],
+                                            -new_offset[1]))
                     fixed_offset = handle - self._fixed_vertex
-                    fixed_angle = -np.arctan2(fixed_offset[0],
-                                              -fixed_offset[1])/np.pi*180
+                    fixed_angle = -np.degrees(np.arctan2(fixed_offset[0],
+                                              -fixed_offset[1]))
 
                     if np.linalg.norm(new_offset) < 1:
                         angle = 0
