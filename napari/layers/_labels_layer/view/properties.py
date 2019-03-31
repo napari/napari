@@ -26,6 +26,7 @@ class QtLabelsLayer(QtLayer):
         self.selection_spinbox = QSpinBox()
         self.selection_spinbox.setSingleStep(1)
         self.selection_spinbox.setMinimum(0)
+        self.selection_spinbox.setMaximum(self.layer._max_label)
         self.selection_spinbox.setValue(self.layer.selected_label)
         self.selection_spinbox.valueChanged.connect(self.changeSelection)
         self.grid_layout.addWidget(QLabel('label:'), 4, 0)
@@ -118,7 +119,7 @@ class QtLabelsLayer(QtLayer):
     def _on_selection_change(self, event):
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
-            self.selection_spinbox.setValue(value)
+            self.selection_spinbox.setValue(int(value))
             self.selection_colorbox.update()
 
     def _on_brush_size_change(self, event):
@@ -155,6 +156,7 @@ class QtLabelsLayer(QtLayer):
             painter.setBrush(QColor(255, 255, 255, 128))
         else:
             color = 255*self.layer._selected_color
+            color = color.astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
         painter.drawRect(0, 0, self._colorbox_height, self._colorbox_height)

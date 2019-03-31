@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import clip
+from scipy import ndimage as ndi
 from copy import copy
 
 from .._base_layer import Layer
@@ -59,7 +59,7 @@ class Labels(Layer):
                                                  max_label=self._max_label)
 
 
-        self._n_dimensional = False
+        self._n_dimensional = True
         self._contiguous = True
         self._brush_size = 10
         self._brush_color = 'white'
@@ -390,23 +390,26 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
-
         if self.n_dimensional or self._raw_image.ndim==2:
             # work with entire image
             labels = self._raw_image
+            slice_coord = tuple(coord)
         else:
             # work with just the sliced image
             labels, slice_indices = self._slice_image(indices,
                                                       image=self._raw_image)
+            slice_coord = tuple(coord[:2])
 
+        matches = labels==old_label
         if self.contiguous:
             # if not contiguous replace only selected connected component
-            # with new_label
-            print('Not implemented')
-            pass
-        else:
-            # if not contiguous replace all pixels with new_label
-            labels[labels==old_label] = new_label
+            labeled_matches, num_features = ndi.label(matches)
+            if num_features != 1:
+                match_label = labeled_matches[slice_coord]
+                matches = np.logical_and(matches, labeled_matches==match_label)
+
+        # Replace target pixels with new_label
+        labels[matches] = new_label
 
         if not (self.n_dimensional or self._raw_image.ndim==2):
             # if working with just the slice, update the rest of the raw image
@@ -437,8 +440,8 @@ class Labels(Layer):
         """
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [clip(pos[1], 0, self.shape[0]-1), clip(pos[0], 0,
-                                                      self.shape[1]-1)]
+        pos = [np.clip(pos[1], 0, self.shape[0]-1), np.clip(pos[0], 0,
+                       self.shape[1]-1)]
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
