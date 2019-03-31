@@ -216,9 +216,9 @@ class Labels(Layer):
             # If one of the existing labels
             self._selected_color = self.label_color(self.selected_label)
         else:
-            # If a new label make white
+            # If a new label make None
             # NEED TO IMPLEMENT BETTER COLOR SELECTION
-            self._selected_color = [1.0, 1.0, 1.0, 1.0]
+            self._selected_color = None
 
     @property
     def mode(self):
@@ -316,6 +316,8 @@ class Labels(Layer):
         -------
         sliced : array or value
             The requested slice.
+        slice_indices : tuple
+            Tuple of indices corresponding to the slice
         """
         if image is None:
             image = self._image
@@ -331,7 +333,8 @@ class Labels(Layer):
             except TypeError:
                 pass
 
-        return image[tuple(indices)]
+        slice_indices = tuple(indices)
+        return image[slice_indices], slice_indices
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -341,7 +344,7 @@ class Labels(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        sliced_image = self._slice_image(indices)
+        sliced_image, slice_indices = self._slice_image(indices)
         self._node.set_data(sliced_image)
 
         self._need_visual_update = True
@@ -369,7 +372,52 @@ class Labels(Layer):
     def method(self, method):
         self._node.method = method
 
-    def get_value(self, position, indices):
+    def fill(self, indices, coord, old_label, new_label):
+        """Replace an existing label with a new label, either just at the
+        connected component if the `contiguous` flag is `True` or everywhere
+        if it is `False`, working either just in the current slice if
+        the `n_dimensional` flag is `False` or on the entire data if it is
+        `True`
+
+        Parameters
+        ----------
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        coord : sequence of int
+            Position of mouse cursor in image coordinates.
+        old_label : int
+            Value of the label image at the coord to be replaced.
+        new_label : int
+            Value of the new label to be filled in.
+        """
+
+        if self.n_dimensional or self._raw_image.ndim==2:
+            # work with entire image
+            labels = self._raw_image
+        else:
+            # work with just the sliced image
+            labels, slice_indices = self._slice_image(indices,
+                                                      image=self._raw_image)
+
+        if self.contiguous:
+            # if not contiguous replace only selected connected component
+            # with new_label
+            print('Not implemented')
+            pass
+        else:
+            # if not contiguous replace all pixels with new_label
+            labels[labels==old_label] = new_label
+
+        if not (self.n_dimensional or self._raw_image.ndim==2):
+            # if working with just the slice, update the rest of the raw image
+            self._raw_image[slice_indices] = labels
+
+        # update the displayed image
+        self._image =  self._raw_image / self._max_label
+
+        self.refresh()
+
+    def get_label(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
@@ -383,12 +431,9 @@ class Labels(Layer):
         Returns
         ----------
         coord : sequence of int
-            Position of mouse cursor in data.
+            Position of mouse cursor in image coordinates.
         label : int
             Value of the label image at the coord.
-        msg : string
-            String containing a message that can be used as
-            a status update.
         """
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
@@ -397,9 +442,29 @@ class Labels(Layer):
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        label = self._slice_image(coord, image=self._raw_image)
+        label, slice_indices = self._slice_image(coord, image=self._raw_image)
+        return coord, label
+
+    def get_message(self, coord, label):
+        """Generates a string based on the coordinates and information about
+        what shapes are hovered over
+
+        Parameters
+        ----------
+        coord : sequence of int
+            Position of mouse cursor in image coordinates.
+        label : int
+            Value of the label image at the coord.
+
+        Returns
+        ----------
+        msg : string
+            String containing a message that can be used as a status update.
+        """
+
         msg = f'{coord}, {self.name}, label {label}'
-        return coord, label, msg
+
+        return msg
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -409,27 +474,36 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
-        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
+        indices = self.viewer.dims.indices
+        coord, label = self.get_label(event.pos, indices)
 
         if self.mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
             pass
         elif self.mode == Mode.PICKER:
-            self.selected_label = value
+            self.selected_label = label
         elif self.mode == Mode.PAINT:
             pass
         elif self.mode == Mode.FILL:
-            pass
+            old_label = label
+            new_label = self.selected_label
+            self.fill(indices, coord, old_label, new_label)
+            self.status = self.get_message(coord, new_label)
         else:
             raise ValueError("Mode not recongnized")
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
         """
         if event.pos is None:
             return
-        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
-        self.status = msg
+        coord, label = self.get_label(event.pos, self.viewer.dims.indices)
+        self.status = self.get_message(coord, label)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
