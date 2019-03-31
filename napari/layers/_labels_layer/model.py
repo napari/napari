@@ -92,7 +92,7 @@ class Labels(Layer):
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        return self.colormap.map(label / self._max_label)
+        return self.colormap.map(label / self._max_label)[0]
 
     @property
     def image(self):
@@ -217,7 +217,7 @@ class Labels(Layer):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
-        In PICK mode the cursor functions like a color picker, setting the
+        In PICKER mode the cursor functions like a color picker, setting the
         clicked on label to be the curent label. If the background is picked it
         will select the background label `0`.
 
@@ -245,7 +245,7 @@ class Labels(Layer):
             self.cursor = 'standard'
             self.interactive = True
             self.help = 'enter paint or fill mode to edit labels'
-        elif mode == Mode.PICK:
+        elif mode == Mode.PICKER:
             self.cursor = 'cross'
             self.interactive = False
             self.help = ('hold <space> to pan/zoom, '
@@ -393,6 +393,28 @@ class Labels(Layer):
         msg = f'{coord}, {self.name}, label {label}'
         return coord, label, msg
 
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
+        """
+        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
+
+        if self.mode == Mode.PAN_ZOOM:
+            # If in pan/zoom mode do nothing
+            pass
+        elif self.mode == Mode.PICKER:
+            self.selected_label = value
+        elif self.mode == Mode.PAINT:
+            pass
+        elif self.mode == Mode.FILL:
+            pass
+        else:
+            raise ValueError("Mode not recongnized")
+
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
@@ -400,3 +422,41 @@ class Labels(Layer):
             return
         coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
         self.status = msg
+
+    def on_key_press(self, event):
+        """Called whenever key pressed in canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
+        """
+        if event.native.isAutoRepeat():
+            return
+        else:
+            if event.key == ' ':
+                if self.mode != Mode.PAN_ZOOM:
+                    self._mode_history = self.mode
+                    self.mode = Mode.PAN_ZOOM
+                else:
+                    self._mode_history = Mode.PAN_ZOOM
+            elif event.key == 'p':
+                self.mode = Mode.PAINT
+            elif event.key == 'f':
+                self.mode = Mode.FILL
+            elif event.key == 'z':
+                self.mode = Mode.PAN_ZOOM
+            elif event.key == 'l':
+                self.mode = Mode.PICKER
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
+        """
+        if event.key == ' ':
+            if self._mode_history != Mode.PAN_ZOOM:
+                self.mode = self._mode_history

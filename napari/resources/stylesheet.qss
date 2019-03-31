@@ -222,3 +222,15 @@ QtModeButton[mode="vertex_remove"]::indicator:unchecked {
 QtModeButton[mode="vertex_remove"]::indicator:unchecked:hover {
   image: url(":/icons/vertex_remove_on.png");
 }
+
+QtModeButton[mode="picker"]::indicator:checked {
+  image: url(":/icons/picker_off.png");
+}
+
+QtModeButton[mode="picker"]::indicator:unchecked {
+  image: url(":/icons/picker_off.png");
+}
+
+QtModeButton[mode="vertepickerx_remove"]::indicator:unchecked:hover {
+  image: url(":/icons/picker_on.png");
+}

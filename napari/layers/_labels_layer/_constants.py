@@ -6,7 +6,7 @@ class Mode(Enum):
     """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
 
-    In PICK mode the cursor functions like a color picker, setting the clicked
+    In PICKER mode the cursor functions like a color picker, setting the clicked
     on label to be the curent label. If the background is picked it will select
     the background label `0`.
 
@@ -23,7 +23,7 @@ class Mode(Enum):
     changed to background and this tool functions like an eraser.
     """
     PAN_ZOOM = 0
-    PICK = 1
+    PICKER = 1
     PAINT = 2
     FILL = 3
 

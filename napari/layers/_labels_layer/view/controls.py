@@ -15,7 +15,7 @@ class QtLabelsControls(QFrame):
 
         self.panzoom_button = QtModeButton(layer, 'zoom', Mode.PAN_ZOOM,
                                            'Pan/zoom mode')
-        self.pick_button = QtModeButton(layer, 'pick', Mode.PICK,
+        self.pick_button = QtModeButton(layer, 'picker', Mode.PICKER,
                                           'Pick mode')
         self.paint_button = QtModeButton(layer, 'paint', Mode.PAINT,
                                           'Paint mode')
@@ -46,7 +46,7 @@ class QtLabelsControls(QFrame):
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
-        elif mode == Mode.PICK:
+        elif mode == Mode.PICKER:
             self.pick_button.setChecked(True)
         elif mode == Mode.PAINT:
             self.paint_button.setChecked(True)

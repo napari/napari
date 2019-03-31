@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QColor
 from PyQt5.QtWidgets import (QPushButton, QComboBox, QSlider, QCheckBox,
-                             QLabel, QSpinBox)
+                             QLabel, QSpinBox, QWidget)
 import numpy as np
 from collections import Iterable
 from ..._base_layer import QtLayer
@@ -11,6 +12,7 @@ class QtLabelsLayer(QtLayer):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.selected_label.connect(self._on_selection_change)
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.brush_shape.connect(self._on_brush_shape_change)
         self.layer.events.contiguous.connect(self._on_contig_change)
@@ -23,15 +25,17 @@ class QtLabelsLayer(QtLayer):
         # selection spinbox
         self.selection_spinbox = QSpinBox()
         self.selection_spinbox.setSingleStep(1)
-        self.selection_spinbox.setValue(self.layer.selected_label)
         self.selection_spinbox.setMinimum(0)
+        self.selection_spinbox.setValue(self.layer.selected_label)
         self.selection_spinbox.valueChanged.connect(self.changeSelection)
         self.grid_layout.addWidget(QLabel('label:'), 4, 0)
         self.grid_layout.addWidget(self.selection_spinbox, 4, 1)
 
         # selected color
-        self.selection_colorbox = QLabel('0')
-        #self.selection_colorbox.setMinimum(0)
+        self._colorbox_height = 18
+        self.selection_colorbox = QWidget()
+        self.selection_colorbox.setFixedHeight(self._colorbox_height)
+        self.selection_colorbox.paintEvent = self.paint_colorbox
         self.grid_layout.addWidget(QLabel('color:'), 5, 0)
         self.grid_layout.addWidget(self.selection_colorbox, 5, 1)
 
@@ -111,6 +115,12 @@ class QtLabelsLayer(QtLayer):
     def _on_colormap_change(self, event):
         self.layer._node.cmap = self.layer.colormap
 
+    def _on_selection_change(self, event):
+        with self.layer.events.selected_label.blocker():
+            value = self.layer.selected_label
+            self.selection_spinbox.setValue(value)
+            self.selection_colorbox.update()
+
     def _on_brush_size_change(self, event):
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
@@ -130,3 +140,21 @@ class QtLabelsLayer(QtLayer):
     def _on_contig_change(self, event):
         with self.layer.events.contiguous.blocker():
             self.contig_checkbox.setChecked(self.layer.contiguous)
+
+    def paint_colorbox(self, event):
+        """Paint the colorbox.
+
+        Parameters
+        ----------
+        event : PyQt5.QtCore.QEvent
+            Event from the Qt context.
+        """
+        painter = QPainter(self.selection_colorbox)
+        if self.layer._selected_color is None:
+            painter.setPen(QColor(255, 255, 255, 128))
+            painter.setBrush(QColor(255, 255, 255, 128))
+        else:
+            color = 255*self.layer._selected_color
+            painter.setPen(QColor(*list(color)))
+            painter.setBrush(QColor(*list(color)))
+        painter.drawRect(0, 0, self._colorbox_height, self._colorbox_height)

@@ -17,6 +17,8 @@
     <file>icons/new_shapes.png</file>
     <file>icons/path_off.png</file>
     <file>icons/path_on.png</file>
+    <file>icons/picker_off.png</file>
+    <file>icons/picker_on.png</file>
     <file>icons/polygon_off.png</file>
     <file>icons/polygon_on.png</file>
     <file>icons/rectangle_off.png</file>
