@@ -89,6 +89,8 @@ class Labels(Layer):
         seed = np.random.random((3,))
         self.colormap = colormaps.label_colormap(self._image, seed=seed)
         self.events.colormap()
+        self._refresh_selected_color()
+        self.events.selected_label()
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
@@ -198,19 +200,25 @@ class Labels(Layer):
     @selected_label.setter
     def selected_label(self, selected_label):
         self._selected_label = selected_label
-        if selected_label == 0:
-            # If background
-            self._selected_color = None
-        elif selected_label <= self._max_label:
-            # If one of the existing labels
-            self._selected_color = self.label_color(selected_label)
-        else:
-            # If a new label make white
-            # NEED TO IMPLEMENT BETTER COLOR SELECTION
-            self._selected_color = [1, 1, 1, 1]
+        self._refresh_selected_color()
         self.events.selected_label()
 
         self.refresh()
+
+    def _refresh_selected_color(self):
+        """Sets `selected_color` to be the color of the currently selected
+        label.
+        """
+        if self.selected_label == 0:
+            # If background
+            self._selected_color = None
+        elif self.selected_label <= self._max_label:
+            # If one of the existing labels
+            self._selected_color = self.label_color(self.selected_label)
+        else:
+            # If a new label make white
+            # NEED TO IMPLEMENT BETTER COLOR SELECTION
+            self._selected_color = [1.0, 1.0, 1.0, 1.0]
 
     @property
     def mode(self):
