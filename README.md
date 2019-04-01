@@ -39,6 +39,12 @@ $ cd napari
 $ pip install -e .
 ```
 
+Note that many of our examples use `data` from `skimage` but `skimage` is otherwise not a dependnecy, so to run all the examples you should call
+
+```sh
+$ pip install skimage
+```
+
 ## simple example
 
 From inside an IPython shell or Jupyter notebook you can open up an interactive viewer by calling
