@@ -278,7 +278,7 @@ class Vectors(Layer):
         self._averaging = value
 
         # emit signal back to qt_properties for averaging
-        self.events.emit_avg()
+        self.events.average()
 
         self._refresh()
 
@@ -343,7 +343,7 @@ class Vectors(Layer):
         self._length = length
 
         # emit signal back to qt_properties for length
-        self.events.emit_len()
+        self.events.length()
 
         self._refresh()
 
