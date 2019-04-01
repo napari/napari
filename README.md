@@ -50,7 +50,7 @@ from napari import ViewerApp
 from napari.util import app_context
 
 with app_context():
-	viewer = ViewerApp(data.astronaut())
+    viewer = ViewerApp(data.astronaut())
 ```
 
 ## more features
