@@ -62,8 +62,18 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
-    def set_cursor(self, cursor):
-        self.canvas.native.setCursor(self._cursors[cursor])
+    def set_cursor(self, cursor, size=None):
+        if cursor == 'square':
+            if size is None:
+                size = 10
+            if size < 10 or size > 300:
+                q_cursor = self._cursors['cross']
+            else:
+                q_cursor = QCursor(QPixmap(':/icons/cursor_square.png')
+                                   .scaledToHeight(size))
+        else:
+            q_cursor = self._cursors[cursor]
+        self.canvas.native.setCursor(q_cursor)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

@@ -177,7 +177,8 @@ class Labels(Layer):
 
     @brush_size.setter
     def brush_size(self, brush_size):
-        self._brush_size = brush_size
+        self._brush_size = int(brush_size)
+        self.cursor_size = self._brush_size/self._get_rescale()
         self.events.brush_size()
 
         self.refresh()
@@ -267,7 +268,8 @@ class Labels(Layer):
             self.help = ('hold <space> to pan/zoom, '
                          'click to pick a label')
         elif mode == Mode.PAINT:
-            self.cursor = 'cross'
+            self.cursor_size = self.brush_size/self._get_rescale()
+            self.cursor = 'square'
             self.interactive = False
             self.help = ('hold <space> to pan/zoom, '
                          'drag to paint a label')
@@ -309,6 +311,20 @@ class Labels(Layer):
         """
         self._need_display_update = True
         self._update()
+
+    def _get_rescale(self):
+        """Get conversion factor from canvas coordinates to image coordinates.
+        Depends on the current zoom level.
+
+        Returns
+        ----------
+        rescale : float
+            Conversion factor from canvas coordinates to image coordinates.
+        """
+        transform = self.viewer._canvas.scene.node_transform(self._node)
+        rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+
+        return rescale.mean()
 
     def _slice_image(self, indices, image=None):
         """Determines the slice of image given the indices.
@@ -385,7 +401,7 @@ class Labels(Layer):
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working either just in the current slice if
         the `n_dimensional` flag is `False` or on the entire data if it is
-        `True`
+        `True`.
 
         Parameters
         ----------
@@ -398,15 +414,19 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
+        int_coord = copy(coord)
+        int_coord[0] = int(round(coord[0]))
+        int_coord[1] = int(round(coord[1]))
+
         if self.n_dimensional or self._raw_image.ndim==2:
             # work with entire image
             labels = self._raw_image
-            slice_coord = tuple(coord)
+            slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
             labels, slice_indices = self._slice_image(indices,
                                                       image=self._raw_image)
-            slice_coord = tuple(coord[:2])
+            slice_coord = tuple(int_coord[:2])
 
         matches = labels==old_label
         if self.contiguous:
@@ -424,7 +444,66 @@ class Labels(Layer):
             self._raw_image[slice_indices] = labels
 
         # update the displayed image
-        self._image =  self._raw_image / self._max_label
+        if self._max_label == 0:
+            self._image =  self._raw_image.astype('float')
+        else:
+            self._image =  self._raw_image / self._max_label
+
+        self.refresh()
+
+    def _to_pix(self, pos, axis):
+        """Round float from cursor position to a valid pixel
+
+        Parameters
+        ----------
+        pos : float
+            Float that is to be mapped.
+        axis : 0 | 1
+            Axis that pos corresponds to.
+        Parameters
+        ----------
+        pix : int
+            Rounded pixel value
+        """
+
+        pix = int(np.clip(round(pos), 0, self.shape[axis]))
+        return pix
+
+    def paint(self, indices, coord, new_label):
+        """Paint over existing labels with a new label, using the selected
+        brush shape and size, either only on the visible slice or in all
+        n dimensions.
+
+        Parameters
+        ----------
+        indices : sequence of int or slice
+            Indices that make up the slice.
+        coord : sequence of int
+            Position of mouse cursor in image coordinates.
+        new_label : int
+            Value of the new label to be filled in.
+        """
+        if self.n_dimensional or self._raw_image.ndim==2:
+            slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
+                                       self._to_pix(ind+self.brush_size/2, i),
+                                       1) for i, ind
+                                in enumerate(coord)])
+        else:
+            slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
+                                       self._to_pix(ind+self.brush_size/2, i),
+                                       1) for i, ind
+                                in enumerate(coord[:2])] + coord[2:])
+
+        # print(self.brush_size/2, coord, slice_coord[:2])
+
+        # update the raw image
+        self._raw_image[slice_coord] = new_label
+
+        # update the displayed image
+        if self._max_label == 0:
+            self._image =  self._raw_image.astype('float')
+        else:
+            self._image =  self._raw_image / self._max_label
 
         self.refresh()
 
@@ -448,12 +527,16 @@ class Labels(Layer):
         """
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [np.clip(pos[1], 0, self.shape[0]-1), np.clip(pos[0], 0,
-                       self.shape[1]-1)]
+        pos = [np.clip(pos[1], 0, self.shape[0]), np.clip(pos[0], 0,
+                       self.shape[1])]
         coord = copy(indices)
-        coord[0] = int(pos[0])
-        coord[1] = int(pos[1])
-        label, slice_indices = self._slice_image(coord, image=self._raw_image)
+        coord[0] = pos[0]
+        coord[1] = pos[1]
+        int_coord = copy(coord)
+        int_coord[0] = int(round(coord[0]))
+        int_coord[1] = int(round(coord[1]))
+        label, slice_indices = self._slice_image(int_coord,
+                                                 image=self._raw_image)
         return coord, label
 
     def get_message(self, coord, label):
@@ -472,8 +555,10 @@ class Labels(Layer):
         msg : string
             String containing a message that can be used as a status update.
         """
-
-        msg = f'{coord}, {self.name}, label {label}'
+        int_coord = copy(coord)
+        int_coord[0] = int(round(coord[0]))
+        int_coord[1] = int(round(coord[1]))
+        msg = f'{int_coord}, {self.name}, label {label}'
 
         return msg
 
@@ -494,8 +579,12 @@ class Labels(Layer):
         elif self.mode == Mode.PICKER:
             self.selected_label = label
         elif self.mode == Mode.PAINT:
-            pass
+            # Start painting with new label
+            new_label = self.selected_label
+            self.paint(indices, coord, new_label)
+            self.status = self.get_message(coord, new_label)
         elif self.mode == Mode.FILL:
+            # Fill clicked on region with new label
             old_label = label
             new_label = self.selected_label
             self.fill(indices, coord, old_label, new_label)
@@ -513,7 +602,14 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        coord, label = self.get_label(event.pos, self.viewer.dims.indices)
+        indices = self.viewer.dims.indices
+        coord, label = self.get_label(event.pos, indices)
+
+        if self.mode == Mode.PAINT and event.is_dragging:
+            new_label = self.selected_label
+            self.paint(indices, coord, new_label)
+            label = new_label
+
         self.status = self.get_message(coord, label)
 
     def on_key_press(self, event):

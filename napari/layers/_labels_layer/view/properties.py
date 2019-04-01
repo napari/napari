@@ -34,15 +34,15 @@ class QtLabelsLayer(QtLayer):
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setFixedWidth(75)
-        sld.setMinimum(0)
-        sld.setMaximum(40)
+        sld.setMinimum(1)
+        sld.setMaximum(30)
         sld.setSingleStep(1)
         value = self.layer.brush_size
         if isinstance(value, Iterable):
             if isinstance(value, list):
                 value = np.asarray(value)
             value = value[:2].mean()
-        sld.setValue(int(value*2))
+        sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.brush_size_slider = sld
         self.grid_layout.addWidget(QLabel('brush size:'), 5, 0)
@@ -87,7 +87,7 @@ class QtLabelsLayer(QtLayer):
         self.layer.selected_label = value
 
     def changeSize(self, value):
-        self.layer.brush_size = float(value)/2
+        self.layer.brush_size = value
 
     def changeShape(self, text):
         self.layer.brush_shape = text
@@ -115,7 +115,7 @@ class QtLabelsLayer(QtLayer):
     def _on_brush_size_change(self, event):
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
-            value = np.clip(int(2*value), 0, 40)
+            value = np.clip(int(value), 1, 30)
             self.brush_size_slider.setValue(value)
 
     def _on_brush_shape_change(self, event):
