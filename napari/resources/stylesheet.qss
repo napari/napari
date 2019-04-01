@@ -41,11 +41,11 @@ QtAdditionButton::indicator:unchecked:hover {
 
 /* ------------------------------------------------------ */
 
-QtLayer > QCheckBox::indicator {
+QtLayer > QCheckBox[mode="visibility"]::indicator {
     width: 18px; height: 18px;
 }
 
-QtLayer > QCheckBox::indicator:checked {
+QtLayer > QCheckBox[mode="visibility"]::indicator:checked {
     image: url(":/icons/eye_on.png");
 }
 
