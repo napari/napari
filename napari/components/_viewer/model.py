@@ -172,6 +172,13 @@ class Viewer:
     def _new_shapes(self):
         self.add_shapes([])
 
+    def _new_labels(self):
+        if self.dims.max_dims == 0:
+            empty_labels = np.zeros((512, 512))
+        else:
+            empty_labels = np.zeros(self.dims.max_shape)
+        self.add_labels(empty_labels)
+
     def _update_layers(self):
         """Updates the contained layers.
         """

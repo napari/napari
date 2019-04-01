@@ -30,6 +30,8 @@ class Labels(Layer):
         Image metadata.
     multichannel : bool, optional
         Whether the image is multichannel. Guesses if None.
+    opacity : float, optional
+        Opacity of the labels, must be between 0 and 1.
     name : str, keyword-only
         Name of the layer.
     **kwargs : dict
@@ -38,7 +40,8 @@ class Labels(Layer):
 
     _brush_shapes = ['circle', 'square']
 
-    def __init__(self, label_image, meta=None, *, name=None, **kwargs):
+    def __init__(self, label_image, meta=None, *, opacity=0.7, name=None,
+                 **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -51,7 +54,11 @@ class Labels(Layer):
 
         self._raw_image = label_image
         self._max_label = np.max(label_image)
-        self._image = label_image / self._max_label
+        if self._max_label == 0:
+            self._image = label_image
+        else:
+            self._image = label_image / self._max_label
+
         self._meta = meta
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
@@ -59,6 +66,7 @@ class Labels(Layer):
                                                  max_label=self._max_label)
 
 
+        self._node.opacity = opacity
         self._n_dimensional = True
         self._contiguous = True
         self._brush_size = 10

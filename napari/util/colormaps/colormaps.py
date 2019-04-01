@@ -134,7 +134,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(labels, seed=0.5, max_label=None):
+def label_colormap(labels, seed=0.5, max_label=None, alpha=1):
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
@@ -145,6 +145,8 @@ def label_colormap(labels, seed=0.5, max_label=None):
         The seed for the low discrepancy sequence generator.
     max_label : int, optional
         The maximum label in `labels`. Computed if not given.
+    alpha : float, optional
+        Alpha value for label colors.
 
     Returns
     -------
@@ -162,12 +164,15 @@ def label_colormap(labels, seed=0.5, max_label=None):
         unique_labels = np.concatenate([[0], unique_labels])
     n = len(unique_labels)
     max_label = max_label or np.max(unique_labels)
-    unique_labels_float = unique_labels / max_label
+    if max_label == 0:
+        unique_labels_float = unique_labels
+    else:
+        unique_labels_float = unique_labels / max_label
     midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
     control_points = np.concatenate(([0.], midpoints, [1.]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate((_color_random(n, seed=seed),
-                             np.full((n, 1), 0.7)), axis=1)
+                             np.full((n, 1), alpha)), axis=1)
     colors[0, :] = 0  # ensure alpha is 0 for label 0
     cmap = vispy.color.Colormap(colors=colors, controls=control_points,
                                 interpolation='zero')
