@@ -2,7 +2,6 @@
 <qresource>
     <file>icons/add_off.png</file>
     <file>icons/add_on.png</file>
-    <file>icons/checkerboard.png</file>
     <file>icons/cursor_disabled.png</file>
     <file>icons/delete.png</file>
     <file>icons/direct_off.png</file>

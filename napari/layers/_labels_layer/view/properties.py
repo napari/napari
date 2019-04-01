@@ -1,7 +1,6 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QColor
 from PyQt5.QtWidgets import (QPushButton, QComboBox, QSlider, QCheckBox,
-                             QLabel, QSpinBox, QWidget)
+                             QLabel, QSpinBox)
 import numpy as np
 from collections import Iterable
 from ..._base_layer import QtLayer
@@ -32,14 +31,6 @@ class QtLabelsLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('label:'), 4, 0)
         self.grid_layout.addWidget(self.selection_spinbox, 4, 1)
 
-        # selected color
-        self._colorbox_height = 18
-        self.selection_colorbox = QWidget()
-        self.selection_colorbox.setFixedHeight(self._colorbox_height)
-        self.selection_colorbox.paintEvent = self.paint_colorbox
-        self.grid_layout.addWidget(QLabel('color:'), 5, 0)
-        self.grid_layout.addWidget(self.selection_colorbox, 5, 1)
-
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setFixedWidth(75)
@@ -54,8 +45,8 @@ class QtLabelsLayer(QtLayer):
         sld.setValue(int(value*2))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.brush_size_slider = sld
-        self.grid_layout.addWidget(QLabel('brush size:'), 6, 0)
-        self.grid_layout.addWidget(sld, 6, 1)
+        self.grid_layout.addWidget(QLabel('brush size:'), 5, 0)
+        self.grid_layout.addWidget(sld, 5, 1)
 
         brush_shape_combo = QComboBox()
         for s in self.layer._brush_shapes:
@@ -66,8 +57,8 @@ class QtLabelsLayer(QtLayer):
         brush_shape_combo.activated[str].connect(
             lambda text=brush_shape_combo: self.changeShape(text))
         self.brush_shape_combo = brush_shape_combo
-        self.grid_layout.addWidget(QLabel('brush shape:'), 7, 0)
-        self.grid_layout.addWidget(brush_shape_combo, 7, 1)
+        self.grid_layout.addWidget(QLabel('brush shape:'), 6, 0)
+        self.grid_layout.addWidget(brush_shape_combo, 6, 1)
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
@@ -75,8 +66,8 @@ class QtLabelsLayer(QtLayer):
         contig_cb.stateChanged.connect(lambda state=contig_cb:
                                        self.change_contig(state))
         self.contig_checkbox = contig_cb
-        self.grid_layout.addWidget(QLabel('contiguous:'), 8, 0)
-        self.grid_layout.addWidget(contig_cb, 8, 1)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 7, 0)
+        self.grid_layout.addWidget(contig_cb, 7, 1)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
@@ -84,8 +75,8 @@ class QtLabelsLayer(QtLayer):
         ndim_cb.stateChanged.connect(lambda state=ndim_cb:
                                      self.change_ndim(state))
         self.ndim_checkbox = ndim_cb
-        self.grid_layout.addWidget(QLabel('n-dim:'), 9, 0)
-        self.grid_layout.addWidget(ndim_cb, 9, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 8, 0)
+        self.grid_layout.addWidget(ndim_cb, 8, 1)
 
         self.setExpanded(False)
 
@@ -120,7 +111,6 @@ class QtLabelsLayer(QtLayer):
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
             self.selection_spinbox.setValue(int(value))
-            self.selection_colorbox.update()
 
     def _on_brush_size_change(self, event):
         with self.layer.events.brush_size.blocker():
@@ -141,22 +131,3 @@ class QtLabelsLayer(QtLayer):
     def _on_contig_change(self, event):
         with self.layer.events.contiguous.blocker():
             self.contig_checkbox.setChecked(self.layer.contiguous)
-
-    def paint_colorbox(self, event):
-        """Paint the colorbox.
-
-        Parameters
-        ----------
-        event : PyQt5.QtCore.QEvent
-            Event from the Qt context.
-        """
-        painter = QPainter(self.selection_colorbox)
-        if self.layer._selected_color is None:
-            painter.setPen(QColor(255, 255, 255, 128))
-            painter.setBrush(QColor(255, 255, 255, 128))
-        else:
-            color = 255*self.layer._selected_color
-            color = color.astype(int)
-            painter.setPen(QColor(*list(color)))
-            painter.setBrush(QColor(*list(color)))
-        painter.drawRect(0, 0, self._colorbox_height, self._colorbox_height)
