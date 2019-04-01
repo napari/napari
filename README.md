@@ -62,12 +62,14 @@ from napari import ViewerApp
 from napari.util import app_context
 
 with app_context():
+    # create the viewer with four layers
     viewer = ViewerApp(astronaut=rgb2gray(data.astronaut()),
                        photographer=data.camera(),
                        coins=data.coins(),
                        moon=data.moon())
-
+    # remove a layer
     viewer.layers.remove('coins')
+    # swap layer order
     viewer.layers['astronaut', 'moon'] = viewer.layers['moon', 'astronaut']
 ```
 
@@ -82,10 +84,14 @@ from napari import ViewerApp
 from napari.util import app_context
 
 with app_context():
+    # setup viewer
     viewer = ViewerApp()
     viewer.add_image(rgb2gray(data.astronaut()))
+    # create three xy coordinates
     points = np.array([[100, 100], [200, 200], [333, 111]])
+    # specify three sizes
     size = np.array([10, 20, 20])
+    # add them to the viewer
     markers = viewer.add_markers(points, size=size)
 ```
 
@@ -110,9 +116,11 @@ from napari import ViewerApp
 from napari.util import app_context
 
 with app_context():
+    # create fake 3d data
     blobs = np.stack([data.binary_blobs(length=128, blob_size_fraction=0.05,
                                         n_dim=3, volume_fraction=f)
                      for f in np.linspace(0.05, 0.5, 10)], axis=-1)
+    # add data to the viewer
     viewer = ViewerApp(blobs.astype(float))
 ```
 
