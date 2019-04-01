@@ -17,17 +17,31 @@ We're developing **napari** in the open! But the project is in a **pre-alpha** s
 
 ## installation
 
-napari can be installed on most Mac OS X and Linux systems with Python 3.6 or 3.7 by calling 
+**napari** can be installed on most Mac OS X and Linux systems with Python 3.6 or 3.7 by calling 
 
 ```sh
 $ pip install napari
 ```
 
-We're working on adding Windows support.
+(We're working on adding Windows support.)
+
+To install from the master branch on Github use
+
+```sh
+$ pip install git+https://github.com/napari/napari
+```
+
+To clone the repository locally and install in editable mode use
+
+```sh
+$ git clone https://github.com/napari/napari.git
+$ cd napari
+$ pip install -e .
+```
 
 ## simple example
 
-From inside the IPython shell or a Jupyter notebook you can run the following to open up an interactive viewer
+From inside an IPython shell or Jupyter notebook you can open up an interactive viewer by calling
 
 ```python
 %gui qt5
@@ -97,7 +111,7 @@ with app_context():
 
 ![image](resources/screenshot-add-markers.png)
 
-napari supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the markers, including any additional ones you have drawn, by calling
+**napari** supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the markers, including any additional ones you have drawn, by calling
 
 ```python
 >>> markers.coords
