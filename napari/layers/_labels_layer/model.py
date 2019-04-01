@@ -55,7 +55,7 @@ class Labels(Layer):
         self._raw_image = label_image
         self._max_label = np.max(label_image)
         if self._max_label == 0:
-            self._image = label_image
+            self._image = label_image.astype('float')
         else:
             self._image = label_image / self._max_label
 

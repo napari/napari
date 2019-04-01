@@ -165,15 +165,15 @@ def label_colormap(labels, seed=0.5, max_label=None, alpha=1):
     n = len(unique_labels)
     max_label = max_label or np.max(unique_labels)
     if max_label == 0:
-        unique_labels_float = unique_labels
+        cmap = vispy.color.Colormap(np.zeros((2, 4)))
     else:
         unique_labels_float = unique_labels / max_label
-    midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
-    control_points = np.concatenate(([0.], midpoints, [1.]))
-    # make sure to add an alpha channel to the colors
-    colors = np.concatenate((_color_random(n, seed=seed),
-                             np.full((n, 1), alpha)), axis=1)
-    colors[0, :] = 0  # ensure alpha is 0 for label 0
-    cmap = vispy.color.Colormap(colors=colors, controls=control_points,
+        midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
+        control_points = np.concatenate(([0.], midpoints, [1.]))
+        # make sure to add an alpha channel to the colors
+        colors = np.concatenate((_color_random(n, seed=seed),
+                                 np.full((n, 1), alpha)), axis=1)
+        colors[0, :] = 0  # ensure alpha is 0 for label 0
+        cmap = vispy.color.Colormap(colors=colors, controls=control_points,
                                 interpolation='zero')
     return cmap
