@@ -95,13 +95,13 @@ with app_context():
 
 ![image](resources/screenshot-add-markers.png)
 
-napari support bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the markers, including any additional ones you have drawn, by calling
+napari supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the markers, including any additional ones you have drawn, by calling
 
 ```python
-markers.coords
->> [[100 100]
-    [200 200]
-    [333 111]]
+>>> markers.coords
+[[100, 100],
+ [200, 200],
+ [333, 111]]
 ```
 
 Finally, you can render and quickly browse slices of multi-dimensional arrays
