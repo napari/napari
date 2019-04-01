@@ -71,7 +71,8 @@ class Labels(Layer):
         self._contiguous = True
         self._brush_size = 10
         self._brush_color = 'white'
-        self._brush_shape = 'circle'
+        self._brush_shape = 'square'
+        self._last_cursor_coord = None
 
         self._selected_label = 0
         self._selected_color = None
@@ -507,6 +508,32 @@ class Labels(Layer):
 
         self.refresh()
 
+    def _interp_coords(self, old_coord, new_coord):
+        """Interpolates coordinates between old and new, useful for ensuring
+        painting is continous. Depends on the current brush size
+
+        Parameters
+        ----------
+        old_coord : np.ndarray, 1x2
+            Last position of cursor.
+        new_coord : np.ndarray, 1x2
+            Current position of cursor.
+
+        Returns
+        ----------
+        coords : np.array, Nx2
+            List of coordinates to ensure painting is continous
+        """
+        num_steps = round(max(abs(np.array(new_coord) - np.array(old_coord)))
+                          / self.brush_size * 4)
+        coords = [np.linspace(old_coord[i], new_coord[i],
+                              num=num_steps + 1) for i in range(2)]
+        coords = np.stack(coords).T
+        if len(coords) > 1:
+            coords = coords[1:]
+
+        return coords
+
     def get_label(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
@@ -582,6 +609,7 @@ class Labels(Layer):
             # Start painting with new label
             new_label = self.selected_label
             self.paint(indices, coord, new_label)
+            self._last_cursor_coord = coord
             self.status = self.get_message(coord, new_label)
         elif self.mode == Mode.FILL:
             # Fill clicked on region with new label
@@ -607,10 +635,25 @@ class Labels(Layer):
 
         if self.mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
-            self.paint(indices, coord, new_label)
+            interp_coord = self._interp_coords(self._last_cursor_coord, coord)
+            with self.freeze_refresh():
+                for c in interp_coord:
+                    self.paint(indices, c, new_label)
+            self.refresh()
+            self._last_cursor_coord = coord
             label = new_label
 
         self.status = self.get_message(coord, label)
+
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
+        """
+        self._last_cursor_coord = None
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
