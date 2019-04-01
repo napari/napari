@@ -1,19 +1,15 @@
-<h4 align='center'><i>this repo is under development and not stable!</i></h4>
+#### **_this repo is under development and not stable!_**
 
-<h1 align='center'>napari</h1>
+# napari
 
-<h4 align='center'>multi-dimensional image viewer for python</h4>
+### multi-dimensional image viewer for python
 
-<p align="center">
-  <a href="https://github.com/napari/napari/raw/master/LICENSE"><img src="https://img.shields.io/pypi/l/napari.svg" alt="License"></a>
-  <a href="https://cirrus-ci.com/napari/napari"><img src="https://api.cirrus-ci.com/github/Napari/napari.svg" alt="Build Status"></a>
-  <a href="https://python.org"><img src="https://img.shields.io/pypi/pyversions/napari.svg" alt="Python Version"></a>
-  <a href="https://pypi.org/project/napari"><img src="https://img.shields.io/pypi/v/napari.svg" alt="PyPI"></a>
-  <a href="https://pypistats.org/packages/napari"><img src="https://img.shields.io/pypi/dm/napari.svg" alt="PyPI - Downloads"></a>
-  <a href="https://github.com/napari/napari"><img src="https://img.shields.io/pypi/status/napari.svg" alt="Development Status"></a>
-
-</p>
-<br>
+[![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/master/LICENSE)
+[![Build Status](https://api.cirrus-ci.com/github/Napari/napari.svg)](https://cirrus-ci.com/napari/napari)
+[![Python Version](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
+[![PyPI](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
+[![Development Status](https://img.shields.io/pypi/status/napari.svg)](https://github.com/napari/napari)
 
 **napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of `PyQt` (for the GUI), `vispy` (for performant GPU-based rendering), and the scientific Python stack (`numpy`, `scipy`).
 
