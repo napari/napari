@@ -1,4 +1,5 @@
 import numpy as np
+from skimage.measure import grid_points_in_poly
 from .shape import Shape
 from ..shape_util import create_box
 
@@ -51,3 +52,25 @@ class Polygon(Shape):
             self._set_meshes(data)
             self._box = create_box(data)
         self._data = data
+
+    def to_mask(self, mask_shape=None):
+        """Converts the shape vertices to a boolean mask with `True` for points
+        lying inside the shape.
+
+        Parameters
+        ----------
+        mask_shape : np.ndarray | tuple | None
+            1x2 array of shape of mask to be generated. If non specified, takes
+            the max of the vertiecs
+
+        Returns
+        ----------
+        mask : np.ndarray
+            Boolean array with `True` for points inside the shape
+        """
+        if mask_shape is None:
+            mask_shape = self.data.max()
+
+        mask = grid_points_in_poly(mask_shape, self.data)
+
+        return mask
