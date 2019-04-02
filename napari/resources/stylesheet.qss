@@ -50,8 +50,17 @@ QtLayer > QCheckBox::indicator:checked {
 }
 
 QtLayer > QLineEdit {
-    background-color: lightGray;
+    background-color: white;
+    color: black;
     border: none;
+    border-radius: 3px;
+}
+
+QtLayer > QLineEdit:disabled {
+    background-color: lightGray;
+    color: black;
+    border: none;
+    border-radius: 3px;
 }
 
 QtLayer {

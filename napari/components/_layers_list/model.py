@@ -165,9 +165,16 @@ class LayersList(ListModel):
             indices.insert(insert_idx, elem_idx)
         self[:] = self[tuple(indices)]
 
-    def unselect_all(self):
+    def unselect_all(self, ignore=None):
+        """Unselects all layers expect any specified in ignore.
+
+        Parameters
+        ----------
+        ignore : Layer | None
+            Layer that should not be unselected if specified.
+        """
         for layer in self:
-            if layer.selected:
+            if layer.selected and layer != ignore:
                 layer.selected = False
 
     def remove_selected(self):
