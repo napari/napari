@@ -38,7 +38,6 @@ class Labels(Layer):
         Parameters that will be translated to metadata.
     """
 
-    _brush_shapes = ['circle', 'square']
 
     def __init__(self, label_image, meta=None, *, opacity=0.7, name=None,
                  **kwargs):
@@ -49,7 +48,7 @@ class Labels(Layer):
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
         self.events.add(colormap=Event, mode=Event, n_dimensional=Event,
-                        contiguous=Event, brush_size=Event, brush_shape=Event,
+                        contiguous=Event, brush_size=Event,
                         selected_label=Event)
 
         self._raw_image = label_image
@@ -70,8 +69,6 @@ class Labels(Layer):
         self._n_dimensional = True
         self._contiguous = True
         self._brush_size = 10
-        self._brush_color = 'white'
-        self._brush_shape = 'square'
         self._last_cursor_coord = None
 
         self._selected_label = 0
@@ -181,21 +178,6 @@ class Labels(Layer):
         self._brush_size = int(brush_size)
         self.cursor_size = self._brush_size/self._get_rescale()
         self.events.brush_size()
-
-        self.refresh()
-
-    @property
-    def brush_shape(self):
-        """ str: Shape of the paint brush, one of "{'square', 'circle'}"
-        """
-        return self._brush_shape
-
-    @brush_shape.setter
-    def brush_shape(self, brush_shape):
-        if brush_shape not in self._brush_shapes:
-            raise ValueError('Brush shape not recognized')
-        self._brush_shape = brush_shape
-        self.events.brush_shape()
 
         self.refresh()
 

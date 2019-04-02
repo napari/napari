@@ -13,7 +13,6 @@ class QtLabelsLayer(QtLayer):
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.selected_label.connect(self._on_selection_change)
         self.layer.events.brush_size.connect(self._on_brush_size_change)
-        self.layer.events.brush_shape.connect(self._on_brush_shape_change)
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
 
@@ -35,7 +34,7 @@ class QtLabelsLayer(QtLayer):
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setFixedWidth(75)
         sld.setMinimum(1)
-        sld.setMaximum(30)
+        sld.setMaximum(40)
         sld.setSingleStep(1)
         value = self.layer.brush_size
         if isinstance(value, Iterable):
@@ -48,26 +47,14 @@ class QtLabelsLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('brush size:'), 5, 0)
         self.grid_layout.addWidget(sld, 5, 1)
 
-        brush_shape_combo = QComboBox()
-        for s in self.layer._brush_shapes:
-            brush_shape_combo.addItem(s)
-        index = brush_shape_combo.findText(
-            self.layer.brush_shape, Qt.MatchFixedString)
-        brush_shape_combo.setCurrentIndex(index)
-        brush_shape_combo.activated[str].connect(
-            lambda text=brush_shape_combo: self.changeShape(text))
-        self.brush_shape_combo = brush_shape_combo
-        self.grid_layout.addWidget(QLabel('brush shape:'), 6, 0)
-        self.grid_layout.addWidget(brush_shape_combo, 6, 1)
-
         contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
         contig_cb.setChecked(self.layer.contiguous)
         contig_cb.stateChanged.connect(lambda state=contig_cb:
                                        self.change_contig(state))
         self.contig_checkbox = contig_cb
-        self.grid_layout.addWidget(QLabel('contiguous:'), 7, 0)
-        self.grid_layout.addWidget(contig_cb, 7, 1)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 6, 0)
+        self.grid_layout.addWidget(contig_cb, 6, 1)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
@@ -75,8 +62,8 @@ class QtLabelsLayer(QtLayer):
         ndim_cb.stateChanged.connect(lambda state=ndim_cb:
                                      self.change_ndim(state))
         self.ndim_checkbox = ndim_cb
-        self.grid_layout.addWidget(QLabel('n-dim:'), 8, 0)
-        self.grid_layout.addWidget(ndim_cb, 8, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
+        self.grid_layout.addWidget(ndim_cb, 7, 1)
 
         self.setExpanded(False)
 
@@ -88,9 +75,6 @@ class QtLabelsLayer(QtLayer):
 
     def changeSize(self, value):
         self.layer.brush_size = value
-
-    def changeShape(self, text):
-        self.layer.brush_shape = text
 
     def change_contig(self, state):
         if state == Qt.Checked:
@@ -115,14 +99,8 @@ class QtLabelsLayer(QtLayer):
     def _on_brush_size_change(self, event):
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
-            value = np.clip(int(value), 1, 30)
+            value = np.clip(int(value), 1, 40)
             self.brush_size_slider.setValue(value)
-
-    def _on_brush_shape_change(self, event):
-        with self.layer.events.brush_shape.blocker():
-            index = self.brush_shape_combo.findText(
-                self.layer.brush_shape, Qt.MatchFixedString)
-            self.brush_shape_combo.setCurrentIndex(index)
 
     def _on_n_dim_change(self, event):
         with self.layer.events.n_dimensional.blocker():
