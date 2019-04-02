@@ -16,65 +16,33 @@ from .view import QtVectorsLayer
 class Vectors(Layer):
     """
     Vectors layer renders lines onto the image.
-    There are currently two data modes supported:
-        1) image-like vectors where every pixel defines its own vector
-        2) coordinate-like vectors where x-y position is not fixed to a grid
-    Supports ONLY 2d vector field
 
     Properties
     ----------
-    vectors : np.ndarray
-        array of shape (N,4) or (N, M , 2)
+    vectors : np.ndarray of shape (N,4) or (N, M, 2)
+        (N, 4) is a list of coordinates (x, y, u, v)
+            x and y are coordinates
+            u and v are x and y projections of the vector
+        (N, M, 2) is an (N, M) image of (u, v) projections
 
-    data : np.ndarray
-        ABC implementation.
-        returns vectors property setter/getter
-
-    _original_data : np.ndarray
-        Used by averaging and length adjustments.
-        Is set during layer construction.
-        Is NOT updated if data is adjusted by assigning the 'vectors' property
+        Returns np.ndarray of the current display (including averaging, length)
 
     averaging : int
-        (int, int) kernel over which to convolve the data
-        averaging.setter adjusts the underlying data
-        subscribe an observer by registering it with "averaging_bind_to"
+        (int, int) kernel over which to convolve and subsample the data
+        not implemented for (N, 4) data
 
     width : int
         width of the line in pixels
 
-    length : int or float
+    length : float
         length of the line
-        length.setter adjusts the underlying data
-        subscribe an observer by registering it with "length_bind_to"
+        not implemented for (N, 4) data
 
     color : str
         one of "get_color_names" from vispy.color
 
     mode : str
         control panel mode
-
-    Attributes
-    ----------
-    Private attributes
-    -------
-    _data_types
-    _data_type
-    _width
-    _color
-    _colors
-    _averaging
-    _length
-    _need_display_update
-    _need_visual_update
-    _raw_dat
-    _original_data
-    _current_data
-    _vectors
-
-    Public attributes
-    -------
-    name
 
     See vispy's line visual docs for more details:
     http://api.vispy.org/en/latest/scene.html
