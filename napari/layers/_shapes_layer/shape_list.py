@@ -592,7 +592,7 @@ class ShapeList():
             N shapes
         """
         if mask_shape is None:
-            mask_shape = self.data.max()
+            mask_shape = self._vertices.max(axis=0).astype('int')
 
         if shape_type is None:
             data = [s.to_mask(mask_shape) for s in self.shapes]
@@ -605,7 +605,7 @@ class ShapeList():
             cls = self._types[shape_type]
             data = ([s.to_mask(mask_shape) for s in self.shapes if
                     type(s) == cls])
-        masks = np.concatenate(data, axis=0)
+        masks = np.array(data)
 
         return masks
 
@@ -633,20 +633,27 @@ class ShapeList():
             or an integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self.data.max()
+            labels_shape = self._vertices.max(axis=0).astype('int')
 
         labels = np.zeros(labels_shape, dtype=int)
 
-        # if shape_type is None:
-        #     data = [s.to_mask(mask_shape) for s in self.shapes]
-        # elif shape_type not in self._types.keys():
-        #     raise ValueError("""shape_type not recognized, must be one of
-        #                  "{'line', 'rectangle', 'ellipse', 'path',
-        #                  'polygon'}"
-        #                  """)
-        # else:
-        #     cls = self._types[shape_type]
-        #     data = ([s.to_mask(mask_shape) for s in self.shapes if
-        #             type(s) == cls])
+        if shape_type is None:
+            for ind in self._z_order[::-1]:
+                mask = self.shapes[ind].to_mask(labels_shape)
+                labels[mask] = ind+1
+        elif shape_type not in self._types.keys():
+            raise ValueError("""shape_type not recognized, must be one of
+                         "{'line', 'rectangle', 'ellipse', 'path',
+                         'polygon'}"
+                         """)
+        else:
+            cls = self._types[shape_type]
+            index = [1 if s==shape_type else 0 for s in self.shape_types]
+            index = np.cumsum(index)
+            for ind in self._z_order[::-1]:
+                shape = self.shapes[ind]
+                if type(shape) == cls:
+                    mask = shape.to_mask(labels_shape)
+                    labels[mask] = index[ind]
 
         return labels

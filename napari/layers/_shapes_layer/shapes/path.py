@@ -69,7 +69,7 @@ class Path(Shape):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = self.data.max()
+            mask_shape = self.data.max(axis=0).astype('int')
 
         mask = np.zeros(mask_shape, dtype=bool)
 

@@ -99,7 +99,7 @@ class Ellipse(Shape):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = self.data.max()
+            mask_shape = self.data.max(axis=0).astype('int')
 
         mask = grid_points_in_poly(mask_shape, self._face_vertices)
 
