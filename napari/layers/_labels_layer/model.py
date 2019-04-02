@@ -493,9 +493,8 @@ class Labels(Layer):
             slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
                                        self._to_pix(ind+self.brush_size/2, i),
                                        1) for i, ind
-                                in enumerate(coord[:2])] + coord[2:])
-
-        # print(self.brush_size/2, coord, slice_coord[:2])
+                                in enumerate(coord[:2])] +
+                                list(np.array(coord[2:]).astype(int)))
 
         # update the raw image
         self._raw_image[slice_coord] = new_label
@@ -524,10 +523,10 @@ class Labels(Layer):
         coords : np.array, Nx2
             List of coordinates to ensure painting is continous
         """
-        num_steps = round(max(abs(np.array(new_coord) - np.array(old_coord)))
+        num_step = round(max(abs(np.array(new_coord) - np.array(old_coord)))
                           / self.brush_size * 4)
         coords = [np.linspace(old_coord[i], new_coord[i],
-                              num=num_steps + 1) for i in range(2)]
+                              num=num_step + 1) for i in range(len(new_coord))]
         coords = np.stack(coords).T
         if len(coords) > 1:
             coords = coords[1:]
