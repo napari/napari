@@ -101,15 +101,21 @@ class Markers(Layer):
     def coords(self, coords: np.ndarray):
         self._coords = coords
 
+        # Adjust the size array when the number of markers has changed
         if len(coords) < len(self._size):
+            # If there are now less markers, remove the sizes of the missing
+            # ones
             with self.freeze_refresh():
                 self.size = self._size[:len(coords)]
         elif len(coords) > len(self._size):
+            # If there are now more markers, add the sizes of last one
+            # or add the default size
             with self.freeze_refresh():
                 adding = len(coords)-len(self._size)
                 if len(self._size) > 0:
                     new_size = self._size[-1]
                 else:
+                    # Add the default size, with a value for each dimension
                     new_size = np.repeat(10, self._size.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
                 self.size = np.concatenate((self._size, size), axis=0)
@@ -445,6 +451,7 @@ class Markers(Layer):
         """
         index = self._selected_markers
         if index is not None:
+            self._size = np.delete(self._size, index, axis=0)
             self.data = np.delete(self.data, index, axis=0)
             self._selected_markers = None
 
