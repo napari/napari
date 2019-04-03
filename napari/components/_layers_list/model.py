@@ -39,7 +39,7 @@ def _reorder(event):
     layers = event.source
     for i in range(len(layers)):
         layers[i]._order = -i
-    canvas = layers.viewer._canvas
+    canvas = layers.viewer._qtviewer.canvas
     canvas._draw_order.clear()
     canvas.update()
 

@@ -165,7 +165,7 @@ class Layer(VisualWrapper, ABC):
             parent = None
         else:
             self._viewer = weakref.ref(viewer)
-            parent = viewer._qtviewer.canvas.scene
+            parent = viewer._qtviewer.view.scene
 
         self._parent = parent
         self._after_set_viewer(prev)
