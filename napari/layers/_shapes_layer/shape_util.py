@@ -1,4 +1,5 @@
 import numpy as np
+from skimage.measure import grid_points_in_poly
 from vispy.geometry import PolygonData
 
 
@@ -678,3 +679,29 @@ def segment_normal(a, b):
     else:
         unit_norm = normal/norm
     return unit_norm
+
+
+def poly_to_mask(mask_shape, vertices):
+    """Converts a polygon to a boolean mask with `True` for points
+    lying inside the shape.
+
+    Parameters
+    ----------
+    mask_shape : np.ndarray | tuple
+        1x2 array of shape of mask to be generated.
+    vertices : np.ndarray
+        Nx2 array of the vertices of the polygon.
+
+    Returns
+    ----------
+    mask : np.ndarray
+        Boolean array with `True` for points inside the polygon
+    """
+    mask = np.zeros(mask_shape, dtype=bool)
+    bottom = vertices.min(axis=0)
+    top = vertices.max(axis=0)
+    top = np.append([top], [mask_shape], axis=0).min(axis=0)
+    if np.all(top > bottom):
+        bb_mask = grid_points_in_poly(top - bottom, vertices - bottom)
+        mask[bottom[0]:top[0], bottom[1]:top[1]] = bb_mask
+    return mask

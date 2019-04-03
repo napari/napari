@@ -1,8 +1,8 @@
 import numpy as np
-from skimage.measure import grid_points_in_poly
 from .shape import Shape
 from ..shape_util import (triangulate_edge, triangulate_ellipse,
-                          center_radii_to_corners, rectangle_to_box)
+                          center_radii_to_corners, rectangle_to_box,
+                          poly_to_mask)
 
 
 class Ellipse(Shape):
@@ -101,6 +101,6 @@ class Ellipse(Shape):
         if mask_shape is None:
             mask_shape = self.data.max(axis=0).astype('int')
 
-        mask = grid_points_in_poly(mask_shape, self._face_vertices)
+        mask = poly_to_mask(mask_shape, self._face_vertices)
 
         return mask

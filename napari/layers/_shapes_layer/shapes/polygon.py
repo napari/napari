@@ -1,7 +1,6 @@
 import numpy as np
-from skimage.measure import grid_points_in_poly
 from .shape import Shape
-from ..shape_util import create_box
+from ..shape_util import create_box, poly_to_mask
 
 
 class Polygon(Shape):
@@ -71,6 +70,6 @@ class Polygon(Shape):
         if mask_shape is None:
             mask_shape = self.data.max(axis=0).astype('int')
 
-        mask = grid_points_in_poly(mask_shape, self.data)
+        mask = poly_to_mask(mask_shape, self.data)
 
         return mask
