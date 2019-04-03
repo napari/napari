@@ -55,15 +55,9 @@ with app_context():
     labels = layer.data.to_labels([512, 512], 'polygon').transpose(1, 0)
 
     masks_layer = viewer.add_image(masks, multichannel=False, name='masks')
-    masks_layer.visible = False
     masks_layer.opacity = 0.7
     masks_layer.colormap = Colormap([[0.0, 0.0, 0.0, 0.0],
                                     [1.0, 0.0, 0.0, 1.0]])
 
     labels_layer = viewer.add_labels(labels, name='labels')
     labels_layer.visible = False
-
-
-# Print the shape coordinate data
-print("your shapes are at:")
-print(layer.data.to_list())
