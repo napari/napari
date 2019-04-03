@@ -648,7 +648,7 @@ class ShapeList():
                          """)
         else:
             cls = self._types[shape_type]
-            index = [1 if s==shape_type else 0 for s in self.shape_types]
+            index = [1 if s == shape_type else 0 for s in self.shape_types]
             index = np.cumsum(index)
             for ind in self._z_order[::-1]:
                 shape = self.shapes[ind]
