@@ -50,9 +50,9 @@ with app_context():
 
     layer._qt_properties.setExpanded(True)
 
-    masks = layer.data.to_masks([512, 512], 'polygon').transpose(2, 1, 0)
+    masks = layer.data.to_masks([512, 512]).transpose(2, 1, 0)
     masks = masks.astype(float)
-    labels = layer.data.to_labels([512, 512], 'polygon').transpose(1, 0)
+    labels = layer.data.to_labels([512, 512]).transpose(1, 0)
 
     masks_layer = viewer.add_image(masks, multichannel=False, name='masks')
     masks_layer.opacity = 0.7
