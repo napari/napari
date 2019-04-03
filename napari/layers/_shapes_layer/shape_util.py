@@ -698,8 +698,8 @@ def poly_to_mask(mask_shape, vertices):
         Boolean array with `True` for points inside the polygon
     """
     mask = np.zeros(mask_shape, dtype=bool)
-    bottom = vertices.min(axis=0)
-    top = vertices.max(axis=0)
+    bottom = vertices.min(axis=0).astype('int')
+    top = np.ceil(vertices.max(axis=0)).astype('int')
     top = np.append([top], [mask_shape], axis=0).min(axis=0)
     if np.all(top > bottom):
         bb_mask = grid_points_in_poly(top - bottom, vertices - bottom)
