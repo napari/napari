@@ -135,7 +135,7 @@ class QtDims(QWidget):
         """
 
         """
-        self._set_nsliders(self.dims.ndims)
+        self._set_nsliders(self.dims.ndims-2)
 
     def _set_nsliders(self, new_number_of_sliders):
         """

@@ -392,12 +392,14 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-        max_shape = self.viewer.dims.max_shape
+
+        max_shape = self.viewer._calc_max_shape()
+
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
                                                      max_shape[1]-1)]
-        coord = copy(indices)
+        coord = list(indices)
         coord[0] = pos[1]
         coord[1] = pos[0]
         return coord

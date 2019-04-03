@@ -77,7 +77,7 @@ class Viewer:
     def interactive(self, interactive):
         if interactive == self.interactive:
             return
-        self._view.interactive = interactive
+        self._qtviewer.view.interactive = interactive
         self._interactive = interactive
 
     @property
@@ -90,7 +90,7 @@ class Viewer:
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self._qt.set_cursor(cursor)
+        self._qtviewer.set_cursor(cursor)
         self._cursor = cursor
 
     @property
@@ -175,6 +175,17 @@ class Viewer:
             ranges = [(min(a,b),max(c,d), min(e,f)) for (a,c,e),(b,d,f) in zip(ranges,layer_range)]
 
         return ranges
+
+    def _calc_max_shape(self):
+        """Calculates the max shape of all displayed layers.
+        This assumes that all layers are stacked.
+        TODO: This is a temporary workaround until refactor is done
+        this method should not be used but instead '_calc_layers_ranges' shoudl be called.
+        """
+
+        max_shape = [max-min for min,max,step in self._calc_layers_ranges()]
+
+        return max_shape
 
     def _calc_layers_num_dims(self):
         """Calculates the number of maximum dimensions in the contained images.

@@ -191,18 +191,35 @@ class Image(Layer):
         self._update()
 
     def _slice_and_project_image(self, slices, projections):
-        """Determines the slice of image given the indices.
+        """returns a sliced and projected image.
 
         Parameters
         ----------
         slices : sequence of int or slices for slicing
         projections :  sequence of booleans.
         """
-        ndim = self.ndim
+        sliced_image = self._slice_image(slices)
 
+        if projections is not None:
+             projection_axis = np.nonzero(list(projections))[0]
+
+             if len(projection_axis) != 0:
+                 projected_image = np.max(sliced_image, axis=tuple(projection_axis))
+                 return projected_image
+
+        return sliced_image
+
+
+    def _slice_image(self, slices):
+        """Returns a projected image.
+
+        Parameters
+        ----------
+        slices : sequence of int or slices for slicing
+        """
+        ndim = self.ndim
         indices = list(slices)
         indices = indices[:ndim]
-
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
 
@@ -211,17 +228,9 @@ class Image(Layer):
                     indices[dim] = max_dim_index
             except TypeError:
                 pass
-
         sliced_image = self.image[tuple(indices)]
-
-        # if projections is not None:
-        #     projection_axis = np.nonzero(list(projections))[0]
-        #
-        #     if len(projection_axis) != 0:
-        #         projected_image = np.max(sliced_image, axis=tuple(projection_axis))
-        #         return projected_image
-
         return sliced_image
+
 
     def _set_view_specifications(self, slices, projections):
         """Sets the view given the indices to slice with.
@@ -383,7 +392,7 @@ class Image(Layer):
         coord = list(copy(slices))
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        value = self._slice_and_project_image(coord, projections)[0]
+        value = self._slice_image(coord)
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):

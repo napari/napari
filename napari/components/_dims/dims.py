@@ -112,7 +112,7 @@ class Dims():
         slice_list = []
         project_list = []
 
-        for (mode, display, point, interval) in zip(self.mode, self.display, self.point, self.interval):
+        for (mode, display, point, interval, range) in zip(self.mode, self.display, self.point, self.interval, self.range):
 
             if mode == DimsMode.Point or mode is None:
                 if display:
@@ -120,7 +120,8 @@ class Dims():
                     project_list.append(False)
                     slice_point = round(point)
                     slice_point = 1 if slice_point==0 else slice_point
-                    slice_list.append(slice(0,slice_point))
+                    ## TODO: workaround here...
+                    slice_list.append(slice(range[0],range[1]))
                 else:
                     # slice:
                     project_list.append(False)
@@ -145,6 +146,17 @@ class Dims():
         project_tuple = tuple(project_list)
 
         return slice_tuple, project_tuple
+
+    @property
+    def indices(self):
+        """
+        Backwards compatible property for easing transition to new architecture
+        TODO: DELETE ME AFTER REFACTOR
+        Returns
+        -------
+        Just the slice
+        """
+        return self.slice_and_project[0]
 
     def set_all_ranges(self, all_ranges: Sequence[Union[int, float]]):
         """Sets ranges for all dimensions

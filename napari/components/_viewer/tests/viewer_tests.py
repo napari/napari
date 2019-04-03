@@ -2,18 +2,20 @@ from skimage import data
 from skimage.color import rgb2gray
 
 from napari import Viewer
-from napari.components import Dims
-from napari.components._dims.dims import DimsMode
+from napari.util import app_context
 
+
+# THIS WILL NOT WORK UNTIL THERE IS SEPARATION BETWEEN MODEL AND VIEW!
 
 def test_dims_and_ranges():
+
     viewer  = Viewer()
 
     astronaut = rgb2gray(data.astronaut())
     coins = rgb2gray(data.coins())
 
     viewer.add_image(astronaut)
-    viewer.add_image(coins)
+    #viewer.add_image(coins)
 
     assert viewer.dims.num_dimensions == 2
 
