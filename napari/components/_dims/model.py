@@ -11,7 +11,7 @@ class DimsMode(Enum):
     Interval = 1
 
 
-class Dims():
+class Dims:
     """Dimensions object modeling multi-dimensional slicing, cropping, and
     displaying in Napari
 
@@ -43,11 +43,10 @@ class Dims():
     def __init__(self, init_ndims=0):
         super().__init__()
 
-        # Events:
         self.events = EmitterGroup(source=self,
-                                    auto_connect=True,
-                                    axis=None,
-                                    ndims=None)
+                                   auto_connect=True,
+                                   axis=None,
+                                   ndims=None)
 
         self.range = []
         self.point = []
@@ -66,12 +65,12 @@ class Dims():
 
     @property
     def ndims(self):
-        """Returns the number of dimensions
+        """Number of dimensions.
 
         Returns
         -------
         ndims : int
-            Number of dimensions
+            Number of dimensions.
         """
         return len(self.point)
 
@@ -88,13 +87,10 @@ class Dims():
 
         Returns
         -------
-        displayed : np.ndarray
+        displayed : list of int
             Displayed dimensions
         """
-        displayed_one_hot = copy(self.display)
-        displayed_one_hot =  ([False if elem is None else elem for elem in
-                              displayed_one_hot])
-        return np.nonzero(list(displayed_one_hot))[0]
+        return [i for i, e in enumerate(self.display) if e]
 
     @property
     def slice_and_project(self):
@@ -112,15 +108,16 @@ class Dims():
         slice_list = []
         project_list = []
 
-        for (mode, display, point, interval) in zip(self.mode, self.display, self.point, self.interval):
+        for mode, display, point, interval in zip(self.mode,
+                                                  self.display,
+                                                  self.point,
+                                                  self.interval):
 
             if mode == DimsMode.Point or mode is None:
                 if display:
                     # no slicing, cropping or projection:
                     project_list.append(False)
-                    slice_point = round(point)
-                    slice_point = 1 if slice_point==0 else slice_point
-                    slice_list.append(slice(0,slice_point))
+                    slice_list.append(slice(None))
                 else:
                     # slice:
                     project_list.append(False)
@@ -156,7 +153,7 @@ class Dims():
         """
         ndim = len(all_ranges)
         modified_dims = self._ensure_axis_present(ndim-1, no_event=True)
-        self.range=all_ranges
+        self.range = all_ranges
 
         self.events.ndims()
         for axis_changed in modified_dims:
@@ -319,7 +316,7 @@ class Dims():
         """
         return self.display[axis]
 
-    def _ensure_axis_present(self, axis: int, no_event = None):
+    def _ensure_axis_present(self, axis, no_event=None):
         """Makes sure that the given axis is in the dimension model
 
         Parameters
@@ -335,11 +332,11 @@ class Dims():
         if axis >= self.ndims:
             old_ndims = self.ndims
             margin_length = 1 + axis - self.ndims
-            self.range.extend([(0.0, 1.0, 0.01)] * (margin_length))
-            self.point.extend([0.0] * (margin_length))
-            self.interval.extend([(0.3, 0.7)] * (margin_length))
-            self.mode.extend([DimsMode.Point] * (margin_length))
-            self.display.extend([False] * (margin_length))
+            self.range.extend([(0.0, 1.0, 0.01)] * margin_length)
+            self.point.extend([0.0] * margin_length)
+            self.interval.extend([(0.3, 0.7)] * margin_length)
+            self.mode.extend([DimsMode.Point] * margin_length)
+            self.display.extend([False] * margin_length)
 
             if not no_event:
                 # First we notify listeners that the number of dimensions have changed:

@@ -29,7 +29,7 @@ class Window:
         self._status_bar.addPermanentWidget(self._help)
 
         self.viewer = viewer
-        self._qt_center.layout().addWidget(self.viewer._qt)
+        self._qt_center.layout().addWidget(self.viewer._qtviewer)
 
         self.viewer.events.status.connect(self._status_changed)
         self.viewer.events.help.connect(self._help_changed)

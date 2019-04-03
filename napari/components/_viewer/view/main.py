@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-from napari.components._dims.qtdims import QtDims
-from .qtcontrols import QtControls
+from napari.components._dims.view import QtDims
+from .controls import QtControls
 
 from os.path import join
 from napari.resources import resources_dir
@@ -17,7 +17,6 @@ class QtViewer(QSplitter):
         super().__init__()
 
         self.viewer = viewer
-        self.viewer._qtviewer = self
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))

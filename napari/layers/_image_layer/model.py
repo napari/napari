@@ -383,7 +383,7 @@ class Image(Layer):
         coord = list(copy(slices))
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        value = self._slice_and_project_image(coord, projections)[0]
+        value = self._slice_and_project_image(coord, projections)
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):

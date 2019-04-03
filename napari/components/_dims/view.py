@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QRadioButton
 from typing import Union
 
 from ..._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
-from .dims import DimsMode, Dims
+from .model import DimsMode, Dims
 
 
 class QtDims(QWidget):

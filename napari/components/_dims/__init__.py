@@ -1,1 +1,1 @@
-from .dims import Dims
+from .model import Dims

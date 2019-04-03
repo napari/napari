@@ -3,8 +3,9 @@ from math import inf
 from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
-from ...util.event import EmitterGroup, Event
+from .view.main import QtViewer
 
+from ...util.event import EmitterGroup, Event
 
 
 class Viewer:
@@ -33,12 +34,9 @@ class Viewer:
         self._status = 'Ready'
         self._help = ''
         self._cursor = 'standard'
-        self._interactive = True
         self._top = None
 
-        ## TODO: this should be eventually removed!
-        ## initialised by QtViewer when it is contrsucted by the model
-        self._qtviewer = None
+        self._qtviewer = QtViewer(self)
 
     @property
     def status(self):
@@ -71,14 +69,13 @@ class Viewer:
     def interactive(self):
         """bool: Determines if canvas pan/zoom interactivity is enabled or not.
         """
-        return self._interactive
+        return self._qtviewer.view.interactive
 
     @interactive.setter
     def interactive(self, interactive):
         if interactive == self.interactive:
             return
-        self._view.interactive = interactive
-        self._interactive = interactive
+        self._qtviewer.view.interactive = interactive
 
     @property
     def cursor(self):
