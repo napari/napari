@@ -118,7 +118,7 @@ class Image(Layer):
         self._need_visual_update = False
 
         self._clim_range = self._clim_range_default()
-        self._node.clim = [np.min(self.image), np.max(self.image)]
+        self._node.clim = [float(self.image.min()), float(self.image.max())]
 
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
@@ -210,7 +210,9 @@ class Image(Layer):
             except TypeError:
                 pass
 
-        return self.image[tuple(indices)]
+        self._image_view = np.asarray(self.image[tuple(indices)])
+
+        return self._image_view
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -342,7 +344,7 @@ class Image(Layer):
         return tuple(interpolation_names)
 
     def _clim_range_default(self):
-        return [np.min(self.image), np.max(self.image)]
+        return [float(self.image.min()), float(self.image.max())]
 
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
@@ -372,7 +374,7 @@ class Image(Layer):
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        value = self._slice_image(coord)
+        value = self._image_view[tuple(coord[:2])]
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):

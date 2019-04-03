@@ -50,8 +50,17 @@ QtLayer > QCheckBox::indicator:checked {
 }
 
 QtLayer > QLineEdit {
-    background-color: lightGray;
+    background-color: white;
+    color: black;
     border: none;
+    border-radius: 3px;
+}
+
+QtLayer > QLineEdit:disabled {
+    background-color: lightGray;
+    color: black;
+    border: none;
+    border-radius: 3px;
 }
 
 QtLayer {
@@ -82,4 +91,143 @@ QPushButton:pressed {
 QPushButton:hover {
     background-color:rgb(0, 153, 255);
     border-radius: 3px;
+}
+
+/* ------------------------------------------------------ */
+
+QtModeButton {
+  background-color:lightGray;
+  border-radius: 3px;
+}
+
+QtModeButton::indicator {
+  subcontrol-position:
+  center center;
+  subcontrol-origin: content;
+  width: 28px; height: 28px;
+}
+
+QtModeButton::indicator:checked {
+  background-color:rgb(0, 153, 255);
+  border-radius: 3px;
+}
+
+QtModeButton[mode="zoom"]::indicator:checked {
+  image: url(":/icons/zoom_off.png");
+}
+
+QtModeButton[mode="zoom"]::indicator:unchecked {
+  image: url(":/icons/zoom_off.png");
+}
+
+QtModeButton[mode="zoom"]::indicator:unchecked:hover {
+  image: url(":/icons/zoom_on.png");
+}
+
+QtModeButton[mode="select"]::indicator:checked {
+  image: url(":/icons/select_off.png");
+}
+
+QtModeButton[mode="select"]::indicator:unchecked {
+  image: url(":/icons/select_off.png");
+}
+
+QtModeButton[mode="select"]::indicator:unchecked:hover {
+  image: url(":/icons/select_on.png");
+}
+
+QtModeButton[mode="direct"]::indicator:checked {
+  image: url(":/icons/direct_off.png");
+}
+
+QtModeButton[mode="direct"]::indicator:unchecked {
+  image: url(":/icons/direct_off.png");
+}
+
+QtModeButton[mode="direct"]::indicator:unchecked:hover {
+  image: url(":/icons/direct_on.png");
+}
+
+QtModeButton[mode="rectangle"]::indicator:checked {
+  image: url(":/icons/rectangle_off.png");
+}
+
+QtModeButton[mode="rectangle"]::indicator:unchecked {
+  image: url(":/icons/rectangle_off.png");
+}
+
+QtModeButton[mode="rectangle"]::indicator:unchecked:hover {
+  image: url(":/icons/rectangle_on.png");
+}
+
+QtModeButton[mode="ellipse"]::indicator:checked {
+  image: url(":/icons/ellipse_off.png");
+}
+
+QtModeButton[mode="ellipse"]::indicator:unchecked {
+  image: url(":/icons/ellipse_off.png");
+}
+
+QtModeButton[mode="ellipse"]::indicator:unchecked:hover {
+  image: url(":/icons/ellipse_on.png");
+}
+
+QtModeButton[mode="line"]::indicator:checked {
+  image: url(":/icons/line_off.png");
+}
+
+QtModeButton[mode="line"]::indicator:unchecked {
+  image: url(":/icons/line_off.png");
+}
+
+QtModeButton[mode="line"]::indicator:unchecked:hover {
+  image: url(":/icons/line_on.png");
+}
+
+QtModeButton[mode="path"]::indicator:checked {
+  image: url(":/icons/path_off.png");
+}
+
+QtModeButton[mode="path"]::indicator:unchecked {
+  image: url(":/icons/path_off.png");
+}
+
+QtModeButton[mode="path"]::indicator:unchecked:hover {
+  image: url(":/icons/path_on.png");
+}
+
+QtModeButton[mode="polygon"]::indicator:checked {
+  image: url(":/icons/polygon_off.png");
+}
+
+QtModeButton[mode="polygon"]::indicator:unchecked {
+  image: url(":/icons/polygon_off.png");
+}
+
+QtModeButton[mode="polygon"]::indicator:unchecked:hover {
+  image: url(":/icons/polygon_on.png");
+}
+
+QtModeButton[mode="vertex_insert"]::indicator:checked {
+  image: url(":/icons/vertex_insert_off.png");
+}
+
+QtModeButton[mode="vertex_insert"]::indicator:unchecked {
+  image: url(":/icons/vertex_insert_off.png");
+}
+
+QtModeButton[mode="vertex_insert"]::indicator:unchecked:hover {
+  image: url(":/icons/vertex_insert_on.png");
+}
+
+QtModeButton[mode="vertex_remove"]::indicator:checked {
+  image: url(":/icons/vertex_remove_off.png");
+}
+
+QtModeButton[mode="vertex_remove"]::indicator:unchecked {
+  image: url(":/icons/vertex_remove_off.png");
+}
+
+QtModeButton[mode="vertex_remove"]::indicator:unchecked:hover {
+  image: url(":/icons/vertex_remove_on.png");
 }
