@@ -63,7 +63,7 @@ If you are changing anything with files and folder structure,
 remember to update doctree
 ```sh
 $ cd docs
-$ sphinx-apidoc -f -P -F -o source ../napari
+$ sphinx-apidoc -f -P -o source ../napari
 ```
 
 Add and commit your changed files:

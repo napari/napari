@@ -1,3 +1,4 @@
+import numpy as np
 from math import inf
 
 from numpy import clip, integer, ndarray, append, insert, delete, empty
@@ -10,7 +11,6 @@ from ...util.event import EmitterGroup, Event
 class Viewer:
     """Viewer object
     """
-
     def __init__(self):
         super().__init__()
         from .._layers_list import LayersList
@@ -130,7 +130,10 @@ class Viewer:
             empty_markers = empty((0, self.dims.ndims))
         self.add_markers(empty_markers)
 
-    def _update_layers(self, axis):
+    def _new_shapes(self):
+        self.add_shapes([])
+
+    def _update_layers(self):
         """Updates the contained layers.
         """
         self.dims._set_2d_viewing()

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import QCoreApplication, Qt, QSize
 from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
@@ -6,15 +6,19 @@ from vispy.scene import SceneCanvas, PanZoomCamera
 from napari.components._dims.qtdims import QtDims
 from .qtcontrols import QtControls
 
-from os.path import join
-from napari.resources import resources_dir
-path_cursor = join(resources_dir, 'icons', 'cursor_disabled.png')
+import os.path as osp
+from ....resources import resources_dir
 
 
 class QtViewer(QSplitter):
+    with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
+        default_stylesheet = f.read()
 
     def __init__(self, viewer):
         super().__init__()
+
+        QCoreApplication.setAttribute(Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
+        self.setStyleSheet(self.default_stylesheet)
 
         self.viewer = viewer
         self.viewer._qtviewer = self
@@ -35,6 +39,8 @@ class QtViewer(QSplitter):
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
 
+        self.view.camera.viewbox_key_event = viewbox_key_event
+
         center = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.canvas.native)
@@ -51,7 +57,8 @@ class QtViewer(QSplitter):
         self.addWidget(self.viewer.layers._qt)
 
         self._cursors = {
-                'disabled': QCursor(QPixmap(path_cursor).scaled(20, 20)),
+                'disabled': QCursor(QPixmap(':/icons/cursor_disabled.png')
+                                    .scaled(20, 20)),
                 'cross': Qt.CrossCursor,
                 'forbidden': Qt.ForbiddenCursor,
                 'pointing': Qt.PointingHandCursor,
@@ -120,3 +127,13 @@ class QtViewer(QSplitter):
         layer = self.viewer._top
         if layer is not None:
             layer.on_key_release(event)
+
+
+def viewbox_key_event(event):
+    """ViewBox key event handler
+    Parameters
+    ----------
+    event : instance of Event
+        The event.
+    """
+    return

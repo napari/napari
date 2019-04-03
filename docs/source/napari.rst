@@ -23,6 +23,14 @@ napari.\_version module
     :undoc-members:
     :show-inheritance:
 
+napari.viewer module
+--------------------
+
+.. automodule:: napari.viewer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
