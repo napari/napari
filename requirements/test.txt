@@ -1,5 +1,4 @@
 pytest
 pytest-faulthandler
 dask[array]
-scikit-image
 zarr
