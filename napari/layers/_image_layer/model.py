@@ -233,10 +233,6 @@ class Image(Layer):
 
         return self._image_view
 
-    def _set_view_slice(self, indices):
-        sliced_image = self.image[tuple(indices)]
-        return sliced_image
-
 
     def _set_view_specifications(self, slices, projections):
         """Sets the view given the indices to slice with.

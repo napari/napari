@@ -58,7 +58,7 @@ class Vectors(Layer):
                  name=None):
 
         visual = LinesNode(antialias=True)
-        super().__init__(visual)
+        super().__init__(visual, name)
 
         # events for non-napari calculations
         self.events.add(length=Event,
@@ -364,13 +364,13 @@ class Vectors(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_slice(self.viewer.dims.indices)
+            self._set_view_specifications(*self.viewer.dims.slice_and_project)
 
         if self._need_visual_update:
             self._need_visual_update = False
             self._node.update()
 
-    def _set_view_slice(self, indices):
+    def _set_view_specifications(self, slices, projections):
         """Sets the view given the indices to slice with.
 
         Parameters
@@ -378,6 +378,9 @@ class Vectors(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
+
+        ##TODO: make use of all the information in model, for now workaround:
+        indices = self.viewer.dims._get_old_indices()
         
         in_slice_vectors = self.vectors
 

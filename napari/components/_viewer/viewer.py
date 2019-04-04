@@ -25,7 +25,7 @@ class Viewer:
 
         self.dims = Dims()
 
-        self.dims.events.axis.connect(self._update_layers)
+
 
 
         self.layers = LayersList(self)
@@ -39,6 +39,10 @@ class Viewer:
         ## TODO: this should be eventually removed!
         ## initialised by QtViewer when it is contrsucted by the model
         self._qtviewer = None
+
+        # Note: Events should be connected at the end of the constructor to avoid passing events on
+        # partially initialised objects...
+        self.dims.events.axis.connect(lambda e: self._update_layers())
 
     @property
     def status(self):
@@ -141,6 +145,7 @@ class Viewer:
 
         for layer in self.layers:
             layer._set_view_specifications(slices, projections)
+
 
     def _update_layer_selection(self, event):
         # iteration goes backwards to find top most selected layer if any

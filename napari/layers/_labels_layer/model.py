@@ -158,7 +158,7 @@ class Labels(Layer):
 
         return image[tuple(indices)]
 
-    def _set_view_slice(self, indices):
+    def _set_view_specifications(self, slices, projections):
         """Sets the view given the indices to slice with.
 
         Parameters
@@ -166,6 +166,10 @@ class Labels(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
+
+        ##TODO: make use of all the information in model, for now workaround:
+        indices = self.viewer.dims._get_old_indices()
+
         sliced_image = self._slice_image(indices)
         self._node.set_data(sliced_image)
 

@@ -532,7 +532,7 @@ class Shapes(Layer):
         """
         if self._need_display_update:
             self._need_display_update = False
-            self._set_view_slice()
+            self._set_view_specifications()
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -544,14 +544,19 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_view_slice(self, indices=None):
-        """Set the shape mesh data to the view.
+    def _set_view_specifications(self, slices=None, projections=None):
+        """Sets the view given the indices to slice with.
 
         Parameters
         ----------
         indices : sequence of int or slice
             Indices to slice with.
         """
+
+        ##TODO: make use of all the information in model, for now workaround:
+        indices = None #self.viewer.dims._get_old_indices()
+
+
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]
@@ -925,7 +930,7 @@ class Shapes(Layer):
         rescale : float
             Conversion factor from canvas coordinates to image coordinates.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        transform = self.viewer._qtviewer.canvas.scene.node_transform(self._node)
         rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
         return rescale.mean()
@@ -943,7 +948,7 @@ class Shapes(Layer):
         coord : sequence of float
             Position of mouse cursor in image coordinates.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        transform = self.viewer._qtviewer.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         coord = np.array([pos[0], pos[1]])
         self._cursor_coord = coord

@@ -382,3 +382,16 @@ class Dims():
 
             # Notify listeners that the number of dimensions have changed:
             self.events.ndims()
+
+
+    def _get_old_indices(self):
+        """This method is a woraround for compatibility for 'old style' layers that do not
+        use the full dims model.
+
+        TODO: This needs to go away once refactor is done.
+
+        """
+        indices = copy(self.point)
+        indices[-2] = slice(None)
+        indices[-1] = slice(None)
+        return indices

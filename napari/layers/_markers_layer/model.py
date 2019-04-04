@@ -301,7 +301,7 @@ class Markers(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_specifications(self.viewer.dims.indices)
+            self._set_view_specifications(*self.viewer.dims.slice_and_project)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -325,10 +325,10 @@ class Markers(Layer):
         coords = self.coords
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
-                distances = abs(coords[:, 2:] - indices[2:])
-                size_array = self._size[:, 2:]/2
+                distances = abs(coords[:, :-2] - indices[:-2])
+                size_array = self._size[:, :-2]/2
                 matches = np.all(distances <= size_array, axis=1)
-                in_slice_markers = coords[matches, :2]
+                in_slice_markers = coords[matches, -2:]
                 size_match = size_array[matches]
                 size_match[size_match == 0] = 1
                 scale_per_dim = (size_match - distances[matches])/size_match
@@ -336,8 +336,8 @@ class Markers(Layer):
                 scale = np.prod(scale_per_dim, axis=1)
                 return in_slice_markers, matches, scale
             else:
-                matches = np.all(coords[:, 2:] == indices[2:], axis=1)
-                in_slice_markers = coords[matches, :2]
+                matches = np.all(coords[:, :-2] == indices[:-2], axis=1)
+                in_slice_markers = coords[matches,-2:]
                 return in_slice_markers, matches, 1
         else:
             return [], [], []
@@ -355,8 +355,8 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            size_array = self._size[matches, :2]*np.expand_dims(scale, axis=1)
-            distances = abs(in_slice_markers - indices[:2])
+            size_array = self._size[matches, -2:]*np.expand_dims(scale, axis=1)
+            distances = abs(in_slice_markers - indices[-2:])
             in_slice_matches = np.all(distances <= size_array/2, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
@@ -368,7 +368,7 @@ class Markers(Layer):
 
         return selection
 
-    def _set_view_specifications(self, indices):
+    def _set_view_specifications(self, slices, projections):
         """Sets the view given the indices to slice with.
 
         Parameters
@@ -377,12 +377,15 @@ class Markers(Layer):
             Indices to slice with.
         """
 
+        ##TODO: make use of all the information in model, for now workaround:
+        indices = self.viewer.dims._get_old_indices()
+
         in_slice_markers, matches, scale = self._slice_markers(indices)
 
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            sizes = (self._size[matches, :2].mean(axis=1)*scale)[::-1]
+            sizes = (self._size[matches, -2:].mean(axis=1)*scale)[::-1]
 
             # Update the markers node
             data = np.array(in_slice_markers) + 0.5
@@ -401,27 +404,18 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-<<<<<<< HEAD
 
         max_shape = self.viewer._calc_max_shape()
 
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [clip(pos[1], 0, max_shape[0]-1), clip(pos[0], 0,
-                                                     max_shape[1]-1)]
+        pos = [np.clip(pos[1], 0, max_shape[0] - 1), np.clip(pos[0], 0,
+                                                             max_shape[1] - 1)]
         coord = list(indices)
         coord[0] = pos[1]
         coord[1] = pos[0]
-        return coord
-=======
-        shape = self._get_shape()
-        transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
-        coord = copy(indices)
-        coord[0] = pos[0]
-        coord[1] = pos[1]
-        return coord[:len(shape)]
->>>>>>> a709f36ca81967e55e41e644961d49361da7ee8b
+        return coord[:len(max_shape)]
+
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
