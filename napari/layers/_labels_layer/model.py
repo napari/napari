@@ -40,7 +40,7 @@ class Labels(Layer):
         Parameters that will be translated to metadata.
     """
     def __init__(self, label_image, meta=None, *, name=None, num_colors=256,
-                 opactiy=0.7, **kwargs):
+                 opacity=0.7, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -59,7 +59,7 @@ class Labels(Layer):
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
         self.colormap = colormaps.label_colormap(num_colors)
-        self.opacity = opactiy
+        self.opacity = opacity
 
 
 
@@ -91,13 +91,15 @@ class Labels(Layer):
 
     def new_colormap(self):
         self.seed = np.random.rand()
-        self._image = colormaps._low_discrepancy_image(self._raw_image, self.seed)
+        self._image = colormaps._low_discrepancy_image(self._raw_image,
+                                                       self.seed)
         self.refresh()
 
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        return self.colormap.map(colormaps._low_discrepancy_image(np.array([label]), self.seed))
+        val = colormaps._low_discrepancy_image(np.array([label]), self.seed)
+        return self.colormap.map(val)
 
     @property
     def image(self):
@@ -201,13 +203,8 @@ class Labels(Layer):
         if self.selected_label == 0:
             # If background
             self._selected_color = None
-        elif self.selected_label <= self._max_label:
-            # If one of the existing labels
-            self._selected_color = self.label_color(self.selected_label)
         else:
-            # If a new label make None
-            # NEED TO IMPLEMENT BETTER COLOR SELECTION
-            self._selected_color = None
+            self._selected_color = self.label_color(self.selected_label)[0]
 
     @property
     def mode(self):
@@ -401,12 +398,14 @@ class Labels(Layer):
         if self.n_dimensional or self._raw_image.ndim==2:
             # work with entire image
             labels = self._raw_image
+            displayed = self._image
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
             labels, slice_indices = self._slice_image(indices,
                                                       image=self._raw_image)
             slice_coord = tuple(int_coord[:2])
+            displayed = self._image[slice_indices]
 
         matches = labels==old_label
         if self.contiguous:
@@ -418,16 +417,13 @@ class Labels(Layer):
 
         # Replace target pixels with new_label
         labels[matches] = new_label
+        displayed[matches] = colormaps._low_discrepancy_image(new_label,
+                                                              self.seed)
 
         if not (self.n_dimensional or self._raw_image.ndim==2):
             # if working with just the slice, update the rest of the raw image
             self._raw_image[slice_indices] = labels
-
-        # update the displayed image
-        if self._max_label == 0:
-            self._image =  self._raw_image.astype('float')
-        else:
-            self._image =  self._raw_image / self._max_label
+            self._image[slice_coord] = displayed
 
         self.refresh()
 
@@ -479,10 +475,8 @@ class Labels(Layer):
         self._raw_image[slice_coord] = new_label
 
         # update the displayed image
-        if self._max_label == 0:
-            self._image =  self._raw_image.astype('float')
-        else:
-            self._image =  self._raw_image / self._max_label
+        self._image[slice_coord] = colormaps._low_discrepancy_image(new_label,
+                                                                    self.seed)
 
         self.refresh()
 

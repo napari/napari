@@ -67,7 +67,7 @@ def _validate_rgb(colors, *, tolerance=0.):
 
 
 def _low_discrepancy_image(image, seed=0.5):
-    """Generate a 1d discrepancy sequence of coordinates.
+    """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
     ----------
