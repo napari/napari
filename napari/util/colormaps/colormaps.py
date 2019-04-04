@@ -65,6 +65,7 @@ def _validate_rgb(colors, *, tolerance=0.):
     filtered_colors = np.clip(colors[valid], 0, 1)
     return filtered_colors
 
+
 def _low_discrepancy_image(image, seed=0.5):
     """Generate a 1d discrepancy sequence of coordinates.
     Parameters
@@ -180,3 +181,4 @@ def label_colormap(num_colors=256, seed=0.5):
     cmap = vispy.color.Colormap(colors=colors, controls=control_points,
                                 interpolation='zero')
     return cmap
+ZZ
