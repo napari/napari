@@ -78,7 +78,7 @@ def _low_discrepancy_image(image, seed=0.5):
 
     Returns
     -------
-        image_out : array of float
+    image_out : array of float
         The set of ``labels`` remapped to [0, 1] quasirandomly.
 
     """
