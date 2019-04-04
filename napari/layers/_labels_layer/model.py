@@ -34,13 +34,13 @@ class Labels(Layer):
         Opacity of the labels, must be between 0 and 1.
     name : str, keyword-only
         Name of the layer.
+    num_colors : int, optional
+        Number of unique colors to use. Default used if not given.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
-
-
-    def __init__(self, label_image, meta=None, *, opacity=0.7, name=None,
-                 **kwargs):
+    def __init__(self, label_image, meta=None, *, name=None, num_colors=256,
+                 opactiy=0.7, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -51,18 +51,16 @@ class Labels(Layer):
                         contiguous=Event, brush_size=Event,
                         selected_label=Event)
 
+        self.seed = 0.5
         self._raw_image = label_image
         self._max_label = np.max(label_image)
-        if self._max_label == 0:
-            self._image = label_image.astype('float')
-        else:
-            self._image = label_image / self._max_label
-
+        self._image = colormaps._low_discrepancy_image(self._raw_image, self.seed)
         self._meta = meta
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
-        self.colormap = colormaps.label_colormap(label_image,
-                                                 max_label=self._max_label)
+        self.colormap = colormaps.label_colormap(num_colors)
+        self.opacity = opactiy
+
 
 
         self._node.opacity = opacity
@@ -92,15 +90,14 @@ class Labels(Layer):
         self.events.colormap()
 
     def new_colormap(self):
-        seed = np.random.random((3,))
-        self.colormap = colormaps.label_colormap(self._image, seed=seed)
-        self.events.colormap()
-        self._refresh_selected_color()
-        self.events.selected_label()
+        self.seed = np.random.rand()
+        self._image = colormaps._low_discrepancy_image(self._raw_image, self.seed)
+        self.refresh()
+
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        return self.colormap.map(label / self._max_label)[0]
+        return self.colormap.map(colormaps._low_discrepancy_image(np.array([label]), self.seed))
 
     @property
     def image(self):

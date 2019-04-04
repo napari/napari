@@ -66,6 +66,27 @@ def _validate_rgb(colors, *, tolerance=0.):
     return filtered_colors
 
 
+def _low_discrepancy_image(image, seed=0.5):
+    """Generate a 1d discrepancy sequence of coordinates.
+
+    Parameters
+    ----------
+    labels : array of int
+        A set of labels or label image.
+    seed : float
+        The seed from which to start the quasirandom sequence.
+
+    Returns
+    -------
+    image_out : array of float
+        The set of ``labels`` remapped to [0, 1] quasirandomly.
+
+    """
+    phi = 1.6180339887498948482
+    image_out = (seed + image / phi) % 1
+    return image_out
+
+
 def _low_discrepancy(dim, n, seed=0.5):
     """Generate a 1d, 2d, or 3d low discrepancy sequence of coordinates.
 
@@ -134,46 +155,31 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
     return rgb[:n]
 
 
-def label_colormap(labels, seed=0.5, max_label=None, alpha=1):
+def label_colormap(num_colors=256, seed=0.5):
     """Produce a colormap suitable for use with a given label set.
 
     Parameters
     ----------
-    labels : array of int
-        A set of labels or label image.
+    num_colors : int, optional
+        Number of unique colors to use. Default used if not given.
     seed : float or array of float, length 3
-        The seed for the low discrepancy sequence generator.
-    max_label : int, optional
-        The maximum label in `labels`. Computed if not given.
-    alpha : float, optional
-        Alpha value for label colors.
+        The seed for the random color generator.
 
     Returns
     -------
     cmap : vispy.color.Colormap
-        A colormap for use with ``labels``. The labels are remapped so that
-        the maximum label falls on 1.0, since vispy requires colormaps to map
-        within [0, 1].
+        A colormap for use with labels are remapped to [0, 1].
 
     Notes
     -----
     0 always maps to fully transparent.
     """
-    unique_labels = np.unique(labels)
-    if unique_labels[0] != 0:
-        unique_labels = np.concatenate([[0], unique_labels])
-    n = len(unique_labels)
-    max_label = max_label or np.max(unique_labels)
-    if max_label == 0:
-        cmap = vispy.color.Colormap(np.zeros((2, 4)))
-    else:
-        unique_labels_float = unique_labels / max_label
-        midpoints = np.convolve(unique_labels_float, [0.5, 0.5], mode='valid')
-        control_points = np.concatenate(([0.], midpoints, [1.]))
-        # make sure to add an alpha channel to the colors
-        colors = np.concatenate((_color_random(n, seed=seed),
-                                 np.full((n, 1), alpha)), axis=1)
-        colors[0, :] = 0  # ensure alpha is 0 for label 0
-        cmap = vispy.color.Colormap(colors=colors, controls=control_points,
+    midpoints = np.linspace(0, 1, num_colors - 1)
+    control_points = np.concatenate(([0.], midpoints, [1.]))
+    # make sure to add an alpha channel to the colors
+    colors = np.concatenate((_color_random(num_colors, seed=seed),
+                             np.full((num_colors, 1), 1)), axis=1)
+    colors[0, :] = 0  # ensure alpha is 0 for label 0
+    cmap = vispy.color.Colormap(colors=colors, controls=control_points,
                                 interpolation='zero')
     return cmap
