@@ -30,10 +30,12 @@ class Labels(Layer):
         Whether the image is multichannel. Guesses if None.
     name : str, keyword-only
         Name of the layer.
+    num_colors : int, optional
+        Number of unique colors to use. Default used if not given.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
-    def __init__(self, label_image, meta=None, *, name=None, **kwargs):
+    def __init__(self, label_image, meta=None, *, name=None, num_colors=256, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -49,7 +51,8 @@ class Labels(Layer):
         self._meta = meta
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
-        self.colormap = colormaps.label_colormap()
+        self.colormap = colormaps.label_colormap(num_colors)
+        self.opacity = 0.7
 
 
         # update flags
@@ -69,7 +72,7 @@ class Labels(Layer):
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        return self.colormap.map(self._low_discrepancy_image(label, self.seed))
+        return self.colormap.map(colormaps._low_discrepancy_image(np.array([label]), self.seed))
 
     @property
     def image(self):

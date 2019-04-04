@@ -183,4 +183,3 @@ def label_colormap(num_colors=256, seed=0.5):
     cmap = vispy.color.Colormap(colors=colors, controls=control_points,
                                 interpolation='zero')
     return cmap
-ZZ
