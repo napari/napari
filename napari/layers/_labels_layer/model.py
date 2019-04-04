@@ -30,10 +30,12 @@ class Labels(Layer):
         Whether the image is multichannel. Guesses if None.
     name : str, keyword-only
         Name of the layer.
+    num_colors : int, optional
+        Number of unique colors to use. Default used if not given.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
-    def __init__(self, label_image, meta=None, *, name=None, **kwargs):
+    def __init__(self, label_image, meta=None, *, name=None, num_colors=256, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -42,14 +44,16 @@ class Labels(Layer):
         super().__init__(visual, name)
         self.events.add(colormap=Event)
 
+        self.seed = 0.5
         self._raw_image = label_image
         self._max_label = np.max(label_image)
-        self._image = label_image / self._max_label
+        self._image = colormaps._low_discrepancy_image(self._raw_image, self.seed)
         self._meta = meta
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
-        self.colormap = colormaps.label_colormap(label_image,
-                                                 max_label=self._max_label)
+        self.colormap = colormaps.label_colormap(num_colors)
+        self.opacity = 0.7
+
 
         # update flags
         self._need_display_update = False
@@ -61,13 +65,14 @@ class Labels(Layer):
         self.events.colormap()
 
     def new_colormap(self):
-        seed = np.random.random((3,))
-        self.colormap = colormaps.label_colormap(self._image, seed=seed)
-        self.events.colormap()
+        self.seed = np.random.rand()
+        self._image = colormaps._low_discrepancy_image(self._raw_image, self.seed)
+        self.refresh()
+    
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        return self.colormap.map(label / self._max_label)
+        return self.colormap.map(colormaps._low_discrepancy_image(np.array([label]), self.seed))
 
     @property
     def image(self):
