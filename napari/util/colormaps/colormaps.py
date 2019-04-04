@@ -86,6 +86,7 @@ def _low_discrepancy_image(image, seed=0.5):
     image_out = (seed + image / phi) % 1
     return image_out
 
+
 def _low_discrepancy(dim, n, seed=0.5):
     """Generate a 1d, 2d, or 3d low discrepancy sequence of coordinates.
 
