@@ -42,14 +42,15 @@ class Labels(Layer):
         super().__init__(visual, name)
         self.events.add(colormap=Event)
 
+        self.seed = 0.5
         self._raw_image = label_image
         self._max_label = np.max(label_image)
-        self._image = label_image / self._max_label
+        self._image = colormaps._low_discrepancy_image(label_image, self.seed)
         self._meta = meta
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
-        self.colormap = colormaps.label_colormap(label_image,
-                                                 max_label=self._max_label)
+        self.colormap = colormaps.label_colormap(label_image)
+
 
         # update flags
         self._need_display_update = False
@@ -61,13 +62,13 @@ class Labels(Layer):
         self.events.colormap()
 
     def new_colormap(self):
-        seed = np.random.random((3,))
+        self.seed = np.random.rand()
         self.colormap = colormaps.label_colormap(self._image, seed=seed)
         self.events.colormap()
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        return self.colormap.map(label / self._max_label)
+        return self.colormap.map(self._low_discrepancy_image(label, self.seed))
 
     @property
     def image(self):
