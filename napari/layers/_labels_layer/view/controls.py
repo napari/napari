@@ -16,11 +16,11 @@ class QtLabelsControls(QFrame):
         self.panzoom_button = QtModeButton(layer, 'zoom', Mode.PAN_ZOOM,
                                            'Pan/zoom mode')
         self.pick_button = QtModeButton(layer, 'picker', Mode.PICKER,
-                                          'Pick mode')
+                                        'Pick mode')
         self.paint_button = QtModeButton(layer, 'paint', Mode.PAINT,
-                                          'Paint mode')
+                                         'Paint mode')
         self.fill_button = QtModeButton(layer, 'fill', Mode.FILL,
-                                          'Fill mode')
+                                        'Fill mode')
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
@@ -104,7 +104,8 @@ class QtColorBox(QWidget):
             painter.setBrush(QColor(255, 255, 255))
             for i in range(self._height//6+1):
                 for j in range(self._height//6+1):
-                    if (i%2 == 0 and j%2 == 0) or (i%2 == 1 and j%2 ==1):
+                    if ((i % 2 == 0 and j % 2 == 0) or (i % 2 == 1 and
+                                                        j % 2 == 1)):
                         painter.drawRect(i*6, j*6, 5, 5)
         else:
             color = 255*self.layer._selected_color

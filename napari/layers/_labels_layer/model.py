@@ -15,6 +15,7 @@ from .view import QtLabelsControls
 from ._constants import Mode, BACKSPACE
 from vispy.color import Colormap
 
+
 @add_to_viewer
 class Labels(Layer):
     """Labels (or segmentation) layer.
@@ -401,7 +402,7 @@ class Labels(Layer):
         int_coord[0] = int(round(coord[0]))
         int_coord[1] = int(round(coord[1]))
 
-        if self.n_dimensional or self._raw_image.ndim==2:
+        if self.n_dimensional or self._raw_image.ndim == 2:
             # work with entire image
             labels = self._raw_image
             displayed = self._image
@@ -413,13 +414,14 @@ class Labels(Layer):
             slice_coord = tuple(int_coord[:2])
             displayed = self._image[slice_indices]
 
-        matches = labels==old_label
+        matches = labels == old_label
         if self.contiguous:
             # if not contiguous replace only selected connected component
             labeled_matches, num_features = ndi.label(matches)
             if num_features != 1:
                 match_label = labeled_matches[slice_coord]
-                matches = np.logical_and(matches, labeled_matches==match_label)
+                matches = np.logical_and(matches,
+                                         labeled_matches == match_label)
 
         # Replace target pixels with new_label
         labels[matches] = new_label
@@ -428,7 +430,7 @@ class Labels(Layer):
         else:
             displayed[matches] = self.raw_to_displayed(new_label)
 
-        if not (self.n_dimensional or self._raw_image.ndim==2):
+        if not (self.n_dimensional or self._raw_image.ndim == 2):
             # if working with just the slice, update the rest of the raw image
             self._raw_image[slice_indices] = labels
             self._image[slice_coord] = displayed
@@ -465,7 +467,7 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
-        if self.n_dimensional or self._raw_image.ndim==2:
+        if self.n_dimensional or self._raw_image.ndim == 2:
             slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
                                        self._to_pix(ind+self.brush_size/2, i),
                                        1) for i, ind
@@ -505,7 +507,7 @@ class Labels(Layer):
             List of coordinates to ensure painting is continous
         """
         num_step = round(max(abs(np.array(new_coord) - np.array(old_coord)))
-                          / self.brush_size * 4)
+                         / self.brush_size * 4)
         coords = [np.linspace(old_coord[i], new_coord[i],
                               num=num_step + 1) for i in range(len(new_coord))]
         coords = np.stack(coords).T
@@ -535,7 +537,7 @@ class Labels(Layer):
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [np.clip(pos[1], 0, self.shape[0]), np.clip(pos[0], 0,
-                       self.shape[1])]
+                                                          self.shape[1])]
         coord = copy(indices)
         coord[0] = pos[0]
         coord[1] = pos[1]
