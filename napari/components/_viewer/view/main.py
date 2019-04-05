@@ -62,10 +62,8 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
-    def set_cursor(self, cursor, size=None):
+    def set_cursor(self, cursor, size=10):
         if cursor == 'square':
-            if size is None:
-                size = 10
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
             else:
