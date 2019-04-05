@@ -723,7 +723,7 @@ def grid_points_in_poly(shape, vertices):
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
-    points = np.array([(x,y) for x in range(shape[0])
+    points = np.array([(x, y) for x in range(shape[0])
                       for y in range(shape[1])], dtype=int)
     inside = points_in_poly(points, vertices)
     mask = inside.reshape(shape)
