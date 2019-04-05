@@ -1,5 +1,4 @@
-from numpy import clip, integer, ndarray, append, insert, delete, empty
-from copy import copy
+import numpy as np
 
 from ...util.event import EmitterGroup, Event
 from .view import QtViewer
@@ -20,7 +19,6 @@ class Viewer:
     camera : vispy.scene.Camera
         Viewer camera.
     """
-
     def __init__(self):
         super().__init__()
         from .._layers_list import LayersList
@@ -166,10 +164,13 @@ class Viewer:
 
     def _new_markers(self):
         if self.dims.max_dims == 0:
-            empty_markers = empty((0, 2))
+            empty_markers = np.empty((0, 2))
         else:
-            empty_markers = empty((0, self.dims.max_dims))
+            empty_markers = np.empty((0, self.dims.max_dims))
         self.add_markers(empty_markers)
+
+    def _new_shapes(self):
+        self.add_shapes([])
 
     def _update_layers(self):
         """Updates the contained layers.

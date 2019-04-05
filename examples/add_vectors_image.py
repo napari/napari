@@ -16,18 +16,19 @@ with app_context():
     viewer = ViewerApp()
 
     # sample vector image-like data
-    # 50x25 grid of slanted lines
-    n = 50
-    m = 25
+    # n x m grid of slanted lines
+    # random data on the open interval (-1, 1)
+    n = 100
+    m = 50
     pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
-    rand1 = np.random.random_sample(n * m)
-    rand2 = np.random.random_sample(n * m)
+    rand1 = 2*(np.random.random_sample(n * m)-0.5)
+    rand2 = 2*(np.random.random_sample(n * m)-0.5)
 
     # assign projections for each vector
     pos[:, :, 0] = rand1.reshape((n, m))
     pos[:, :, 1] = rand2.reshape((n, m))
 
     # add the vectors
-    viewer.add_vectors(pos)
+    vect = viewer.add_vectors(pos)
 
 

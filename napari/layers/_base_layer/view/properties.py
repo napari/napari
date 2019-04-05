@@ -2,23 +2,10 @@ from PyQt5.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame,
                              QVBoxLayout, QCheckBox, QWidget, QApplication,
                              QLabel, QComboBox)
 from PyQt5.QtCore import Qt, QMimeData
-from PyQt5.QtGui import QPalette, QDrag
-
-from os.path import join
-from ....resources import resources_dir
-path_on = join(resources_dir, 'icons', 'eye_on.png')
+from PyQt5.QtGui import QDrag
 
 
 class QtLayer(QFrame):
-    unselectedStylesheet = """QFrame#layer {border: 3px solid lightGray;
-        background-color:lightGray; border-radius: 3px;}"""
-
-    selectedStylesheet = """QFrame#layer {border: 3px solid rgb(0, 153, 255);
-        background-color:lightGray; border-radius: 3px;}"""
-
-    cbStylesheet = """QCheckBox::indicator {width: 18px; height: 18px;}
-        QCheckBox::indicator:checked {image: url(""" + path_on + ");}"
-
     def __init__(self, layer):
         super().__init__()
 
@@ -31,12 +18,10 @@ class QtLayer(QFrame):
         layer.events.visible.connect(self._on_visible_change)
 
         self.setObjectName('layer')
-        self.layer.selected = True
 
         self.grid_layout = QGridLayout()
 
         cb = QCheckBox(self)
-        cb.setStyleSheet(self.cbStylesheet)
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
@@ -44,11 +29,12 @@ class QtLayer(QFrame):
         self.grid_layout.addWidget(cb, 0, 0)
 
         textbox = QLineEdit(self)
-        textbox.setStyleSheet('background-color:lightGray; border:none')
         textbox.setText(layer.name)
+        textbox.home(False)
         textbox.setToolTip('Layer name')
         textbox.setFixedWidth(80)
         textbox.setAcceptDrops(False)
+        textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
         self.grid_layout.addWidget(textbox, 0, 1)
@@ -85,12 +71,19 @@ class QtLayer(QFrame):
         self.setFixedWidth(200)
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
+        self.layer.selected = True
 
     def _on_select(self, event):
-        self.setStyleSheet(self.selectedStylesheet)
+        self.setProperty('selected', True)
+        self.nameTextBox.setEnabled(True)
+        self.style().unpolish(self)
+        self.style().polish(self)
 
     def _on_deselect(self, event):
-        self.setStyleSheet(self.unselectedStylesheet)
+        self.setProperty('selected', False)
+        self.nameTextBox.setEnabled(False)
+        self.style().unpolish(self)
+        self.style().polish(self)
 
     def changeOpacity(self, value):
         with self.layer.events.blocker(self._on_opacity_change):
@@ -123,7 +116,7 @@ class QtLayer(QFrame):
         elif modifiers == Qt.ControlModifier:
             self.layer.selected = not self.layer.selected
         else:
-            self.layer.viewer.layers.unselect_all()
+            self.layer.viewer.layers.unselect_all(ignore=self.layer)
             self.layer.selected = True
 
     def mousePressEvent(self, event):
@@ -177,6 +170,7 @@ class QtLayer(QFrame):
     def _on_layer_name_change(self, event):
         with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
+            self.nameTextBox.home(False)
 
     def _on_opacity_change(self, event):
         with self.layer.events.opacity.blocker():

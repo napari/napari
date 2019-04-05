@@ -2,17 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QFrame, QCheckBox)
-from os.path import join
-from ....resources import resources_dir
 
-path_delete = join(resources_dir, 'icons', 'delete.png')
-path_add = join(resources_dir, 'icons', 'add.png')
-
-styleSheet = """QPushButton {background-color:lightGray; border-radius: 3px;}
-                QPushButton:pressed {background-color:rgb(0, 153, 255);
-                border-radius: 3px;}
-                QPushButton:hover {background-color:rgb(0, 153, 255);
-                border-radius: 3px;}"""
+from .... import resources
 
 
 class QtLayersButtons(QFrame):
@@ -21,11 +12,13 @@ class QtLayersButtons(QFrame):
 
         self.layers = layers
         self.deleteButton = QtDeleteButton(self.layers)
-        self.addButton = QtAddButton(self.layers)
+        self.newMarkersButton = QtNewMarkersButton(self.layers)
+        self.newShapesButton = QtNewShapesButton(self.layers)
 
         layout = QHBoxLayout()
         layout.addStretch(0)
-        layout.addWidget(self.addButton)
+        layout.addWidget(self.newMarkersButton)
+        layout.addWidget(self.newShapesButton)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
 
@@ -35,12 +28,11 @@ class QtDeleteButton(QPushButton):
         super().__init__()
 
         self.layers = layers
-        self.setIcon(QIcon(path_delete))
+        self.setIcon(QIcon(':/icons/delete.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Delete layers')
         self.setAcceptDrops(True)
-        self.setStyleSheet(styleSheet)
         self.clicked.connect(self.layers.remove_selected)
 
     def dragEnterEvent(self, event):
@@ -58,14 +50,25 @@ class QtDeleteButton(QPushButton):
         event.accept()
 
 
-class QtAddButton(QPushButton):
+class QtNewMarkersButton(QPushButton):
     def __init__(self, layers):
         super().__init__()
 
         self.layers = layers
-        self.setIcon(QIcon(path_add))
+        self.setIcon(QIcon(':icons/new_markers.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
-        self.setToolTip('Add layer')
-        self.setStyleSheet(styleSheet)
+        self.setToolTip('New markers layer')
         self.clicked.connect(self.layers.viewer._new_markers)
+
+
+class QtNewShapesButton(QPushButton):
+    def __init__(self, layers):
+        super().__init__()
+
+        self.layers = layers
+        self.setIcon(QIcon(':icons/new_shapes.png'))
+        self.setFixedWidth(28)
+        self.setFixedHeight(28)
+        self.setToolTip('New shapes layer')
+        self.clicked.connect(self.layers.viewer._new_shapes)
