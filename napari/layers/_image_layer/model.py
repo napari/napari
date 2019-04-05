@@ -118,8 +118,7 @@ class Image(Layer):
         self._need_visual_update = False
 
         self._clim_range = self._clim_range_default()
-        #self._node.clim = [float(self.image.min()), float(self.image.max())]
-        self._node.clim = [0.0, 150000.0]
+        self._node.clim = self._clim_range
 
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
@@ -347,7 +346,7 @@ class Image(Layer):
     def _clim_range_default(self):
         #return [float(self.image.min()), float(self.image.max())]
         return [0.0, 150000.0]
-        
+
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
