@@ -1,7 +1,8 @@
+
 from typing import Union
 
 import numpy as np
-from scipy import signal
+import scipy.signal as signal
 
 from .._base_layer import Layer
 from .._register import add_to_viewer
@@ -11,38 +12,69 @@ from vispy.color import get_color_names
 
 from .view import QtVectorsLayer
 
-
 @add_to_viewer
 class Vectors(Layer):
     """
     Vectors layer renders lines onto the image.
+    There are currently two data modes supported:
+        1) image-like vectors where every pixel defines its own vector
+        2) coordinate-like vectors where x-y position is not fixed to a grid
+    Supports ONLY 2d vector field
 
     Properties
     ----------
-    vectors : np.ndarray of shape (N,4) or (N, M, 2)
-        (N, 4) is a list of coordinates (x, y, u, v)
-            x and y are coordinates
-            u and v are x and y projections of the vector
-        (N, M, 2) is an (N, M) image of (u, v) projections
+    vectors : np.ndarray
+        array of shape (N,4) or (N, M , 2)
 
-        Returns np.ndarray of the current display (including averaging, length)
+    data : np.ndarray
+        ABC implementation.
+        returns vectors property setter/getter
+
+    _original_data : np.ndarray
+        Used by averaging and length adjustments.
+        Is set during layer construction.
+        Is NOT updated if data is adjusted by assigning the 'vectors' property
 
     averaging : int
-        (int, int) kernel over which to convolve and subsample the data
-        not implemented for (N, 4) data
+        (int, int) kernel over which to convolve the data
+        averaging.setter adjusts the underlying data
+        subscribe an observer by registering it with "averaging_bind_to"
 
     width : int
         width of the line in pixels
 
-    length : float
+    length : int or float
         length of the line
-        not implemented for (N, 4) data
+        length.setter adjusts the underlying data
+        subscribe an observer by registering it with "length_bind_to"
 
     color : str
         one of "get_color_names" from vispy.color
 
     mode : str
         control panel mode
+
+    Attributes
+    ----------
+    Private attributes
+    -------
+    _data_types
+    _data_type
+    _width
+    _color
+    _colors
+    _averaging
+    _length
+    _need_display_update
+    _need_visual_update
+    _raw_dat
+    _original_data
+    _current_data
+    _vectors
+
+    Public attributes
+    -------
+    name
 
     See vispy's line visual docs for more details:
     http://api.vispy.org/en/latest/scene.html
@@ -61,8 +93,8 @@ class Vectors(Layer):
         super().__init__(visual)
 
         # events for non-napari calculations
-        self.events.add(length=Event,
-                        average=Event)
+        self.events.add(emit_len=Event,
+                        emit_avg=Event)
 
         # Store underlying data model
         self._data_types = ('image', 'coords')
@@ -101,13 +133,12 @@ class Vectors(Layer):
 
     @_original_data.setter
     def _original_data(self, dat: np.ndarray):
-        """Must preserve data used at construction. Specifically for default
-        averaging/length adjustments.
+        """
+        Must preserve data used at construction. Specifically for default
+            averaging/length adjustments
         averaging/length adjustments recalculate the underlying data
-
-        Parameters
-        ----------
-        dat : np.ndarray
+        :param dat: updated only at construction
+        :return:
         """
         if self._raw_dat is None:
             self._raw_dat = dat
@@ -118,17 +149,16 @@ class Vectors(Layer):
 
     @vectors.setter
     def vectors(self, vectors: np.ndarray):
-        """Can accept two data types:
+        """
+        Can accept two data types:
             1) (N, 4) array with elements (x, y, u, v),
                 where x-y are position (center) and u-v are x-y projections of
                     the vector
             2) (N, M, 2) array with elements (u, v)
                 where u-v are x-y projections of the vector
                 vector position is one per-pixel in the NxM array
-
-        Parameters
-        ----------
-        vectors : np.ndarray
+        :param vectors: ndarray
+        :return:
         """
         self._original_data = vectors
         self._current_data = vectors
@@ -139,35 +169,35 @@ class Vectors(Layer):
         self._refresh()
 
     def _convert_to_vector_type(self, vectors):
-        """Check on input data for proper shape and dtype
-
-        Parameters
-        ----------
-        vectors : np.ndarray
         """
-        if vectors.shape[-1] == 4 and vectors.ndim == 2:
+        Check on input data for proper shape and dtype
+        :param vectors: ndarray
+        :return:
+        """
+
+        if vectors.shape[-1] == 4 and len(vectors.shape) == 2:
             coord_list = self._convert_coords_to_coordinates(vectors)
             self._data_type = self._data_types[1]
 
-        elif vectors.shape[-1] == 2 and vectors.ndim == 3:
+        elif vectors.shape[-1] == 2 and len(vectors.shape) == 3:
             coord_list = self._convert_image_to_coordinates(vectors)
             self._data_type = self._data_types[0]
 
         else:
-            raise TypeError(
+            raise InvalidDataFormatError(
                 "Vector data of shape %s is not supported" %
                 str(vectors.shape))
 
         return coord_list
 
     def _convert_image_to_coordinates(self, vect) -> np.ndarray:
-        """To convert an image-like array with elements (x-proj, y-proj) into a
-        position list of coordinates
+        """
+        To convert an image-like array with elements (x-proj, y-proj) into a
+            position list of coordinates
         Every pixel position (n, m) results in two output coordinates of (N,2)
 
-        Parameters
-        ----------
-        vect : np.ndarray of shape (N, M, 2)
+        :param vect: ndarray of shape (N, M, 2)
+        :return: position list of shape (2*N*M, 2) for vispy
         """
         xdim = vect.shape[0]
         ydim = vect.shape[1]
@@ -207,14 +237,15 @@ class Vectors(Layer):
         return pos
 
     def _convert_coords_to_coordinates(self, vect) -> np.ndarray:
-        """To convert a list of coordinates of shape
-        (x-center, y-center, x-proj, y-proj) into a list of coordinates
+        """
+        To convert a list of coordinates of shape
+            (x-center, y-center, x-proj, y-proj) into a list of coordinates
         Input coordinate of (N,4) becomes two output coordinates of (N,2)
 
-        Parameters
-        ----------
-        vect : np.ndarray of shape (N, 4)
+        :param vect: np.ndarray of shape (N, 4)
+        :return: position list of shape (2*N, 2) for vispy
         """
+
         # create empty vector of necessary shape
         #   one coordinate for each endpoint of the vector
         pos = np.empty((2 * len(vect), 2), dtype=np.float32)
@@ -233,38 +264,42 @@ class Vectors(Layer):
 
     @property
     def averaging(self) -> int:
+        """
+        Set the kernel over which to average
+        :return: string of averaging kernel size
+        """
         return self._averaging
     
     @averaging.setter
     def averaging(self, value: int):
-        """Calculates an average vector over a kernel
-
-        Parameters
-        ----------
-        value : int that defines (int, int) kernel
+        """
+        Calculates an average vector over a kernel
+        :param averaging: one of "_avg_dims" above
+        :return:
         """
         self._averaging = value
 
         # emit signal back to qt_properties for averaging
-        self.events.average()
+        self.events.emit_avg()
 
         self._refresh()
 
     def _default_avg(self):
-        """Default method for calculating average
+        """
+        Default method for calculating average
         Implemented ONLY for image-like vector data
+        :return:
         """
         if self._data_type == 'coords':
-            return
-            # return "default averaging is supported only for 'matrix' dataTypes"
+            # default averaging is supported only for 'matrix' dataTypes
+            return None
         elif self._data_type == 'image':
 
             x, y = self._averaging, self._averaging
 
             if (x,y) == (1, 1):
                 self.vectors = self._original_data
-                return
-                # return "calling original data"
+                return None
 
             tempdat = self._original_data
             range_x = tempdat.shape[0]
@@ -286,13 +321,15 @@ class Vectors(Layer):
 
     @property
     def width(self) -> Union[int, float]:
+        """
+        width of the line in pixels
+            widths greater than 1px only guaranteed to work with "agg" method
+        :return: int or float line width
+        """
         return self._width
 
     @width.setter
-    def width(self, width: Union[int, float]):
-        """width of the line in pixels
-        widths greater than 1px only guaranteed to work with "agg" method
-        """
+    def width(self, width: Union[int, float]) -> None:
         self._width = width
         self._refresh()
 
@@ -302,16 +339,15 @@ class Vectors(Layer):
 
     @length.setter
     def length(self, length: Union[int, float]):
-        """Change the length of all lines
-
-        Parameters
-        ----------
-        length : int or float multiplicative factor
+        """
+        Change the length of all lines
+        :param length: length multiplicative factor
+        :return: None
         """
         self._length = length
 
         # emit signal back to qt_properties for length
-        self.events.length()
+        self.events.emit_len()
 
         self._refresh()
 
@@ -319,31 +355,42 @@ class Vectors(Layer):
         """
         Default method for calculating vector lengths
         Implemented ONLY for image-like vector data
+        :param event_len: new length
+        :return:
         """
 
         if self._data_type == 'coords':
-            return "length adjustment not allowed for coordinate-style data"
+            return None
         elif self._data_type == 'image':
             self._vectors = self._convert_to_vector_type(self._current_data)
 
     @property
     def color(self) -> str:
+        """Color, ColorArray: color of the body of the marker
+        """
         return self._color
 
     @color.setter
-    def color(self, color: str):
-        """Color, ColorArray: color of the body of the marker
-        """
+    def color(self, color: str) -> None:
         self._color = color
         self._refresh()
 
     # =========================== Napari Layer ABC methods ===================
     @property
     def data(self) -> np.ndarray:
+        """
+
+        :return: coordinates of line vertices
+        """
         return self.vectors
 
     @data.setter
-    def data(self, data: np.ndarray):
+    def data(self, data: np.ndarray) -> None:
+        """
+        :param data:
+        :return:
+        """
+
         self.vectors = data
 
     def _get_shape(self):
@@ -396,3 +443,15 @@ class Vectors(Layer):
         self._need_visual_update = True
         self._update()
 
+    # ========================= Napari Layer ABC CONTROL methods =====================
+
+
+class InvalidDataFormatError(Exception):
+    """
+    To better describe when vector data is not correct
+        more informative than TypeError
+    """
+
+    def __init__(self, message):
+        Exception.__init__(self, message)
+        self.message = message

@@ -12,8 +12,8 @@ class QtVectorsLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.average.connect(self.change_avg)
-        self.layer.events.length.connect(self.change_len)
+        self.layer.events.emit_avg.connect(self.change_avg)
+        self.layer.events.emit_len.connect(self.change_len)
 
         # vector color adjustment and widget
         face_comboBox = QComboBox()
