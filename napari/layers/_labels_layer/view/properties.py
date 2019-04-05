@@ -24,7 +24,7 @@ class QtLabelsLayer(QtLayer):
         self.selection_spinbox = QSpinBox()
         self.selection_spinbox.setSingleStep(1)
         self.selection_spinbox.setMinimum(0)
-        self.selection_spinbox.setMaximum(self.layer._max_label)
+        self.selection_spinbox.setMaximum(2147483647)
         self.selection_spinbox.setValue(self.layer.selected_label)
         self.selection_spinbox.valueChanged.connect(self.changeSelection)
         self.grid_layout.addWidget(QLabel('label:'), 4, 0)

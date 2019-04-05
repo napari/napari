@@ -13,7 +13,7 @@ from .._register import add_to_viewer
 from .view import QtLabelsLayer
 from .view import QtLabelsControls
 from ._constants import Mode, BACKSPACE
-
+from vispy.color import Colormap
 
 @add_to_viewer
 class Labels(Layer):
@@ -53,15 +53,11 @@ class Labels(Layer):
 
         self.seed = 0.5
         self._raw_image = label_image
-        self._max_label = np.max(label_image)
-        self._image = colormaps._low_discrepancy_image(self._raw_image, self.seed)
+        self._image = self.raw_to_displayed(self._raw_image)
         self._meta = meta
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
         self.colormap = colormaps.label_colormap(num_colors)
-        self.opacity = opacity
-
-
 
         self._node.opacity = opacity
         self._n_dimensional = True
@@ -77,8 +73,6 @@ class Labels(Layer):
         self._status = str(self._mode)
         self._help = 'enter paint or fill mode to edit labels'
 
-
-
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
@@ -89,16 +83,34 @@ class Labels(Layer):
         self._node.clim = [0., 1.]
         self.events.colormap()
 
+    def raw_to_displayed(self, raw):
+        """Determines displayed image from a saved raw image and a saved seed.
+        This function ensures that the 0 label gets mapped to the 0 displayed
+        pixel
+
+        Parameters
+        -------
+        raw : array | float
+            Raw input image
+
+        Returns
+        -------
+        image : array
+            Image mapped between 0 and 1 to be displayed
+        """
+        image = np.where(raw > 0, colormaps._low_discrepancy_image(raw,
+                         self.seed), 0)
+        return image
+
     def new_colormap(self):
         self.seed = np.random.rand()
-        self._image = colormaps._low_discrepancy_image(self._raw_image,
-                                                       self.seed)
-        self.refresh()
+        self._image = self.raw_to_displayed(self._raw_image)
 
+        self.refresh()
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        val = colormaps._low_discrepancy_image(np.array([label]), self.seed)
+        val = self.raw_to_displayed(np.array([label]))
         return self.colormap.map(val)
 
     @property
@@ -191,20 +203,14 @@ class Labels(Layer):
     @selected_label.setter
     def selected_label(self, selected_label):
         self._selected_label = selected_label
-        self._refresh_selected_color()
-        self.events.selected_label()
-
-        self.refresh()
-
-    def _refresh_selected_color(self):
-        """Sets `selected_color` to be the color of the currently selected
-        label.
-        """
-        if self.selected_label == 0:
+        if selected_label == 0:
             # If background
             self._selected_color = None
         else:
-            self._selected_color = self.label_color(self.selected_label)[0]
+            self._selected_color = self.label_color(selected_label)[0]
+        self.events.selected_label()
+
+        self.refresh()
 
     @property
     def mode(self):
@@ -417,8 +423,10 @@ class Labels(Layer):
 
         # Replace target pixels with new_label
         labels[matches] = new_label
-        displayed[matches] = colormaps._low_discrepancy_image(new_label,
-                                                              self.seed)
+        if new_label == 0:
+            displayed[matches] = 0
+        else:
+            displayed[matches] = self.raw_to_displayed(new_label)
 
         if not (self.n_dimensional or self._raw_image.ndim==2):
             # if working with just the slice, update the rest of the raw image
@@ -445,15 +453,13 @@ class Labels(Layer):
         pix = int(np.clip(round(pos), 0, self.shape[axis]))
         return pix
 
-    def paint(self, indices, coord, new_label):
+    def paint(self, coord, new_label):
         """Paint over existing labels with a new label, using the selected
         brush shape and size, either only on the visible slice or in all
         n dimensions.
 
         Parameters
         ----------
-        indices : sequence of int or slice
-            Indices that make up the slice.
         coord : sequence of int
             Position of mouse cursor in image coordinates.
         new_label : int
@@ -475,8 +481,10 @@ class Labels(Layer):
         self._raw_image[slice_coord] = new_label
 
         # update the displayed image
-        self._image[slice_coord] = colormaps._low_discrepancy_image(new_label,
-                                                                    self.seed)
+        if new_label == 0:
+            self._image[slice_coord] = 0
+        else:
+            self._image[slice_coord] = self.raw_to_displayed(new_label)
 
         self.refresh()
 
@@ -580,7 +588,7 @@ class Labels(Layer):
         elif self.mode == Mode.PAINT:
             # Start painting with new label
             new_label = self.selected_label
-            self.paint(indices, coord, new_label)
+            self.paint(coord, new_label)
             self._last_cursor_coord = coord
             self.status = self.get_message(coord, new_label)
         elif self.mode == Mode.FILL:
@@ -610,7 +618,7 @@ class Labels(Layer):
             interp_coord = self._interp_coords(self._last_cursor_coord, coord)
             with self.freeze_refresh():
                 for c in interp_coord:
-                    self.paint(indices, c, new_label)
+                    self.paint(c, new_label)
             self.refresh()
             self._last_cursor_coord = coord
             label = new_label
