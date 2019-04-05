@@ -121,11 +121,11 @@ class Dims():
                     slice_point = round(point)
                     slice_point = 1 if slice_point==0 else slice_point
                     ## TODO: workaround here...
-                    slice_list.append(slice(range[0],range[1]))
+                    slice_list.append(slice(int(round(range[0])),int(round(range[1]))))
                 else:
                     # slice:
                     project_list.append(False)
-                    slice_list.append(round(point))
+                    slice_list.append(int(round(point)))
             elif mode == DimsMode.Interval:
                 if display:
                     # crop for display:
@@ -133,14 +133,14 @@ class Dims():
                     if interval is None:
                         slice_list.append(slice(None))
                     else:
-                        slice_list.append(slice(round(interval[0]), round(interval[1])))
+                        slice_list.append(slice(int(round(interval[0])), int(round(interval[1]))))
                 else:
                     # crop before project:
                     project_list.append(True)
                     if interval is None:
                         slice_list.append(slice(None))
                     else:
-                        slice_list.append(slice(round(interval[0]), round(interval[1])))
+                        slice_list.append(slice(int(round(interval[0])), int(round(interval[1]))))
 
         slice_tuple = tuple(slice_list)
         project_tuple = tuple(project_list)

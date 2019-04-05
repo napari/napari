@@ -13,9 +13,9 @@ def _add(event):
     """
     layers = event.source
     layer = event.item
+    layer.viewer = layers.viewer
     layer.name = layers._coerce_name(layer.name, layer)
     layer._order = -len(layers)
-    layer.viewer = layers.viewer
     layer.events.select.connect(layers.viewer._update_layer_selection)
     layer.events.deselect.connect(layers.viewer._update_layer_selection)
 
@@ -67,13 +67,14 @@ class LayersList(ListModel):
                          lookup={str: lambda q, e: q == e.name})
         self._viewer = None
 
-        self.events.added.connect(_add)
-        self.events.removed.connect(_remove)
-        self.events.reordered.connect(_reorder)
-
         # property setting - happens last
         self.viewer = viewer
         self._qt = QtLayersPanel(self)
+
+        # Connecting events always at the end of the constructor...
+        self.events.added.connect(_add)
+        self.events.removed.connect(_remove)
+        self.events.reordered.connect(_reorder)
 
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)

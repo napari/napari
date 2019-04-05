@@ -31,6 +31,16 @@ with app_context():
     pos[:, 2] = radius_space*np.cos(phi_space)
     pos[:, 3] = radius_space*np.sin(phi_space)
 
+
+
     # add the vectors
     viewer.add_vectors(pos)
+
+    from skimage import data
+    layer = viewer.add_image(data.camera(), name='photographer')
+    layer.colormap = 'gray'
+
+    print(viewer.dims.slice_and_project)
+
+
 

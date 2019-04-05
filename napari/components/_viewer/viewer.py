@@ -22,9 +22,10 @@ class Viewer:
                                    help=Event,
                                    active_markers=Event)
 
-
-        self.dims = Dims()
-
+        # Initial dimension must be set to at least the number of visible dimensions of the viewer
+        self.dims = Dims(2)
+        self.dims.set_display(0,True)
+        self.dims.set_display(1, True)
 
 
 

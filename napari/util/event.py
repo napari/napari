@@ -240,8 +240,8 @@ class EventEmitter(object):
         assert inspect.isclass(event_class)
         self.event_class = event_class
 
-        self._ignore_callback_errors = True
-        self.print_callback_errors = 'reminders'
+        self._ignore_callback_errors = True #False
+        self.print_callback_errors = 'reminders' #'always'
 
     @property
     def ignore_callback_errors(self):
@@ -502,7 +502,7 @@ class EventEmitter(object):
     def _invoke_callback(self, cb, event):
         try:
             cb(event)
-        except Exception:
+        except Exception as exception:
             _handle_exception(self.ignore_callback_errors,
                               self.print_callback_errors,
                               self, cb_event=(cb, event))

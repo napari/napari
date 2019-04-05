@@ -348,9 +348,10 @@ class Vectors(Layer):
 
     def _get_shape(self):
         if len(self.vectors) == 0:
-            return np.ones(self.vectors.shape, dtype=int)
+            return np.ones(2, dtype=int)
         else:
             return np.max(self.vectors, axis=0) + 1
+
 
     def _refresh(self):
         """Fully refresh the underlying visual.
