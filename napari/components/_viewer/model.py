@@ -169,6 +169,9 @@ class Viewer:
             empty_markers = np.empty((0, self.dims.max_dims))
         self.add_markers(empty_markers)
 
+    def _new_shapes(self):
+        self.add_shapes([])
+
     def _update_layers(self):
         """Updates the contained layers.
         """
