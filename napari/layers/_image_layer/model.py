@@ -83,6 +83,11 @@ class Image(Layer):
         Whether the image is multichannel. Guesses if None.
     name : str, keyword-only
         Name of the layer.
+    clim_range : list | array | None
+        Length two list or array with the default color limit range for the
+        image. If not passed will be calculated as the min and max of the
+        image. Passing a value prevents this calculation which can be useful
+        when working with very large datasets that are dynamically loaded.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
@@ -92,7 +97,7 @@ class Image(Layer):
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta=None, multichannel=None, *, name=None,
-                 **kwargs):
+                 clim_range=None, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -117,7 +122,10 @@ class Image(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
-        self._clim_range = self._clim_range_default()
+        if clim_range is None:
+            self._clim_range = self._clim_range_default()
+        else:
+            self._clim_range = clim_range
         self._node.clim = self._clim_range
 
         cmin, cmax = self.clim
@@ -344,8 +352,7 @@ class Image(Layer):
         return tuple(interpolation_names)
 
     def _clim_range_default(self):
-        #return [float(self.image.min()), float(self.image.max())]
-        return [0.0, 150000.0]
+        return [float(self.image.min()), float(self.image.max())]
 
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
