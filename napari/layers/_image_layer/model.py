@@ -130,6 +130,7 @@ class Image(Layer):
 
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
+        self._coord = [0, 0]
 
         self._qt_properties = QtImageLayer(self)
         self._qt_controls = QtImageControls(self)
@@ -235,6 +236,10 @@ class Image(Layer):
         self._node.set_data(sliced_image)
 
         self._need_visual_update = True
+
+        coord, value, msg = self.get_value(self._coord, indices)
+        self.status = msg
+
         self._update()
 
     @property
@@ -403,4 +408,5 @@ class Image(Layer):
         if event.pos is None:
             return
         coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
+        self._coord = coord
         self.status = msg
