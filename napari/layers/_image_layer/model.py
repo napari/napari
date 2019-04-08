@@ -130,7 +130,7 @@ class Image(Layer):
 
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
-        self._coord = [0, 0]
+        self._pos = [0, 0]
 
         self._qt_properties = QtImageLayer(self)
         self._qt_controls = QtImageControls(self)
@@ -237,7 +237,7 @@ class Image(Layer):
 
         self._need_visual_update = True
 
-        coord, value, msg = self.get_value(self._coord, indices)
+        coord, value, msg = self.get_value(self._pos, indices)
         self.status = msg
 
         self._update()
@@ -380,6 +380,7 @@ class Image(Layer):
             String containing a message that can be used as
             a status update.
         """
+        self._pos = position
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         pos = [clip(pos[1], 0, self.shape[0]-1), clip(pos[0], 0,
@@ -408,5 +409,4 @@ class Image(Layer):
         if event.pos is None:
             return
         coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
-        self._coord = coord
         self.status = msg
