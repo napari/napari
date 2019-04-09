@@ -40,7 +40,7 @@ class Labels(Layer):
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
-    def __init__(self, label_image, meta=None, *, name=None, num_colors=256,
+    def __init__(self, label_image, meta=None, *, name=None, num_colors=50,
                  opacity=0.7, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
@@ -91,7 +91,7 @@ class Labels(Layer):
 
         Parameters
         -------
-        raw : array | float
+        raw : array | int
             Raw input image
 
         Returns
