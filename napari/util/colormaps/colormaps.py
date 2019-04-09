@@ -84,7 +84,7 @@ def _low_discrepancy_image(image, seed=0.5):
     """
     phi = 1.6180339887498948482
     image_out = (seed + image / phi) % 1
-    return image_out
+    return np.clip(image_out, 0.00001, 1.0-0.00001)
 
 
 def _low_discrepancy(dim, n, seed=0.5):
@@ -174,8 +174,8 @@ def label_colormap(num_colors=256, seed=0.5):
     -----
     0 always maps to fully transparent.
     """
-    midpoints = np.linspace(0, 1, num_colors - 1)
-    control_points = np.concatenate(([0.], midpoints, [1.]))
+    midpoints = np.linspace(0.00001, 1-0.00001, num_colors - 1)
+    control_points = np.concatenate(([0], midpoints, [1.]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate((_color_random(num_colors, seed=seed),
                              np.full((num_colors, 1), 1)), axis=1)
