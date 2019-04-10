@@ -44,8 +44,9 @@ class Pyramid(Image):
         self._max_tile_shape = np.array([1200, 1200])
         self._top_left = np.array([0, 0])
 
-        super().__init__(pyramid[self._pyramid_level], meta=meta, multichannel=multichannel,
-                         name=name, clim_range=clim_range, **kwargs)
+        super().__init__(pyramid[self._pyramid_level], meta=meta,
+                         multichannel=multichannel, name=name,
+                         clim_range=clim_range, **kwargs)
         self.scale = [self._image_downsamples[self._pyramid_level]] * 2
 
     @property
@@ -73,7 +74,7 @@ class Pyramid(Image):
         self._pyramid_level = level
         self.scale = [self._image_downsamples[self.pyramid_level]] * 2
         self._top_left = self.find_top_left()
-        self._update_pyramid()
+        self._update_image_from_pyramid()
         self.refresh()
 
     @property
@@ -87,10 +88,13 @@ class Pyramid(Image):
         if np.all(self._top_left == top_left):
             return
         self._top_left = top_left
-        self._update_pyramid()
+        self._update_image_from_pyramid()
         self.refresh()
 
-    def _update_pyramid(self):
+    def _update_image_from_pyramid(self):
+        """Updates the image data from the pyramid based on requested tile
+        and pyramid level
+        """
         if np.any(self._image_shapes[self.pyramid_level] >
                   self._max_tile_shape):
             slices = [slice(self._top_left[i], self._top_left[i] +
@@ -102,6 +106,13 @@ class Pyramid(Image):
             self.translate = [0, 0]
 
     def _get_shape(self):
+        """Shape of base of pyramid
+
+        Returns
+        ----------
+        shape : np.ndarry
+            Shape of base of pyramid
+        """
         if self.multichannel:
             return self.pyramid[0].shape[:-1]
         return self.pyramid[0].shape
@@ -129,20 +140,25 @@ class Pyramid(Image):
         """
         self._pos = position
         transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
+        pos_in_tile = transform.map(position)[:2]
+        pos_in_slice = pos_in_tile +  self.translate[:2]/self.scale[:2]
+
+        # Make sure pos in slice doesn't go off edge
         shape = self._image_shapes[self._pyramid_level]
-        pos = [np.clip(pos[1], 0, shape[0]-1), np.clip(pos[0], 0, shape[1]-1)]
+        pos_in_slice = ([np.clip(pos_in_slice[1], 0, shape[0]-1),
+                         np.clip(pos_in_slice[0], 0, shape[1]-1)])
+
+        # Get value of image from tile
+        adj_coord = [int(pos_in_tile[1]), int(pos_in_tile[0])]
+        adj_coord = np.clip(adj_coord, 0,
+                            np.array(self._image_view.shape[:2])-1)
+        value = self._image_view[tuple(adj_coord)]
 
         coord = copy(indices)
-        coord[0] = int(pos[0])
-        coord[1] = int(pos[1])
-        adj_values = coord[:2]
-        adj_values = np.clip(adj_values, 0,
-                             np.array(self._image_view.shape[:2])-1)
-        value = self._image_view[tuple(adj_values)]
-        coord[0] = int(coord[0]*self.scale[0]) + self.top_left[0]
-        coord[1] = int(coord[1]*self.scale[1]) + self.top_left[1]
-        msg = f'{coord}, {self.name}' + ', value '
+        coord[0] = int(pos_in_slice[0]*self.scale[0])
+        coord[1] = int(pos_in_slice[1]*self.scale[1])
+
+        msg = f'{coord}, {self.pyramid_level}, {self.name}' + ', value '
         if isinstance(value, np.ndarray):
             if isinstance(value[0], np.integer):
                 msg = msg + str(value)
@@ -176,17 +192,29 @@ class Pyramid(Image):
         return level
 
     def find_top_left(self):
+        """Finds the top left pixel of the canvas. Depends on the current
+        pan and zoom position
+
+        Returns
+        ----------
+        top_left : np.ndarry
+            Length two array with coordinates of top left pixel.
+        """
+
         # Find image coordinate of top left canvas pixel
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map([0, 0])[:2] + self.translate[:2]/self.scale[:2]
 
         shape = self._image_shapes[0]
+
+        # Clip according to the max image shape
         pos = [np.clip(pos[1], 0, shape[0]-1),
                np.clip(pos[0], 0, shape[1]-1)]
 
         # Convert to offset for image array
         top_left = np.array(pos)
-        top_left = np.floor(top_left/self._max_tile_shape*4)*self._max_tile_shape/4
+        scale = self._max_tile_shape/4
+        top_left = scale*np.floor(top_left/scale)
 
         return top_left.astype(int)
 
@@ -200,16 +228,3 @@ class Pyramid(Image):
             self.pyramid_level = pyramid_level
         else:
             self.top_left = self.find_top_left()
-        print('on', self.top_left, self.pyramid_level, self.scale[:2], self.translate[:2])
-
-
-    # Make sure make data sent over to vispy does not exceed the max tile
-    # size.
-    # Check shape of requested 2D slice.
-    # If < _max_tile_shape then plot and set top left pixel to [0, 0] and
-    # translate to [0, 0].
-    # If > _max_tile_shape then determine center pixel and top left pixel
-    # rounded to appropriate degree and extract 2D slice of max shape
-    # around it add appropriate translation value of top left.
-    # On draw event check value of top_left pixel, if changed
-    # Instead do this on a swap image level .........
