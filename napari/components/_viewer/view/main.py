@@ -29,6 +29,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
         # Set 2D camera (the camera will scale to the contents in the scene)
@@ -99,6 +100,12 @@ class QtViewer(QSplitter):
         layer = self.viewer._top
         if layer is not None:
             layer.on_key_release(event)
+
+    def on_draw(self, event):
+        """Called whenever draw in canvas. Called for all layers, not just top
+        """
+        for layer in self.viewer.layers:
+            layer.on_draw(event)
 
 
 def viewbox_key_event(event):

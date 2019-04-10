@@ -273,3 +273,8 @@ class Layer(VisualWrapper, ABC):
         """Called whenever key released in canvas.
         """
         return
+
+    def on_draw(self, event):
+        """Called whenever the canvas is drawn.
+        """
+        return
