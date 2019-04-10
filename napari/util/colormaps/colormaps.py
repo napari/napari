@@ -84,6 +84,9 @@ def _low_discrepancy_image(image, seed=0.5):
     """
     phi = 1.6180339887498948482
     image_out = (seed + image / phi) % 1
+    # Clipping slightly above 0 and below 1 is necessary to ensure that the
+    # labels do not get mapped to 0 which is represented by the background
+    # and is transparent
     return np.clip(image_out, 0.00001, 1.0-0.00001)
 
 
@@ -174,6 +177,8 @@ def label_colormap(num_colors=256, seed=0.5):
     -----
     0 always maps to fully transparent.
     """
+    # Starting the control points slightly above 0 and below 1 is necessary
+    # to ensure that the background pixel 0 is transparent
     midpoints = np.linspace(0.00001, 1-0.00001, num_colors - 1)
     control_points = np.concatenate(([0], midpoints, [1.]))
     # make sure to add an alpha channel to the colors
