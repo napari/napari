@@ -310,6 +310,34 @@ class Labels(Layer):
 
         return rescale.mean()
 
+    def _get_indices(self, indices):
+        """Gets the slice indices.
+
+        Parameters
+        ----------
+        indices : sequence of int or slice
+            Indices to slice with.
+
+        Returns
+        -------
+        slice_indices : tuple
+            Tuple of indices corresponding to the slice
+        """
+        ndim = self.ndim
+        indices = list(indices)[:ndim]
+
+        for dim in range(len(indices)):
+            max_dim_index = self.image.shape[dim] - 1
+
+            try:
+                if indices[dim] > max_dim_index:
+                    indices[dim] = max_dim_index
+            except TypeError:
+                pass
+
+        slice_indices = tuple(indices)
+        return slice_indices
+
     def _slice_image(self, indices, image=None):
         """Determines the slice of image given the indices.
 
@@ -324,25 +352,11 @@ class Labels(Layer):
         -------
         sliced : array or value
             The requested slice.
-        slice_indices : tuple
-            Tuple of indices corresponding to the slice
         """
         if image is None:
             image = self._image
-        ndim = self.ndim
-        indices = list(indices)[:ndim]
-
-        for dim in range(len(indices)):
-            max_dim_index = self.image.shape[dim] - 1
-
-            try:
-                if indices[dim] > max_dim_index:
-                    indices[dim] = max_dim_index
-            except TypeError:
-                pass
-
-        slice_indices = tuple(indices)
-        return image[slice_indices], slice_indices
+        slice_indices = self._get_indices(indices)
+        return image[slice_indices]
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -352,7 +366,7 @@ class Labels(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-        sliced_image, slice_indices = self._slice_image(indices)
+        sliced_image = self._slice_image(indices)
         self._node.set_data(sliced_image)
 
         self._need_visual_update = True
@@ -409,8 +423,8 @@ class Labels(Layer):
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
-            labels, slice_indices = self._slice_image(indices,
-                                                      image=self._raw_image)
+            slice_indices = self._get_indices(slice_indices)
+            labels = self._slice_image(indices, image=self._raw_image)
             slice_coord = tuple(int_coord[:2])
             displayed = self._image[slice_indices]
 
@@ -452,7 +466,7 @@ class Labels(Layer):
             Rounded pixel value
         """
 
-        pix = int(np.clip(round(pos), 0, self.shape[axis]))
+        pix = int(np.clip(round(pos), 0, self.shape[axis]-1))
         return pix
 
     def paint(self, coord, new_label):
@@ -544,8 +558,7 @@ class Labels(Layer):
         int_coord = copy(coord)
         int_coord[0] = int(round(coord[0]))
         int_coord[1] = int(round(coord[1]))
-        label, slice_indices = self._slice_image(int_coord,
-                                                 image=self._raw_image)
+        label = self._slice_image(int_coord, image=self._raw_image)
         return coord, label
 
     def get_message(self, coord, label):
