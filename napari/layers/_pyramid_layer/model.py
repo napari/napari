@@ -43,7 +43,6 @@ class Pyramid(Image):
 
         self._max_tile_shape = np.array([1200, 1200])
         self._top_left = np.array([0, 0])
-        self._boundary_offset = np.array([0, 0])
 
         super().__init__(pyramid[self._pyramid_level], meta=meta, multichannel=multichannel,
                          name=name, clim_range=clim_range, **kwargs)
@@ -72,8 +71,8 @@ class Pyramid(Image):
         if self._pyramid_level == level:
             return
         self._pyramid_level = level
-        self._top_left = self.find_top_left()
         self.scale = [self._image_downsamples[self.pyramid_level]] * 2
+        self._top_left = self.find_top_left()
         self._update_pyramid()
         self.refresh()
 
@@ -180,10 +179,8 @@ class Pyramid(Image):
         # Find image coordinate of top left canvas pixel
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map([0, 0])[:2] + self.translate[:2]/self.scale[:2]
-        shape = self._image_shapes[self.pyramid_level]
-        pos = pos
-        pos = pos - self._boundary_offset
 
+        shape = self._image_shapes[0]
         pos = [np.clip(pos[1], 0, shape[0]-1),
                np.clip(pos[0], 0, shape[1]-1)]
 
