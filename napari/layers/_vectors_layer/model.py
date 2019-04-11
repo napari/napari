@@ -395,10 +395,8 @@ class Vectors(Layer):
         signs[::2] = -1
         offests = offests*signs
 
-        np.array([[1, 0] if i%2 == 0 else [-1, 0] for i in range(2*len(vectors))])
-
         vertices = centers + width*offests/2
-        triangles = np.array([[2*i, 2*i+1, 2*i+2] if i%2 == 0 else
+        triangles = np.array([[2*i, 2*i+1, 2*i+2] if i % 2 == 0 else
                               [2*i-1, 2*i, 2*i+1] for i in
                               range(len(vectors)//2)]).astype(np.uint32)
 

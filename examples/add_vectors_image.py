@@ -16,7 +16,7 @@ with app_context():
     viewer = ViewerApp()
 
     image = 0.2*np.random.rand(24, 100) + 0.5
-    layer = viewer.add_image(image, clim_range = [0, 1], name='background')
+    layer = viewer.add_image(image, clim_range=[0, 1], name='background')
     layer.colormap = 'gray'
 
     # sample vector image-like data
