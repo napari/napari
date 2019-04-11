@@ -15,6 +15,10 @@ with app_context():
     # create the viewer and window
     viewer = ViewerApp()
 
+    image = 0.2*np.random.rand(25, 100) + 0.5
+    layer = viewer.add_image(image, clim_range = [0, 1], name='background')
+    layer.colormap = 'gray'
+
     # sample vector image-like data
     # n x m grid of slanted lines
     # random data on the open interval (-1, 1)
@@ -30,5 +34,3 @@ with app_context():
 
     # add the vectors
     vect = viewer.add_vectors(pos)
-
-

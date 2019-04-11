@@ -12,8 +12,9 @@ class QtVectorsLayer(QtLayer):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.average.connect(self.change_avg)
-        self.layer.events.length.connect(self.change_len)
+        self.layer.events.averaging.connect(self._on_avg_change)
+        self.layer.events.width.connect(self.change_width)
+        self.layer.events.length.connect(self._on_len_change)
 
         # vector color adjustment and widget
         face_comboBox = QComboBox()
@@ -29,13 +30,13 @@ class QtVectorsLayer(QtLayer):
         self.grid_layout.addWidget(face_comboBox, 3, 1)
 
         # line width in pixels
-        width_field = QSpinBox()
+        self.width_field = QSpinBox()
         value = self.layer.width
-        width_field.setValue(value)
-        width_field.setMinimum(1)
-        width_field.valueChanged.connect(self.change_width)
+        self.width_field.setValue(value)
+        self.width_field.setMinimum(1)
+        self.width_field.valueChanged.connect(self.change_width)
         self.grid_layout.addWidget(QLabel('width:'), 4, 0)
-        self.grid_layout.addWidget(width_field, 4, 1)
+        self.grid_layout.addWidget(self.width_field, 4, 1)
 
         # averaging spinbox
         self.averaging_spinbox = QSpinBox()
@@ -69,17 +70,18 @@ class QtVectorsLayer(QtLayer):
 
     def change_width(self, value):
         self.layer.width = value
-    
+
     def change_length(self, value):
         self.layer.length = value
 
-    def change_avg(self, event):
-        self.layer._default_avg()
+    def _on_avg_change(self, event):
+        with self.layer.events.averaging.blocker():
+            self.averaging_spinbox.setValue(self.layer.averaging)
 
-    def change_len(self, event):
-        self.layer._default_length()
+    def _on_len_change(self, event):
+        with self.layer.events.length.blocker():
+            self.length_field.setValue(self.layer.length)
 
-
-
-
-
+    def _on_len_change(self, event):
+        with self.layer.events.width.blocker():
+            self.width_field.setValue(self.layer.width)
