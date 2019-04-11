@@ -1,4 +1,8 @@
-from PyQt5.QtWidgets import QPushButton
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QPushButton, QComboBox, QSlider, QCheckBox,
+                             QLabel, QSpinBox)
+import numpy as np
+from collections import Iterable
 from ..._base_layer import QtLayer
 
 
@@ -7,15 +11,101 @@ class QtLabelsLayer(QtLayer):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.selected_label.connect(self._on_selection_change)
+        self.layer.events.brush_size.connect(self._on_brush_size_change)
+        self.layer.events.contiguous.connect(self._on_contig_change)
+        self.layer.events.n_dimensional.connect(self._on_n_dim_change)
 
         self.colormap_update = QPushButton('shuffle colors')
         self.colormap_update.clicked.connect(self.changeColor)
         self.grid_layout.addWidget(self.colormap_update, 3, 0, 1, 2)
+
+        # selection spinbox
+        self.selection_spinbox = QSpinBox()
+        self.selection_spinbox.setSingleStep(1)
+        self.selection_spinbox.setMinimum(0)
+        self.selection_spinbox.setMaximum(2147483647)
+        self.selection_spinbox.setValue(self.layer.selected_label)
+        self.selection_spinbox.valueChanged.connect(self.changeSelection)
+        self.grid_layout.addWidget(QLabel('label:'), 4, 0)
+        self.grid_layout.addWidget(self.selection_spinbox, 4, 1)
+
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setFocusPolicy(Qt.NoFocus)
+        sld.setFixedWidth(75)
+        sld.setMinimum(1)
+        sld.setMaximum(40)
+        sld.setSingleStep(1)
+        value = self.layer.brush_size
+        if isinstance(value, Iterable):
+            if isinstance(value, list):
+                value = np.asarray(value)
+            value = value[:2].mean()
+        sld.setValue(int(value))
+        sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
+        self.brush_size_slider = sld
+        self.grid_layout.addWidget(QLabel('brush size:'), 5, 0)
+        self.grid_layout.addWidget(sld, 5, 1)
+
+        contig_cb = QCheckBox()
+        contig_cb.setToolTip('contiguous editing')
+        contig_cb.setChecked(self.layer.contiguous)
+        contig_cb.stateChanged.connect(lambda state=contig_cb:
+                                       self.change_contig(state))
+        self.contig_checkbox = contig_cb
+        self.grid_layout.addWidget(QLabel('contiguous:'), 6, 0)
+        self.grid_layout.addWidget(contig_cb, 6, 1)
+
+        ndim_cb = QCheckBox()
+        ndim_cb.setToolTip('n-dimensional editing')
+        ndim_cb.setChecked(self.layer.n_dimensional)
+        ndim_cb.stateChanged.connect(lambda state=ndim_cb:
+                                     self.change_ndim(state))
+        self.ndim_checkbox = ndim_cb
+        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
+        self.grid_layout.addWidget(ndim_cb, 7, 1)
 
         self.setExpanded(False)
 
     def changeColor(self):
         self.layer.new_colormap()
 
+    def changeSelection(self, value):
+        self.layer.selected_label = value
+
+    def changeSize(self, value):
+        self.layer.brush_size = value
+
+    def change_contig(self, state):
+        if state == Qt.Checked:
+            self.layer.contiguous = True
+        else:
+            self.layer.contiguous = False
+
+    def change_ndim(self, state):
+        if state == Qt.Checked:
+            self.layer.n_dimensional = True
+        else:
+            self.layer.n_dimensional = False
+
     def _on_colormap_change(self, event):
         self.layer._node.cmap = self.layer.colormap
+
+    def _on_selection_change(self, event):
+        with self.layer.events.selected_label.blocker():
+            value = self.layer.selected_label
+            self.selection_spinbox.setValue(int(value))
+
+    def _on_brush_size_change(self, event):
+        with self.layer.events.brush_size.blocker():
+            value = self.layer.brush_size
+            value = np.clip(int(value), 1, 40)
+            self.brush_size_slider.setValue(value)
+
+    def _on_n_dim_change(self, event):
+        with self.layer.events.n_dimensional.blocker():
+            self.ndim_checkbox.setChecked(self.layer.n_dimensional)
+
+    def _on_contig_change(self, event):
+        with self.layer.events.contiguous.blocker():
+            self.contig_checkbox.setChecked(self.layer.contiguous)

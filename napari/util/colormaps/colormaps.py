@@ -67,7 +67,7 @@ def _validate_rgb(colors, *, tolerance=0.):
 
 
 def _low_discrepancy_image(image, seed=0.5):
-    """Generate a 1d discrepancy sequence of coordinates.
+    """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
     ----------
@@ -84,7 +84,10 @@ def _low_discrepancy_image(image, seed=0.5):
     """
     phi = 1.6180339887498948482
     image_out = (seed + image / phi) % 1
-    return image_out
+    # Clipping slightly above 0 and below 1 is necessary to ensure that the
+    # labels do not get mapped to 0 which is represented by the background
+    # and is transparent
+    return np.clip(image_out, 0.00001, 1.0-0.00001)
 
 
 def _low_discrepancy(dim, n, seed=0.5):
@@ -163,7 +166,7 @@ def label_colormap(num_colors=256, seed=0.5):
     num_colors : int, optional
         Number of unique colors to use. Default used if not given.
     seed : float or array of float, length 3
--       The seed for the random color generator.
+        The seed for the random color generator.
 
     Returns
     -------
@@ -174,8 +177,10 @@ def label_colormap(num_colors=256, seed=0.5):
     -----
     0 always maps to fully transparent.
     """
-    midpoints = np.linspace(0, 1, num_colors - 1)
-    control_points = np.concatenate(([0.], midpoints, [1.]))
+    # Starting the control points slightly above 0 and below 1 is necessary
+    # to ensure that the background pixel 0 is transparent
+    midpoints = np.linspace(0.00001, 1-0.00001, num_colors - 1)
+    control_points = np.concatenate(([0], midpoints, [1.]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate((_color_random(num_colors, seed=seed),
                              np.full((num_colors, 1), 1)), axis=1)

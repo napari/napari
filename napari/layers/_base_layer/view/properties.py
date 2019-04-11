@@ -24,6 +24,7 @@ class QtLayer(QFrame):
         cb = QCheckBox(self)
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
+        cb.setProperty('mode', 'visibility')
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
         self.visibleCheckBox = cb
         self.grid_layout.addWidget(cb, 0, 0)
