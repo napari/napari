@@ -25,4 +25,5 @@ def path_id(name):
 @pytest.mark.parametrize('path', paths, ids=path_id)
 def test_example(path):
     with open(path, 'r') as f:
+        print(path)
         exec(f.read(), {})
