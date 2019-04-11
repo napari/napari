@@ -35,6 +35,7 @@ class Viewer:
         self._status = 'Ready'
         self._help = ''
         self._cursor = 'standard'
+        self._cursor_size = None
         self._interactive = True
         self._top = None
 
@@ -104,8 +105,21 @@ class Viewer:
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self._qt.set_cursor(cursor)
+        self._qt.set_cursor(cursor, self.cursor_size)
         self._cursor = cursor
+
+    @property
+    def cursor_size(self):
+        """int | None: Size of cursor if custom. None is yields default size
+        """
+        return self._cursor_size
+
+    @cursor_size.setter
+    def cursor_size(self, cursor_size):
+        if cursor_size == self.cursor_size:
+            return
+        self._qt.set_cursor(self.cursor, cursor_size)
+        self._cursor_size = cursor_size
 
     @property
     def active_markers(self):
@@ -171,6 +185,13 @@ class Viewer:
 
     def _new_shapes(self):
         self.add_shapes([])
+
+    def _new_labels(self):
+        if self.dims.max_dims == 0:
+            empty_labels = np.zeros((512, 512), dtype=int)
+        else:
+            empty_labels = np.zeros(self.dims.max_shape, dtype=int)
+        self.add_labels(empty_labels)
 
     def _update_layers(self):
         """Updates the contained layers.
