@@ -383,8 +383,8 @@ class Image(Layer):
         self._pos = position
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [clip(pos[1], 0, self.shape[0]-1), clip(pos[0], 0,
-                                                      self.shape[1]-1)]
+        pos = [clip(pos[1], 0, self._image_view.shape[0]-1), clip(pos[0], 0,
+                    self._image_view.shape[1]-1)]
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
