@@ -15,7 +15,7 @@ with app_context():
     # create the viewer and window
     viewer = ViewerApp()
 
-    image = 0.2*np.random.rand(25, 100) + 0.5
+    image = 0.2*np.random.rand(24, 100) + 0.5
     layer = viewer.add_image(image, clim_range = [0, 1], name='background')
     layer.colormap = 'gray'
 
@@ -33,4 +33,4 @@ with app_context():
     pos[:, :, 1] = rand2.reshape((n, m))
 
     # add the vectors
-    vect = viewer.add_vectors(pos)
+    vect = viewer.add_vectors(pos, width=0.2, length=2.5)

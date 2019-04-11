@@ -36,7 +36,7 @@ with app_context():
     pos[:, 3] = 2*radius_space*np.sin(phi_space)
 
     # add the vectors
-    layer = viewer.add_vectors(pos)
+    layer = viewer.add_vectors(pos, width=0.4)
 
     print(layer.vectors.shape)
     print(layer._mesh_vertices.shape)
