@@ -199,6 +199,7 @@ class Image(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
+
         ndim = self.ndim
 
         indices = list(indices)

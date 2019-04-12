@@ -199,14 +199,12 @@ class Viewer:
 
     def _on_layers_change(self, event):
         self.dims.set_all_ranges(self._calc_layers_ranges())
-        self.dims._set_2d_viewing()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.
         """
 
         ndims = self._calc_layers_num_dims()
-
         ranges = [(inf, -inf, inf)]*ndims
 
         for layer in self.layers:
@@ -230,7 +228,6 @@ class Viewer:
         """Calculates the number of maximum dimensions in the contained images.
         """
         max_dims = 0
-
         for layer in self.layers:
             dims = layer.ndim
             if dims > max_dims:

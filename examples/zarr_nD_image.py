@@ -15,4 +15,5 @@ with app_context():
     data[53_000:53_100, 100:110, 110:120] = 1
 
     array = da.from_zarr(data)
-    viewer = ViewerApp(array, clim_range=[0, 1])
+    print(array.shape)
+    viewer = ViewerApp(array, clim_range=[0, 1], multichannel=False)

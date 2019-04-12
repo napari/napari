@@ -44,24 +44,14 @@ def is_multichannel(meta):
 
 
 def guess_multichannel(shape):
-    """Guesses if an image is multichannel based on its shape.
+    """If last dim is 3 or 4 assume image is multichannel.
     """
-    first_dims = shape[:-1]
     last_dim = shape[-1]
 
-    average = sum(first_dims) / len(first_dims)
-
-    if average * .95 - 1 <= last_dim <= average * 1.05 + 1:
-        # roughly all dims are the same
-        return False
-
     if last_dim in (3, 4):
-        if average > 10:
-            return True
-
-    diff = average - last_dim
-
-    return diff > last_dim * 100
+        return True
+    else:
+        return False
 
 
 def guess_metadata(image, meta, multichannel, kwargs):

@@ -163,6 +163,7 @@ class Dims():
         """
         ndim = len(all_ranges)
         modified_dims = self._ensure_axis_present(ndim-1, no_event=True)
+        self._set_2d_viewing()
         self.range=all_ranges
 
         self.events.ndims()
@@ -348,7 +349,7 @@ class Dims():
             self.mode.extend([DimsMode.POINT] * (margin_length))
             self.display.extend([False] * (margin_length))
 
-            self._set_2d_viewing()
+            #self._set_2d_viewing()
 
             if not no_event:
                 # First we notify listeners that the number of dimensions have changed:
