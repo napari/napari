@@ -215,7 +215,7 @@ class Image(Layer):
                     indices[dim] = max_dim_index
             except TypeError:
                 pass
-
+        print(indices)
         self._image_view = np.asarray(self.image[tuple(indices)])
 
         return self._image_view
