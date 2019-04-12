@@ -67,11 +67,9 @@ class LayersList(ListModel):
                          lookup={str: lambda q, e: q == e.name})
         self._viewer = None
 
-        # property setting - happens last
         self.viewer = viewer
         self._qt = QtLayersPanel(self)
 
-        # Connecting events always at the end of the constructor...
         self.events.added.connect(_add)
         self.events.removed.connect(_remove)
         self.events.reordered.connect(_reorder)
