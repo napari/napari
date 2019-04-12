@@ -55,6 +55,7 @@ class Layer(VisualWrapper, ABC):
         self._status = 'Ready'
         self._help = ''
         self._cursor = 'standard'
+        self._cursor_size = None
         self._interactive = True
         self.events.add(select=Event,
                         deselect=Event,
@@ -222,6 +223,19 @@ class Layer(VisualWrapper, ABC):
             return
         self.viewer.cursor = cursor
         self._cursor = cursor
+
+    @property
+    def cursor_size(self):
+        """int | None: Size of cursor if custom. None is yields default size
+        """
+        return self._cursor_size
+
+    @cursor_size.setter
+    def cursor_size(self, cursor_size):
+        if cursor_size == self.cursor_size:
+            return
+        self.viewer.cursor_size = cursor_size
+        self._cursor_size = cursor_size
 
     def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.

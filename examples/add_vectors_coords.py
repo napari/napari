@@ -35,12 +35,3 @@ with app_context():
 
     # add the vectors
     viewer.add_vectors(pos)
-
-    from skimage import data
-    layer = viewer.add_image(data.camera(), name='photographer')
-    layer.colormap = 'gray'
-
-    print(viewer.dims.slice_and_project)
-
-
-

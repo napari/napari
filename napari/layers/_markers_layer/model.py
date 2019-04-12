@@ -431,7 +431,7 @@ class Markers(Layer):
             String containing a message that can be used as
             a status update.
         """
-        coord_shift = copy(coord)
+        coord_shift = list(copy(coord))
         coord_shift[0] = int(coord[1])
         coord_shift[1] = int(coord[0])
         msg = f'{coord_shift}, {self.name}'

@@ -47,7 +47,7 @@ class QtViewer(QSplitter):
         layout.addWidget(self.canvas.native)
 
         dimsview = QtDims(self.viewer.dims)
-        dimsview.setFixedHeight(0)
+        #dimsview.setFixedHeight(0)
         layout.addWidget(dimsview)
 
         center.setLayout(layout)
@@ -67,8 +67,16 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
-    def set_cursor(self, cursor):
-        self.canvas.native.setCursor(self._cursors[cursor])
+    def set_cursor(self, cursor, size=10):
+        if cursor == 'square':
+            if size < 10 or size > 300:
+                q_cursor = self._cursors['cross']
+            else:
+                q_cursor = QCursor(QPixmap(':/icons/cursor_square.png')
+                                   .scaledToHeight(size))
+        else:
+            q_cursor = self._cursors[cursor]
+        self.canvas.native.setCursor(q_cursor)
 
     def screenshot(self, region=None, size=None, bgcolor=None):
         """Render the scene to an offscreen buffer and return the image array.
