@@ -5,7 +5,6 @@ from copy import copy
 from ...util.event import EmitterGroup, Event
 
 
-
 class Viewer:
     """Viewer object
     """
@@ -20,12 +19,10 @@ class Viewer:
                                    help=Event,
                                    active_markers=Event)
 
-        # Initial dimension must be set to at least the number of visible dimensions of the viewer
+        # Initial dimension must be set to at least the number of visible
+        # dimensions of the viewer
         self.dims = Dims(2)
-        self.dims.set_display(0, True)
-        self.dims.set_display(1, True)
-
-
+        self.dims._set_2d_viewing()
 
         self.layers = LayersList(self)
 
@@ -36,12 +33,10 @@ class Viewer:
         self._interactive = True
         self._top = None
 
-        ## TODO: this should be eventually removed!
-        ## initialised by QtViewer when it is contrsucted by the model
+        # TODO: this should be eventually removed!
+        # initialised by QtViewer when it is contrsucted by the model
         self._qtviewer = None
 
-        # Note: Events should be connected at the end of the constructor to avoid passing events on
-        # partially initialised objects...
         self.dims.events.axis.connect(lambda e: self._update_layers())
 
     @property
@@ -209,7 +204,8 @@ class Viewer:
 
         for layer in self.layers:
             layer_range = layer.range
-            ranges = [(min(a, b), max(c, d), min(e, f)) for (a, c, e), (b, d, f) in zip(ranges, layer_range)]
+            ranges = ([(min(a, b), max(c, d), min(e, f)) for
+                      (a, c, e), (b, d, f) in zip(ranges, layer_range)])
 
         return ranges
 
@@ -217,7 +213,8 @@ class Viewer:
         """Calculates the max shape of all displayed layers.
         This assumes that all layers are stacked.
         TODO: This is a temporary workaround until refactor is done
-        this method should not be used but instead '_calc_layers_ranges' shoudl be called.
+        this method should not be used but instead '_calc_layers_ranges' should
+        be called.
         """
 
         max_shape = [max-min for min, max, step in self._calc_layers_ranges()]

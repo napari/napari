@@ -337,7 +337,7 @@ class Markers(Layer):
                 return in_slice_markers, matches, scale
             else:
                 matches = np.all(coords[:, :-2] == indices[:-2], axis=1)
-                in_slice_markers = coords[matches,-2:]
+                in_slice_markers = coords[matches, -2:]
                 return in_slice_markers, matches, 1
         else:
             return [], [], []
@@ -412,7 +412,6 @@ class Markers(Layer):
         coord[-2] = pos[1]
         coord[-1] = pos[0]
         return coord[-len(max_shape):]
-
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates

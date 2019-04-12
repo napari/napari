@@ -10,7 +10,6 @@ from .qtcontrols import QtControls
 import os.path as osp
 
 
-
 class QtViewer(QSplitter):
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
         default_stylesheet = f.read()
@@ -18,7 +17,8 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
 
-        QCoreApplication.setAttribute(Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
+        atribute = Qt.AA_UseStyleSheetPropagationInWidgetStyles
+        QCoreApplication.setAttribute(atribute, True)
         self.setStyleSheet(self.default_stylesheet)
 
         self.viewer = viewer

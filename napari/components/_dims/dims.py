@@ -44,10 +44,8 @@ class Dims():
         super().__init__()
 
         # Events:
-        self.events = EmitterGroup(source=self,
-                                    auto_connect=True,
-                                    axis=None,
-                                    ndims=None)
+        self.events = EmitterGroup(source=self, auto_connect=True, axis=None,
+                                   ndims=None)
 
         self.range = []
         self.point = []
@@ -92,8 +90,8 @@ class Dims():
             Displayed dimensions
         """
         displayed_one_hot = copy(self.display)
-        displayed_one_hot =  ([False if elem is None else elem for elem in
-                              displayed_one_hot])
+        displayed_one_hot = ([False if elem is None else elem for elem in
+                             displayed_one_hot])
         return np.nonzero(list(displayed_one_hot))[0]
 
     @property
@@ -111,7 +109,8 @@ class Dims():
 
         slice_list = []
         project_list = []
-        for (mode, display, point, interval, range) in zip(self.mode, self.display, self.point, self.interval, self.range):
+        z = zip(self.mode, self.display, self.point, self.interval, self.range)
+        for (mode, display, point, interval, range) in z:
             if mode == DimsMode.POINT or mode is None:
                 if display:
                     # no slicing, cropping or projection:
@@ -128,14 +127,16 @@ class Dims():
                     if interval is None:
                         slice_list.append(slice(None))
                     else:
-                        slice_list.append(slice(int(round(interval[0])), int(round(interval[1]))))
+                        slice_list.append(slice(int(round(interval[0])),
+                                          int(round(interval[1]))))
                 else:
                     # crop before project:
                     project_list.append(True)
                     if interval is None:
                         slice_list.append(slice(None))
                     else:
-                        slice_list.append(slice(int(round(interval[0])), int(round(interval[1]))))
+                        slice_list.append(slice(int(round(interval[0])),
+                                          int(round(interval[1]))))
 
         slice_tuple = tuple(slice_list)
         project_tuple = tuple(project_list)
@@ -164,7 +165,7 @@ class Dims():
         ndim = len(all_ranges)
         modified_dims = self._ensure_axis_present(ndim-1, no_event=True)
         self._set_2d_viewing()
-        self.range=all_ranges
+        self.range = all_ranges
 
         self.events.ndims()
         for axis_changed in modified_dims:
@@ -327,7 +328,7 @@ class Dims():
         """
         return self.display[axis]
 
-    def _ensure_axis_present(self, axis: int, no_event = None):
+    def _ensure_axis_present(self, axis: int, no_event=None):
         """Makes sure that the given axis is in the dimension model
 
         Parameters
@@ -349,13 +350,11 @@ class Dims():
             self.mode.extend([DimsMode.POINT] * (margin_length))
             self.display.extend([False] * (margin_length))
 
-            #self._set_2d_viewing()
-
             if not no_event:
-                # First we notify listeners that the number of dimensions have changed:
+                # Notify listeners that the number of dimensions have changed
                 self.events.ndims()
 
-                # Then we notify listeners of which dimensions have been affected.
+                # Notify listeners of which dimensions have been affected
                 for axis_changed in range(old_ndims - 1, self.ndims):
                     self.events.axis(axis=axis_changed)
 

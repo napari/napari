@@ -30,7 +30,7 @@ class QtDims(QWidget):
     update_axis = pyqtSignal(int)
     update_ndims = pyqtSignal()
 
-    def __init__(self, dims: Dims, parent = None):
+    def __init__(self, dims: Dims, parent=None):
 
         super().__init__(parent=parent)
 
@@ -47,9 +47,7 @@ class QtDims(QWidget):
         # Initialises the layout:
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        #layout.setColumnStretch(1, 1)
         self.setLayout(layout)
-
 
         # First we need to make sure that the current state of the model is
         # correctly reflected in the view. This is important because in the
@@ -62,7 +60,7 @@ class QtDims(QWidget):
         # Then we set the mode fop each slider:
         for axis in range(0, dims.ndims-2):
             slider = self.sliders[axis]
-            if self.dims.get_mode(axis)==DimsMode.POINT:
+            if self.dims.get_mode(axis) == DimsMode.POINT:
                 slider.collapse()
             else:
                 slider.expand()
@@ -90,7 +88,6 @@ class QtDims(QWidget):
         # widget
         self.update_ndims.connect(self._update_nsliders)
 
-
     @property
     def nsliders(self):
         """Returns the number of sliders displayed
@@ -110,7 +107,7 @@ class QtDims(QWidget):
         ----------
         slider_index : slider index (corresponds to axis index)
         """
-        if slider_index>=self.nsliders:
+        if slider_index >= self.nsliders:
             return
 
         slider = self.sliders[slider_index]
@@ -118,17 +115,17 @@ class QtDims(QWidget):
         if slider is None:
             return
 
-        if slider_index<self.dims.ndims:
+        if slider_index < self.dims.ndims:
 
             mode = self.dims.get_mode(slider_index)
-            if mode ==DimsMode.POINT:
+            if mode == DimsMode.POINT:
                 slider.collapse()
                 slider.setValue(self.dims.get_point(slider_index))
-            elif mode ==DimsMode.INTERVAL:
+            elif mode == DimsMode.INTERVAL:
                 slider.expand()
                 slider.setValues(self.dims.get_interval(slider_index))
             slider_range = self.dims.get_range(slider_index)
-            if (slider_range is not None) and (slider_range != (None, None, None)):
+            if slider_range not in (None, (None, None, None)):
                 slider.setRange(slider_range)
 
     def _update_nsliders(self):
@@ -156,7 +153,7 @@ class QtDims(QWidget):
         ----------
         number_of_sliders : new number of sliders
         """
-        while number_of_sliders>self.nsliders:
+        while number_of_sliders > self.nsliders:
             new_slider_axis = self.nsliders
             slider = self._create_range_slider_widget(new_slider_axis)
             for i in range(self.nsliders):
@@ -196,7 +193,6 @@ class QtDims(QWidget):
                                values=(point, point),
                                parent=self)
 
-        #slider.default_collapse_logic=False
         slider.setFocusPolicy(Qt.StrongFocus)
 
         # notify of changes while sliding:
@@ -228,7 +224,8 @@ class QtDims(QWidget):
                 if interval is not None:
                     min, max = interval
                     self.dims.set_point(axis, (max+min)/2)
-            self.dims.set_mode(axis, DimsMode.POINT if collapsed else DimsMode.INTERVAL)
+            self.dims.set_mode(axis, DimsMode.POINT if collapsed else
+                               DimsMode.INTERVAL)
 
         slider.collapsedChanged.connect(collapse_change_listener)
 
