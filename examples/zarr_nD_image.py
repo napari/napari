@@ -11,8 +11,8 @@ from napari.util import app_context
 
 
 with app_context():
-    data = zarr.zeros((200, 210, 102_000), chunks=(200, 210, 100))
-    data[100:110, 110:120, 53_000:53_100] = 1
+    data = zarr.zeros((102_000, 200, 210), chunks=(100, 200, 210))
+    data[53_000:53_100, 100:110, 110:120] = 1
 
     array = da.from_zarr(data)
-    viewer = ViewerApp(array)
+    viewer = ViewerApp(array, clim_range=[0, 1])

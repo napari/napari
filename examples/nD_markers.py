@@ -17,7 +17,7 @@ with app_context():
     viewer = ViewerApp(blobs.astype(float))
 
     # add the markers
-    markers = np.array([[100, 100, 0, 0], [50, 120, 0, 0], [100, 40, 1, 0],
-                       [110, 20, 100, 2], [400, 100, 10, 8]])
-    viewer.add_markers(markers, size=[10, 10, 6, 0], face_color='blue',
+    markers = np.array([[0, 0, 100, 100], [0, 0, 50, 120], [1, 0, 100, 40],
+                       [2, 10, 110, 100], [10, 8, 400, 100]])
+    viewer.add_markers(markers, size=[0, 6, 10, 10], face_color='blue',
                        n_dimensional=True)
