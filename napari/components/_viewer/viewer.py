@@ -1,7 +1,5 @@
 import numpy as np
 from math import inf
-
-from numpy import clip, integer, ndarray, append, insert, delete, empty
 from copy import copy
 
 from ...util.event import EmitterGroup, Event
@@ -24,7 +22,7 @@ class Viewer:
 
         # Initial dimension must be set to at least the number of visible dimensions of the viewer
         self.dims = Dims(2)
-        self.dims.set_display(0,True)
+        self.dims.set_display(0, True)
         self.dims.set_display(1, True)
 
 
@@ -158,9 +156,9 @@ class Viewer:
 
     def _new_markers(self):
         if self.dims.ndims == 0:
-            empty_markers = empty((0, 2))
+            empty_markers = np.empty((0, 2))
         else:
-            empty_markers = empty((0, self.dims.ndims))
+            empty_markers = np.empty((0, self.dims.ndims))
         self.add_markers(empty_markers)
 
     def _new_shapes(self):
@@ -212,7 +210,7 @@ class Viewer:
 
         for layer in self.layers:
             layer_range = layer.range
-            ranges = [(min(a,b),max(c,d), min(e,f)) for (a,c,e),(b,d,f) in zip(ranges,layer_range)]
+            ranges = [(min(a, b), max(c, d), min(e, f)) for (a, c, e), (b, d, f) in zip(ranges, layer_range)]
 
         return ranges
 
@@ -223,7 +221,7 @@ class Viewer:
         this method should not be used but instead '_calc_layers_ranges' shoudl be called.
         """
 
-        max_shape = [max-min for min,max,step in self._calc_layers_ranges()]
+        max_shape = [max-min for min, max, step in self._calc_layers_ranges()]
 
         return max_shape
 

@@ -215,7 +215,6 @@ class Image(Layer):
                     indices[dim] = max_dim_index
             except TypeError:
                 pass
-        print(indices)
         self._image_view = np.asarray(self.image[tuple(indices)])
 
         return self._image_view
@@ -376,9 +375,9 @@ class Image(Layer):
                 np.clip(pos[0], 0, self._image_view.shape[1]-1)])
 
         coord = list(indices)
-        coord[0] = int(pos[0])
-        coord[1] = int(pos[1])
-        value = self._image_view[tuple(coord[:2])]
+        coord[-2] = int(pos[0])
+        coord[-1] = int(pos[1])
+        value = self._image_view[tuple(coord[-2:])]
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, np.ndarray):
             if isinstance(value[0], np.integer):

@@ -111,7 +111,6 @@ class Dims():
 
         slice_list = []
         project_list = []
-
         for (mode, display, point, interval, range) in zip(self.mode, self.display, self.point, self.interval, self.range):
             if mode == DimsMode.Point or mode is None:
                 if display:
@@ -348,6 +347,8 @@ class Dims():
             self.interval.extend([(0.3, 0.7)] * (margin_length))
             self.mode.extend([DimsMode.Point] * (margin_length))
             self.display.extend([False] * (margin_length))
+            self.display = [False for i in range(len(self.display))]
+            self.display[-2:] = (True, True)
 
             if not no_event:
                 # First we notify listeners that the number of dimensions have changed:
@@ -378,16 +379,3 @@ class Dims():
 
             # Notify listeners that the number of dimensions have changed:
             self.events.ndims()
-
-
-    def _get_old_indices(self):
-        """This method is a woraround for compatibility for 'old style' layers that do not
-        use the full dims model.
-
-        TODO: This needs to go away once refactor is done.
-
-        """
-        indices = copy(self.point)
-        indices[-2] = slice(None)
-        indices[-1] = slice(None)
-        return indices

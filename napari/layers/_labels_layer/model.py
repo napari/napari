@@ -579,8 +579,8 @@ class Labels(Layer):
             String containing a message that can be used as a status update.
         """
         int_coord = copy(coord)
-        int_coord[0] = int(round(coord[0]))
-        int_coord[1] = int(round(coord[1]))
+        int_coord[-2] = int(round(coord[-2]))
+        int_coord[-1] = int(round(coord[-1]))
         msg = f'{int_coord}, {self.name}, label {label}'
 
         return msg

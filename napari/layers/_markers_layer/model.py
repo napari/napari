@@ -323,7 +323,6 @@ class Markers(Layer):
         """
         # Get a list of the coords for the markers in this slice
         coords = self.coords
-        print(indices[:-2])
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, :-2] - indices[:-2])
