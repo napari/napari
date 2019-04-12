@@ -193,9 +193,9 @@ class QRangeSlider(QWidget):
             self.bc_min, self.bc_max = self.scale_min, self.scale_max
             min_value = (self.scale_max+self.scale_min)/2
             max_value = (self.scale_max+self.scale_min)/2
-            self.setValues((min_value,max_value))
+            self.setValues((min_value, max_value))
         else:
-            #self.setValues((self.scale_min, self.scale_max))
+            # self.setValues((self.scale_min, self.scale_max))
             self.update()
         self.collapsed = True
 
@@ -204,14 +204,14 @@ class QRangeSlider(QWidget):
             min_value = self.scale_min - (self.bc_max - self.bc_min)/2
             max_value = self.scale_min + (self.bc_max - self.bc_min)/2
             if min_value < self.start:
-               min_value = self.start
-               max_value = min_value + self.bc_max - self.bc_min
+                min_value = self.start
+                max_value = min_value + self.bc_max - self.bc_min
             elif max_value > self.end:
-               max_value = self.end
-               min_value = max_value - (self.bc_max - self.bc_min)
+                max_value = self.end
+                min_value = max_value - (self.bc_max - self.bc_min)
             self.setValues((min_value, max_value))
         else:
-            #self.setValues((self.scale_min, self.scale_max))
+            # self.setValues((self.scale_min, self.scale_max))
             self.update()
         self.collapsed = False
 
@@ -226,7 +226,7 @@ class QRangeSlider(QWidget):
 
     def setRange(self, slider_range):
         self.start, self.end, self.single_step = slider_range
-        self.scale = self.end  - self.start
+        self.scale = self.end - self.start
 
     def setEmitWhileMoving(self, flag):
         if flag:

@@ -926,7 +926,8 @@ class Shapes(Layer):
         rescale : float
             Conversion factor from canvas coordinates to image coordinates.
         """
-        transform = self.viewer._qtviewer.canvas.scene.node_transform(self._node)
+        scene = self.viewer._qtviewer.canvas.scene
+        transform = scene.node_transform(self._node)
         rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
         return rescale.mean()
@@ -944,7 +945,8 @@ class Shapes(Layer):
         coord : sequence of float
             Position of mouse cursor in image coordinates.
         """
-        transform = self.viewer._qtviewer.canvas.scene.node_transform(self._node)
+        scene = self.viewer._qtviewer.canvas.scene
+        transform = scene.node_transform(self._node)
         pos = transform.map(position)
         coord = np.array([pos[0], pos[1]])
         self._cursor_coord = coord
