@@ -90,7 +90,7 @@ class Dims():
             Displayed dimensions
         """
         displayed_one_hot = copy(self.display)
-        displayed_one_hot = ([False if elem is None else elem for elem in
+        displayed_one_hot = ([False if ind is None else ind for ind in
                              displayed_one_hot])
         return np.nonzero(list(displayed_one_hot))[0]
 
@@ -181,25 +181,9 @@ class Dims():
         range : tuple
             Range specified as (min, max, step)
         """
-        self._ensure_axis_present(axis)
         if self.range[axis] != range:
             self.range[axis] = range
             self.events.axis(axis=axis)
-
-    def get_range(self, axis: int):
-        """Returns the point at which this dimension is sliced
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-
-        Returns
-        ----------
-        range : tuple
-            Range specified as (min, max, step)
-        """
-        return self.range[axis]
 
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets the point at which to slice this dimension
@@ -211,25 +195,9 @@ class Dims():
         value : int or float
             Value of the point
         """
-        self._ensure_axis_present(axis)
         if self.point[axis] != value:
             self.point[axis] = value
             self.events.axis(axis=axis)
-
-    def get_point(self, axis: int):
-        """Returns the point at which this dimension is sliced
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-
-        Returns
-        ----------
-        value : int or float
-            Value of the point
-        """
-        return self.point[axis]
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
         """Sets the interval used for cropping and projecting this dimension
@@ -241,7 +209,6 @@ class Dims():
         interval : tuple
             INTERVAL specified with (min, max)
         """
-        self._ensure_axis_present(axis)
         if self.interval[axis] != interval:
             self.interval[axis] = interval
             self.events.axis(axis=axis)
@@ -256,17 +223,9 @@ class Dims():
         mode : POINT or INTERVAL
             Whether dimension is in the POINT or INTERVAL mode
         """
-        self._ensure_axis_present(axis)
         if self.mode[axis] != mode:
             self.mode[axis] = mode
             self.events.axis(axis=axis)
-
-    def _set_2d_viewing(self):
-        """Sets the 2d viewing
-        """
-        self.display = [False] * len(self.display)
-        self.display[-1] = True
-        self.display[-2] = True
 
     def set_display(self, axis: int, display: bool):
         """Sets the display boolean flag for a given axis
@@ -278,10 +237,16 @@ class Dims():
         display : bool
             Bool which is `True` for display and `False` for slice or project.
         """
-        self._ensure_axis_present(axis)
         if self.display[axis] != display:
             self.display[axis] = display
             self.events.axis(axis=axis)
+
+    def _set_2d_viewing(self):
+        """Sets the 2d viewing
+        """
+        self.display = [False] * len(self.display)
+        self.display[-1] = True
+        self.display[-2] = True
 
     def _ensure_axis_present(self, axis: int, no_event=None):
         """Makes sure that the given axis is in the dimension model
