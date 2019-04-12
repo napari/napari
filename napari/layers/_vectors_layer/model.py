@@ -389,8 +389,7 @@ class Vectors(Layer):
             Nx3 array of vertex indices that form the mesh triangles
         """
         centers = np.array([vectors[i//2] for i in range(2*len(vectors))])
-        offests = np.array([segment_normal(vectors[2*i], vectors[2*i+1]) for i
-                            in range(len(vectors)//2)])
+        offests = segment_normal(vectors[::2, :], vectors[1::2, :])
         offests = offests[[i//4 for i in range(4*len(offests))]]
         signs = np.ones((len(offests), 2))
         signs[::2] = -1
@@ -399,7 +398,7 @@ class Vectors(Layer):
         vertices = centers + width*offests/2
         triangles = np.array([[2*i, 2*i+1, 2*i+2] if i % 2 == 0 else
                               [2*i-1, 2*i, 2*i+1] for i in
-                              range(len(vectors)//2)]).astype(np.uint32)
+                              range(len(vectors))]).astype(np.uint32)
 
         return vertices, triangles
 
