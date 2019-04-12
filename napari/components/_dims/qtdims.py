@@ -62,7 +62,7 @@ class QtDims(QWidget):
         # Then we set the mode fop each slider:
         for axis in range(0, dims.ndims):
             slider = self.sliders[axis]
-            if self.dims.get_mode(axis)==DimsMode.Point:
+            if self.dims.get_mode(axis)==DimsMode.POINT:
                 slider.collapse()
             else:
                 slider.expand()
@@ -121,10 +121,10 @@ class QtDims(QWidget):
         if slider_index<self.dims.ndims:
 
             mode = self.dims.get_mode(slider_index)
-            if mode ==DimsMode.Point:
+            if mode ==DimsMode.POINT:
                 slider.collapse()
                 slider.setValue(self.dims.get_point(slider_index))
-            elif mode ==DimsMode.Interval:
+            elif mode ==DimsMode.INTERVAL:
                 slider.expand()
                 slider.setValues(self.dims.get_interval(slider_index))
             slider_range = self.dims.get_range(slider_index)
@@ -206,7 +206,7 @@ class QtDims(QWidget):
         slider.collapsable = True
 
         # and sets it in the correct state:
-        if self.dims.get_mode(axis) == DimsMode.Point:
+        if self.dims.get_mode(axis) == DimsMode.POINT:
             slider.collapse()
         else:
             slider.expand()
@@ -228,7 +228,7 @@ class QtDims(QWidget):
                 if interval is not None:
                     min, max = interval
                     self.dims.set_point(axis, (max+min)/2)
-            self.dims.set_mode(axis, DimsMode.Point if collapsed else DimsMode.Interval)
+            self.dims.set_mode(axis, DimsMode.POINT if collapsed else DimsMode.INTERVAL)
 
         slider.collapsedChanged.connect(collapse_change_listener)
 

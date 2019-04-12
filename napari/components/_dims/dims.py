@@ -7,8 +7,8 @@ from ...util.event import EmitterGroup
 
 
 class DimsMode(Enum):
-    Point = 0
-    Interval = 1
+    POINT = 0
+    INTERVAL = 1
 
 
 class Dims():
@@ -112,7 +112,7 @@ class Dims():
         slice_list = []
         project_list = []
         for (mode, display, point, interval, range) in zip(self.mode, self.display, self.point, self.interval, self.range):
-            if mode == DimsMode.Point or mode is None:
+            if mode == DimsMode.POINT or mode is None:
                 if display:
                     # no slicing, cropping or projection:
                     project_list.append(False)
@@ -121,7 +121,7 @@ class Dims():
                     # slice:
                     project_list.append(False)
                     slice_list.append(int(round(point)))
-            elif mode == DimsMode.Interval:
+            elif mode == DimsMode.INTERVAL:
                 if display:
                     # crop for display:
                     project_list.append(False)
@@ -237,7 +237,7 @@ class Dims():
         axis : int
             Dimension index
         interval : tuple
-            Interval specified with (min, max)
+            INTERVAL specified with (min, max)
         """
         self._ensure_axis_present(axis)
         if self.interval[axis] != interval:
@@ -255,19 +255,19 @@ class Dims():
         Returns
         ----------
         interval : tuple
-            Interval specified with (min, max)
+            INTERVAL specified with (min, max)
         """
         return self.interval[axis]
 
     def set_mode(self, axis: int, mode: DimsMode):
-        """Sets the mode: Point or Interval
+        """Sets the mode: POINT or INTERVAL
 
         Parameters
         ----------
         axis : int
             Dimension index
-        mode : Point or Interval
-            Whether dimension is in the Point or Interval mode
+        mode : POINT or INTERVAL
+            Whether dimension is in the POINT or INTERVAL mode
         """
         self._ensure_axis_present(axis)
         if self.mode[axis] != mode:
@@ -284,8 +284,8 @@ class Dims():
 
         Returns
         ----------
-        mode : Point or Interval
-            Whether dimension is in the Point or Interval mode
+        mode : POINT or INTERVAL
+            Whether dimension is in the POINT or INTERVAL mode
         """
         return self.mode[axis]
 
@@ -345,7 +345,7 @@ class Dims():
             self.range.extend([(0.0, 1.0, 0.01)] * (margin_length))
             self.point.extend([0.0] * (margin_length))
             self.interval.extend([(0.3, 0.7)] * (margin_length))
-            self.mode.extend([DimsMode.Point] * (margin_length))
+            self.mode.extend([DimsMode.POINT] * (margin_length))
             self.display.extend([False] * (margin_length))
 
             self._set_2d_viewing()

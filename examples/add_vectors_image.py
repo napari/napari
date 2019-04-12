@@ -30,5 +30,3 @@ with app_context():
 
     # add the vectors
     vect = viewer.add_vectors(pos)
-
-

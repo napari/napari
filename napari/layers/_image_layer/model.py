@@ -179,9 +179,6 @@ class Image(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer.dims._child_layer_changed = True
-            #self.viewer.dims._update()
-
             self._node._need_colortransform_update = True
             self._set_view_slice(self.viewer.dims.indices)
 

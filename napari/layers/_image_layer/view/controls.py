@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
 
-from napari._qt.range_slider.range_slider import QVRangeSlider
+from ...._qt.range_slider.range_slider import QVRangeSlider
 
 
 class QtImageControls(QWidget):

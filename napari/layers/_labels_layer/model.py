@@ -280,9 +280,6 @@ class Labels(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer.dims._child_layer_changed = True
-            #self.viewer.dims._update()
-
             self._node._need_colortransform_update = True
             self._set_view_slice(self.viewer.dims.indices)
 
@@ -413,7 +410,7 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
-        int_coord = list(coord)
+        int_coord = list(copy(coord))
         int_coord[0] = int(round(coord[0]))
         int_coord[1] = int(round(coord[1]))
 
