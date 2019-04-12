@@ -199,6 +199,7 @@ class Viewer:
 
     def _on_layers_change(self, event):
         self.dims.set_all_ranges(self._calc_layers_ranges())
+        self.dims._set_2d_viewing()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.

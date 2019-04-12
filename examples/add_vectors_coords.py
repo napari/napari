@@ -31,7 +31,5 @@ with app_context():
     pos[:, 2] = radius_space*np.cos(phi_space)
     pos[:, 3] = radius_space*np.sin(phi_space)
 
-
-
     # add the vectors
     viewer.add_vectors(pos)

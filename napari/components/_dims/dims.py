@@ -347,8 +347,8 @@ class Dims():
             self.interval.extend([(0.3, 0.7)] * (margin_length))
             self.mode.extend([DimsMode.Point] * (margin_length))
             self.display.extend([False] * (margin_length))
-            self.display = [False for i in range(len(self.display))]
-            self.display[-2:] = (True, True)
+
+            self._set_2d_viewing()
 
             if not no_event:
                 # First we notify listeners that the number of dimensions have changed:

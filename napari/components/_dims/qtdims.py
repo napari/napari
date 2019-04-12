@@ -159,7 +159,10 @@ class QtDims(QWidget):
         while number_of_sliders>self.nsliders:
             new_slider_axis = self.nsliders
             slider = self._create_range_slider_widget(new_slider_axis)
-            self.layout().addWidget(slider, new_slider_axis, 0)
+            for i in range(self.nsliders):
+                item = self.layout().takeAt(i)
+                self.layout().addWidget(item.widget(), i+1, 0)
+            self.layout().addWidget(slider, 0, 0)
             self.sliders.append(slider)
             self.setMinimumHeight(self.nsliders * self._slider_height)
 
@@ -187,10 +190,10 @@ class QtDims(QWidget):
         output : range slider
         """
         range = self.dims.get_range(axis)
-        interval = self.dims.get_interval(axis)
+        point = self.dims.get_point(axis)
 
         slider = QHRangeSlider(slider_range=range,
-                               values=interval,
+                               values=(point, point),
                                parent=self)
 
         #slider.default_collapse_logic=False
