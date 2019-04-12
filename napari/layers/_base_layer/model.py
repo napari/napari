@@ -125,11 +125,10 @@ class Layer(VisualWrapper, ABC):
 
     @property
     def range(self):
-        """tuple of int: Shape of the data.
+        """list of tuple of int: ranges of data for slicing.
         """
-        #TODO: later we need this to depend on the layer transform
         shape = self._get_shape()
-        return [(0,max,1) for max in shape]
+        return [(0, max, 1) for max in shape]
 
     @property
     def selected(self):
@@ -166,7 +165,7 @@ class Layer(VisualWrapper, ABC):
             parent = None
         else:
             self._viewer = weakref.ref(viewer)
-            parent = viewer._qtviewer.view.scene
+            parent = viewer._view.scene
 
         self._parent = parent
         self._after_set_viewer(prev)
