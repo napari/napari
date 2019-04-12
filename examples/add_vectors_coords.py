@@ -37,7 +37,3 @@ with app_context():
 
     # add the vectors
     layer = viewer.add_vectors(pos, width=0.4)
-
-    print(layer.vectors.shape)
-    print(layer._mesh_vertices.shape)
-    print(layer._mesh_triangles.shape)
