@@ -409,9 +409,9 @@ class Markers(Layer):
         pos = [np.clip(pos[1], 0, max_shape[0] - 1), np.clip(pos[0], 0,
                                                              max_shape[1] - 1)]
         coord = list(indices)
-        coord[0] = pos[1]
-        coord[1] = pos[0]
-        return coord[:len(max_shape)]
+        coord[-2] = pos[1]
+        coord[-1] = pos[0]
+        return coord[-len(max_shape):]
 
 
     def get_message(self, coord, value):
@@ -432,8 +432,8 @@ class Markers(Layer):
             a status update.
         """
         coord_shift = list(copy(coord))
-        coord_shift[0] = int(coord[1])
-        coord_shift[1] = int(coord[0])
+        coord_shift[-2] = int(coord[-2])
+        coord_shift[-1] = int(coord[-1])
         msg = f'{coord_shift}, {self.name}'
         if value is None:
             pass

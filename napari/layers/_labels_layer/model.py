@@ -411,8 +411,8 @@ class Labels(Layer):
             Value of the new label to be filled in.
         """
         int_coord = list(copy(coord))
-        int_coord[0] = int(round(coord[0]))
-        int_coord[1] = int(round(coord[1]))
+        int_coord[-2] = int(round(coord[-2]))
+        int_coord[-1] = int(round(coord[-1]))
 
         if self.n_dimensional or self._raw_image.ndim == 2:
             # work with entire image
@@ -423,7 +423,7 @@ class Labels(Layer):
             # work with just the sliced image
             slice_indices = self._get_indices(slice_indices)
             labels = self._slice_image(indices, image=self._raw_image)
-            slice_coord = tuple(int_coord[:2])
+            slice_coord = tuple(int_coord[-2:])
             displayed = self._image[slice_indices]
 
         matches = labels == old_label
@@ -485,11 +485,11 @@ class Labels(Layer):
                                        1) for i, ind
                                 in enumerate(coord)])
         else:
-            slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
+            slice_coord = tuple(list(np.array(coord[:-2]).astype(int)) +
+                                [slice(self._to_pix(ind-self.brush_size/2, i),
                                        self._to_pix(ind+self.brush_size/2, i),
                                        1) for i, ind
-                                in enumerate(coord[:2])] +
-                                list(np.array(coord[2:]).astype(int)))
+                                in enumerate(coord[-2:])])
 
         # update the raw image
         self._raw_image[slice_coord] = new_label
@@ -551,11 +551,11 @@ class Labels(Layer):
         pos = [np.clip(pos[1], 0, self.shape[0]), np.clip(pos[0], 0,
                                                           self.shape[1])]
         coord = list(copy(indices))
-        coord[0] = pos[0]
-        coord[1] = pos[1]
+        coord[-2] = pos[0]
+        coord[-1] = pos[1]
         int_coord = copy(coord)
-        int_coord[0] = int(round(coord[0]))
-        int_coord[1] = int(round(coord[1]))
+        int_coord[-2] = int(round(coord[-2]))
+        int_coord[-1] = int(round(coord[-1]))
         label = self._slice_image(int_coord, image=self._raw_image)
         return coord, label
 
