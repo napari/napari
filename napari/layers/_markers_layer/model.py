@@ -301,7 +301,7 @@ class Markers(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_specifications(*self.viewer.dims.slice_and_project)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -368,7 +368,7 @@ class Markers(Layer):
 
         return selection
 
-    def _set_view_specifications(self, slices, projections):
+    def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
 
         Parameters
@@ -376,9 +376,6 @@ class Markers(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-
-        ##TODO: make use of all the information in model, for now workaround:
-        indices = self.viewer.dims._get_old_indices()
 
         in_slice_markers, matches, scale = self._slice_markers(indices)
 

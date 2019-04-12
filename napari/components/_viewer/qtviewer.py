@@ -47,6 +47,7 @@ class QtViewer(QSplitter):
         layout.addWidget(self.canvas.native)
 
         dimsview = QtDims(self.viewer.dims)
+        dimsview.setFixedHeight(0)
         layout.addWidget(dimsview)
 
         center.setLayout(layout)

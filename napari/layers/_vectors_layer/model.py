@@ -234,7 +234,7 @@ class Vectors(Layer):
     @property
     def averaging(self) -> int:
         return self._averaging
-    
+
     @averaging.setter
     def averaging(self, value: int):
         """Calculates an average vector over a kernel
@@ -365,13 +365,13 @@ class Vectors(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self._set_view_specifications(*self.viewer.dims.slice_and_project)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
             self._node.update()
 
-    def _set_view_specifications(self, slices, projections):
+    def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
 
         Parameters
@@ -380,9 +380,6 @@ class Vectors(Layer):
             Indices to slice with.
         """
 
-        ##TODO: make use of all the information in model, for now workaround:
-        indices = self.viewer.dims._get_old_indices()
-        
         in_slice_vectors = self.vectors
 
         # Display vectors if there are any in this slice
@@ -399,4 +396,3 @@ class Vectors(Layer):
             connect='segments')
         self._need_visual_update = True
         self._update()
-

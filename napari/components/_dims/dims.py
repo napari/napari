@@ -113,15 +113,11 @@ class Dims():
         project_list = []
 
         for (mode, display, point, interval, range) in zip(self.mode, self.display, self.point, self.interval, self.range):
-
             if mode == DimsMode.Point or mode is None:
                 if display:
                     # no slicing, cropping or projection:
                     project_list.append(False)
-                    slice_point = round(point)
-                    slice_point = 1 if slice_point==0 else slice_point
-                    ## TODO: workaround here...
-                    slice_list.append(slice(int(round(range[0])),int(round(range[1]))))
+                    slice_list.append(slice(None, None, None))
                 else:
                     # slice:
                     project_list.append(False)

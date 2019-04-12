@@ -235,7 +235,7 @@ class Layer(VisualWrapper, ABC):
             self.refresh()
 
     @abstractmethod
-    def _set_view_specifications(self, indices, projections):
+    def _set_view_slice(self, indices, projections):
         """Sets the slice to be used by this layer.
 
         Parameters

@@ -532,7 +532,7 @@ class Shapes(Layer):
         """
         if self._need_display_update:
             self._need_display_update = False
-            self._set_view_specifications()
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -544,7 +544,7 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_view_specifications(self, slices=None, projections=None):
+    def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
 
         Parameters
@@ -552,10 +552,6 @@ class Shapes(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
-
-        ##TODO: make use of all the information in model, for now workaround:
-        indices = None #self.viewer.dims._get_old_indices()
-
 
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]

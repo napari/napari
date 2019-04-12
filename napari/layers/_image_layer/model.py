@@ -176,9 +176,7 @@ class Image(Layer):
             #self.viewer.dims._update()
 
             self._node._need_colortransform_update = True
-
-            slices, projections = self.viewer.dims.slice_and_project
-            self._set_view_specifications(slices, projections)
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -190,36 +188,18 @@ class Image(Layer):
         self._need_display_update = True
         self._update()
 
-    def _slice_and_project_image(self, slices, projections):
-        """returns a sliced and projected image.
-
+    def _slice_image(self, indices):
+        """Determines the slice of image given the indices.
         Parameters
         ----------
-        slices : sequence of int or slices for slicing
-        projections :  sequence of booleans.
-        """
-        sliced_image = self._slice_image(slices)
-
-        if projections is not None:
-             projection_axis = np.nonzero(list(projections))[0]
-
-             if len(projection_axis) != 0:
-                 projected_image = np.max(sliced_image, axis=tuple(projection_axis))
-                 return projected_image
-
-        return sliced_image
-
-
-    def _slice_image(self, slices):
-        """Returns a projected image.
-
-        Parameters
-        ----------
-        slices : sequence of int or slices for slicing
+        indices : sequence of int or slice
+            Indices to slice with.
         """
         ndim = self.ndim
-        indices = list(slices)
+
+        indices = list(indices)
         indices = indices[:ndim]
+
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
 
@@ -233,18 +213,16 @@ class Image(Layer):
 
         return self._image_view
 
-
-    def _set_view_specifications(self, slices, projections):
+    def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
-
         Parameters
         ----------
-        slices : sequence of int or slices for slicing
-        projections :  sequence of booleans.
+        indices : sequence of int or slice
+            Indices to slice with.
         """
-        sliced_and_projected_image = self._slice_and_project_image(slices, projections)
+        sliced_image = self._slice_image(indices)
 
-        self._node.set_data(sliced_and_projected_image)
+        self._node.set_data(sliced_image)
 
         self._need_visual_update = True
         self._update()
