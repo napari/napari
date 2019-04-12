@@ -60,7 +60,7 @@ class QtDims(QWidget):
         # Then we set the mode fop each slider:
         for axis in range(0, dims.ndims-2):
             slider = self.sliders[axis]
-            if self.dims.get_mode(axis) == DimsMode.POINT:
+            if self.dims.mode[axis] == DimsMode.POINT:
                 slider.collapse()
             else:
                 slider.expand()
@@ -117,14 +117,14 @@ class QtDims(QWidget):
 
         if slider_index < self.dims.ndims:
 
-            mode = self.dims.get_mode(slider_index)
+            mode = self.dims.mode[slider_index]
             if mode == DimsMode.POINT:
                 slider.collapse()
-                slider.setValue(self.dims.get_point(slider_index))
+                slider.setValue(self.dims.point[slider_index])
             elif mode == DimsMode.INTERVAL:
                 slider.expand()
-                slider.setValues(self.dims.get_interval(slider_index))
-            slider_range = self.dims.get_range(slider_index)
+                slider.setValues(self.dims.interval[slider_index])
+            slider_range = self.dims.range[slider_index]
             if slider_range not in (None, (None, None, None)):
                 slider.setRange(slider_range)
 
@@ -186,8 +186,8 @@ class QtDims(QWidget):
         -------
         output : range slider
         """
-        range = self.dims.get_range(axis)
-        point = self.dims.get_point(axis)
+        range = self.dims.range[axis]
+        point = self.dims.point[axis]
 
         slider = QHRangeSlider(slider_range=range,
                                values=(point, point),
@@ -202,7 +202,7 @@ class QtDims(QWidget):
         slider.collapsable = True
 
         # and sets it in the correct state:
-        if self.dims.get_mode(axis) == DimsMode.POINT:
+        if self.dims.mode[axis] == DimsMode.POINT:
             slider.collapse()
         else:
             slider.expand()
@@ -220,7 +220,7 @@ class QtDims(QWidget):
         # Listener to be used for sending events back to model:
         def collapse_change_listener(collapsed):
             if collapsed:
-                interval = self.dims.get_interval(axis)
+                interval = self.dims.interval[axis]
                 if interval is not None:
                     min, max = interval
                     self.dims.set_point(axis, (max+min)/2)

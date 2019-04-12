@@ -246,21 +246,6 @@ class Dims():
             self.interval[axis] = interval
             self.events.axis(axis=axis)
 
-    def get_interval(self, axis: int):
-        """Returns interval for this dimension
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-
-        Returns
-        ----------
-        interval : tuple
-            INTERVAL specified with (min, max)
-        """
-        return self.interval[axis]
-
     def set_mode(self, axis: int, mode: DimsMode):
         """Sets the mode: POINT or INTERVAL
 
@@ -275,21 +260,6 @@ class Dims():
         if self.mode[axis] != mode:
             self.mode[axis] = mode
             self.events.axis(axis=axis)
-
-    def get_mode(self, axis: int):
-        """Returns the mode for a given axis
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-
-        Returns
-        ----------
-        mode : POINT or INTERVAL
-            Whether dimension is in the POINT or INTERVAL mode
-        """
-        return self.mode[axis]
 
     def _set_2d_viewing(self):
         """Sets the 2d viewing
@@ -312,21 +282,6 @@ class Dims():
         if self.display[axis] != display:
             self.display[axis] = display
             self.events.axis(axis=axis)
-
-    def get_display(self, axis: int):
-        """Returns the display boolean flag for a given axis
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-
-        Returns
-        ----------
-        display : bool
-            Bool which is `True` for display and `False` for slice or project.
-        """
-        return self.display[axis]
 
     def _ensure_axis_present(self, axis: int, no_event=None):
         """Makes sure that the given axis is in the dimension model
