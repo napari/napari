@@ -24,7 +24,7 @@ class QtDims(QWidget):
         List of slider widgets
     """
 
-    _slider_height = 27
+    _slider_height = 19
 
     # Qt Signals for sending events to Qt thread
     update_axis = pyqtSignal(int)
@@ -57,10 +57,10 @@ class QtDims(QWidget):
         # occured before the view is initialised with the model.
 
         # First we set the dimenions of the view with respect to the model:
-        self._set_nsliders(dims.ndims)
+        self._set_nsliders(dims.ndims-2)
 
         # Then we set the mode fop each slider:
-        for axis in range(0, dims.ndims):
+        for axis in range(0, dims.ndims-2):
             slider = self.sliders[axis]
             if self.dims.get_mode(axis)==DimsMode.POINT:
                 slider.collapse()
@@ -133,7 +133,7 @@ class QtDims(QWidget):
 
     def _update_nsliders(self):
         """
-
+        Updates the number of sliders based on the number of dimensions
         """
         self._set_nsliders(self.dims.ndims-2)
 
