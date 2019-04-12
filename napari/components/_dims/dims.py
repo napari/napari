@@ -146,11 +146,12 @@ class Dims():
     @property
     def indices(self):
         """
-        Backwards compatible property for easing transition to new architecture
-        TODO: DELETE ME AFTER REFACTOR
+        Indices for slicing
+
         Returns
         -------
-        Just the slice
+        slice : tuple
+            The slice tuple
         """
         return self.slice_and_project[0]
 
@@ -297,5 +298,5 @@ class Dims():
             self.mode = self.mode[:ndims]
             self.display = self.display[:ndims]
 
-            # Notify listeners that the number of dimensions have changed:
+            # Notify listeners that the number of dimensions have changed
             self.events.ndims()
