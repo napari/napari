@@ -1,6 +1,6 @@
 import numpy as np
 from .shape import Shape
-from ..shape_util import create_box
+from ..shape_util import create_box, poly_to_mask
 
 
 class Polygon(Shape):
@@ -51,3 +51,25 @@ class Polygon(Shape):
             self._set_meshes(data)
             self._box = create_box(data)
         self._data = data
+
+    def to_mask(self, mask_shape=None):
+        """Converts the shape vertices to a boolean mask with `True` for points
+        lying inside the shape.
+
+        Parameters
+        ----------
+        mask_shape : np.ndarray | tuple | None
+            1x2 array of shape of mask to be generated. If non specified, takes
+            the max of the vertiecs
+
+        Returns
+        ----------
+        mask : np.ndarray
+            Boolean array with `True` for points inside the shape
+        """
+        if mask_shape is None:
+            mask_shape = self.data.max(axis=0).astype('int')
+
+        mask = poly_to_mask(mask_shape, self.data)
+
+        return mask

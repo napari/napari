@@ -295,3 +295,8 @@ class Shape(ABC):
             self.shift(-center)
             self.transform(transform)
             self.shift(-center)
+
+    @abstractmethod
+    def to_mask(self, mask_shape=None):
+        # user writes own docstring
+        raise NotImplementedError()
