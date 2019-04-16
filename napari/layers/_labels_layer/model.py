@@ -559,7 +559,8 @@ class Labels(Layer):
         int_coord[0] = int(round(coord[0]))
         int_coord[1] = int(round(coord[1]))
         label = self._slice_image(int_coord, image=self._raw_image)
-        return coord, label
+
+        return coord[:len(self.shape)], label
 
     def get_message(self, coord, label):
         """Generates a string based on the coordinates and information about
