@@ -549,9 +549,9 @@ class ShapeList():
 
         Parameters
         ----------
-        shape_type : str | None
-            String of shape shape_type, must be one of "{'line', 'rectangle',
-            'ellipse', 'path', 'polygon'}".
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
 
         Returns
         ----------
@@ -568,7 +568,7 @@ class ShapeList():
                          """)
         else:
             cls = self._types[shape_type]
-            data = [s.data for s in self.shapes if type(s) == cls]
+            data = [s.data for s in self.shapes if isinstance(shape, cls)]
         return data
 
     def to_masks(self, mask_shape=None, shape_type=None):
@@ -579,16 +579,16 @@ class ShapeList():
         Parameters
         ----------
         mask_shape : np.ndarray | tuple | None
-            1x2 array of shape of mask to be generated. If non specified, takes
-            the max of all the vertiecs
-        shape_type : str | None
-            String of shape shape_type, must be one of "{'line', 'rectangle',
-            'ellipse', 'path', 'polygon'}".
+            2-tuple defining shape of mask to be generated. If non specified,
+            takes the max of all the vertiecs
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
 
         Returns
         ----------
-        masks : np.ndarray
-            NxMxP array where the is one binary mask of shape MxP for each of
+        masks : (N, M, P) np.ndarray
+            Array where there is one binary mask of shape MxP for each of
             N shapes
         """
         if mask_shape is None:
@@ -603,8 +603,8 @@ class ShapeList():
                          """)
         else:
             cls = self._types[shape_type]
-            data = ([s.to_mask(mask_shape) for s in self.shapes if
-                    type(s) == cls])
+            data = [s.to_mask(mask_shape) for s in self.shapes if
+                    isinstance(shape, cls)]
         masks = np.array(data)
 
         return masks
@@ -620,20 +620,20 @@ class ShapeList():
         Parameters
         ----------
         labels_shape : np.ndarray | tuple | None
-            1x2 array of shape of mask to be generated. If non specified, takes
-            the max of all the vertiecs
-        shape_type : str | None
-            String of shape shape_type, must be one of "{'line', 'rectangle',
-            'ellipse', 'path', 'polygon'}".
+            2-tuple defining shape of labels image to be generated. If non
+            specified, takes the max of all the vertiecs
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
 
         Returns
         ----------
         labels : np.ndarray
-            MxP integer array where the each value is either 0 for background
-            or an integer up to N for points inside the corresponding shape.
+            MxP integer array where each value is either 0 for background or an
+            integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self._vertices.max(axis=0).astype('int')
+            labels_shape = self._vertices.max(axis=0).astype(np.int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
@@ -648,11 +648,11 @@ class ShapeList():
                          """)
         else:
             cls = self._types[shape_type]
-            index = [1 if s == shape_type else 0 for s in self.shape_types]
+            index = [int(s == shape_type) for s in self.shape_types]
             index = np.cumsum(index)
             for ind in self._z_order[::-1]:
                 shape = self.shapes[ind]
-                if type(shape) == cls:
+                if isinstance(shape, cls):
                     mask = shape.to_mask(labels_shape)
                     labels[mask] = index[ind]
 

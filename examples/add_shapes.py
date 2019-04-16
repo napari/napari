@@ -10,6 +10,7 @@ from skimage.color import rgb2gray
 from napari import ViewerApp
 from napari.util import app_context
 
+
 with app_context():
     # create the viewer and window
     viewer = ViewerApp()
