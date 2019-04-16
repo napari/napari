@@ -1,4 +1,5 @@
 import numpy as np
+from ...util import segment_normal
 from vispy.geometry import PolygonData
 
 
@@ -652,32 +653,6 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     triangles = np.array(triangles)
 
     return centers, offsets, triangles
-
-
-def segment_normal(a, b):
-    """Determines the unit normal of the vector from a to b.
-
-    Parameters
-    ----------
-    a : np.ndarray
-        Length 2 array of first point
-    b : np.ndarray
-        Length 2 array of second point
-
-    Returns
-    -------
-    unit_norm : np.ndarray
-        Length the unit normal of the vector from a to b. If a == b,
-        then return [1, 0]
-    """
-    d = b-a
-    normal = np.array([d[1], -d[0]])
-    norm = np.linalg.norm(normal)
-    if norm == 0:
-        unit_norm = np.array([1, 0])
-    else:
-        unit_norm = normal/norm
-    return unit_norm
 
 
 def poly_to_mask(mask_shape, vertices):
