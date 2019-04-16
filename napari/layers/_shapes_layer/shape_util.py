@@ -653,3 +653,96 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     triangles = np.array(triangles)
 
     return centers, offsets, triangles
+
+
+def poly_to_mask(mask_shape, vertices):
+    """Converts a polygon to a boolean mask with `True` for points
+    lying inside the shape. Uses the bounding box of the vertices to reduce
+    computation time.
+
+    Parameters
+    ----------
+    mask_shape : np.ndarray | tuple
+        1x2 array of shape of mask to be generated.
+    vertices : np.ndarray
+        Nx2 array of the vertices of the polygon.
+
+    Returns
+    ----------
+    mask : np.ndarray
+        Boolean array with `True` for points inside the polygon
+    """
+    mask = np.zeros(mask_shape, dtype=bool)
+    bottom = vertices.min(axis=0).astype('int')
+    top = np.ceil(vertices.max(axis=0)).astype('int')
+    top = np.append([top], [mask_shape], axis=0).min(axis=0)
+    if np.all(top > bottom):
+        bb_mask = grid_points_in_poly(top - bottom, vertices - bottom)
+        mask[bottom[0]:top[0], bottom[1]:top[1]] = bb_mask
+    return mask
+
+
+def grid_points_in_poly(shape, vertices):
+    """Converts a polygon to a boolean mask with `True` for points
+    lying inside the shape. Loops through all indices in the grid
+
+    Parameters
+    ----------
+    shape : np.ndarray | tuple
+        1x2 array of shape of mask to be generated.
+    vertices : np.ndarray
+        Nx2 array of the vertices of the polygon.
+
+    Returns
+    ----------
+    mask : np.ndarray
+        Boolean array with `True` for points inside the polygon
+    """
+    points = np.array([(x, y) for x in range(shape[0])
+                      for y in range(shape[1])], dtype=int)
+    inside = points_in_poly(points, vertices)
+    mask = inside.reshape(shape)
+    return mask
+
+
+def points_in_poly(points, vertices):
+    """Tests points for being inside a polygon using the ray casting algorithm
+
+    Parameters
+    ----------
+    points : np.ndarray
+        Mx2 array of points to be tested
+    vertices : np.ndarray
+        Nx2 array of the vertices of the polygon.
+
+    Returns
+    ----------
+    inside : np.ndarray
+        Length M boolean array with `True` for points inside the polygon
+    """
+    n_verts = len(vertices)
+    inside = np.zeros(len(points), dtype=bool)
+    j = n_verts-1
+    for i in range(n_verts):
+        # Determine if a horizontal ray emanating from the point crosses the
+        # line defined by vertices i-1 and vertices i.
+        cond_1 = np.logical_and(vertices[i, 1] <= points[:, 1],
+                                points[:, 1] < vertices[j, 1])
+        cond_2 = np.logical_and(vertices[j, 1] <= points[:, 1],
+                                points[:, 1] < vertices[i, 1])
+        cond_3 = np.logical_or(cond_1, cond_2)
+        d = vertices[j] - vertices[i]
+        if d[1] == 0:
+            # If y vertices are aligned avoid division by zero
+            cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])
+        else:
+            cond_4 = points[:, 0] < (d[0] * (points[:, 1] - vertices[i, 1]) /
+                                     d[1] + vertices[i, 0])
+        cond_5 = np.logical_and(cond_3, cond_4)
+        inside[cond_5] = 1 - inside[cond_5]
+        j = i
+
+    # If the number of crossings is even then the point is outside the polygon,
+    # if the number of crossings is odd then the point is inside the polygon
+
+    return inside
