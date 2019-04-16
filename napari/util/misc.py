@@ -131,3 +131,62 @@ def formatdoc(obj):
         return obj
     finally:
         del frame
+
+
+def segment_normal(a, b):
+    """Determines the unit normal of the vector from a to b.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        Length 2 array of first point or Nx2 array of points
+    b : np.ndarray
+        Length 2 array of second point or Nx2 array of points
+
+    Returns
+    -------
+    unit_norm : np.ndarray
+        Length the unit normal of the vector from a to b. If a == b,
+        then returns [0, 0] or Nx2 array of vectors
+    """
+    d = b-a
+
+    if d.ndim == 1:
+        normal = np.array([d[1], -d[0]])
+        norm = np.linalg.norm(normal)
+        if norm == 0:
+            norm = 1
+    else:
+        normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
+        norm = np.linalg.norm(normal, axis=1, keepdims=True)
+        ind = norm == 0
+        norm[ind] = 1
+    unit_norm = normal/norm
+
+    return unit_norm
+
+
+def segment_normal_vector(a, b):
+    """Determines the unit normal of the vector from a to b.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        Length 2 array of first point
+    b : np.ndarray
+        Length 2 array of second point
+
+    Returns
+    -------
+    unit_norm : np.ndarray
+        Length the unit normal of the vector from a to b. If a == b,
+        then returns [0, 0]
+    """
+    d = b-a
+    normal = np.array([d[1], -d[0]])
+    norm = np.linalg.norm(normal)
+    if norm == 0:
+        unit_norm = np.array([0, 0])
+    else:
+        unit_norm = normal/norm
+    return unit_norm

@@ -51,3 +51,26 @@ class Path(Shape):
             self._set_meshes(data, face=False, closed=False)
             self._box = create_box(data)
         self._data = data
+
+    def to_mask(self, mask_shape=None):
+        """Converts the shape vertices to a boolean mask with `True` for points
+        lying inside the shape. For a Path returns an array of `False` as
+        a Path has no interior.
+
+        Parameters
+        ----------
+        mask_shape : np.ndarray | tuple | None
+            1x2 array of shape of mask to be generated. If non specified, takes
+            the max of the vertiecs
+
+        Returns
+        ----------
+        mask : np.ndarray
+            Boolean array with `True` for points inside the shape
+        """
+        if mask_shape is None:
+            mask_shape = self.data.max(axis=0).astype('int')
+
+        mask = np.zeros(mask_shape, dtype=bool)
+
+        return mask
