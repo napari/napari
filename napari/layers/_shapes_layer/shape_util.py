@@ -706,7 +706,7 @@ def grid_points_in_poly(shape, vertices):
 
 
 def points_in_poly(points, vertices):
-    """Tests points for being inside a polygon.
+    """Tests points for being inside a polygon using the ray casting algorithm
 
     Parameters
     ----------
@@ -724,6 +724,8 @@ def points_in_poly(points, vertices):
     inside = np.zeros(len(points), dtype=bool)
     j = n_verts-1
     for i in range(n_verts):
+        # Determine if a horizontal ray emanating from the point crosses the
+        # line defined by vertices i-1 and vertices i.
         cond_1 = np.logical_and(vertices[i, 1] <= points[:, 1],
                                 points[:, 1] < vertices[j, 1])
         cond_2 = np.logical_and(vertices[j, 1] <= points[:, 1],
@@ -739,5 +741,8 @@ def points_in_poly(points, vertices):
         cond_5 = np.logical_and(cond_3, cond_4)
         inside[cond_5] = 1 - inside[cond_5]
         j = i
+
+    # If the number of crossings is even then the point is outside the polygon,
+    # if the number of crossings is odd then the point is inside the polygon
 
     return inside
