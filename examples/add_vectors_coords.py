@@ -9,6 +9,7 @@ Each vector position is defined by an (x, y, x-proj, y-proj) element
 
 from napari import ViewerApp
 from napari.util import app_context
+from skimage import data
 
 import numpy as np
 
@@ -17,6 +18,9 @@ with app_context():
     # create the viewer and window
     viewer = ViewerApp()
 
+    layer = viewer.add_image(data.camera(), name='photographer')
+    layer.colormap = 'gray'
+
     # sample vector coord-like data
     n = 1000
     pos = np.zeros((n, 4), dtype=np.float32)
@@ -24,13 +28,12 @@ with app_context():
     radius_space = np.linspace(0, 100, n)
 
     # assign x-y position
-    pos[:, 0] = radius_space*np.cos(phi_space)
-    pos[:, 1] = radius_space*np.sin(phi_space)
+    pos[:, 0] = radius_space*np.cos(phi_space) + 256
+    pos[:, 1] = radius_space*np.sin(phi_space) + 256
 
     # assign x-y projection
-    pos[:, 2] = radius_space*np.cos(phi_space)
-    pos[:, 3] = radius_space*np.sin(phi_space)
+    pos[:, 2] = 2*radius_space*np.cos(phi_space)
+    pos[:, 3] = 2*radius_space*np.sin(phi_space)
 
     # add the vectors
-    viewer.add_vectors(pos)
-
+    layer = viewer.add_vectors(pos, width=0.4)

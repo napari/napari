@@ -145,8 +145,8 @@ class Pyramid(Image):
 
         # Make sure pos in slice doesn't go off edge
         shape = self._image_shapes[self._pyramid_level]
-        pos_in_slice = ([np.clip(pos_in_slice[1], 0, shape[0]-1),
-                         np.clip(pos_in_slice[0], 0, shape[1]-1)])
+        pos_in_slice = [np.clip(pos_in_slice[1], 0, shape[0]-1),
+                        np.clip(pos_in_slice[0], 0, shape[1]-1)]
 
         # Get value of image from tile
         adj_coord = [int(pos_in_tile[1]), int(pos_in_tile[0])]

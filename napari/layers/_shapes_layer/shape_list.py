@@ -16,6 +16,8 @@ class ShapeList():
     ----------
     shapes : list
         Length N list of N shape objects
+    shape_types : list
+        Length N list of names of N shape objects
 
     Extended Summary
     ----------
@@ -51,6 +53,13 @@ class ShapeList():
 
         for d in data:
             self.add(d)
+
+    @property
+    def shape_types(self):
+        """list: List of shape types where each element of the list is a
+        str corresponding to the name of one shape
+        """
+        return [s.name for s in self.shapes]
 
     def add(self, shape, shape_index=None):
         """Adds a single Shape object
@@ -433,40 +442,6 @@ class ShapeList():
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
 
-    def to_list(self, shape_type=None):
-        """Returns the vertex data assoicated with the shapes as a list
-        where each element of the list corresponds to one shape. Passing a
-        `shape_type` argument leads to only that particular `shape_type`
-        being returned.
-
-        Parameters
-        ----------
-        shape_type : str
-            String of shape shape_type, must be one of "{'line', 'rectangle',
-            'ellipse', 'path', 'polygon'}".
-
-        Returns
-        ----------
-        data : list
-            List of shape data where each element of the list is an
-            `np.ndarray` corresponding to one shape
-        shape_type : list | str
-            List of shape types where each element of the list is a
-            str corresponding to one shape
-        """
-        if shape_type is None:
-            data = [s.data for s in self.shapes]
-            shape_type = [s.name for s in self.shapes]
-        elif shape_type not in self._types.keys():
-            raise ValueError("""shape_type not recognized, must be one of
-                         "{'line', 'rectangle', 'ellipse', 'path',
-                         'polygon'}"
-                         """)
-        else:
-            cls = self._types[shape_type]
-            data = [s.data for s in self.shapes if type(s) == cls]
-        return data, shape_type
-
     def outline(self, indices):
         """Finds outlines of shapes listed in indices
 
@@ -565,3 +540,120 @@ class ShapeList():
             return ordered_shapes[0]
         else:
             return None
+
+    def to_list(self, shape_type=None):
+        """Returns the vertex data assoicated with the shapes as a list
+        where each element of the list corresponds to one shape. Passing a
+        `shape_type` argument leads to only that particular `shape_type`
+        being returned.
+
+        Parameters
+        ----------
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
+
+        Returns
+        ----------
+        data : list
+            List of shape data where each element of the list is an
+            `np.ndarray` corresponding to one shape
+        """
+        if shape_type is None:
+            data = [s.data for s in self.shapes]
+        elif shape_type not in self._types.keys():
+            raise ValueError("""shape_type not recognized, must be one of
+                         "{'line', 'rectangle', 'ellipse', 'path',
+                         'polygon'}"
+                         """)
+        else:
+            cls = self._types[shape_type]
+            data = [s.data for s in self.shapes if isinstance(shape, cls)]
+        return data
+
+    def to_masks(self, mask_shape=None, shape_type=None):
+        """Returns N binary masks, one for each shape, embedded in an array of
+        shape mask_shape Passing a `shape_type` argument leads to only mask
+        from that particular `shape_type` being returned.
+
+        Parameters
+        ----------
+        mask_shape : np.ndarray | tuple | None
+            2-tuple defining shape of mask to be generated. If non specified,
+            takes the max of all the vertiecs
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
+
+        Returns
+        ----------
+        masks : (N, M, P) np.ndarray
+            Array where there is one binary mask of shape MxP for each of
+            N shapes
+        """
+        if mask_shape is None:
+            mask_shape = self._vertices.max(axis=0).astype('int')
+
+        if shape_type is None:
+            data = [s.to_mask(mask_shape) for s in self.shapes]
+        elif shape_type not in self._types.keys():
+            raise ValueError("""shape_type not recognized, must be one of
+                         "{'line', 'rectangle', 'ellipse', 'path',
+                         'polygon'}"
+                         """)
+        else:
+            cls = self._types[shape_type]
+            data = [s.to_mask(mask_shape) for s in self.shapes if
+                    isinstance(shape, cls)]
+        masks = np.array(data)
+
+        return masks
+
+    def to_labels(self, labels_shape=None, shape_type=None):
+        """Returns a integer labels image, where each shape is embedded in an
+        array of shape labels_shape with the value of the index + 1
+        corresponding to it, and 0 for background. Passing a `shape_type`
+        argument leads to only labels from that particular `shape_type` being
+        returned. These labels will be renumbered appropriately. For
+        overlapping shapes z-ordering will be respected.
+
+        Parameters
+        ----------
+        labels_shape : np.ndarray | tuple | None
+            2-tuple defining shape of labels image to be generated. If non
+            specified, takes the max of all the vertiecs
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
+
+        Returns
+        ----------
+        labels : np.ndarray
+            MxP integer array where each value is either 0 for background or an
+            integer up to N for points inside the corresponding shape.
+        """
+        if labels_shape is None:
+            labels_shape = self._vertices.max(axis=0).astype(np.int)
+
+        labels = np.zeros(labels_shape, dtype=int)
+
+        if shape_type is None:
+            for ind in self._z_order[::-1]:
+                mask = self.shapes[ind].to_mask(labels_shape)
+                labels[mask] = ind+1
+        elif shape_type not in self._types.keys():
+            raise ValueError("""shape_type not recognized, must be one of
+                         "{'line', 'rectangle', 'ellipse', 'path',
+                         'polygon'}"
+                         """)
+        else:
+            cls = self._types[shape_type]
+            index = [int(s == shape_type) for s in self.shape_types]
+            index = np.cumsum(index)
+            for ind in self._z_order[::-1]:
+                shape = self.shapes[ind]
+                if isinstance(shape, cls):
+                    mask = shape.to_mask(labels_shape)
+                    labels[mask] = index[ind]
+
+        return labels

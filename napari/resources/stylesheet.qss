@@ -41,11 +41,11 @@ QtAdditionButton::indicator:unchecked:hover {
 
 /* ------------------------------------------------------ */
 
-QtLayer > QCheckBox::indicator {
+QtLayer > QCheckBox[mode="visibility"]::indicator {
     width: 18px; height: 18px;
 }
 
-QtLayer > QCheckBox::indicator:checked {
+QtLayer > QCheckBox[mode="visibility"]::indicator:checked {
     image: url(":/icons/eye_on.png");
 }
 
@@ -230,4 +230,40 @@ QtModeButton[mode="vertex_remove"]::indicator:unchecked {
 
 QtModeButton[mode="vertex_remove"]::indicator:unchecked:hover {
   image: url(":/icons/vertex_remove_on.png");
+}
+
+QtModeButton[mode="fill"]::indicator:checked {
+  image: url(":/icons/fill_off.png");
+}
+
+QtModeButton[mode="fill"]::indicator:unchecked {
+  image: url(":/icons/fill_off.png");
+}
+
+QtModeButton[mode="fill"]::indicator:unchecked:hover {
+  image: url(":/icons/fill_on.png");
+}
+
+QtModeButton[mode="paint"]::indicator:checked {
+  image: url(":/icons/paint_off.png");
+}
+
+QtModeButton[mode="paint"]::indicator:unchecked {
+  image: url(":/icons/paint_off.png");
+}
+
+QtModeButton[mode="paint"]::indicator:unchecked:hover {
+  image: url(":/icons/paint_on.png");
+}
+
+QtModeButton[mode="picker"]::indicator:checked {
+  image: url(":/icons/picker_off.png");
+}
+
+QtModeButton[mode="picker"]::indicator:unchecked {
+  image: url(":/icons/picker_off.png");
+}
+
+QtModeButton[mode="picker"]::indicator:unchecked:hover {
+  image: url(":/icons/picker_on.png");
 }
