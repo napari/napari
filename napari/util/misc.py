@@ -1,6 +1,37 @@
 """Miscellaneous utility functions.
 """
+import numpy as np
 import inspect
+import itertools
+
+
+def ensure_iterable(arg, color=False):
+    """Ensure an argument is an iterable. Useful when an input argument
+    can either be a single value or a list. If a color is passed then it
+    will be treated specially to determine if it is iterable.
+    """
+    if is_iterable(arg, color=color):
+        return arg
+    else:
+        return itertools.repeat(arg)
+
+
+def is_iterable(arg, color=False):
+    """Determine if a single argument is an iterable. If a color is being
+    provided and the argument is a 1-D array of length 3 or 4 then the input
+    is taken to not be iterable.
+    """
+    if type(arg) is str:
+        return False
+    elif np.isscalar(arg):
+        return False
+    elif color and isinstance(arg, (list, np.ndarray)):
+        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg)==4):
+            return False
+        else:
+            return True
+    else:
+        return True
 
 
 def is_multichannel(meta):
@@ -110,3 +141,62 @@ def formatdoc(obj):
         return obj
     finally:
         del frame
+
+
+def segment_normal(a, b):
+    """Determines the unit normal of the vector from a to b.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        Length 2 array of first point or Nx2 array of points
+    b : np.ndarray
+        Length 2 array of second point or Nx2 array of points
+
+    Returns
+    -------
+    unit_norm : np.ndarray
+        Length the unit normal of the vector from a to b. If a == b,
+        then returns [0, 0] or Nx2 array of vectors
+    """
+    d = b-a
+
+    if d.ndim == 1:
+        normal = np.array([d[1], -d[0]])
+        norm = np.linalg.norm(normal)
+        if norm == 0:
+            norm = 1
+    else:
+        normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
+        norm = np.linalg.norm(normal, axis=1, keepdims=True)
+        ind = norm == 0
+        norm[ind] = 1
+    unit_norm = normal/norm
+
+    return unit_norm
+
+
+def segment_normal_vector(a, b):
+    """Determines the unit normal of the vector from a to b.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        Length 2 array of first point
+    b : np.ndarray
+        Length 2 array of second point
+
+    Returns
+    -------
+    unit_norm : np.ndarray
+        Length the unit normal of the vector from a to b. If a == b,
+        then returns [0, 0]
+    """
+    d = b-a
+    normal = np.array([d[1], -d[0]])
+    norm = np.linalg.norm(normal)
+    if norm == 0:
+        unit_norm = np.array([0, 0])
+    else:
+        unit_norm = normal/norm
+    return unit_norm

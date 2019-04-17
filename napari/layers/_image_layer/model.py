@@ -83,6 +83,11 @@ class Image(Layer):
         Whether the image is multichannel. Guesses if None.
     name : str, keyword-only
         Name of the layer.
+    clim_range : list | array | None
+        Length two list or array with the default color limit range for the
+        image. If not passed will be calculated as the min and max of the
+        image. Passing a value prevents this calculation which can be useful
+        when working with very large datasets that are dynamically loaded.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
@@ -92,7 +97,7 @@ class Image(Layer):
     default_interpolation = 'nearest'
 
     def __init__(self, image, meta=None, multichannel=None, *, name=None,
-                 **kwargs):
+                 clim_range=None, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -117,8 +122,11 @@ class Image(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
-        self._clim_range = self._clim_range_default()
-        self._node.clim = [np.min(self.image), np.max(self.image)]
+        if clim_range is None:
+            self._clim_range = self._clim_range_default()
+        else:
+            self._clim_range = clim_range
+        self._node.clim = self._clim_range
 
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
@@ -210,7 +218,9 @@ class Image(Layer):
             except TypeError:
                 pass
 
-        return self.image[tuple(indices)]
+        self._image_view = np.asarray(self.image[tuple(indices)])
+
+        return self._image_view
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -342,7 +352,7 @@ class Image(Layer):
         return tuple(interpolation_names)
 
     def _clim_range_default(self):
-        return [np.min(self.image), np.max(self.image)]
+        return [float(self.image.min()), float(self.image.max())]
 
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
@@ -367,12 +377,12 @@ class Image(Layer):
         """
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [clip(pos[1], 0, self.shape[0]-1), clip(pos[0], 0,
-                                                      self.shape[1]-1)]
+        pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
+               np.clip(pos[0], 0, self._image_view.shape[1]-1)]
         coord = copy(indices)
         coord[0] = int(pos[0])
         coord[1] = int(pos[1])
-        value = self._slice_image(coord)
+        value = self._image_view[tuple(coord[:2])]
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, ndarray):
             if isinstance(value[0], integer):

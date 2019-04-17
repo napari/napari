@@ -37,6 +37,8 @@ class QtViewer(QSplitter):
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
 
+        self.view.camera.viewbox_key_event = viewbox_key_event
+
         center = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.canvas.native)
@@ -60,8 +62,16 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
-    def set_cursor(self, cursor):
-        self.canvas.native.setCursor(self._cursors[cursor])
+    def set_cursor(self, cursor, size=10):
+        if cursor == 'square':
+            if size < 10 or size > 300:
+                q_cursor = self._cursors['cross']
+            else:
+                q_cursor = QCursor(QPixmap(':/icons/cursor_square.png')
+                                   .scaledToHeight(size))
+        else:
+            q_cursor = self._cursors[cursor]
+        self.canvas.native.setCursor(q_cursor)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -97,3 +107,13 @@ class QtViewer(QSplitter):
         layer = self.viewer._top
         if layer is not None:
             layer.on_key_release(event)
+
+
+def viewbox_key_event(event):
+    """ViewBox key event handler
+    Parameters
+    ----------
+    event : instance of Event
+        The event.
+    """
+    return
