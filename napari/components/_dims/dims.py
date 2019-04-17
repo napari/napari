@@ -53,7 +53,7 @@ class Dims():
         self.mode = []
         self.display = []
 
-        self._ensure_axis_present(init_ndims - 1)
+        self._add_axes(init_ndims - 1)
 
     def __str__(self):
         return "~~".join([str(self.range),
@@ -76,7 +76,7 @@ class Dims():
     @ndims.setter
     def ndims(self, ndims):
         if self.ndims < ndims:
-            self._ensure_axis_present(ndims - 1)
+            self._add_axes(ndims - 1)
         elif self.ndims > ndims:
             self._trim_ndims(ndims)
 
@@ -164,7 +164,7 @@ class Dims():
             Ranges of all dimensions
         """
         ndim = len(all_ranges)
-        modified_dims = self._ensure_axis_present(ndim-1, no_event=True)
+        modified_dims = self._add_axes(ndim-1, no_event=True)
         self._set_2d_viewing()
         self.range = all_ranges
 
@@ -249,7 +249,7 @@ class Dims():
         self.display[-1] = True
         self.display[-2] = True
 
-    def _ensure_axis_present(self, axis: int, no_event=None):
+    def _add_axes(self, axis: int, no_event=None):
         """Makes sure that the given axis is in the dimension model
 
         Parameters
