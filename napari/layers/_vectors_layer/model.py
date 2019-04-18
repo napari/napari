@@ -389,14 +389,14 @@ class Vectors(Layer):
         triangles : np.ndarray
             Nx3 array of vertex indices that form the mesh triangles
         """
-        centers = np.array([vectors[i//2] for i in range(2*len(vectors))])
-        offests = segment_normal(vectors[::2, :], vectors[1::2, :])
-        offests = offests[[i//4 for i in range(4*len(offests))]]
-        signs = np.ones((len(offests), 2))
+        centers = np.repeat(vectors, 2, axis=0)
+        offsets = segment_normal(vectors[::2, :], vectors[1::2, :])
+        offsets = np.repeat(offsets, 4, axis=0)
+        signs = np.ones((len(offsets), 2))
         signs[::2] = -1
-        offests = offests*signs
+        offsets = offsets*signs
 
-        vertices = centers + width*offests/2
+        vertices = centers + width*offsets/2
         triangles = np.array([[2*i, 2*i+1, 2*i+2] if i % 2 == 0 else
                               [2*i-1, 2*i, 2*i+1] for i in
                               range(len(vectors))]).astype(np.uint32)
