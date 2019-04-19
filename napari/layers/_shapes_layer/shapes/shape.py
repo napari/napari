@@ -300,3 +300,8 @@ class Shape(ABC):
     def to_mask(self, mask_shape=None):
         # user writes own docstring
         raise NotImplementedError()
+
+    @abstractmethod
+    def to_xml(self):
+        # user writes own docstring
+        raise NotImplementedError()

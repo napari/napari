@@ -1,4 +1,5 @@
 import numpy as np
+from xml.etree.ElementTree import Element
 from .shape import Shape
 from ..shape_util import (triangulate_edge, triangulate_ellipse,
                           center_radii_to_corners, rectangle_to_box,
@@ -104,3 +105,22 @@ class Ellipse(Shape):
         mask = poly_to_mask(mask_shape, self._face_vertices)
 
         return mask
+
+    def to_xml(self):
+        """Generates an xml element that defintes the shape according to the
+        svg specification.
+
+        Returns
+        ----------
+        element : Element
+            xml element specifying the shape according to svg.
+        """
+        x = f'{self.data[0, 0]}'
+        y = f'{self.data[0, 1]}'
+        rx = f'{self.data[1, 0] - self.data[0, 0]}'
+        ry = f'{self.data[3, 1] - self.data[0, 1]}'
+
+        element = Element('rect', x=x, y=y, width=rx, height=ry,
+                          fill='red', stroke='navy', **{'stroke-width': '10'})
+
+        return element
