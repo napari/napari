@@ -1,4 +1,4 @@
-from .components._viewer.qtviewer import QtViewer
+from .components._viewer.view import QtViewer
 from .components import Window, Viewer
 
 

@@ -1,14 +1,9 @@
 import numpy as np
 from copy import copy
-from enum import Enum
 from typing import Union, Tuple, Iterable, Sequence
 
+from ._constants import DimsMode
 from ...util.event import EmitterGroup
-
-
-class DimsMode(Enum):
-    POINT = 0
-    INTERVAL = 1
 
 
 class Dims():

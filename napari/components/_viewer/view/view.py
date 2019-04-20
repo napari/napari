@@ -3,9 +3,9 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-from .._dims.qtdims import QtDims
-from ...resources import resources_dir
-from .qtcontrols import QtControls
+from ..._dims.view import QtDims
+from ....resources import resources_dir
+from .controls import QtControls
 
 import os.path as osp
 
