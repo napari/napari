@@ -121,6 +121,6 @@ class Ellipse(Shape):
         ry = f'{self.data[3, 1] - self.data[0, 1]}'
 
         element = Element('rect', x=x, y=y, width=rx, height=ry,
-                          fill='red', stroke='navy', **{'stroke-width': '10'})
+                          **self.svg_props)
 
         return element

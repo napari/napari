@@ -84,12 +84,8 @@ class Polygon(Shape):
         element : Element
             xml element specifying the shape according to svg.
         """
-        x = f'{self.data[0, 0]}'
-        y = f'{self.data[0, 1]}'
-        rx = f'{self.data[1, 0] - self.data[0, 0]}'
-        ry = f'{self.data[3, 1] - self.data[0, 1]}'
+        points = ' '.join([str(d[0]) +',' + str(d[1]) for d in self.data])
 
-        element = Element('rect', x=x, y=y, width=rx, height=ry,
-                          fill='red', stroke='navy', **{'stroke-width': '10'})
+        element = Element('polygon', points=points, **self.svg_props)
 
         return element

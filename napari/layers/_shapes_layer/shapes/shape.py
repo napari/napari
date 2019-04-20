@@ -159,6 +159,28 @@ class Shape(ABC):
         self._opacity = opacity
 
     @property
+    def svg_props(self):
+        """dict: color and width properties in the svg specification
+        """
+        width = f'{self.edge_width}'
+        face_color = (255*self.face_color.rgba).astype('int')
+        fill = f'rgb{tuple(face_color[:3])}'
+        edge_color = (255*self.edge_color.rgba).astype('int')
+        stroke = f'rgb{tuple(edge_color[:3])}'
+        opacity = f'{self.opacity}'
+
+        # Currently not using fill or stroke opacity - only global opacity
+        # as otherwise leads to unexpected behavior when reading svg into
+        # other applications
+        # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
+        # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
+
+        props = {'fill': fill, 'stroke': stroke, 'stroke-width': width,
+                 'opacity': opacity}
+
+        return props
+
+    @property
     def z_index(self):
         """int: z order priority of shape. Shapes with higher z order displayed
         ontop of others.
