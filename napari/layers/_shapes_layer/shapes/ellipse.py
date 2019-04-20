@@ -115,12 +115,34 @@ class Ellipse(Shape):
         element : Element
             xml element specifying the shape according to svg.
         """
-        x = f'{self.data[0, 0]}'
-        y = f'{self.data[0, 1]}'
-        rx = f'{self.data[1, 0] - self.data[0, 0]}'
-        ry = f'{self.data[3, 1] - self.data[0, 1]}'
+        props = self.svg_props
 
-        element = Element('rect', x=x, y=y, width=rx, height=ry,
-                          **self.svg_props)
+        offset = self.data[1] - self.data[0]
+        angle = -np.arctan2(offset[0], -offset[1])
+        if not angle == 0:
+            # if shape has been rotated, shift to origin
+            cen = self.data.mean(axis=0)
+            cords = self.data - cen
 
+            # rotate back to axis aligned
+            c, s = np.cos(angle), np.sin(-angle)
+            rotation = np.array([[c, s], [-s, c]])
+            cords = cords @ rotation.T
+
+            # shift back to center
+            cords = cords + cen
+
+            # define rotation around center
+            transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
+            props['transform'] = transform
+        else:
+            cords = self.data
+
+        cx = f'{cen[0]}'
+        cy = f'{cen[1]}'
+        size = abs(cords[2] - cords[0])
+        rx = f'{size[0]/2}'
+        ry = f'{size[1]/2}'
+
+        element = Element('ellipse', cx=cx, cy=cy, rx=rx, ry=ry, **props)
         return element
