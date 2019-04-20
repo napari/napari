@@ -423,7 +423,7 @@ class Labels(Layer):
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
-            slice_indices = self._get_indices(slice_indices)
+            slice_indices = self._get_indices(indices)
             labels = self._slice_image(indices, image=self._raw_image)
             slice_coord = tuple(int_coord[:2])
             displayed = self._image[slice_indices]
@@ -447,7 +447,7 @@ class Labels(Layer):
         if not (self.n_dimensional or self._raw_image.ndim == 2):
             # if working with just the slice, update the rest of the raw image
             self._raw_image[slice_indices] = labels
-            self._image[slice_coord] = displayed
+            self._image[slice_indices] = displayed
 
         self.refresh()
 
@@ -559,7 +559,8 @@ class Labels(Layer):
         int_coord[0] = int(round(coord[0]))
         int_coord[1] = int(round(coord[1]))
         label = self._slice_image(int_coord, image=self._raw_image)
-        return coord, label
+
+        return coord[:self.image.ndim], label
 
     def get_message(self, coord, label):
         """Generates a string based on the coordinates and information about
