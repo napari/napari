@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QGridLayout, QRadioButton
+from PyQt5.QtWidgets import QWidget, QGridLayout, QRadioButton, QSizePolicy
 from typing import Union
 
 from ..._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
@@ -41,14 +41,11 @@ class QtDims(QWidget):
         # list of sliders
         self.sliders = []
 
-        # adjust this widget initial geometry hints:
-        self.setMinimumWidth(512)
-        self.setMinimumHeight(0)
-
         # Initialises the layout:
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         # First we need to make sure that the current state of the model is
         # correctly reflected in the view. This is important because in the

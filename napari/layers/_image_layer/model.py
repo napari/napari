@@ -371,7 +371,7 @@ class Image(Layer):
         pos = transform.map(position)
         pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
                np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = copy(indices)
+        coord = list(copy(indices))
         coord[-2] = int(pos[0])
         coord[-1] = int(pos[1])
         value = self._image_view[tuple(coord[-2:])]

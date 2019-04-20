@@ -45,11 +45,8 @@ class QtViewer(QSplitter):
         center = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.canvas.native)
-
         dimsview = QtDims(self.viewer.dims)
-
         layout.addWidget(dimsview)
-
         center.setLayout(layout)
 
         # Add controls, center, and layerlist
