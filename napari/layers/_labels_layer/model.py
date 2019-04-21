@@ -53,8 +53,8 @@ class Labels(Layer):
                         selected_label=Event)
 
         self.seed = 0.5
-        self._raw_image = label_image
-        self._image = self.raw_to_displayed(self._raw_image)
+        self._image = label_image
+        self._image_view = None
         self._meta = meta
         self.interpolation = 'nearest'
         self.colormap_name = 'random'
@@ -105,7 +105,6 @@ class Labels(Layer):
 
     def new_colormap(self):
         self.seed = np.random.rand()
-        self._image = self.raw_to_displayed(self._raw_image)
 
         self.refresh()
 
@@ -356,7 +355,12 @@ class Labels(Layer):
         if image is None:
             image = self._image
         slice_indices = self._get_indices(indices)
-        return image[slice_indices]
+
+        self._image_view = np.asarray(self.image[slice_indices])
+
+        sliced = self.raw_to_displayed(self._image_view)
+
+        return sliced
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
@@ -416,17 +420,15 @@ class Labels(Layer):
         int_coord[0] = int(round(coord[0]))
         int_coord[1] = int(round(coord[1]))
 
-        if self.n_dimensional or self._raw_image.ndim == 2:
+        if self.n_dimensional or self.image.ndim == 2:
             # work with entire image
-            labels = self._raw_image
-            displayed = self._image
+            labels = self._image
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
             slice_indices = self._get_indices(indices)
-            labels = self._slice_image(indices, image=self._raw_image)
+            labels = self._image_view
             slice_coord = tuple(int_coord[:2])
-            displayed = self._image[slice_indices]
 
         matches = labels == old_label
         if self.contiguous:
@@ -439,15 +441,10 @@ class Labels(Layer):
 
         # Replace target pixels with new_label
         labels[matches] = new_label
-        if new_label == 0:
-            displayed[matches] = 0
-        else:
-            displayed[matches] = self.raw_to_displayed(new_label)
 
-        if not (self.n_dimensional or self._raw_image.ndim == 2):
+        if not (self.n_dimensional or self.image.ndim == 2):
             # if working with just the slice, update the rest of the raw image
-            self._raw_image[slice_indices] = labels
-            self._image[slice_indices] = displayed
+            self._image[slice_indices] = labels
 
         self.refresh()
 
@@ -481,7 +478,7 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
-        if self.n_dimensional or self._raw_image.ndim == 2:
+        if self.n_dimensional or self.image.ndim == 2:
             slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
                                        self._to_pix(ind+self.brush_size/2, i),
                                        1) for i, ind
@@ -493,14 +490,8 @@ class Labels(Layer):
                                 in enumerate(coord[:2])] +
                                 list(np.array(coord[2:]).astype(int)))
 
-        # update the raw image
-        self._raw_image[slice_coord] = new_label
-
-        # update the displayed image
-        if new_label == 0:
-            self._image[slice_coord] = 0
-        else:
-            self._image[slice_coord] = self.raw_to_displayed(new_label)
+        # update the labels image
+        self._image[slice_coord] = new_label
 
         self.refresh()
 
@@ -550,15 +541,15 @@ class Labels(Layer):
         """
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [np.clip(pos[1], 0, self.shape[0]), np.clip(pos[0], 0,
-                                                          self.shape[1])]
+        pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
+               np.clip(pos[0], 0, self._image_view.shape[1]-1)]
         coord = copy(indices)
         coord[0] = pos[0]
         coord[1] = pos[1]
         int_coord = copy(coord)
         int_coord[0] = int(round(coord[0]))
         int_coord[1] = int(round(coord[1]))
-        label = self._slice_image(int_coord, image=self._raw_image)
+        label = self._image_view[tuple(int_coord[:2])]
 
         return coord[:self.image.ndim], label
 
