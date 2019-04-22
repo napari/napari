@@ -530,6 +530,8 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     if len(path) > 2:
         clean_path = np.array([p for i, p in enumerate(path) if i == 0 or
                               not np.all(p == path[i-1])])
+        if clean_path.shape[0] == 1:
+            clean_path = np.concatenate((clean_path, clean_path), axis=0)
     else:
         clean_path = path
 
