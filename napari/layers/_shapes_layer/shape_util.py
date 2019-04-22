@@ -255,6 +255,29 @@ def orientation(p, q, r):
     return val
 
 
+def is_colinear(points):
+    """Determines is a list of 2D points are colinear
+
+    Parameters
+    -------
+    points : np.ndarray
+        Nx2 array of points to be tested for colinearity
+
+    Returns
+    -------
+    val : bool
+        True is all points are colinear, False otherwise.
+    """
+    if len(points) < 3:
+        return True
+
+    for p in points[2:]:
+        if orientation(points[0], points[1], p) != 0:
+            return False
+
+    return True
+
+
 def point_to_lines(point, lines):
     """Calculate the distance between a point and line segments and returns the
     index of the closest line. First calculates the distance to the infinite
