@@ -88,7 +88,7 @@ class Rectangle(Shape):
 
         Returns
         ----------
-        element : Element
+        element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
         props = self.svg_props
@@ -98,15 +98,15 @@ class Rectangle(Shape):
         if not angle == 0:
             # if shape has been rotated, shift to origin
             cen = self.data.mean(axis=0)
-            cords = self.data - cen
+            coords = self.data - cen
 
             # rotate back to axis aligned
             c, s = np.cos(angle), np.sin(-angle)
             rotation = np.array([[c, s], [-s, c]])
-            cords = cords @ rotation.T
+            coords = coords @ rotation.T
 
             # shift back to center
-            cords = cords + cen
+            coords = coords + cen
 
             # define rotation around center
             transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
@@ -114,11 +114,11 @@ class Rectangle(Shape):
         else:
             cords = self.data
 
-        x = f'{cords.min(axis=0)[0]}'
-        y = f'{cords.min(axis=0)[1]}'
+        x = str(cords.min(axis=0)[0])
+        y = str(cords.min(axis=0)[1])
         size = abs(cords[2] - cords[0])
-        width = f'{size[0]}'
-        height = f'{size[1]}'
+        width = str(size[0])
+        height = str(size[1])
 
         element = Element('rect', x=x, y=y, width=width, height=height,
                           **props)

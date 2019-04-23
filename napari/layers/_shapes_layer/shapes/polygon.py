@@ -81,7 +81,7 @@ class Polygon(Shape):
 
         Returns
         ----------
-        element : Element
+        element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
         points = ' '.join([str(d[0]) +',' + str(d[1]) for d in self.data])

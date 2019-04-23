@@ -1191,8 +1191,8 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        canvas_shape : np.ndarray | tuple | None
-            2-tuple defining shape of svg canvas to be generated. If non
+        canvas_shape : tuple, optional
+            2 tuple defining shape of svg canvas to be generated. If not
             specified, takes the max of all the vertiecs
         shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
                      None, optional

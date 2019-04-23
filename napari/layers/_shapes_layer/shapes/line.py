@@ -82,13 +82,13 @@ class Line(Shape):
 
         Returns
         ----------
-        element : Element
+        element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
-        x1 = f'{self.data[0, 0]}'
-        y1 = f'{self.data[0, 1]}'
-        x2 = f'{self.data[1, 0]}'
-        y2 = f'{self.data[1, 1]}'
+        x1 = str(self.data[0, 0])
+        y1 = str(self.data[0, 1])
+        x2 = str(self.data[1, 0])
+        y2 = str(self.data[1, 1])
 
         element = Element('line', x1=x1, y1=y1, x2=x2, y2=y2,
                           **self.svg_props)
