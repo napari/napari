@@ -112,11 +112,11 @@ class Rectangle(Shape):
             transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
             props['transform'] = transform
         else:
-            cords = self.data
+            coords = self.data
 
-        x = str(cords.min(axis=0)[0])
-        y = str(cords.min(axis=0)[1])
-        size = abs(cords[2] - cords[0])
+        x = str(coords.min(axis=0)[0])
+        y = str(coords.min(axis=0)[1])
+        size = abs(coords[2] - coords[0])
         width = str(size[0])
         height = str(size[1])
 
