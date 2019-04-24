@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from vispy.color import Color
-from ..shape_util import triangulate_edge, triangulate_face
+from ..shape_util import triangulate_edge, triangulate_face, is_collinear
 
 
 class Shape(ABC):
@@ -189,8 +189,10 @@ class Shape(ABC):
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         if face:
-            if len(data) > 2:
-                vertices, triangles = triangulate_face(data)
+            clean_data = np.array([p for i, p in enumerate(data) if i == 0 or
+                                   not np.all(p == data[i-1])])
+            if not is_collinear(clean_data):
+                vertices, triangles = triangulate_face(clean_data)
                 if len(triangles) > 0:
                     self._face_vertices = vertices
                     self._face_triangles = triangles
