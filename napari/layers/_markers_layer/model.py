@@ -22,7 +22,9 @@ class Markers(Layer):
     ----------
     coords : np.ndarray
         Coordinates for each marker.
-    symbol : str, Symbols
+    symbol : Symbols or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
+                         'hbar', 'ring', 'square', 'star', 'tailed_arrow', 
+                         'triangle_down', 'triangle_up', 'vbar', 'x'}
         Symbol to be used as a marker. If given as a string, must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring, square,
         star, tailed_arrow, triangle_down, triangle_up, vbar, x
