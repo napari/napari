@@ -11,7 +11,7 @@ from vispy.color import get_color_names
 
 from .view import QtMarkersLayer
 from .view import QtMarkersControls
-from ._constants import Symbols
+from ._constants import Symbol
 
 
 @add_to_viewer
@@ -22,8 +22,8 @@ class Markers(Layer):
     ----------
     coords : np.ndarray
         Coordinates for each marker.
-    symbol : Symbols or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
-                         'hbar', 'ring', 'square', 'star', 'tailed_arrow', 
+    symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
+                         'hbar', 'ring', 'square', 'star', 'tailed_arrow',
                          'triangle_down', 'triangle_up', 'vbar', 'x'}
         Symbol to be used as a marker. If given as a string, must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring, square,
@@ -54,7 +54,7 @@ class Markers(Layer):
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    def __init__(self, coords, symbol='DISC', size=10, edge_width=1,
+    def __init__(self, coords, symbol='disc', size=10, edge_width=1,
                  edge_width_rel=None, edge_color='black', face_color='white',
                  scaling=True, n_dimensional=False, *, name=None):
         super().__init__(MarkersNode(), name)
@@ -156,10 +156,10 @@ class Markers(Layer):
         return self._symbol
 
     @symbol.setter
-    def symbol(self, symbol: Union[str, Symbols]) -> None:
+    def symbol(self, symbol: Union[str, Symbol]) -> None:
 
         if isinstance(symbol, str):
-            symbol = Symbols[symbol.upper()]
+            symbol = Symbol[symbol.upper()]
         self._symbol = symbol
 
         self.events.symbol()

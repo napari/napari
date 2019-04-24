@@ -1,8 +1,8 @@
 from enum import Enum
 
 
-class Symbols(Enum):
-    """Symbols: Valid symbol/marker types for the Markers layer.
+class Symbol(Enum):
+    """Symbol: Valid symbol/marker types for the Markers layer.
     The string method returns the valid vispy string.
 
     See the Vispy documentation for more details
