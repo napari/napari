@@ -157,9 +157,8 @@ class Markers(Layer):
     def symbol(self, symbol: Union[str, Symbols]) -> None:
 
         if isinstance(symbol, str):
-            self._symbol = Symbols[symbol.upper()]
-        else:
-            self._symbol = symbol
+           symbol = Symbols[symbol.upper()]
+        self._symbol = symbol
 
         self.events.symbol()
 

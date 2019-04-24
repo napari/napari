@@ -89,7 +89,7 @@ class QtMarkersLayer(QtLayer):
         self.layer.edge_color = text
 
     def changeSymbol(self, text):
-        self.layer.symbol = text.upper()
+        self.layer.symbol = text
 
     def changeSize(self, value):
         self.layer.size = value
