@@ -2,7 +2,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
 from collections import Iterable
 import numpy as np
+
 from ..._base_layer import QtLayer
+from .._constants import Symbols
 
 
 class QtMarkersLayer(QtLayer):
@@ -59,11 +61,9 @@ class QtMarkersLayer(QtLayer):
         self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
         symbol_comboBox = QComboBox()
-        symbols = self.layer._marker_types
-        for s in symbols:
-            symbol_comboBox.addItem(s)
-        index = symbol_comboBox.findText(
-            self.layer.symbol, Qt.MatchFixedString)
+        for s in Symbols:
+            symbol_comboBox.addItem(str(s))
+        index = self.layer.symbol.value
         symbol_comboBox.setCurrentIndex(index)
         symbol_comboBox.activated[str].connect(
             lambda text=symbol_comboBox: self.changeSymbol(text))
@@ -89,7 +89,7 @@ class QtMarkersLayer(QtLayer):
         self.layer.edge_color = text
 
     def changeSymbol(self, text):
-        self.layer.symbol = text
+        self.layer.symbol = text.upper()
 
     def changeSize(self, value):
         self.layer.size = value
@@ -106,8 +106,7 @@ class QtMarkersLayer(QtLayer):
 
     def _on_symbol_change(self, event):
         with self.layer.events.symbol.blocker():
-            index = self.symbolComboBox.findText(
-                self.layer.symbol, Qt.MatchFixedString)
+            index = self.layer.symbol.value
             self.symbolComboBox.setCurrentIndex(index)
 
     def _on_size_change(self, event):

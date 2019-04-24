@@ -1,5 +1,4 @@
 from typing import Union
-from collections import Iterable
 
 import numpy as np
 from copy import copy
@@ -8,11 +7,11 @@ from .._base_layer import Layer
 from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
-from vispy.visuals import marker_types
 from vispy.color import get_color_names
 
 from .view import QtMarkersLayer
 from .view import QtMarkersControls
+from ._constants import Symbols
 
 
 @add_to_viewer
@@ -23,8 +22,10 @@ class Markers(Layer):
     ----------
     coords : np.ndarray
         Coordinates for each marker.
-    symbol : str
-        Symbol to be used as a marker
+    symbol : str, Symbols
+        Symbol to be used as a marker. If given as a string, must be one of the
+        following: arrow, clobber, cross, diamond, disc, hbar, ring, square,
+        star, tailed_arrow, triangle_down, triangle_up, vbar, x
     size : int, float, np.ndarray, list
         Size of the marker. If given as a scalar, all markers are the
         same size. If given as a list/array, size must be the same
@@ -51,7 +52,7 @@ class Markers(Layer):
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    def __init__(self, coords, symbol='o', size=10, edge_width=1,
+    def __init__(self, coords, symbol='DISC', size=10, edge_width=1,
                  edge_width_rel=None, edge_color='black', face_color='white',
                  scaling=True, n_dimensional=False, *, name=None):
         super().__init__(MarkersNode(), name)
@@ -77,7 +78,6 @@ class Markers(Layer):
             self.face_color = face_color
             self.scaling = scaling
             self.n_dimensional = n_dimensional
-            self._marker_types = marker_types
             self._colors = get_color_names()
             self._selected_markers = None
             self._mode = 'pan/zoom'
@@ -154,8 +154,13 @@ class Markers(Layer):
         return self._symbol
 
     @symbol.setter
-    def symbol(self, symbol: str) -> None:
-        self._symbol = symbol
+    def symbol(self, symbol: Union[str, Symbols]) -> None:
+
+        if isinstance(symbol, str):
+            self._symbol = Symbols[symbol.upper()]
+        else:
+            self._symbol = symbol
+
         self.events.symbol()
 
         self.refresh()
@@ -394,7 +399,7 @@ class Markers(Layer):
 
         self._node.set_data(
             data[::-1], size=sizes, edge_width=self.edge_width,
-            symbol=self.symbol, edge_width_rel=self.edge_width_rel,
+            symbol=str(self.symbol), edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
         self._need_visual_update = True
