@@ -1,4 +1,5 @@
 import numpy as np
+from xml.etree.ElementTree import Element
 from .shape import Shape
 from ..shape_util import create_box, poly_to_mask
 
@@ -73,3 +74,18 @@ class Polygon(Shape):
         mask = poly_to_mask(mask_shape, self.data)
 
         return mask
+
+    def to_xml(self):
+        """Generates an xml element that defintes the shape according to the
+        svg specification.
+
+        Returns
+        ----------
+        element : xml.etree.ElementTree.Element
+            xml element specifying the shape according to svg.
+        """
+        points = ' '.join([str(d[0]) + ',' + str(d[1]) for d in self.data])
+
+        element = Element('polygon', points=points, **self.svg_props)
+
+        return element

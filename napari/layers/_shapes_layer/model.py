@@ -1,4 +1,5 @@
 import numpy as np
+from xml.etree.ElementTree import Element, tostring
 from copy import copy, deepcopy
 from contextlib import contextmanager
 
@@ -1182,6 +1183,46 @@ class Shapes(Layer):
                     self._drag_start = coord
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
+
+    def to_svg(self, canvas_shape=None, shape_type=None):
+        """Returns an svg string with all the shapes contained in the layer.
+        Passing a `shape_type` argument leads to only shapes from that
+        particular `shape_type` being returned.
+
+        Parameters
+        ----------
+        canvas_shape : 2-tuple, optional
+            Shape of SVG canvas to be generated. If not specified, takes the
+            max of all the vertices
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
+            optional
+            String of shape type to be included
+
+        Returns
+        ----------
+        svg : string
+            String with the svg specification of the shapes contained in the
+            layer
+        """
+
+        if canvas_shape is None:
+            canvas_shape = self.data._vertices.max(axis=0).astype(np.int)
+
+        xml = Element('svg', width=f'{canvas_shape[0]}',
+                      height=f'{canvas_shape[1]}', version='1.1',
+                      xmlns='http://www.w3.org/2000/svg')
+
+        xml_list = self.data.to_xml(shape_type=shape_type)
+
+        for x in xml_list:
+            xml.append(x)
+
+        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
+               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
+               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
+               tostring(xml, encoding='unicode', method='xml'))
+
+        return svg
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
