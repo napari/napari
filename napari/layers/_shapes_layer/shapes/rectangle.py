@@ -102,7 +102,8 @@ class Rectangle(Shape):
 
             # rotate back to axis aligned
             c, s = np.cos(angle), np.sin(-angle)
-            rotation = np.array([[c, s], [-s, c]])
+            rotation = np.array([[c, s],
+                                 [-s, c]])
             coords = coords @ rotation.T
 
             # shift back to center

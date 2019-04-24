@@ -62,5 +62,6 @@ with app_context():
     labels_layer.visible = False
 
     svg = layer.to_svg()
-    with open('shape.svg', 'w') as file:
-        file.write(svg)
+    # To save svg file
+    # with open('shape.svg', 'w') as f:
+    #     f.write(svg)

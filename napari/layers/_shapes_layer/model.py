@@ -1191,12 +1191,12 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        canvas_shape : tuple, optional
-            2 tuple defining shape of svg canvas to be generated. If not
-            specified, takes the max of all the vertiecs
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
+        canvas_shape : 2-tuple, optional
+            Shape of SVG canvas to be generated. If not specified, takes the
+            max of all the vertices
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
+            optional
+            String of shape type to be included
 
         Returns
         ----------

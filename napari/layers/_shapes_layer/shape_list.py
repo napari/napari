@@ -659,16 +659,14 @@ class ShapeList():
         return labels
 
     def to_xml(self, shape_type=None):
-        """Returns a list of xml elements defining each shape according to the
-        svg specification. Z ordering of the shapes will be taken into account.
-        Passing a `shape_type` argument leads to only xml from that particular
-        `shape_type` being returned.
+        """Convert the shapes to a list of xml elements according to the svg
+        specification. Z ordering of the shapes will be taken into account.
 
         Parameters
         ----------
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
+            optional
+            String of which shape types should to be included in the xml.
 
         Returns
         ----------
@@ -680,10 +678,9 @@ class ShapeList():
         if shape_type is None:
             xml = [self.shapes[ind].to_xml() for ind in self._z_order[::-1]]
         elif shape_type not in self._types.keys():
-            raise ValueError("""shape_type not recognized, must be one of
-                         "{'line', 'rectangle', 'ellipse', 'path',
-                         'polygon'}"
-                         """)
+            raise ValueError('shape_type not recognized, must be one of '
+                             "{'line', 'rectangle', 'ellipse', 'path', "
+                             "'polygon'}")
         else:
             cls = self._types[shape_type]
             xml = [self.shapes[ind].to_xml() for ind in self._z_order[::-1] if

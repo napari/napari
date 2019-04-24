@@ -126,7 +126,8 @@ class Ellipse(Shape):
 
             # rotate back to axis aligned
             c, s = np.cos(angle), np.sin(-angle)
-            rotation = np.array([[c, s], [-s, c]])
+            rotation = np.array([[c, s],
+                                 [-s, c]])
             coords = coords @ rotation.T
 
             # shift back to center
@@ -141,8 +142,8 @@ class Ellipse(Shape):
         cx = str(cen[0])
         cy = str(cen[1])
         size = abs(coords[2] - coords[0])
-        rx = str(size[0]/2)
-        ry = str(size[1]/2)
+        rx = str(size[0] / 2)
+        ry = str(size[1] / 2)
 
         element = Element('ellipse', cx=cx, cy=cy, rx=rx, ry=ry, **props)
         return element

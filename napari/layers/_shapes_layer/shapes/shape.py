@@ -162,12 +162,12 @@ class Shape(ABC):
     def svg_props(self):
         """dict: color and width properties in the svg specification
         """
-        width = f'{self.edge_width}'
-        face_color = (255*self.face_color.rgba).astype('int')
+        width = str(self.edge_width)
+        face_color = (255 * self.face_color.rgba).astype(np.int)
         fill = f'rgb{tuple(face_color[:3])}'
-        edge_color = (255*self.edge_color.rgba).astype('int')
+        edge_color = (255 * self.edge_color.rgba).astype(np.int)
         stroke = f'rgb{tuple(edge_color[:3])}'
-        opacity = f'{self.opacity}'
+        opacity = str(self.opacity)
 
         # Currently not using fill or stroke opacity - only global opacity
         # as otherwise leads to unexpected behavior when reading svg into
