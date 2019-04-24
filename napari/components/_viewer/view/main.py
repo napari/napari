@@ -97,13 +97,14 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
-        layer = self.viewer._top
-        if layer is not None:
-            layer.on_key_press(event)
-
         if (event.text in self.viewer.key_bindings and not
                 event.native.isAutoRepeat()):
             self.viewer.key_bindings[event.text](self.viewer)
+            return
+
+        layer = self.viewer._top
+        if layer is not None:
+            layer.on_key_press(event)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.

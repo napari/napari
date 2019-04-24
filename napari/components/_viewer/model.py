@@ -18,6 +18,12 @@ class Viewer:
         Contains axes, indices, dimensions and sliders.
     camera : vispy.scene.Camera
         Viewer camera.
+    key_bindings : dict of string: callable
+        Custom key bindings. The dictionary key is a string containing the key
+        pressed and the value is the function to be bound to the key event.
+        The function should accept the viewer object as an input argument.
+        These key bindings are executed instead of any layer specific key
+        bindings.
     """
     def __init__(self):
         super().__init__()
@@ -38,7 +44,7 @@ class Viewer:
         self._cursor_size = None
         self._interactive = True
         self._top = None
-        self._key_bindings = {}
+        self.key_bindings = {}
 
         self._qt = QtViewer(self)
 
@@ -134,18 +140,6 @@ class Viewer:
             return
         self._active_markers = active_markers
         self.events.active_markers(index=self._active_markers)
-
-    @property
-    def key_bindings(self):
-        """dict: custom key bindings
-        """
-        return self._key_bindings
-
-    @key_bindings.setter
-    def key_bindings(self, key_bindings):
-        if key_bindings == self.key_bindings:
-            return
-        self._key_bindings = key_bindings
 
     def reset_view(self):
         """Resets the camera's view.
