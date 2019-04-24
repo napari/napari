@@ -20,13 +20,13 @@ with app_context():
         next(viewer)
 
     def reject_image(viewer):
-       print('this is a bad image')
-       next(viewer)
+        print('this is a bad image')
+        next(viewer)
 
     def next(viewer):
         blobs = data.binary_blobs(length=128, blob_size_fraction=0.05,
                                   n_dim=2, volume_fraction=.25).astype(float)
         viewer.layers[0].image = blobs
 
-    custom_key_bindings = {'a':accept_image, 'r':reject_image}
+    custom_key_bindings = {'a': accept_image, 'r': reject_image}
     viewer.key_bindings = custom_key_bindings
