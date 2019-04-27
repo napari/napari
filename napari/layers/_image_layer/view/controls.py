@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QHBoxLayout, QWidget
-from PyQt5.QtCore import QSize
+from qtpy.QtWidgets import QHBoxLayout, QWidget
+from qtpy.QtCore import QSize
 
 from ....util.range_slider import QVRangeSlider
 

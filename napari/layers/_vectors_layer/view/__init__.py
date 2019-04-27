@@ -1,2 +1,1 @@
-
 from .properties import QtVectorsLayer

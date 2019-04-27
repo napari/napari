@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from qtpy.QtCore import QSize
+from qtpy.QtWidgets import QWidget, QVBoxLayout
 from .list import QtLayersList
 from .buttons import QtLayersButtons
 

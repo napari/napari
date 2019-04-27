@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
-from PyQt5.QtCore import Qt
+from qtpy.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
+from qtpy.QtCore import Qt
 
 from .._viewer import Viewer
 

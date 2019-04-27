@@ -2,14 +2,14 @@
 Range slider, extended QWidget slider for napari.
 """
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets
 
 
 class QRangeSlider(QtWidgets.QWidget):
     """
     QRangeSlider class, super class for QVRangeSlider and QHRangeSlider.
     """
-    rangeChanged = QtCore.pyqtSignal(float, float)
+    rangeChanged = QtCore.Signal(float, float)
 
     def __init__(self, slider_range, values, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -248,7 +248,7 @@ class QHRangeSlider(QRangeSlider):
         Min, max, and step of the slider.
     values : 2-tuple of int
         Start and end of the slider range.
-    parent : PyQt5.QtWidgets.QWidget
+    parent : qtpy.QtWidgets.QWidget
         Parent widget.
     """
     def __init__(self, slider_range=None, values=None, parent=None):
@@ -261,7 +261,7 @@ class QHRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : PyQt5.QtCore.QEvent
+        event : qtpy.QtCore.QEvent
             Event from the Qt context.
 
         Returns
@@ -276,7 +276,7 @@ class QHRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : PyQt5.QtCore.QEvent
+        event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
@@ -331,7 +331,7 @@ class QVRangeSlider(QRangeSlider):
         Min, max, and step of the slider.
     values : 2-tuple of int
         Start and end of the slider range.
-    parent : PyQt5.QtWidgets.QWidget
+    parent : qtpy.QtWidgets.QWidget
         Parent widget.
     """
     def __init__(self, slider_range=None, values=None, parent=None):
@@ -344,7 +344,7 @@ class QVRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : PyQt5.QtCore.QEvent
+        event : qtpy.QtCore.QEvent
             Event from the Qt context.
 
         Returns
@@ -359,7 +359,7 @@ class QVRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : PyQt5.QtCore.QEvent
+        event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()

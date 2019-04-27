@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
+from qtpy.QtCore import Qt, QSize
+from qtpy.QtWidgets import QWidget, QSlider, QGridLayout
 
 
 class QtDims(QWidget):
@@ -45,7 +45,7 @@ class QtDims(QWidget):
 
         Returns
         -------
-        slider : PyQt5.QSlider or None
+        slider : qtpy.QSlider or None
             Updated slider, if it exists.
         """
         axis = event.dim

@@ -2,8 +2,8 @@ import os
 import sys
 from contextlib import contextmanager
 
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QTimer
+from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import QTimer
 
 
 @contextmanager

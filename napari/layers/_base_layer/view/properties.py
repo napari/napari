@@ -1,8 +1,8 @@
-from PyQt5.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame,
+from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame,
                              QVBoxLayout, QCheckBox, QWidget, QApplication,
                              QLabel, QComboBox)
-from PyQt5.QtCore import Qt, QMimeData
-from PyQt5.QtGui import QDrag
+from qtpy.QtCore import Qt, QMimeData
+from qtpy.QtGui import QDrag
 
 
 class QtLayer(QFrame):
