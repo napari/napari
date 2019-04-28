@@ -24,15 +24,6 @@ class QtLabelsLayer(QtLayer):
         self.grid_layout.addWidget(QLabel('shuffle colors:'), 3, 0)
         self.grid_layout.addWidget(self.colormap_update, 3, 1)
 
-        # contig_cb2 = QCheckBox()
-        # contig_cb2.setToolTip('contiguous editing')
-        # contig_cb2.setChecked(self.layer.contiguous)
-        # contig_cb2.stateChanged.connect(lambda state=contig_cb2:
-        #                                self.change_contig(state))
-        # self.contig_checkbox = contig_cb2
-        # self.grid_layout.addWidget(QLabel('contiguous:'), 3, 0)
-        # self.grid_layout.addWidget(contig_cb2, 3, 1)
-
         # selection spinbox
         self.selection_spinbox = QSpinBox()
         self.selection_spinbox.setSingleStep(1)

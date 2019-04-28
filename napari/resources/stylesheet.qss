@@ -223,7 +223,6 @@ QtLayer > QPushButton#shuffle:pressed {
 
 QtLayer > QCheckBox#visibility {
    background-color: {{ foreground }};
-   spacing: 50px;
 }
 
 QtLayer > QCheckBox#visibility::indicator:unchecked {
