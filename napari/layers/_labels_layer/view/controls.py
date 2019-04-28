@@ -24,14 +24,16 @@ class QtLabelsControls(QFrame):
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
-        self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.paint_button)
+        self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
+        
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(12, 20, 10, 10)
         layout.addWidget(self.panzoom_button)
-        layout.addWidget(self.pick_button)
         layout.addWidget(self.paint_button)
+        layout.addWidget(self.pick_button)
         layout.addWidget(self.fill_button)
         layout.addWidget(QtColorBox(layer))
         layout.addStretch(0)

@@ -2,6 +2,8 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QFrame, QCheckBox, QScrollArea)
 
+from ....util.theme import palettes
+palette = palettes['light']
 
 class QtLayersList(QScrollArea):
 
@@ -16,6 +18,7 @@ class QtLayersList(QScrollArea):
         self.vbox_layout = QVBoxLayout(scrollWidget)
         self.vbox_layout.addWidget(QtDivider())
         self.vbox_layout.addStretch(1)
+        self.vbox_layout.setContentsMargins(0, 0, 0, 0)
         self.centers = []
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
@@ -123,15 +126,14 @@ class QtLayersList(QScrollArea):
 
 
 class QtDivider(QFrame):
-    unselectedStlyesheet = """QFrame {border: 3px solid rgb(236,236,236);
-        background-color:rgb(236,236,236); border-radius: 3px;}"""
-    selectedStlyesheet = """QFrame {border: 3px solid rgb(0, 153, 255);
-        background-color:rgb(0, 153, 255); border-radius: 3px;}"""
+    unselectedStlyesheet = "QFrame {;}"
+    selectedStlyesheet = """QFrame {border: 2px solid %s;
+        background-color: white; border-radius: 3px;}""" % palette['text']
 
     def __init__(self):
         super().__init__()
         self.setSelected(False)
-        self.setFixedHeight(4)
+        self.setFixedSize(50, 2)
 
     def setSelected(self, bool):
         if bool:

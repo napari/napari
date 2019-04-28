@@ -7,17 +7,19 @@ from .controls import QtControls
 
 import os.path as osp
 from ....resources import resources_dir
-
+from ....util.theme import template, palettes
+palette = palettes['light']
 
 class QtViewer(QSplitter):
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        default_stylesheet = f.read()
+        raw_stylesheet = f.read()
+        themed_stylesheet = template(raw_stylesheet, **palette)
 
     def __init__(self, viewer):
         super().__init__()
 
         QCoreApplication.setAttribute(Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
-        self.setStyleSheet(self.default_stylesheet)
+        self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
 
@@ -41,6 +43,7 @@ class QtViewer(QSplitter):
 
         center = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(15, 20, 15, 10)
         layout.addWidget(self.canvas.native)
         layout.addWidget(self.viewer.dims._qt)
         center.setLayout(layout)
@@ -54,7 +57,7 @@ class QtViewer(QSplitter):
         viewer.dims._qt.setFixedHeight(0)
 
         self._cursors = {
-                'disabled': QCursor(QPixmap(':/icons/cursor_disabled.png')
+                'disabled': QCursor(QPixmap(':/icons/cursor/cursor_disabled.png')
                                     .scaled(20, 20)),
                 'cross': Qt.CrossCursor,
                 'forbidden': Qt.ForbiddenCursor,
@@ -67,7 +70,7 @@ class QtViewer(QSplitter):
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(QPixmap(':/icons/cursor_square.png')
+                q_cursor = QCursor(QPixmap(':/icons/cursor/cursor_square.png')
                                    .scaledToHeight(size))
         else:
             q_cursor = self._cursors[cursor]

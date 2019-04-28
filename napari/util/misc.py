@@ -5,6 +5,12 @@ import inspect
 import itertools
 
 
+def str_to_rgb(arg):
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
+    """
+    return [int(x) for x in arg.split('(')[1].split(')')[0].split(',')]
+
+
 def ensure_iterable(arg, color=False):
     """Ensure an argument is an iterable. Useful when an input argument
     can either be a single value or a list. If a color is passed then it

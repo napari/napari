@@ -16,9 +16,22 @@ class QtLabelsLayer(QtLayer):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
 
-        self.colormap_update = QPushButton('shuffle colors')
+        self.colormap_update = QPushButton()
+        self.colormap_update.setObjectName('shuffle')
         self.colormap_update.clicked.connect(self.changeColor)
-        self.grid_layout.addWidget(self.colormap_update, 3, 0, 1, 2)
+        self.colormap_update.setFixedWidth(19)
+        self.colormap_update.setFixedHeight(19)
+        self.grid_layout.addWidget(QLabel('shuffle colors:'), 3, 0)
+        self.grid_layout.addWidget(self.colormap_update, 3, 1)
+
+        # contig_cb2 = QCheckBox()
+        # contig_cb2.setToolTip('contiguous editing')
+        # contig_cb2.setChecked(self.layer.contiguous)
+        # contig_cb2.stateChanged.connect(lambda state=contig_cb2:
+        #                                self.change_contig(state))
+        # self.contig_checkbox = contig_cb2
+        # self.grid_layout.addWidget(QLabel('contiguous:'), 3, 0)
+        # self.grid_layout.addWidget(contig_cb2, 3, 1)
 
         # selection spinbox
         self.selection_spinbox = QSpinBox()
@@ -26,6 +39,7 @@ class QtLabelsLayer(QtLayer):
         self.selection_spinbox.setMinimum(0)
         self.selection_spinbox.setMaximum(2147483647)
         self.selection_spinbox.setValue(self.layer.selected_label)
+        self.selection_spinbox.setFixedWidth(75)
         self.selection_spinbox.valueChanged.connect(self.changeSelection)
         self.grid_layout.addWidget(QLabel('label:'), 4, 0)
         self.grid_layout.addWidget(self.selection_spinbox, 4, 1)
