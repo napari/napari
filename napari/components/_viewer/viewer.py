@@ -34,7 +34,7 @@ class Viewer:
         self._top = None
 
         # TODO: this should be eventually removed!
-        # initialised by QtViewer when it is contrsucted by the model
+        # initialised by QtViewer when it is constructed by the model
         self._qtviewer = None
 
         self.dims.events.axis.connect(lambda e: self._update_layers())

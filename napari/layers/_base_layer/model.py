@@ -250,6 +250,7 @@ class Layer(VisualWrapper, ABC):
     def _set_view_slice(self, indices):
         """Called whenever the sliders change. Sets the current view given a
         specific slice to view.
+        
         Parameters
         ----------
         indices : sequence of int or slice

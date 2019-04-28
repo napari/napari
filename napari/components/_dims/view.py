@@ -29,7 +29,7 @@ class QtDims(QWidget):
 
     # Qt Signals for sending events to Qt thread
     update_axis = pyqtSignal(int)
-    update_ndims = pyqtSignal()
+    update_ndim = pyqtSignal()
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -53,10 +53,10 @@ class QtDims(QWidget):
         # occured before the view is initialised with the model.
 
         # First we set the dimenions of the view with respect to the model:
-        self._set_nsliders(dims.ndims-2)
+        self._set_nsliders(dims.ndim-2)
 
-        # Then we set the mode fop each slider:
-        for axis in range(0, dims.ndims-2):
+        # Then we set the mode for each slider:
+        for axis in range(0, dims.ndim-2):
             slider = self.sliders[axis]
             if self.dims.mode[axis] == DimsMode.POINT:
                 slider.collapse()
@@ -77,14 +77,14 @@ class QtDims(QWidget):
         # widget
         self.update_axis.connect(self._update_slider)
 
-        # ndims change listener
-        def update_ndims_listener(event):
-            self.update_ndims.emit()
-        self.dims.events.ndims.connect(update_ndims_listener)
+        # ndim change listener
+        def update_ndim_listener(event):
+            self.update_ndim.emit()
+        self.dims.events.ndim.connect(update_ndim_listener)
 
-        # What to do with the ndims change events in terms of UI calls to the
+        # What to do with the ndim change events in terms of UI calls to the
         # widget
-        self.update_ndims.connect(self._update_nsliders)
+        self.update_ndim.connect(self._update_nsliders)
 
     @property
     def nsliders(self):
@@ -113,7 +113,7 @@ class QtDims(QWidget):
         if slider is None:
             return
 
-        if slider_index < self.dims.ndims:
+        if slider_index < self.dims.ndim:
 
             mode = self.dims.mode[slider_index]
             if mode == DimsMode.POINT:
@@ -130,7 +130,7 @@ class QtDims(QWidget):
         """
         Updates the number of sliders based on the number of dimensions
         """
-        self._set_nsliders(self.dims.ndims-2)
+        self._set_nsliders(self.dims.ndim-2)
 
     def _set_nsliders(self, new_number_of_sliders):
         """
@@ -151,9 +151,8 @@ class QtDims(QWidget):
         ----------
         number_of_sliders : new number of sliders
         """
-        while number_of_sliders > self.nsliders:
-            new_slider_axis = self.nsliders
-            slider = self._create_range_slider_widget(new_slider_axis)
+        for slider_num in range(self.nsliders, number_of_sliders):
+            slider = self._create_range_slider_widget(slider_num)
             for i in range(self.nsliders):
                 item = self.layout().takeAt(i)
                 self.layout().addWidget(item.widget(), i+1, 0)
@@ -168,7 +167,7 @@ class QtDims(QWidget):
         ----------
         number_of_sliders : new number of sliders
         """
-        while number_of_sliders < self.nsliders:
+        for slider_num in range(self.nsliders, number_of_sliders):
             slider = self.sliders.pop()
             self.layout().removeWidget(slider)
             slider.deleteLater()

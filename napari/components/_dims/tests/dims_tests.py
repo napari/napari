@@ -9,7 +9,7 @@ def test_point():
     dims = Dims(4)
     dims.set_point(3, 2.5)
 
-    assert dims.ndims == 4
+    assert dims.ndim == 4
     assert dims.point[0] == 0.0
     assert dims.point[1] == 0.0
     assert dims.point[2] == 0.0
@@ -26,7 +26,7 @@ def test_display():
     dims.set_display(2, True)
     dims.set_display(3, True)
 
-    assert dims.ndims == 4
+    assert dims.ndim == 4
     assert not dims.display[0]
     assert not dims.display[1]
     assert dims.display[2]
@@ -39,10 +39,10 @@ def test_add_remove_dims():
     Tests adding and removing dimensions
     """
     dims = Dims(2)
-    assert dims.ndims == 2
+    assert dims.ndim == 2
 
-    dims.ndims = 10
-    assert dims.ndims == 10
+    dims.ndim = 10
+    assert dims.ndim == 10
 
-    dims.ndims = 5
-    assert dims.ndims == 5
+    dims.ndim = 5
+    assert dims.ndim == 5
