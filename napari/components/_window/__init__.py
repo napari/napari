@@ -8,7 +8,7 @@ from .view import Window
 
 from vispy import app
 
-if 'QT_API' in  environ:
+if 'QT_API' in environ:
     app.use_app(environ['QT_API'])
 else:
     app.use_app('pyqt5')
