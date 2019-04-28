@@ -35,7 +35,7 @@ class QtDeleteButton(QPushButton):
         self.setFixedHeight(28)
         self.setToolTip('Delete layers')
         self.setAcceptDrops(True)
-        self.clicked.connect(self.layers.remove_selected)
+        self.clicked.connect(lambda: self.layers.remove_selected())
 
     def dragEnterEvent(self, event):
         event.accept()
@@ -61,7 +61,7 @@ class QtNewMarkersButton(QPushButton):
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('New markers layer')
-        self.clicked.connect(self.layers.viewer._new_markers)
+        self.clicked.connect(lambda: self.layers.viewer._new_markers())
 
 
 class QtNewShapesButton(QPushButton):
@@ -73,7 +73,7 @@ class QtNewShapesButton(QPushButton):
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('New shapes layer')
-        self.clicked.connect(self.layers.viewer._new_shapes)
+        self.clicked.connect(lambda: self.layers.viewer._new_shapes())
 
 
 class QtNewLabelsButton(QPushButton):
@@ -85,4 +85,4 @@ class QtNewLabelsButton(QPushButton):
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('New labels layer')
-        self.clicked.connect(self.layers.viewer._new_labels)
+        self.clicked.connect(lambda: self.layers.viewer._new_labels())
