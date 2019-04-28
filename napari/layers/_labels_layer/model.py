@@ -541,7 +541,7 @@ class Labels(Layer):
         pos = transform.map(position)
         pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
                np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = copy(indices)
+        coord = list(copy(indices))
         coord[-2] = pos[0]
         coord[-1] = pos[1]
         int_coord = copy(coord)

@@ -207,7 +207,7 @@ class Viewer:
         if self.dims.ndim == 0:
             empty_labels = np.zeros((512, 512), dtype=int)
         else:
-            empty_labels = np.zeros(self.dims.ndim, dtype=int)
+            empty_labels = np.zeros(self._calc_max_shape(), dtype=int)
         self.add_labels(empty_labels)
 
     def _update_layers(self):
