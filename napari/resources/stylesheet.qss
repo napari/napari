@@ -272,6 +272,11 @@ QPushButton:hover {
     border-radius: 3px;
 }
 
+QPushButton:pressed {
+  background-color: {{ highlight }};
+  border-radius: 3px;
+}
+
 QtDeleteButton {
    image: url(":/icons/{{ folder }}/delete.svg");
 }
