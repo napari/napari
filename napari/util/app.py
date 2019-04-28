@@ -23,4 +23,4 @@ def app_context():
         timer.setInterval(500)
         timer.timeout.connect(app.quit)
         timer.start()
-    app.exec()
+    app.exec_()
