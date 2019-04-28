@@ -1,6 +1,8 @@
 import numpy as np
+from xml.etree.ElementTree import Element
 from .shape import Shape
 from ..shape_util import find_corners, rectangle_to_box, poly_to_mask
+
 
 class Rectangle(Shape):
     """Class for a single rectangle
@@ -79,3 +81,46 @@ class Rectangle(Shape):
         mask = poly_to_mask(mask_shape, self.data)
 
         return mask
+
+    def to_xml(self):
+        """Generates an xml element that defintes the shape according to the
+        svg specification.
+
+        Returns
+        ----------
+        element : xml.etree.ElementTree.Element
+            xml element specifying the shape according to svg.
+        """
+        props = self.svg_props
+
+        offset = self.data[1] - self.data[0]
+        angle = -np.arctan2(offset[0], -offset[1])
+        if not angle == 0:
+            # if shape has been rotated, shift to origin
+            cen = self.data.mean(axis=0)
+            coords = self.data - cen
+
+            # rotate back to axis aligned
+            c, s = np.cos(angle), np.sin(-angle)
+            rotation = np.array([[c, s],
+                                 [-s, c]])
+            coords = coords @ rotation.T
+
+            # shift back to center
+            coords = coords + cen
+
+            # define rotation around center
+            transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
+            props['transform'] = transform
+        else:
+            coords = self.data
+
+        x = str(coords.min(axis=0)[0])
+        y = str(coords.min(axis=0)[1])
+        size = abs(coords[2] - coords[0])
+        width = str(size[0])
+        height = str(size[1])
+
+        element = Element('rect', x=x, y=y, width=width, height=height,
+                          **props)
+        return element

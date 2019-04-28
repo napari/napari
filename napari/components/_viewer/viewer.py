@@ -6,7 +6,25 @@ from ...util.event import EmitterGroup, Event
 
 
 class Viewer:
-    """Viewer object
+    """Viewer containing the rendered scene, layers, and controlling elements
+    including dimension sliders, and control bars for color limits.
+
+    Attributes
+    ----------
+    window : Window
+        Parent window.
+    layers : LayersList
+        List of contained layers.
+    dims : Dimensions
+        Contains axes, indices, dimensions and sliders.
+    camera : vispy.scene.Camera
+        Viewer camera.
+    key_bindings : dict of string: callable
+        Custom key bindings. The dictionary key is a string containing the key
+        pressed and the value is the function to be bound to the key event.
+        The function should accept the viewer object as an input argument.
+        These key bindings are executed instead of any layer specific key
+        bindings.
     """
     def __init__(self):
         super().__init__()
@@ -32,6 +50,7 @@ class Viewer:
         self._cursor_size = None
         self._interactive = True
         self._top = None
+        self.key_bindings = {}
 
         # TODO: this should be eventually removed!
         # initialised by QtViewer when it is constructed by the model
@@ -175,20 +194,20 @@ class Viewer:
             self.reset_view()
 
     def _new_markers(self):
-        if self.dims.ndims == 0:
+        if self.dims.ndim == 0:
             empty_markers = np.empty((0, 2))
         else:
-            empty_markers = np.empty((0, self.dims.ndims))
+            empty_markers = np.empty((0, self.dims.ndim))
         self.add_markers(empty_markers)
 
     def _new_shapes(self):
         self.add_shapes([])
 
     def _new_labels(self):
-        if self.dims.max_dims == 0:
+        if self.dims.ndim == 0:
             empty_labels = np.zeros((512, 512), dtype=int)
         else:
-            empty_labels = np.zeros(self.dims.max_shape, dtype=int)
+            empty_labels = np.zeros(self.dims.ndim, dtype=int)
         self.add_labels(empty_labels)
 
     def _update_layers(self):
