@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QFrame, QCheckBox, QScrollArea)
 
 from ....util.theme import palettes
-palette = palettes['light']
+palette = palettes['dark']
 
 class QtLayersList(QScrollArea):
 

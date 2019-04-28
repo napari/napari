@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt
 
 from .._viewer import Viewer
 from ...util.theme import palettes
-palette = palettes['light']
+palette = palettes['dark']
 
 class Window:
     """Application window that contains the menu bar and viewers.

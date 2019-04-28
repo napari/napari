@@ -8,7 +8,7 @@ from .controls import QtControls
 import os.path as osp
 from ....resources import resources_dir
 from ....util.theme import template, palettes
-palette = palettes['light']
+palette = palettes['dark']
 
 class QtViewer(QSplitter):
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:

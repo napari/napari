@@ -6,7 +6,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from .misc import str_to_rgb
 from .theme import palettes
-palette = palettes['light']
+palette = palettes['dark']
 
 
 class QRangeSlider(QtWidgets.QWidget):

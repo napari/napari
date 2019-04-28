@@ -34,7 +34,7 @@ class QtLayer(QFrame):
         textbox.setText(layer.name)
         textbox.home(False)
         textbox.setToolTip('Layer name')
-        textbox.setFixedWidth(115)
+        textbox.setFixedWidth(122)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.setStyleSheet("""QLineEdit {padding-right: 10px; 
