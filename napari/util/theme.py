@@ -21,7 +21,8 @@ palettes = {
     }
 }
 
+
 def template(css, **palette):
-    for k,v in palette.items():
+    for k, v in palette.items():
         css = css.replace('{{ %s }}' % k, v)
-    return css 
+    return css

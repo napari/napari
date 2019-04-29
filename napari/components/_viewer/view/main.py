@@ -10,6 +10,7 @@ from ....resources import resources_dir
 from ....util.theme import template, palettes
 palette = palettes['dark']
 
+
 class QtViewer(QSplitter):
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
         raw_stylesheet = f.read()
@@ -18,7 +19,8 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
 
-        QCoreApplication.setAttribute(Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
+        QCoreApplication.setAttribute(
+            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
         self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
@@ -57,8 +59,9 @@ class QtViewer(QSplitter):
         viewer.dims._qt.setFixedHeight(0)
 
         self._cursors = {
-                'disabled': QCursor(QPixmap(':/icons/cursor/cursor_disabled.png')
-                                    .scaled(20, 20)),
+                'disabled': QCursor(
+                    QPixmap(':/icons/cursor/cursor_disabled.png')
+                    .scaled(20, 20)),
                 'cross': Qt.CrossCursor,
                 'forbidden': Qt.ForbiddenCursor,
                 'pointing': Qt.PointingHandCursor,

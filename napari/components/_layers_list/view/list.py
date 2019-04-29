@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
 from ....util.theme import palettes
 palette = palettes['dark']
 
+
 class QtLayersList(QScrollArea):
 
     def __init__(self, layers):

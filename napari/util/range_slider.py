@@ -231,10 +231,14 @@ class QRangeSlider(QtWidgets.QWidget):
     def setEnabled(self, bool):
         if bool:
             self.enabled = True
-            self.bar_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
-            self.background_color = QtGui.QColor(*str_to_rgb(palette['foreground']))
-            self.handle_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
-            self.handle_border_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
+            self.bar_color = QtGui.QColor(
+                *str_to_rgb(palette['highlight']))
+            self.background_color = QtGui.QColor(
+                *str_to_rgb(palette['foreground']))
+            self.handle_color = QtGui.QColor(
+                *str_to_rgb(palette['highlight']))
+            self.handle_border_color = QtGui.QColor(
+                *str_to_rgb(palette['highlight']))
         else:
             self.enabled = False
             self.bar_color = QtCore.Qt.gray

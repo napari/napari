@@ -27,7 +27,6 @@ class QtLabelsControls(QFrame):
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
-        
 
         layout = QVBoxLayout()
         layout.setContentsMargins(12, 20, 10, 10)

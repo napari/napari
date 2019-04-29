@@ -1,10 +1,10 @@
-"""Utility script to generate copies of icons with colors based 
+"""Utility script to generate copies of icons with colors based
 on our themes. Neccessary workaround because qt does not allow
 for styling svg elements using qss
 
 run as python -m napari.util.icons"""
 
-import os.path as osp
+from os.path import join
 
 from ..resources import resources_dir
 from .theme import palettes
@@ -46,9 +46,9 @@ icons = [
     'zoom'
 ]
 
-for name,palette in palettes.items():
+for name, palette in palettes.items():
     for icon in icons:
-        filename = icon + '.svg'
+        file = icon + '.svg'
         if icon == 'visibility':
             css = insert.replace('{{ color }}', palette['text'])
         elif icon == 'visibility_off':
@@ -57,10 +57,10 @@ for name,palette in palettes.items():
             css = insert.replace('{{ color }}', palette['secondary'])
         else:
             css = insert.replace('{{ color }}', palette['icon'])
-        with open(osp.join(resources_dir, 'icons', 'svg', filename), 'r') as fr:
+        with open(join(resources_dir, 'icons', 'svg', file), 'r') as fr:
             contents = fr.readlines()
             fr.close()
             contents.insert(4, css)
-            with open(osp.join(resources_dir, 'icons', name, filename), 'w') as fw:
+            with open(join(resources_dir, 'icons', name, file), 'w') as fw:
                 fw.write("".join(contents))
-                fw.close() 
+                fw.close()

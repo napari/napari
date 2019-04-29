@@ -37,7 +37,7 @@ class QtLayer(QFrame):
         textbox.setFixedWidth(122)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
-        textbox.setStyleSheet("""QLineEdit {padding-right: 10px; 
+        textbox.setStyleSheet("""QLineEdit {padding-right: 10px;
             qproperty-alignment: left;}""")
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox

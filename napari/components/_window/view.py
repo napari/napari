@@ -5,6 +5,7 @@ from .._viewer import Viewer
 from ...util.theme import palettes
 palette = palettes['dark']
 
+
 class Window:
     """Application window that contains the menu bar and viewers.
 
@@ -30,14 +31,14 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self._status_bar.setStyleSheet('QStatusBar { background: %s; color: %s}' % 
-            (palette['background'], palette['text']))
+        self._status_bar.setStyleSheet("""QStatusBar { background: %s;
+            color: %s}""" % (palette['background'], palette['text']))
 
         self.viewer = viewer
         self._qt_center.layout().addWidget(self.viewer._qt)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
-        self._qt_center.setStyleSheet('QWidget { background: %s;}' % 
-            palette['background'])
+        self._qt_center.setStyleSheet(
+            'QWidget { background: %s;}' % palette['background'])
 
         self.viewer.events.status.connect(self._status_changed)
         self.viewer.events.help.connect(self._help_changed)
