@@ -5,6 +5,10 @@ Range slider, extended QWidget slider for napari.
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QWidget
 
+from ...util.misc import str_to_rgb
+from ...util.theme import palettes
+palette = palettes['dark']
+
 
 class QRangeSlider(QWidget):
     """
@@ -16,7 +20,7 @@ class QRangeSlider(QWidget):
     def __init__(self, slider_range, values, parent=None):
         QWidget.__init__(self, parent)
         self.bar_width = 16
-        self.slider_width = 2
+        self.slider_width = 8
         self.emit_while_moving = 0
         self.moving = "none"
         self.old_scale_min = 0.0
@@ -259,12 +263,18 @@ class QRangeSlider(QWidget):
     def setEnabled(self, bool):
         if bool:
             self.enabled = True
-            self.bar_color = QtGui.QColor(0, 153, 255)
-            self.handle_color = QtCore.Qt.white
-            self.handle_border_color = QtCore.Qt.lightGray
+            self.bar_color = QtGui.QColor(
+                *str_to_rgb(palette['highlight']))
+            self.background_color = QtGui.QColor(
+                *str_to_rgb(palette['foreground']))
+            self.handle_color = QtGui.QColor(
+                *str_to_rgb(palette['highlight']))
+            self.handle_border_color = QtGui.QColor(
+                *str_to_rgb(palette['highlight']))
         else:
             self.enabled = False
             self.bar_color = QtCore.Qt.gray
+            self.background_color = QtCore.Qt.gray
             self.handle_color = QtCore.Qt.gray
             self.handle_border_color = QtCore.Qt.gray
         self.update()
@@ -314,8 +324,8 @@ class QHRangeSlider(QRangeSlider):
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
 
         # Background
-        painter.setPen(QtCore.Qt.lightGray)
-        painter.setBrush(QtCore.Qt.lightGray)
+        painter.setPen(self.background_color)
+        painter.setBrush(self.background_color)
         painter.drawRect(self.bar_width/2, h/2-self.slider_width/2,
                          w-self.bar_width, self.slider_width)
 
@@ -397,8 +407,8 @@ class QVRangeSlider(QRangeSlider):
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
 
         # Background
-        painter.setPen(QtCore.Qt.lightGray)
-        painter.setBrush(QtCore.Qt.lightGray)
+        painter.setPen(self.background_color)
+        painter.setBrush(self.background_color)
         painter.drawRect(w/2-self.slider_width/2, self.bar_width/2,
                          self.slider_width, h-self.bar_width)
 

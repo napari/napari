@@ -20,9 +20,10 @@ class QtMarkersControls(QFrame):
         self.button_group.addButton(self.panzoom_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(12, 20, 10, 10)
+        layout.addWidget(self.panzoom_button)
         layout.addWidget(self.select_button)
         layout.addWidget(self.addition_button)
-        layout.addWidget(self.panzoom_button)
         layout.addStretch(0)
         self.setLayout(layout)
         self.setMouseTracking(True)

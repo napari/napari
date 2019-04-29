@@ -25,7 +25,7 @@ class QtDims(QWidget):
         List of slider widgets
     """
 
-    _slider_height = 19
+    SLIDERHEIGHT = 26
 
     # Qt Signals for sending events to Qt thread
     update_axis = pyqtSignal(int)
@@ -158,7 +158,7 @@ class QtDims(QWidget):
                 self.layout().addWidget(item.widget(), i+1, 0)
             self.layout().addWidget(slider, 0, 0)
             self.sliders.append(slider)
-            self.setMinimumHeight(self.nsliders * self._slider_height)
+            self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
         """

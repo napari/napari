@@ -15,4 +15,4 @@ class QtLayersPanel(QWidget):
         layout.addWidget(self.layersList)
         layout.addWidget(self.layersButtons)
         self.setLayout(layout)
-        self.setMinimumSize(QSize(250, 250))
+        self.setMinimumSize(QSize(308, 250))

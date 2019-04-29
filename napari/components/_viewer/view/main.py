@@ -8,11 +8,15 @@ from ....resources import resources_dir
 from .controls import QtControls
 
 import os.path as osp
+from ....resources import resources_dir
+from ....util.theme import template, palettes
+palette = palettes['dark']
 
 
 class QtViewer(QSplitter):
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        default_stylesheet = f.read()
+        raw_stylesheet = f.read()
+        themed_stylesheet = template(raw_stylesheet, **palette)
 
     def __init__(self, viewer):
         super().__init__()
@@ -20,7 +24,7 @@ class QtViewer(QSplitter):
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
         )
-        self.setStyleSheet(self.default_stylesheet)
+        self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
         self.viewer._qtviewer = self
@@ -45,6 +49,7 @@ class QtViewer(QSplitter):
 
         center = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(15, 20, 15, 10)
         layout.addWidget(self.canvas.native)
         dimsview = QtDims(self.viewer.dims)
         layout.addWidget(dimsview)
@@ -57,8 +62,9 @@ class QtViewer(QSplitter):
         self.addWidget(self.viewer.layers._qt)
 
         self._cursors = {
-                'disabled': QCursor(QPixmap(':/icons/cursor_disabled.png')
-                                    .scaled(20, 20)),
+                'disabled': QCursor(
+                    QPixmap(':/icons/cursor/cursor_disabled.png')
+                    .scaled(20, 20)),
                 'cross': Qt.CrossCursor,
                 'forbidden': Qt.ForbiddenCursor,
                 'pointing': Qt.PointingHandCursor,
@@ -70,7 +76,7 @@ class QtViewer(QSplitter):
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(QPixmap(':/icons/cursor_square.png')
+                q_cursor = QCursor(QPixmap(':/icons/cursor/cursor_square.png')
                                    .scaledToHeight(size))
         else:
             q_cursor = self._cursors[cursor]
