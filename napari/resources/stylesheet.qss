@@ -53,6 +53,10 @@ QSlider::handle:horizontal {
    border-radius: 8px;
 }
 
+QSlider::sub-page:horizontal {
+    background: {{ highlight }};
+}
+
 /* ------------------------------------------------------ */
 
 QScrollBar:vertical {
@@ -135,6 +139,10 @@ QtLayer > QSlider::handle:horizontal {
    margin-top: -4px;
    margin-bottom: -4px;
    border-radius: 8px;
+}
+
+QtLayer > QSlider::sub-page:horizontal {
+    background: {{ secondary }};
 }
 
 QtLayer > QLineEdit {

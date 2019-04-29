@@ -39,7 +39,7 @@ class QtLabelsLayer(QtLayer):
 
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(75)
+        sld.setFixedWidth(110)
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)

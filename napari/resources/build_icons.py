@@ -2,12 +2,12 @@
 on our themes. Neccessary workaround because qt does not allow
 for styling svg elements using qss
 
-run as python -m napari.util.icons"""
+run as python -m napari.resources.build_icons"""
 
 from os.path import join
 
 from ..resources import resources_dir
-from .theme import palettes
+from ..util.theme import palettes
 
 insert = """<style type="text/css">
     path{fill:{{ color }}}

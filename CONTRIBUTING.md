@@ -53,7 +53,7 @@ Our icon build process starts with a base set of `svg` formatted icons stored in
 Then run the following command
 
 ```sh
-python -m napari.util.icons
+python -m napari.resources.build_icons
 ```
 
 This creates separate folders in `napari/resources/icons` with full colored icon sets for each of our themes.

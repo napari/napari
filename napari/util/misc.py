@@ -1,5 +1,6 @@
 """Miscellaneous utility functions.
 """
+import re
 import numpy as np
 import inspect
 import itertools
@@ -8,7 +9,8 @@ import itertools
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
     """
-    return [int(x) for x in arg.split('(')[1].split(')')[0].split(',')]
+    return list(map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)',
+                                  arg).groups()))
 
 
 def ensure_iterable(arg, color=False):
