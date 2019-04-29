@@ -74,23 +74,11 @@ class Dims:
         """
         return copy(self._point)
 
-    @point.setter
-    def point(self, point):
-        if point == self.point:
-            return
-        self._point = point
-
     @property
     def interval(self):
         """list of 2-tuple: List of tuples (min, max), one for each dimension
         """
         return copy(self._interval)
-
-    @interval.setter
-    def interval(self, interval):
-        if interval == self.interval:
-            return
-        self._interval = interval
 
     @property
     def mode(self):
@@ -98,24 +86,12 @@ class Dims:
         """
         return copy(self._mode)
 
-    @mode.setter
-    def mode(self, mode):
-        if mode == self.mode:
-            return
-        self._mode = mode
-
     @property
     def display(self):
         """list: List of bool indicating if dimension displayed or not, one for
         each dimension
         """
         return copy(self._display)
-
-    @display.setter
-    def display(self, display):
-        if display == self.display:
-            return
-        self._display = display
 
     @property
     def ndim(self):
