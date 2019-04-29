@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QSlider, QGridLayout
 
 
 class QtDims(QWidget):
-    SLIDERHEIGHT = 19
+    SLIDERHEIGHT = 26
 
     def __init__(self, dims):
         super().__init__()
