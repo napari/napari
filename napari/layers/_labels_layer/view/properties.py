@@ -16,13 +16,12 @@ class QtLabelsLayer(QtLayer):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
 
-        self.colormap_update = QPushButton()
+        self.colormap_update = QPushButton('shuffle colors')
         self.colormap_update.setObjectName('shuffle')
         self.colormap_update.clicked.connect(self.changeColor)
-        self.colormap_update.setFixedWidth(19)
-        self.colormap_update.setFixedHeight(19)
-        self.grid_layout.addWidget(QLabel('shuffle colors:'), 3, 0)
-        self.grid_layout.addWidget(self.colormap_update, 3, 1)
+        self.colormap_update.setFixedWidth(225)
+        self.colormap_update.setFixedHeight(25)
+        self.grid_layout.addWidget(self.colormap_update, 3, 0, 1, 2)
 
         # selection spinbox
         self.selection_spinbox = QSpinBox()

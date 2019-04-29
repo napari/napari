@@ -142,7 +142,8 @@ QtLayer > QLineEdit {
     border: none;
     border-radius: 0px;
     font-size: 18px;
-    text-transform: uppercase;
+    padding-right: 10px;
+    qproperty-alignment: left;
 }
 
 QtLayer > QLineEdit:disabled {
