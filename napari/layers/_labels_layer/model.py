@@ -582,6 +582,8 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
+        if event.pos is None:
+            return
         indices = self.viewer.dims.indices
         coord, label = self.get_label(event.pos, indices)
 
@@ -620,7 +622,11 @@ class Labels(Layer):
 
         if self.mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
-            interp_coord = self._interp_coords(self._last_cursor_coord, coord)
+            if self._last_cursor_coord is None:
+                interp_coord = [coord]
+            else:
+                interp_coord = self._interp_coords(self._last_cursor_coord,
+                                                   coord)
             with self.freeze_refresh():
                 for c in interp_coord:
                     self.paint(c, new_label)

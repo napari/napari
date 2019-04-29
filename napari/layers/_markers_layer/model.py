@@ -393,7 +393,7 @@ class Markers(Layer):
             sizes = 0
 
         self._node.set_data(
-            data[::-1], size=sizes, edge_width=self.edge_width,
+            data[::-1, ::-1], size=sizes, edge_width=self.edge_width,
             symbol=self.symbol, edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
@@ -406,8 +406,6 @@ class Markers(Layer):
 
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        pos = [np.clip(pos[1], 0, max_shape[0] - 1), np.clip(pos[0], 0,
-                                                             max_shape[1] - 1)]
         coord = list(indices)
         coord[-2] = pos[1]
         coord[-1] = pos[0]

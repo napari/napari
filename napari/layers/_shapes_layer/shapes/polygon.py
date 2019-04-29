@@ -69,9 +69,9 @@ class Polygon(Shape):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = self.data.max(axis=0).astype('int')
+            mask_shape = self.data[:, ::-1].max(axis=0).astype('int')
 
-        mask = poly_to_mask(mask_shape, self.data)
+        mask = poly_to_mask(mask_shape, self.data[:, ::-1])
 
         return mask
 
@@ -84,7 +84,7 @@ class Polygon(Shape):
         element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
-        points = ' '.join([str(d[0]) + ',' + str(d[1]) for d in self.data])
+        points = ' '.join([str(d[1]) + ',' + str(d[0]) for d in self.data])
 
         element = Element('polygon', points=points, **self.svg_props)
 

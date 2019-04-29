@@ -21,10 +21,10 @@ class Vectors(Layer):
     Properties
     ----------
     vectors : np.ndarray of shape (N,4) or (N, M, 2)
-        (N, 4) is a list of coordinates (x, y, u, v)
+        (N, 4) is a list of coordinates (y, x, v, u)
             x and y are coordinates
-            u and v are x and y projections of the vector
-        (N, M, 2) is an (N, M) image of (u, v) projections
+            u and v are y and x projections of the vector
+        (N, M, 2) is an (N, M) image of (v, u) projections
         Returns np.ndarray of the current display (including averaging, length)
     averaging : int
         (int, int) kernel over which to convolve and subsample the data
@@ -115,10 +115,10 @@ class Vectors(Layer):
     @vectors.setter
     def vectors(self, vectors: np.ndarray):
         """Can accept two data types:
-            1) (N, 4) array with elements (x, y, u, v),
+            1) (N, 4) array with elements (y, x, v, u),
                 where x-y are position (center) and u-v are x-y projections of
                     the vector
-            2) (N, M, 2) array with elements (u, v)
+            2) (N, M, 2) array with elements (v, u)
                 where u-v are x-y projections of the vector
                 vector position is one per-pixel in the NxM array
 
@@ -161,7 +161,7 @@ class Vectors(Layer):
         return coord_list
 
     def _convert_image_to_coordinates(self, vect) -> np.ndarray:
-        """To convert an image-like array with elements (x-proj, y-proj) into a
+        """To convert an image-like array with elements (y-proj, x-proj) into a
         position list of coordinates
         Every pixel position (n, m) results in two output coordinates of (N,2)
 
@@ -208,7 +208,7 @@ class Vectors(Layer):
 
     def _convert_coords_to_coordinates(self, vect) -> np.ndarray:
         """To convert a list of coordinates of shape
-        (x-center, y-center, x-proj, y-proj) into a list of coordinates
+        (y-center, x-center, y-proj, x-proj) into a list of coordinates
         Input coordinate of (N,4) becomes two output coordinates of (N,2)
 
         Parameters
@@ -430,7 +430,7 @@ class Vectors(Layer):
         if len(faces) == 0:
             self._node.set_data(vertices=None, faces=None)
         else:
-            self._node.set_data(vertices=vertices, faces=faces,
+            self._node.set_data(vertices=vertices[:, ::-1], faces=faces,
                                 color=self.color)
 
         self._need_visual_update = True

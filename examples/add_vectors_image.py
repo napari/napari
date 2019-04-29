@@ -25,13 +25,15 @@ with app_context():
     # sample vector image-like data
     # n x m grid of slanted lines
     # random data on the open interval (-1, 1)
-    pos = np.zeros(shape=(m, n, 2), dtype=np.float32)
+    pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
     rand1 = 2*(np.random.random_sample(n * m)-0.5)
     rand2 = 2*(np.random.random_sample(n * m)-0.5)
 
     # assign projections for each vector
-    pos[:, :, 0] = rand1.reshape((m, n))
-    pos[:, :, 1] = rand2.reshape((m, n))
+    pos[:, :, 0] = rand1.reshape((n, m))
+    pos[:, :, 1] = rand2.reshape((n, m))
 
     # add the vectors
     vect = viewer.add_vectors(pos, width=0.2, length=2.5)
+
+    print(image.shape, pos.shape)

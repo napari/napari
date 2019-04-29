@@ -557,7 +557,7 @@ class Shapes(Layer):
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]
-        vertices = self.data._mesh.vertices
+        vertices = self.data._mesh.vertices[:, ::-1]
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
         else:
@@ -639,6 +639,7 @@ class Shapes(Layer):
             centers, offsets, triangles = self.data.outline(index)
             rescale = self._get_rescale()
             vertices = centers + rescale*self._highlight_width*offsets
+            vertices = vertices[:, ::-1]
         else:
             vertices = None
             triangles = None
@@ -675,10 +676,10 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                vertices = box
+                vertices = box[:, ::-1]
                 # Use a subset of the vertices of the interaction_box to plot
                 # the line around the edge
-                pos = box[BOX_LINE_HANDLE]
+                pos = box[BOX_LINE_HANDLE][:, ::-1]
                 width = 1.5
             elif self.mode in ([Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON,
                                 Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
@@ -686,7 +687,7 @@ class Shapes(Layer):
                                 Mode.VERTEX_REMOVE]):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(self.data._index, self.selected_shapes)
-                vertices = self.data._vertices[inds]
+                vertices = self.data._vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
                 if self.mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
@@ -717,7 +718,7 @@ class Shapes(Layer):
             width = 1.5
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
-            pos = box[BOX_LINE]
+            pos = box[BOX_LINE][:, ::-1]
         else:
             # Otherwise show nothing
             vertices = np.empty((0, 2))
@@ -949,7 +950,7 @@ class Shapes(Layer):
         scene = self.viewer._qtviewer.canvas.scene
         transform = scene.node_transform(self._node)
         pos = transform.map(position)
-        coord = np.array([pos[0], pos[1]])
+        coord = np.array([pos[1], pos[0]])
         self._cursor_coord = coord
 
         return coord
@@ -971,10 +972,7 @@ class Shapes(Layer):
         msg : string
             String containing a message that can be used as a status update.
         """
-        coord_shift = copy(coord)
-        coord_shift[0] = int(coord[1])
-        coord_shift[1] = int(coord[0])
-        msg = f'{coord_shift.astype(int)}, {self.name}'
+        msg = f'{coord.astype(int)}, {self.name}'
         if shape is not None:
             msg = msg + ', shape ' + str(shape)
             if vertex is not None:

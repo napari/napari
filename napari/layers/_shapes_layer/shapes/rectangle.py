@@ -76,9 +76,9 @@ class Rectangle(Shape):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = self.data.max(axis=0).astype('int')
+            mask_shape = self.data[:, ::-1].max(axis=0).astype('int')
 
-        mask = poly_to_mask(mask_shape, self.data)
+        mask = poly_to_mask(mask_shape, self.data[:, ::-1])
 
         return mask
 
@@ -92,13 +92,14 @@ class Rectangle(Shape):
             xml element specifying the shape according to svg.
         """
         props = self.svg_props
+        data = self.data[:, ::-1]
 
-        offset = self.data[1] - self.data[0]
+        offset = data[1] - data[0]
         angle = -np.arctan2(offset[0], -offset[1])
         if not angle == 0:
             # if shape has been rotated, shift to origin
-            cen = self.data.mean(axis=0)
-            coords = self.data - cen
+            cen = data.mean(axis=0)
+            coords = data - cen
 
             # rotate back to axis aligned
             c, s = np.cos(angle), np.sin(-angle)
@@ -113,7 +114,7 @@ class Rectangle(Shape):
             transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
             props['transform'] = transform
         else:
-            coords = self.data
+            coords = data
 
         x = str(coords.min(axis=0)[0])
         y = str(coords.min(axis=0)[1])
