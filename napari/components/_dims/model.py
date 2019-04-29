@@ -172,7 +172,6 @@ class Dims:
 
         return tuple(slice_list)
 
-
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
 
