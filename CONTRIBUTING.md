@@ -46,6 +46,28 @@ $ make html
 
 Then you can find the built docs in `docs/source/_build/html`
 
+## Building the icons
+
+Our icon build process starts with a base set of `svg` formatted icons stored in `napari/resources/icons/svg`. If you want to add a new icon to the app, make the icon in whatever program you like, add it to that folder, and make sure it is listed in both `napari/util/icons.py` and `napari/resources/res.qrc`. 
+
+Then run the following command
+
+```sh
+python -m napari.util.icons
+```
+
+This creates separate folders in `napari/resources/icons` with full colored icon sets for each of our themes.
+
+Finally, compile all the icons for use in the app by calling.
+
+```sh
+pyrcc5 -o napari/resources/qt.py napari/resources/res.qrc
+```
+
+You might need to run `pip install pyqt5ac` if you don't already have the `pyrcc5` command.
+
+If you want to change one of the existing icons, modify the version in `napari/resources/icons/svg` and run the commands above.
+
 ## Making changes
 
 Create a new feature branch:

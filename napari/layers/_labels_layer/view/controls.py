@@ -101,8 +101,8 @@ class QtColorBox(QWidget):
         """
         painter = QPainter(self)
         if self.layer._selected_color is None:
-            painter.setPen(QColor(255, 255, 255))
-            painter.setBrush(QColor(255, 255, 255))
+            painter.setPen(QColor(230, 230, 230))
+            painter.setBrush(QColor(230, 230, 230))
             for i in range(self._height//6+1):
                 for j in range(self._height//6+1):
                     if ((i % 2 == 0 and j % 2 == 0) or (i % 2 == 1 and
