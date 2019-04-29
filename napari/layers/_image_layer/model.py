@@ -194,7 +194,7 @@ class Image(Layer):
 
     def _slice_image(self, indices):
         """Determines the slice of image given the indices.
-        
+
         Parameters
         ----------
         indices : sequence of int or slice

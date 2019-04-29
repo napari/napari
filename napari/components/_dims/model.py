@@ -101,10 +101,8 @@ class Dims:
         displayed : np.ndarray
             Displayed dimensions
         """
-        displayed_one_hot = copy(self.display)
-        displayed_one_hot = [False if ind is None else ind for ind in
-                             displayed_one_hot]
-        return np.nonzero(list(displayed_one_hot))[0]
+        displayed = [i for i, d in enumerate(self.display) if d is True]
+        return np.array(displayed)
 
     @property
     def slice_and_project(self):
