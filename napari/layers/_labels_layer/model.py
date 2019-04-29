@@ -320,7 +320,7 @@ class Labels(Layer):
             Tuple of indices corresponding to the slice
         """
         ndim = self.ndim
-        indices = list(indices)[:ndim]
+        indices = list(indices)[-ndim:]
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1

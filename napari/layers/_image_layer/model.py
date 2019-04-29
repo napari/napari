@@ -204,7 +204,7 @@ class Image(Layer):
         ndim = self.ndim
 
         indices = list(indices)
-        indices = indices[:ndim]
+        indices = indices[-ndim:]
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1

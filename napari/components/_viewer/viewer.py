@@ -1,6 +1,7 @@
 import numpy as np
 from math import inf
 from copy import copy
+from itertools import zip_longest
 
 from ...util.event import EmitterGroup, Event
 
@@ -247,11 +248,12 @@ class Viewer:
         ranges = [(inf, -inf, inf)]*ndims
 
         for layer in self.layers:
-            layer_range = layer.range
-            ranges = ([(min(a, b), max(c, d), min(e, f)) for
-                      (a, c, e), (b, d, f) in zip(ranges, layer_range)])
+            layer_range = layer.range[::-1]
+            ranges = [(min(a, b), max(c, d), min(e, f)) for
+                      (a, c, e), (b, d, f) in zip_longest(ranges, layer_range,
+                      fillvalue=(inf, -inf, inf))]
 
-        return ranges
+        return ranges[::-1]
 
     def _calc_max_shape(self):
         """Calculates the max shape of all displayed layers.
