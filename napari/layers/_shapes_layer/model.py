@@ -546,14 +546,13 @@ class Shapes(Layer):
         self._update()
 
     def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
+        """Set the view given the slicing indices.
 
         Parameters
         ----------
         indices : sequence of int or slice
             Indices to slice with.
         """
-
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]

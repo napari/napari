@@ -214,12 +214,14 @@ class Image(Layer):
                     indices[dim] = max_dim_index
             except TypeError:
                 pass
+
         self._image_view = np.asarray(self.image[tuple(indices)])
 
         return self._image_view
 
     def _set_view_slice(self, indices):
         """Sets the view given the indices to slice with.
+
         Parameters
         ----------
         indices : sequence of int or slice
@@ -352,12 +354,14 @@ class Image(Layer):
     def get_value(self, position, indices):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
+
         Parameters
         ----------
         position : sequence of two int
             Position of mouse cursor in canvas.
         indices : sequence of int or slice
             Indices that make up the slice.
+
         Returns
         ----------
         coord : sequence of int
@@ -372,7 +376,7 @@ class Image(Layer):
         pos = transform.map(position)
         pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
                np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = list(copy(indices))
+        coord = list(indices)
         coord[-2] = int(pos[0])
         coord[-1] = int(pos[1])
         value = self._image_view[tuple(coord[-2:])]

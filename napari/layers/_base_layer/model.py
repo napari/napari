@@ -125,7 +125,8 @@ class Layer(VisualWrapper, ABC):
 
     @property
     def range(self):
-        """list of tuple of int: ranges of data for slicing.
+        """list of 3-tuple of int: ranges of data for slicing specifed by
+        (min, max, step).
         """
         shape = self._get_shape()
         return [(0, max, 1) for max in shape]

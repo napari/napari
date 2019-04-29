@@ -1,1 +1,1 @@
-from .viewer import Viewer
+from .model import Viewer

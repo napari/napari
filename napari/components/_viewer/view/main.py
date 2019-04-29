@@ -17,8 +17,9 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
 
-        atribute = Qt.AA_UseStyleSheetPropagationInWidgetStyles
-        QCoreApplication.setAttribute(atribute, True)
+        QCoreApplication.setAttribute(
+            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
+        )
         self.setStyleSheet(self.default_stylesheet)
 
         self.viewer = viewer

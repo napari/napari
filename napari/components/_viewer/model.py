@@ -238,7 +238,7 @@ class Viewer:
         self._qtviewer.canvas.native.setFocus()
 
     def _on_layers_change(self, event):
-        self.dims.set_all_ranges(self._calc_layers_ranges())
+        self.dims.range = self._calc_layers_ranges()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.

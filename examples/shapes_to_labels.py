@@ -20,9 +20,9 @@ with app_context():
     layer.colormap = 'gray'
 
     # create a list of polygons
-    polygons = [np.array([[11, 13], [111, 113], [22, 246]]),
-                np.array([[505, 60], [402, 71], [383, 42], [251, 95],
-                          [212, 59], [131, 137], [126, 187], [191, 204],
+    polygons = [np.array([[11,   13], [111, 113], [22, 246]]),
+                np.array([[505,  60], [402,  71], [383,  42], [251,  95],
+                          [212,  59], [131, 137], [126, 187], [191, 204],
                           [171, 248], [211, 260], [273, 243], [264, 225],
                           [430, 173], [512, 160]]),
                 np.array([[310, 382], [229, 381], [209, 401], [221, 411],
@@ -54,7 +54,7 @@ with app_context():
     masks_layer = viewer.add_image(masks.astype(float), name='masks')
     masks_layer.opacity = 0.7
     masks_layer.colormap = Colormap([[0.0, 0.0, 0.0, 0.0],
-                                    [1.0, 0.0, 0.0, 1.0]])
+                                     [1.0, 0.0, 0.0, 1.0]])
 
     labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')

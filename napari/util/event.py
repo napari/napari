@@ -503,7 +503,7 @@ class EventEmitter(object):
     def _invoke_callback(self, cb, event):
         try:
             cb(event)
-        except Exception as exception:
+        except Exception:
             _handle_exception(self.ignore_callback_errors,
                               self.print_callback_errors,
                               self, cb_event=(cb, event))

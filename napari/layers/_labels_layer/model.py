@@ -414,7 +414,7 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
-        int_coord = list(copy(coord))
+        int_coord = list(coord)
         int_coord[-2] = int(round(coord[-2]))
         int_coord[-1] = int(round(coord[-1]))
 
@@ -541,7 +541,7 @@ class Labels(Layer):
         pos = transform.map(position)
         pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
                np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = list(copy(indices))
+        coord = list(indices)
         coord[-2] = pos[0]
         coord[-1] = pos[1]
         int_coord = copy(coord)
