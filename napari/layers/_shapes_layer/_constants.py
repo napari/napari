@@ -3,7 +3,7 @@ import sys
 
 
 class Mode(Enum):
-    """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
+    """Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
 
     The SELECT mode allows for entire shapes to be selected, moved and
@@ -31,6 +31,8 @@ class Mode(Enum):
     VERTEX_REMOVE = 9
 
 class Box():
+    """Box: Constants associated with the vertices of the interaction box
+    """
     WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]
     LINE = [0, 2, 4, 6, 0]
