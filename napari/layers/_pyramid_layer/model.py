@@ -154,7 +154,7 @@ class Pyramid(Image):
                             np.array(self._image_view.shape[:2])-1)
         value = self._image_view[tuple(adj_coord)]
 
-        coord = copy(indices)
+        coord = list(indices)
         coord[0] = int(pos_in_slice[0]*self.scale[0])
         coord[1] = int(pos_in_slice[1]*self.scale[1])
 
@@ -221,7 +221,7 @@ class Pyramid(Image):
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
         """
-        camera = self.viewer._qt.view.camera
+        camera = self.viewer._qtviewer.view.camera
         shape = self._image_shapes[self.pyramid_level]
         pyramid_level = self.compute_pyramid_level(camera)
         if pyramid_level != self.pyramid_level:
