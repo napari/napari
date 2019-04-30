@@ -483,8 +483,10 @@ class Labels(Layer):
                                 in enumerate(coord)])
         else:
             slice_coord = tuple(list(np.array(coord[:-2]).astype(int)) +
-                                [slice(self._to_pix(ind-self.brush_size/2, i),
-                                       self._to_pix(ind+self.brush_size/2, i),
+                                [slice(self._to_pix(ind-self.brush_size/2,
+                                                    len(self.shape) - 2 + i),
+                                       self._to_pix(ind+self.brush_size/2,
+                                                    len(self.shape) - 2 + i),
                                        1) for i, ind
                                 in enumerate(coord[-2:])])
 
