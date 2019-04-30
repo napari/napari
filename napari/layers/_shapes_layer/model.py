@@ -14,10 +14,7 @@ from vispy.color import get_color_names
 
 from .view import QtShapesLayer
 from .view import QtShapesControls
-from ._constants import (Mode, BOX_LINE_HANDLE, BOX_LINE, BOX_TOP_CENTER,
-                         BOX_CENTER, BOX_LEN, BOX_HANDLE, BOX_WITH_HANDLE,
-                         BOX_TOP_LEFT, BOX_BOTTOM_RIGHT, BOX_BOTTOM_LEFT,
-                         BACKSPACE)
+from ._constants import Mode, Box, BACKSPACE
 from .shape_list import ShapeList
 from .shape_util import create_box, point_to_lines
 from .shapes import Rectangle, Ellipse, Line, Path, Polygon
@@ -599,14 +596,14 @@ class Shapes(Layer):
             box = copy(self.data.shapes[index]._box)
 
         if box is not None:
-            rot = box[BOX_TOP_CENTER]
-            length_box = np.linalg.norm(box[BOX_BOTTOM_LEFT] -
-                                        box[BOX_TOP_LEFT])
+            rot = box[Box.TOP_CENTER]
+            length_box = np.linalg.norm(box[Box.BOTTOM_LEFT] -
+                                        box[Box.TOP_LEFT])
             if length_box > 0:
                 rescale = self._get_rescale()
                 r = self._rotation_handle_length*rescale
-                rot = rot-r*(box[BOX_BOTTOM_LEFT] -
-                             box[BOX_TOP_LEFT])/length_box
+                rot = rot-r*(box[Box.BOTTOM_LEFT] -
+                             box[Box.TOP_LEFT])/length_box
             box = np.append(box, [rot], axis=0)
 
         return box
@@ -667,7 +664,7 @@ class Shapes(Layer):
             if self.mode == Mode.SELECT:
                 # If in select mode just show the interaction boudning box
                 # including its vertices and the rotation handle
-                box = self._selected_box[BOX_WITH_HANDLE]
+                box = self._selected_box[Box.WITH_HANDLE]
                 if self._hover_shape is None:
                     face_color = 'white'
                 elif self._hover_vertex is None:
@@ -678,7 +675,7 @@ class Shapes(Layer):
                 vertices = box[:, ::-1]
                 # Use a subset of the vertices of the interaction_box to plot
                 # the line around the edge
-                pos = box[BOX_LINE_HANDLE][:, ::-1]
+                pos = box[Box.LINE_HANDLE][:, ::-1]
                 width = 1.5
             elif self.mode in ([Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON,
                                 Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
@@ -717,7 +714,7 @@ class Shapes(Layer):
             width = 1.5
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
-            pos = box[BOX_LINE][:, ::-1]
+            pos = box[Box.LINE][:, ::-1]
         else:
             # Otherwise show nothing
             vertices = np.empty((0, 2))
@@ -834,12 +831,12 @@ class Shapes(Layer):
             scale = [scale, scale]
         box = self._selected_box - center
         box = np.array(box*scale)
-        if not np.all(box[BOX_TOP_CENTER] == box[BOX_HANDLE]):
+        if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
             rescale = self._get_rescale()
             r = self._rotation_handle_length*rescale
-            handle_vec = box[BOX_HANDLE]-box[BOX_TOP_CENTER]
+            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[BOX_HANDLE] = box[BOX_TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
@@ -854,12 +851,12 @@ class Shapes(Layer):
         """
         box = self._selected_box - center
         box = box @ transform.T
-        if not np.all(box[BOX_TOP_CENTER] == box[BOX_HANDLE]):
+        if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
             rescale = self._get_rescale()
             r = self._rotation_handle_length*rescale
-            handle_vec = box[BOX_HANDLE]-box[BOX_TOP_CENTER]
+            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[BOX_HANDLE] = box[BOX_TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
         self._selected_box = box + center
 
     def _shape_at(self, coord):
@@ -884,7 +881,7 @@ class Shapes(Layer):
         if len(self.selected_shapes) > 0:
             if self.mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
-                box = self._selected_box[BOX_WITH_HANDLE]
+                box = self._selected_box[Box.WITH_HANDLE]
                 distances = abs(box - coord[:2])
 
                 # Get the vertex sizes
@@ -1031,24 +1028,24 @@ class Shapes(Layer):
                 if vertex is None:
                     # Check where dragging box from to move whole object
                     if self._drag_start is None:
-                        center = self._selected_box[BOX_CENTER]
+                        center = self._selected_box[Box.CENTER]
                         self._drag_start = coord - center
-                    center = self._selected_box[BOX_CENTER]
+                    center = self._selected_box[Box.CENTER]
                     shift = coord - center - self._drag_start
                     for index in self.selected_shapes:
                         self.data.shift(index, shift)
                     self._selected_box = self._selected_box + shift
                     self.refresh()
-                elif vertex < BOX_LEN:
+                elif vertex < Box.LEN:
                     # Corner / edge vertex is being dragged so resize object
                     box = self._selected_box
                     if self._fixed_vertex is None:
-                        self._fixed_index = (vertex+4) % BOX_LEN
+                        self._fixed_index = (vertex+4) % Box.LEN
                         self._fixed_vertex = box[self._fixed_index]
 
-                    size = (box[(self._fixed_index+4) % BOX_LEN] -
+                    size = (box[(self._fixed_index+4) % Box.LEN] -
                             box[self._fixed_index])
-                    offset = box[BOX_HANDLE] - box[BOX_CENTER]
+                    offset = box[Box.HANDLE] - box[Box.CENTER]
                     offset = offset/np.linalg.norm(offset)
                     offset_perp = np.array([offset[1], -offset[0]])
 
@@ -1081,7 +1078,7 @@ class Shapes(Layer):
                     if self._fixed_index % 2 == 0:
                         # corner selected
                         scale = np.array([dist_perp, dist])
-                    elif self._fixed_index % 4 == 1:
+                    elif self._fixed_index % 4 == 3:
                         # top selected
                         scale = np.array([1, dist])
                     else:
@@ -1091,7 +1088,7 @@ class Shapes(Layer):
                     # prevent box from shrinking below a threshold size
                     rescale = self._get_rescale()
                     threshold = self._vertex_size*rescale/8
-                    scale[abs(scale*size) < threshold] = 1
+                    scale[abs(scale*size[[1, 0]]) < threshold] = 1
 
                     # check orientation of box
                     angle = -np.arctan2(offset[0], -offset[1])
@@ -1115,9 +1112,9 @@ class Shapes(Layer):
                     self.refresh()
                 elif vertex == 8:
                     # Rotation handle is being dragged so rotate object
-                    handle = self._selected_box[BOX_HANDLE]
+                    handle = self._selected_box[Box.HANDLE]
                     if self._drag_start is None:
-                        self._fixed_vertex = self._selected_box[BOX_CENTER]
+                        self._fixed_vertex = self._selected_box[Box.CENTER]
                         offset = handle - self._fixed_vertex
                         self._drag_start = -np.degrees(np.arctan2(offset[0],
                                                        -offset[1]))
@@ -1595,7 +1592,7 @@ class Shapes(Layer):
                 self._fixed_aspect = True
                 box = self._selected_box
                 if box is not None:
-                    size = box[BOX_BOTTOM_RIGHT]-box[BOX_TOP_LEFT]
+                    size = box[Box.BOTTOM_RIGHT]-box[Box.TOP_LEFT]
                     if not np.any(size == np.zeros(2)):
                         self._aspect_ratio = abs(size[1] / size[0])
                     else:
