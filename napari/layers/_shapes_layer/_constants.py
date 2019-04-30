@@ -30,16 +30,17 @@ class Mode(Enum):
     VERTEX_INSERT = 8
     VERTEX_REMOVE = 9
 
-
-BOX_WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
-BOX_LINE_HANDLE = [1, 2, 4, 6, 0, 1, 8]
-BOX_LINE = [0, 2, 4, 6, 0]
-BOX_TOP_LEFT = 0
-BOX_TOP_CENTER = 1
-BOX_BOTTOM_RIGHT = 4
-BOX_BOTTOM_LEFT = 6
-BOX_CENTER = 8
-BOX_HANDLE = 9
-BOX_LEN = 8
+class Box():
+    WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
+    LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]
+    LINE = [0, 2, 4, 6, 0]
+    TOP_LEFT = 0
+    TOP_CENTER = 7
+    LEFT_CENTER = 1
+    BOTTOM_RIGHT = 4
+    BOTTOM_LEFT = 2
+    CENTER = 8
+    HANDLE = 9
+    LEN = 8
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
