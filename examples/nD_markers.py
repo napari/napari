@@ -18,6 +18,6 @@ with app_context():
 
     # add the markers
     markers = np.array([[0, 0, 100, 100], [0, 0, 50, 120], [1, 0, 100, 40],
-                        [2, 10, 110, 100], [10, 8, 400, 100]])
+                        [2, 10, 110, 100], [9, 8, 80, 100]])
     viewer.add_markers(markers, size=[0, 6, 10, 10], face_color='blue',
                        n_dimensional=True)

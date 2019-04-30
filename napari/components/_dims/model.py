@@ -65,8 +65,8 @@ class Dims:
     def range(self, range):
         if range == self.range:
             return
-        self._range = range
         self.ndim = len(range)
+        self._range = range
 
     @property
     def point(self):
