@@ -34,12 +34,14 @@ class Viewer:
                                    auto_connect=True,
                                    status=Event,
                                    help=Event,
+                                   title=Event,
                                    active_markers=Event)
         self.dims = Dims(self)
         self.layers = LayersList(self)
 
         self._status = 'Ready'
         self._help = ''
+        self._title = 'napari'
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
@@ -88,6 +90,19 @@ class Viewer:
             return
         self._help = help
         self.events.help(text=self._help)
+
+    @property
+    def title(self):
+        """string: String that is displayed in window title.
+        """
+        return self._title
+
+    @title.setter
+    def title(self, title):
+        if title == self.title:
+            return
+        self._title = title
+        self.events.title(text=self._title)
 
     @property
     def interactive(self):
