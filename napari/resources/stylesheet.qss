@@ -1,6 +1,87 @@
-QRadioButton {
-    background-color:lightGray;
+QWidget {
+  background-color: {{ background }};
+  border: 0px;
+  padding: 0px;
+  color: {{ text }};
+  selection-background-color: {{ secondary }};
+  selection-color: {{ text }};
+}
+
+QtViewer {
+   padding-top: 50px;
+}
+
+QLabel {
+   background-color: {{ foreground }};
+   qproperty-alignment: right;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QSplitter {
+    spacing: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+QSplitter::handle:horizontal {
+    width: 2px;
+}
+
+QSplitter::handle:vertical {
+    height: 2px;
+}
+
+/* ------------------------------------------------------ */
+
+QSlider {
+   background-color: {{ background }};
+}
+
+QSlider::groove:horizontal {
+   border: 0px;
+   background: {{ foreground }};
+   height: 8px;
+}
+
+QSlider::handle:horizontal {
+   background: {{ highlight }};
+   border: 0px;
+   width: 16px;
+   margin-top: -4px;
+   margin-bottom: -4px;
+   border-radius: 8px;
+}
+
+QSlider::sub-page:horizontal {
+    background: {{ highlight }};
+}
+
+/* ------------------------------------------------------ */
+
+QScrollBar:vertical {
+    background-color: {{ background }};
+    width: 16px;
+    margin: 16px 2px 16px 2px;
     border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: {{ foreground }};
+    border: 0px;
+    min-height: 8px;
+    border-radius: 3px;
+}
+
+/* ------------------------------------------------------ */
+
+QRadioButton {
+    background-color: {{ foreground }};
+    border-radius: 3px;
+}
+
+QRadioButton:hover {
+   background-color: {{ primary }};
 }
 
 QRadioButton::indicator {
@@ -10,93 +91,227 @@ QRadioButton::indicator {
 }
 
 QRadioButton::indicator:checked {
-    background-color:rgb(0, 153, 255);
+    background-color: {{ highlight }};
     border-radius: 3px;
 }
 
-QtPanZoomButton::indicator:checked, QtPanZoomButton::indicator:unchecked {
-    image: url(":/icons/zoom_off.png");
+QtPanZoomButton::indicator {
+    image: url(":/icons/{{ folder }}/zoom.svg");
 }
 
-QtPanZoomButton::indicator:unchecked:hover {
-    image: url(":/icons/zoom_on.png");
+QtSelectButton::indicator {
+    image: url(":/icons/{{ folder }}/select_marker.svg");
 }
 
-QtSelectButton::indicator:checked, QtSelectButton::indicator:unchecked {
-    image: url(":/icons/select_off.png");
-}
-
-QtSelectButton::indicator:unchecked:hover {
-    image: url(":/icons/select_on.png");
-}
-
-QtAdditionButton::indicator:checked, QtAdditionButton::indicator:unchecked {
-    image: url(":/icons/add_off.png");
-}
-
-QtAdditionButton::indicator:unchecked:hover {
-    image: url(":/icons/add_on.png");
+QtAdditionButton::indicator {
+    image: url(":/icons/{{ folder }}/add.svg");
 }
 
 
 /* ------------------------------------------------------ */
 
-QtLayer > QCheckBox[mode="visibility"]::indicator {
-    width: 18px; height: 18px;
-}
-
-QtLayer > QCheckBox[mode="visibility"]::indicator:checked {
-    image: url(":/icons/eye_on.png");
-}
-
-QtLayer > QLineEdit {
-    background-color: white;
-    color: black;
-    border: none;
-    border-radius: 3px;
-}
-
-QtLayer > QLineEdit:disabled {
-    background-color: lightGray;
-    color: black;
-    border: none;
-    border-radius: 3px;
-}
-
 QtLayer {
-    border: 3px solid lightGray;
-    background-color: lightGray;
+    border: 0px;
+    background-color: {{ foreground }};
     border-radius: 3px;
+    padding: 0px;
+    margin: 0px;
 }
 
 QtLayer[selected="true"] {
-    border: 3px solid rgb(0, 153, 255);
-    background-color: lightGray;
+    border: 1px solid {{ text }};
+}
+
+QtLayer > QSlider {
+   background-color: {{ foreground }};
+}
+
+QtLayer > QSlider::groove:horizontal {
+   border: 0px;
+   background: {{ primary }};
+   height: 8px;
+}
+
+QtLayer > QSlider::handle:horizontal {
+   background: {{ secondary }};
+   border: 0px;
+   width: 16px;
+   margin-top: -4px;
+   margin-bottom: -4px;
+   border-radius: 8px;
+}
+
+QtLayer > QSlider::sub-page:horizontal {
+    background: {{ secondary }};
+}
+
+QtLayer > QLineEdit {
+    background-color: {{ foreground }};
+    border: none;
+    border-radius: 0px;
+    font-size: 18px;
+    padding-right: 10px;
+    qproperty-alignment: left;
+}
+
+QtLayer > QLineEdit:disabled {
+    background-color: {{ foreground }};
+    border: none;
     border-radius: 3px;
+}
+
+QtLayer > QComboBox {
+   background-color: {{ primary }};
+   padding-left: 6px;
+   padding-right: 10px;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QtLayer > QComboBox::drop-down {
+   subcontrol-origin: padding;
+   subcontrol-position: top right;
+   width: 30px;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+}
+
+QtLayer > QComboBox::down-arrow {
+   image: url(":/icons/{{ folder }}/drop_down.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayer > QSpinBox {
+   background-color: {{ primary }};
+   padding-left: 14px;
+   padding-right: 6px;
+   padding-top: 2px;
+   padding-bottom: 3px;
+}
+
+QtLayer > QSpinBox::up-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center right;
+    width: 16px;
+    height: 16px;
+    right: 6px;
+}
+
+QtLayer > QSpinBox::down-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center left;
+    width: 16px;
+    height: 16px;
+    left: 6px;
+}
+
+QtLayer > QSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayer > QSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayer > QPushButton#shuffle {
+  background-color: {{ secondary }};
+  border: 3px solid {{ secondary }};
+  text-align: left;
+  padding-left: 5px;
+}
+
+QtLayer > QLabel#shuffle-label {
+  margin-top: 4px;
+}
+
+QtLayer > QPushButton#shuffle:pressed {
+  background-color: {{ foreground }};
+  border: 3px solid {{ secondary }};
+}
+
+QtLayer > QCheckBox#visibility {
+   background-color: {{ foreground }};
+}
+
+QtLayer > QCheckBox#visibility::indicator:unchecked {
+   border: 0px;
+   border-radius: 4px;
+   width: 24px;
+   height: 24px;
+   image: url(":/icons/{{ folder }}/visibility_off.svg");
+}
+
+QtLayer > QCheckBox#visibility::indicator:checked {
+   background-color: {{ foreground }};
+   border: 0px;
+   width: 24px;
+   height: 24px;
+   image: url(":/icons/{{ folder }}/visibility.svg");
+}
+
+QtLayer > QCheckBox {
+  background-color: {{ foreground }};
+  spacing: 50px;
+}
+
+QtLayer > QCheckBox::indicator {
+   border: 3px solid {{ secondary }};
+   border-radius: 4px;
+   width: 13px;
+   height: 13px;
+}
+
+QtLayer > QCheckBox::indicator:checked {
+   background-color: {{ secondary }};
+   width: 13px;
+   height: 13px;
 }
 
 
 /* ------------------------------------------------------ */
 
 QPushButton {
-    background-color:lightGray;
-    border-radius: 3px;
-}
-
-QPushButton:pressed {
-    background-color:rgb(0, 153, 255);
+    background-color: {{ foreground }};
     border-radius: 3px;
 }
 
 QPushButton:hover {
-    background-color:rgb(0, 153, 255);
+    background-color: {{ primary }};
     border-radius: 3px;
+}
+
+QPushButton:pressed {
+  background-color: {{ highlight }};
+  border-radius: 3px;
+}
+
+QtDeleteButton {
+   image: url(":/icons/{{ folder }}/delete.svg");
+}
+
+QtNewMarkersButton {
+   image: url(":/icons/{{ folder }}/new_markers.svg");
+}
+
+QtNewShapesButton {
+   image: url(":/icons/{{ folder }}/new_shapes.svg");
+}
+
+QtNewLabelsButton {
+   image: url(":/icons/{{ folder }}/new_labels.svg");
 }
 
 /* ------------------------------------------------------ */
 
 QtModeButton {
-  background-color:lightGray;
+  background-color: {{ foreground }};
   border-radius: 3px;
 }
 
@@ -108,162 +323,76 @@ QtModeButton::indicator {
 }
 
 QtModeButton::indicator:checked {
-  background-color:rgb(0, 153, 255);
+  background-color: {{ highlight }};
   border-radius: 3px;
 }
 
-QtModeButton[mode="zoom"]::indicator:checked {
-  image: url(":/icons/zoom_off.png");
+QtModeButton::indicator:unchecked:hover {
+  background-color: {{ primary }};
+  border-radius: 3px;
 }
 
-QtModeButton[mode="zoom"]::indicator:unchecked {
-  image: url(":/icons/zoom_off.png");
+QtModeButton[mode="zoom"]::indicator {
+  image: url(":/icons/{{ folder }}/zoom.svg");
 }
 
-QtModeButton[mode="zoom"]::indicator:unchecked:hover {
-  image: url(":/icons/zoom_on.png");
+QtModeButton[mode="select"]::indicator {
+  image: url(":/icons/{{ folder }}/select.svg");
 }
 
-QtModeButton[mode="select"]::indicator:checked {
-  image: url(":/icons/select_off.png");
+QtModeButton[mode="direct"]::indicator {
+  image: url(":/icons/{{ folder }}/direct.svg");
 }
 
-QtModeButton[mode="select"]::indicator:unchecked {
-  image: url(":/icons/select_off.png");
+QtModeButton[mode="rectangle"]::indicator {
+  image: url(":/icons/{{ folder }}/rectangle.svg");
 }
 
-QtModeButton[mode="select"]::indicator:unchecked:hover {
-  image: url(":/icons/select_on.png");
+QtModeButton[mode="ellipse"]::indicator {
+  image: url(":/icons/{{ folder }}/ellipse.svg");
+  color: red;
 }
 
-QtModeButton[mode="direct"]::indicator:checked {
-  image: url(":/icons/direct_off.png");
+QtModeButton[mode="line"]::indicator {
+  image: url(":/icons/{{ folder }}/line.svg");
 }
 
-QtModeButton[mode="direct"]::indicator:unchecked {
-  image: url(":/icons/direct_off.png");
+QtModeButton[mode="path"]::indicator {
+  image: url(":/icons/{{ folder }}/path.svg");
 }
 
-QtModeButton[mode="direct"]::indicator:unchecked:hover {
-  image: url(":/icons/direct_on.png");
+QtModeButton[mode="polygon"]::indicator {
+  image: url(":/icons/{{ folder }}/polygon.svg");
 }
 
-QtModeButton[mode="rectangle"]::indicator:checked {
-  image: url(":/icons/rectangle_off.png");
+QtModeButton[mode="vertex_insert"]::indicator {
+  image: url(":/icons/{{ folder }}/vertex_insert.svg");
 }
 
-QtModeButton[mode="rectangle"]::indicator:unchecked {
-  image: url(":/icons/rectangle_off.png");
+QtModeButton[mode="vertex_remove"]::indicator {
+  image: url(":/icons/{{ folder }}/vertex_remove.svg");
 }
 
-QtModeButton[mode="rectangle"]::indicator:unchecked:hover {
-  image: url(":/icons/rectangle_on.png");
+QtModeButton[mode="paint"]::indicator {
+  image: url(":/icons/{{ folder }}/paint.svg");
 }
 
-QtModeButton[mode="ellipse"]::indicator:checked {
-  image: url(":/icons/ellipse_off.png");
+QtModeButton[mode="fill"]::indicator {
+  image: url(":/icons/{{ folder }}/fill.svg");
 }
 
-QtModeButton[mode="ellipse"]::indicator:unchecked {
-  image: url(":/icons/ellipse_off.png");
+QtModeButton[mode="picker"]::indicator {
+  image: url(":/icons/{{ folder }}/picker.svg");
 }
 
-QtModeButton[mode="ellipse"]::indicator:unchecked:hover {
-  image: url(":/icons/ellipse_on.png");
+QtMoveBackButton {
+   image: url(":/icons/{{ folder }}/move_back.svg");
 }
 
-QtModeButton[mode="line"]::indicator:checked {
-  image: url(":/icons/line_off.png");
+QtMoveFrontButton {
+   image: url(":/icons/{{ folder }}/move_front.svg");
 }
 
-QtModeButton[mode="line"]::indicator:unchecked {
-  image: url(":/icons/line_off.png");
-}
-
-QtModeButton[mode="line"]::indicator:unchecked:hover {
-  image: url(":/icons/line_on.png");
-}
-
-QtModeButton[mode="path"]::indicator:checked {
-  image: url(":/icons/path_off.png");
-}
-
-QtModeButton[mode="path"]::indicator:unchecked {
-  image: url(":/icons/path_off.png");
-}
-
-QtModeButton[mode="path"]::indicator:unchecked:hover {
-  image: url(":/icons/path_on.png");
-}
-
-QtModeButton[mode="polygon"]::indicator:checked {
-  image: url(":/icons/polygon_off.png");
-}
-
-QtModeButton[mode="polygon"]::indicator:unchecked {
-  image: url(":/icons/polygon_off.png");
-}
-
-QtModeButton[mode="polygon"]::indicator:unchecked:hover {
-  image: url(":/icons/polygon_on.png");
-}
-
-QtModeButton[mode="vertex_insert"]::indicator:checked {
-  image: url(":/icons/vertex_insert_off.png");
-}
-
-QtModeButton[mode="vertex_insert"]::indicator:unchecked {
-  image: url(":/icons/vertex_insert_off.png");
-}
-
-QtModeButton[mode="vertex_insert"]::indicator:unchecked:hover {
-  image: url(":/icons/vertex_insert_on.png");
-}
-
-QtModeButton[mode="vertex_remove"]::indicator:checked {
-  image: url(":/icons/vertex_remove_off.png");
-}
-
-QtModeButton[mode="vertex_remove"]::indicator:unchecked {
-  image: url(":/icons/vertex_remove_off.png");
-}
-
-QtModeButton[mode="vertex_remove"]::indicator:unchecked:hover {
-  image: url(":/icons/vertex_remove_on.png");
-}
-
-QtModeButton[mode="fill"]::indicator:checked {
-  image: url(":/icons/fill_off.png");
-}
-
-QtModeButton[mode="fill"]::indicator:unchecked {
-  image: url(":/icons/fill_off.png");
-}
-
-QtModeButton[mode="fill"]::indicator:unchecked:hover {
-  image: url(":/icons/fill_on.png");
-}
-
-QtModeButton[mode="paint"]::indicator:checked {
-  image: url(":/icons/paint_off.png");
-}
-
-QtModeButton[mode="paint"]::indicator:unchecked {
-  image: url(":/icons/paint_off.png");
-}
-
-QtModeButton[mode="paint"]::indicator:unchecked:hover {
-  image: url(":/icons/paint_on.png");
-}
-
-QtModeButton[mode="picker"]::indicator:checked {
-  image: url(":/icons/picker_off.png");
-}
-
-QtModeButton[mode="picker"]::indicator:unchecked {
-  image: url(":/icons/picker_off.png");
-}
-
-QtModeButton[mode="picker"]::indicator:unchecked:hover {
-  image: url(":/icons/picker_on.png");
+QtDeleteShapeButton {
+   image: url(":/icons/{{ folder }}/delete_shape.svg");
 }

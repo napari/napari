@@ -1,4 +1,5 @@
 import numpy as np
+from xml.etree.ElementTree import Element, tostring
 from copy import copy, deepcopy
 from contextlib import contextmanager
 
@@ -532,7 +533,7 @@ class Shapes(Layer):
         """
         if self._need_display_update:
             self._need_display_update = False
-            self._set_view_slice()
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -544,8 +545,8 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_view_slice(self, indices=None):
-        """Set the shape mesh data to the view.
+    def _set_view_slice(self, indices):
+        """Set the view given the slicing indices.
 
         Parameters
         ----------
@@ -555,7 +556,7 @@ class Shapes(Layer):
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]
-        vertices = self.data._mesh.vertices
+        vertices = self.data._mesh.vertices[:, ::-1]
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
         else:
@@ -637,6 +638,7 @@ class Shapes(Layer):
             centers, offsets, triangles = self.data.outline(index)
             rescale = self._get_rescale()
             vertices = centers + rescale*self._highlight_width*offsets
+            vertices = vertices[:, ::-1]
         else:
             vertices = None
             triangles = None
@@ -673,10 +675,10 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                vertices = box
+                vertices = box[:, ::-1]
                 # Use a subset of the vertices of the interaction_box to plot
                 # the line around the edge
-                pos = box[BOX_LINE_HANDLE]
+                pos = box[BOX_LINE_HANDLE][:, ::-1]
                 width = 1.5
             elif self.mode in ([Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON,
                                 Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
@@ -684,7 +686,7 @@ class Shapes(Layer):
                                 Mode.VERTEX_REMOVE]):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(self.data._index, self.selected_shapes)
-                vertices = self.data._vertices[inds]
+                vertices = self.data._vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
                 if self.mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
@@ -715,7 +717,7 @@ class Shapes(Layer):
             width = 1.5
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
-            pos = box[BOX_LINE]
+            pos = box[BOX_LINE][:, ::-1]
         else:
             # Otherwise show nothing
             vertices = np.empty((0, 2))
@@ -925,7 +927,8 @@ class Shapes(Layer):
         rescale : float
             Conversion factor from canvas coordinates to image coordinates.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        scene = self.viewer._qtviewer.canvas.scene
+        transform = scene.node_transform(self._node)
         rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
         return rescale.mean()
@@ -943,9 +946,10 @@ class Shapes(Layer):
         coord : sequence of float
             Position of mouse cursor in image coordinates.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        scene = self.viewer._qtviewer.canvas.scene
+        transform = scene.node_transform(self._node)
         pos = transform.map(position)
-        coord = np.array([pos[0], pos[1]])
+        coord = np.array([pos[1], pos[0]])
         self._cursor_coord = coord
 
         return coord
@@ -967,10 +971,7 @@ class Shapes(Layer):
         msg : string
             String containing a message that can be used as a status update.
         """
-        coord_shift = copy(coord)
-        coord_shift[0] = int(coord[1])
-        coord_shift[1] = int(coord[0])
-        msg = f'{coord_shift.astype(int)}, {self.name}'
+        msg = f'{coord.astype(int)}, {self.name}'
         if shape is not None:
             msg = msg + ', shape ' + str(shape)
             if vertex is not None:
@@ -1182,6 +1183,46 @@ class Shapes(Layer):
                     self._drag_start = coord
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
+
+    def to_svg(self, canvas_shape=None, shape_type=None):
+        """Returns an svg string with all the shapes contained in the layer.
+        Passing a `shape_type` argument leads to only shapes from that
+        particular `shape_type` being returned.
+
+        Parameters
+        ----------
+        canvas_shape : 2-tuple, optional
+            Shape of SVG canvas to be generated. If not specified, takes the
+            max of all the vertices
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
+            optional
+            String of shape type to be included
+
+        Returns
+        ----------
+        svg : string
+            String with the svg specification of the shapes contained in the
+            layer
+        """
+
+        if canvas_shape is None:
+            canvas_shape = self.data._vertices.max(axis=0).astype(np.int)
+
+        xml = Element('svg', width=f'{canvas_shape[0]}',
+                      height=f'{canvas_shape[1]}', version='1.1',
+                      xmlns='http://www.w3.org/2000/svg')
+
+        xml_list = self.data.to_xml(shape_type=shape_type)
+
+        for x in xml_list:
+            xml.append(x)
+
+        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
+               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
+               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
+               tostring(xml, encoding='unicode', method='xml'))
+
+        return svg
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
-from PyQt5.QtCore import QSize
 
-from ....util.range_slider import QVRangeSlider
+from ...._qt.range_slider.range_slider import QVRangeSlider
 
 
 class QtImageControls(QWidget):
@@ -20,6 +19,7 @@ class QtImageControls(QWidget):
 
         layout = QHBoxLayout()
         layout.addWidget(self.climSlider)
+        layout.setContentsMargins(12, 15, 10, 10)
         self.setLayout(layout)
         self.setMouseTracking(True)
 

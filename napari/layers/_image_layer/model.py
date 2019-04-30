@@ -1,7 +1,6 @@
 from warnings import warn
 
 import numpy as np
-from numpy import clip, integer, ndarray
 from copy import copy
 
 import vispy.color
@@ -181,9 +180,6 @@ class Image(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer.dims._child_layer_changed = True
-            self.viewer.dims._update()
-
             self._node._need_colortransform_update = True
             self._set_view_slice(self.viewer.dims.indices)
 
@@ -205,10 +201,11 @@ class Image(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
+
         ndim = self.ndim
 
         indices = list(indices)
-        indices = indices[:ndim]
+        indices = indices[-ndim:]
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
@@ -385,19 +382,19 @@ class Image(Layer):
         pos = transform.map(position)
         pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
                np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = copy(indices)
-        coord[0] = int(pos[0])
-        coord[1] = int(pos[1])
-        value = self._image_view[tuple(coord[:2])]
+        coord = list(indices)
+        coord[-2] = int(pos[0])
+        coord[-1] = int(pos[1])
+        value = self._image_view[tuple(coord[-2:])]
         msg = f'{coord}, {self.name}' + ', value '
-        if isinstance(value, ndarray):
-            if isinstance(value[0], integer):
+        if isinstance(value, np.ndarray):
+            if isinstance(value[0], np.integer):
                 msg = msg + str(value)
             else:
                 v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
                 msg = msg + v_str
         else:
-            if isinstance(value, integer):
+            if isinstance(value, np.integer):
                 msg = msg + str(value)
             else:
                 msg = msg + f'{value:0.3}'

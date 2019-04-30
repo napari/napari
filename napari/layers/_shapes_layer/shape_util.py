@@ -185,19 +185,19 @@ def lines_intersect(p1, q1, p2, q2):
         return True
 
     # Test special cases
-    # p1, q1 and p2 are colinear and p2 lies on segment p1q1
+    # p1, q1 and p2 are collinear and p2 lies on segment p1q1
     if o1 == 0 and on_segment(p1, p2, q1):
         return True
 
-    # p1, q1 and q2 are colinear and q2 lies on segment p1q1
+    # p1, q1 and q2 are collinear and q2 lies on segment p1q1
     if o2 == 0 and on_segment(p1, q2, q1):
         return True
 
-    # p2, q2 and p1 are colinear and p1 lies on segment p2q2
+    # p2, q2 and p1 are collinear and p1 lies on segment p2q2
     if o3 == 0 and on_segment(p2, p1, q2):
         return True
 
-    # p2, q2 and q1 are colinear and q1 lies on segment p2q2
+    # p2, q2 and q1 are collinear and q1 lies on segment p2q2
     if o4 == 0 and on_segment(p2, q1, q2):
         return True
 
@@ -246,13 +246,38 @@ def orientation(p, q, r):
     Returns
     -------
     val : int
-        One of (-1, 0, 1). 0 if p, q, r are colinear, 1 if clockwise, and -1
+        One of (-1, 0, 1). 0 if p, q, r are collinear, 1 if clockwise, and -1
         if counterclockwise.
     """
     val = (q[1] - p[1])*(r[0] - q[0]) - (q[0] - p[0])*(r[1] - q[1])
     val = np.sign(val)
 
     return val
+
+
+def is_collinear(points):
+    """Determines if a list of 2D points are collinear.
+
+    Parameters
+    -------
+    points : (N, 2) array
+        Points to be tested for collinearity
+
+    Returns
+    -------
+    val : bool
+        True is all points are collinear, False otherwise.
+    """
+    if len(points) < 3:
+        return True
+
+    # The collinearity test takes three points, the first two are the first
+    # two in the list, and then the third is iterated through in the loop
+    for p in points[2:]:
+        if orientation(points[0], points[1], p) != 0:
+            return False
+
+    return True
 
 
 def point_to_lines(point, lines):
@@ -530,6 +555,8 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     if len(path) > 2:
         clean_path = np.array([p for i, p in enumerate(path) if i == 0 or
                               not np.all(p == path[i-1])])
+        if clean_path.shape[0] == 1:
+            clean_path = np.concatenate((clean_path, clean_path), axis=0)
     else:
         clean_path = path
 

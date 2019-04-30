@@ -3,23 +3,31 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
+from ..._dims.view import QtDims
+from ....resources import resources_dir
 from .controls import QtControls
 
 import os.path as osp
 from ....resources import resources_dir
+from ....util.theme import template, palettes
+palette = palettes['dark']
 
 
 class QtViewer(QSplitter):
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        default_stylesheet = f.read()
+        raw_stylesheet = f.read()
+        themed_stylesheet = template(raw_stylesheet, **palette)
 
     def __init__(self, viewer):
         super().__init__()
 
-        QCoreApplication.setAttribute(Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
-        self.setStyleSheet(self.default_stylesheet)
+        QCoreApplication.setAttribute(
+            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
+        )
+        self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
+        self.viewer._qtviewer = self
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -42,8 +50,10 @@ class QtViewer(QSplitter):
 
         center = QWidget()
         layout = QVBoxLayout()
+        layout.setContentsMargins(15, 20, 15, 10)
         layout.addWidget(self.canvas.native)
-        layout.addWidget(self.viewer.dims._qt)
+        dimsview = QtDims(self.viewer.dims)
+        layout.addWidget(dimsview)
         center.setLayout(layout)
 
         # Add controls, center, and layerlist
@@ -52,11 +62,10 @@ class QtViewer(QSplitter):
         self.addWidget(center)
         self.addWidget(self.viewer.layers._qt)
 
-        viewer.dims._qt.setFixedHeight(0)
-
         self._cursors = {
-                'disabled': QCursor(QPixmap(':/icons/cursor_disabled.png')
-                                    .scaled(20, 20)),
+                'disabled': QCursor(
+                    QPixmap(':/icons/cursor/cursor_disabled.png')
+                    .scaled(20, 20)),
                 'cross': Qt.CrossCursor,
                 'forbidden': Qt.ForbiddenCursor,
                 'pointing': Qt.PointingHandCursor,
@@ -68,7 +77,7 @@ class QtViewer(QSplitter):
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(QPixmap(':/icons/cursor_square.png')
+                q_cursor = QCursor(QPixmap(':/icons/cursor/cursor_square.png')
                                    .scaledToHeight(size))
         else:
             q_cursor = self._cursors[cursor]
@@ -98,6 +107,11 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
+        if (event.text in self.viewer.key_bindings and not
+                event.native.isAutoRepeat()):
+            self.viewer.key_bindings[event.text](self.viewer)
+            return
+
         layer = self.viewer._top
         if layer is not None:
             layer.on_key_press(event)
