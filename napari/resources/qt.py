@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # Resource object code
-<<<<<<< HEAD
-=======
-#
-# Created by: The Resource Compiler for PyQt5 (Qt v5.12.1)
-#
-# WARNING! All changes made in this file will be lost!
->>>>>>> master
 
 from qtpy import QtCore
 
