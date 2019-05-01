@@ -22,6 +22,7 @@ class QtLayer(QFrame):
         self.grid_layout = QGridLayout()
 
         cb = QCheckBox(self)
+        cb.setObjectName('visibility')
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.setProperty('mode', 'visibility')
@@ -33,7 +34,7 @@ class QtLayer(QFrame):
         textbox.setText(layer.name)
         textbox.home(False)
         textbox.setToolTip('Layer name')
-        textbox.setFixedWidth(80)
+        textbox.setFixedWidth(122)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
@@ -43,7 +44,7 @@ class QtLayer(QFrame):
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(75)
+        sld.setFixedWidth(110)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -69,7 +70,7 @@ class QtLayer(QFrame):
         msg = 'Click to select\nDrag to rearrange\nDouble click to expand'
         self.setToolTip(msg)
         self.setExpanded(False)
-        self.setFixedWidth(200)
+        self.setFixedWidth(250)
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
         self.layer.selected = True

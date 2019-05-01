@@ -28,7 +28,7 @@ with app_context():
     radius_space = np.linspace(0, 100, n)
 
     # assign x-y position
-    pos[:, 0] = radius_space*np.cos(phi_space) + 256
+    pos[:, 0] = radius_space*np.cos(phi_space) + 350
     pos[:, 1] = radius_space*np.sin(phi_space) + 256
 
     # assign x-y projection

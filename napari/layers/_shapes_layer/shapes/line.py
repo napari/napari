@@ -90,7 +90,7 @@ class Line(Shape):
         x2 = str(self.data[1, 0])
         y2 = str(self.data[1, 1])
 
-        element = Element('line', x1=x1, y1=y1, x2=x2, y2=y2,
+        element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2,
                           **self.svg_props)
 
         return element

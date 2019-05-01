@@ -39,7 +39,7 @@ class QtShapesControls(QFrame):
 
         self.move_front_button = QtMoveFrontButton(layer)
         self.move_back_button = QtMoveBackButton(layer)
-        self.delete_button = QtDeleteButton(layer)
+        self.delete_button = QtDeleteShapeButton(layer)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -54,6 +54,7 @@ class QtShapesControls(QFrame):
         self.button_group.addButton(self.vertex_remove_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(12, 20, 10, 10)
         layout.addWidget(self.panzoom_button)
         layout.addWidget(self.select_button)
         layout.addWidget(self.direct_button)
@@ -120,12 +121,11 @@ class QtModeButton(QRadioButton):
                 self.layer.mode = self.mode
 
 
-class QtDeleteButton(QPushButton):
+class QtDeleteShapeButton(QPushButton):
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
-        self.setIcon(QIcon(':/icons/delete.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Delete selected')
@@ -137,7 +137,6 @@ class QtMoveBackButton(QPushButton):
         super().__init__()
 
         self.layer = layer
-        self.setIcon(QIcon(':/icons/move_back.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Move to back')
@@ -149,7 +148,6 @@ class QtMoveFrontButton(QPushButton):
         super().__init__()
 
         self.layer = layer
-        self.setIcon(QIcon(':/icons/move_front.png'))
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Move to front')

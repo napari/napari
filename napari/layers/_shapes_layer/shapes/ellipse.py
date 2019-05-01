@@ -116,13 +116,14 @@ class Ellipse(Shape):
             xml element specifying the shape according to svg.
         """
         props = self.svg_props
+        data = self.data[:, ::-1]
 
-        offset = self.data[1] - self.data[0]
+        offset = data[1] - data[0]
         angle = -np.arctan2(offset[0], -offset[1])
         if not angle == 0:
             # if shape has been rotated, shift to origin
-            cen = self.data.mean(axis=0)
-            coords = self.data - cen
+            cen = data.mean(axis=0)
+            coords = data - cen
 
             # rotate back to axis aligned
             c, s = np.cos(angle), np.sin(-angle)
@@ -137,7 +138,7 @@ class Ellipse(Shape):
             transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
             props['transform'] = transform
         else:
-            coords = self.data
+            coords = data
 
         cx = str(cen[0])
         cy = str(cen[1])
