@@ -27,8 +27,8 @@ class ViewerApp(Viewer):
         Arrays to render as image layers, keyed by layer name.
     """
     def __init__(self, *images, meta=None, multichannel=None, clim_range=None,
-                 **named_images):
-        super().__init__()
+                 title='napari', **named_images):
+        super().__init__(title=title)
         self.window = Window(self)
         for image in images:
             self.add_image(image, meta=meta, multichannel=multichannel,

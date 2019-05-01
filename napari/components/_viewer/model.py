@@ -25,7 +25,7 @@ class Viewer:
         These key bindings are executed instead of any layer specific key
         bindings.
     """
-    def __init__(self):
+    def __init__(self, title='napari'):
         super().__init__()
         from .._layers_list import LayersList
         from .._dims import Dims
@@ -41,7 +41,7 @@ class Viewer:
 
         self._status = 'Ready'
         self._help = ''
-        self._title = 'napari'
+        self._title = title
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
