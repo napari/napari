@@ -27,7 +27,7 @@ class Viewer:
         These key bindings are executed instead of any layer specific key
         bindings.
     """
-    def __init__(self):
+    def __init__(self, title='napari'):
         super().__init__()
         from .._layers_list import LayersList
         from .._dims import Dims
@@ -36,6 +36,7 @@ class Viewer:
                                    auto_connect=True,
                                    status=Event,
                                    help=Event,
+                                   title=Event,
                                    active_markers=Event)
 
         # Initial dimension must be set to at least the number of visible
@@ -47,6 +48,7 @@ class Viewer:
 
         self._status = 'Ready'
         self._help = ''
+        self._title = title
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
@@ -99,6 +101,19 @@ class Viewer:
             return
         self._help = help
         self.events.help(text=self._help)
+
+    @property
+    def title(self):
+        """string: String that is displayed in window title.
+        """
+        return self._title
+
+    @title.setter
+    def title(self, title):
+        if title == self.title:
+            return
+        self._title = title
+        self.events.title(text=self._title)
 
     @property
     def interactive(self):
