@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QGridLayout, QRadioButton, QSizePolicy
+from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import QWidget, QGridLayout, QRadioButton, QSizePolicy
 from typing import Union
 
 from ..._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
@@ -28,8 +28,8 @@ class QtDims(QWidget):
     SLIDERHEIGHT = 26
 
     # Qt Signals for sending events to Qt thread
-    update_axis = pyqtSignal(int)
-    update_ndim = pyqtSignal()
+    update_axis = Signal(int)
+    update_ndim = Signal()
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -135,6 +135,7 @@ class QtDims(QWidget):
     def _set_nsliders(self, new_number_of_sliders):
         """
         Sets the number of sliders displayed
+
         Parameters
         ----------
         new_number_of_sliders :
@@ -147,6 +148,7 @@ class QtDims(QWidget):
     def _create_sliders(self, number_of_sliders):
         """
         Creates sliders to match new number of dimensions
+
         Parameters
         ----------
         number_of_sliders : new number of sliders
@@ -163,6 +165,7 @@ class QtDims(QWidget):
     def _trim_sliders(self, number_of_sliders):
         """
         Trims number of dimensions to a lower number
+
         Parameters
         ----------
         number_of_sliders : new number of sliders
@@ -175,13 +178,14 @@ class QtDims(QWidget):
     def _create_range_slider_widget(self, axis):
         """
         Creates a range slider widget for a given axis
+
         Parameters
         ----------
         axis : axis index
 
         Returns
         -------
-        output : range slider
+        slider : range slider
         """
         range = self.dims.range[axis]
         point = self.dims.point[axis]

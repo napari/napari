@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QHBoxLayout, QStackedWidget, QWidget
-from PyQt5.QtCore import QSize
+from qtpy.QtWidgets import QHBoxLayout, QStackedWidget, QWidget
+from qtpy.QtCore import QSize
 
 
 class QtControls(QStackedWidget):

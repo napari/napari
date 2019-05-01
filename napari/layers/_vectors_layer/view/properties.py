@@ -1,6 +1,5 @@
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QLabel, QComboBox, QDoubleSpinBox, QSpinBox,
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (QLabel, QComboBox, QDoubleSpinBox, QSpinBox,
                              QGridLayout)
 import numpy as np
 

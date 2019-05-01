@@ -1,6 +1,6 @@
-from PyQt5.QtCore import QCoreApplication, Qt, QSize
-from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
-from PyQt5.QtGui import QCursor, QPixmap
+from qtpy.QtCore import QCoreApplication, Qt, QSize
+from qtpy.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
+from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from ..._dims.view import QtDims

@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QPushButton, QComboBox, QSlider, QCheckBox,
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (QPushButton, QComboBox, QSlider, QCheckBox,
                              QLabel, QSpinBox)
 import numpy as np
 from collections import Iterable
