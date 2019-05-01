@@ -135,6 +135,7 @@ class QtDims(QWidget):
     def _set_nsliders(self, new_number_of_sliders):
         """
         Sets the number of sliders displayed
+
         Parameters
         ----------
         new_number_of_sliders :
@@ -147,6 +148,7 @@ class QtDims(QWidget):
     def _create_sliders(self, number_of_sliders):
         """
         Creates sliders to match new number of dimensions
+
         Parameters
         ----------
         number_of_sliders : new number of sliders
@@ -163,6 +165,7 @@ class QtDims(QWidget):
     def _trim_sliders(self, number_of_sliders):
         """
         Trims number of dimensions to a lower number
+
         Parameters
         ----------
         number_of_sliders : new number of sliders
@@ -175,18 +178,14 @@ class QtDims(QWidget):
     def _create_range_slider_widget(self, axis):
         """
         Creates a range slider widget for a given axis
+
         Parameters
         ----------
         axis : axis index
 
         Returns
         -------
-<<<<<<< HEAD
-        slider : qtpy.QSlider or None
-            Updated slider, if it exists.
-=======
-        output : range slider
->>>>>>> master
+        slider : range slider
         """
         range = self.dims.range[axis]
         point = self.dims.point[axis]
