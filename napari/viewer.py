@@ -1,3 +1,4 @@
+from .components._viewer.view import QtViewer
 from .components import Window, Viewer
 
 
@@ -29,6 +30,9 @@ class ViewerApp(Viewer):
     def __init__(self, *images, meta=None, multichannel=None, clim_range=None,
                  **named_images):
         super().__init__()
+
+        self._qtviewer = QtViewer(self)
+
         self.window = Window(self)
         for image in images:
             self.add_image(image, meta=meta, multichannel=multichannel,

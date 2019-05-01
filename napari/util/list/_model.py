@@ -6,7 +6,7 @@ from ._typed import TypedList
 
 class ListModel(MultiIndexList, TypedList):
     """List with events, tuple-indexing, typing, and filtering.
-    
+
     Parameters
     ----------
     basetype : type
@@ -19,13 +19,13 @@ class ListModel(MultiIndexList, TypedList):
 
     Attributes
     ----------
-    changed : vispy.util.event.EmitterGroup
+    events : vispy.util.event.EmitterGroup
         Group of events for adding, removing, and reordering elements
         within the list.
     """
     def __init__(self, basetype, iterable=(), lookup=None):
         super().__init__(basetype, iterable, lookup)
-        self.changed = EmitterGroup(source=self,
+        self.events = EmitterGroup(source=self,
                                     auto_connect=True,
                                     added=None,
                                     removed=None,
@@ -40,17 +40,17 @@ class ListModel(MultiIndexList, TypedList):
                             'setting of list items not allowed')
 
         super().__setitem__(indices, new_indices)
-        self.changed.reordered()
+        self.events.reordered()
 
     def insert(self, index, object):
         super().insert(index, object)
-        self.changed.added(item=object, index=self.__locitem__(index))
+        self.events.added(item=object, index=self.__locitem__(index))
 
     def append(self, object):
         super(TypedList, self).append(object)
-        self.changed.added(item=object, index=len(self) - 1)
+        self.events.added(item=object, index=len(self) - 1)
 
     def pop(self, key):
         obj = super().pop(key)
-        self.changed.removed(item=obj)
+        self.events.removed(item=obj)
         return obj

@@ -35,7 +35,7 @@ class Window:
             color: %s}""" % (palette['background'], palette['text']))
 
         self.viewer = viewer
-        self._qt_center.layout().addWidget(self.viewer._qt)
+        self._qt_center.layout().addWidget(self.viewer._qtviewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
         self._qt_center.setStyleSheet(
             'QWidget { background: %s;}' % palette['background'])
