@@ -85,7 +85,7 @@ class Path(Shape):
         element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
-        points = ' '.join([str(d[0]) + ',' + str(d[1]) for d in self.data])
+        points = ' '.join([f'{d[1]},{d[0]}' for d in self.data])
 
         props = self.svg_props
         props['fill'] = 'none'

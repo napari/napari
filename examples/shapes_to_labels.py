@@ -20,15 +20,15 @@ with app_context():
     layer.colormap = 'gray'
 
     # create a list of polygons
-    polygons = ([np.array([[13,  11], [113, 111], [246, 22]]),
-                 np.array([[60, 505], [71, 402], [42, 383], [95, 251],
-                           [59, 212], [137, 131], [187, 126], [204, 191],
-                           [248, 171], [260, 211], [243, 273], [225, 264],
-                           [173, 430], [160, 512]]),
-                 np.array([[382, 310], [381, 229], [401, 209], [411, 221],
-                           [411, 258], [412, 300], [435, 306], [434, 268],
-                           [454, 265], [461, 298], [461, 307], [507, 307],
-                           [510, 349], [369, 352], [366, 330], [366, 330]])])
+    polygons = [np.array([[11,   13], [111, 113], [22, 246]]),
+                np.array([[505,  60], [402,  71], [383,  42], [251,  95],
+                          [212,  59], [131, 137], [126, 187], [191, 204],
+                          [171, 248], [211, 260], [273, 243], [264, 225],
+                          [430, 173], [512, 160]]),
+                np.array([[310, 382], [229, 381], [209, 401], [221, 411],
+                          [258, 411], [300, 412], [306, 435], [268, 434],
+                          [265, 454], [298, 461], [307, 461], [307, 507],
+                          [349, 510], [352, 369], [330, 366], [330, 366]])]
 
     # add polygons
     layer = viewer.add_shapes(polygons, shape_type='polygon', edge_width=1,
@@ -42,7 +42,7 @@ with app_context():
     layer.selected_shapes = []
 
     # add an ellipse to the layer
-    ellipse = np.array([[222, 59], [289, 110], [243, 170], [176, 119]])
+    ellipse = np.array([[59, 222], [110, 289], [170, 243], [119, 176]])
     layer.add_shapes(ellipse, shape_type='ellipse', edge_width=5,
                      edge_color='coral', face_color='purple',
                      opacity=0.75)
@@ -50,14 +50,13 @@ with app_context():
 
     layer._qt_properties.setExpanded(True)
 
-    masks = layer.data.to_masks([512, 512]).transpose(2, 1, 0)
-    masks_layer = viewer.add_image(masks.astype(float), multichannel=False,
-                                   name='masks')
+    masks = layer.data.to_masks([512, 512])
+    masks_layer = viewer.add_image(masks.astype(float), name='masks')
     masks_layer.opacity = 0.7
     masks_layer.colormap = Colormap([[0.0, 0.0, 0.0, 0.0],
-                                    [1.0, 0.0, 0.0, 1.0]])
+                                     [1.0, 0.0, 0.0, 1.0]])
 
-    labels = layer.data.to_labels([512, 512]).transpose(1, 0)
+    labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
     labels_layer.visible = False
 

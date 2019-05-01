@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from PyQt5.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
+from ..._dims.view import QtDims
+from ....resources import resources_dir
 from .controls import QtControls
 
 import os.path as osp
@@ -20,10 +22,12 @@ class QtViewer(QSplitter):
         super().__init__()
 
         QCoreApplication.setAttribute(
-            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
+            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
+        )
         self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
+        self.viewer._qtviewer = self
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -47,7 +51,8 @@ class QtViewer(QSplitter):
         layout = QVBoxLayout()
         layout.setContentsMargins(15, 20, 15, 10)
         layout.addWidget(self.canvas.native)
-        layout.addWidget(self.viewer.dims._qt)
+        dimsview = QtDims(self.viewer.dims)
+        layout.addWidget(dimsview)
         center.setLayout(layout)
 
         # Add controls, center, and layerlist
@@ -55,8 +60,6 @@ class QtViewer(QSplitter):
         self.addWidget(self.control_panel)
         self.addWidget(center)
         self.addWidget(self.viewer.layers._qt)
-
-        viewer.dims._qt.setFixedHeight(0)
 
         self._cursors = {
                 'disabled': QCursor(

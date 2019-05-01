@@ -279,9 +279,6 @@ class Labels(Layer):
         if self._need_display_update:
             self._need_display_update = False
 
-            self.viewer.dims._child_layer_changed = True
-            self.viewer.dims._update()
-
             self._node._need_colortransform_update = True
             self._set_view_slice(self.viewer.dims.indices)
 
@@ -323,7 +320,7 @@ class Labels(Layer):
             Tuple of indices corresponding to the slice
         """
         ndim = self.ndim
-        indices = list(indices)[:ndim]
+        indices = list(indices)[-ndim:]
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
@@ -370,6 +367,7 @@ class Labels(Layer):
         indices : sequence of int or slice
             Indices to slice with.
         """
+
         sliced_image = self._slice_image(indices)
         self._node.set_data(sliced_image)
 
@@ -416,9 +414,9 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
-        int_coord = copy(coord)
-        int_coord[0] = int(round(coord[0]))
-        int_coord[1] = int(round(coord[1]))
+        int_coord = list(coord)
+        int_coord[-2] = int(round(coord[-2]))
+        int_coord[-1] = int(round(coord[-1]))
 
         if self.n_dimensional or self.image.ndim == 2:
             # work with entire image
@@ -428,7 +426,7 @@ class Labels(Layer):
             # work with just the sliced image
             slice_indices = self._get_indices(indices)
             labels = self._image_view
-            slice_coord = tuple(int_coord[:2])
+            slice_coord = tuple(int_coord[-2:])
 
         matches = labels == old_label
         if self.contiguous:
@@ -484,11 +482,13 @@ class Labels(Layer):
                                        1) for i, ind
                                 in enumerate(coord)])
         else:
-            slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
-                                       self._to_pix(ind+self.brush_size/2, i),
+            slice_coord = tuple(list(np.array(coord[:-2]).astype(int)) +
+                                [slice(self._to_pix(ind-self.brush_size/2,
+                                                    len(self.shape) - 2 + i),
+                                       self._to_pix(ind+self.brush_size/2,
+                                                    len(self.shape) - 2 + i),
                                        1) for i, ind
-                                in enumerate(coord[:2])] +
-                                list(np.array(coord[2:]).astype(int)))
+                                in enumerate(coord[-2:])])
 
         # update the labels image
         self._image[slice_coord] = new_label
@@ -543,15 +543,15 @@ class Labels(Layer):
         pos = transform.map(position)
         pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
                np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = copy(indices)
-        coord[0] = pos[0]
-        coord[1] = pos[1]
+        coord = list(indices)
+        coord[-2] = pos[0]
+        coord[-1] = pos[1]
         int_coord = copy(coord)
-        int_coord[0] = int(round(coord[0]))
-        int_coord[1] = int(round(coord[1]))
-        label = self._image_view[tuple(int_coord[:2])]
+        int_coord[-2] = int(round(coord[-2]))
+        int_coord[-1] = int(round(coord[-1]))
+        label = self._image_view[tuple(int_coord[-2:])]
 
-        return coord[:self.image.ndim], label
+        return coord[-self.image.ndim:], label
 
     def get_message(self, coord, label):
         """Generates a string based on the coordinates and information about
@@ -570,8 +570,8 @@ class Labels(Layer):
             String containing a message that can be used as a status update.
         """
         int_coord = copy(coord)
-        int_coord[0] = int(round(coord[0]))
-        int_coord[1] = int(round(coord[1]))
+        int_coord[-2] = int(round(coord[-2]))
+        int_coord[-1] = int(round(coord[-1]))
         msg = f'{int_coord}, {self.name}, label {label}'
 
         return msg
@@ -584,6 +584,8 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
+        if event.pos is None:
+            return
         indices = self.viewer.dims.indices
         coord, label = self.get_label(event.pos, indices)
 
@@ -622,7 +624,11 @@ class Labels(Layer):
 
         if self.mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
-            interp_coord = self._interp_coords(self._last_cursor_coord, coord)
+            if self._last_cursor_coord is None:
+                interp_coord = [coord]
+            else:
+                interp_coord = self._interp_coords(self._last_cursor_coord,
+                                                   coord)
             with self.freeze_refresh():
                 for c in interp_coord:
                     self.paint(c, new_label)

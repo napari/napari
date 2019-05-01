@@ -42,7 +42,7 @@ class CallSignature(inspect.Signature):
     def __str__(self):
         """do not render separators
 
-        commented code is what was taken out from 
+        commented code is what was taken out from
         the copy/pasted inspect module code :)
         """
         result = []

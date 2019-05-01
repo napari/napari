@@ -2,7 +2,7 @@
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
-## LICENSE.txt
+# # LICENSE.txt
 # Vispy licensing terms
 # ---------------------
 
@@ -37,7 +37,7 @@
 # Exceptions
 # ----------
 #
-# The examples code in the examples directory can be considered public 
+# The examples code in the examples directory can be considered public
 # domain, unless otherwise indicated in the corresponding source file.
 
 """
@@ -183,6 +183,7 @@ class Event(object):
         """Shorter string representation"""
         return self.__class__.__name__
 
+
 _event_repr_depth = 0
 
 
@@ -240,8 +241,8 @@ class EventEmitter(object):
         assert inspect.isclass(event_class)
         self.event_class = event_class
 
-        self._ignore_callback_errors = True
-        self.print_callback_errors = 'reminders'
+        self._ignore_callback_errors = True  # False
+        self.print_callback_errors = 'reminders'  # 'always'
 
     @property
     def ignore_callback_errors(self):
