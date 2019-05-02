@@ -770,6 +770,7 @@ class Shapes(Layer):
         self.selected_shapes = []
         self._drag_start = None
         self._drag_box = None
+        self._is_selecting = False
         self._fixed_vertex = None
         self._moving_shape = None
         self._moving_vertex = None
