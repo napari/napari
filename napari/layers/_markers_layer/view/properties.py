@@ -1,5 +1,5 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
 from collections import Iterable
 import numpy as np
 from ..._base_layer import QtLayer
@@ -17,7 +17,7 @@ class QtMarkersLayer(QtLayer):
 
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(75)
+        sld.setFixedWidth(110)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)

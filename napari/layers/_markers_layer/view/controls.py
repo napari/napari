@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame
 
 
 class QtMarkersControls(QFrame):
@@ -20,9 +20,10 @@ class QtMarkersControls(QFrame):
         self.button_group.addButton(self.panzoom_button)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(12, 20, 10, 10)
+        layout.addWidget(self.panzoom_button)
         layout.addWidget(self.select_button)
         layout.addWidget(self.addition_button)
-        layout.addWidget(self.panzoom_button)
         layout.addStretch(0)
         self.setLayout(layout)
         self.setMouseTracking(True)

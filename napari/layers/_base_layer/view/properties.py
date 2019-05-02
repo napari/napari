@@ -1,8 +1,8 @@
-from PyQt5.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame,
+from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame,
                              QVBoxLayout, QCheckBox, QWidget, QApplication,
                              QLabel, QComboBox)
-from PyQt5.QtCore import Qt, QMimeData
-from PyQt5.QtGui import QDrag
+from qtpy.QtCore import Qt, QMimeData
+from qtpy.QtGui import QDrag
 
 
 class QtLayer(QFrame):
@@ -18,22 +18,25 @@ class QtLayer(QFrame):
         layer.events.visible.connect(self._on_visible_change)
 
         self.setObjectName('layer')
-        self.layer.selected = True
 
         self.grid_layout = QGridLayout()
 
         cb = QCheckBox(self)
+        cb.setObjectName('visibility')
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
+        cb.setProperty('mode', 'visibility')
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
         self.visibleCheckBox = cb
         self.grid_layout.addWidget(cb, 0, 0)
 
         textbox = QLineEdit(self)
         textbox.setText(layer.name)
+        textbox.home(False)
         textbox.setToolTip('Layer name')
-        textbox.setFixedWidth(80)
+        textbox.setFixedWidth(122)
         textbox.setAcceptDrops(False)
+        textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
         self.grid_layout.addWidget(textbox, 0, 1)
@@ -41,7 +44,7 @@ class QtLayer(QFrame):
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(75)
+        sld.setFixedWidth(110)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -67,17 +70,20 @@ class QtLayer(QFrame):
         msg = 'Click to select\nDrag to rearrange\nDouble click to expand'
         self.setToolTip(msg)
         self.setExpanded(False)
-        self.setFixedWidth(200)
+        self.setFixedWidth(250)
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
+        self.layer.selected = True
 
     def _on_select(self, event):
         self.setProperty('selected', True)
+        self.nameTextBox.setEnabled(True)
         self.style().unpolish(self)
         self.style().polish(self)
 
     def _on_deselect(self, event):
         self.setProperty('selected', False)
+        self.nameTextBox.setEnabled(False)
         self.style().unpolish(self)
         self.style().polish(self)
 
@@ -112,7 +118,7 @@ class QtLayer(QFrame):
         elif modifiers == Qt.ControlModifier:
             self.layer.selected = not self.layer.selected
         else:
-            self.layer.viewer.layers.unselect_all()
+            self.layer.viewer.layers.unselect_all(ignore=self.layer)
             self.layer.selected = True
 
     def mousePressEvent(self, event):
@@ -166,6 +172,7 @@ class QtLayer(QFrame):
     def _on_layer_name_change(self, event):
         with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
+            self.nameTextBox.home(False)
 
     def _on_opacity_change(self, event):
         with self.layer.events.opacity.blocker():

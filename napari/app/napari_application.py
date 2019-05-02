@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QAction
+from qtpy.QtWidgets import QApplication, QAction
 
 
 class NapariApplication(QApplication):
