@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QColor
-from PyQt5.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QPainter, QColor
+from qtpy.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
                              QPushButton, QWidget)
 
 from .._constants import Mode
@@ -96,7 +96,7 @@ class QtColorBox(QWidget):
 
         Parameters
         ----------
-        event : PyQt5.QtCore.QEvent
+        event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
         painter = QPainter(self)

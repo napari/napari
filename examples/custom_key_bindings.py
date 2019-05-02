@@ -13,14 +13,18 @@ with app_context():
     blobs = data.binary_blobs(length=128, blob_size_fraction=0.05,
                               n_dim=2, volume_fraction=.25).astype(float)
 
-    viewer.add_image(blobs)
+    viewer.add_image(blobs, name='blobs')
 
     def accept_image(viewer):
-        print('this is a good image')
+        msg = 'this is a good image'
+        viewer.status = msg
+        print(msg)
         next(viewer)
 
     def reject_image(viewer):
-        print('this is a bad image')
+        msg = 'this is a bad image'
+        viewer.status = msg
+        print(msg)
         next(viewer)
 
     def next(viewer):
@@ -30,3 +34,6 @@ with app_context():
 
     custom_key_bindings = {'a': accept_image, 'r': reject_image}
     viewer.key_bindings = custom_key_bindings
+
+    # change viewer title
+    viewer.title = 'quality control images'
