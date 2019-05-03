@@ -21,6 +21,7 @@ class Window:
     """
     def __init__(self, viewer, show=True):
         self._qt_window = QMainWindow()
+        self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget()
         self._qt_window.setCentralWidget(self._qt_center)
         self._qt_window.setWindowTitle(viewer.title)
