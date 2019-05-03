@@ -146,11 +146,11 @@ with app_context():
 
 ![image](resources/screenshot-nD-image.png)
 
-You can draw lines and polygons on an image, including selection and adjustment of shapes and vertices, and control over fill and stroke color. Run `examples/add_shapes.py` to generate the following example.
+You can draw lines and polygons on an image, including selection and adjustment of shapes and vertices, and control over fill and stroke color. Run `examples/add_shapes.py` to generate and interact with the following example.
 
 ![image](resources/screenshot-add-shapes.png)
 
-You can also paint pixel-wise labels, useful for creating masks for segmentation, and fill in closed regions using the paint bucket. Run `examples/labels-0-2d.py` to generate the following example.
+You can also paint pixel-wise labels, useful for creating masks for segmentation, and fill in closed regions using the paint bucket. Run `examples/labels-0-2d.py` to generate and interact with the following example.
 
 ![image](resources/screenshot-add-labels.png)
 
