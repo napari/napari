@@ -39,7 +39,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-Note that many of our examples use `data` from `skimage` but `skimage` is otherwise not a dependnecy, so to run all the examples you should call
+Note that many of our examples use `data` from `skimage` but `skimage` is otherwise not a dependnecy, so in order to be able to run all the examples you should call
 
 ```sh
 $ pip install scikit-image
@@ -69,7 +69,7 @@ with app_context():
     viewer = ViewerApp(data.astronaut())
 ```
 
-## more features
+## features
 
 Check out the scripts in the `examples` folder to see some of the functionality we're developing!
 
@@ -126,7 +126,7 @@ with app_context():
  [333, 111]]
 ```
 
-Finally, you can render and quickly browse slices of multi-dimensional arrays
+You can render and quickly browse slices of multi-dimensional arrays
 
 ```python
 
@@ -145,6 +145,14 @@ with app_context():
 ```
 
 ![image](resources/screenshot-nD-image.png)
+
+You can draw lines and polygons on an image, including selection and adjustment of shapes and vertices, and control over fill and stroke color. Run `examples/add_shapes.py` to generate the following example.
+
+![image](resources/screenshot-add-shapes.png)
+
+You can also paint pixel-wise labels, useful for creating masks for segmentation, and fill in closed regions using the paint bucket. Run `examples/labels-0-2d.py` to generate the following example.
+
+![image](resources/screenshot-add-labels.png)
 
 ## plans
 
