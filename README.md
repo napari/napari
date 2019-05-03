@@ -158,10 +158,9 @@ You can also paint pixel-wise labels, useful for creating masks for segmentation
 
 We're working on several features, including 
 
-- shape-based annotation (for drawing polygons and bounding boxes)
-- region labeling (for defining segmentation)
-- 3D volumetric rendering
-- support for a plugin ecosystem (for integrating image processing and machine learning tools)
+- support for 3D volumetric rendering
+- support for multiple canvases
+- a plugin ecosystem for integrating image processing and machine learning tools
 
 See [this issue](https://github.com/napari/napari/issues/141) for some of the key use cases we're trying to enable, and feel free to add comments or ideas!
 
