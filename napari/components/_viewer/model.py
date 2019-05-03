@@ -8,6 +8,8 @@ from ...util.event import EmitterGroup, Event
 from ...util.theme import palettes
 from ...util.misc import has_clims
 from .._dims import Dims
+from ...util.keybindings import (bind_key_method, unbind_key_method,
+                                 rebind_key_method, bind_keys_method, bind_keys)
 
 
 class ViewerModel:
@@ -22,13 +24,20 @@ class ViewerModel:
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
+<<<<<<< HEAD
     key_bindings : dict of string: callable
         Custom key bindings. The dictionary key is a string containing the key
         pressed and the value is the function to be bound to the key event.
         The function should accept the viewer object as an input argument.
         These key bindings are executed instead of any layer specific key
         bindings.
+=======
+    camera : vispy.scene.Camera
+        ViewerWidget camera.
+>>>>>>> add keybinding convenience functions; convert existing keybindings
     """
+    default_keybindings = {}
+
     def __init__(self, title='napari'):
         super().__init__()
         from .._layers_list import LayersList
@@ -57,7 +66,8 @@ class ViewerModel:
         self._cursor_size = None
         self._interactive = True
         self._active_layer = None
-        self.key_bindings = {}
+        self._keybindings = {}
+        self.keybindings = self.default_keybindings
 
         # TODO: this should be eventually removed!
         # attached by QtViewer when it is constructed by the model
@@ -161,6 +171,33 @@ class ViewerModel:
             return
         self._active_layer = active_layer
         self.events.active_layer(item=self._active_layer)
+
+    @property
+    def keybindings(self):
+        return self._keybindings.copy()
+
+    @keybindings.setter
+    def keybindings(self, keybindings):
+        if keybindings == self.keybindings:
+            return
+        kb = {}
+        bind_keys(kb, keybindings.items())
+        self._keybindings = kb
+
+    bind_key = bind_key_method(keybindings='_keybindings',
+                               class_keybindings='default_keybindings')
+
+    unbind_key = unbind_key_method(keybindings='_keybindings',
+                                   class_keybindings='default_keybindings')
+
+    rebind_key = rebind_key_method(keybindings='_keybindings',
+                                   class_keybindings='default_keybindings')
+
+    bind_keys = bind_keys_method(keybindings='_keybindings',
+                                 class_keybindings='default_keybindings')
+
+    def reset_keybindings(self):
+        self.keybindings = self.default_keybindings
 
     def reset_view(self):
         """Resets the camera's view.

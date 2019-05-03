@@ -100,6 +100,8 @@ class Image(Layer):
     default_colormap = 'magma'
     default_interpolation = 'nearest'
 
+    default_keybindings = {}
+
     def __init__(self, image, meta=None, multichannel=None, *, name=None,
                  clim_range=None, **kwargs):
         if name is None and meta is not None:

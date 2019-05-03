@@ -499,34 +499,41 @@ class Markers(Layer):
                 self._add(coord)
         self.status = self.get_message(coord, self._selected_markers)
 
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-        """
-        if event.native.isAutoRepeat():
-            return
-        else:
-            if event.key == ' ':
-                if self.mode != 'pan/zoom':
-                    self._mode_history = self.mode
-                    self.mode = 'pan/zoom'
-                else:
-                    self._mode_history = 'pan/zoom'
-            elif event.key == 'Shift':
-                if self.mode == 'add':
-                    self.cursor = 'forbidden'
-            elif event.key == 'a':
-                self.mode = 'add'
-            elif event.key == 's':
-                self.mode = 'select'
-            elif event.key == 'z':
-                self.mode = 'pan/zoom'
+    def _activate_add_mode(self):
+        self.mode = 'add'
 
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
-        """
-        if event.key == ' ':
-            if self._mode_history != 'pan/zoom':
-                self.mode = self._mode_history
-        elif event.key == 'Shift':
-            if self.mode == 'add':
-                self.cursor = 'cross'
+    def _activate_select_mode(self):
+        self.mode = 'select'
+
+    def _activate_pan_zoom_mode(self):
+        self.mode = 'pan/zoom'
+
+    def _hold_to_pan_zoom(self):
+        if self.mode != 'pan/zoom':
+            # on key press
+            prev_mode = self.mode
+            self.mode = 'pan/zoom'
+
+            yield
+
+            # on key release
+            self.mode = prev_mode
+
+    def _hold_to_delete(self):
+        # on key press
+        if self.mode == 'add':
+            self.cursor = 'forbidden'
+
+        yield
+
+        # on key release
+        if self.mode == 'add':  # check again in case modes were switched
+            self.cursor = 'cross'
+
+    default_keybindings = {
+        'Space': _hold_to_pan_zoom,
+        'Shift': _hold_to_delete,
+        'a': _activate_add_mode,
+        's': _activate_select_mode,
+        'z': _activate_pan_zoom_mode
+    }

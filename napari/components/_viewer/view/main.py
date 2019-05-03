@@ -1,3 +1,5 @@
+import inspect
+
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
@@ -8,6 +10,13 @@ from ..._layers_list.view import QtLayersList
 from ....resources import resources_dir
 from .controls import QtControls
 from .buttons import QtLayersButtons
+
+import os.path as osp
+from ....resources import resources_dir
+from ....util.theme import template, palettes
+from ....util.keybindings import components_to_seq
+palette = palettes['dark']
+
 
 class QtViewer(QSplitter):
 
@@ -76,6 +85,8 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
+        self._key_release_generators = {}
+
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
         self.viewer.events.reset_view.connect(self._on_reset_view)
@@ -112,6 +123,8 @@ class QtViewer(QSplitter):
     def _on_cursor(self, event):
         cursor = self.viewer.cursor
         size = self.viewer.cursor_size
+
+    def set_cursor(self, cursor, size=10):
         if cursor == 'square':
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
@@ -156,22 +169,37 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
-        if (event.text in self.viewer.key_bindings and not
-                event.native.isAutoRepeat()):
-            self.viewer.key_bindings[event.text](self.viewer)
+        if event.native.isAutoRepeat() or event.key is None:
             return
 
+        seq = components_to_seq(event.key.name, event.modifiers)
+
         layer = self.viewer.active_layer
-        if layer is not None:
-            layer.on_key_press(event)
+        if layer is not None and seq in layer.keybindings:
+            parent = layer
+        elif seq in self.viewer.keybindings:
+            parent = self.viewer
+        else:
+            return
+
+        func = parent.keybindings[seq]
+        gen = func(parent)
+
+        if inspect.isgeneratorfunction(func):
+            try:
+                next(gen)
+            except StopIteration:  # only one statement
+                pass
+            else:
+                self._key_release_generators[event.key] = gen
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
         """
-        layer = self.viewer.active_layer
-        if layer is not None:
-            layer.on_key_release(event)
-
+        try:
+            next(self._key_release_generators[event.key])
+        except (KeyError, StopIteration):
+            pass
 
 def viewbox_key_event(event):
     """ViewBox key event handler

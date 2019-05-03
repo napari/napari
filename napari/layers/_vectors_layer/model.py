@@ -40,6 +40,7 @@ class Vectors(Layer):
     mode : str
         control panel mode
     """
+    default_keybindings = {}
 
     def __init__(self,
                  vectors,

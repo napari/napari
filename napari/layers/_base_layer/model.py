@@ -6,6 +6,8 @@ import numpy as np
 import weakref
 
 from ...util.event import Event
+from ...util.keybindings import (bind_key_method, unbind_key_method,
+                                 rebind_key_method, bind_keys_method, bind_keys)
 from ._visual_wrapper import VisualWrapper
 
 
@@ -26,6 +28,7 @@ class Layer(VisualWrapper, ABC):
         * `_get_shape()`: called by `shape` property
         * `_refresh()`: called by `refresh` method
         * `data` property (setter & getter)
+        * `default_keybindings` class variable (dictionary)
 
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice
@@ -69,6 +72,8 @@ class Layer(VisualWrapper, ABC):
                         cursor=Event,
                         cursor_size=Event)
         self.name = name
+        self._keybindings = {}
+        self.keybindings = self.default_keybindings
 
     def __str__(self):
         """Return self.name
@@ -361,6 +366,33 @@ class Layer(VisualWrapper, ABC):
 
         return svg
 
+    @property
+    def keybindings(self):
+        return self._keybindings.copy()
+
+    @keybindings.setter
+    def keybindings(self, keybindings):
+        if keybindings == self.keybindings:
+            return
+        kb = {}
+        bind_keys(kb, keybindings.items())
+        self._keybindings = kb
+
+    bind_key = bind_key_method(keybindings='_keybindings',
+                               class_keybindings='default_keybindings')
+
+    unbind_key = unbind_key_method(keybindings='_keybindings',
+                                   class_keybindings='default_keybindings')
+
+    rebind_key = rebind_key_method(keybindings='_keybindings',
+                                   class_keybindings='default_keybindings')
+
+    bind_keys = bind_keys_method(keybindings='_keybindings',
+                                 class_keybindings='default_keybindings')
+
+    def reset_keybindings(self):
+        self.keybindings = self.default_keybindings
+
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
@@ -373,15 +405,5 @@ class Layer(VisualWrapper, ABC):
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
-        """
-        return
-
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-        """
-        return
-
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
         """
         return

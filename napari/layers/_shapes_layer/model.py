@@ -748,46 +748,6 @@ class Shapes(Layer):
         self._node._subvisuals[1].set_data(pos=pos, color=edge_color,
                                            width=width)
 
-    def _finish_drawing(self):
-        """Reset properties used in shape drawing so new shapes can be drawn.
-        """
-        index = copy(self._moving_shape)
-        self._is_moving = False
-        self.selected_shapes = []
-        self._drag_start = None
-        self._drag_box = None
-        self._is_selecting = False
-        self._fixed_vertex = None
-        self._moving_shape = None
-        self._moving_vertex = None
-        self._hover_shape = None
-        self._hover_vertex = None
-        if self._is_creating is True and self.mode == Mode.ADD_PATH:
-            vertices = self.data._vertices[self.data._index == index]
-            if len(vertices) <= 2:
-                self.data.remove(index)
-            else:
-                self.data.edit(index, vertices[:-1])
-        if self._is_creating is True and self.mode == Mode.ADD_POLYGON:
-            vertices = self.data._vertices[self.data._index == index]
-            if len(vertices) <= 2:
-                self.data.remove(index)
-        self._is_creating = False
-        self.refresh()
-
-    def remove_selected(self):
-        """Remove any selected shapes.
-        """
-        to_remove = sorted(self.selected_shapes, reverse=True)
-        for index in to_remove:
-            self.data.remove(index)
-        self.selected_shapes = []
-        shape, vertex = self._shape_at(self.coordinates[-2:])
-        self._hover_shape = shape
-        self._hover_vertex = vertex
-        self.status = self.get_message(self.coordinates[-2:], shape, vertex)
-        self.refresh()
-
     def _rotate_box(self, angle, center=[0, 0]):
         """Perfrom a rotation on the selected box.
 
@@ -942,23 +902,6 @@ class Shapes(Layer):
         for index in self.selected_shapes:
             self.data.update_z_index(index, new_z_index)
         self.refresh()
-
-    def _copy_shapes(self):
-        """Copy selected shapes to clipboard.
-        """
-        self._clipboard = ([deepcopy(self.data.shapes[i]) for i in
-                           self._selected_shapes])
-
-    def _paste_shapes(self):
-        """Paste any shapes from clipboard and then selects them.
-        """
-        cur_shapes = len(self.data.shapes)
-        for s in self._clipboard:
-            self.data.add(s)
-        self.selected_shapes = list(range(cur_shapes,
-                                    cur_shapes+len(self._clipboard)))
-        self.move_to_front()
-        self._copy_shapes()
 
     def _move(self, coord):
         """Moves object at given mouse position and set of indices.
@@ -1501,86 +1444,153 @@ class Shapes(Layer):
         else:
             raise ValueError("Mode not recongnized")
 
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
+    def _activate_add_rectangle_mode(self):
+        self.mode = Mode.ADD_RECTANGLE
 
-        Parameters
-        ----------
-        event : Event
-            Vispy event
+    def _activate_add_elipse_mode(self):
+        self.mode = Mode.ADD_ELLIPSE
+
+    def _activate_add_line_mode(self):
+        self.mode = Mode.ADD_LINE
+
+    def _activate_add_path_mode(self):
+        self.mode = Mode.ADD_PATH
+
+    def _activate_add_polygon_mode(self):
+        self.mode = Mode.ADD_POLYGON
+
+    def _activate_direct_mode(self):
+        self.mode = Mode.DIRECT
+
+    def _activate_select_mode(self):
+        self.mode = Mode.SELECT
+
+    def _activate_pan_zoom_mode(self):
+        self.mode = Mode.PAN_ZOOM
+
+    def _activate_vertex_insert_mode(self):
+        self.mode = Mode.VERTEX_INSERT
+
+    def _activate_vertex_remove_mode(self):
+        self.mode = Mode.VERTEX_REMOVE
+
+    def _copy_shapes(self):
+        """Copy selected shapes to clipboard.
         """
-        if event.native.isAutoRepeat():
-            return
+        if self.mode in (Mode.DIRECT, Mode.SELECT):
+            self._clipboard = ([deepcopy(self.data.shapes[i]) for i in
+                               self._selected_shapes])
+
+    def _paste_shapes(self):
+        """Paste any shapes from clipboard and then selects them.
+        """
+        if self.mode in (Mode.DIRECT, Mode.SELECT):
+            cur_shapes = len(self.data.shapes)
+            for s in self._clipboard:
+                self.data.add(s)
+            self.selected_shapes = list(range(cur_shapes,
+                                        cur_shapes+len(self._clipboard)))
+            self.move_to_front()
+            self._copy_shapes()
+
+    def _select_all(self):
+        if self.mode in (Mode.DIRECT, Mode.SELECT):
+            self.selected_shapes = list(range(len(self.data.shapes)))
+            self._set_highlight()
+  
+    def _finish_drawing(self):
+        """Reset properties used in shape drawing so new shapes can be drawn.
+        """
+        index = copy(self._moving_shape)
+        self._is_moving = False
+        self.selected_shapes = []
+        self._drag_start = None
+        self._drag_box = None
+        self._is_selecting = False
+        self._fixed_vertex = None
+        self._moving_shape = None
+        self._moving_vertex = None
+        self._hover_shape = None
+        self._hover_vertex = None
+        if self._is_creating is True and self.mode == Mode.ADD_PATH:
+            vertices = self.data._vertices[self.data._index == index]
+            if len(vertices) <= 2:
+                self.data.remove(index)
+            else:
+                self.data.edit(index, vertices[:-1])
+        if self._is_creating is True and self.mode == Mode.ADD_POLYGON:
+            vertices = self.data._vertices[self.data._index == index]
+            if len(vertices) <= 2:
+                self.data.remove(index)
+        self._is_creating = False
+        self.refresh()
+
+    def remove_selected(self):
+        """Remove any selected shapes.
+        """
+        # TODO: can this be made private?
+        to_remove = sorted(self.selected_shapes, reverse=True)
+        for index in to_remove:
+            self.data.remove(index)
+        self.selected_shapes = []
+        shape, vertex = self._shape_at(self.coordinates[-2:])
+        self._hover_shape = shape
+        self._hover_vertex = vertex
+        self.status = self.get_message(self.coordinates[-2:], shape, vertex)
+        self.refresh()
+
+    def _hold_to_pan_zoom(self):
+        if self.mode != Mode.PAN_ZOOM:
+            # on key press
+            prev_mode = self.mode
+            prev_selected_shapes = copy(self.selected_shapes)
+            self.mode = Mode.PAN_ZOOM
+
+            yield
+
+            # on key release
+            self.mode = prev_mode
+            self.selected_shapes = prev_selected_shapes
+            self._set_highlight()
+
+    def _hold_to_move_shape(self):
+        # on key press
+        self._fixed_aspect = True
+        box = self._selected_box
+        if box is not None:
+            size = box[Box.BOTTOM_RIGHT]-box[Box.TOP_LEFT]
+            if not np.any(size == np.zeros(2)):
+                self._aspect_ratio = abs(size[1] / size[0])
+            else:
+                self._aspect_ratio = 1
         else:
-            if event.key == ' ':
-                if self.mode != Mode.PAN_ZOOM:
-                    self._mode_history = self.mode
-                    self._selected_shapes_history = copy(self.selected_shapes)
-                    self.mode = Mode.PAN_ZOOM
-                else:
-                    self._mode_history = Mode.PAN_ZOOM
-            elif event.key == 'Shift':
-                self._fixed_aspect = True
-                box = self._selected_box
-                if box is not None:
-                    size = box[Box.BOTTOM_RIGHT]-box[Box.TOP_LEFT]
-                    if not np.any(size == np.zeros(2)):
-                        self._aspect_ratio = abs(size[1] / size[0])
-                    else:
-                        self._aspect_ratio = 1
-                else:
-                    self._aspect_ratio = 1
-                if self._is_moving:
-                    self._move(self.coordinates[-2:])
-            elif event.key == 'r':
-                self.mode = Mode.ADD_RECTANGLE
-            elif event.key == 'e':
-                self.mode = Mode.ADD_ELLIPSE
-            elif event.key == 'l':
-                self.mode = Mode.ADD_LINE
-            elif event.key == 't':
-                self.mode = Mode.ADD_PATH
-            elif event.key == 'p':
-                self.mode = Mode.ADD_POLYGON
-            elif event.key == 'd':
-                self.mode = Mode.DIRECT
-            elif event.key == 's':
-                self.mode = Mode.SELECT
-            elif event.key == 'z':
-                self.mode = Mode.PAN_ZOOM
-            elif event.key == 'i':
-                self.mode = Mode.VERTEX_INSERT
-            elif event.key == 'x':
-                self.mode = Mode.VERTEX_REMOVE
-            elif event.key == 'c' and 'Control' in event.modifiers:
-                if self.mode in [Mode.DIRECT, Mode.SELECT]:
-                    self._copy_shapes()
-            elif event.key == 'v' and 'Control' in event.modifiers:
-                if self.mode in [Mode.DIRECT, Mode.SELECT]:
-                    self._paste_shapes()
-            elif event.key == 'a':
-                if self.mode in [Mode.DIRECT, Mode.SELECT]:
-                    self.selected_shapes = list(range(len(self.data.shapes)))
-                    self._set_highlight()
-            elif event.key == 'Backspace':
-                self.remove_selected()
-            elif event.key == 'Escape':
-                self._finish_drawing()
+            self._aspect_ratio = 1
+        if self._is_moving:
+            self._move(self.coordinates[-2:])
 
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
+        yield
 
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if event.key == ' ':
-            if self._mode_history != Mode.PAN_ZOOM:
-                self.mode = self._mode_history
-                self.selected_shapes = self._selected_shapes_history
-                self._set_highlight()
-        elif event.key == 'Shift':
-            self._fixed_aspect = False
-            if self._is_moving:
-                self._move(self.coordinates[-2:])
+        # on key release
+        self._fixed_aspect = False
+        if self._is_moving:
+            self._move(self.coordinates[-2:])
+
+    default_keybindings = {
+        'Space': _hold_to_pan_zoom,
+        'Shift': _hold_to_move_shape,
+        'r': _activate_add_rectangle_mode,
+        'e': _activate_add_elipse_mode,
+        'l': _activate_add_line_mode,
+        't': _activate_add_path_mode,
+        'p': _activate_add_polygon_mode,
+        'd': _activate_direct_mode,
+        's': _activate_select_mode,
+        'z': _activate_pan_zoom_mode,
+        'i': _activate_vertex_insert_mode,
+        'x': _activate_vertex_remove_mode,
+        'Control-c': _copy_shapes,
+        'Control-v': _paste_shapes,
+        'a': _select_all,
+        'Backspace': remove_selected,
+        'Escape': _finish_drawing
+    }

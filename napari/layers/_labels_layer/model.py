@@ -599,40 +599,35 @@ class Labels(Layer):
         """
         self._last_cursor_coord = None
 
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
+    def _activate_paint_mode(self):
+        self.mode = Mode.PAINT
 
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if event.native.isAutoRepeat():
-            return
-        else:
-            if event.key == ' ':
-                if self.mode != Mode.PAN_ZOOM:
-                    self._mode_history = self.mode
-                    self.mode = Mode.PAN_ZOOM
-                else:
-                    self._mode_history = Mode.PAN_ZOOM
-            elif event.key == 'p':
-                self.mode = Mode.PAINT
-            elif event.key == 'f':
-                self.mode = Mode.FILL
-            elif event.key == 'z':
-                self.mode = Mode.PAN_ZOOM
-            elif event.key == 'l':
-                self.mode = Mode.PICKER
+    def _activate_fill_mode(self):
+        self.mode = Mode.FILL
 
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
+    def _activate_pan_zoom_mode(self):
+        self.mode = Mode.PAN_ZOOM
 
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if event.key == ' ':
-            if self._mode_history != Mode.PAN_ZOOM:
-                self.mode = self._mode_history
+    def _activate_picker_mode(self):
+        self.mode = Mode.PICKER
+
+    def _hold_to_pan_zoom(self):
+        # on press
+        prev_mode = self.mode
+
+        if self.mode != Mode.PAN_ZOOM:
+            self.mode = Mode.PAN_ZOOM
+
+        yield
+
+        # on release
+        if prev_mode != Mode.PAN_ZOOM:
+            self.mode = prev_mode
+
+    default_keybindings = {
+        'Space': _hold_to_pan_zoom,
+        'p': _activate_paint_mode,
+        'f': _activate_fill_mode,
+        'z': _activate_pan_zoom_mode,
+        'l': _activate_picker_mode
+    }
