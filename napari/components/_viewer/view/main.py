@@ -71,7 +71,7 @@ class QtViewer(QSplitter):
         right_layout.addWidget(buttons_view)
         right.setLayout(right_layout)
         right.setMinimumSize(QSize(308, 250))
-        
+
         self.addWidget(right)
 
         self._cursors = {

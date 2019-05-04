@@ -1,6 +1,6 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QFrame, QCheckBox, QScrollArea)
+                            QFrame, QCheckBox, QScrollArea)
 
 from ....util.theme import palettes
 palette = palettes['dark']
