@@ -44,7 +44,7 @@ class Viewer:
         self.dims = Dims(2)
         self.dims._set_2d_viewing()
 
-        self.layers = LayersList(self)
+        self.layers = LayersList()
 
         self._status = 'Ready'
         self._help = ''
@@ -60,6 +60,12 @@ class Viewer:
         self._qtviewer = None
 
         self.dims.events.axis.connect(lambda e: self._update_layers())
+        self.layers.events.added.connect(self._on_layers_change)
+        self.layers.events.removed.connect(self._on_layers_change)
+        self.layers.events.added.connect(self._update_layer_selection)
+        self.layers.events.removed.connect(self._update_layer_selection)
+        self.layers.events.reordered.connect(self._update_layer_selection)
+        self.layers.events.reordered.connect(lambda e: self._update_canvas())
 
     @property
     def _canvas(self):
@@ -205,6 +211,9 @@ class Viewer:
         layer : Layer
             Layer to add.
         """
+        layer.viewer = self
+        layer.events.select.connect(self._update_layer_selection)
+        layer.events.deselect.connect(self._update_layer_selection)
         self.layers.append(layer)
         if len(self.layers) == 1:
             self.reset_view()
@@ -292,3 +301,10 @@ class Viewer:
                 max_dims = dims
 
         return max_dims
+
+    def _update_canvas(self):
+        """Clears draw order and refreshes canvas. Usefeul for when layers are
+        reoredered.
+        """
+        self._canvas._draw_order.clear()
+        self._canvas.update()
