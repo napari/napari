@@ -29,8 +29,7 @@ class QtLayersList(QScrollArea):
         self.layers.events.reordered.connect(self._reorder)
 
     def _add(self, event):
-        """Inserts a layer widget at a specific index
-        """
+        """Insert `event.widget` at index `event.index`."""
         layer = event.item
         index = event.index
         total = len(self.layers)
@@ -40,8 +39,7 @@ class QtLayersList(QScrollArea):
             self.vbox_layout.insertWidget(2*(total - index), QtDivider())
 
     def _remove(self, event):
-        """Removes a layer widget
-        """
+        """Remove layer widget at index `event.index`."""
         layer = event.item
         if layer._qt_properties is not None:
             index = self.vbox_layout.indexOf(layer._qt_properties)
@@ -71,13 +69,11 @@ class QtLayersList(QScrollArea):
                 self.vbox_layout.insertWidget(2*(total - i), divider)
 
     def mouseReleaseEvent(self, event):
-        """Unselects all layer widgets
-        """
+        """Unselects all layer widgets."""
         self.layers.unselect_all()
 
     def dragLeaveEvent(self, event):
-        """Unselects layer dividers
-        """
+        """Unselects layer dividers."""
         event.ignore()
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
@@ -91,20 +87,25 @@ class QtLayersList(QScrollArea):
         self.centers = [(divs[i+1]+divs[i])/2 for i in range(len(divs)-1)]
 
     def dragMoveEvent(self, event):
+        """Set the appropriate layers list divider to be highlighted when
+        dragging a layer to a new position in the layers list.
+        """
+        # Determine which widget center is the mouse currently closed to
         cord = event.pos().y()
         center_list = (i for i, x in enumerate(self.centers) if x > cord)
         divider_index = next(center_list, len(self.centers))
+        # Determine the current location of the widget being dragged
         layerWidget = event.source()
         total = self.vbox_layout.count()//2 - 1
         index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
         insert = total - divider_index
-        if not (insert == index) and not (insert-1 == index):
-            state = True
-        else:
-            state = False
+        # If the widget being dragged hasn't moved above or below any other
+        # widgets then don't highlight any dividers
+        selected = (not (insert == index) and not (insert-1 == index))
+        # Set the selected state of all the dividers
         for i in range(0, self.vbox_layout.count(), 2):
             if i == 2*divider_index:
-                self.vbox_layout.itemAt(i).widget().setSelected(state)
+                self.vbox_layout.itemAt(i).widget().setSelected(selected)
             else:
                 self.vbox_layout.itemAt(i).widget().setSelected(False)
 

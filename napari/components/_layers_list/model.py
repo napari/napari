@@ -8,8 +8,7 @@ from ...util.list import ListModel
 
 
 def _add(event):
-    """Callback when an item is added to set its order and viewer.
-    """
+    """When a layer is added, set its name and order."""
     layers = event.source
     layer = event.item
     layer.name = layers._coerce_name(layer.name, layer)
@@ -17,9 +16,7 @@ def _add(event):
 
 
 def _remove(event):
-    """Callback when an item is removed to remove its viewer
-    and reset its order.
-    """
+    """When a layer is removed, remove its viewer."""
     layers = event.source
     layer = event.item
     layer._order = 0
@@ -27,9 +24,7 @@ def _remove(event):
 
 
 def _reorder(event):
-    """Callback when the list is reordered to propagate those changes
-    to the node draw order.
-    """
+    """When the list is reordered, propagate those changes to draw order."""
     layers = event.source
     for i in range(len(layers)):
         layers[i]._order = -i
