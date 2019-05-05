@@ -59,6 +59,7 @@ class Layer(VisualWrapper, ABC):
         self._cursor_size = None
         self._interactive = True
         self._indices = ()
+        self._cursor_position = (0, 0)
         self.events.add(select=Event,
                         deselect=Event,
                         name=Event)
@@ -103,8 +104,31 @@ class Layer(VisualWrapper, ABC):
     def indices(self, indices):
         if indices == self.indices:
             return
-        self._indices = indices
+        self._indices = indices[-self.ndim:]
         self._set_view_slice()
+
+    @property
+    def cursor_position(self):
+        """tuple: 2-tuple of cursor in image coordinates. Setter does
+        transformation from canvas coordinates to image coordinates
+        """
+        return self._cursor_position
+
+    @cursor_position.setter
+    def cursor_position(self, cursor_position):
+        if cursor_position is None:
+            return
+        transform = self._node.canvas.scene.node_transform(self._node)
+        self._cursor_position = tuple(transform.map(cursor_position)[:2])
+
+    @property
+    def coordinates(self):
+        """tuple: Tuple of floats for slicing arrays on each dimension at
+        the current cursor position."""
+        coords = list(self.indices)
+        coords[-2] = self.cursor_position[1]
+        coords[-1] = self.cursor_position[0]
+        return tuple(coords)
 
     @property
     @abstractmethod
@@ -256,7 +280,6 @@ class Layer(VisualWrapper, ABC):
         rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
         return rescale.mean()
-
 
     def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.

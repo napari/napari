@@ -375,16 +375,6 @@ class Markers(Layer):
         self._need_visual_update = True
         self._update()
 
-    def _get_coord(self, position, indices):
-        ndim = len(self._get_shape())
-        
-        transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
-        coord = list(indices)
-        coord[-2] = pos[1]
-        coord[-1] = pos[0]
-        return coord[-ndim:]
-
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
         and value.
@@ -402,10 +392,8 @@ class Markers(Layer):
             String containing a message that can be used as
             a status update.
         """
-        coord_shift = list(coord)
-        coord_shift[-2] = int(coord[-2])
-        coord_shift[-1] = int(coord[-1])
-        msg = f'{coord_shift}, {self.name}'
+        int_coord = np.round(coord).astype(int)
+        msg = f'{int_coord}, {self.name}'
         if value is None:
             pass
         else:
@@ -446,10 +434,8 @@ class Markers(Layer):
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
-        if event.pos is None:
-            return
-        position = event.pos
-        coord = self._get_coord(position, self.indices)
+        self.cursor_position = event.pos
+        coord = self.coordinates
         if self.mode == 'select' and event.is_dragging:
             self._move(coord)
         else:
@@ -459,8 +445,8 @@ class Markers(Layer):
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
-        position = event.pos
-        coord = self._get_coord(position, self.indices)
+        self.cursor_position = event.pos
+        coord = self.coordinates
         self._selected_markers = self._select_marker(coord)
         shift = 'Shift' in event.modifiers
 

@@ -396,13 +396,7 @@ class Vectors(Layer):
         return vertices, triangles
 
     def _set_view_slice(self):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
+        """Sets the view given the indices to slice with."""
 
         vertices = self._mesh_vertices
         faces = self._mesh_triangles

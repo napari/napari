@@ -139,8 +139,6 @@ class Shapes(Layer):
         If a scaling or rotation is in progress then the index of the vertex of
         the boudning box that is remaining fixed during the move. `None`
         otherwise.
-    _cursor_coord : np.ndarray
-        Length 2 array of the current cursor position in Image coordinates.
     _update_properties : bool
         Bool indicating if properties are to allowed to update the selected
         shapes when they are changed. Blocking this prevents circular loops
@@ -235,7 +233,6 @@ class Shapes(Layer):
             self._is_selecting = False
             self._drag_box = None
             self._drag_box_stored = None
-            self._cursor_coord = np.array([0, 0])
             self._is_creating = False
             self._update_properties = True
             self._clipboard = []
@@ -526,13 +523,7 @@ class Shapes(Layer):
                 self.data.add(shape)
 
     def _set_view_slice(self):
-        """Set the view given the slicing indices.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
+        """Set the view given the slicing indices."""
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]
@@ -777,10 +768,10 @@ class Shapes(Layer):
         for index in to_remove:
             self.data.remove(index)
         self.selected_shapes = []
-        shape, vertex = self._shape_at(self._cursor_coord)
+        shape, vertex = self._shape_at(self.coordinates[-2:])
         self._hover_shape = shape
         self._hover_vertex = vertex
-        self.status = self.get_message(self._cursor_coord, shape, vertex)
+        self.status = self.get_message(self.coordinates[-2:], shape, vertex)
         self.refresh()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -893,26 +884,6 @@ class Shapes(Layer):
         shape = self.data.inside(coord)
         return shape, None
 
-    def _get_coord(self, position):
-        """Convert a position in canvas coordinates to image coordinates.
-
-        Parameters
-        ----------
-        position : sequence of int
-            Position of mouse cursor in canvas coordinates.
-
-        Returns
-        ----------
-        coord : sequence of float
-            Position of mouse cursor in image coordinates.
-        """
-        transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
-        coord = np.array([pos[1], pos[0]])
-        self._cursor_coord = coord
-
-        return coord
-
     def get_message(self, coord, shape, vertex):
         """Generates a string based on the coordinates and information about
         what shapes are hovered over
@@ -930,7 +901,8 @@ class Shapes(Layer):
         msg : string
             String containing a message that can be used as a status update.
         """
-        msg = f'{coord.astype(int)}, {self.name}'
+        int_coord = np.round(coord).astype(int)
+        msg = f'{int_coord}, {self.name}'
         if shape is not None:
             msg = msg + ', shape ' + str(shape)
             if vertex is not None:
@@ -1190,8 +1162,8 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
-        position = event.pos
-        coord = self._get_coord(position)
+        self.cursor_position = event.pos
+        coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
 
         if self.mode == Mode.PAN_ZOOM:
@@ -1397,10 +1369,8 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
-        if event.pos is None:
-            return
-        position = event.pos
-        coord = self._get_coord(position)
+        self.cursor_position = event.pos
+        coord = self.coordinates[-2:]
 
         if self.mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode just look at coord all
@@ -1470,8 +1440,8 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
-        position = event.pos
-        coord = self._get_coord(position)
+        self.cursor_position = event.pos
+        coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
 
         if self.mode == Mode.PAN_ZOOM:
@@ -1560,7 +1530,7 @@ class Shapes(Layer):
                 else:
                     self._aspect_ratio = 1
                 if self._is_moving:
-                    self._move(self._cursor_coord)
+                    self._move(self.coordinates[-2:])
             elif event.key == 'r':
                 self.mode = Mode.ADD_RECTANGLE
             elif event.key == 'e':
@@ -1612,4 +1582,4 @@ class Shapes(Layer):
         elif event.key == 'Shift':
             self._fixed_aspect = False
             if self._is_moving:
-                self._move(self._cursor_coord)
+                self._move(self.coordinates[-2:])
