@@ -173,25 +173,6 @@ class Image(Layer):
             return self.image.shape[:-1]
         return self.image.shape
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
-
-            self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
     def _slice_image(self, indices):
         """Determines the slice of image given the indices.
 
@@ -219,15 +200,9 @@ class Image(Layer):
 
         return self._image_view
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-        sliced_image = self._slice_image(indices)
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
+        sliced_image = self._slice_image(self.indices)
 
         self._node.set_data(sliced_image)
 
@@ -399,5 +374,5 @@ class Image(Layer):
         """
         if event.pos is None:
             return
-        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
+        coord, value, msg = self.get_value(event.pos, self.indices)
         self.status = msg

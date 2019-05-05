@@ -39,6 +39,7 @@ class Layer(VisualWrapper, ABC):
     shape
     selected
     viewer
+    indices
 
     Methods
     -------
@@ -57,6 +58,7 @@ class Layer(VisualWrapper, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
+        self._indices = ()
         self.events.add(select=Event,
                         deselect=Event,
                         name=Event)
@@ -93,6 +95,18 @@ class Layer(VisualWrapper, ABC):
         self.events.name()
 
     @property
+    def indices(self):
+        """Tuple of slice objects for slicing arrays on each dimension."""
+        return self._indices
+
+    @indices.setter
+    def indices(self, indices):
+        if indices == self.indices:
+            return
+        self._indices = indices
+        self._set_view_slice()
+
+    @property
     @abstractmethod
     def data(self):
         # user writes own docstring
@@ -105,10 +119,6 @@ class Layer(VisualWrapper, ABC):
 
     @abstractmethod
     def _get_shape(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _refresh(self):
         raise NotImplementedError()
 
     @property
@@ -248,15 +258,21 @@ class Layer(VisualWrapper, ABC):
         if self.viewer is not None:
             self.refresh()
 
-    def _set_view_slice(self, indices):
-        """Called whenever the sliders change. Sets the current view given a
-        specific slice to view.
+    def _update(self):
+        """Update the underlying visual."""
+        if self._need_display_update:
+            self._need_display_update = False
+            if hasattr(self._node, '_need_colortransform_update'):
+                self._node._need_colortransform_update = True
+            self._set_view_slice()
 
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices that make up the slice.
-        """
+        if self._need_visual_update:
+            self._need_visual_update = False
+            self._node.update()
+
+    @abstractmethod
+    def _set_view_slice(self):
+        raise NotImplementedError()
 
     def refresh(self):
         """Fully refreshes the layer. If layer is frozen refresh will not occur
@@ -264,6 +280,12 @@ class Layer(VisualWrapper, ABC):
         if self._freeze:
             return
         self._refresh()
+
+    def _refresh(self):
+        """Fully refresh the underlying visual.
+        """
+        self._need_display_update = True
+        self._update()
 
     @contextmanager
     def freeze_refresh(self):

@@ -295,24 +295,6 @@ class Markers(Layer):
         else:
             return np.max(self.coords, axis=0) + 1
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
-
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
     def _slice_markers(self, indices):
         """Determines the slice of markers given the indices.
 
@@ -368,16 +350,10 @@ class Markers(Layer):
 
         return selection
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
 
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-
-        in_slice_markers, matches, scale = self._slice_markers(indices)
+        in_slice_markers, matches, scale = self._slice_markers(self.indices)
 
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
@@ -401,7 +377,6 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-
         max_shape = self.viewer._calc_max_shape()
 
         transform = self._node.canvas.scene.node_transform(self._node)
@@ -475,8 +450,7 @@ class Markers(Layer):
         if event.pos is None:
             return
         position = event.pos
-        indices = self.viewer.dims.indices
-        coord = self._get_coord(position, indices)
+        coord = self._get_coord(position, self.indices)
         if self.mode == 'select' and event.is_dragging:
             self._move(coord)
         else:
@@ -487,8 +461,7 @@ class Markers(Layer):
         """Called whenever mouse pressed in canvas.
         """
         position = event.pos
-        indices = self.viewer.dims.indices
-        coord = self._get_coord(position, indices)
+        coord = self._get_coord(position, self.indices)
         self._selected_markers = self._select_marker(coord)
         shift = 'Shift' in event.modifiers
 

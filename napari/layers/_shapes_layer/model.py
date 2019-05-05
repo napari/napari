@@ -525,24 +525,7 @@ class Shapes(Layer):
                                   face_color=fc, opacity=o, z_index=z)
                 self.data.add(shape)
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
-    def _set_view_slice(self, indices):
+    def _set_view_slice(self):
         """Set the view given the slicing indices.
 
         Parameters

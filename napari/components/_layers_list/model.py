@@ -15,6 +15,7 @@ def _add(event):
     layer = event.item
     layer.name = layers._coerce_name(layer.name, layer)
     layer._order = -len(layers)
+    layer._indices = layers.viewer.dims.indices
     layer.viewer = layers.viewer
     layer.events.select.connect(layers.viewer._update_layer_selection)
     layer.events.deselect.connect(layers.viewer._update_layer_selection)
