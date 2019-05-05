@@ -4,6 +4,7 @@ from copy import copy
 from itertools import zip_longest
 
 from ...util.event import EmitterGroup, Event
+from .._dims import Dims
 
 
 class Viewer:
@@ -29,8 +30,7 @@ class Viewer:
     """
     def __init__(self, title='napari'):
         super().__init__()
-        from .._layers_list import LayersList
-        from .._dims import Dims
+        from .._layers import Layers
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
@@ -44,7 +44,7 @@ class Viewer:
         self.dims = Dims(2)
         self.dims._set_2d_viewing()
 
-        self.layers = LayersList()
+        self.layers = Layers()
 
         self._status = 'Ready'
         self._help = ''

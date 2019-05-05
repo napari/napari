@@ -4,7 +4,7 @@ from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from ..._dims.view import QtDims
-from ..._layers_list.view import QtLayersList
+from ..._layers.view import QtLayers
 
 from ....resources import resources_dir
 from .controls import QtControls
@@ -54,8 +54,8 @@ class QtViewer(QSplitter):
         center_layout = QVBoxLayout()
         center_layout.setContentsMargins(15, 20, 15, 10)
         center_layout.addWidget(self.canvas.native)
-        dimsview = QtDims(self.viewer.dims)
-        center_layout.addWidget(dimsview)
+        self.dims = QtDims(self.viewer.dims)
+        center_layout.addWidget(self.dims)
         center.setLayout(center_layout)
 
         # Add controls, center, and layerlist
@@ -65,10 +65,10 @@ class QtViewer(QSplitter):
 
         right = QWidget()
         right_layout = QVBoxLayout()
-        layers_view = QtLayersList(self.viewer.layers)
-        right_layout.addWidget(layers_view)
-        buttons_view = QtLayersButtons(viewer)
-        right_layout.addWidget(buttons_view)
+        self.layers = QtLayers(self.viewer.layers)
+        right_layout.addWidget(self.layers)
+        self.buttons = QtLayersButtons(viewer)
+        right_layout.addWidget(self.buttons)
         right.setLayout(right_layout)
         right.setMinimumSize(QSize(308, 250))
 
