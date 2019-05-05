@@ -153,7 +153,7 @@ class Markers(Layer):
     def symbol(self) -> str:
         """ str: marker symbol
         """
-        return self._symbol
+         return str(self._symbol)
 
     @symbol.setter
     def symbol(self, symbol: Union[str, Symbol]) -> None:
