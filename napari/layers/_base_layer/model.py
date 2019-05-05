@@ -252,9 +252,9 @@ class Layer(VisualWrapper, ABC):
         """float: Conversion factor from canvas coordinates to image
         coordinates. Depends on the current zoom level.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        transform = self._node.canvas.scene.node_transform(self._node)
         rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-        
+
         return rescale.mean()
 
 

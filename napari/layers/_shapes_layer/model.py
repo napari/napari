@@ -183,7 +183,7 @@ class Shapes(Layer):
 
         super().__init__(visual, name)
 
-        # Freeze refreshes to prevent drawing before the viewer is constructed
+        # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
             # Add the shape data
             self.data = ShapeList()
@@ -906,8 +906,7 @@ class Shapes(Layer):
         coord : sequence of float
             Position of mouse cursor in image coordinates.
         """
-        scene = self.viewer._qtviewer.canvas.scene
-        transform = scene.node_transform(self._node)
+        transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         coord = np.array([pos[1], pos[0]])
         self._cursor_coord = coord

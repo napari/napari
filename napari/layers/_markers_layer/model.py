@@ -376,14 +376,14 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-        max_shape = self.viewer._calc_max_shape()
-
+        ndim = len(self._get_shape())
+        
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
         coord = list(indices)
         coord[-2] = pos[1]
         coord[-1] = pos[0]
-        return coord[-len(max_shape):]
+        return coord[-ndim:]
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
