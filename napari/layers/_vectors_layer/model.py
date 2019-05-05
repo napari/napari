@@ -135,7 +135,6 @@ class Vectors(Layer):
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
 
-        self.viewer._child_layer_changed = True
         self.refresh()
 
     def _convert_to_vector_type(self, vectors):

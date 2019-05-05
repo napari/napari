@@ -187,7 +187,7 @@ class Labels(Layer):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
-        self.cursor_size = self._brush_size/self._get_rescale()
+        self.cursor_size = self._brush_size/self.rescale
         self.events.brush_size()
 
         self.refresh()
@@ -251,7 +251,7 @@ class Labels(Layer):
             self.help = ('hold <space> to pan/zoom, '
                          'click to pick a label')
         elif mode == Mode.PAINT:
-            self.cursor_size = self.brush_size/self._get_rescale()
+            self.cursor_size = self.brush_size/self.rescale
             self.cursor = 'square'
             self.interactive = False
             self.help = ('hold <space> to pan/zoom, '
@@ -272,20 +272,6 @@ class Labels(Layer):
 
     def _get_shape(self):
         return self.image.shape
-
-    def _get_rescale(self):
-        """Get conversion factor from canvas coordinates to image coordinates.
-        Depends on the current zoom level.
-
-        Returns
-        ----------
-        rescale : float
-            Conversion factor from canvas coordinates to image coordinates.
-        """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
-        rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-
-        return rescale.mean()
 
     def _get_indices(self, indices):
         """Gets the slice indices.

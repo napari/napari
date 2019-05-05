@@ -583,8 +583,7 @@ class Shapes(Layer):
             length_box = np.linalg.norm(box[Box.BOTTOM_LEFT] -
                                         box[Box.TOP_LEFT])
             if length_box > 0:
-                rescale = self._get_rescale()
-                r = self._rotation_handle_length*rescale
+                r = self._rotation_handle_length*self.rescale
                 rot = rot-r*(box[Box.BOTTOM_LEFT] -
                              box[Box.TOP_LEFT])/length_box
             box = np.append(box, [rot], axis=0)
@@ -616,8 +615,7 @@ class Shapes(Layer):
                 index = self._hover_shape
 
             centers, offsets, triangles = self.data.outline(index)
-            rescale = self._get_rescale()
-            vertices = centers + rescale*self._highlight_width*offsets
+            vertices = centers + self.rescale*self._highlight_width*offsets
             vertices = vertices[:, ::-1]
         else:
             vertices = None
@@ -816,8 +814,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            rescale = self._get_rescale()
-            r = self._rotation_handle_length*rescale
+            r = self._rotation_handle_length*self.rescale
             handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
@@ -836,8 +833,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = box @ transform.T
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            rescale = self._get_rescale()
-            r = self._rotation_handle_length*rescale
+            r = self._rotation_handle_length*self.rescale
             handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
@@ -869,8 +865,7 @@ class Shapes(Layer):
                 distances = abs(box - coord[:2])
 
                 # Get the vertex sizes
-                rescale = self._get_rescale()
-                sizes = self._vertex_size*rescale/2
+                sizes = self._vertex_size*self.rescale/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -884,8 +879,7 @@ class Shapes(Layer):
                 distances = abs(vertices - coord[:2])
 
                 # Get the vertex sizes
-                rescale = self._get_rescale()
-                sizes = self._vertex_size*rescale/2
+                sizes = self._vertex_size*self.rescale/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
@@ -898,21 +892,6 @@ class Shapes(Layer):
         # Check if mouse inside shape
         shape = self.data.inside(coord)
         return shape, None
-
-    def _get_rescale(self):
-        """Get conversion factor from canvas coordinates to image coordinates.
-        Depends on the current zoom level.
-
-        Returns
-        ----------
-        rescale : float
-            Conversion factor from canvas coordinates to image coordinates.
-        """
-        scene = self.viewer._qtviewer.canvas.scene
-        transform = scene.node_transform(self._node)
-        rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-
-        return rescale.mean()
 
     def _get_coord(self, position):
         """Convert a position in canvas coordinates to image coordinates.
@@ -1070,8 +1049,7 @@ class Shapes(Layer):
                         scale = np.array([dist_perp, 1])
 
                     # prevent box from shrinking below a threshold size
-                    rescale = self._get_rescale()
-                    threshold = self._vertex_size*rescale/8
+                    threshold = self._vertex_size*self.rescale/8
                     scale[abs(scale*size[[1, 0]]) < threshold] = 1
 
                     # check orientation of box
@@ -1245,8 +1223,7 @@ class Shapes(Layer):
         elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                             Mode.ADD_LINE]):
             # Start drawing a rectangle / ellipse / line
-            rescale = self._get_rescale()
-            size = self._vertex_size*rescale/4
+            size = self._vertex_size*self.rescale/4
             new_z_index = max(self.data._z_index, default=-1) + 1
             if self.mode == Mode.ADD_RECTANGLE:
                 data = np.array([coord, coord+size])

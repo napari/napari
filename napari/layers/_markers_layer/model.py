@@ -120,7 +120,6 @@ class Markers(Layer):
                 size = np.repeat([new_size], adding, axis=0)
                 self.size = np.concatenate((self._size, size), axis=0)
 
-        self.viewer._child_layer_changed = True
         self.refresh()
 
     @property
