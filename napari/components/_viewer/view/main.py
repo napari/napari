@@ -4,8 +4,11 @@ from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from ..._dims.view import QtDims
+from ..._layers.view import QtLayers
+
 from ....resources import resources_dir
 from .controls import QtControls
+from .buttons import QtLayersButtons
 
 import os.path as osp
 from ....resources import resources_dir
@@ -48,18 +51,28 @@ class QtViewer(QSplitter):
         self.view.camera.viewbox_key_event = viewbox_key_event
 
         center = QWidget()
-        layout = QVBoxLayout()
-        layout.setContentsMargins(15, 20, 15, 10)
-        layout.addWidget(self.canvas.native)
-        dimsview = QtDims(self.viewer.dims)
-        layout.addWidget(dimsview)
-        center.setLayout(layout)
+        center_layout = QVBoxLayout()
+        center_layout.setContentsMargins(15, 20, 15, 10)
+        center_layout.addWidget(self.canvas.native)
+        self.dims = QtDims(self.viewer.dims)
+        center_layout.addWidget(self.dims)
+        center.setLayout(center_layout)
 
         # Add controls, center, and layerlist
         self.control_panel = QtControls(viewer)
         self.addWidget(self.control_panel)
         self.addWidget(center)
-        self.addWidget(self.viewer.layers._qt)
+
+        right = QWidget()
+        right_layout = QVBoxLayout()
+        self.layers = QtLayers(self.viewer.layers)
+        right_layout.addWidget(self.layers)
+        self.buttons = QtLayersButtons(viewer)
+        right_layout.addWidget(self.buttons)
+        right.setLayout(right_layout)
+        right.setMinimumSize(QSize(308, 250))
+
+        self.addWidget(right)
 
         self._cursors = {
                 'disabled': QCursor(

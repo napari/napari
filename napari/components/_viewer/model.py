@@ -4,6 +4,7 @@ from copy import copy
 from itertools import zip_longest
 
 from ...util.event import EmitterGroup, Event
+from .._dims import Dims
 
 
 class Viewer:
@@ -29,8 +30,7 @@ class Viewer:
     """
     def __init__(self, title='napari'):
         super().__init__()
-        from .._layers_list import LayersList
-        from .._dims import Dims
+        from .._layers import Layers
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
@@ -44,7 +44,7 @@ class Viewer:
         self.dims = Dims(2)
         self.dims._set_2d_viewing()
 
-        self.layers = LayersList(self)
+        self.layers = Layers()
 
         self._status = 'Ready'
         self._help = ''
@@ -60,6 +60,12 @@ class Viewer:
         self._qtviewer = None
 
         self.dims.events.axis.connect(lambda e: self._update_layers())
+        self.layers.events.added.connect(self._on_layers_change)
+        self.layers.events.removed.connect(self._on_layers_change)
+        self.layers.events.added.connect(self._update_layer_selection)
+        self.layers.events.removed.connect(self._update_layer_selection)
+        self.layers.events.reordered.connect(self._update_layer_selection)
+        self.layers.events.reordered.connect(lambda e: self._update_canvas())
 
     @property
     def _canvas(self):
@@ -205,7 +211,11 @@ class Viewer:
         layer : Layer
             Layer to add.
         """
+        layer.events.select.connect(self._update_layer_selection)
+        layer.events.deselect.connect(self._update_layer_selection)
         self.layers.append(layer)
+        layer._indices = self.dims.indices
+        layer.viewer = self
         if len(self.layers) == 1:
             self.reset_view()
 
@@ -292,3 +302,10 @@ class Viewer:
                 max_dims = dims
 
         return max_dims
+
+    def _update_canvas(self):
+        """Clears draw order and refreshes canvas. Usefeul for when layers are
+        reoredered.
+        """
+        self._canvas._draw_order.clear()
+        self._canvas.update()

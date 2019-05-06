@@ -2,7 +2,7 @@ from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QWidget, QGridLayout, QRadioButton, QSizePolicy
 from typing import Union
 
-from ..._qt.range_slider.range_slider import QVRangeSlider, QHRangeSlider
+from ..._qt import QHRangeSlider
 from .model import Dims
 from ._constants import DimsMode
 
