@@ -214,7 +214,7 @@ class Viewer:
         layer.events.select.connect(self._update_layer_selection)
         layer.events.deselect.connect(self._update_layer_selection)
         self.layers.append(layer)
-        layer._indices = self.dims.indices
+        layer.indices = self.dims.indices
         layer.viewer = self
         if len(self.layers) == 1:
             self.reset_view()

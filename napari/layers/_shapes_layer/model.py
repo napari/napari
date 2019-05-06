@@ -574,7 +574,7 @@ class Shapes(Layer):
             length_box = np.linalg.norm(box[Box.BOTTOM_LEFT] -
                                         box[Box.TOP_LEFT])
             if length_box > 0:
-                r = self._rotation_handle_length*self.rescale
+                r = self._rotation_handle_length * self.rescale
                 rot = rot-r*(box[Box.BOTTOM_LEFT] -
                              box[Box.TOP_LEFT])/length_box
             box = np.append(box, [rot], axis=0)
@@ -606,7 +606,7 @@ class Shapes(Layer):
                 index = self._hover_shape
 
             centers, offsets, triangles = self.data.outline(index)
-            vertices = centers + self.rescale*self._highlight_width*offsets
+            vertices = centers + self.rescale * self._highlight_width * offsets
             vertices = vertices[:, ::-1]
         else:
             vertices = None
