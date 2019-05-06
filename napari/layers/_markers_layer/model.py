@@ -434,6 +434,8 @@ class Markers(Layer):
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord = self.coordinates
         if self.mode == 'select' and event.is_dragging:
@@ -445,6 +447,8 @@ class Markers(Layer):
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord = self.coordinates
         self._selected_markers = self._select_marker(coord)

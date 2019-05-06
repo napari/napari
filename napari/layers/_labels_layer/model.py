@@ -509,6 +509,8 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord, label = self.get_value()
 
@@ -540,6 +542,8 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord, label = self.get_value()
 

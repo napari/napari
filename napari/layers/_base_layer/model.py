@@ -116,8 +116,6 @@ class Layer(VisualWrapper, ABC):
 
     @cursor_position.setter
     def cursor_position(self, cursor_position):
-        if cursor_position is None:
-            return
         transform = self._node.canvas.scene.node_transform(self._node)
         self._cursor_position = tuple(transform.map(cursor_position)[:2])
 

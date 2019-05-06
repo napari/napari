@@ -371,6 +371,8 @@ class Image(Layer):
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)

@@ -1162,6 +1162,8 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
@@ -1369,6 +1371,8 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord = self.coordinates[-2:]
 
@@ -1440,6 +1444,8 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
+        if event.pos is None:
+            return
         self.cursor_position = event.pos
         coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
