@@ -11,7 +11,7 @@ from vispy.color import get_color_names
 
 from .view import QtMarkersLayer
 from .view import QtMarkersControls
-from ._constants import Symbol
+from ._constants import Symbol, SYMBOL_ALIAS
 
 
 @add_to_viewer
@@ -153,12 +153,16 @@ class Markers(Layer):
     def symbol(self) -> str:
         """ str: marker symbol
         """
-         return str(self._symbol)
+        return str(self._symbol)
 
     @symbol.setter
     def symbol(self, symbol: Union[str, Symbol]) -> None:
 
         if isinstance(symbol, str):
+            # Convert the alias string to the deduplicated string
+            if symbol in SYMBOL_ALIAS:
+                symbol = SYMBOL_ALIAS[symbol]
+            # Convert the string name to the Symbol Enum
             symbol = Symbol[symbol.upper()]
         self._symbol = symbol
 
@@ -400,7 +404,7 @@ class Markers(Layer):
 
         self._node.set_data(
             data[::-1], size=sizes, edge_width=self.edge_width,
-            symbol=str(self.symbol), edge_width_rel=self.edge_width_rel,
+            symbol=self.symbol, edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
         self._need_visual_update = True

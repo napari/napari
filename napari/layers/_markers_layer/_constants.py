@@ -1,13 +1,24 @@
 from enum import Enum
 
+# Mapping of symbol alias names to the deduplicated name
+SYMBOL_ALIAS = {
+    'o': 'DISC',
+    '*': 'STAR',
+    '+': 'CROSS',
+    '-': 'HBAR',
+    '->': 'TAILED_ARROW',
+    '>': 'ARROW',
+    '^': 'TRIANGLE_UP',
+    'v': 'TRIANGLE_DOWN',
+    's': 'SQUARE',
+    '|': 'VBAR'
+}
+
 
 class Symbol(Enum):
     """Symbol: Valid symbol/marker types for the Markers layer.
     The string method returns the valid vispy string.
 
-    See the Vispy documentation for more details
-    on the MarkersVisuals:
-        http://vispy.org/visuals.html#vispy.visuals.MarkersVisual
     """
     ARROW = 0
     CLOBBER = 1

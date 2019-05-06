@@ -63,7 +63,8 @@ class QtMarkersLayer(QtLayer):
         symbol_comboBox = QComboBox()
         for s in Symbol:
             symbol_comboBox.addItem(str(s))
-        index = self.layer.symbol.value
+        index = symbol_comboBox.findText(
+            self.layer.symbol, Qt.MatchFixedString)
         symbol_comboBox.setCurrentIndex(index)
         symbol_comboBox.activated[str].connect(
             lambda text=symbol_comboBox: self.changeSymbol(text))
@@ -106,7 +107,8 @@ class QtMarkersLayer(QtLayer):
 
     def _on_symbol_change(self, event):
         with self.layer.events.symbol.blocker():
-            index = self.layer.symbol.value
+            index = self.symbolComboBox.findText(
+                self.layer.symbol, Qt.MatchFixedString)
             self.symbolComboBox.setCurrentIndex(index)
 
     def _on_size_change(self, event):
