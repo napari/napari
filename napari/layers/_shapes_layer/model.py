@@ -574,7 +574,7 @@ class Shapes(Layer):
             length_box = np.linalg.norm(box[Box.BOTTOM_LEFT] -
                                         box[Box.TOP_LEFT])
             if length_box > 0:
-                r = self._rotation_handle_length * self.rescale
+                r = self._rotation_handle_length * self.scale_factor
                 rot = rot-r*(box[Box.BOTTOM_LEFT] -
                              box[Box.TOP_LEFT])/length_box
             box = np.append(box, [rot], axis=0)
@@ -606,7 +606,8 @@ class Shapes(Layer):
                 index = self._hover_shape
 
             centers, offsets, triangles = self.data.outline(index)
-            vertices = centers + self.rescale * self._highlight_width * offsets
+            vertices = centers + (self.scale_factor * self._highlight_width *
+                                  offsets)
             vertices = vertices[:, ::-1]
         else:
             vertices = None
@@ -805,7 +806,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = self._rotation_handle_length*self.rescale
+            r = self._rotation_handle_length*self.scale_factor
             handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
@@ -824,7 +825,7 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = box @ transform.T
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = self._rotation_handle_length*self.rescale
+            r = self._rotation_handle_length*self.scale_factor
             handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
@@ -856,7 +857,7 @@ class Shapes(Layer):
                 distances = abs(box - coord[:2])
 
                 # Get the vertex sizes
-                sizes = self._vertex_size*self.rescale/2
+                sizes = self._vertex_size*self.scale_factor/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -870,7 +871,7 @@ class Shapes(Layer):
                 distances = abs(vertices - coord[:2])
 
                 # Get the vertex sizes
-                sizes = self._vertex_size*self.rescale/2
+                sizes = self._vertex_size*self.scale_factor/2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
@@ -1020,7 +1021,7 @@ class Shapes(Layer):
                         scale = np.array([dist_perp, 1])
 
                     # prevent box from shrinking below a threshold size
-                    threshold = self._vertex_size*self.rescale/8
+                    threshold = self._vertex_size*self.scale_factor/8
                     scale[abs(scale*size[[1, 0]]) < threshold] = 1
 
                     # check orientation of box
@@ -1196,7 +1197,7 @@ class Shapes(Layer):
         elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                             Mode.ADD_LINE]):
             # Start drawing a rectangle / ellipse / line
-            size = self._vertex_size*self.rescale/4
+            size = self._vertex_size*self.scale_factor/4
             new_z_index = max(self.data._z_index, default=-1) + 1
             if self.mode == Mode.ADD_RECTANGLE:
                 data = np.array([coord, coord+size])

@@ -270,14 +270,14 @@ class Layer(VisualWrapper, ABC):
         self._cursor_size = cursor_size
 
     @property
-    def rescale(self):
+    def scale_factor(self):
         """float: Conversion factor from canvas coordinates to image
         coordinates. Depends on the current zoom level.
         """
         transform = self._node.canvas.scene.node_transform(self._node)
-        rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+        scale_factor = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
-        return rescale.mean()
+        return scale_factor.mean()
 
     def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.
