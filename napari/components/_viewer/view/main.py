@@ -5,11 +5,9 @@ from vispy.scene import SceneCanvas, PanZoomCamera
 
 from ..._dims.view import QtDims
 from ..._layers.view import QtLayers
-
 from ....resources import resources_dir
 from .controls import QtControls
 from .buttons import QtLayersButtons
-
 
 class QtViewer(QSplitter):
 
