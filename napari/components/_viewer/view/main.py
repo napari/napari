@@ -7,16 +7,8 @@ from ..._dims.view import QtDims
 from ....resources import resources_dir
 from .controls import QtControls
 
-import os.path as osp
-from ....resources import resources_dir
-from ....util.theme import template, palettes
-palette = palettes['dark']
-
 
 class QtViewer(QSplitter):
-    with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
-        themed_stylesheet = template(raw_stylesheet, **palette)
 
     def __init__(self, viewer):
         super().__init__()
@@ -24,7 +16,6 @@ class QtViewer(QSplitter):
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
         )
-        self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
         self.viewer._qtviewer = self
@@ -54,6 +45,7 @@ class QtViewer(QSplitter):
         dimsview = QtDims(self.viewer.dims)
         layout.addWidget(dimsview)
         center.setLayout(layout)
+        self.dims = dimsview
 
         # Add controls, center, and layerlist
         self.control_panel = QtControls(viewer)

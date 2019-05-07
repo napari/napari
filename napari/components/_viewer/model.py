@@ -4,6 +4,8 @@ from copy import copy
 from itertools import zip_longest
 
 from ...util.event import EmitterGroup, Event
+from ...util.theme import palettes
+from ...util.misc import has_clims
 
 
 class Viewer:
@@ -206,6 +208,10 @@ class Viewer:
             Layer to add.
         """
         self.layers.append(layer)
+        if self.theme is not None and has_clims(layer):
+            palette = palettes[self.theme]
+            layer._qt_controls.climSlider.setColors(
+                palette['foreground'], palette['highlight'])
         if len(self.layers) == 1:
             self.reset_view()
 
