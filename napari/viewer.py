@@ -62,7 +62,7 @@ class ViewerApp(Viewer):
         self._theme = theme
 
         if theme not in palettes.keys():
-            raise KeyError("Theme '%s' not found, options are %s." 
+            raise KeyError("Theme '%s' not found, options are %s."
                            % (theme, list(palettes.keys())))
 
         palette = palettes[theme]

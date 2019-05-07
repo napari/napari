@@ -14,4 +14,3 @@ with app_context():
 
     # set the theme to 'light'
     viewer.theme = 'light'
-
