@@ -1,5 +1,11 @@
+import os.path as osp
+
 from .components._viewer.view import QtViewer
 from .components import Window, Viewer
+from .layers._image_layer.model import Image
+from .resources import resources_dir
+from .util.theme import template, palettes
+from .util.misc import has_clims
 
 
 class ViewerApp(Viewer):
@@ -38,3 +44,47 @@ class ViewerApp(Viewer):
         for name, image in named_images.items():
             self.add_image(image, meta=meta, multichannel=multichannel,
                            clim_range=clim_range, name=name)
+        self.theme = 'dark'
+
+    @property
+    def theme(self):
+        """string: Color theme.
+        """
+        if hasattr(self, '_theme'):
+            return self._theme
+        else:
+            return None
+
+    @theme.setter
+    def theme(self, theme):
+        if self.theme is not None and theme == self.theme:
+            return
+        self._theme = theme
+
+        if theme not in palettes.keys():
+            raise KeyError("Theme '%s' not found, options are %s." 
+                           % (theme, list(palettes.keys())))
+
+        palette = palettes[theme]
+
+        # template and apply the primary stylesheet
+        with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
+            raw_stylesheet = f.read()
+            themed_stylesheet = template(raw_stylesheet, **palette)
+        self._qtviewer.setStyleSheet(themed_stylesheet)
+
+        # set window styles which don't use the primary stylesheet
+        self.window._status_bar.setStyleSheet("""QStatusBar { background: %s;
+            color: %s}""" % (palette['background'], palette['text']))
+        self.window._qt_center.setStyleSheet(
+            'QWidget { background: %s;}' % palette['background'])
+
+        # set styles on clim slider
+        for layer in self.layers:
+            if has_clims(layer):
+                layer._qt_controls.climSlider.setColors(
+                    palette['foreground'], palette['highlight'])
+
+        # set styles on dims sliders
+        for slider in self._qtviewer.dims.sliders:
+            slider.setColors(palette['foreground'], palette['highlight'])
