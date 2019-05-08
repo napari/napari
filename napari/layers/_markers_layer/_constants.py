@@ -30,14 +30,14 @@ class Symbol(Enum):
 
 # Mapping of symbol alias names to the deduplicated name
 SYMBOL_ALIAS = {
-    'o': Symbol['DISC'],
-    '*': Symbol['STAR'],
-    '+': Symbol['CROSS'],
-    '-': Symbol['HBAR'],
-    '->': Symbol['TAILED_ARROW'],
-    '>': Symbol['ARROW'],
-    '^': Symbol['TRIANGLE_UP'],
-    'v': Symbol['TRIANGLE_DOWN'],
-    's': Symbol['SQUARE'],
-    '|': Symbol['VBAR']
+    'o': Symbol.DISC,
+    '*': Symbol.STAR,
+    '+': Symbol.CROSS,
+    '-': Symbol.HBAR,
+    '->': Symbol.TAILED_ARROW,
+    '>': Symbol.ARROW,
+    '^': Symbol.TRIANGLE_UP,
+    'v': Symbol.TRIANGLE_DOWN,
+    's': Symbol.SQUARE,
+    '|': Symbol.VBAR
 }
