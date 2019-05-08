@@ -433,7 +433,7 @@ class Markers(Layer):
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas. Converts the `event.pos`
-        from screen coordinates to `self.coordinates` in image coordinates.
+        from canvas coordinates to `self.coordinates` in image coordinates.
         """
         if event.pos is None:
             return
@@ -447,7 +447,7 @@ class Markers(Layer):
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas. Converts the `event.pos`
-        from screen coordinates to `self.coordinates` in image coordinates.
+        from canvas coordinates to `self.coordinates` in image coordinates.
         """
         if event.pos is None:
             return

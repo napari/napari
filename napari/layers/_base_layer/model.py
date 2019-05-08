@@ -112,7 +112,7 @@ class Layer(VisualWrapper, ABC):
     def coordinates(self):
         """Tuple of floats for slicing arrays at the current cursor position.
 
-        The setter expects the a 2-tuple of coordinates in screen space
+        The setter expects the a 2-tuple of coordinates in canvas space
         ordered (x, y) and then transforms them to image space and inserts
         them into the correct position of the layer indices. The length of the
         tuple is equal to the number of dimensions of the layer.
@@ -271,7 +271,7 @@ class Layer(VisualWrapper, ABC):
 
     @property
     def scale_factor(self):
-        """float: Conversion factor from screen coordinates to image
+        """float: Conversion factor from canvas coordinates to image
         coordinates, which depends on the current zoom level.
         """
         transform = self._node.canvas.scene.node_transform(self._node)
