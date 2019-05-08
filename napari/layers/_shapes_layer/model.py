@@ -1,4 +1,5 @@
 import numpy as np
+from xml.etree.ElementTree import Element, tostring
 from copy import copy, deepcopy
 from contextlib import contextmanager
 
@@ -13,10 +14,7 @@ from vispy.color import get_color_names
 
 from .view import QtShapesLayer
 from .view import QtShapesControls
-from ._constants import (Mode, BOX_LINE_HANDLE, BOX_LINE, BOX_TOP_CENTER,
-                         BOX_CENTER, BOX_LEN, BOX_HANDLE, BOX_WITH_HANDLE,
-                         BOX_TOP_LEFT, BOX_BOTTOM_RIGHT, BOX_BOTTOM_LEFT,
-                         BACKSPACE)
+from ._constants import Mode, Box, BACKSPACE
 from .shape_list import ShapeList
 from .shape_util import create_box, point_to_lines
 from .shapes import Rectangle, Ellipse, Line, Path, Polygon
@@ -532,7 +530,7 @@ class Shapes(Layer):
         """
         if self._need_display_update:
             self._need_display_update = False
-            self._set_view_slice()
+            self._set_view_slice(self.viewer.dims.indices)
 
         if self._need_visual_update:
             self._need_visual_update = False
@@ -544,8 +542,8 @@ class Shapes(Layer):
         self._need_display_update = True
         self._update()
 
-    def _set_view_slice(self, indices=None):
-        """Set the shape mesh data to the view.
+    def _set_view_slice(self, indices):
+        """Set the view given the slicing indices.
 
         Parameters
         ----------
@@ -555,7 +553,7 @@ class Shapes(Layer):
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]
-        vertices = self.data._mesh.vertices
+        vertices = self.data._mesh.vertices[:, ::-1]
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
         else:
@@ -598,14 +596,14 @@ class Shapes(Layer):
             box = copy(self.data.shapes[index]._box)
 
         if box is not None:
-            rot = box[BOX_TOP_CENTER]
-            length_box = np.linalg.norm(box[BOX_BOTTOM_LEFT] -
-                                        box[BOX_TOP_LEFT])
+            rot = box[Box.TOP_CENTER]
+            length_box = np.linalg.norm(box[Box.BOTTOM_LEFT] -
+                                        box[Box.TOP_LEFT])
             if length_box > 0:
                 rescale = self._get_rescale()
                 r = self._rotation_handle_length*rescale
-                rot = rot-r*(box[BOX_BOTTOM_LEFT] -
-                             box[BOX_TOP_LEFT])/length_box
+                rot = rot-r*(box[Box.BOTTOM_LEFT] -
+                             box[Box.TOP_LEFT])/length_box
             box = np.append(box, [rot], axis=0)
 
         return box
@@ -637,6 +635,7 @@ class Shapes(Layer):
             centers, offsets, triangles = self.data.outline(index)
             rescale = self._get_rescale()
             vertices = centers + rescale*self._highlight_width*offsets
+            vertices = vertices[:, ::-1]
         else:
             vertices = None
             triangles = None
@@ -665,7 +664,7 @@ class Shapes(Layer):
             if self.mode == Mode.SELECT:
                 # If in select mode just show the interaction boudning box
                 # including its vertices and the rotation handle
-                box = self._selected_box[BOX_WITH_HANDLE]
+                box = self._selected_box[Box.WITH_HANDLE]
                 if self._hover_shape is None:
                     face_color = 'white'
                 elif self._hover_vertex is None:
@@ -673,10 +672,10 @@ class Shapes(Layer):
                 else:
                     face_color = self._highlight_color
                 edge_color = self._highlight_color
-                vertices = box
+                vertices = box[:, ::-1]
                 # Use a subset of the vertices of the interaction_box to plot
                 # the line around the edge
-                pos = box[BOX_LINE_HANDLE]
+                pos = box[Box.LINE_HANDLE][:, ::-1]
                 width = 1.5
             elif self.mode in ([Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON,
                                 Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
@@ -684,7 +683,7 @@ class Shapes(Layer):
                                 Mode.VERTEX_REMOVE]):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(self.data._index, self.selected_shapes)
-                vertices = self.data._vertices[inds]
+                vertices = self.data._vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
                 if self.mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
@@ -715,7 +714,7 @@ class Shapes(Layer):
             width = 1.5
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
-            pos = box[BOX_LINE]
+            pos = box[Box.LINE][:, ::-1]
         else:
             # Otherwise show nothing
             vertices = np.empty((0, 2))
@@ -771,6 +770,7 @@ class Shapes(Layer):
         self.selected_shapes = []
         self._drag_start = None
         self._drag_box = None
+        self._is_selecting = False
         self._fixed_vertex = None
         self._moving_shape = None
         self._moving_vertex = None
@@ -832,12 +832,12 @@ class Shapes(Layer):
             scale = [scale, scale]
         box = self._selected_box - center
         box = np.array(box*scale)
-        if not np.all(box[BOX_TOP_CENTER] == box[BOX_HANDLE]):
+        if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
             rescale = self._get_rescale()
             r = self._rotation_handle_length*rescale
-            handle_vec = box[BOX_HANDLE]-box[BOX_TOP_CENTER]
+            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[BOX_HANDLE] = box[BOX_TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
@@ -852,12 +852,12 @@ class Shapes(Layer):
         """
         box = self._selected_box - center
         box = box @ transform.T
-        if not np.all(box[BOX_TOP_CENTER] == box[BOX_HANDLE]):
+        if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
             rescale = self._get_rescale()
             r = self._rotation_handle_length*rescale
-            handle_vec = box[BOX_HANDLE]-box[BOX_TOP_CENTER]
+            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[BOX_HANDLE] = box[BOX_TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
         self._selected_box = box + center
 
     def _shape_at(self, coord):
@@ -882,7 +882,7 @@ class Shapes(Layer):
         if len(self.selected_shapes) > 0:
             if self.mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
-                box = self._selected_box[BOX_WITH_HANDLE]
+                box = self._selected_box[Box.WITH_HANDLE]
                 distances = abs(box - coord[:2])
 
                 # Get the vertex sizes
@@ -925,7 +925,8 @@ class Shapes(Layer):
         rescale : float
             Conversion factor from canvas coordinates to image coordinates.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        scene = self.viewer._qtviewer.canvas.scene
+        transform = scene.node_transform(self._node)
         rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
         return rescale.mean()
@@ -943,9 +944,10 @@ class Shapes(Layer):
         coord : sequence of float
             Position of mouse cursor in image coordinates.
         """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
+        scene = self.viewer._qtviewer.canvas.scene
+        transform = scene.node_transform(self._node)
         pos = transform.map(position)
-        coord = np.array([pos[0], pos[1]])
+        coord = np.array([pos[1], pos[0]])
         self._cursor_coord = coord
 
         return coord
@@ -967,10 +969,7 @@ class Shapes(Layer):
         msg : string
             String containing a message that can be used as a status update.
         """
-        coord_shift = copy(coord)
-        coord_shift[0] = int(coord[1])
-        coord_shift[1] = int(coord[0])
-        msg = f'{coord_shift.astype(int)}, {self.name}'
+        msg = f'{coord.astype(int)}, {self.name}'
         if shape is not None:
             msg = msg + ', shape ' + str(shape)
             if vertex is not None:
@@ -1030,24 +1029,24 @@ class Shapes(Layer):
                 if vertex is None:
                     # Check where dragging box from to move whole object
                     if self._drag_start is None:
-                        center = self._selected_box[BOX_CENTER]
+                        center = self._selected_box[Box.CENTER]
                         self._drag_start = coord - center
-                    center = self._selected_box[BOX_CENTER]
+                    center = self._selected_box[Box.CENTER]
                     shift = coord - center - self._drag_start
                     for index in self.selected_shapes:
                         self.data.shift(index, shift)
                     self._selected_box = self._selected_box + shift
                     self.refresh()
-                elif vertex < BOX_LEN:
+                elif vertex < Box.LEN:
                     # Corner / edge vertex is being dragged so resize object
                     box = self._selected_box
                     if self._fixed_vertex is None:
-                        self._fixed_index = (vertex+4) % BOX_LEN
+                        self._fixed_index = (vertex+4) % Box.LEN
                         self._fixed_vertex = box[self._fixed_index]
 
-                    size = (box[(self._fixed_index+4) % BOX_LEN] -
+                    size = (box[(self._fixed_index+4) % Box.LEN] -
                             box[self._fixed_index])
-                    offset = box[BOX_HANDLE] - box[BOX_CENTER]
+                    offset = box[Box.HANDLE] - box[Box.CENTER]
                     offset = offset/np.linalg.norm(offset)
                     offset_perp = np.array([offset[1], -offset[0]])
 
@@ -1080,7 +1079,7 @@ class Shapes(Layer):
                     if self._fixed_index % 2 == 0:
                         # corner selected
                         scale = np.array([dist_perp, dist])
-                    elif self._fixed_index % 4 == 1:
+                    elif self._fixed_index % 4 == 3:
                         # top selected
                         scale = np.array([1, dist])
                     else:
@@ -1090,7 +1089,7 @@ class Shapes(Layer):
                     # prevent box from shrinking below a threshold size
                     rescale = self._get_rescale()
                     threshold = self._vertex_size*rescale/8
-                    scale[abs(scale*size) < threshold] = 1
+                    scale[abs(scale*size[[1, 0]]) < threshold] = 1
 
                     # check orientation of box
                     angle = -np.arctan2(offset[0], -offset[1])
@@ -1114,9 +1113,9 @@ class Shapes(Layer):
                     self.refresh()
                 elif vertex == 8:
                     # Rotation handle is being dragged so rotate object
-                    handle = self._selected_box[BOX_HANDLE]
+                    handle = self._selected_box[Box.HANDLE]
                     if self._drag_start is None:
-                        self._fixed_vertex = self._selected_box[BOX_CENTER]
+                        self._fixed_vertex = self._selected_box[Box.CENTER]
                         offset = handle - self._fixed_vertex
                         self._drag_start = -np.degrees(np.arctan2(offset[0],
                                                        -offset[1]))
@@ -1182,6 +1181,46 @@ class Shapes(Layer):
                     self._drag_start = coord
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
+
+    def to_svg(self, canvas_shape=None, shape_type=None):
+        """Returns an svg string with all the shapes contained in the layer.
+        Passing a `shape_type` argument leads to only shapes from that
+        particular `shape_type` being returned.
+
+        Parameters
+        ----------
+        canvas_shape : 2-tuple, optional
+            Shape of SVG canvas to be generated. If not specified, takes the
+            max of all the vertices
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
+            optional
+            String of shape type to be included
+
+        Returns
+        ----------
+        svg : string
+            String with the svg specification of the shapes contained in the
+            layer
+        """
+
+        if canvas_shape is None:
+            canvas_shape = self.data._vertices.max(axis=0).astype(np.int)
+
+        xml = Element('svg', width=f'{canvas_shape[0]}',
+                      height=f'{canvas_shape[1]}', version='1.1',
+                      xmlns='http://www.w3.org/2000/svg')
+
+        xml_list = self.data.to_xml(shape_type=shape_type)
+
+        for x in xml_list:
+            xml.append(x)
+
+        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
+               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
+               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
+               tostring(xml, encoding='unicode', method='xml'))
+
+        return svg
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -1554,7 +1593,7 @@ class Shapes(Layer):
                 self._fixed_aspect = True
                 box = self._selected_box
                 if box is not None:
-                    size = box[BOX_BOTTOM_RIGHT]-box[BOX_TOP_LEFT]
+                    size = box[Box.BOTTOM_RIGHT]-box[Box.TOP_LEFT]
                     if not np.any(size == np.zeros(2)):
                         self._aspect_ratio = abs(size[1] / size[0])
                     else:

@@ -3,4 +3,5 @@ scipy>=1.2.0
 vispy>=0.5.3
 PyOpenGL>=3.1.0
 PyQt5>=5.10.1
+qtpy>=1.7.0
 SIP>=0.1.5

@@ -293,7 +293,7 @@ class Markers(Layer):
             self.status = mode
             self._mode = mode
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
         self.events.mode(mode=mode)
 
@@ -335,10 +335,10 @@ class Markers(Layer):
         coords = self.coords
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
-                distances = abs(coords[:, 2:] - indices[2:])
-                size_array = self._size[:, 2:]/2
+                distances = abs(coords[:, :-2] - indices[:-2])
+                size_array = self._size[:, :-2]/2
                 matches = np.all(distances <= size_array, axis=1)
-                in_slice_markers = coords[matches, :2]
+                in_slice_markers = coords[matches, -2:]
                 size_match = size_array[matches]
                 size_match[size_match == 0] = 1
                 scale_per_dim = (size_match - distances[matches])/size_match
@@ -346,8 +346,8 @@ class Markers(Layer):
                 scale = np.prod(scale_per_dim, axis=1)
                 return in_slice_markers, matches, scale
             else:
-                matches = np.all(coords[:, 2:] == indices[2:], axis=1)
-                in_slice_markers = coords[matches, :2]
+                matches = np.all(coords[:, :-2] == indices[:-2], axis=1)
+                in_slice_markers = coords[matches, -2:]
                 return in_slice_markers, matches, 1
         else:
             return [], [], []
@@ -365,8 +365,8 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            size_array = self._size[matches, :2]*np.expand_dims(scale, axis=1)
-            distances = abs(in_slice_markers - indices[:2])
+            size_array = self._size[matches, -2:]*np.expand_dims(scale, axis=1)
+            distances = abs(in_slice_markers - indices[-2:])
             in_slice_matches = np.all(distances <= size_array/2, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
@@ -392,7 +392,7 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            sizes = (self._size[matches, :2].mean(axis=1)*scale)[::-1]
+            sizes = (self._size[matches, -2:].mean(axis=1)*scale)[::-1]
 
             # Update the markers node
             data = np.array(in_slice_markers) + 0.5
@@ -403,7 +403,7 @@ class Markers(Layer):
             sizes = 0
 
         self._node.set_data(
-            data[::-1], size=sizes, edge_width=self.edge_width,
+            data[::-1, ::-1], size=sizes, edge_width=self.edge_width,
             symbol=self.symbol, edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
@@ -411,13 +411,15 @@ class Markers(Layer):
         self._update()
 
     def _get_coord(self, position, indices):
-        shape = self._get_shape()
+
+        max_shape = self.viewer._calc_max_shape()
+
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map(position)
-        coord = copy(indices)
-        coord[0] = pos[0]
-        coord[1] = pos[1]
-        return coord[:len(shape)]
+        coord = list(indices)
+        coord[-2] = pos[1]
+        coord[-1] = pos[0]
+        return coord[-len(max_shape):]
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -436,9 +438,9 @@ class Markers(Layer):
             String containing a message that can be used as
             a status update.
         """
-        coord_shift = copy(coord)
-        coord_shift[0] = int(coord[1])
-        coord_shift[1] = int(coord[0])
+        coord_shift = list(coord)
+        coord_shift[-2] = int(coord[-2])
+        coord_shift[-1] = int(coord[-1])
         msg = f'{coord_shift}, {self.name}'
         if value is None:
             pass

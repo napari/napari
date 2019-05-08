@@ -1,25 +1,36 @@
-from PyQt5.QtCore import QCoreApplication, Qt, QSize
-from PyQt5.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
-from PyQt5.QtGui import QCursor, QPixmap
+from qtpy.QtCore import QCoreApplication, Qt, QSize
+from qtpy.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
+from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
+from ..._dims.view import QtDims
+from ..._layers.view import QtLayers
+
+from ....resources import resources_dir
 from .controls import QtControls
+from .buttons import QtLayersButtons
 
 import os.path as osp
 from ....resources import resources_dir
+from ....util.theme import template, palettes
+palette = palettes['dark']
 
 
 class QtViewer(QSplitter):
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        default_stylesheet = f.read()
+        raw_stylesheet = f.read()
+        themed_stylesheet = template(raw_stylesheet, **palette)
 
     def __init__(self, viewer):
         super().__init__()
 
-        QCoreApplication.setAttribute(Qt.AA_UseStyleSheetPropagationInWidgetStyles, True)
-        self.setStyleSheet(self.default_stylesheet)
+        QCoreApplication.setAttribute(
+            Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
+        )
+        self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
+        self.viewer._qtviewer = self
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -40,22 +51,33 @@ class QtViewer(QSplitter):
         self.view.camera.viewbox_key_event = viewbox_key_event
 
         center = QWidget()
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas.native)
-        layout.addWidget(self.viewer.dims._qt)
-        center.setLayout(layout)
+        center_layout = QVBoxLayout()
+        center_layout.setContentsMargins(15, 20, 15, 10)
+        center_layout.addWidget(self.canvas.native)
+        self.dims = QtDims(self.viewer.dims)
+        center_layout.addWidget(self.dims)
+        center.setLayout(center_layout)
 
         # Add controls, center, and layerlist
         self.control_panel = QtControls(viewer)
         self.addWidget(self.control_panel)
         self.addWidget(center)
-        self.addWidget(self.viewer.layers._qt)
 
-        viewer.dims._qt.setFixedHeight(0)
+        right = QWidget()
+        right_layout = QVBoxLayout()
+        self.layers = QtLayers(self.viewer.layers)
+        right_layout.addWidget(self.layers)
+        self.buttons = QtLayersButtons(viewer)
+        right_layout.addWidget(self.buttons)
+        right.setLayout(right_layout)
+        right.setMinimumSize(QSize(308, 250))
+
+        self.addWidget(right)
 
         self._cursors = {
-                'disabled': QCursor(QPixmap(':/icons/cursor_disabled.png')
-                                    .scaled(20, 20)),
+                'disabled': QCursor(
+                    QPixmap(':/icons/cursor/cursor_disabled.png')
+                    .scaled(20, 20)),
                 'cross': Qt.CrossCursor,
                 'forbidden': Qt.ForbiddenCursor,
                 'pointing': Qt.PointingHandCursor,
@@ -67,7 +89,7 @@ class QtViewer(QSplitter):
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(QPixmap(':/icons/cursor_square.png')
+                q_cursor = QCursor(QPixmap(':/icons/cursor/cursor_square.png')
                                    .scaledToHeight(size))
         else:
             q_cursor = self._cursors[cursor]
@@ -97,6 +119,11 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
+        if (event.text in self.viewer.key_bindings and not
+                event.native.isAutoRepeat()):
+            self.viewer.key_bindings[event.text](self.viewer)
+            return
+
         layer = self.viewer._top
         if layer is not None:
             layer.on_key_press(event)

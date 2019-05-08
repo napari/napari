@@ -105,3 +105,6 @@ venv.bak/
 
 # Pycharm files
 .idea
+
+# OS stuff
+.DS_store 

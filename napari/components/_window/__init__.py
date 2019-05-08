@@ -2,10 +2,14 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
-from PyQt5.QtWidgets import QApplication as QtApplication
-
+from qtpy.QtWidgets import QApplication as QtApplication
+from qtpy import API_NAME
+from os import environ
 from .view import Window
 
 from vispy import app
-app.use_app('pyqt5')
+
+# set vispy to use same backend as qtpy
+app.use_app(API_NAME)
+
 del app
