@@ -54,7 +54,7 @@ class Markers(Layer):
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    def __init__(self, coords, symbol='disc', size=10, edge_width=1,
+    def __init__(self, coords, symbol='o', size=10, edge_width=1,
                  edge_width_rel=None, edge_color='black', face_color='white',
                  scaling=True, n_dimensional=False, *, name=None):
         super().__init__(MarkersNode(), name)
