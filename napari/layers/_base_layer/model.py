@@ -126,7 +126,7 @@ class Layer(VisualWrapper, ABC):
         coords = list(self.indices)
         coords[-2] = position[1]
         coords[-1] = position[0]
-        self._coordinates =  tuple(coords)
+        self._coordinates = tuple(coords)
 
     @property
     @abstractmethod
