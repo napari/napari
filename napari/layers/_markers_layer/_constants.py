@@ -27,6 +27,7 @@ class Symbol(Enum):
         """
         return self.name.lower()
 
+
 # Mapping of symbol alias names to the deduplicated name
 SYMBOL_ALIAS = {
     'o': Symbol['DISC'],
