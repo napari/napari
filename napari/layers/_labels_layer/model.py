@@ -472,11 +472,11 @@ class Labels(Layer):
         value : int or float or sequence of int or float
             Value of the data at the coord.
         """
-        coord = np.round(self.coordinates).astype(int)
-        coord[-2] = np.clip(coord[-2], 0, self._image_view.shape[0]-1)
-        coord[-1] = np.clip(coord[-1], 0, self._image_view.shape[1]-1)
+        coord = list(self.coordinates)
+        coord[-2:] = np.clip(coord[-2:], 0,
+                             np.asarray(self._image_view.shape) - 1)
 
-        value = self._image_view[int(round(coord[-2])), int(round(coord[-1]))]
+        value = self._image_view[tuple(np.round(coord[-2:]).astype(int))]
 
         return coord, value
 
@@ -502,7 +502,8 @@ class Labels(Layer):
         return msg
 
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
+        """Called whenever mouse pressed in canvas.  Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -511,7 +512,7 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord, label = self.get_value()
 
         if self.mode == Mode.PAN_ZOOM:
@@ -535,7 +536,8 @@ class Labels(Layer):
             raise ValueError("Mode not recongnized")
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas.  Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -544,7 +546,7 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord, label = self.get_value()
 
         if self.mode == Mode.PAINT and event.is_dragging:

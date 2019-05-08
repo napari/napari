@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+import numpy as np
 
 import weakref
 
@@ -108,25 +109,24 @@ class Layer(VisualWrapper, ABC):
         self._set_view_slice()
 
     @property
-    def cursor_position(self):
-        """tuple: 2-tuple of cursor in image coordinates. Setter does
-        transformation from canvas coordinates to image coordinates
-        """
-        return self._cursor_position
-
-    @cursor_position.setter
-    def cursor_position(self, cursor_position):
-        transform = self._node.canvas.scene.node_transform(self._node)
-        self._cursor_position = tuple(transform.map(cursor_position)[:2])
-
-    @property
     def coordinates(self):
-        """tuple: Tuple of floats for slicing arrays on each dimension at
-        the current cursor position."""
+        """Tuple of floats for slicing arrays at the current cursor position.
+
+        The setter expects the a 2-tuple of coordinates in screen space
+        ordered (x, y) and then transforms them to image space and inserts
+        them into the correct position of the layer indices. The length of the
+        tuple is equal to the number of dimensions of the layer.
+        """
+        return self._coordinates
+
+    @coordinates.setter
+    def coordinates(self, cursor_position):
+        transform = self._node.canvas.scene.node_transform(self._node)
+        position = tuple(transform.map(cursor_position)[:2])
         coords = list(self.indices)
-        coords[-2] = self.cursor_position[1]
-        coords[-1] = self.cursor_position[0]
-        return tuple(coords)
+        coords[-2] = position[1]
+        coords[-1] = position[0]
+        self._coordinates =  tuple(coords)
 
     @property
     @abstractmethod
@@ -271,13 +271,13 @@ class Layer(VisualWrapper, ABC):
 
     @property
     def scale_factor(self):
-        """float: Conversion factor from canvas coordinates to image
-        coordinates. Depends on the current zoom level.
+        """float: Conversion factor from screen coordinates to image
+        coordinates, which depends on the current zoom level.
         """
         transform = self._node.canvas.scene.node_transform(self._node)
         scale_factor = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
-        return scale_factor.mean()
+        return scale_factor[0]
 
     def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.

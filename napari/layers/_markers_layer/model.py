@@ -432,11 +432,12 @@ class Markers(Layer):
             self.refresh()
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas. Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord = self.coordinates
         if self.mode == 'select' and event.is_dragging:
             self._move(coord)
@@ -445,11 +446,12 @@ class Markers(Layer):
         self.status = self.get_message(coord, self._selected_markers)
 
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
+        """Called whenever mouse pressed in canvas. Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord = self.coordinates
         self._selected_markers = self._select_marker(coord)
         shift = 'Shift' in event.modifiers

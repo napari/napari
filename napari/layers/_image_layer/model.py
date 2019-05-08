@@ -323,14 +323,14 @@ class Image(Layer):
 
         Returns
         ----------
-        coord : sequence of int
-            Position of mouse cursor in data.
+        coord : tuple of int
+            Position of cursor in image space.
         value : int or float or sequence of int or float
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
-        coord[-2] = np.clip(coord[-2], 0, self._image_view.shape[0]-1)
-        coord[-1] = np.clip(coord[-1], 0, self._image_view.shape[1]-1)
+        coord[-2:] = np.clip(coord[-2:], 0,
+                             np.asarray(self._image_view.shape) - 1)
 
         value = self._image_view[tuple(coord[-2:])]
 
@@ -369,10 +369,11 @@ class Image(Layer):
         return msg
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas. Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)

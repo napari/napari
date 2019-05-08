@@ -1156,7 +1156,8 @@ class Shapes(Layer):
         return svg
 
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
+        """Called whenever mouse pressed in canvas. Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -1165,7 +1166,7 @@ class Shapes(Layer):
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
 
@@ -1365,7 +1366,8 @@ class Shapes(Layer):
             raise ValueError("Mode not recongnized")
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas. Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -1374,7 +1376,7 @@ class Shapes(Layer):
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord = self.coordinates[-2:]
 
         if self.mode == Mode.PAN_ZOOM:
@@ -1438,7 +1440,8 @@ class Shapes(Layer):
         self.status = self.get_message(coord, shape, vertex)
 
     def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
+        """Called whenever mouse released in canvas. Converts the `event.pos`
+        from screen coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -1447,7 +1450,7 @@ class Shapes(Layer):
         """
         if event.pos is None:
             return
-        self.cursor_position = event.pos
+        self.coordinates = event.pos
         coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
 
