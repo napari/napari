@@ -54,8 +54,8 @@ with app_context():
     # change the layer marker edge color
     layer.edge_color = 'blue'
 
-    # change the layer marker symbol
-    layer.symbol = 'cross'
+    # change the layer marker symbol using an alias
+    layer.symbol = '+'
 
     # change the layer marker n_dimensional status
     layer.n_dimensional = True
