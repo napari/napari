@@ -163,7 +163,7 @@ class Markers(Layer):
             if symbol in SYMBOL_ALIAS:
                 symbol = SYMBOL_ALIAS[symbol]
             else:
-                symbol = Symbol[symbol.upper()]
+                symbol = Symbol(symbol)
         self._symbol = symbol
 
         self.events.symbol()

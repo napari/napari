@@ -25,7 +25,7 @@ class Symbol(Enum):
         """String representation: The string method returns the
         valid vispy symbol string for the Markers visual.
         """
-        return self.name.lower()
+        return self.value
 
 
 # Mapping of symbol alias names to the deduplicated name
