@@ -162,8 +162,8 @@ class Markers(Layer):
             # Convert the alias string to the deduplicated string
             if symbol in SYMBOL_ALIAS:
                 symbol = SYMBOL_ALIAS[symbol]
-            # Convert the string name to the Symbol Enum
-            symbol = Symbol[symbol.upper()]
+            else:
+                symbol = Symbol[symbol.upper()]
         self._symbol = symbol
 
         self.events.symbol()
