@@ -132,7 +132,7 @@ class QtDivider(QFrame):
 
     def setSelected(self, bool):
         if bool:
-            self.setProperty('selected', 'true')
+            self.setProperty('selected', True)
             self.style().polish(self)
         else:
             self.setProperty('selected', False)
