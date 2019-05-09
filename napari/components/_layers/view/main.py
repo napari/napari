@@ -135,5 +135,5 @@ class QtDivider(QFrame):
             self.setProperty('selected', 'true')
             self.style().polish(self)
         else:
-            self.setProperty('selected', 'false')
+            self.setProperty('selected', False)
             self.style().polish(self)
