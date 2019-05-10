@@ -130,8 +130,8 @@ class QtDivider(QFrame):
         self.setSelected(False)
         self.setFixedSize(50, 2)
 
-    def setSelected(self, state):
-        if state:
+    def setSelected(self, selected):
+        if selected:
             self.setProperty('selected', True)
             self.style().polish(self)
         else:
