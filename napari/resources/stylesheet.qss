@@ -32,11 +32,11 @@ QSplitter::handle:vertical {
     height: 2px;
 }
 
-QtDivider[selected="true"] {
+QtDivider[selected=true] {
   background-color: {{ text }}; 
 }
 
-QtDivider[selected="false"] {
+QtDivider[selected=false] {
   background-color: {{ background }}; 
 }
 

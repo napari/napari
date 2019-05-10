@@ -33,6 +33,9 @@ class ViewerApp(Viewer):
     **named_images : dict of str -> ndarray, optional
         Arrays to render as image layers, keyed by layer name.
     """
+    with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
+        raw_stylesheet = f.read()
+
     def __init__(self, *images, meta=None, multichannel=None, clim_range=None,
                  title='napari', **named_images):
         super().__init__(title=title)
@@ -50,9 +53,9 @@ class ViewerApp(Viewer):
     def theme(self):
         """string: Color theme.
         """
-        if hasattr(self, '_theme'):
+        try:
             return self._theme
-        else:
+        except AttributeError:
             return None
 
     @theme.setter
@@ -68,14 +71,12 @@ class ViewerApp(Viewer):
         palette = palettes[theme]
 
         # template and apply the primary stylesheet
-        with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-            raw_stylesheet = f.read()
-            themed_stylesheet = template(raw_stylesheet, **palette)
+        themed_stylesheet = template(self.raw_stylesheet, **palette)
         self._qtviewer.setStyleSheet(themed_stylesheet)
 
         # set window styles which don't use the primary stylesheet
-        self.window._status_bar.setStyleSheet("""QStatusBar { background: %s;
-            color: %s}""" % (palette['background'], palette['text']))
+        self.window._status_bar.setStyleSheet('QStatusBar { background: %s;'
+            'color: %s}' % (palette['background'], palette['text']))
         self.window._qt_center.setStyleSheet(
             'QWidget { background: %s;}' % palette['background'])
 
