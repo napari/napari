@@ -75,8 +75,9 @@ class ViewerApp(Viewer):
         self._qtviewer.setStyleSheet(themed_stylesheet)
 
         # set window styles which don't use the primary stylesheet
-        self.window._status_bar.setStyleSheet('QStatusBar { background: %s;'
-            'color: %s}' % (palette['background'], palette['text']))
+        self.window._status_bar.setStyleSheet(
+            'QStatusBar { background: %s;color: %s}'
+            % (palette['background'], palette['text']))
         self.window._qt_center.setStyleSheet(
             'QWidget { background: %s;}' % palette['background'])
 
