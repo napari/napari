@@ -2,9 +2,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                             QFrame, QCheckBox, QScrollArea)
 
-from ....util.theme import palettes
-palette = palettes['dark']
-
 
 class QtLayers(QScrollArea):
 
@@ -128,17 +125,15 @@ class QtLayers(QScrollArea):
 
 
 class QtDivider(QFrame):
-    unselectedStlyesheet = "QFrame {;}"
-    selectedStlyesheet = """QFrame {border: 2px solid %s;
-        background-color: white; border-radius: 3px;}""" % palette['text']
-
     def __init__(self):
         super().__init__()
         self.setSelected(False)
         self.setFixedSize(50, 2)
 
-    def setSelected(self, bool):
-        if bool:
-            self.setStyleSheet(self.selectedStlyesheet)
+    def setSelected(self, selected):
+        if selected:
+            self.setProperty('selected', True)
+            self.style().polish(self)
         else:
-            self.setStyleSheet(self.unselectedStlyesheet)
+            self.setProperty('selected', False)
+            self.style().polish(self)
