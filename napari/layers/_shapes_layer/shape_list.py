@@ -658,7 +658,7 @@ class ShapeList():
 
         return labels
 
-    def to_xml(self, shape_type=None):
+    def to_xml_list(self, shape_type=None):
         """Convert the shapes to a list of xml elements according to the svg
         specification. Z ordering of the shapes will be taken into account.
 

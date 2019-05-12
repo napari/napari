@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from xml.etree.ElementTree import Element, tostring
 
 import weakref
 
@@ -270,6 +271,53 @@ class Layer(VisualWrapper, ABC):
         self._freeze = True
         yield
         self._freeze = False
+
+    def to_xml_list(self):
+        """Generates a list of xml elements for the layer.
+
+        Returns
+        ----------
+        xml : list of xml.etree.ElementTree.Element
+            List of a single xml element specifying the currently viewed image
+            as a png according to the svg specification.
+        """
+        return []
+
+    def to_svg(self, canvas_shape=None):
+        """Returns an svg string with all the currently viewed image as a png.
+
+        Parameters
+        ----------
+        canvas_shape : 2-tuple, optional
+            Shape of SVG canvas to be generated. If not specified, takes the
+            shape of last two dimensions of the layer
+
+        Returns
+        ----------
+        svg : string
+            String with the svg specification of the currently viewed image
+        """
+
+        if canvas_shape is None:
+            canvas_shape = self.shape[-2:]
+
+        props = {'xmlns': 'http://www.w3.org/2000/svg',
+                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+        xml = Element('svg', width=f'{canvas_shape[0]}',
+                      height=f'{canvas_shape[1]}', version='1.1',
+                      **props)
+
+        xml_list = self.to_xml_list()
+
+        for x in xml_list:
+            xml.append(x)
+
+        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
+               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
+               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
+               tostring(xml, encoding='unicode', method='xml'))
+
+        return svg
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

@@ -1,6 +1,9 @@
 import numpy as np
 from scipy import ndimage as ndi
 from copy import copy
+from xml.etree.ElementTree import Element
+from base64 import b64encode
+from imageio import imwrite
 
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
@@ -575,6 +578,26 @@ class Labels(Layer):
         msg = f'{int_coord}, {self.name}, label {label}'
 
         return msg
+
+    def to_xml_list(self):
+        """Generates a list with a single xml element that defines the
+        currently viewed image as a png according to the svg specification.
+
+        Returns
+        ----------
+        xml : list of xml.etree.ElementTree.Element
+            List of a single xml element specifying the currently viewed image
+            as a png according to the svg specification.
+        """
+        image_str = imwrite('<bytes>', self._image_view, format='png')
+        image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
+        props = {'xlink:href': image_str}
+        width = str(self.shape[-2])
+        height = str(self.shape[-1])
+        xml = Element('image', width=width, height=height,
+                      **props)
+
+        return [xml]
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

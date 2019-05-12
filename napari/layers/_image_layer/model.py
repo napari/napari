@@ -1,4 +1,7 @@
 from warnings import warn
+from xml.etree.ElementTree import Element
+from base64 import b64encode
+from imageio import imwrite
 
 import numpy as np
 from copy import copy
@@ -393,6 +396,28 @@ class Image(Layer):
             else:
                 msg = msg + f'{value:0.3}'
         return coord, value, msg
+
+    def to_xml_list(self):
+        """Generates a list with a single xml element that defines the
+        currently viewed image as a png according to the svg specification.
+
+        Returns
+        ----------
+        xml : list of xml.etree.ElementTree.Element
+            List of a single xml element specifying the currently viewed image
+            as a png according to the svg specification.
+        """
+        #image = (self.colormap[1].map(self._image_view)*255).astype('uint8')
+        image = self._image_view
+        image_str = imwrite('<bytes>', image, format='png')
+        image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
+        props = {'xlink:href': image_str}
+        width = str(self.shape[-2])
+        height = str(self.shape[-1])
+        xml = Element('image', width=width, height=height,
+                      **props)
+
+        return [xml]
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
