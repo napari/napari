@@ -250,10 +250,19 @@ class Viewer:
             layer._set_view_slice(self.dims.indices)
 
     def _update_active_layer(self, event):
+        """Set the active layer by iterating over the layers list and
+        finding the first selected layer. If multiple layers are selected the
+        iteration stops and the active layer is set to be None
+
+        Parameters
+        ----------
+        event : Event
+            No Event parameters are used
+        """
         # iteration goes backwards to find top most selected layer if any
         # if multiple layers are selected sets the active layer to None
         active_layer = None
-        for layer in self.layers[::-1]:
+        for layer in self.layers:
             if active_layer is None and layer.selected:
                 active_layer = layer
             elif active_layer is not None and layer.selected:

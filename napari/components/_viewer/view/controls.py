@@ -19,6 +19,13 @@ class QtControls(QStackedWidget):
         self.viewer.events.active_layer.connect(self._display)
 
     def _display(self, event):
+        """Change the displayed controls to be those of the target layer.
+
+        Parameters
+        ----------
+        event : Event
+            Event with the target layer at `event.item`.
+        """
         if event is None:
             layer = None
         else:
@@ -30,11 +37,25 @@ class QtControls(QStackedWidget):
             self.setCurrentWidget(layer._qt_controls)
 
     def _add(self, event):
+        """Add the controls target layer to the list of control widgets.
+
+        Parameters
+        ----------
+        event : Event
+            Event with the target layer at `event.item`.
+        """
         layer = event.item
         if layer._qt_controls is not None:
             self.addWidget(layer._qt_controls)
 
     def _remove(self, event):
+        """Remove the controls target layer from the list of control widgets.
+
+        Parameters
+        ----------
+        event : Event
+            Event with the target layer at `event.item`.
+        """
         layer = event.item
         if layer._qt_controls is not None:
             self.removeWidget(layer._qt_controls)
