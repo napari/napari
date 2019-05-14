@@ -58,8 +58,6 @@ with app_context():
 
     labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
-    
+
     svg = viewer.to_svg()
-    # To save svg file
-    with open('shapes.svg', 'w') as f:
-        f.write(svg)
+    # svg = viewer.to_svg(file='viewer.svg')

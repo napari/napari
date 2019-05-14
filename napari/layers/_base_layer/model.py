@@ -283,14 +283,17 @@ class Layer(VisualWrapper, ABC):
         """
         return []
 
-    def to_svg(self, canvas_shape=None):
-        """Returns an svg string with all the currently viewed image as a png.
+    def to_svg(self, file=None, canvas_shape=None):
+        """Returns an svg string with all the currently viewed image as a png
+        or writes to svg to a file.
 
         Parameters
         ----------
-        canvas_shape : 2-tuple, optional
-            Shape of SVG canvas to be generated. If not specified, takes the
-            shape of last two dimensions of the layer
+        file : path-like object, optional
+            An object representing a file system path. A path-like object is
+            either a str or bytes object representing a path, or an object
+            implementing the `os.PathLike` protocol. If passed the svg will be
+            written to this file
 
         Returns
         ----------
@@ -317,6 +320,11 @@ class Layer(VisualWrapper, ABC):
                '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
                tostring(xml, encoding='unicode', method='xml'))
 
+        if file:
+            # Save svg to file
+            with open(file, 'w') as f:
+                f.write(svg)
+                
         return svg
 
     def on_mouse_move(self, event):
