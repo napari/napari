@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+import numpy as np
 
 import weakref
 
@@ -39,6 +40,7 @@ class Layer(VisualWrapper, ABC):
     shape
     selected
     viewer
+    indices
 
     Methods
     -------
@@ -57,6 +59,8 @@ class Layer(VisualWrapper, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
+        self._indices = ()
+        self._cursor_position = (0, 0)
         self.events.add(select=Event,
                         deselect=Event,
                         name=Event)
@@ -93,6 +97,40 @@ class Layer(VisualWrapper, ABC):
         self.events.name()
 
     @property
+    def indices(self):
+        """Tuple of int of Slice: Used for slicing arrays on each dimension.
+        """
+        return self._indices
+
+    @indices.setter
+    def indices(self, indices):
+        if indices == self.indices:
+            return
+        self._indices = indices[-self.ndim:]
+        self._set_view_slice()
+
+    @property
+    def coordinates(self):
+        """Tuple of float: Coordinates of the cursor in the respective image
+        space of each layer.
+
+        The setter expects the a 2-tuple of coordinates in canvas space
+        ordered (x, y) and then transforms them to image space and inserts
+        them into the correct position of the layer indices. The length of the
+        tuple is equal to the number of dimensions of the layer.
+        """
+        return self._coordinates
+
+    @coordinates.setter
+    def coordinates(self, cursor_position):
+        transform = self._node.canvas.scene.node_transform(self._node)
+        position = tuple(transform.map(cursor_position)[:2])
+        coords = list(self.indices)
+        coords[-2] = position[1]
+        coords[-1] = position[0]
+        self._coordinates = tuple(coords)
+
+    @property
     @abstractmethod
     def data(self):
         # user writes own docstring
@@ -105,10 +143,6 @@ class Layer(VisualWrapper, ABC):
 
     @abstractmethod
     def _get_shape(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _refresh(self):
         raise NotImplementedError()
 
     @property
@@ -237,6 +271,16 @@ class Layer(VisualWrapper, ABC):
         self.viewer.cursor_size = cursor_size
         self._cursor_size = cursor_size
 
+    @property
+    def scale_factor(self):
+        """float: Conversion factor from canvas coordinates to image
+        coordinates, which depends on the current zoom level.
+        """
+        transform = self._node.canvas.scene.node_transform(self._node)
+        scale_factor = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
+
+        return scale_factor[0]
+
     def _after_set_viewer(self, prev):
         """Triggered after a new viewer is set.
 
@@ -248,15 +292,21 @@ class Layer(VisualWrapper, ABC):
         if self.viewer is not None:
             self.refresh()
 
-    def _set_view_slice(self, indices):
-        """Called whenever the sliders change. Sets the current view given a
-        specific slice to view.
+    def _update(self):
+        """Update the underlying visual."""
+        if self._need_display_update:
+            self._need_display_update = False
+            if hasattr(self._node, '_need_colortransform_update'):
+                self._node._need_colortransform_update = True
+            self._set_view_slice()
 
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices that make up the slice.
-        """
+        if self._need_visual_update:
+            self._need_visual_update = False
+            self._node.update()
+
+    @abstractmethod
+    def _set_view_slice(self):
+        raise NotImplementedError()
 
     def refresh(self):
         """Fully refreshes the layer. If layer is frozen refresh will not occur
@@ -264,6 +314,12 @@ class Layer(VisualWrapper, ABC):
         if self._freeze:
             return
         self._refresh()
+
+    def _refresh(self):
+        """Fully refresh the underlying visual.
+        """
+        self._need_display_update = True
+        self._update()
 
     @contextmanager
     def freeze_refresh(self):

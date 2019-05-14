@@ -135,7 +135,6 @@ class Vectors(Layer):
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
 
-        self.viewer._child_layer_changed = True
         self.refresh()
 
     def _convert_to_vector_type(self, vectors):
@@ -364,13 +363,6 @@ class Vectors(Layer):
         else:
             return np.max(self.vectors, axis=0) + 1
 
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
     def _generate_meshes(self, vectors, width):
         """Generates list of mesh vertices and triangles from a list of vectors
 
@@ -403,26 +395,8 @@ class Vectors(Layer):
 
         return vertices, triangles
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
-
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
 
         vertices = self._mesh_vertices
         faces = self._mesh_triangles

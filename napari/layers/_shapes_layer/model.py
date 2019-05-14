@@ -139,8 +139,6 @@ class Shapes(Layer):
         If a scaling or rotation is in progress then the index of the vertex of
         the boudning box that is remaining fixed during the move. `None`
         otherwise.
-    _cursor_coord : np.ndarray
-        Length 2 array of the current cursor position in Image coordinates.
     _update_properties : bool
         Bool indicating if properties are to allowed to update the selected
         shapes when they are changed. Blocking this prevents circular loops
@@ -183,7 +181,7 @@ class Shapes(Layer):
 
         super().__init__(visual, name)
 
-        # Freeze refreshes to prevent drawing before the viewer is constructed
+        # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
             # Add the shape data
             self.data = ShapeList()
@@ -235,7 +233,6 @@ class Shapes(Layer):
             self._is_selecting = False
             self._drag_box = None
             self._drag_box_stored = None
-            self._cursor_coord = np.array([0, 0])
             self._is_creating = False
             self._update_properties = True
             self._clipboard = []
@@ -525,31 +522,8 @@ class Shapes(Layer):
                                   face_color=fc, opacity=o, z_index=z)
                 self.data.add(shape)
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
-    def _set_view_slice(self, indices):
-        """Set the view given the slicing indices.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
+    def _set_view_slice(self):
+        """Set the view given the slicing indices."""
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]
@@ -600,8 +574,7 @@ class Shapes(Layer):
             length_box = np.linalg.norm(box[Box.BOTTOM_LEFT] -
                                         box[Box.TOP_LEFT])
             if length_box > 0:
-                rescale = self._get_rescale()
-                r = self._rotation_handle_length*rescale
+                r = self._rotation_handle_length * self.scale_factor
                 rot = rot-r*(box[Box.BOTTOM_LEFT] -
                              box[Box.TOP_LEFT])/length_box
             box = np.append(box, [rot], axis=0)
@@ -633,8 +606,8 @@ class Shapes(Layer):
                 index = self._hover_shape
 
             centers, offsets, triangles = self.data.outline(index)
-            rescale = self._get_rescale()
-            vertices = centers + rescale*self._highlight_width*offsets
+            vertices = centers + (self.scale_factor * self._highlight_width *
+                                  offsets)
             vertices = vertices[:, ::-1]
         else:
             vertices = None
@@ -796,10 +769,10 @@ class Shapes(Layer):
         for index in to_remove:
             self.data.remove(index)
         self.selected_shapes = []
-        shape, vertex = self._shape_at(self._cursor_coord)
+        shape, vertex = self._shape_at(self.coordinates[-2:])
         self._hover_shape = shape
         self._hover_vertex = vertex
-        self.status = self.get_message(self._cursor_coord, shape, vertex)
+        self.status = self.get_message(self.coordinates[-2:], shape, vertex)
         self.refresh()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -833,11 +806,10 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            rescale = self._get_rescale()
-            r = self._rotation_handle_length*rescale
-            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
+            r = self._rotation_handle_length * self.scale_factor
+            handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec/cur_len
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
@@ -853,11 +825,10 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = box @ transform.T
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            rescale = self._get_rescale()
-            r = self._rotation_handle_length*rescale
-            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
+            r = self._rotation_handle_length * self.scale_factor
+            handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec/cur_len
         self._selected_box = box + center
 
     def _shape_at(self, coord):
@@ -886,8 +857,7 @@ class Shapes(Layer):
                 distances = abs(box - coord[:2])
 
                 # Get the vertex sizes
-                rescale = self._get_rescale()
-                sizes = self._vertex_size*rescale/2
+                sizes = self._vertex_size * self.scale_factor / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -901,8 +871,7 @@ class Shapes(Layer):
                 distances = abs(vertices - coord[:2])
 
                 # Get the vertex sizes
-                rescale = self._get_rescale()
-                sizes = self._vertex_size*rescale/2
+                sizes = self._vertex_size * self.scale_factor / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
@@ -915,42 +884,6 @@ class Shapes(Layer):
         # Check if mouse inside shape
         shape = self.data.inside(coord)
         return shape, None
-
-    def _get_rescale(self):
-        """Get conversion factor from canvas coordinates to image coordinates.
-        Depends on the current zoom level.
-
-        Returns
-        ----------
-        rescale : float
-            Conversion factor from canvas coordinates to image coordinates.
-        """
-        scene = self.viewer._qtviewer.canvas.scene
-        transform = scene.node_transform(self._node)
-        rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-
-        return rescale.mean()
-
-    def _get_coord(self, position):
-        """Convert a position in canvas coordinates to image coordinates.
-
-        Parameters
-        ----------
-        position : sequence of int
-            Position of mouse cursor in canvas coordinates.
-
-        Returns
-        ----------
-        coord : sequence of float
-            Position of mouse cursor in image coordinates.
-        """
-        scene = self.viewer._qtviewer.canvas.scene
-        transform = scene.node_transform(self._node)
-        pos = transform.map(position)
-        coord = np.array([pos[1], pos[0]])
-        self._cursor_coord = coord
-
-        return coord
 
     def get_message(self, coord, shape, vertex):
         """Generates a string based on the coordinates and information about
@@ -969,7 +902,8 @@ class Shapes(Layer):
         msg : string
             String containing a message that can be used as a status update.
         """
-        msg = f'{coord.astype(int)}, {self.name}'
+        int_coord = np.round(coord).astype(int)
+        msg = f'{int_coord}, {self.name}'
         if shape is not None:
             msg = msg + ', shape ' + str(shape)
             if vertex is not None:
@@ -1087,8 +1021,7 @@ class Shapes(Layer):
                         scale = np.array([dist_perp, 1])
 
                     # prevent box from shrinking below a threshold size
-                    rescale = self._get_rescale()
-                    threshold = self._vertex_size*rescale/8
+                    threshold = self._vertex_size * self.scale_factor / 8
                     scale[abs(scale*size[[1, 0]]) < threshold] = 1
 
                     # check orientation of box
@@ -1130,7 +1063,7 @@ class Shapes(Layer):
                     if np.linalg.norm(new_offset) < 1:
                         angle = 0
                     elif self._fixed_aspect:
-                        angle = np.round(new_angle/45)*45 - fixed_angle
+                        angle = np.round(new_angle / 45) * 45 - fixed_angle
                     else:
                         angle = new_angle - fixed_angle
 
@@ -1223,15 +1156,18 @@ class Shapes(Layer):
         return svg
 
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
+        """Called whenever mouse pressed in canvas. Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
         event : Event
             Vispy event
         """
-        position = event.pos
-        coord = self._get_coord(position)
+        if event.pos is None:
+            return
+        self.coordinates = event.pos
+        coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
 
         if self.mode == Mode.PAN_ZOOM:
@@ -1262,14 +1198,13 @@ class Shapes(Layer):
         elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                             Mode.ADD_LINE]):
             # Start drawing a rectangle / ellipse / line
-            rescale = self._get_rescale()
-            size = self._vertex_size*rescale/4
+            size = self._vertex_size * self.scale_factor / 4
             new_z_index = max(self.data._z_index, default=-1) + 1
             if self.mode == Mode.ADD_RECTANGLE:
                 data = np.array([coord, coord+size])
                 shape_type = 'rectangle'
             elif self.mode == Mode.ADD_ELLIPSE:
-                data = np.array([coord+size/2, [size, size]])
+                data = np.array([coord+size / 2, [size, size]])
                 shape_type = 'ellipse'
             elif self.mode == Mode.ADD_LINE:
                 data = np.array([coord, coord+size])
@@ -1431,7 +1366,8 @@ class Shapes(Layer):
             raise ValueError("Mode not recongnized")
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas. Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -1440,8 +1376,8 @@ class Shapes(Layer):
         """
         if event.pos is None:
             return
-        position = event.pos
-        coord = self._get_coord(position)
+        self.coordinates = event.pos
+        coord = self.coordinates[-2:]
 
         if self.mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode just look at coord all
@@ -1504,15 +1440,18 @@ class Shapes(Layer):
         self.status = self.get_message(coord, shape, vertex)
 
     def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
+        """Called whenever mouse released in canvas. Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
         event : Event
             Vispy event
         """
-        position = event.pos
-        coord = self._get_coord(position)
+        if event.pos is None:
+            return
+        self.coordinates = event.pos
+        coord = self.coordinates[-2:]
         shift = 'Shift' in event.modifiers
 
         if self.mode == Mode.PAN_ZOOM:
@@ -1601,7 +1540,7 @@ class Shapes(Layer):
                 else:
                     self._aspect_ratio = 1
                 if self._is_moving:
-                    self._move(self._cursor_coord)
+                    self._move(self.coordinates[-2:])
             elif event.key == 'r':
                 self.mode = Mode.ADD_RECTANGLE
             elif event.key == 'e':
@@ -1653,4 +1592,4 @@ class Shapes(Layer):
         elif event.key == 'Shift':
             self._fixed_aspect = False
             if self._is_moving:
-                self._move(self._cursor_coord)
+                self._move(self.coordinates[-2:])
