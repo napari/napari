@@ -23,7 +23,7 @@ class QtControls(QStackedWidget):
             layer = None
         else:
             layer = event.item
-            
+
         if layer is None or layer._qt_controls is None:
             self.setCurrentWidget(self.empty_widget)
         else:

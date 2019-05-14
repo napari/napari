@@ -260,7 +260,7 @@ class Viewer:
                 active_layer = None
                 break
 
-        if active_layer == None:
+        if active_layer is None:
             self.status = 'Ready'
             self.help = ''
             self.cursor = 'standard'
