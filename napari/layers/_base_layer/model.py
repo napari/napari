@@ -98,7 +98,8 @@ class Layer(VisualWrapper, ABC):
 
     @property
     def indices(self):
-        """Tuple of slice objects for slicing arrays on each dimension."""
+        """Tuple of int of Slice: Used for slicing arrays on each dimension.
+        """
         return self._indices
 
     @indices.setter
@@ -110,7 +111,8 @@ class Layer(VisualWrapper, ABC):
 
     @property
     def coordinates(self):
-        """Tuple of floats for slicing arrays at the current cursor position.
+        """Tuple of float: Coordinates of the cursor in the respective image
+        space of each layer.
 
         The setter expects the a 2-tuple of coordinates in canvas space
         ordered (x, y) and then transforms them to image space and inserts

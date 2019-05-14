@@ -187,7 +187,7 @@ class Labels(Layer):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
-        self.cursor_size = self._brush_size/self.scale_factor
+        self.cursor_size = self._brush_size / self.scale_factor
         self.events.brush_size()
 
         self.refresh()
@@ -251,7 +251,7 @@ class Labels(Layer):
             self.help = ('hold <space> to pan/zoom, '
                          'click to pick a label')
         elif mode == Mode.PAINT:
-            self.cursor_size = self.brush_size/self.scale_factor
+            self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
             self.help = ('hold <space> to pan/zoom, '

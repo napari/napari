@@ -806,10 +806,10 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = np.array(box*scale)
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = self._rotation_handle_length*self.scale_factor
-            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
+            r = self._rotation_handle_length * self.scale_factor
+            handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec/cur_len
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
@@ -825,10 +825,10 @@ class Shapes(Layer):
         box = self._selected_box - center
         box = box @ transform.T
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
-            r = self._rotation_handle_length*self.scale_factor
-            handle_vec = box[Box.HANDLE]-box[Box.TOP_CENTER]
+            r = self._rotation_handle_length * self.scale_factor
+            handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[Box.HANDLE] = box[Box.TOP_CENTER] + r*handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec/cur_len
         self._selected_box = box + center
 
     def _shape_at(self, coord):
@@ -857,7 +857,7 @@ class Shapes(Layer):
                 distances = abs(box - coord[:2])
 
                 # Get the vertex sizes
-                sizes = self._vertex_size*self.scale_factor/2
+                sizes = self._vertex_size * self.scale_factor / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
@@ -871,7 +871,7 @@ class Shapes(Layer):
                 distances = abs(vertices - coord[:2])
 
                 # Get the vertex sizes
-                sizes = self._vertex_size*self.scale_factor/2
+                sizes = self._vertex_size * self.scale_factor / 2
 
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
@@ -1021,7 +1021,7 @@ class Shapes(Layer):
                         scale = np.array([dist_perp, 1])
 
                     # prevent box from shrinking below a threshold size
-                    threshold = self._vertex_size*self.scale_factor/8
+                    threshold = self._vertex_size * self.scale_factor / 8
                     scale[abs(scale*size[[1, 0]]) < threshold] = 1
 
                     # check orientation of box
@@ -1063,7 +1063,7 @@ class Shapes(Layer):
                     if np.linalg.norm(new_offset) < 1:
                         angle = 0
                     elif self._fixed_aspect:
-                        angle = np.round(new_angle/45)*45 - fixed_angle
+                        angle = np.round(new_angle / 45) * 45 - fixed_angle
                     else:
                         angle = new_angle - fixed_angle
 
@@ -1198,13 +1198,13 @@ class Shapes(Layer):
         elif self.mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
                             Mode.ADD_LINE]):
             # Start drawing a rectangle / ellipse / line
-            size = self._vertex_size*self.scale_factor/4
+            size = self._vertex_size * self.scale_factor / 4
             new_z_index = max(self.data._z_index, default=-1) + 1
             if self.mode == Mode.ADD_RECTANGLE:
                 data = np.array([coord, coord+size])
                 shape_type = 'rectangle'
             elif self.mode == Mode.ADD_ELLIPSE:
-                data = np.array([coord+size/2, [size, size]])
+                data = np.array([coord+size / 2, [size, size]])
                 shape_type = 'ellipse'
             elif self.mode == Mode.ADD_LINE:
                 data = np.array([coord, coord+size])

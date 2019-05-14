@@ -325,7 +325,7 @@ class Image(Layer):
         ----------
         coord : tuple of int
             Position of cursor in image space.
-        value : int or float or sequence of int or float
+        value : int, float, or sequence of int or float
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
@@ -337,8 +337,8 @@ class Image(Layer):
         return coord, value
 
     def get_message(self, coord, value):
-        """Generates a string based on the coordinates and information about
-        what shapes are hovered over
+        """Generate a status message based on the coordinates and information
+        about what shapes are hovered over
 
         Parameters
         ----------
