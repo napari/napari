@@ -1,4 +1,5 @@
 from typing import Union
+from xml.etree.ElementTree import Element
 
 import numpy as np
 from copy import copy
@@ -7,7 +8,7 @@ from .._base_layer import Layer
 from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
-from vispy.color import get_color_names
+from vispy.color import get_color_names, Color
 
 from .view import QtMarkersLayer
 from .view import QtMarkersControls
@@ -85,6 +86,8 @@ class Markers(Layer):
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
             self._status = self._mode
+            self._markers_view = np.empty((0, 2))
+            self._sizes_view = 0
 
             # update flags
             self._need_display_update = False
@@ -252,6 +255,28 @@ class Markers(Layer):
         self.refresh()
 
     @property
+    def svg_props(self):
+        """dict: color and width properties in the svg specification
+        """
+        width = str(self.edge_width)
+        face_color = (255 * Color(self.face_color).rgba).astype(np.int)
+        fill = f'rgb{tuple(face_color[:3])}'
+        edge_color = (255 * Color(self.edge_color).rgba).astype(np.int)
+        stroke = f'rgb{tuple(edge_color[:3])}'
+        opacity = str(self.opacity)
+
+        # Currently not using fill or stroke opacity - only global opacity
+        # as otherwise leads to unexpected behavior when reading svg into
+        # other applications
+        # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
+        # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
+
+        props = {'fill': fill, 'stroke': stroke, 'stroke-width': width,
+                 'opacity': opacity}
+
+        return props
+
+    @property
     def scaling(self) -> bool:
         """bool: if True, marker rescales when zooming
         """
@@ -395,15 +420,17 @@ class Markers(Layer):
             sizes = (self._size[matches, -2:].mean(axis=1)*scale)[::-1]
 
             # Update the markers node
-            data = np.array(in_slice_markers) + 0.5
+            data = np.array(in_slice_markers)[::-1] + 0.5
 
         else:
             # if no markers in this slice send dummy data
             data = np.empty((0, 2))
             sizes = 0
+        self._markers_view = data
+        self._sizes_view = sizes
 
         self._node.set_data(
-            data[::-1, ::-1], size=sizes, edge_width=self.edge_width,
+            data, size=sizes, edge_width=self.edge_width,
             symbol=self.symbol, edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
@@ -478,6 +505,28 @@ class Markers(Layer):
         if index is not None:
             self.data[index] = coord
             self.refresh()
+
+    def to_xml_list(self):
+        """Convert the shapes to a list of xml elements according to the svg
+        specification. Z ordering of the shapes will be taken into account.
+
+        Returns
+        ----------
+        xml : list
+            List of xml elements defining each shape according to the
+            svg specification
+        """
+        xml_list = []
+        props = self.svg_props
+
+        for d, s in zip(self._markers_view, self._sizes_view):
+            cx = str(d[0])
+            cy = str(d[1])
+            r = str(s/2)
+            element = Element('circle', cx=cx, cy=cy, r=r, **props)
+            xml_list.append(element)
+
+        return xml_list
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

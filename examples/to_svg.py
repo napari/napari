@@ -58,4 +58,10 @@ with app_context():
 
     labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
-    labels_layer.visible = False
+
+    markers = np.array([[100, 100], [200, 200], [333, 111]])
+    size = np.array([10, 20, 20])
+    viewer.add_markers(markers, size=size)
+
+    svg = viewer.to_svg()
+    svg = viewer.to_svg(file='viewer.svg')
