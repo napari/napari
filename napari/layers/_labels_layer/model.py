@@ -589,14 +589,17 @@ class Labels(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        image_str = imwrite('<bytes>', self._image_view, format='png')
+        image = self.raw_to_displayed(self._image_view)
+        mapped_image = (self.colormap.map(image)*255).astype('uint8')
+        mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
+        image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
         width = str(self.shape[-2])
         height = str(self.shape[-1])
-        xml = Element('image', width=width, height=height,
+        opacity = str(self.opacity)
+        xml = Element('image', width=width, height=height, opacity=opacity,
                       **props)
-
         return [xml]
 
     def on_mouse_press(self, event):

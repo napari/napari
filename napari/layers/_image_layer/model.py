@@ -407,9 +407,13 @@ class Image(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        #image = (self.colormap[1].map(self._image_view)*255).astype('uint8')
-        image = self._image_view
-        image_str = imwrite('<bytes>', image, format='png')
+        image = np.clip(self._image_view, self.clim[0], self.clim[1])
+        color_range = self.clim[1] - self.clim[0]
+        if color_range != 0:
+            image = image/color_range
+        mapped_image = (self.colormap[1].map(image)*255).astype('uint8')
+        mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
+        image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
         width = str(self.shape[-2])
@@ -417,7 +421,6 @@ class Image(Layer):
         opacity = str(self.opacity)
         xml = Element('image', width=width, height=height, opacity=opacity,
                       **props)
-
         return [xml]
 
     def on_mouse_move(self, event):

@@ -17,8 +17,7 @@ with app_context():
 
     # add the image
     img_layer = viewer.add_image(data.camera(), name='photographer')
-    #img_layer.colormap = 'gray'
-    img_layer.colormap = 'viridis'
+    img_layer.colormap = 'gray'
 
     # create a list of polygons
     polygons = [np.array([[11,   13], [111, 113], [22, 246]]),
@@ -56,12 +55,10 @@ with app_context():
     masks_layer.opacity = 0.7
     masks_layer.colormap = Colormap([[0.0, 0.0, 0.0, 0.0],
                                      [1.0, 0.0, 0.0, 1.0]])
-    #masks_layer.visible = False
 
     labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
-    labels_layer.visible = False
-
+    
     svg = viewer.to_svg()
     # To save svg file
     with open('shapes.svg', 'w') as f:
