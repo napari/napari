@@ -324,7 +324,7 @@ class Layer(VisualWrapper, ABC):
             # Save svg to file
             with open(file, 'w') as f:
                 f.write(svg)
-                
+    
         return svg
 
     def on_mouse_move(self, event):
