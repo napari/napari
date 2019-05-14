@@ -26,15 +26,15 @@ class QtImageControls(QWidget):
 
     def clim_slider_changed(self, slidermin, slidermax):
         valmin, valmax = self.layer._clim_range
-        cmin = valmin+slidermin*(valmax-valmin)
-        cmax = valmin+slidermax*(valmax-valmin)
-        self.layer.clim = [cmin, cmax]
+        cmin = valmin + slidermin * (valmax - valmin)
+        cmax = valmin + slidermax * (valmax - valmin)
+        self.layer.clim = cmin, cmax
 
     def clim_slider_update(self, event):
         valmin, valmax = self.layer._clim_range
         cmin, cmax = self.layer.clim
-        slidermin = (cmin - valmin)/(valmax - valmin)
-        slidermax = (cmax - valmin)/(valmax - valmin)
+        slidermin = (cmin - valmin) / (valmax - valmin)
+        slidermax = (cmax - valmin) / (valmax - valmin)
         self.climSlider.blockSignals(True)
         self.climSlider.setValues((slidermin, slidermax))
         self.climSlider.blockSignals(False)
