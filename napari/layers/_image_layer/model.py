@@ -414,7 +414,8 @@ class Image(Layer):
         props = {'xlink:href': image_str}
         width = str(self.shape[-2])
         height = str(self.shape[-1])
-        xml = Element('image', width=width, height=height,
+        opacity = str(self.opacity)
+        xml = Element('image', width=width, height=height, opacity=opacity,
                       **props)
 
         return [xml]
