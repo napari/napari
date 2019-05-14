@@ -156,6 +156,8 @@ You can also paint pixel-wise labels, useful for creating masks for segmentation
 
 You can change the theme after creating the viewer by setting the `viewer.theme` property. The viewer currently supports `light` and `dark` themes, with `dark` as the default. Run `examples/set_theme.py` to see an example of changing themes.
 
+![image](resources/screenshot-set-theme.png)
+
 ## plans
 
 We're working on several features, including 

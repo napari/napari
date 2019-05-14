@@ -265,6 +265,7 @@ class Viewer:
         layer.events.select.connect(self._update_layer_selection)
         layer.events.deselect.connect(self._update_layer_selection)
         self.layers.append(layer)
+        layer.indices = self.dims.indices
         layer.viewer = self
 
         if self.theme is not None and has_clims(layer):
@@ -296,7 +297,7 @@ class Viewer:
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer._set_view_slice(self.dims.indices)
+            layer.indices = self.dims.indices
 
     def _update_layer_selection(self, event):
         # iteration goes backwards to find top most selected layer if any

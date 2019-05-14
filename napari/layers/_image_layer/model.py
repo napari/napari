@@ -176,38 +176,10 @@ class Image(Layer):
             return self.image.shape[:-1]
         return self.image.shape
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
+    def _slice_image(self):
+        """Determines the slice of image from the indices."""
 
-            self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
-    def _slice_image(self, indices):
-        """Determines the slice of image given the indices.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-
-        ndim = self.ndim
-
-        indices = list(indices)
-        indices = indices[-ndim:]
+        indices = list(self.indices)
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
@@ -222,15 +194,9 @@ class Image(Layer):
 
         return self._image_view
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-        sliced_image = self._slice_image(indices)
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
+        sliced_image = self._slice_image()
 
         self._node.set_data(sliced_image)
 
@@ -354,35 +320,42 @@ class Image(Layer):
     def _clim_range_default(self):
         return [float(self.image.min()), float(self.image.max())]
 
-    def get_value(self, position, indices):
+    def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
+        Returns
+        ----------
+        coord : tuple of int
+            Position of cursor in image space.
+        value : int, float, or sequence of int or float
+            Value of the data at the coord.
+        """
+        coord = np.round(self.coordinates).astype(int)
+        coord[-2:] = np.clip(coord[-2:], 0,
+                             np.asarray(self._image_view.shape) - 1)
+
+        value = self._image_view[tuple(coord[-2:])]
+
+        return coord, value
+
+    def get_message(self, coord, value):
+        """Generate a status message based on the coordinates and information
+        about what shapes are hovered over
+
         Parameters
         ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
+        coord : sequence of int
+            Position of mouse cursor in image coordinates.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
 
         Returns
         ----------
-        coord : sequence of int
-            Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
         msg : string
-            String containing a message that can be used as
-            a status update.
+            String containing a message that can be used as a status update.
         """
-        transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
-        pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
-               np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = list(indices)
-        coord[-2] = int(pos[0])
-        coord[-1] = int(pos[1])
-        value = self._image_view[tuple(coord[-2:])]
+
         msg = f'{coord}, {self.name}' + ', value '
         if isinstance(value, np.ndarray):
             if isinstance(value[0], np.integer):
@@ -395,7 +368,8 @@ class Image(Layer):
                 msg = msg + str(value)
             else:
                 msg = msg + f'{value:0.3}'
-        return coord, value, msg
+
+        return msg
 
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the
@@ -424,9 +398,11 @@ class Image(Layer):
         return [xml]
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas. Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
         """
         if event.pos is None:
             return
-        coord, value, msg = self.get_value(event.pos, self.viewer.dims.indices)
-        self.status = msg
+        self.coordinates = event.pos
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
