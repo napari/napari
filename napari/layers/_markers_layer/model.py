@@ -507,23 +507,24 @@ class Markers(Layer):
             self.refresh()
 
     def to_xml_list(self):
-        """Convert the shapes to a list of xml elements according to the svg
-        specification. Z ordering of the shapes will be taken into account.
+        """Convert the markers to a list of xml elements according to the svg
+        specification. Z ordering of the markers will be taken into account.
+        Each marker is represented by a circle. Support for other symbols is
+        not yet implemented.
 
         Returns
         ----------
         xml : list
-            List of xml elements defining each shape according to the
+            List of xml elements defining each marker according to the
             svg specification
         """
         xml_list = []
-        props = self.svg_props
 
         for d, s in zip(self._markers_view, self._sizes_view):
             cx = str(d[0])
             cy = str(d[1])
             r = str(s/2)
-            element = Element('circle', cx=cx, cy=cy, r=r, **props)
+            element = Element('circle', cx=cx, cy=cy, r=r, **self.svg_props)
             xml_list.append(element)
 
         return xml_list
