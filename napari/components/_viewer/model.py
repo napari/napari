@@ -39,7 +39,7 @@ class Viewer:
                                    status=Event,
                                    help=Event,
                                    title=Event,
-                                   active_markers=Event)
+                                   active_layer=Event)
 
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
@@ -54,7 +54,7 @@ class Viewer:
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
-        self._top = None
+        self._active_layer = None
         self.key_bindings = {}
 
         # TODO: this should be eventually removed!
@@ -64,9 +64,9 @@ class Viewer:
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
-        self.layers.events.added.connect(self._update_layer_selection)
-        self.layers.events.removed.connect(self._update_layer_selection)
-        self.layers.events.reordered.connect(self._update_layer_selection)
+        self.layers.events.added.connect(self._update_active_layer)
+        self.layers.events.removed.connect(self._update_active_layer)
+        self.layers.events.reordered.connect(self._update_active_layer)
         self.layers.events.reordered.connect(lambda e: self._update_canvas())
 
     @property
@@ -163,17 +163,17 @@ class Viewer:
         self._cursor_size = cursor_size
 
     @property
-    def active_markers(self):
-        """int: index of active_markers
+    def active_layer(self):
+        """int: index of active_layer
         """
-        return self._active_markers
+        return self._active_layer
 
-    @active_markers.setter
-    def active_markers(self, active_markers):
-        if active_markers == self.active_markers:
+    @active_layer.setter
+    def active_layer(self, active_layer):
+        if active_layer == self.active_layer:
             return
-        self._active_markers = active_markers
-        self.events.active_markers(index=self._active_markers)
+        self._active_layer = active_layer
+        self.events.active_layer(item=self._active_layer)
 
     def reset_view(self):
         """Resets the camera's view.
@@ -213,8 +213,8 @@ class Viewer:
         layer : Layer
             Layer to add.
         """
-        layer.events.select.connect(self._update_layer_selection)
-        layer.events.deselect.connect(self._update_layer_selection)
+        layer.events.select.connect(self._update_active_layer)
+        layer.events.deselect.connect(self._update_active_layer)
         self.layers.append(layer)
         layer.viewer = self
 
@@ -249,25 +249,29 @@ class Viewer:
         for layer in self.layers:
             layer._set_view_slice(self.dims.indices)
 
-    def _update_layer_selection(self, event):
+    def _update_active_layer(self, event):
         # iteration goes backwards to find top most selected layer if any
+        # if multiple layers are selected sets the active layer to None
+        active_layer = None
         for layer in self.layers[::-1]:
-            if layer.selected:
-                self._qtviewer.control_panel.display(layer)
-                self.status = layer.status
-                self.help = layer.help
-                self.cursor = layer.cursor
-                self.interactive = layer.interactive
-                self._top = layer
+            if active_layer is None and layer.selected:
+                active_layer = layer
+            elif active_layer is not None and layer.selected:
+                active_layer = None
                 break
-        else:
-            self._qtviewer.control_panel.display(None)
+
+        if active_layer == None:
             self.status = 'Ready'
             self.help = ''
             self.cursor = 'standard'
             self.interactive = True
-            self._top = None
-        self._qtviewer.canvas.native.setFocus()
+            self.active_layer = None
+        else:
+            self.status = active_layer.status
+            self.help = active_layer.help
+            self.cursor = active_layer.cursor
+            self.interactive = active_layer.interactive
+            self.active_layer = active_layer
 
     def _on_layers_change(self, event):
         self.dims.range = self._calc_layers_ranges()

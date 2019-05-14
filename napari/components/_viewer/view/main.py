@@ -87,21 +87,21 @@ class QtViewer(QSplitter):
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_mouse_release(event)
 
@@ -113,14 +113,14 @@ class QtViewer(QSplitter):
             self.viewer.key_bindings[event.text](self.viewer)
             return
 
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_key_press(event)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_key_release(event)
 

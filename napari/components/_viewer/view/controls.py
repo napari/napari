@@ -12,12 +12,18 @@ class QtControls(QStackedWidget):
         self.setMinimumSize(QSize(40, 40))
         self.empty_widget = QWidget()
         self.addWidget(self.empty_widget)
-        self.display(None)
+        self._display(None)
 
         self.viewer.layers.events.added.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
+        self.viewer.events.active_layer.connect(self._display)
 
-    def display(self, layer):
+    def _display(self, event):
+        if event is None:
+            layer = None
+        else:
+            layer = event.item
+            
         if layer is None or layer._qt_controls is None:
             self.setCurrentWidget(self.empty_widget)
         else:
