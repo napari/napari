@@ -329,6 +329,20 @@ class Markers(Layer):
         else:
             return np.max(self.coords, axis=0) + 1
 
+    @property
+    def range(self):
+        """list of 3-tuple of int: ranges of data for slicing specifed by
+        (min, max, step).
+        """
+        if len(self.coords) == 0:
+            maxs = np.ones(self.coords.shape[1], dtype=int)
+            mins = np.zeros(self.coords.shape[1], dtype=int)
+        else:
+            maxs = np.max(self.coords, axis=0) + 1
+            mins = np.min(self.coords, axis=0)
+
+        return [(min, max, 1) for min, max in zip(mins, maxs)]
+
     def _slice_markers(self, indices):
         """Determines the slice of markers given the indices.
 

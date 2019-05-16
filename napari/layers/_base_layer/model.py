@@ -163,8 +163,7 @@ class Layer(VisualWrapper, ABC):
         """list of 3-tuple of int: ranges of data for slicing specifed by
         (min, max, step).
         """
-        shape = self._get_shape()
-        return [(0, max, 1) for max in shape]
+        return [(0, max, 1) for max in self.shape]
 
     @property
     def selected(self):
@@ -340,8 +339,8 @@ class Layer(VisualWrapper, ABC):
         return []
 
     def to_svg(self, file=None, canvas_shape=None):
-        """Returns an svg string with all the currently viewed image as a png
-        or writes to svg to a file.
+        """Convert the current layer state to an SVG.
+
 
         Parameters
         ----------
@@ -350,26 +349,38 @@ class Layer(VisualWrapper, ABC):
             either a str or bytes object representing a path, or an object
             implementing the `os.PathLike` protocol. If passed the svg will be
             written to this file
+        view_box : 4-tuple, optional
+            View box of SVG canvas to be generated specified as `min-x`,
+            `min-y`, `width` and `height`. If not specified, calculated
+            from the last two dimensions of the layer.
 
         Returns
         ----------
         svg : string
-            String with the svg specification of the currently viewed image
+            SVG representation of the layer.
         """
 
-        if canvas_shape is None:
-            canvas_shape = self.shape[-2:]
+        if view_box is None:
+            min_shape = [r[0] for r in self.range[-2:]]
+            max_shape = [r[1] for f in self.range[-2:]]
+            shape = np.subtract(max_shape, min_shape)
+        else:
+            shape = view_box[2:]
+            min_shape = view_box[:2]
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
-        xml = Element('svg', width=f'{canvas_shape[0]}',
-                      height=f'{canvas_shape[1]}', version='1.1',
-                      **props)
+
+        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
+                      version='1.1', **props)
+
+        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
+        xml_transform = Element('g', transform=transform)
 
         xml_list = self.to_xml_list()
-
         for x in xml_list:
-            xml.append(x)
+            xml_transform.append(x)
+        xml.append(xml_transform)
 
         svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
                '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +

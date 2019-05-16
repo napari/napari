@@ -11,6 +11,7 @@ from napari import ViewerApp
 from napari.util import app_context
 from vispy.color import Colormap
 
+
 with app_context():
     # create the viewer and window
     viewer = ViewerApp()

@@ -206,9 +206,9 @@ class Viewer:
         """
         return self.canvas.render(region, size, bgcolor)
 
-    def to_svg(self, file=None, canvas_shape=None):
-        """Returns an svg string with all the currently viewed image as a png
-        or writes to svg to a file.
+    def to_svg(self, file=None, view_box=None):
+        """Convert the viewer state to an SVG. Non visible layers will be
+        ignored.
 
         Parameters
         ----------
@@ -217,30 +217,41 @@ class Viewer:
             either a str or bytes object representing a path, or an object
             implementing the `os.PathLike` protocol. If passed the svg will be
             written to this file
-        canvas_shape : 2-tuple, optional
-            Shape of SVG canvas to be generated. If not specified, takes the
-            shape of the last two dimensions of the view
+        view_box : 4-tuple, optional
+            View box of SVG canvas to be generated specified as `min-x`,
+            `min-y`, `width` and `height`. If not specified, calculated
+            from the last two dimensions of the view.
 
         Returns
         ----------
         svg : string
-            String with the svg specification of the currently viewed layers
+            SVG representation of the currently viewed layers.
         """
 
-        if canvas_shape is None:
-            canvas_shape = self._calc_max_shape()[-2:]
+        if view_box is None:
+            min_shape, max_shape = self._calc_bbox()
+            min_shape = min_shape[-2:]
+            max_shape = max_shape[-2:]
+            shape = np.subtract(max_shape, min_shape)
+        else:
+            shape = view_box[2:]
+            min_shape = view_box[:2]
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
-        xml = Element('svg', width=f'{canvas_shape[0]}',
-                      height=f'{canvas_shape[1]}', version='1.1',
-                      **props)
+
+        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
+                      version='1.1', **props)
+
+        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
+        xml_transform = Element('g', transform=transform)
 
         for layer in self.layers:
             if layer.visible:
                 xml_list = layer.to_xml_list()
                 for x in xml_list:
-                    xml.append(x)
+                    xml_transform.append(x)
+        xml.append(xml_transform)
 
         svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
                '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
@@ -350,17 +361,18 @@ class Viewer:
 
         return ranges[::-1]
 
-    def _calc_max_shape(self):
-        """Calculates the max shape of all displayed layers.
+    def _calc_bbox(self):
+        """Calculates the bounding box of all displayed layers.
         This assumes that all layers are stacked.
-        TODO: This is a temporary workaround until refactor is done
-        this method should not be used but instead '_calc_layers_ranges' should
-        be called.
         """
 
-        max_shape = [max-min for min, max, step in self._calc_layers_ranges()]
+        min_shape = []
+        max_shape = []
+        for min, max, step in self._calc_layers_ranges():
+            min_shape.append(min)
+            max_shape.append(max)
 
-        return max_shape
+        return min_shape, max_shape
 
     def _calc_layers_num_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
