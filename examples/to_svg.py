@@ -79,4 +79,4 @@ with app_context():
     layer = viewer.add_vectors(pos, width=2)
 
     svg = viewer.to_svg()
-    # svg = viewer.to_svg(file='viewer.svg')
+    #svg = viewer.to_svg(file='viewer.svg')

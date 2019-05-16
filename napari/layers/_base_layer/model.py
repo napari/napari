@@ -350,15 +350,22 @@ class Layer(VisualWrapper, ABC):
             either a str or bytes object representing a path, or an object
             implementing the `os.PathLike` protocol. If passed the svg will be
             written to this file
+        view_box : 4-tuple, optional
+            View box of SVG canvas to be generated specified as `min-x`,
+            `min-y`, `width` and `height`. If not specified, calculated
+            from the last two dimensions of the layer.
 
         Returns
         ----------
         svg : string
-            String with the svg specification of the currently viewed image
+            String with the svg specification of the currently viewed layers
         """
 
-        if canvas_shape is None:
-            canvas_shape = self.shape[-2:]
+        if view_box is None:
+            min_shape = [0, 0]
+            max_shape = self.shape[-2:]
+            range = np.array(max_shape) - np.array(min_shape)
+            view_box = min_shape[::-1] + list(range)[::-1]
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}

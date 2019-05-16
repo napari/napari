@@ -520,8 +520,8 @@ class Labels(Layer):
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
-        width = str(self.shape[-2])
-        height = str(self.shape[-1])
+        width = str(self.shape[-1])
+        height = str(self.shape[-2])
         opacity = str(self.opacity)
         xml = Element('image', width=width, height=height, opacity=opacity,
                       **props)
