@@ -207,7 +207,8 @@ class Viewer:
         return self.canvas.render(region, size, bgcolor)
 
     def to_svg(self, file=None, view_box=None):
-        """Convert the viewer state to an SVG.
+        """Convert the viewer state to an SVG. Non visible layers will be
+        ignored.
 
         Parameters
         ----------
