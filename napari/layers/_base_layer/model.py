@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from xml.etree.ElementTree import Element, tostring
 import numpy as np
 
 import weakref
@@ -326,6 +327,61 @@ class Layer(VisualWrapper, ABC):
         self._freeze = True
         yield
         self._freeze = False
+
+    def to_xml_list(self):
+        """Generates a list of xml elements for the layer.
+
+        Returns
+        ----------
+        xml : list of xml.etree.ElementTree.Element
+            List of a single xml element specifying the currently viewed image
+            as a png according to the svg specification.
+        """
+        return []
+
+    def to_svg(self, file=None, canvas_shape=None):
+        """Returns an svg string with all the currently viewed image as a png
+        or writes to svg to a file.
+
+        Parameters
+        ----------
+        file : path-like object, optional
+            An object representing a file system path. A path-like object is
+            either a str or bytes object representing a path, or an object
+            implementing the `os.PathLike` protocol. If passed the svg will be
+            written to this file
+
+        Returns
+        ----------
+        svg : string
+            String with the svg specification of the currently viewed image
+        """
+
+        if canvas_shape is None:
+            canvas_shape = self.shape[-2:]
+
+        props = {'xmlns': 'http://www.w3.org/2000/svg',
+                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+        xml = Element('svg', width=f'{canvas_shape[0]}',
+                      height=f'{canvas_shape[1]}', version='1.1',
+                      **props)
+
+        xml_list = self.to_xml_list()
+
+        for x in xml_list:
+            xml.append(x)
+
+        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
+               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
+               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
+               tostring(xml, encoding='unicode', method='xml'))
+
+        if file:
+            # Save svg to file
+            with open(file, 'w') as f:
+                f.write(svg)
+
+        return svg
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

@@ -58,4 +58,25 @@ with app_context():
 
     labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
-    labels_layer.visible = False
+
+    markers = np.array([[100, 100], [200, 200], [333, 111]])
+    size = np.array([10, 20, 20])
+    viewer.add_markers(markers, size=size)
+
+    n = 100
+    pos = np.zeros((n, 4), dtype=np.float32)
+    phi_space = np.linspace(0, 4*np.pi, n)
+    radius_space = np.linspace(0, 100, n)
+
+    # assign x-y position
+    pos[:, 0] = radius_space*np.cos(phi_space) + 256
+    pos[:, 1] = radius_space*np.sin(phi_space) + 256
+    # assign x-y projection
+    pos[:, 2] = 2*radius_space*np.cos(phi_space)
+    pos[:, 3] = 2*radius_space*np.sin(phi_space)
+
+    # add the vectors
+    layer = viewer.add_vectors(pos, width=2)
+
+    svg = viewer.to_svg()
+    # svg = viewer.to_svg(file='viewer.svg')
