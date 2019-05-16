@@ -235,12 +235,12 @@ class Viewer:
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
-                 
+
         xml = Element('svg', height=f'{range[0]}', width=f'{range[1]}',
                       version='1.1', **props)
 
         transform = ("translate(" + str(-min_shape[1]) + " " +
-                     str(-min_shape[0])+ ")")
+                     str(-min_shape[0]) + ")")
         xml_transform = Element('g', transform=transform)
 
         for layer in self.layers:

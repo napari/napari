@@ -372,7 +372,7 @@ class Layer(VisualWrapper, ABC):
                       version='1.1', **props)
 
         transform = ("translate(" + str(-min_shape[1]) + " " +
-                     str(-min_shape[0])+ ")")
+                     str(-min_shape[0]) + ")")
         xml_transform = Element('g', transform=transform)
 
         xml_list = self.to_xml_list()
