@@ -1,5 +1,4 @@
-from qtpy.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
-from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QAction
 
 from ...util.theme import template
 
@@ -29,8 +28,12 @@ class Window:
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = self._qt_window.statusBar()
-        self._status_bar.showMessage('Ready')
+        self.main_menu = self._qt_window.menuBar()
 
+        self._add_window_menu()
+        self._add_view_menu()
+
+        self._status_bar.showMessage('Ready')
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
@@ -48,6 +51,24 @@ class Window:
 
         if show:
             self.show()
+
+    def _add_window_menu(self):
+        exit_action = QAction("Close window", self._qt_window)
+        exit_action.setShortcut("Ctrl+W")
+        exit_action.setStatusTip('Close napari window')
+        exit_action.triggered.connect(self._qt_window.close)
+        self.window_menu = self.main_menu.addMenu('&Window')
+        self.window_menu.addAction(exit_action)
+
+    def _add_view_menu(self):
+        toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
+        toggle_visible.setShortcut('Alt')
+        toggle_visible.setStatusTip('Show/hide the menubar')
+        toggle_visible.triggered.connect(
+            lambda: self.main_menu.setVisible(not self.main_menu.isVisible())
+        )
+        self.view_menu = self.main_menu.addMenu('&View')
+        self.view_menu.addAction(toggle_visible)
 
     def resize(self, width, height):
         """Resize the window.
