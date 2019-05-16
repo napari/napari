@@ -374,8 +374,7 @@ class Layer(VisualWrapper, ABC):
         xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
                       version='1.1', **props)
 
-        transform = ("translate(" + str(-min_shape[1]) + " " +
-                     str(-min_shape[0]) + ")")
+        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
 
         xml_list = self.to_xml_list()

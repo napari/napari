@@ -243,8 +243,7 @@ class Viewer:
         xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
                       version='1.1', **props)
 
-        transform = ("translate(" + str(-min_shape[1]) + " " +
-                     str(-min_shape[0]) + ")")
+        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
 
         for layer in self.layers:
@@ -367,8 +366,11 @@ class Viewer:
         This assumes that all layers are stacked.
         """
 
-        min_shape = [min for min, max, step in self._calc_layers_ranges()]
-        max_shape = [max for min, max, step in self._calc_layers_ranges()]
+        min_shape = []
+        max_shape = []
+        for min, max, step in self._calc_layers_ranges():
+            min_shape.append(min)
+            max_shape.append(max)
 
         return min_shape, max_shape
 
