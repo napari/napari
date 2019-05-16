@@ -163,8 +163,7 @@ class Layer(VisualWrapper, ABC):
         """list of 3-tuple of int: ranges of data for slicing specifed by
         (min, max, step).
         """
-        shape = self._get_shape()
-        return [(0, max, 1) for max in shape]
+        return [(0, max, 1) for max in self.shape]
 
     @property
     def selected(self):
@@ -362,21 +361,24 @@ class Layer(VisualWrapper, ABC):
         """
 
         if view_box is None:
-            min_shape = [0, 0]
-            max_shape = self.shape[-2:]
-            range = np.array(max_shape) - np.array(min_shape)
-            view_box = min_shape[::-1] + list(range)[::-1]
+            min_shape = np.array([r[0] for r in self.range[-2:]])
+            max_shape = np.array([r[1] for f in self.range[-2:]])
+            range = max_shape - min_shape
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
-        xml = Element('svg', width=f'{canvas_shape[0]}',
-                      height=f'{canvas_shape[1]}', version='1.1',
-                      **props)
+
+        xml = Element('svg', height=f'{range[0]}', width=f'{range[1]}',
+                      version='1.1', **props)
+
+        transform = ("translate(" + str(-min_shape[1]) + " " +
+                     str(-min_shape[0])+ ")")
+        xml_transform = Element('g', transform=transform)
 
         xml_list = self.to_xml_list()
-
         for x in xml_list:
-            xml.append(x)
+            xml_transform.append(x)
+        xml.append(xml_transform)
 
         svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
                '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +

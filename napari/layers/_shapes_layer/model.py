@@ -445,6 +445,20 @@ class Shapes(Layer):
         else:
             return np.max(self.data._vertices, axis=0) + 1
 
+    @property
+    def range(self):
+        """list of 3-tuple of int: ranges of data for slicing specifed by
+        (min, max, step).
+        """
+        if len(self.data._vertices) == 0:
+            maxs = [1, 1]
+            mins = [0, 0]
+        else:
+            maxs = np.max(self.data._vertices, axis=0) + 1
+            mins = np.min(self.data._vertices, axis=0)
+
+        return [(min, max, 1) for min, max in zip(mins, maxs)]
+
     def add_shapes(self, data, *, shape_type='rectangle', edge_width=1,
                    edge_color='black', face_color='white', opacity=0.7,
                    z_index=0):

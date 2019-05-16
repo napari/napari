@@ -229,22 +229,26 @@ class Viewer:
         """
 
         if view_box is None:
-            min_shape = self._calc_min_shape()[-2:]
-            max_shape = self._calc_max_shape()[-2:]
-            range = np.array(max_shape) - np.array(min_shape)
-            view_box = min_shape[::-1] + list(range)[::-1]
+            min_shape = np.array(self._calc_min_shape()[-2:])
+            max_shape = np.array(self._calc_max_shape()[-2:])
+            range = max_shape - min_shape
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+                 
+        xml = Element('svg', height=f'{range[0]}', width=f'{range[1]}',
+                      version='1.1', **props)
 
-        xml = Element('svg', viewBox=f'{view_box}', version='1.1',
-                      **props)
+        transform = ("translate(" + str(-min_shape[1]) + " " +
+                     str(-min_shape[0])+ ")")
+        xml_transform = Element('g', transform=transform)
 
         for layer in self.layers:
             if layer.visible:
                 xml_list = layer.to_xml_list()
                 for x in xml_list:
-                    xml.append(x)
+                    xml_transform.append(x)
+        xml.append(xml_transform)
 
         svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
                '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
