@@ -339,8 +339,8 @@ class Layer(VisualWrapper, ABC):
         return []
 
     def to_svg(self, file=None, canvas_shape=None):
-        """Returns an svg string with all the currently viewed image as a png
-        or writes to svg to a file.
+        """Convert the current layer state to an SVG.
+
 
         Parameters
         ----------
@@ -357,18 +357,21 @@ class Layer(VisualWrapper, ABC):
         Returns
         ----------
         svg : string
-            String with the svg specification of the currently viewed layers
+            SVG representation of the layer.
         """
 
         if view_box is None:
-            min_shape = np.array([r[0] for r in self.range[-2:]])
-            max_shape = np.array([r[1] for f in self.range[-2:]])
-            range = max_shape - min_shape
+            min_shape = [r[0] for r in self.range[-2:]]
+            max_shape = [r[1] for f in self.range[-2:]]
+            shape = np.subtract(max_shape, min_shape)
+        else:
+            shape = view_box[2:]
+            min_shape = view_box[:2]
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
 
-        xml = Element('svg', height=f'{range[0]}', width=f'{range[1]}',
+        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
                       version='1.1', **props)
 
         transform = ("translate(" + str(-min_shape[1]) + " " +

@@ -207,8 +207,7 @@ class Viewer:
         return self.canvas.render(region, size, bgcolor)
 
     def to_svg(self, file=None, view_box=None):
-        """Returns an svg string with all the currently viewed image as a png
-        or writes to svg to a file.
+        """Convert the viewer state to an SVG.
 
         Parameters
         ----------
@@ -225,18 +224,22 @@ class Viewer:
         Returns
         ----------
         svg : string
-            String with the svg specification of the currently viewed layers
+            SVG representation of the currently viewed layers.
         """
 
         if view_box is None:
-            min_shape = np.array(self._calc_min_shape()[-2:])
-            max_shape = np.array(self._calc_max_shape()[-2:])
-            range = max_shape - min_shape
+            min_shape, max_shape = self._calc_bbox()
+            min_shape = min_shape[-2:]
+            max_shape = max_shape[-2:]
+            shape = np.subtract(max_shape, min_shape)
+        else:
+            shape = view_box[2:]
+            min_shape = view_box[:2]
 
         props = {'xmlns': 'http://www.w3.org/2000/svg',
                  'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
 
-        xml = Element('svg', height=f'{range[0]}', width=f'{range[1]}',
+        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
                       version='1.1', **props)
 
         transform = ("translate(" + str(-min_shape[1]) + " " +
@@ -358,23 +361,15 @@ class Viewer:
 
         return ranges[::-1]
 
-    def _calc_max_shape(self):
-        """Calculates the max shape of all displayed layers.
+    def _calc_bbox(self):
+        """Calculates the bounding box of all displayed layers.
         This assumes that all layers are stacked.
         """
 
+        min_shape = [min for min, max, step in self._calc_layers_ranges()]
         max_shape = [max for min, max, step in self._calc_layers_ranges()]
 
-        return max_shape
-
-    def _calc_min_shape(self):
-        """Calculates the min shape of all displayed layers.
-        This assumes that all layers are stacked.
-        """
-
-        max_shape = [min for min, max, step in self._calc_layers_ranges()]
-
-        return max_shape
+        return min_shape, max_shape
 
     def _calc_layers_num_dims(self):
         """Calculates the number of maximum dimensions in the contained images.
