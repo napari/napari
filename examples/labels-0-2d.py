@@ -3,7 +3,7 @@ Display a labels layer above of an image layer using the add_labels and
 add_image APIs
 """
 
-from skimage import data
+from imageio import imread
 from skimage.filters import threshold_otsu
 from skimage.segmentation import clear_border
 from skimage.measure import label
@@ -12,12 +12,13 @@ from napari import ViewerApp
 from napari.util import app_context
 
 
+coins = imread('imageio:coins.png')[50:-50, 50:-50]
+
 with app_context():
-    image = data.coins()[50:-50, 50:-50]
 
     # apply threshold
-    thresh = threshold_otsu(image)
-    bw = closing(image > thresh, square(4))
+    thresh = threshold_otsu(coins)
+    bw = closing(coins > thresh, square(4))
 
     # remove artifacts connected to image border
     cleared = remove_small_objects(clear_border(bw), 20)
@@ -26,7 +27,7 @@ with app_context():
     label_image = label(cleared)
 
     # initialise viewer with astro image
-    viewer = ViewerApp(coins=image, multichannel=False)
+    viewer = ViewerApp(coins=coins, multichannel=False)
     viewer.layers[0].colormap = 'gray'
 
     # add the labels

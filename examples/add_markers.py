@@ -4,18 +4,19 @@ add_image APIs
 """
 
 import numpy as np
-from skimage import data
-from skimage.color import rgb2gray
+from imageio import imread
 from napari import ViewerApp
 from napari.util import app_context
 
+
+astro = imread('imageio:astronaut.png').mean(axis=2) / 255
 
 with app_context():
     # create the viewer and window
     viewer = ViewerApp()
 
     # add the image
-    viewer.add_image(rgb2gray(data.astronaut()))
+    viewer.add_image(astro)
     # add the markers
     markers = np.array([[100, 100], [200, 200], [333, 111]])
     size = np.array([10, 20, 20])

@@ -3,16 +3,16 @@ Displays one image using the add_image API and then adjust some of its
 properties
 """
 
-from skimage import data
-from skimage.color import rgb2gray
+from imageio import imread
 from napari import ViewerApp
 from napari.util import app_context
 
 
+astro = imread('imageio:astronaut.png').mean(axis=2) / 255
+
 with app_context():
     # create the viewer with an image
-    viewer = ViewerApp(astronaut=rgb2gray(data.astronaut()),
-                       title='napari example')
+    viewer = ViewerApp(astronaut=astro, title='napari example')
 
     # adjust some of the layer properties
     layer = viewer.layers[0]

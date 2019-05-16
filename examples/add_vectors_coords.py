@@ -9,16 +9,17 @@ Each vector position is defined by an (x, y, x-proj, y-proj) element
 
 from napari import ViewerApp
 from napari.util import app_context
-from skimage import data
-
+from imageio import imread
 import numpy as np
 
+
+photographer = imread('imageio:camera.png')
 
 with app_context():
     # create the viewer and window
     viewer = ViewerApp()
 
-    layer = viewer.add_image(data.camera(), name='photographer')
+    layer = viewer.add_image(photographer, name='photographer')
     layer.colormap = 'gray'
 
     # sample vector coord-like data

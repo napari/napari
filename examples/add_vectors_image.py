@@ -8,8 +8,8 @@ Each vector position is defined by an (x-proj, y-proj) element
 
 from napari import ViewerApp
 from napari.util import app_context
-
 import numpy as np
+
 
 with app_context():
     # create the viewer and window

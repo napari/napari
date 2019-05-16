@@ -5,18 +5,19 @@ your shapes.
 """
 
 import numpy as np
-from skimage import data
-from skimage.color import rgb2gray
+from imageio import imread
 from napari import ViewerApp
 from napari.util import app_context
 
+
+photographer = imread('imageio:camera.png')
 
 with app_context():
     # create the viewer and window
     viewer = ViewerApp()
 
     # add the image
-    layer = viewer.add_image(data.camera(), name='photographer')
+    layer = viewer.add_image(photographer, name='photographer')
     layer.colormap = 'gray'
 
     # create a list of polygons
