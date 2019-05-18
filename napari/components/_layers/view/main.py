@@ -1,6 +1,7 @@
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QMimeData
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                            QFrame, QCheckBox, QScrollArea)
+                            QFrame, QCheckBox, QScrollArea, QApplication)
+from qtpy.QtGui import QDrag
 
 
 class QtLayers(QScrollArea):
@@ -24,6 +25,8 @@ class QtLayers(QScrollArea):
         self.layers.events.added.connect(self._add)
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
+
+        self.dragStartPosition = (0, 0)
 
     def _add(self, event):
         """Insert `event.widget` at index `event.index`."""
@@ -65,9 +68,70 @@ class QtLayers(QScrollArea):
                                               layer._qt_properties)
                 self.vbox_layout.insertWidget(2*(total - i), divider)
 
+    def mousePressEvent(self, event):
+        widget = self.childAt(event.pos())
+        if hasattr(widget, 'layer') or hasattr(widget.parentWidget(), 'layer'):
+            self.dragStartPosition = event.pos()
+        event.accept()
+
     def mouseReleaseEvent(self, event):
         """Unselects all layer widgets."""
-        self.layers.unselect_all()
+
+        widget = self.childAt(event.pos())
+        if hasattr(widget, 'layer'):
+            layer = widget.layer
+        elif hasattr(widget.parentWidget(), 'layer'):
+            layer = widget.parentWidget().layer
+        else:
+            layer = None
+
+        if layer is None:
+            self.layers.unselect_all()
+        else:
+            modifiers = event.modifiers()
+            if modifiers == Qt.ShiftModifier:
+                index = self.layers.index(layer)
+                lastSelected = None
+                for i in range(len(self.layers)):
+                    if self.layers[i].selected:
+                        lastSelected = i
+                r = [index, lastSelected]
+                r.sort()
+                for i in range(r[0], r[1]+1):
+                    self.layers[i].selected = True
+            elif modifiers == Qt.ControlModifier:
+                layer.selected = not layer.selected
+            else:
+                self.layers.unselect_all(ignore=layer)
+                layer.selected = True
+        event.accept()
+
+    def mouseMoveEvent(self, event):
+        widget = self.childAt(event.pos())
+        if hasattr(widget, 'layer'):
+            layer = widget.layer
+        elif hasattr(widget.parentWidget(), 'layer'):
+            layer = widget.parentWidget().layer
+        else:
+            return
+
+        distance = (event.pos() - self.dragStartPosition).manhattanLength()
+        if distance < QApplication.startDragDistance():
+            return
+        mimeData = QMimeData()
+        mimeData.setText(layer.name)
+        drag = QDrag(self)
+        drag.setMimeData(mimeData)
+        drag.setHotSpot(event.pos() - self.rect().topLeft())
+        dropAction = drag.exec_(Qt.MoveAction | Qt.CopyAction)
+
+        if dropAction == Qt.CopyAction:
+            if not layer.selected:
+                index = self.layers.index(layer)
+                self.layers.pop(index)
+            else:
+                self.layers.remove_selected()
+        event.accept()
 
     def dragLeaveEvent(self, event):
         """Unselects layer dividers."""
@@ -76,12 +140,12 @@ class QtLayers(QScrollArea):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dragEnterEvent(self, event):
-        event.accept()
         divs = []
         for i in range(0, self.vbox_layout.count(), 2):
             widget = self.vbox_layout.itemAt(i).widget()
             divs.append(widget.y()+widget.frameGeometry().height()/2)
         self.centers = [(divs[i+1]+divs[i])/2 for i in range(len(divs)-1)]
+        event.accept()
 
     def dragMoveEvent(self, event):
         """Set the appropriate layers list divider to be highlighted when
@@ -92,10 +156,11 @@ class QtLayers(QScrollArea):
         center_list = (i for i, x in enumerate(self.centers) if x > cord)
         divider_index = next(center_list, len(self.centers))
         # Determine the current location of the widget being dragged
-        layerWidget = event.source()
         total = self.vbox_layout.count()//2 - 1
-        index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
         insert = total - divider_index
+        layer_name = event.mimeData().text()
+        layer = self.layers[layer_name]
+        index = self.layers.index(layer)
         # If the widget being dragged hasn't moved above or below any other
         # widgets then don't highlight any dividers
         selected = (not (insert == index) and not (insert-1 == index))
@@ -112,10 +177,11 @@ class QtLayers(QScrollArea):
         cord = event.pos().y()
         center_list = (i for i, x in enumerate(self.centers) if x > cord)
         divider_index = next(center_list, len(self.centers))
-        layerWidget = event.source()
         total = self.vbox_layout.count()//2 - 1
-        index = total - self.vbox_layout.indexOf(layerWidget)//2 - 1
         insert = total - divider_index
+        layer_name = event.mimeData().text()
+        layer = self.layers[layer_name]
+        index = self.layers.index(layer)
         if index != insert and index+1 != insert:
             if not self.layers[index].selected:
                 self.layers.unselect_all()
