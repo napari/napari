@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel
+from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
                             QVBoxLayout, QCheckBox, QWidget, QComboBox)
 from qtpy.QtCore import Qt
 
