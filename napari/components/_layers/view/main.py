@@ -108,7 +108,9 @@ class QtLayers(QScrollArea):
 
     def mouseMoveEvent(self, event):
         widget = self.childAt(event.pos())
-        if hasattr(widget, 'layer'):
+        if widget is None:
+            return
+        elif hasattr(widget, 'layer'):
             layer = widget.layer
         elif hasattr(widget.parentWidget(), 'layer'):
             layer = widget.parentWidget().layer
@@ -123,14 +125,7 @@ class QtLayers(QScrollArea):
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
-        dropAction = drag.exec_(Qt.MoveAction | Qt.CopyAction)
-
-        if dropAction == Qt.CopyAction:
-            if not layer.selected:
-                index = self.layers.index(layer)
-                self.layers.pop(index)
-            else:
-                self.layers.remove_selected()
+        dropAction = drag.exec_()
         event.accept()
 
     def dragLeaveEvent(self, event):
