@@ -29,7 +29,6 @@ class Layer(VisualWrapper, ABC):
 
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice
-        * `_after_set_viewer()`: called after the viewer is set
         * `_qt_properties`: QtWidget inserted into the layer list GUI
         * `_qt_controls`: QtWidget inserted into the controls panel GUI
         * `_basename()`: base/default name of the layer
@@ -204,10 +203,6 @@ class Layer(VisualWrapper, ABC):
             parent = None
         else:
             self._viewer = weakref.ref(viewer)
-            parent = viewer._view.scene
-
-        self._parent = parent
-        self._after_set_viewer(prev)
 
     @property
     def status(self):
@@ -284,17 +279,6 @@ class Layer(VisualWrapper, ABC):
         scale_factor = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
         return scale_factor[0]
-
-    def _after_set_viewer(self, prev):
-        """Triggered after a new viewer is set.
-
-        Parameters
-        ----------
-        prev : Viewer
-            Previous viewer.
-        """
-        if self.viewer is not None:
-            self.refresh()
 
     def _update(self):
         """Update the underlying visual."""
