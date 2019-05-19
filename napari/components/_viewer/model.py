@@ -280,6 +280,8 @@ class Viewer:
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
+        layer.events.name.connect(self._update_name)
+
         self.layers.append(layer)
         layer.indices = self.dims.indices
         layer.viewer = self
@@ -416,3 +418,8 @@ class Viewer:
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor_size = event.cursor_size
+
+    def _update_name(self, event):
+        """Coerce name of the layer in `event.layer`."""
+        layer = event.source
+        layer.name = self.layers._coerce_name(layer.name, layer)

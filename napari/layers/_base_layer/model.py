@@ -62,6 +62,7 @@ class Layer(VisualWrapper, ABC):
         self._interactive = True
         self._indices = ()
         self._cursor_position = (0, 0)
+        self._name = ''
         self.events.add(select=Event,
                         deselect=Event,
                         name=Event,
@@ -93,12 +94,10 @@ class Layer(VisualWrapper, ABC):
 
     @name.setter
     def name(self, name):
+        if name == self.name:
+            return
         if not name:
             name = self._basename()
-
-        if self.viewer:
-            name = self.viewer.layers._coerce_name(name, self)
-
         self._name = name
         self.events.name()
 
