@@ -64,7 +64,12 @@ class Layer(VisualWrapper, ABC):
         self._cursor_position = (0, 0)
         self.events.add(select=Event,
                         deselect=Event,
-                        name=Event)
+                        name=Event,
+                        status=Event,
+                        help=Event,
+                        interactive=Event,
+                        cursor=Event,
+                        cursor_size=Event)
         self.name = name
 
     def __str__(self):
@@ -215,7 +220,7 @@ class Layer(VisualWrapper, ABC):
     def status(self, status):
         if status == self.status:
             return
-        self.viewer.status = status
+        self.events.status(status=status)
         self._status = status
 
     @property
@@ -229,7 +234,7 @@ class Layer(VisualWrapper, ABC):
     def help(self, help):
         if help == self.help:
             return
-        self.viewer.help = help
+        self.events.help(help=help)
         self._help = help
 
     @property
@@ -242,7 +247,7 @@ class Layer(VisualWrapper, ABC):
     def interactive(self, interactive):
         if interactive == self.interactive:
             return
-        self.viewer.interactive = interactive
+        self.events.interactive(interactive=interactive)
         self._interactive = interactive
 
     @property
@@ -255,7 +260,7 @@ class Layer(VisualWrapper, ABC):
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self.viewer.cursor = cursor
+        self.events.cursor(cursor=cursor)
         self._cursor = cursor
 
     @property
@@ -268,7 +273,7 @@ class Layer(VisualWrapper, ABC):
     def cursor_size(self, cursor_size):
         if cursor_size == self.cursor_size:
             return
-        self.viewer.cursor_size = cursor_size
+        self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
     @property

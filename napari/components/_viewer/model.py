@@ -275,6 +275,11 @@ class Viewer:
         """
         layer.events.select.connect(self._update_active_layer)
         layer.events.deselect.connect(self._update_active_layer)
+        layer.events.status.connect(self._update_status)
+        layer.events.help.connect(self._update_help)
+        layer.events.interactive.connect(self._update_interactive)
+        layer.events.cursor.connect(self._update_cursor)
+        layer.events.cursor_size.connect(self._update_cursor_size)
         self.layers.append(layer)
         layer.indices = self.dims.indices
         layer.viewer = self
@@ -391,3 +396,23 @@ class Viewer:
         """
         self._canvas._draw_order.clear()
         self._canvas.update()
+
+    def _update_status(self, event):
+        """Set the viewer status with the `event.status` string."""
+        self.status = event.status
+
+    def _update_help(self, event):
+        """Set the viewer help with the `event.help` string."""
+        self.help = event.help
+
+    def _update_interactive(self, event):
+        """Set the viewer interactivity with the `event.interactive` bool."""
+        self.interactive = event.interactive
+
+    def _update_cursor(self, event):
+        """Set the viewer cursor with the `event.cursor` string."""
+        self.cursor = event.cursor
+
+    def _update_cursor_size(self, event):
+        """Set the viewer cursor_size with the `event.cursor_size` int."""
+        self.cursor_size = event.cursor_size
