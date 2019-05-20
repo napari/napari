@@ -92,6 +92,8 @@ class QtLayers(QScrollArea):
         modifiers = event.modifiers()
         layer = self.layers[self.drag_name]
         if modifiers == Qt.ShiftModifier:
+            # If shift select all layers in between currently selected one and
+            # clicked one
             index = self.layers.index(layer)
             lastSelected = None
             for i in range(len(self.layers)):
@@ -102,8 +104,10 @@ class QtLayers(QScrollArea):
             for i in range(r[0], r[1] + 1):
                 self.layers[i].selected = True
         elif modifiers == Qt.ControlModifier:
+            # If control click toggle selected state
             layer.selected = not layer.selected
         else:
+            # If otherwise unselect all and leave clicked one selected
             self.layers.unselect_all(ignore=layer)
             layer.selected = True
 
