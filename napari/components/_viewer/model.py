@@ -284,7 +284,6 @@ class Viewer:
 
         self.layers.append(layer)
         layer.indices = self.dims.indices
-        layer.viewer = self
         layer._parent = self._view.scene
 
         if self.theme is not None and has_clims(layer):

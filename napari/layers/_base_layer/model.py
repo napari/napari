@@ -39,7 +39,6 @@ class Layer(VisualWrapper, ABC):
     ndim
     shape
     selected
-    viewer
     indices
 
     Methods
@@ -50,7 +49,6 @@ class Layer(VisualWrapper, ABC):
     def __init__(self, central_node, name=None):
         super().__init__(central_node)
         self._selected = False
-        self._viewer = None
         self._qt_properties = None
         self._qt_controls = None
         self._freeze = False
@@ -184,25 +182,6 @@ class Layer(VisualWrapper, ABC):
             self.events.select()
         else:
             self.events.deselect()
-
-    @property
-    def viewer(self):
-        """Viewer: Parent viewer widget.
-        """
-        if self._viewer is not None:
-            return self._viewer()
-
-    @viewer.setter
-    def viewer(self, viewer):
-        prev = self.viewer
-        if viewer == prev:
-            return
-
-        if viewer is None:
-            self._viewer = None
-            parent = None
-        else:
-            self._viewer = weakref.ref(viewer)
 
     @property
     def status(self):
