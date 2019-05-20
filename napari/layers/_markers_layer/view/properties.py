@@ -93,10 +93,8 @@ class QtMarkersLayer(QtLayer):
         self.layer.symbol = text
 
     def changeSize(self, value):
-        avg = np.asarray(self.layer.size).mean()
-        if avg == 0:
-            avg = 1
-        self.layer.size = self.layer.size/avg*value
+        avg = np.mean(self.layer.size) or 1
+        self.layer.size = self.layer.size / avg * value
 
     def change_ndim(self, state):
         if state == Qt.Checked:
