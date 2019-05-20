@@ -29,7 +29,6 @@ class Layer(VisualWrapper, ABC):
 
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice
-        * `_after_set_viewer()`: called after the viewer is set
         * `_qt_properties`: QtWidget inserted into the layer list GUI
         * `_qt_controls`: QtWidget inserted into the controls panel GUI
         * `_basename()`: base/default name of the layer
@@ -62,9 +61,15 @@ class Layer(VisualWrapper, ABC):
         self._interactive = True
         self._indices = ()
         self._cursor_position = (0, 0)
+        self._name = ''
         self.events.add(select=Event,
                         deselect=Event,
-                        name=Event)
+                        name=Event,
+                        status=Event,
+                        help=Event,
+                        interactive=Event,
+                        cursor=Event,
+                        cursor_size=Event)
         self.name = name
 
     def __str__(self):
@@ -88,12 +93,10 @@ class Layer(VisualWrapper, ABC):
 
     @name.setter
     def name(self, name):
+        if name == self.name:
+            return
         if not name:
             name = self._basename()
-
-        if self.viewer:
-            name = self.viewer.layers._coerce_name(name, self)
-
         self._name = name
         self.events.name()
 
@@ -200,10 +203,6 @@ class Layer(VisualWrapper, ABC):
             parent = None
         else:
             self._viewer = weakref.ref(viewer)
-            parent = viewer._view.scene
-
-        self._parent = parent
-        self._after_set_viewer(prev)
 
     @property
     def status(self):
@@ -215,7 +214,7 @@ class Layer(VisualWrapper, ABC):
     def status(self, status):
         if status == self.status:
             return
-        self.viewer.status = status
+        self.events.status(status=status)
         self._status = status
 
     @property
@@ -229,7 +228,7 @@ class Layer(VisualWrapper, ABC):
     def help(self, help):
         if help == self.help:
             return
-        self.viewer.help = help
+        self.events.help(help=help)
         self._help = help
 
     @property
@@ -242,7 +241,7 @@ class Layer(VisualWrapper, ABC):
     def interactive(self, interactive):
         if interactive == self.interactive:
             return
-        self.viewer.interactive = interactive
+        self.events.interactive(interactive=interactive)
         self._interactive = interactive
 
     @property
@@ -255,7 +254,7 @@ class Layer(VisualWrapper, ABC):
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self.viewer.cursor = cursor
+        self.events.cursor(cursor=cursor)
         self._cursor = cursor
 
     @property
@@ -268,7 +267,7 @@ class Layer(VisualWrapper, ABC):
     def cursor_size(self, cursor_size):
         if cursor_size == self.cursor_size:
             return
-        self.viewer.cursor_size = cursor_size
+        self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
     @property
@@ -280,17 +279,6 @@ class Layer(VisualWrapper, ABC):
         scale_factor = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
         return scale_factor[0]
-
-    def _after_set_viewer(self, prev):
-        """Triggered after a new viewer is set.
-
-        Parameters
-        ----------
-        prev : Viewer
-            Previous viewer.
-        """
-        if self.viewer is not None:
-            self.refresh()
 
     def _update(self):
         """Update the underlying visual."""
