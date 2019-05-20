@@ -419,7 +419,7 @@ class Markers(Layer):
         self._sizes_view = sizes
 
         self._node.set_data(
-            data, size=sizes, edge_width=self.edge_width,
+            data[:, [1, 0]], size=sizes, edge_width=self.edge_width,
             symbol=self.symbol, edge_width_rel=self.edge_width_rel,
             edge_color=self.edge_color, face_color=self.face_color,
             scaling=self.scaling)
@@ -497,8 +497,8 @@ class Markers(Layer):
         xml_list = []
 
         for d, s in zip(self._markers_view, self._sizes_view):
-            cx = str(d[0])
-            cy = str(d[1])
+            cx = str(d[1])
+            cy = str(d[0])
             r = str(s/2)
             element = Element('circle', cx=cx, cy=cy, r=r, **self.svg_props)
             xml_list.append(element)
