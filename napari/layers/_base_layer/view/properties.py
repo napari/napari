@@ -1,8 +1,6 @@
-from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame,
-                             QVBoxLayout, QCheckBox, QWidget, QApplication,
-                             QLabel, QComboBox)
-from qtpy.QtCore import Qt, QMimeData
-from qtpy.QtGui import QDrag
+from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
+                            QVBoxLayout, QCheckBox, QWidget, QComboBox)
+from qtpy.QtCore import Qt
 
 
 class QtLayer(QFrame):
@@ -104,51 +102,16 @@ class QtLayer(QFrame):
         self.layer.blending = text
 
     def mouseReleaseEvent(self, event):
-        modifiers = event.modifiers()
-        if modifiers == Qt.ShiftModifier:
-            index = self.layer.viewer.layers.index(self.layer)
-            lastSelected = None
-            for i in range(len(self.layer.viewer.layers)):
-                if self.layer.viewer.layers[i].selected:
-                    lastSelected = i
-            r = [index, lastSelected]
-            r.sort()
-            for i in range(r[0], r[1]+1):
-                self.layer.viewer.layers[i].selected = True
-        elif modifiers == Qt.ControlModifier:
-            self.layer.selected = not self.layer.selected
-        else:
-            self.layer.viewer.layers.unselect_all(ignore=self.layer)
-            self.layer.selected = True
+        event.ignore()
 
     def mousePressEvent(self, event):
-        self.dragStartPosition = event.pos()
+        event.ignore()
 
     def mouseMoveEvent(self, event):
-        distance = (event.pos() - self.dragStartPosition).manhattanLength()
-        if distance < QApplication.startDragDistance():
-            return
-        mimeData = QMimeData()
-        if not self.layer.selected:
-            name = self.layer.name
-        else:
-            name = ''
-            for layer in self.layer.viewer.layers:
-                if layer.selected:
-                    name = layer.name + '; ' + name
-            name = name[:-2]
-        mimeData.setText(name)
-        drag = QDrag(self)
-        drag.setMimeData(mimeData)
-        drag.setHotSpot(event.pos() - self.rect().topLeft())
-        dropAction = drag.exec_(Qt.MoveAction | Qt.CopyAction)
+        event.ignore()
 
-        if dropAction == Qt.CopyAction:
-            if not self.layer.selected:
-                index = self.layer.viewer.layers.index(self.layer)
-                self.layer.viewer.layers.pop(index)
-            else:
-                self.layer.viewer.layers.remove_selected()
+    def mouseDoubleClickEvent(self, event):
+        self.setExpanded(not self.expanded)
 
     def setExpanded(self, bool):
         if bool:
@@ -165,9 +128,6 @@ class QtLayer(QFrame):
                     self.grid_layout.itemAtPosition(i, j).widget().show()
                 else:
                     self.grid_layout.itemAtPosition(i, j).widget().hide()
-
-    def mouseDoubleClickEvent(self, event):
-        self.setExpanded(not self.expanded)
 
     def _on_layer_name_change(self, event):
         with self.layer.events.name.blocker():

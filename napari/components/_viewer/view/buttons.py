@@ -48,8 +48,13 @@ class QtDeleteButton(QPushButton):
         self.update()
 
     def dropEvent(self, event):
-        event.setDropAction(Qt.CopyAction)
         event.accept()
+        layer_name = event.mimeData().text()
+        layer = self.viewer.layers[layer_name]
+        if not layer.selected:
+            self.viewer.layers.remove(layer)
+        else:
+            self.viewer.layers.remove_selected()
 
 
 class QtNewMarkersButton(QPushButton):
