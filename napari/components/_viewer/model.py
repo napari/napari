@@ -287,6 +287,8 @@ class Viewer:
         if len(self.layers) == 1:
             self.reset_view()
 
+        self.layers.unselect_all(ignore=layer)
+
     def _new_markers(self):
         if self.dims.ndim == 0:
             empty_markers = np.empty((0, 2))
