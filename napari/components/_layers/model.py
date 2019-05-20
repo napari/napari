@@ -20,7 +20,7 @@ def _remove(event):
     layers = event.source
     layer = event.item
     layer._order = 0
-    layer.viewer = None
+    layer._parent = None
 
 
 def _reorder(event):
@@ -44,11 +44,6 @@ class Layers(ListModel):
     def __init__(self):
         super().__init__(basetype=Layer,
                          lookup={str: lambda q, e: q == e.name})
-
-        # Connect the add events before setting the viewer so that the
-        # addition will cause the first layer dims to update before any
-        # of the layer properties get set. Note that callbacks get called in
-        # the reverse order that they are made in (i.e. last made called first)
 
         self.events.added.connect(_add)
         self.events.removed.connect(_remove)
