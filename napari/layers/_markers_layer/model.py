@@ -38,14 +38,10 @@ class Markers(Layer):
         of markers and dims is the number of dimensions
     edge_width : int, float, None
         Width of the symbol edge in pixels.
-    edge_width_rel : int, float, None
-        Width of the marker edge as a fraction of the marker size.
     edge_color : Color, ColorArray
         Color of the marker border.
     face_color : Color, ColorArray
         Color of the marker body.
-    scaling : bool
-        If True, marker rescales when zooming.
     n_dimensional : bool
         If True, renders markers not just in central plane but also in all
         n-dimensions according to specified marker size.
@@ -56,8 +52,8 @@ class Markers(Layer):
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
     def __init__(self, coords, symbol='o', size=10, edge_width=1,
-                 edge_width_rel=None, edge_color='black', face_color='white',
-                 scaling=True, n_dimensional=False, *, name=None):
+                 edge_color='black', face_color='white', n_dimensional=False,
+                 *, name=None):
         super().__init__(MarkersNode(), name)
 
         self.events.add(mode=Event,
@@ -76,10 +72,8 @@ class Markers(Layer):
             self.symbol = symbol
             self.size = size
             self.edge_width = edge_width
-            self.edge_width_rel = edge_width_rel
             self.edge_color = edge_color
             self.face_color = face_color
-            self.scaling = scaling
             self.n_dimensional = n_dimensional
             self._colors = get_color_names()
             self._selected_markers = None
@@ -208,24 +202,6 @@ class Markers(Layer):
         self.refresh()
 
     @property
-    def edge_width_rel(self) -> Union[None, int, float]:
-        """None, int, float: width of the marker edge as a fraction
-            of the marker size.
-
-            vispy docs say: "exactly one edge_width and
-            edge_width_rel must be supplied", but I don't know
-            what that means... -KY
-        """
-
-        return self._edge_width_rel
-
-    @edge_width_rel.setter
-    def edge_width_rel(self, edge_width_rel: Union[None, float]) -> None:
-        self._edge_width_rel = edge_width_rel
-
-        self.refresh()
-
-    @property
     def edge_color(self) -> str:
         """Color, ColorArray: the marker edge color
         """
@@ -274,19 +250,6 @@ class Markers(Layer):
                  'opacity': opacity}
 
         return props
-
-    @property
-    def scaling(self) -> bool:
-        """bool: if True, marker rescales when zooming
-        """
-
-        return self._scaling
-
-    @scaling.setter
-    def scaling(self, scaling: bool) -> None:
-        self._scaling = scaling
-
-        self.refresh()
 
     @property
     def mode(self):
@@ -420,9 +383,8 @@ class Markers(Layer):
 
         self._node.set_data(
             data[:, [1, 0]], size=sizes, edge_width=self.edge_width,
-            symbol=self.symbol, edge_width_rel=self.edge_width_rel,
-            edge_color=self.edge_color, face_color=self.face_color,
-            scaling=self.scaling)
+            symbol=self.symbol, edge_color=self.edge_color,
+            face_color=self.face_color, scaling=True)
         self._need_visual_update = True
         self._update()
 

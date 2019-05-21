@@ -62,6 +62,7 @@ with app_context():
 
     # change the layer marker size
     layer.size = 20
+    layer.size = np.array([10, 50, 20])
 
     # change the layer mode
     layer.mode = 'add'

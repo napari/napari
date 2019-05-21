@@ -20,7 +20,7 @@ class QtMarkersLayer(QtLayer):
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setFixedWidth(110)
-        sld.setMinimum(0)
+        sld.setMinimum(1)
         sld.setMaximum(100)
         sld.setSingleStep(1)
         value = self.layer.size
@@ -93,7 +93,9 @@ class QtMarkersLayer(QtLayer):
         self.layer.symbol = text
 
     def changeSize(self, value):
-        self.layer.size = value
+        """Rescale marker sizes according to the value of the size slider."""
+        avg = np.mean(self.layer.size) or 1
+        self.layer.size = self.layer.size / avg * value
 
     def change_ndim(self, state):
         if state == Qt.Checked:
