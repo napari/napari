@@ -4,7 +4,7 @@ from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
 from qtpy.QtGui import QDrag
 
 
-class QtLayers(QScrollArea):
+class QtLayersList(QScrollArea):
 
     def __init__(self, layers):
         super().__init__()
