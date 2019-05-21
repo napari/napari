@@ -6,9 +6,6 @@ from qtpy import QtCore, QtGui
 from qtpy.QtWidgets import QWidget
 
 from ...util.misc import str_to_rgb
-from ...util.theme import palettes
-palette = palettes['dark']
-
 
 class QRangeSlider(QWidget):
     """
@@ -44,6 +41,7 @@ class QRangeSlider(QWidget):
         self.start_pos = None
         self.display_min = None
         self.display_max = None
+        self.setColors('rgb(100,100,100)', 'rgb(200,200,200)')
         self.setEnabled(True)
 
         if slider_range:
@@ -260,23 +258,21 @@ class QRangeSlider(QWidget):
         self.updateDisplayValues()
         self.update()
 
+    def setColors(self, background, foreground):
+        self.bar_color = QtGui.QColor(
+            *str_to_rgb(foreground))
+        self.background_color = QtGui.QColor(
+            *str_to_rgb(background))
+        self.handle_color = QtGui.QColor(
+            *str_to_rgb(foreground))
+        self.handle_border_color = QtGui.QColor(
+            *str_to_rgb(foreground))
+
     def setEnabled(self, bool):
         if bool:
             self.enabled = True
-            self.bar_color = QtGui.QColor(
-                *str_to_rgb(palette['highlight']))
-            self.background_color = QtGui.QColor(
-                *str_to_rgb(palette['foreground']))
-            self.handle_color = QtGui.QColor(
-                *str_to_rgb(palette['highlight']))
-            self.handle_border_color = QtGui.QColor(
-                *str_to_rgb(palette['highlight']))
         else:
             self.enabled = False
-            self.bar_color = QtCore.Qt.gray
-            self.background_color = QtCore.Qt.gray
-            self.handle_color = QtCore.Qt.gray
-            self.handle_border_color = QtCore.Qt.gray
         self.update()
 
 

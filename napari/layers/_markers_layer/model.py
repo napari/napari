@@ -1,5 +1,5 @@
 from typing import Union
-from collections import Iterable
+from xml.etree.ElementTree import Element
 
 import numpy as np
 from copy import copy
@@ -8,11 +8,11 @@ from .._base_layer import Layer
 from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
-from vispy.visuals import marker_types
-from vispy.color import get_color_names
+from vispy.color import get_color_names, Color
 
 from .view import QtMarkersLayer
 from .view import QtMarkersControls
+from ._constants import Symbol, SYMBOL_ALIAS
 
 
 @add_to_viewer
@@ -23,8 +23,12 @@ class Markers(Layer):
     ----------
     coords : np.ndarray
         Coordinates for each marker.
-    symbol : str
-        Symbol to be used as a marker
+    symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
+                         'hbar', 'ring', 'square', 'star', 'tailed_arrow',
+                         'triangle_down', 'triangle_up', 'vbar', 'x'}
+        Symbol to be used as a marker. If given as a string, must be one of the
+        following: arrow, clobber, cross, diamond, disc, hbar, ring, square,
+        star, tailed_arrow, triangle_down, triangle_up, vbar, x
     size : int, float, np.ndarray, list
         Size of the marker. If given as a scalar, all markers are the
         same size. If given as a list/array, size must be the same
@@ -34,14 +38,10 @@ class Markers(Layer):
         of markers and dims is the number of dimensions
     edge_width : int, float, None
         Width of the symbol edge in pixels.
-    edge_width_rel : int, float, None
-        Width of the marker edge as a fraction of the marker size.
     edge_color : Color, ColorArray
         Color of the marker border.
     face_color : Color, ColorArray
         Color of the marker body.
-    scaling : bool
-        If True, marker rescales when zooming.
     n_dimensional : bool
         If True, renders markers not just in central plane but also in all
         n-dimensions according to specified marker size.
@@ -52,8 +52,8 @@ class Markers(Layer):
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
     def __init__(self, coords, symbol='o', size=10, edge_width=1,
-                 edge_width_rel=None, edge_color='black', face_color='white',
-                 scaling=True, n_dimensional=False, *, name=None):
+                 edge_color='black', face_color='white', n_dimensional=False,
+                 *, name=None):
         super().__init__(MarkersNode(), name)
 
         self.events.add(mode=Event,
@@ -72,17 +72,16 @@ class Markers(Layer):
             self.symbol = symbol
             self.size = size
             self.edge_width = edge_width
-            self.edge_width_rel = edge_width_rel
             self.edge_color = edge_color
             self.face_color = face_color
-            self.scaling = scaling
             self.n_dimensional = n_dimensional
-            self._marker_types = marker_types
             self._colors = get_color_names()
             self._selected_markers = None
             self._mode = 'pan/zoom'
             self._mode_history = self._mode
             self._status = self._mode
+            self._markers_view = np.empty((0, 2))
+            self._sizes_view = 0
 
             # update flags
             self._need_display_update = False
@@ -120,7 +119,6 @@ class Markers(Layer):
                 size = np.repeat([new_size], adding, axis=0)
                 self.size = np.concatenate((self._size, size), axis=0)
 
-        self.viewer._child_layer_changed = True
         self.refresh()
 
     @property
@@ -151,11 +149,19 @@ class Markers(Layer):
     def symbol(self) -> str:
         """ str: marker symbol
         """
-        return self._symbol
+        return str(self._symbol)
 
     @symbol.setter
-    def symbol(self, symbol: str) -> None:
+    def symbol(self, symbol: Union[str, Symbol]) -> None:
+
+        if isinstance(symbol, str):
+            # Convert the alias string to the deduplicated string
+            if symbol in SYMBOL_ALIAS:
+                symbol = SYMBOL_ALIAS[symbol]
+            else:
+                symbol = Symbol(symbol)
         self._symbol = symbol
+
         self.events.symbol()
 
         self.refresh()
@@ -196,24 +202,6 @@ class Markers(Layer):
         self.refresh()
 
     @property
-    def edge_width_rel(self) -> Union[None, int, float]:
-        """None, int, float: width of the marker edge as a fraction
-            of the marker size.
-
-            vispy docs say: "exactly one edge_width and
-            edge_width_rel must be supplied", but I don't know
-            what that means... -KY
-        """
-
-        return self._edge_width_rel
-
-    @edge_width_rel.setter
-    def edge_width_rel(self, edge_width_rel: Union[None, float]) -> None:
-        self._edge_width_rel = edge_width_rel
-
-        self.refresh()
-
-    @property
     def edge_color(self) -> str:
         """Color, ColorArray: the marker edge color
         """
@@ -242,17 +230,26 @@ class Markers(Layer):
         self.refresh()
 
     @property
-    def scaling(self) -> bool:
-        """bool: if True, marker rescales when zooming
+    def svg_props(self):
+        """dict: color and width properties in the svg specification
         """
+        width = str(self.edge_width)
+        face_color = (255 * Color(self.face_color).rgba).astype(np.int)
+        fill = f'rgb{tuple(face_color[:3])}'
+        edge_color = (255 * Color(self.edge_color).rgba).astype(np.int)
+        stroke = f'rgb{tuple(edge_color[:3])}'
+        opacity = str(self.opacity)
 
-        return self._scaling
+        # Currently not using fill or stroke opacity - only global opacity
+        # as otherwise leads to unexpected behavior when reading svg into
+        # other applications
+        # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
+        # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
 
-    @scaling.setter
-    def scaling(self, scaling: bool) -> None:
-        self._scaling = scaling
+        props = {'fill': fill, 'stroke': stroke, 'stroke-width': width,
+                 'opacity': opacity}
 
-        self.refresh()
+        return props
 
     @property
     def mode(self):
@@ -295,23 +292,19 @@ class Markers(Layer):
         else:
             return np.max(self.coords, axis=0) + 1
 
-    def _update(self):
-        """Update the underlying visual.
+    @property
+    def range(self):
+        """list of 3-tuple of int: ranges of data for slicing specifed by
+        (min, max, step).
         """
-        if self._need_display_update:
-            self._need_display_update = False
+        if len(self.coords) == 0:
+            maxs = np.ones(self.coords.shape[1], dtype=int)
+            mins = np.zeros(self.coords.shape[1], dtype=int)
+        else:
+            maxs = np.max(self.coords, axis=0) + 1
+            mins = np.min(self.coords, axis=0)
 
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
+        return [(min, max, 1) for min, max in zip(mins, maxs)]
 
     def _slice_markers(self, indices):
         """Determines the slice of markers given the indices.
@@ -368,16 +361,10 @@ class Markers(Layer):
 
         return selection
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
 
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-
-        in_slice_markers, matches, scale = self._slice_markers(indices)
+        in_slice_markers, matches, scale = self._slice_markers(self.indices)
 
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
@@ -385,31 +372,21 @@ class Markers(Layer):
             sizes = (self._size[matches, -2:].mean(axis=1)*scale)[::-1]
 
             # Update the markers node
-            data = np.array(in_slice_markers) + 0.5
+            data = np.array(in_slice_markers)[::-1] + 0.5
 
         else:
             # if no markers in this slice send dummy data
             data = np.empty((0, 2))
             sizes = 0
+        self._markers_view = data
+        self._sizes_view = sizes
 
         self._node.set_data(
-            data[::-1, ::-1], size=sizes, edge_width=self.edge_width,
-            symbol=self.symbol, edge_width_rel=self.edge_width_rel,
-            edge_color=self.edge_color, face_color=self.face_color,
-            scaling=self.scaling)
+            data[:, [1, 0]], size=sizes, edge_width=self.edge_width,
+            symbol=self.symbol, edge_color=self.edge_color,
+            face_color=self.face_color, scaling=True)
         self._need_visual_update = True
         self._update()
-
-    def _get_coord(self, position, indices):
-
-        max_shape = self.viewer._calc_max_shape()
-
-        transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
-        coord = list(indices)
-        coord[-2] = pos[1]
-        coord[-1] = pos[0]
-        return coord[-len(max_shape):]
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -428,10 +405,8 @@ class Markers(Layer):
             String containing a message that can be used as
             a status update.
         """
-        coord_shift = list(coord)
-        coord_shift[-2] = int(coord[-2])
-        coord_shift[-1] = int(coord[-1])
-        msg = f'{coord_shift}, {self.name}'
+        int_coord = np.round(coord).astype(int)
+        msg = f'{int_coord}, {self.name}'
         if value is None:
             pass
         else:
@@ -469,14 +444,37 @@ class Markers(Layer):
             self.data[index] = coord
             self.refresh()
 
+    def to_xml_list(self):
+        """Convert the markers to a list of xml elements according to the svg
+        specification. Z ordering of the markers will be taken into account.
+        Each marker is represented by a circle. Support for other symbols is
+        not yet implemented.
+
+        Returns
+        ----------
+        xml : list
+            List of xml elements defining each marker according to the
+            svg specification
+        """
+        xml_list = []
+
+        for d, s in zip(self._markers_view, self._sizes_view):
+            cx = str(d[1])
+            cy = str(d[0])
+            r = str(s/2)
+            element = Element('circle', cx=cx, cy=cy, r=r, **self.svg_props)
+            xml_list.append(element)
+
+        return xml_list
+
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas. Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
         """
         if event.pos is None:
             return
-        position = event.pos
-        indices = self.viewer.dims.indices
-        coord = self._get_coord(position, indices)
+        self.coordinates = event.pos
+        coord = self.coordinates
         if self.mode == 'select' and event.is_dragging:
             self._move(coord)
         else:
@@ -484,11 +482,13 @@ class Markers(Layer):
         self.status = self.get_message(coord, self._selected_markers)
 
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
+        """Called whenever mouse pressed in canvas. Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
         """
-        position = event.pos
-        indices = self.viewer.dims.indices
-        coord = self._get_coord(position, indices)
+        if event.pos is None:
+            return
+        self.coordinates = event.pos
+        coord = self.coordinates
         self._selected_markers = self._select_marker(coord)
         shift = 'Shift' in event.modifiers
 

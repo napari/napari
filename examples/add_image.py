@@ -40,7 +40,7 @@ with app_context():
 
     # change the layer colormap and color limits
     layer.colormap = 'gray'
-    layer.clim = (0.1, 0.9)
+    layer.clim = (0, 0.9)
 
     # change the layer interpolation mode
     layer.interpolation = 'bicubic'

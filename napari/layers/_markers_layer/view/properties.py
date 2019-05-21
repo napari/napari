@@ -2,7 +2,9 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
 from collections import Iterable
 import numpy as np
+
 from ..._base_layer import QtLayer
+from .._constants import Symbol
 
 
 class QtMarkersLayer(QtLayer):
@@ -18,7 +20,7 @@ class QtMarkersLayer(QtLayer):
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setFixedWidth(110)
-        sld.setMinimum(0)
+        sld.setMinimum(1)
         sld.setMaximum(100)
         sld.setSingleStep(1)
         value = self.layer.size
@@ -59,9 +61,8 @@ class QtMarkersLayer(QtLayer):
         self.grid_layout.addWidget(edge_comboBox, 5, 1)
 
         symbol_comboBox = QComboBox()
-        symbols = self.layer._marker_types
-        for s in symbols:
-            symbol_comboBox.addItem(s)
+        for s in Symbol:
+            symbol_comboBox.addItem(str(s))
         index = symbol_comboBox.findText(
             self.layer.symbol, Qt.MatchFixedString)
         symbol_comboBox.setCurrentIndex(index)
@@ -92,7 +93,9 @@ class QtMarkersLayer(QtLayer):
         self.layer.symbol = text
 
     def changeSize(self, value):
-        self.layer.size = value
+        """Rescale marker sizes according to the value of the size slider."""
+        avg = np.mean(self.layer.size) or 1
+        self.layer.size = self.layer.size / avg * value
 
     def change_ndim(self, state):
         if state == Qt.Checked:
