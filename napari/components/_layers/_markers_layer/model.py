@@ -6,8 +6,8 @@ from copy import copy
 
 from .._base_layer import Layer
 from .._register import add_to_viewer
-from ..._vispy.scene.visuals import Markers as MarkersNode
-from ...util.event import Event
+from ...._vispy.scene.visuals import Markers as MarkersNode
+from ....util.event import Event
 from vispy.color import get_color_names, Color
 
 from .view import QtMarkersLayer

@@ -2,7 +2,7 @@ import os.path as osp
 
 from .components._viewer.view import QtViewer
 from .components import Window, Viewer
-from .layers._image_layer.model import Image
+from .components._layers import Image
 from .resources import resources_dir
 from .util.theme import template, palettes
 from .util.misc import has_clims

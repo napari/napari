@@ -1,5 +1,5 @@
 import numpy as np
-from ...util import segment_normal
+from ....util import segment_normal
 from vispy.geometry import PolygonData
 
 

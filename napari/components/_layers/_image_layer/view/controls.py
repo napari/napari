@@ -1,5 +1,5 @@
 from qtpy.QtWidgets import QHBoxLayout, QWidget
-from ...._qt import QVRangeSlider
+from ....._qt import QVRangeSlider
 
 
 class QtImageControls(QWidget):

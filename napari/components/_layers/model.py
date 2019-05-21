@@ -1,7 +1,7 @@
 import weakref
 from collections.abc import Iterable, Sequence
 
-from ...layers import Layer
+from ._base_layer import Layer
 
 from ...util.naming import inc_name_count
 from ...util.list import ListModel

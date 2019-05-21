@@ -2,13 +2,13 @@ import numpy as np
 from copy import copy, deepcopy
 from contextlib import contextmanager
 
-from ...util.event import Event
-from ...util.misc import ensure_iterable
+from ....util.event import Event
+from ....util.misc import ensure_iterable
 from .._base_layer import Layer
 from .._register import add_to_viewer
 
-from ..._vispy.scene.visuals import Mesh, Markers, Compound
-from ..._vispy.scene.visuals import Line as VispyLine
+from ...._vispy.scene.visuals import Mesh, Markers, Compound
+from ...._vispy.scene.visuals import Line as VispyLine
 from vispy.color import get_color_names
 
 from .view import QtShapesLayer

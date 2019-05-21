@@ -5,7 +5,7 @@ import numpy as np
 
 import weakref
 
-from ...util.event import Event
+from ....util.event import Event
 from ._visual_wrapper import VisualWrapper
 
 
