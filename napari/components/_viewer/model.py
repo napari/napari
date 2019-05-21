@@ -31,6 +31,7 @@ class Viewer:
         These key bindings are executed instead of any layer specific key
         bindings.
     """
+
     def __init__(self, title='napari'):
         super().__init__()
         from .._layers import Layers
@@ -237,11 +238,16 @@ class Viewer:
             shape = view_box[2:]
             min_shape = view_box[:2]
 
-        props = {'xmlns': 'http://www.w3.org/2000/svg',
-                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+        props = {
+            'xmlns': 'http://www.w3.org/2000/svg',
+            'xmlns:xlink': 'http://www.w3.org/1999/xlink'
+        }
 
-        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
-                      version='1.1', **props)
+        xml = Element('svg',
+                      height=f'{shape[0]}',
+                      width=f'{shape[1]}',
+                      version='1.1',
+                      **props)
 
         transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
@@ -288,8 +294,8 @@ class Viewer:
 
         if self.theme is not None and has_clims(layer):
             palette = palettes[self.theme]
-            layer._qt_controls.climSlider.setColors(
-                palette['foreground'], palette['highlight'])
+            layer._qt_controls.climSlider.setColors(palette['foreground'],
+                                                    palette['highlight'])
 
         if len(self.layers) == 1:
             self.reset_view()
@@ -360,13 +366,13 @@ class Viewer:
         """
 
         ndims = self._calc_layers_num_dims()
-        ranges = [(inf, -inf, inf)]*ndims
+        ranges = [(inf, -inf, inf)] * ndims
 
         for layer in self.layers:
             layer_range = layer.range[::-1]
-            ranges = [(min(a, b), max(c, d), min(e, f)) for
-                      (a, c, e), (b, d, f) in zip_longest(ranges, layer_range,
-                      fillvalue=(inf, -inf, inf))]
+            ranges = [(min(a, b), max(c, d), min(e, f))
+                      for (a, c, e), (b, d, f) in zip_longest(
+                          ranges, layer_range, fillvalue=(inf, -inf, inf))]
 
         return ranges[::-1]
 
