@@ -33,7 +33,7 @@ class Viewer:
     """
     def __init__(self, title='napari'):
         super().__init__()
-        from .._layers import Layers
+        from .._layers_list import LayersList
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
@@ -47,7 +47,7 @@ class Viewer:
         self.dims = Dims(2)
         self.dims._set_2d_viewing()
 
-        self.layers = Layers()
+        self.layers = LayersList()
 
         self._status = 'Ready'
         self._help = ''
