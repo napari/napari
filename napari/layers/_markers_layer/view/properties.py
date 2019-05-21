@@ -93,6 +93,7 @@ class QtMarkersLayer(QtLayer):
         self.layer.symbol = text
 
     def changeSize(self, value):
+        """Rescale marker sizes according to the value of the size slider."""
         avg = np.mean(self.layer.size) or 1
         self.layer.size = self.layer.size / avg * value
 
