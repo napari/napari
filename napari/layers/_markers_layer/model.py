@@ -118,7 +118,7 @@ class Markers(Layer):
                     new_size = np.repeat(10, self._size.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
                 self.size = np.concatenate((self._size, size), axis=0)
-
+        self.events.data()
         self.refresh()
 
     @property

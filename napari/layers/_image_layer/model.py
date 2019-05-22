@@ -145,7 +145,7 @@ class Image(Layer):
     @image.setter
     def image(self, image):
         self._image = image
-
+        self.events.data()
         self.refresh()
 
     @property
@@ -169,6 +169,7 @@ class Image(Layer):
     @data.setter
     def data(self, data):
         self._image, self._meta = data
+        self.events.data()
         self.refresh()
 
     def _get_shape(self):

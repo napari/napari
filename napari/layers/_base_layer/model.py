@@ -62,6 +62,7 @@ class Layer(VisualWrapper, ABC):
         self._name = ''
         self.events.add(select=Event,
                         deselect=Event,
+                        data=Event,
                         name=Event,
                         status=Event,
                         help=Event,
