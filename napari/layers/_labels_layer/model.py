@@ -323,6 +323,9 @@ class Labels(Layer):
         self._need_visual_update = True
         self._update()
 
+        coord, label = self.get_value()
+        self.status = self.get_message(coord, label)
+
     @property
     def method(self):
         """string: Selects method of rendering image in case of non-linear

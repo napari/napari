@@ -203,6 +203,9 @@ class Image(Layer):
         self._need_visual_update = True
         self._update()
 
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
+
     @property
     def multichannel(self):
         """bool: Whether the image is multichannel.
