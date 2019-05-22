@@ -11,12 +11,11 @@ from napari.util import app_context
 with app_context():
     viewer = ViewerApp()
 
-    # add 3D data
+    # add data
     blobs = data.binary_blobs(length=128, blob_size_fraction=0.05,
                               n_dim=3, volume_fraction=.25).astype(float)
 
     layer = viewer.add_image(blobs[:64])
 
-    # switch to 3D data
+    # switch number of displayed dimensions
     layer.image = blobs[:3]
-    #viewer._on_layers_change(None)
