@@ -1,5 +1,5 @@
 """
-Change image shape directly on the layer
+Change image shape and dims directly on the layer
 """
 
 import numpy as np
@@ -18,4 +18,10 @@ with app_context():
     layer = viewer.add_image(blobs[:64])
 
     # switch number of displayed dimensions
+    layer.image = blobs[0]
+
+    # switch number of displayed dimensions
+    layer.image = blobs[:64]
+
+    # switch the shape of the displayed data
     layer.image = blobs[:3]
