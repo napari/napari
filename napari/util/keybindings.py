@@ -1,3 +1,37 @@
+"""Keys are represented in the form ``[modifier-]key``, e.g. ``a``,
+``Control-c``, or ``Control-Alt-Delete``.
+Valid modifiers are Control, Alt, Shift, and Meta,
+and can be represented with the shorthands C, M, S, and s, respectively.
+
+Shift pressed with any letter will be consumed
+to transform it to upper case, e.g. Shift + w => W.
+Otherwise, the letter will be lower case.
+Shift will also be consumed without transformation when pressed
+with any other non-special key unless Control is also a modifier.
+
+Special keys include Shift, Control, Alt, Meta, Up, Down, Left, Right,
+PageUp, PageDown, Insert, Delete, Home, End, Escape, Backspace, F1,
+F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, Space, Enter, and Tab
+
+Functions take in only one argument: the parent that the function
+was bound to. This is the viewer or layer.
+
+By default, all functions are assumed to work on key presses only,
+but can be denoted to work on release too by separating the function
+into two statements with the yield keyword::
+
+    @viewer.bind_key('h')
+    def hello_world(viewer):
+        # on key press
+        viewer.status = 'hello world!'
+
+        yield
+
+        # on key release
+        viewer.status = 'goodbye world :('
+
+"""
+
 import re
 import types
 from collections import OrderedDict
@@ -6,8 +40,12 @@ from typing import Sequence, Iterable, Mapping, ByteString, Callable
 
 from vispy.util import keys
 
+from .misc import formatdoc
+
 
 STRINGTYPES = str, ByteString
+
+DOC_EXPLANATION = __doc__.replace('\n', '\n    ')
 
 
 SPECIAL_KEYS = [keys.SHIFT,
@@ -462,6 +500,7 @@ def _bind_key_method_normalize_input(args, kwargs):
     return args
 
 
+@formatdoc
 def _bind_key_method(keybindings, *args, **kwargs):
     """Bind, unbind, or rebind one or more key sequences at the same time.
 
@@ -469,7 +508,7 @@ def _bind_key_method(keybindings, *args, **kwargs):
 
     ``@o.bind_key(seq)`` (used as a decorator)
 
-    ``o.bind_key({seq1: op1, seq2: op2, ..., seqn: opn})``
+    ``o.bind_key({{seq1: op1, seq2: op2, ..., seqn: opn}})``
 
     ``o.bind_key((seq1, op1), (seq2, op2), ..., (seqn, opn))``
 
@@ -490,6 +529,8 @@ def _bind_key_method(keybindings, *args, **kwargs):
     -----
     Unbindings are performed first, followed by rebindings,
     and finally new bindings.
+
+    {DOC_EXPLANATION}
     """
     if len(args) == 1 and isinstance(args[0], str):
         def inner(func):
