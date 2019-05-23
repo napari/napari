@@ -8,7 +8,6 @@ from vispy.util import keys
 
 
 STRINGTYPES = str, ByteString
-UNDEFINED = object()
 
 
 SPECIAL_KEYS = [keys.SHIFT,
@@ -52,7 +51,7 @@ MODIFIER_KEYS = OrderedDict(C=keys.CONTROL,
 shorthand_modifier_patt = re.compile(f"([{''.join(MODIFIER_KEYS)}])(?=-)")
 
 
-class BindOperation:
+class BindOperation(Enum):
     BIND = 'bind'
     UNBIND = 'unbind'
     REBIND = 'rebind'
@@ -303,13 +302,15 @@ def _bind_keys_validate_pair(pair):
     _determine_binding_op(op)
 
 
-def unbind_keys(keybindings, seqs, error=True):
+def unbind_keys(keybindings, *seqs, error=True):
     """Unbind functions from a keymap.
 
     Parameters
     ----------
     keybindings : dict of str: callable
         Keymap to modify.
+    *seqs : iterable of str
+        Key sequences to unbind. If not provided, unbind all key sequences.
     error : bool
         Whether to error when a function is not found in the keymap.
         Defaults to ``True``.
@@ -325,6 +326,11 @@ def unbind_keys(keybindings, seqs, error=True):
         When a function is not found in the keymap
         and ``error`` is set to ``True``.
     """
+    if len(seqs) == 0:
+        seqs = list(keybindings.keys())
+    elif len(seqs) == 1 and isinstance(seqs[0], Iterable):
+        seqs = seqs[0]
+
     funcs = []
 
     for seq in seqs:
@@ -413,12 +419,13 @@ def bind_keys(keybindings, key_pairs):
         bind_key(keybindings, seq, func)
 
 
-def _bind_keys_normalize_input(args, kwargs):
+def _bind_key_method_normalize_input(args, kwargs):
     """Normalize args and kwargs to key-operation pairs.
 
     Parameters
     ----------
-    args : 1-tuple of dict of str: (callable, str, or None), \
+    args : 2-tuple of str, (callable, str, or None), \
+           1-tuple of dict of str: (callable, str, or None), \
            1-tuple of iterable of 2-sequence of (str, (callable, str, or None)), \  # noqa
            or tuple of 2-sequence of (str, (callable, str, or None))
         Binding operations taken as positional arguments.
@@ -431,70 +438,67 @@ def _bind_keys_normalize_input(args, kwargs):
         Binding operations in a singular format.
     """
     if len(args) == 1:
-        # bind_keys((('asdf', func), ('sdf', None)))
+        # bind_key((('asdf', func), ('sdf', None)))
         # is equivalent to
-        # bind_keys(('asdf', func), ('sdf', None))
+        # bind_key(('asdf', func), ('sdf', None))
         args = args[0]
 
         if isinstance(args, Mapping):
             args = args.items()  # dict -> (N, 2) view
 
         if isinstance(args, Iterable):
-            if isinstance(args, STRINGTYPES):
-                raise TypeError()
             args = tuple(args)
+    elif len(args) == 2:
+        # bind_key('asdf', func) == bind_key(('asdf', func))
+        try:
+            _bind_keys_validate_pair(args)
+        except TypeError:
+            pass
+        else:
+            args = (args,)
 
     args += tuple(kwargs.items())
 
     return args
 
 
-def _bind_key_method(keybindings, seq, func=UNDEFINED):
-    """Bind a function to a key sequence.
+def _bind_key_method(keybindings, *args, **kwargs):
+    """Bind, unbind, or rebind one or more key sequences at the same time.
 
-    Parameters
-    ----------
-    seq : str
-        Key sequence.
-    func : callable, str, or None, optional
-        Callable to bind to the key sequence.
-        If a string is passed, instead perform a rebind operation.
-        If ``None`` is passed, unbind instead.
-        If not provided, this becomes a decorator.
-    """
-    if func is UNDEFINED:  # used as a decorator
-        def inner(func):
-            bind_key(keybindings, seq, func)
-            return func
+    ``o.bind_key(seq, op)``
 
-        return inner
+    ``@o.bind_key(seq)`` (used as a decorator)
 
-    bind_key(keybindings, seq, func)
+    ``o.bind_key({seq1: op1, seq2: op2, ..., seqn: opn})``
 
+    ``o.bind_key((seq1, op1), (seq2, op2), ..., (seqn, opn))``
 
-def _bind_keys_method(keybindings, *args, **kwargs):
-    """Bind, unbind, or rebind multiple key sequences at the same time.
+    ``o.bind_key([(seq1, op1), (seq2, op2), ..., (seqn, opn)])``
 
-    `o.bind_keys({seq1: op1, seq2: op2, ..., seqn: opn})`
-
-    `o.bind_keys((seq1, op1), (seq2, op2), ..., (seqn, opn))`
-
-    `o.bind_keys([(seq1, op1), (seq2, op2), ..., (seqn, opn)])`
-
-    `o.bind_keys(seq1=op1, seq2=op2, ..., seqn=opn})`
+    ``o.bind_key(seq1=op1, seq2=op2, ..., seqn=opn)``
 
     Parameters
     ----------
     operations : dict of str: (callable, str, or None) \
                  or iterable of 2-sequence of (str, (callable, str, or None))
-        Binding operations to perform.
+        Key sequence and binding operation pairs.
+        Passing a callable will bind it to the key sequence.
+        Passing another key sequence  will rebind it to the new key sequence.
+        Passing ``None`` will unbind the key sequence.
 
     Notes
     -----
     Unbindings are performed first, followed by rebindings,
     and finally new bindings.
     """
-    bind_keys(keybindings, _bind_keys_normalize_input(args, kwargs))
+    if len(args) == 1 and isinstance(args[0], str):
+        def inner(func):
+            bind_key(keybindings, args[0], func)
+            return func
+
+        return inner
+
+    bind_keys(keybindings, _bind_key_method_normalize_input(args, kwargs))
 
 
 class KeybindingDescriptor:
@@ -534,6 +538,4 @@ def _keybinding_method(name, method):
 
 
 bind_key_method = _keybinding_method('bind_key', _bind_key_method)
-unbind_key_method = _keybinding_method('unbind_key', unbind_key)
-rebind_key_method = _keybinding_method('rebind_key', rebind_key)
-bind_keys_method = _keybinding_method('bind_keys', _bind_keys_method)
+unbind_keys_method = _keybinding_method('unbind_keys', unbind_keys)

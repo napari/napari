@@ -1,11 +1,11 @@
 import pytest
-from ..keybindings import (_bind_keys_normalize_input, _bind_keys_validate_pair,
+from ..keybindings import (_bind_key_method_normalize_input, _bind_keys_validate_pair,
                            _determine_binding_op, _expand_shorthand,
                            BindOperation, bind_key, bind_keys, bind_key_method,
-                           bind_keys_method, components_to_seq,
+                           components_to_seq,
                            normalize_key_sequence, parse_seq, rebind_key,
-                           rebind_key_method, rebind_keys, unbind_key,
-                           unbind_key_method, unbind_keys)
+                           rebind_keys, unbind_key,
+                           unbind_keys_method, unbind_keys)
 
 
 def test_expand_shorthand():
@@ -100,13 +100,15 @@ def test_bind_key():
 def test_unbind_keys():
     kb = dict(a=lambda: 42,
               b=lambda: 'SPAM',
-              c=lambda: 'aliiiens')
+              c=lambda: 'aliiiens',
+              d=lambda: 500)
 
-    assert [kb['a']] == unbind_keys(kb, ['a'])
-    assert kb == dict(b=kb['b'],
-                      c=kb['c'])
+    assert [kb['a']] == unbind_keys(kb, 'a')
+    assert set(kb.keys()) == {'b', 'c', 'd'}
 
-    assert list(kb.values()) == unbind_keys(kb, list(kb.keys()))
+    assert {kb['b'], kb['c']} == set(unbind_keys(kb, ['b', 'c']))
+
+    assert [kb['d']] == unbind_keys(kb)
     assert kb == {}
 
 
@@ -128,7 +130,7 @@ def test_rebind_keys():
 
 
 def test_bind_keys_normalize_input():
-    norm = lambda *args, **kwargs: _bind_keys_normalize_input(args, kwargs)
+    norm = lambda *args, **kwargs: _bind_key_method_normalize_input(args, kwargs)
     out = (('a', 'b'),
            ('c', 'd'))
 
@@ -145,6 +147,8 @@ def test_bind_keys_normalize_input():
     assert (norm({'a': 'b',
                   'c': 'd'})
             == out)
+
+    assert norm('a', 'b') == (('a', 'b'),)
 
 
 def test_bind_keys():
@@ -187,12 +191,8 @@ def test_keybinding_descriptors():
 
         bind_key = bind_key_method(keybindings='keybindings',
                                    class_keybindings='default_keybindings')
-        unbind_key = unbind_key_method(keybindings='keybindings',
-                                       class_keybindings='default_keybindings')
-        rebind_key = rebind_key_method(keybindings='keybindings',
-                                       class_keybindings='default_keybindings')
-        bind_keys = bind_keys_method(keybindings='keybindings',
-                                     class_keybindings='default_keybindings')
+        unbind_keys = unbind_keys_method(keybindings='keybindings',
+                                         class_keybindings='default_keybindings')
 
     f = lambda: 42
 
@@ -203,28 +203,31 @@ def test_keybinding_descriptors():
     def bar(): ...
     assert Foo.default_keybindings['b'] is bar
 
-    assert Foo.unbind_key('b') is bar
+    assert Foo.unbind_keys('b') == [bar]
     assert list(Foo.default_keybindings.keys()) == ['a']
 
-    Foo.rebind_key('b', 'a')
+    Foo.bind_key('b', 'a')
     assert Foo.default_keybindings == dict(b=f)
 
     foo = Foo()
     assert foo.keybindings == Foo.default_keybindings
 
-    foo.bind_keys(a=lambda: 'SPAM')
+    foo.bind_key(a=lambda: 'SPAM')
     assert set(foo.keybindings) == {'a', 'b'}
     assert foo.keybindings != Foo.default_keybindings
 
     f2 = lambda: 'aliiiens'
-    foo.bind_keys(('c', f2),
-                  ('a', None),
-                  ('a', 'b'))
+    foo.bind_key(('c', f2),
+                 ('a', None),
+                 ('a', 'b'))
     assert foo.keybindings == dict(a=f,
                                    c=f2)
 
-    foo.bind_keys({'c': None})
+    foo.bind_key({'c': None})
     assert foo.keybindings == dict(a=f)
 
-    foo.bind_keys([('a', None)])
+    foo.bind_key([('a', None)])
+    assert foo.keybindings == {}
+
+    assert list(foo.keybindings.values()) == foo.unbind_keys()
     assert foo.keybindings == {}

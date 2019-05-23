@@ -6,8 +6,7 @@ import numpy as np
 import weakref
 
 from ...util.event import Event
-from ...util.keybindings import (bind_key_method, unbind_key_method,
-                                 rebind_key_method, bind_keys_method, bind_keys)
+from ...util.keybindings import bind_key_method, unbind_keys_method, bind_keys
 from ._visual_wrapper import VisualWrapper
 
 
@@ -381,14 +380,8 @@ class Layer(VisualWrapper, ABC):
     bind_key = bind_key_method(keybindings='_keybindings',
                                class_keybindings='default_keybindings')
 
-    unbind_key = unbind_key_method(keybindings='_keybindings',
-                                   class_keybindings='default_keybindings')
-
-    rebind_key = rebind_key_method(keybindings='_keybindings',
-                                   class_keybindings='default_keybindings')
-
-    bind_keys = bind_keys_method(keybindings='_keybindings',
-                                 class_keybindings='default_keybindings')
+    unbind_keys = unbind_keys_method(keybindings='_keybindings',
+                                     class_keybindings='default_keybindings')
 
     def reset_keybindings(self):
         self.keybindings = self.default_keybindings
