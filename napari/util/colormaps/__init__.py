@@ -1,1 +1,1 @@
-from .colormaps import matplotlib_colormaps
+from .colormaps import matplotlib_colormaps, simple_colormaps

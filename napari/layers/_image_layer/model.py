@@ -16,7 +16,7 @@ from ...util.interpolation import (interpolation_names,
                                   interpolation_index_to_name as _index_to_name,  # noqa
                                   interpolation_name_to_index as _name_to_index)  # noqa
 from ...util.misc import guess_metadata
-from ...util.colormaps import matplotlib_colormaps
+from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
 from ...util.event import Event
 
@@ -68,6 +68,7 @@ def vispy_or_mpl_colormap(name):
 
 AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
                        for k in matplotlib_colormaps}
+AVAILABLE_COLORMAPS.update(simple_colormaps)
 
 
 @add_to_viewer
