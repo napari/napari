@@ -1,18 +1,18 @@
 """
-Display one markers layer ontop of one image layer using the add_markers and
+Display a markers layer on top of an image layer using the add_markers and
 add_image APIs
 """
 
 import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-from napari import Viewer
+import napari
 from napari.util import app_context
 
 
 with app_context():
-    # create the viewer and window
-    viewer = Viewer()
+    # create the viewer window
+    viewer = napari.Viewer()
 
     # add the image
     viewer.add_image(rgb2gray(data.astronaut()))

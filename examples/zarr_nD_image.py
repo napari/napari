@@ -4,9 +4,7 @@ Display one 4-D image layer using the add_image API
 
 import dask.array as da
 import zarr
-import numpy as np
-from skimage import data
-from napari import Viewer
+import napari
 from napari.util import app_context
 
 
@@ -16,4 +14,6 @@ with app_context():
 
     array = da.from_zarr(data)
     print(array.shape)
-    viewer = Viewer(array, clim_range=[0, 1], multichannel=False)
+    # For big data, we should specify the clim range, or napari will try
+    # to find the min and max of the full image.
+    viewer = napari.view(array, clim_range=[0, 1], multichannel=False)

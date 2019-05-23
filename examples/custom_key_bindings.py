@@ -2,14 +2,13 @@
 Display one 4-D image layer using the add_image API
 """
 
-import numpy as np
 from skimage import data
-from napari import Viewer
+import napari
 from napari.util import app_context
 
 
 with app_context():
-    viewer = Viewer()
+    viewer = napari.Viewer()
     blobs = data.binary_blobs(length=128, blob_size_fraction=0.05,
                               n_dim=2, volume_fraction=.25).astype(float)
 
