@@ -8,7 +8,7 @@ from skimage.filters import threshold_otsu
 from skimage.segmentation import clear_border
 from skimage.measure import label
 from skimage.morphology import closing, square, remove_small_objects
-from napari import ViewerApp
+from napari import Viewer
 from napari.util import app_context
 
 
@@ -26,7 +26,7 @@ with app_context():
     label_image = label(cleared)
 
     # initialise viewer with astro image
-    viewer = ViewerApp(coins=image, multichannel=False)
+    viewer = Viewer(coins=image, multichannel=False)
     viewer.layers[0].colormap = 'gray'
 
     # add the labels

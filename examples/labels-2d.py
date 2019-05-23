@@ -6,7 +6,7 @@ add_image APIs
 from skimage import data
 from skimage.color import rgb2gray
 from skimage.segmentation import slic
-from napari import ViewerApp
+from napari import Viewer
 from napari.util import app_context
 
 
@@ -14,7 +14,7 @@ with app_context():
     astro = data.astronaut()
 
     # initialise viewer with astro image
-    viewer = ViewerApp(astronaut=rgb2gray(astro), multichannel=False)
+    viewer = Viewer(astronaut=rgb2gray(astro), multichannel=False)
     viewer.layers[0].colormap = 'gray'
 
     # add the labels

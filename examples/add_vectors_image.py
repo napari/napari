@@ -6,14 +6,14 @@ Each vector position is defined by an (x-proj, y-proj) element
     where each vector is centered on a pixel of the NxM grid
 """
 
-from napari import ViewerApp
+from napari import Viewer
 from napari.util import app_context
 
 import numpy as np
 
 with app_context():
     # create the viewer and window
-    viewer = ViewerApp()
+    viewer = Viewer()
 
     n = 100
     m = 200

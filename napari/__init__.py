@@ -6,7 +6,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning,
                             message=vispy_warning)
     from .components import Window, ViewerWidget
-    from .viewer import ViewerApp
+    from .viewer import Viewer
 
 from ._version import get_versions
 __version__ = get_versions()['version']

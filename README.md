@@ -53,7 +53,7 @@ From inside an IPython shell or Jupyter notebook you can open up an interactive 
 %gui qt5
 from skimage import data
 from napari import ViewerApp
-viewer = ViewerApp(data.astronaut())
+viewer = Viewer(data.astronaut())
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -66,7 +66,7 @@ from napari import ViewerApp
 from napari.util import app_context
 
 with app_context():
-    viewer = ViewerApp(data.astronaut())
+    viewer = Viewer(data.astronaut())
 ```
 
 ## features
@@ -83,7 +83,7 @@ from napari.util import app_context
 
 with app_context():
     # create the viewer with four layers
-    viewer = ViewerApp(astronaut=rgb2gray(data.astronaut()),
+    viewer = Viewer(astronaut=rgb2gray(data.astronaut()),
                        photographer=data.camera(),
                        coins=data.coins(),
                        moon=data.moon())
@@ -105,7 +105,7 @@ from napari.util import app_context
 
 with app_context():
     # setup viewer
-    viewer = ViewerApp()
+    viewer = Viewer()
     viewer.add_image(rgb2gray(data.astronaut()))
     # create three xy coordinates
     points = np.array([[100, 100], [200, 200], [333, 111]])
@@ -141,7 +141,7 @@ with app_context():
                                         n_dim=3, volume_fraction=f)
                      for f in np.linspace(0.05, 0.5, 10)], axis=-1)
     # add data to the viewer
-    viewer = ViewerApp(blobs.astype(float))
+    viewer = Viewer(blobs.astype(float))
 ```
 
 ![image](resources/screenshot-nD-image.png)

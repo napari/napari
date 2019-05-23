@@ -6,13 +6,13 @@ add_image APIs
 import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-from napari import ViewerApp
+from napari import Viewer
 from napari.util import app_context
 
 
 with app_context():
     # create the viewer and window
-    viewer = ViewerApp()
+    viewer = Viewer()
 
     # add the image
     viewer.add_image(rgb2gray(data.astronaut()))

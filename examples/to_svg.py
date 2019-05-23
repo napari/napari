@@ -7,14 +7,14 @@ your shapes.
 import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-from napari import ViewerApp
+from napari import Viewer
 from napari.util import app_context
 from vispy.color import Colormap
 
 
 with app_context():
     # create the viewer and window
-    viewer = ViewerApp()
+    viewer = Viewer()
 
     # add the image
     img_layer = viewer.add_image(data.camera(), name='photographer')

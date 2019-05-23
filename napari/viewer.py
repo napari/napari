@@ -8,7 +8,7 @@ from .util.theme import template, palettes
 from .util.misc import has_clims
 
 
-class ViewerApp(ViewerWidget):
+class Viewer(ViewerWidget):
     """Napari ndarray viewer.
 
     Parameters

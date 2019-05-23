@@ -6,7 +6,7 @@ import dask.array as da
 import zarr
 import numpy as np
 from skimage import data
-from napari import ViewerApp
+from napari import Viewer
 from napari.util import app_context
 
 
@@ -16,4 +16,4 @@ with app_context():
 
     array = da.from_zarr(data)
     print(array.shape)
-    viewer = ViewerApp(array, clim_range=[0, 1], multichannel=False)
+    viewer = Viewer(array, clim_range=[0, 1], multichannel=False)
