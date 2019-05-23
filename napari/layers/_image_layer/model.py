@@ -67,8 +67,7 @@ def vispy_or_mpl_colormap(name):
 
 
 AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
-                       for k in matplotlib_colormaps +
-                       list(vispy.color.get_colormaps())}
+                       for k in matplotlib_colormaps}
 
 
 @add_to_viewer
