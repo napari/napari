@@ -32,6 +32,11 @@ Make the development version available globally:
 $ pip install -e .
 ```
 
+Also do not forget to install black formatter hook with:
+```sh
+pre-commit install
+```
+
 ## Building the dev-docs
 
 Go to documentation source
