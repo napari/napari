@@ -1,8 +1,6 @@
 from qtpy.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
 from qtpy.QtCore import Qt
 
-from .._viewer import ViewerWidget
-
 
 class Window:
     """Application window that contains the menu bar and viewer.
@@ -20,12 +18,12 @@ class Window:
     def __init__(self, qt_viewer, show=True):
 
         self.qt_viewer = qt_viewer
-        
+
         self._qt_window = QMainWindow()
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget()
         self._qt_window.setCentralWidget(self._qt_center)
-        self._qt_window.setWindowTitle(viewer.title)
+        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = self._qt_window.statusBar()
         self._status_bar.showMessage('Ready')

@@ -22,7 +22,7 @@ class Viewer(ViewerModel):
         super().__init__(title=title)
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
-        self.screenshot = self.window.qtviewer.screenshot
+        self.screenshot = self.window.qt_viewer.screenshot
         self.theme = 'dark'
 
     @property
@@ -48,7 +48,7 @@ class Viewer(ViewerModel):
 
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
-        self.window.qtviewer.setStyleSheet(themed_stylesheet)
+        self.window.qt_viewer.setStyleSheet(themed_stylesheet)
 
         # set window styles which don't use the primary stylesheet
         self.window._status_bar.setStyleSheet(
@@ -64,5 +64,5 @@ class Viewer(ViewerModel):
                     palette['foreground'], palette['highlight'])
 
         # set styles on dims sliders
-        for slider in self.window.qtviewer.dims.sliders:
+        for slider in self.window.qt_viewer.dims.sliders:
             slider.setColors(palette['foreground'], palette['highlight'])
