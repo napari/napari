@@ -4,19 +4,12 @@ from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from ..._dims.view import QtDims
+from ..._layers_list.view import QtLayersList
 from ....resources import resources_dir
 from .controls import QtControls
-
-import os.path as osp
-from ....resources import resources_dir
-from ....util.theme import template, palettes
-palette = palettes['dark']
-
+from .buttons import QtLayersButtons
 
 class QtViewer(QSplitter):
-    with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
-        themed_stylesheet = template(raw_stylesheet, **palette)
 
     def __init__(self, viewer):
         super().__init__()
@@ -24,10 +17,8 @@ class QtViewer(QSplitter):
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
         )
-        self.setStyleSheet(self.themed_stylesheet)
 
         self.viewer = viewer
-        self.viewer._qtviewer = self
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -40,6 +31,10 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
+
+        # TO DO: Remove
+        self.viewer._scene = self.view.scene
+
         # Set 2D camera (the camera will scale to the contents in the scene)
         self.view.camera = PanZoomCamera(aspect=1)
         # flip y-axis to have correct aligment
@@ -49,18 +44,28 @@ class QtViewer(QSplitter):
         self.view.camera.viewbox_key_event = viewbox_key_event
 
         center = QWidget()
-        layout = QVBoxLayout()
-        layout.setContentsMargins(15, 20, 15, 10)
-        layout.addWidget(self.canvas.native)
-        dimsview = QtDims(self.viewer.dims)
-        layout.addWidget(dimsview)
-        center.setLayout(layout)
+        center_layout = QVBoxLayout()
+        center_layout.setContentsMargins(15, 20, 15, 10)
+        center_layout.addWidget(self.canvas.native)
+        self.dims = QtDims(self.viewer.dims)
+        center_layout.addWidget(self.dims)
+        center.setLayout(center_layout)
 
         # Add controls, center, and layerlist
         self.control_panel = QtControls(viewer)
         self.addWidget(self.control_panel)
         self.addWidget(center)
-        self.addWidget(self.viewer.layers._qt)
+
+        right = QWidget()
+        right_layout = QVBoxLayout()
+        self.layers = QtLayersList(self.viewer.layers)
+        right_layout.addWidget(self.layers)
+        self.buttons = QtLayersButtons(viewer)
+        right_layout.addWidget(self.buttons)
+        right.setLayout(right_layout)
+        right.setMinimumSize(QSize(308, 250))
+
+        self.addWidget(right)
 
         self._cursors = {
                 'disabled': QCursor(
@@ -72,7 +77,42 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
-    def set_cursor(self, cursor, size=10):
+        self.viewer.events.interactive.connect(self._on_interactive)
+        self.viewer.events.cursor.connect(self._on_cursor)
+        self.viewer.events.reset_view.connect(self._on_reset_view)
+        self.viewer.layers.events.reordered.connect(self._update_canvas)
+
+    def screenshot(self, region=None, size=None, bgcolor=None):
+        """Render the scene to an offscreen buffer and return the image array.
+
+        Parameters
+        ----------
+        region : tuple | None
+            Specifies the region of the canvas to render. Format is
+            (x, y, w, h). By default, the entire canvas is rendered.
+        size : tuple | None
+            Specifies the size of the image array to return. If no size is
+            given, then the size of the *region* is used, multiplied by the
+            pixel scaling factor of the canvas (see `pixel_scale`). This
+            argument allows the scene to be rendered at resolutions different
+            from the native canvas resolution.
+        bgcolor : instance of Color | None
+            The background color to use.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        return self.canvas.render(region, size, bgcolor)
+
+    def _on_interactive(self, event):
+        self.view.interactive = self.viewer.interactive
+
+    def _on_cursor(self, event):
+        cursor = self.viewer.cursor
+        size = self.viewer.cursor_size
         if cursor == 'square':
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
@@ -83,24 +123,34 @@ class QtViewer(QSplitter):
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
 
+    def _on_reset_view(self, event):
+        self.view.camera.set_range()
+
+    def _update_canvas(self, event):
+        """Clears draw order and refreshes canvas. Usefeul for when layers are
+        reoredered.
+        """
+        self.canvas._draw_order.clear()
+        self.canvas.update()
+
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_mouse_release(event)
 
@@ -112,14 +162,14 @@ class QtViewer(QSplitter):
             self.viewer.key_bindings[event.text](self.viewer)
             return
 
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_key_press(event)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
         """
-        layer = self.viewer._top
+        layer = self.viewer.active_layer
         if layer is not None:
             layer.on_key_release(event)
 

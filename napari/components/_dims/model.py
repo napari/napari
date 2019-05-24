@@ -34,6 +34,9 @@ class Dims:
         Number of dimensions
     displayed : list of int
         Array of the displayed dimensions
+    indices : tuple of slice object
+        Tuple of slice objects for slicing arrays on each dimension, one for
+        each dimension
     """
     def __init__(self, init_ndim=0):
         super().__init__()
@@ -145,9 +148,7 @@ class Dims:
 
     @property
     def indices(self):
-        """Tuple of slice objects for slicing arrays on each layer. There is
-        one slice object for each layer
-        """
+        """Tuple of slice objects for slicing arrays on each dimension."""
         slice_list = []
         z = zip(self.mode, self.display, self.point, self.interval, self.range)
         for (mode, display, point, interval, range) in z:

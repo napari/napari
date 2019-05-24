@@ -124,6 +124,7 @@ class VisualWrapper:
                              f'got {blending}')
         self._node.set_gl_state(blending)
         self._blending = blending
+        self._node.update()
         self.events.blending()
 
     @property

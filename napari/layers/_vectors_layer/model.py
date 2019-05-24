@@ -1,4 +1,5 @@
 from typing import Union
+from xml.etree.ElementTree import Element
 
 import numpy as np
 from scipy import signal
@@ -8,7 +9,7 @@ from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Mesh
 from ...util.event import Event
 from ...util import segment_normal
-from vispy.color import get_color_names
+from vispy.color import get_color_names, Color
 
 from .view import QtVectorsLayer
 
@@ -135,7 +136,6 @@ class Vectors(Layer):
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
 
-        self.viewer._child_layer_changed = True
         self.refresh()
 
     def _convert_to_vector_type(self, vectors):
@@ -349,6 +349,19 @@ class Vectors(Layer):
         self._color = color
         self.refresh()
 
+    @property
+    def svg_props(self):
+        """dict: color and width properties in the svg specification
+        """
+        width = str(self.width)
+        edge_color = (255 * Color(self.color).rgba).astype(np.int)
+        stroke = f'rgb{tuple(edge_color[:3])}'
+        opacity = str(self.opacity)
+
+        props = {'stroke': stroke, 'stroke-width': width, 'opacity': opacity}
+
+        return props
+
     # =========================== Napari Layer ABC methods ===================
     @property
     def data(self) -> np.ndarray:
@@ -364,12 +377,19 @@ class Vectors(Layer):
         else:
             return np.max(self.vectors, axis=0) + 1
 
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
+    @property
+    def range(self):
+        """list of 3-tuple of int: ranges of data for slicing specifed by
+        (min, max, step).
         """
-        self._need_display_update = True
-        self._update()
+        if len(self.vectors) == 0:
+            maxs = [1, 1]
+            mins = [0, 0]
+        else:
+            maxs = np.max(self.vectors, axis=0) + 1
+            mins = np.min(self.vectors, axis=0)
+
+        return [(min, max, 1) for min, max in zip(mins, maxs)]
 
     def _generate_meshes(self, vectors, width):
         """Generates list of mesh vertices and triangles from a list of vectors
@@ -403,26 +423,8 @@ class Vectors(Layer):
 
         return vertices, triangles
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
-
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
 
         vertices = self._mesh_vertices
         faces = self._mesh_triangles
@@ -435,3 +437,27 @@ class Vectors(Layer):
 
         self._need_visual_update = True
         self._update()
+
+    def to_xml_list(self):
+        """Convert the vectors to a list of xml elements according to the svg
+        specification. Each vector is represented by a line.
+
+        Returns
+        ----------
+        xml : list
+            List of xml elements defining each marker according to the
+            svg specification
+        """
+        xml_list = []
+
+        for i in range(len(self.vectors)//2):
+            x1 = str(self.vectors[2*i, 0])
+            y1 = str(self.vectors[2*i, 1])
+            x2 = str(self.vectors[2*i+1, 0])
+            y2 = str(self.vectors[2*i+1, 1])
+
+            element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2,
+                              **self.svg_props)
+            xml_list.append(element)
+
+        return xml_list

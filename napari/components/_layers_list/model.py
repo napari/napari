@@ -5,117 +5,52 @@ from ...layers import Layer
 
 from ...util.naming import inc_name_count
 from ...util.list import ListModel
-from .view import QtLayersPanel
 
 
 def _add(event):
-    """Callback when an item is added to set its order and viewer.
-    """
+    """When a layer is added, set its name and order."""
     layers = event.source
     layer = event.item
     layer.name = layers._coerce_name(layer.name, layer)
     layer._order = -len(layers)
-    layer.viewer = layers.viewer
-    layer.events.select.connect(layers.viewer._update_layer_selection)
-    layer.events.deselect.connect(layers.viewer._update_layer_selection)
 
 
 def _remove(event):
-    """Callback when an item is removed to remove its viewer
-    and reset its order.
-    """
+    """When a layer is removed, remove its viewer."""
     layers = event.source
     layer = event.item
-    layer.viewer = None
     layer._order = 0
-    layer.events.select.disconnect(layers.viewer._update_layer_selection)
-    layer.events.deselect.disconnect(layers.viewer._update_layer_selection)
+    layer._parent = None
 
 
 def _reorder(event):
-    """Callback when the list is reordered to propagate those changes
-    to the node draw order.
-    """
+    """When the list is reordered, propagate those changes to draw order."""
     layers = event.source
     for i in range(len(layers)):
         layers[i]._order = -i
-    canvas = layers.viewer._qtviewer.canvas
-    canvas._draw_order.clear()
-    canvas.update()
 
 
 class LayersList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
-    Parameters
-    ----------
-    viewer : Viewer, optional
-        Parent viewer.
-
     Attributes
     ----------
-    viewer : Viewer
-        Parent viewer.
     events : vispy.util.event.EmitterGroup
         Event hooks:
             * added(item, index): whenever an item is added
             * removed(item): whenever an item is removed
             * reordered(): whenever the list is reordered
     """
-    def __init__(self, viewer=None):
+    def __init__(self):
         super().__init__(basetype=Layer,
                          lookup={str: lambda q, e: q == e.name})
-        self._viewer = None
-
-        # Connect the add events before setting the viewer so that the
-        # addition will cause the first layer dims to update before any
-        # of the layer properties get set. Note that callbacks get called in
-        # the reverse order that they are made in (i.e. last made called first)
 
         self.events.added.connect(_add)
         self.events.removed.connect(_remove)
         self.events.reordered.connect(_reorder)
 
-        self.viewer = viewer
-        self._qt = QtLayersPanel(self)
-
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
-
-    @property
-    def viewer(self):
-        """Viewer: Parent viewer.
-        """
-        if self._viewer is None:
-            return self._viewer
-
-        return self._viewer()
-
-    @viewer.setter
-    def viewer(self, viewer):
-        prev = self.viewer
-        if viewer == prev:
-            return
-
-        if prev is not None:
-            self.events.added.disconnect(prev._on_layers_change)
-            self.events.removed.disconnect(prev._on_layers_change)
-            self.events.added.disconnect(prev._update_layer_selection)
-            self.events.removed.disconnect(prev._update_layer_selection)
-            self.events.reordered.disconnect(prev._update_layer_selection)
-
-        for layer in self:
-            layer.viewer = viewer
-
-        if viewer is not None:
-            self.events.added.connect(viewer._on_layers_change)
-            self.events.removed.connect(viewer._on_layers_change)
-            self.events.added.connect(viewer._update_layer_selection)
-            self.events.removed.connect(viewer._update_layer_selection)
-            self.events.reordered.connect(viewer._update_layer_selection)
-            viewer = weakref.ref(viewer)
-
-        self._viewer = viewer
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.

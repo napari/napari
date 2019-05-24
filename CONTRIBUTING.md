@@ -58,6 +58,8 @@ python -m napari.resources.build_icons
 
 This creates separate folders in `napari/resources/icons` with full colored icon sets for each of our themes.
 
+Make sure that the file `napari/resources/icons/res.qrc` has a list of all the icons with the correct prefix for each of our themes, e.g. `<file>icons/light/select.svg</file>`, `<file>icons/dark/select.svg</file>`, etc.
+
 Finally, compile all the icons for use in the app by calling.
 
 ```sh

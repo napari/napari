@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import ndimage as ndi
-from copy import copy
+from xml.etree.ElementTree import Element
+from base64 import b64encode
+from imageio import imwrite
 
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
@@ -12,8 +14,7 @@ from .._register import add_to_viewer
 
 from .view import QtLabelsLayer
 from .view import QtLabelsControls
-from ._constants import Mode, BACKSPACE
-from vispy.color import Colormap
+from ._constants import Mode
 
 
 @add_to_viewer
@@ -187,7 +188,7 @@ class Labels(Layer):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
-        self.cursor_size = self._brush_size/self._get_rescale()
+        self.cursor_size = self._brush_size / self.scale_factor
         self.events.brush_size()
 
         self.refresh()
@@ -251,7 +252,7 @@ class Labels(Layer):
             self.help = ('hold <space> to pan/zoom, '
                          'click to pick a label')
         elif mode == Mode.PAINT:
-            self.cursor_size = self.brush_size/self._get_rescale()
+            self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
             self.help = ('hold <space> to pan/zoom, '
@@ -273,54 +274,15 @@ class Labels(Layer):
     def _get_shape(self):
         return self.image.shape
 
-    def _update(self):
-        """Update the underlying visual.
-        """
-        if self._need_display_update:
-            self._need_display_update = False
-
-            self._node._need_colortransform_update = True
-            self._set_view_slice(self.viewer.dims.indices)
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
-
-    def _get_rescale(self):
-        """Get conversion factor from canvas coordinates to image coordinates.
-        Depends on the current zoom level.
-
-        Returns
-        ----------
-        rescale : float
-            Conversion factor from canvas coordinates to image coordinates.
-        """
-        transform = self.viewer._canvas.scene.node_transform(self._node)
-        rescale = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-
-        return rescale.mean()
-
-    def _get_indices(self, indices):
+    def _get_indices(self):
         """Gets the slice indices.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
 
         Returns
         -------
         slice_indices : tuple
             Tuple of indices corresponding to the slice
         """
-        ndim = self.ndim
-        indices = list(indices)[-ndim:]
+        indices = list(self.indices)
 
         for dim in range(len(indices)):
             max_dim_index = self.image.shape[dim] - 1
@@ -334,24 +296,15 @@ class Labels(Layer):
         slice_indices = tuple(indices)
         return slice_indices
 
-    def _slice_image(self, indices, image=None):
-        """Determines the slice of image given the indices.
-
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        image : array, optional
-            The image to slice. Defaults to self._image if None.
+    def _slice_image(self):
+        """Determines the slice of image from the indices.
 
         Returns
         -------
         sliced : array or value
             The requested slice.
         """
-        if image is None:
-            image = self._image
-        slice_indices = self._get_indices(indices)
+        slice_indices = self._get_indices()
 
         self._image_view = np.asarray(self.image[slice_indices])
 
@@ -359,16 +312,10 @@ class Labels(Layer):
 
         return sliced
 
-    def _set_view_slice(self, indices):
-        """Sets the view given the indices to slice with.
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
 
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-
-        sliced_image = self._slice_image(indices)
+        sliced_image = self._slice_image()
         self._node.set_data(sliced_image)
 
         self._need_visual_update = True
@@ -396,7 +343,7 @@ class Labels(Layer):
     def method(self, method):
         self._node.method = method
 
-    def fill(self, indices, coord, old_label, new_label):
+    def fill(self, coord, old_label, new_label):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working either just in the current slice if
@@ -405,26 +352,22 @@ class Labels(Layer):
 
         Parameters
         ----------
-        indices : sequence of int or slice
-            Indices that make up the slice.
-        coord : sequence of int
+        coord : sequence of float
             Position of mouse cursor in image coordinates.
         old_label : int
             Value of the label image at the coord to be replaced.
         new_label : int
             Value of the new label to be filled in.
         """
-        int_coord = list(coord)
-        int_coord[-2] = int(round(coord[-2]))
-        int_coord[-1] = int(round(coord[-1]))
+        int_coord = np.round(coord).astype(int)
 
-        if self.n_dimensional or self.image.ndim == 2:
+        if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self._image
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
-            slice_indices = self._get_indices(indices)
+            slice_indices = self._get_indices()
             labels = self._image_view
             slice_coord = tuple(int_coord[-2:])
 
@@ -440,7 +383,7 @@ class Labels(Layer):
         # Replace target pixels with new_label
         labels[matches] = new_label
 
-        if not (self.n_dimensional or self.image.ndim == 2):
+        if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw image
             self._image[slice_indices] = labels
 
@@ -461,7 +404,7 @@ class Labels(Layer):
             Rounded pixel value
         """
 
-        pix = int(np.clip(round(pos), 0, self.shape[axis]-1))
+        pix = np.clip(int(round(pos)), 0, self._get_shape()[axis])
         return pix
 
     def paint(self, coord, new_label):
@@ -476,19 +419,17 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
-        if self.n_dimensional or self.image.ndim == 2:
+        if self.n_dimensional or self.ndim == 2:
             slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
                                        self._to_pix(ind+self.brush_size/2, i),
-                                       1) for i, ind
-                                in enumerate(coord)])
+                                       1) for i, ind in enumerate(coord)])
         else:
             slice_coord = tuple(list(np.array(coord[:-2]).astype(int)) +
                                 [slice(self._to_pix(ind-self.brush_size/2,
-                                                    len(self.shape) - 2 + i),
+                                                    self.ndim - 2 + i),
                                        self._to_pix(ind+self.brush_size/2,
-                                                    len(self.shape) - 2 + i),
-                                       1) for i, ind
-                                in enumerate(coord[-2:])])
+                                                    self.ndim - 2 + i), 1)
+                                 for i, ind in enumerate(coord[-2:])])
 
         # update the labels image
         self._image[slice_coord] = new_label
@@ -521,39 +462,26 @@ class Labels(Layer):
 
         return coords
 
-    def get_label(self, position, indices):
+    def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
-        Parameters
-        ----------
-        position : sequence of two int
-            Position of mouse cursor in canvas.
-        indices : sequence of int or slice
-            Indices that make up the slice.
-
         Returns
         ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        label : int
-            Value of the label image at the coord.
+        coord : sequence of float
+            Position of mouse cursor in data.
+        value : int or float or sequence of int or float
+            Value of the data at the coord.
         """
-        transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map(position)
-        pos = [np.clip(pos[1], 0, self._image_view.shape[0]-1),
-               np.clip(pos[0], 0, self._image_view.shape[1]-1)]
-        coord = list(indices)
-        coord[-2] = pos[0]
-        coord[-1] = pos[1]
-        int_coord = copy(coord)
-        int_coord[-2] = int(round(coord[-2]))
-        int_coord[-1] = int(round(coord[-1]))
-        label = self._image_view[tuple(int_coord[-2:])]
+        coord = list(self.coordinates)
+        coord[-2:] = np.clip(coord[-2:], 0,
+                             np.asarray(self._image_view.shape) - 1)
 
-        return coord[-self.image.ndim:], label
+        value = self._image_view[tuple(np.round(coord[-2:]).astype(int))]
 
-    def get_message(self, coord, label):
+        return coord, value
+
+    def get_message(self, coord, value):
         """Generates a string based on the coordinates and information about
         what shapes are hovered over
 
@@ -561,7 +489,7 @@ class Labels(Layer):
         ----------
         coord : sequence of int
             Position of mouse cursor in image coordinates.
-        label : int
+        value : int
             Value of the label image at the coord.
 
         Returns
@@ -569,15 +497,37 @@ class Labels(Layer):
         msg : string
             String containing a message that can be used as a status update.
         """
-        int_coord = copy(coord)
-        int_coord[-2] = int(round(coord[-2]))
-        int_coord[-1] = int(round(coord[-1]))
-        msg = f'{int_coord}, {self.name}, label {label}'
+        int_coord = np.round(coord).astype(int)
+        msg = f'{int_coord}, {self.name}, label {value}'
 
         return msg
 
+    def to_xml_list(self):
+        """Generates a list with a single xml element that defines the
+        currently viewed image as a png according to the svg specification.
+
+        Returns
+        ----------
+        xml : list of xml.etree.ElementTree.Element
+            List of a single xml element specifying the currently viewed image
+            as a png according to the svg specification.
+        """
+        image = self.raw_to_displayed(self._image_view)
+        mapped_image = (self.colormap.map(image)*255).astype('uint8')
+        mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
+        image_str = imwrite('<bytes>', mapped_image, format='png')
+        image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
+        props = {'xlink:href': image_str}
+        width = str(self.shape[-1])
+        height = str(self.shape[-2])
+        opacity = str(self.opacity)
+        xml = Element('image', width=width, height=height, opacity=opacity,
+                      **props)
+        return [xml]
+
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
+        """Called whenever mouse pressed in canvas.  Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -586,8 +536,8 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        indices = self.viewer.dims.indices
-        coord, label = self.get_label(event.pos, indices)
+        self.coordinates = event.pos
+        coord, label = self.get_value()
 
         if self.mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
@@ -604,13 +554,14 @@ class Labels(Layer):
             # Fill clicked on region with new label
             old_label = label
             new_label = self.selected_label
-            self.fill(indices, coord, old_label, new_label)
+            self.fill(coord, old_label, new_label)
             self.status = self.get_message(coord, new_label)
         else:
             raise ValueError("Mode not recongnized")
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
+        """Called whenever mouse moves over canvas.  Converts the `event.pos`
+        from canvas coordinates to `self.coordinates` in image coordinates.
 
         Parameters
         ----------
@@ -619,8 +570,8 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        indices = self.viewer.dims.indices
-        coord, label = self.get_label(event.pos, indices)
+        self.coordinates = event.pos
+        coord, label = self.get_value()
 
         if self.mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label

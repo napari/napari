@@ -39,7 +39,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-Note that many of our examples use `data` from `skimage` but `skimage` is otherwise not a dependnecy, so to run all the examples you should call
+Note that many of our examples use `data` from `skimage` but `skimage` is otherwise not a dependnecy, so in order to be able to run all the examples you should call
 
 ```sh
 $ pip install scikit-image
@@ -52,8 +52,8 @@ From inside an IPython shell or Jupyter notebook you can open up an interactive 
 ```python
 %gui qt5
 from skimage import data
-from napari import ViewerApp
-viewer = ViewerApp(data.astronaut())
+import napari
+viewer = napari.view(data.astronaut(), multichannel=True)
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -62,14 +62,14 @@ To do the same thing inside a script call
 
 ```python
 from skimage import data
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
-    viewer = ViewerApp(data.astronaut())
+    viewer = napari.view(data.astronaut())
 ```
 
-## more features
+## features
 
 Check out the scripts in the `examples` folder to see some of the functionality we're developing!
 
@@ -78,15 +78,15 @@ For example, you can add multiple images in different layers and adjust them
 ```python
 from skimage import data
 from skimage.color import rgb2gray
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
     # create the viewer with four layers
-    viewer = ViewerApp(astronaut=rgb2gray(data.astronaut()),
-                       photographer=data.camera(),
-                       coins=data.coins(),
-                       moon=data.moon())
+    viewer = napari.view(astronaut=rgb2gray(data.astronaut()),
+                         photographer=data.camera(),
+                         coins=data.coins(),
+                         moon=data.moon())
     # remove a layer
     viewer.layers.remove('coins')
     # swap layer order
@@ -98,14 +98,15 @@ with app_context():
 You can add markers on top of an image
 
 ```python
+import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
-    # setup viewer
-    viewer = ViewerApp()
+    # set up viewer
+    viewer = napari.Viewer()
     viewer.add_image(rgb2gray(data.astronaut()))
     # create three xy coordinates
     points = np.array([[100, 100], [200, 200], [333, 111]])
@@ -126,13 +127,13 @@ with app_context():
  [333, 111]]
 ```
 
-Finally, you can render and quickly browse slices of multi-dimensional arrays
+You can render and quickly browse slices of multi-dimensional arrays
 
 ```python
 
 import numpy as np
 from skimage import data
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
@@ -141,19 +142,30 @@ with app_context():
                                         n_dim=3, volume_fraction=f)
                      for f in np.linspace(0.05, 0.5, 10)], axis=-1)
     # add data to the viewer
-    viewer = ViewerApp(blobs.astype(float))
+    viewer = napari.view(blobs.astype(float))
 ```
 
 ![image](resources/screenshot-nD-image.png)
+
+You can draw lines and polygons on an image, including selection and adjustment of shapes and vertices, and control over fill and stroke color. Run `examples/add_shapes.py` to generate and interact with the following example.
+
+![image](resources/screenshot-add-shapes.png)
+
+You can also paint pixel-wise labels, useful for creating masks for segmentation, and fill in closed regions using the paint bucket. Run `examples/labels-0-2d.py` to generate and interact with the following example.
+
+![image](resources/screenshot-add-labels.png)
+
+You can change the theme after creating the viewer by setting the `viewer.theme` property. The viewer currently supports `light` and `dark` themes, with `dark` as the default. Run `examples/set_theme.py` to see an example of changing themes.
+
+![image](resources/screenshot-set-theme.png)
 
 ## plans
 
 We're working on several features, including 
 
-- shape-based annotation (for drawing polygons and bounding boxes)
-- region labeling (for defining segmentation)
-- 3D volumetric rendering
-- support for a plugin ecosystem (for integrating image processing and machine learning tools)
+- support for 3D volumetric rendering
+- support for multiple canvases
+- a plugin ecosystem for integrating image processing and machine learning tools
 
 See [this issue](https://github.com/napari/napari/issues/141) for some of the key use cases we're trying to enable, and feel free to add comments or ideas!
 

@@ -6,18 +6,17 @@ your shapes.
 
 import numpy as np
 from skimage import data
-from skimage.color import rgb2gray
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 from vispy.color import Colormap
 
 with app_context():
     # create the viewer and window
-    viewer = ViewerApp()
+    viewer = napari.Viewer()
 
     # add the image
-    layer = viewer.add_image(data.camera(), name='photographer')
-    layer.colormap = 'gray'
+    img_layer = viewer.add_image(data.camera(), name='photographer')
+    img_layer.colormap = 'gray'
 
     # create a list of polygons
     polygons = [np.array([[11,   13], [111, 113], [22, 246]]),
@@ -59,8 +58,3 @@ with app_context():
     labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
     labels_layer.visible = False
-
-    svg = layer.to_svg()
-    # To save svg file
-    # with open('shape.svg', 'w') as f:
-    #     f.write(svg)

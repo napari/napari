@@ -1,18 +1,18 @@
 """
-Display one markers layer ontop of one image layer using the add_markers and
+Display a markers layer on top of an image layer using the add_markers and
 add_image APIs
 """
 
 import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 
 with app_context():
-    # create the viewer and window
-    viewer = ViewerApp()
+    # create the viewer window
+    viewer = napari.Viewer()
 
     # add the image
     viewer.add_image(rgb2gray(data.astronaut()))
@@ -54,14 +54,15 @@ with app_context():
     # change the layer marker edge color
     layer.edge_color = 'blue'
 
-    # change the layer marker symbol
-    layer.symbol = 'cross'
+    # change the layer marker symbol using an alias
+    layer.symbol = '+'
 
     # change the layer marker n_dimensional status
     layer.n_dimensional = True
 
     # change the layer marker size
     layer.size = 20
+    layer.size = np.array([10, 50, 20])
 
     # change the layer mode
     layer.mode = 'add'

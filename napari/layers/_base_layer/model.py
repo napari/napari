@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from xml.etree.ElementTree import Element, tostring
+import numpy as np
 
 import weakref
 
@@ -27,7 +29,6 @@ class Layer(VisualWrapper, ABC):
 
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice
-        * `_after_set_viewer()`: called after the viewer is set
         * `_qt_properties`: QtWidget inserted into the layer list GUI
         * `_qt_controls`: QtWidget inserted into the controls panel GUI
         * `_basename()`: base/default name of the layer
@@ -38,7 +39,7 @@ class Layer(VisualWrapper, ABC):
     ndim
     shape
     selected
-    viewer
+    indices
 
     Methods
     -------
@@ -48,7 +49,6 @@ class Layer(VisualWrapper, ABC):
     def __init__(self, central_node, name=None):
         super().__init__(central_node)
         self._selected = False
-        self._viewer = None
         self._qt_properties = None
         self._qt_controls = None
         self._freeze = False
@@ -57,9 +57,17 @@ class Layer(VisualWrapper, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
+        self._indices = ()
+        self._cursor_position = (0, 0)
+        self._name = ''
         self.events.add(select=Event,
                         deselect=Event,
-                        name=Event)
+                        name=Event,
+                        status=Event,
+                        help=Event,
+                        interactive=Event,
+                        cursor=Event,
+                        cursor_size=Event)
         self.name = name
 
     def __str__(self):
@@ -83,14 +91,46 @@ class Layer(VisualWrapper, ABC):
 
     @name.setter
     def name(self, name):
+        if name == self.name:
+            return
         if not name:
             name = self._basename()
-
-        if self.viewer:
-            name = self.viewer.layers._coerce_name(name, self)
-
         self._name = name
         self.events.name()
+
+    @property
+    def indices(self):
+        """Tuple of int of Slice: Used for slicing arrays on each dimension.
+        """
+        return self._indices
+
+    @indices.setter
+    def indices(self, indices):
+        if indices == self.indices:
+            return
+        self._indices = indices[-self.ndim:]
+        self._set_view_slice()
+
+    @property
+    def coordinates(self):
+        """Tuple of float: Coordinates of the cursor in the respective image
+        space of each layer.
+
+        The setter expects the a 2-tuple of coordinates in canvas space
+        ordered (x, y) and then transforms them to image space and inserts
+        them into the correct position of the layer indices. The length of the
+        tuple is equal to the number of dimensions of the layer.
+        """
+        return self._coordinates
+
+    @coordinates.setter
+    def coordinates(self, cursor_position):
+        transform = self._node.canvas.scene.node_transform(self._node)
+        position = tuple(transform.map(cursor_position)[:2])
+        coords = list(self.indices)
+        coords[-2] = position[1]
+        coords[-1] = position[0]
+        self._coordinates = tuple(coords)
 
     @property
     @abstractmethod
@@ -105,10 +145,6 @@ class Layer(VisualWrapper, ABC):
 
     @abstractmethod
     def _get_shape(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _refresh(self):
         raise NotImplementedError()
 
     @property
@@ -128,8 +164,7 @@ class Layer(VisualWrapper, ABC):
         """list of 3-tuple of int: ranges of data for slicing specifed by
         (min, max, step).
         """
-        shape = self._get_shape()
-        return [(0, max, 1) for max in shape]
+        return [(0, max, 1) for max in self.shape]
 
     @property
     def selected(self):
@@ -149,29 +184,6 @@ class Layer(VisualWrapper, ABC):
             self.events.deselect()
 
     @property
-    def viewer(self):
-        """Viewer: Parent viewer widget.
-        """
-        if self._viewer is not None:
-            return self._viewer()
-
-    @viewer.setter
-    def viewer(self, viewer):
-        prev = self.viewer
-        if viewer == prev:
-            return
-
-        if viewer is None:
-            self._viewer = None
-            parent = None
-        else:
-            self._viewer = weakref.ref(viewer)
-            parent = viewer._view.scene
-
-        self._parent = parent
-        self._after_set_viewer(prev)
-
-    @property
     def status(self):
         """string: Status string
         """
@@ -181,7 +193,7 @@ class Layer(VisualWrapper, ABC):
     def status(self, status):
         if status == self.status:
             return
-        self.viewer.status = status
+        self.events.status(status=status)
         self._status = status
 
     @property
@@ -195,7 +207,7 @@ class Layer(VisualWrapper, ABC):
     def help(self, help):
         if help == self.help:
             return
-        self.viewer.help = help
+        self.events.help(help=help)
         self._help = help
 
     @property
@@ -208,7 +220,7 @@ class Layer(VisualWrapper, ABC):
     def interactive(self, interactive):
         if interactive == self.interactive:
             return
-        self.viewer.interactive = interactive
+        self.events.interactive(interactive=interactive)
         self._interactive = interactive
 
     @property
@@ -221,7 +233,7 @@ class Layer(VisualWrapper, ABC):
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self.viewer.cursor = cursor
+        self.events.cursor(cursor=cursor)
         self._cursor = cursor
 
     @property
@@ -234,29 +246,34 @@ class Layer(VisualWrapper, ABC):
     def cursor_size(self, cursor_size):
         if cursor_size == self.cursor_size:
             return
-        self.viewer.cursor_size = cursor_size
+        self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
-    def _after_set_viewer(self, prev):
-        """Triggered after a new viewer is set.
-
-        Parameters
-        ----------
-        prev : Viewer
-            Previous viewer.
+    @property
+    def scale_factor(self):
+        """float: Conversion factor from canvas coordinates to image
+        coordinates, which depends on the current zoom level.
         """
-        if self.viewer is not None:
-            self.refresh()
+        transform = self._node.canvas.scene.node_transform(self._node)
+        scale_factor = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
 
-    def _set_view_slice(self, indices):
-        """Called whenever the sliders change. Sets the current view given a
-        specific slice to view.
+        return scale_factor[0]
 
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices that make up the slice.
-        """
+    def _update(self):
+        """Update the underlying visual."""
+        if self._need_display_update:
+            self._need_display_update = False
+            if hasattr(self._node, '_need_colortransform_update'):
+                self._node._need_colortransform_update = True
+            self._set_view_slice()
+
+        if self._need_visual_update:
+            self._need_visual_update = False
+            self._node.update()
+
+    @abstractmethod
+    def _set_view_slice(self):
+        raise NotImplementedError()
 
     def refresh(self):
         """Fully refreshes the layer. If layer is frozen refresh will not occur
@@ -265,11 +282,84 @@ class Layer(VisualWrapper, ABC):
             return
         self._refresh()
 
+    def _refresh(self):
+        """Fully refresh the underlying visual.
+        """
+        self._need_display_update = True
+        self._update()
+
     @contextmanager
     def freeze_refresh(self):
         self._freeze = True
         yield
         self._freeze = False
+
+    def to_xml_list(self):
+        """Generates a list of xml elements for the layer.
+
+        Returns
+        ----------
+        xml : list of xml.etree.ElementTree.Element
+            List of a single xml element specifying the currently viewed image
+            as a png according to the svg specification.
+        """
+        return []
+
+    def to_svg(self, file=None, canvas_shape=None):
+        """Convert the current layer state to an SVG.
+
+
+        Parameters
+        ----------
+        file : path-like object, optional
+            An object representing a file system path. A path-like object is
+            either a str or bytes object representing a path, or an object
+            implementing the `os.PathLike` protocol. If passed the svg will be
+            written to this file
+        view_box : 4-tuple, optional
+            View box of SVG canvas to be generated specified as `min-x`,
+            `min-y`, `width` and `height`. If not specified, calculated
+            from the last two dimensions of the layer.
+
+        Returns
+        ----------
+        svg : string
+            SVG representation of the layer.
+        """
+
+        if view_box is None:
+            min_shape = [r[0] for r in self.range[-2:]]
+            max_shape = [r[1] for f in self.range[-2:]]
+            shape = np.subtract(max_shape, min_shape)
+        else:
+            shape = view_box[2:]
+            min_shape = view_box[:2]
+
+        props = {'xmlns': 'http://www.w3.org/2000/svg',
+                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+
+        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
+                      version='1.1', **props)
+
+        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
+        xml_transform = Element('g', transform=transform)
+
+        xml_list = self.to_xml_list()
+        for x in xml_list:
+            xml_transform.append(x)
+        xml.append(xml_transform)
+
+        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
+               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
+               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
+               tostring(xml, encoding='unicode', method='xml'))
+
+        if file:
+            # Save svg to file
+            with open(file, 'w') as f:
+                f.write(svg)
+
+        return svg
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

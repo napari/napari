@@ -1,1 +1,1 @@
-from .main import QtLayersPanel
+from .main import QtLayersList
