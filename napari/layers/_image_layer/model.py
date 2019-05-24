@@ -205,6 +205,9 @@ class Image(Layer):
         self._need_visual_update = True
         self._update()
 
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
+
     @property
     def multichannel(self):
         """bool: Whether the image is multichannel.
@@ -334,8 +337,11 @@ class Image(Layer):
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
-        coord[-2:] = np.clip(coord[-2:], 0,
-                             np.asarray(self._image_view.shape) - 1)
+        if self.multichannel:
+            shape = self._image_view.shape[:-1]
+        else:
+            shape = self._image_view.shape
+        coord[-2:] = np.clip(coord[-2:], 0, np.asarray(shape) - 1)
 
         value = self._image_view[tuple(coord[-2:])]
 
