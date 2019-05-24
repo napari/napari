@@ -40,6 +40,10 @@ class ViewerWidget:
                                    status=Event,
                                    help=Event,
                                    title=Event,
+                                   interactive=Event,
+                                   cursor=Event,
+                                   cursor_size=Event,
+                                   reset_view=Event,
                                    active_layer=Event)
 
         # Initial dimension must be set to at least the number of visible
@@ -134,8 +138,8 @@ class ViewerWidget:
     def interactive(self, interactive):
         if interactive == self.interactive:
             return
-        self._qtviewer.view.interactive = interactive
         self._interactive = interactive
+        self.events.interactive()
 
     @property
     def cursor(self):

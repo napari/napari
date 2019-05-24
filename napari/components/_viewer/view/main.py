@@ -73,6 +73,11 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
+        self.viewer.events.interactive.connect(self._on_interactive)
+
+    def _on_interactive(self, event):
+        self.view.interactive = self.viewer.interactive
+
     def set_cursor(self, cursor, size=10):
         if cursor == 'square':
             if size < 10 or size > 300:
