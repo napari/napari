@@ -205,9 +205,6 @@ class Image(Layer):
 
         self._need_visual_update = True
 
-        coord, value, msg = self.get_value(self._pos, indices)
-        self.status = msg
-
         self._update()
 
         coord, value = self.get_value()
