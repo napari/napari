@@ -60,7 +60,7 @@ class ViewerModel:
         self.key_bindings = {}
 
         # TODO: this should be eventually removed!
-        # attaced by QtViewer when it is constructed by the model
+        # attached by QtViewer when it is constructed by the model
         self._scene = None
 
         self.dims.events.axis.connect(lambda e: self._update_layers())
