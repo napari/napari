@@ -11,6 +11,23 @@ with open(_matplotlib_list_file) as fin:
     matplotlib_colormaps = [line.rstrip() for line in fin]
 
 
+primary_color_names = ['red', 'green', 'blue',
+                       'cyan', 'magenta', 'yellow']
+primary_colors = np.array([
+        (1, 0, 0),
+        (0, 1, 0),
+        (0, 0, 1),
+        (0, 1, 1),
+        (1, 0, 1),
+        (1, 1, 0),
+    ], dtype=float)
+
+
+simple_colormaps = {name: vispy.color.Colormap([[0., 0., 0.], color])
+                    for name, color in
+                    zip(primary_color_names, primary_colors)}
+
+
 def _all_rgb():
     """Return all 256**3 valid rgb tuples."""
     base = np.arange(256, dtype=np.uint8)

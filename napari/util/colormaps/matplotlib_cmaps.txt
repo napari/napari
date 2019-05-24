@@ -7,7 +7,4 @@ hsv
 twilight
 twilight_shifted
 gist_earth
-RdYlBu
-coolwarm
 PiYG
-bone
