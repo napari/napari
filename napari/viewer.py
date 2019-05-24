@@ -1,13 +1,13 @@
 import os.path as osp
 
 from .components._viewer.view import QtViewer
-from .components import Window, ViewerWidget
+from .components import Window, ViewerModel
 from .resources import resources_dir
 from .util.theme import template, palettes
 from .util.misc import has_clims
 
 
-class Viewer(ViewerWidget):
+class Viewer(ViewerModel):
     """Napari ndarray viewer.
 
     Parameters
@@ -20,8 +20,9 @@ class Viewer(ViewerWidget):
 
     def __init__(self, title='napari'):
         super().__init__(title=title)
-        self._qtviewer = QtViewer(self)
-        self.window = Window(self)
+        qt_viewer = QtViewer(self)
+        self.window = Window(qt_viewer)
+        self.screenshot = self.window.qt_viewer.screenshot
         self.theme = 'dark'
 
     @property
@@ -47,7 +48,7 @@ class Viewer(ViewerWidget):
 
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
-        self._qtviewer.setStyleSheet(themed_stylesheet)
+        self.window.qt_viewer.setStyleSheet(themed_stylesheet)
 
         # set window styles which don't use the primary stylesheet
         self.window._status_bar.setStyleSheet(
@@ -63,5 +64,5 @@ class Viewer(ViewerWidget):
                     palette['foreground'], palette['highlight'])
 
         # set styles on dims sliders
-        for slider in self._qtviewer.dims.sliders:
+        for slider in self.window.qt_viewer.dims.sliders:
             slider.setColors(palette['foreground'], palette['highlight'])

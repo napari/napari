@@ -1,1 +1,1 @@
-from .model import ViewerWidget
+from .model import ViewerModel
