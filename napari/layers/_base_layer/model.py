@@ -122,7 +122,7 @@ class Layer(VisualWrapper, ABC):
         ordered (x, y) and then transforms them to image space and inserts
         them into the correct position of the layer indices. The length of the
         tuple is equal to the number of dimensions of the layer. If ``None`` is
-        passed then (0, 0) in will replace necessary the layer indices.
+        passed then (0, 0) will replace necessary the layer indices.
         """
         return self._coordinates
 
