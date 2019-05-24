@@ -71,7 +71,7 @@ ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
 ALL_COLORMAPS.update(simple_colormaps)
 
 # ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.values())}
+AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 
 @add_to_viewer
 class Image(Layer):
