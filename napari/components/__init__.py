@@ -6,7 +6,7 @@ Classes
 -------
 Window
     Window containing file menus, toolbars, and viewers.
-Viewer
+ViewerWidget
     Data viewer displaying the currently rendered scene and
     layer-related controls.
 """
@@ -19,6 +19,6 @@ with warnings.catch_warnings():
                             message=vispy_warning)
 
     from ._window import Window, QtApplication
-from ._viewer import Viewer
+from ._viewer import ViewerWidget
 from ._layers_list import LayersList
 from ._dims import Dims

@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import ndimage as ndi
-from copy import copy
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
@@ -15,8 +14,7 @@ from .._register import add_to_viewer
 
 from .view import QtLabelsLayer
 from .view import QtLabelsControls
-from ._constants import Mode, BACKSPACE
-from vispy.color import Colormap
+from ._constants import Mode
 
 
 @add_to_viewer

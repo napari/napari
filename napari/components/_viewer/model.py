@@ -10,7 +10,7 @@ from ...util.misc import has_clims
 from .._dims import Dims
 
 
-class Viewer:
+class ViewerWidget:
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -23,7 +23,7 @@ class Viewer:
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
     camera : vispy.scene.Camera
-        Viewer camera.
+        ViewerWidget camera.
     key_bindings : dict of string: callable
         Custom key bindings. The dictionary key is a string containing the key
         pressed and the value is the function to be bound to the key event.
@@ -80,7 +80,7 @@ class Viewer:
 
     @property
     def camera(self):
-        """vispy.scene.Camera: Viewer camera.
+        """vispy.scene.Camera: ViewerWidget camera.
         """
         return self._view.camera
 

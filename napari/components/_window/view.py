@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
 from qtpy.QtCore import Qt
 
-from .._viewer import Viewer
+from .._viewer import ViewerWidget
 
 
 class Window:
@@ -9,12 +9,12 @@ class Window:
 
     Parameters
     ----------
-    viewer : Viewer
+    viewer : ViewerWidget
         Contained viewer.
 
     Attributes
     ----------
-    viewer : Viewer
+    viewer : ViewerWidget
         Contained viewer.
     """
     def __init__(self, viewer, show=True):
