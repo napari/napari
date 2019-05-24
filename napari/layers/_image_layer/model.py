@@ -66,10 +66,12 @@ def vispy_or_mpl_colormap(name):
     return cmap
 
 
-AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
-                       for k in matplotlib_colormaps}
-AVAILABLE_COLORMAPS.update(simple_colormaps)
+# A dictionary mapping names to VisPy colormap objects
+ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
+ALL_COLORMAPS.update(simple_colormaps)
 
+# ... sorted alphabetically by name
+AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.values())}
 
 @add_to_viewer
 class Image(Layer):
