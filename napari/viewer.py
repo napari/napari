@@ -14,7 +14,14 @@ class Viewer(ViewerModel):
     ----------
     title : string
         The title of the viewer window.
+
+    Attributes
+    ----------
+    themes : dict of str: dict of str: str
+        Preset color palettes.
     """
+    themes = palettes
+
     with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
         raw_stylesheet = f.read()
 
@@ -23,28 +30,22 @@ class Viewer(ViewerModel):
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
         self.screenshot = self.window.qt_viewer.screenshot
+
+        self._palette = None
         self.theme = 'dark'
 
     @property
-    def theme(self):
-        """string: Color theme.
+    def palette(self):
+        """dict of str: str : Color palette with which to style the viewer.
         """
-        try:
-            return self._theme
-        except AttributeError:
-            return None
+        return self._palette
 
-    @theme.setter
-    def theme(self, theme):
-        if self.theme is not None and theme == self.theme:
+    @palette.setter
+    def palette(self, palette):
+        if palette == self.palette:
             return
-        self._theme = theme
 
-        if theme not in palettes.keys():
-            raise KeyError("Theme '%s' not found, options are %s."
-                           % (theme, list(palettes.keys())))
-
-        palette = palettes[theme]
+        self._palette = palette
 
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
@@ -66,3 +67,22 @@ class Viewer(ViewerModel):
         # set styles on dims sliders
         for slider in self.window.qt_viewer.dims.sliders:
             slider.setColors(palette['foreground'], palette['highlight'])
+
+    @property
+    def theme(self):
+        """string or None : Preset color palette.
+        """
+        for theme, palette in self.themes.items():
+            if palette == self.palette:
+                return theme
+
+    @theme.setter
+    def theme(self, theme):
+        if theme == self.theme:
+            return
+
+        try:
+            self.palette = self.themes[theme]
+        except KeyError:
+            raise ValueError(f"Theme '{theme}' not found; "
+                             f"options are {list(self.themes)}.")
