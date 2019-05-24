@@ -121,7 +121,7 @@ class Layer(VisualWrapper, ABC):
         The setter expects the a 2-tuple of coordinates in canvas space
         ordered (x, y) and then transforms them to image space and inserts
         them into the correct position of the layer indices. The length of the
-        tuple is equal to the number of dimensions of the layer. If `None` is
+        tuple is equal to the number of dimensions of the layer. If ``None`` is
         passed then (0, 0) in will replace necessary the layer indices.
         """
         return self._coordinates
