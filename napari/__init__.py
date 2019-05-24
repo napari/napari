@@ -5,7 +5,7 @@ vispy_warning = "VisPy is not yet compatible with matplotlib 2.2+"
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning,
                             message=vispy_warning)
-    from .components import Window, ViewerWidget
+    from .components import Window
     from .viewer import Viewer
 
 from ._view import view

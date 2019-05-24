@@ -1,1 +1,2 @@
-from .model import ViewerWidget
+from .model import ViewerModel
+from .view import QtViewer
