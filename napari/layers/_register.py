@@ -1,7 +1,7 @@
 import re
 import inspect
 
-from ..components import Viewer
+from ..components import ViewerWidget
 
 
 template = """def {name}(self, {signature}):
@@ -135,7 +135,7 @@ def create_func(cls, name=None, doc=None):
 
 def _register(cls, *, name=None, doc=None):
     func = create_func(cls, name=name, doc=doc)
-    setattr(Viewer, func.__name__, func)
+    setattr(ViewerWidget, func.__name__, func)
     return cls
 
 
