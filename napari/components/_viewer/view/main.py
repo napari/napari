@@ -28,19 +28,19 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
-
-        # TO DO: Remove
-        self.viewer._scene = self.view.scene
 
         # Set 2D camera (the camera will scale to the contents in the scene)
         self.view.camera = PanZoomCamera(aspect=1)
         # flip y-axis to have correct aligment
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
-
         self.view.camera.viewbox_key_event = viewbox_key_event
+
+        # TO DO: Remove
+        self.viewer._view = self.view
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -172,6 +172,11 @@ class QtViewer(QSplitter):
         if layer is not None:
             layer.on_key_release(event)
 
+    def on_draw(self, event):
+        """Called whenever drawn in canvas. Called for all layers, not just top
+        """
+        for layer in self.viewer.layers:
+            layer.on_draw(event)
 
 def viewbox_key_event(event):
     """ViewBox key event handler

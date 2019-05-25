@@ -529,8 +529,7 @@ class Labels(Layer):
         return [xml]
 
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.  Converts the `event.pos`
-        from canvas coordinates to `self.coordinates` in image coordinates.
+        """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
@@ -539,7 +538,7 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        self.coordinates = event.pos
+        self.position = tuple(event.pos)
         coord, label = self.get_value()
 
         if self.mode == Mode.PAN_ZOOM:
@@ -563,8 +562,7 @@ class Labels(Layer):
             raise ValueError("Mode not recongnized")
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.  Converts the `event.pos`
-        from canvas coordinates to `self.coordinates` in image coordinates.
+        """Called whenever mouse moves over canvas.
 
         Parameters
         ----------
@@ -573,7 +571,7 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        self.coordinates = event.pos
+        self.position = tuple(event.pos)
         coord, label = self.get_value()
 
         if self.mode == Mode.PAINT and event.is_dragging:

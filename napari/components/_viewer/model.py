@@ -61,7 +61,7 @@ class ViewerModel:
 
         # TODO: this should be eventually removed!
         # attached by QtViewer when it is constructed by the model
-        self._scene = None
+        self._view = None
 
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
@@ -244,8 +244,8 @@ class ViewerModel:
         layer.events.name.connect(self._update_name)
 
         self.layers.append(layer)
+        layer.parent = self._view
         layer.indices = self.dims.indices
-        layer._parent = self._scene
 
         if self.theme is not None and has_clims(layer):
             palette = palettes[self.theme]

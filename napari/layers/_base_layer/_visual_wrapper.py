@@ -36,6 +36,7 @@ class VisualWrapper:
     def __init__(self, central_node):
         self._node = central_node
         self._blending = 'translucent'
+        self._parent = None
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    blending=Event,
@@ -72,14 +73,15 @@ class VisualWrapper:
         self._node.order = order
 
     @property
-    def _parent(self):
-        """vispy.scene.Node: Parent node.
+    def parent(self):
+        """vispy.View: View containing parent node and camera.
         """
-        return self._node.parent
+        return self._parent
 
-    @_parent.setter
-    def _parent(self, parent):
-        self._node.parent = parent
+    @parent.setter
+    def parent(self, parent):
+        self._parent = parent
+        self._node.parent = parent.scene
 
     @property
     def opacity(self):
