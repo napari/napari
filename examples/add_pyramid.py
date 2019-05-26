@@ -25,7 +25,7 @@ with app_context():
     viewer = napari.Viewer()
 
     # add image pyramid
-    viewer.add_pyramid(pyramid)
+    viewer.add_pyramid(pyramid, clim_range=[0, 255])
 
     camera = viewer.window.qt_viewer.view.camera
 
