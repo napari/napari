@@ -28,5 +28,10 @@ with app_context():
     viewer.add_pyramid(pyramid)
 
     camera = viewer.window.qt_viewer.view.camera
-    camera.rect = (-.1*pyramid[0].shape[1], 0, 1.2*pyramid[0].shape[1],
-                   pyramid[0].shape[0])
+
+    # Set the view box of the camera to include the whole base image of the
+    # pyramid with a little padding. The view box is a 4-tuple of the x, y
+    # corner position followed by width and height
+    base_shape = pyramid[0].shape
+    camera.rect = (-0.1 * base_shape[1], -0.1 * base_shape[0],
+                   1.2 * base_shape[1], 1.2 * base_shape[0])
