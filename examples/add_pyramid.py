@@ -15,7 +15,7 @@ rows, cols, dim = image.shape
 
 
 # create pyramid from astronaut image
-astronaut=rgb2gray(data.astronaut())
+astronaut = rgb2gray(data.astronaut())
 base = np.tile(astronaut, (16, 16))
 pyramid = list(pyramid_gaussian(base, downscale=2, multichannel=False))[:-8]
 print([p.shape[:2] for p in pyramid])

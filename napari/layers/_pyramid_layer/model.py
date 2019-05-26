@@ -141,9 +141,9 @@ class Pyramid(Image):
         coord[-2:] = np.clip(coord[-2:], 0, np.asarray(shape) - 1)
         value = self._image_view[tuple(coord[-2:])]
 
-
         pos_in_slice = (self.coordinates[-2:] +
                         self.translate[[1, 0]] / self.scale[:2])
+
         # Make sure pos in slice doesn't go off edge
         shape = self._image_shapes[self._pyramid_level]
         coord = np.clip(pos_in_slice, 0, np.asarray(shape) - 1)
