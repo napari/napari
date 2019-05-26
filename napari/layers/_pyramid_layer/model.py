@@ -41,7 +41,7 @@ class Pyramid(Image):
         self._image_downsamples = avg_shape[0]/avg_shape
         self._pyramid_level = len(pyramid)-1
 
-        self._max_tile_shape = np.array([1200, 1200])
+        self._max_tile_shape = np.array([1600, 1600])
         self._top_left = np.array([0, 0])
 
         super().__init__(pyramid[self._pyramid_level], meta=meta,
@@ -142,13 +142,12 @@ class Pyramid(Image):
         value = self._image_view[tuple(coord[-2:])]
 
 
-        pos_in_slice = (self.coordinates[-2:] + self.translate[[1, 0]] / self.scale[:2])
+        pos_in_slice = (self.coordinates[-2:] +
+                        self.translate[[1, 0]] / self.scale[:2])
         # Make sure pos in slice doesn't go off edge
         shape = self._image_shapes[self._pyramid_level]
         coord = np.clip(pos_in_slice, 0, np.asarray(shape) - 1)
         coord = np.round(coord*self.scale[:2]).astype(int)
-
-        #print(pos_in_slice, shape, coord, self.scale[:2])
 
         return coord, value
 
@@ -166,9 +165,18 @@ class Pyramid(Image):
         level : int
             Level of the pyramid to be viewing.
         """
-        size = camera.rect.size
-        level = np.round(np.clip(np.log2(np.array(size).min())-8, 0,
-                                 len(self.pyramid)-1)).astype('int')
+        # Requested field of view from the camera in log units
+        size = np.log2(np.array(camera.rect.size).max())
+
+        # Max allowed tile in log units
+        max_size = np.log2(self._max_tile_shape.max())
+
+        # Allow for 2x coverage of field of view with max tile
+        diff = size - max_size + 1
+
+        # Find closed downsample level to diff
+        level = np.argmin(abs(np.log2(self._image_downsamples)-diff))
+
         return level
 
     def find_top_left(self):
