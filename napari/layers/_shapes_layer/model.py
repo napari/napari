@@ -15,7 +15,7 @@ from .view import QtShapesLayer
 from .view import QtShapesControls
 from ._constants import Mode, Box, BACKSPACE
 from .shape_list import ShapeList
-from .shape_util import create_box, point_to_lines
+from .shape_util import create_box, point_to_lines, slice_by_plane
 from .shapes import Rectangle, Ellipse, Line, Path, Polygon
 
 
@@ -183,7 +183,9 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
             # Add the shape data
-            self.data = ShapeList()
+            self.nd_data = {'2D': ShapeList()}
+            self.nd_data_dim = 2
+            self._data = self.nd_data['2D']
             self.add_shapes(data, shape_type=shape_type, edge_width=edge_width,
                             edge_color=edge_color, face_color=face_color,
                             opacity=opacity, z_index=z_index)
@@ -259,6 +261,8 @@ class Shapes(Layer):
 
     @data.setter
     def data(self, data):
+        if self._data == data:
+            return
         self._data = data
         self.refresh()
 
@@ -441,9 +445,17 @@ class Shapes(Layer):
         """Determines the shape of the vertex data.
         """
         if len(self.data._vertices) == 0:
-            return [1, 1]
+            slice_shape = [1, 1]
         else:
-            return np.max(self.data._vertices, axis=0) + 1
+            slice_shape = list(np.max(self.data._vertices, axis=0) + 1)
+
+        if len(self.nd_data.keys()) == 1:
+            return [1] * (self.nd_data_dim-2) + slice_shape
+        else:
+            keys = list(self.nd_data.keys())
+            keys.remove('2D')
+            max_val = np.array(keys).max(axis=0)
+            return list(max_val) + slice_shape
 
     @property
     def range(self):
@@ -506,37 +518,48 @@ class Shapes(Layer):
             return
 
         if np.array(data[0]).ndim == 1:
-            # If a single array for a shape has been passed
-            if shape_type in self.data._types.keys():
-                shape_cls = self.data._types[shape_type]
-                shape = shape_cls(data, edge_width=edge_width,
-                                  edge_color=edge_color, face_color=face_color,
-                                  opacity=opacity, z_index=z_index)
-            else:
-                raise ValueError("""shape_type not recognized, must be one of
-                                 "{'line', 'rectangle', 'ellipse', 'path',
-                                 'polygon'}"
-                                 """)
-            self.data.add(shape)
-        else:
-            # Turn input arguments into iterables
-            shape_types = ensure_iterable(shape_type)
-            edge_widths = ensure_iterable(edge_width)
-            opacities = ensure_iterable(opacity)
-            z_indices = ensure_iterable(z_index)
-            edge_colors = ensure_iterable(edge_color, color=True)
-            face_colors = ensure_iterable(face_color, color=True)
+            # If a single array for a shape has been passed turn into list
+            data = [data]
 
-            for d, st, ew, ec, fc, o, z, in zip(data, shape_types, edge_widths,
-                                                edge_colors, face_colors,
-                                                opacities, z_indices):
-                shape_cls = self.data._types[st]
-                shape = shape_cls(d, edge_width=ew, edge_color=ec,
+        # Turn input arguments into iterables
+        shape_types = ensure_iterable(shape_type)
+        edge_widths = ensure_iterable(edge_width)
+        opacities = ensure_iterable(opacity)
+        z_indices = ensure_iterable(z_index)
+        edge_colors = ensure_iterable(edge_color, color=True)
+        face_colors = ensure_iterable(face_color, color=True)
+
+        for d, st, ew, ec, fc, o, z, in zip(data, shape_types, edge_widths,
+                                            edge_colors, face_colors,
+                                            opacities, z_indices):
+            shape_cls = self.data._types[st]
+            key, data_2D = slice_by_plane(d)
+            if key is not False:
+                shape = shape_cls(data_2D, edge_width=ew, edge_color=ec,
                                   face_color=fc, opacity=o, z_index=z)
-                self.data.add(shape)
+                if key == '2D':
+                    self.data.add(shape)
+                elif key in self.nd_data:
+                    self.nd_data[key].add(shape)
+                else:
+                    self.nd_data[key] = ShapeList()
+                    self.nd_data[key].add(shape)
+                    if len(key) > self.nd_data_dim:
+                        self.nd_data_dim = len(key)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
+        with self.freeze_refresh():
+            if len(self.indices) == 2:
+                self.data = self.nd_data['2D']
+            else:
+                key = self.indices[:-2]
+                if key not in self.nd_data:
+                    self.nd_data[key] = ShapeList()
+                if not self.data == self.nd_data[key]:
+                    self.data = self.nd_data[key]
+                    self._finish_drawing()
+
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
         colors = self.data._mesh.triangles_colors[z_order]

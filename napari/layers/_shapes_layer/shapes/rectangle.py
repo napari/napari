@@ -10,7 +10,9 @@ class Rectangle(Shape):
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of vertices specifying the shape.
+        Either a 2x2 array specifying the two corners of an axis aligned
+        rectangle, or a 4x2 array specifying the four corners of a boudning box
+        that contains the rectangle. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -40,7 +42,7 @@ class Rectangle(Shape):
 
     @property
     def data(self):
-        """np.ndarray: Nx2 array of vertices.
+        """np.ndarray: 4x2 array of vertices.
         """
         return self._data
 

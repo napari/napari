@@ -3,6 +3,32 @@ from ...util import segment_normal
 from vispy.geometry import PolygonData
 
 
+def slice_by_plane(data):
+    """Determine if shape is entirely definied within a single 2D plane
+
+    Parameters
+    ----------
+    data : np.ndarray
+        NxD array of vertices specifying the shape.
+
+    Returns
+    ----------
+    key : str | tuple of int | bool
+        If shape is 2D return the string '2D', otherwise return the tuple
+        of int defining the 2D plane if the shape is entirely definied
+        within a single 2D plane. Otherwise return False
+    value : np.ndarray | False
+        Nx2 array of vertices specifying the shape in the 2D plane or False
+        if no such specification exists.
+    """
+    if data.shape[1] == 2:
+        return '2D', data
+    elif (data[:, :-2] == data[0, :-2]).all():
+        return tuple(data[0, :-2]), data[:, -2:]
+    else:
+        return False, False
+
+
 def inside_triangles(triangles):
     """Checks which triangles contain the origin
 

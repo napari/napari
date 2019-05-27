@@ -10,7 +10,7 @@ class Line(Shape):
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of vertices specifying the shape.
+        2x2 array of vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -38,7 +38,7 @@ class Line(Shape):
 
     @property
     def data(self):
-        """np.ndarray: Nx2 array of vertices.
+        """np.ndarray: 2x2 array of vertices.
         """
         return self._data
 

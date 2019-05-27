@@ -44,7 +44,7 @@ class Ellipse(Shape):
 
     @property
     def data(self):
-        """np.ndarray: Nx2 array of vertices.
+        """np.ndarray: 4x2 array of vertices.
         """
         return self._data
 
