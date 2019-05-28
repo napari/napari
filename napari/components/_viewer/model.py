@@ -6,7 +6,6 @@ from xml.etree.ElementTree import Element, tostring
 
 from ...util.event import EmitterGroup, Event
 from ...util.theme import palettes
-from ...util.misc import has_clims
 from .._dims import Dims
 
 
@@ -28,7 +27,11 @@ class ViewerModel:
         The function should accept the viewer object as an input argument.
         These key bindings are executed instead of any layer specific key
         bindings.
+    themes : dict of str: dict of str: str
+        Preset color palettes.
     """
+    themes = palettes
+
     def __init__(self, title='napari'):
         super().__init__()
         from .._layers_list import LayersList
@@ -41,7 +44,8 @@ class ViewerModel:
                                    interactive=Event,
                                    cursor=Event,
                                    reset_view=Event,
-                                   active_layer=Event)
+                                   active_layer=Event,
+                                   palette=Event)
 
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
@@ -59,6 +63,9 @@ class ViewerModel:
         self._active_layer = None
         self.key_bindings = {}
 
+        self._palette = None
+        self.theme = 'dark'
+
         # TODO: this should be eventually removed!
         # attached by QtViewer when it is constructed by the model
         self._scene = None
@@ -69,6 +76,39 @@ class ViewerModel:
         self.layers.events.added.connect(self._update_active_layer)
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
+
+    @property
+    def palette(self):
+        """dict of str: str : Color palette with which to style the viewer.
+        """
+        return self._palette
+
+    @palette.setter
+    def palette(self, palette):
+        if palette == self.palette:
+            return
+
+        self._palette = palette
+        self.events.palette(palette=palette)
+
+    @property
+    def theme(self):
+        """string or None : Preset color palette.
+        """
+        for theme, palette in self.themes.items():
+            if palette == self.palette:
+                return theme
+
+    @theme.setter
+    def theme(self, theme):
+        if theme == self.theme:
+            return
+
+        try:
+            self.palette = self.themes[theme]
+        except KeyError:
+            raise ValueError(f"Theme '{theme}' not found; "
+                             f"options are {list(self.themes)}.")
 
     @property
     def status(self):
@@ -246,11 +286,6 @@ class ViewerModel:
         self.layers.append(layer)
         layer.indices = self.dims.indices
         layer._parent = self._scene
-
-        if self.theme is not None and has_clims(layer):
-            palette = palettes[self.theme]
-            layer._qt_controls.climSlider.setColors(
-                palette['foreground'], palette['highlight'])
 
         if len(self.layers) == 1:
             self.reset_view()
