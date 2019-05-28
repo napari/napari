@@ -5,7 +5,6 @@ import numpy as np
 from scipy import signal
 
 from .._base_layer import Layer
-from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Mesh
 from ...util.event import Event
 from ...util import segment_normal
@@ -14,7 +13,6 @@ from vispy.color import get_color_names, Color
 from .view import QtVectorsLayer
 
 
-@add_to_viewer
 class Vectors(Layer):
     """
     Vectors layer renders lines onto the image.

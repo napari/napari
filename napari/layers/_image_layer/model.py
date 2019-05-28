@@ -4,7 +4,6 @@ from base64 import b64encode
 from imageio import imwrite
 
 import numpy as np
-from copy import copy
 from scipy import ndimage as ndi
 from skimage.util import img_as_ubyte
 
@@ -21,8 +20,6 @@ from ...util.misc import guess_metadata
 from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
 from ...util.event import Event
-
-from .._register import add_to_viewer
 
 from .view import QtImageLayer
 from .view import QtImageControls
@@ -75,7 +72,7 @@ ALL_COLORMAPS.update(simple_colormaps)
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 
-@add_to_viewer
+
 class Image(Layer):
     """Image layer.
 

@@ -1,8 +1,8 @@
 import numpy as np
 from math import inf
-from copy import copy
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
+from ... import layers
 
 from ...util.event import EmitterGroup, Event
 from ...util.theme import palettes
@@ -292,6 +292,56 @@ class ViewerModel:
             self.reset_view()
 
         self.layers.unselect_all(ignore=layer)
+
+    def add_image(self, image, *args, **kwargs):
+        """Add an image layer to the layers list.
+
+        See :class:`napari.layers.Image` for a description of valid
+        arguments and keyword arguments.
+        """
+        layer = layers.Image(image, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_markers(self, points, *args, **kwargs):
+        """Add a markers layer to the layers list.
+
+        See :class:`napari.layers.Markers` for a description of valid
+        arguments and keyword arguments.
+        """
+        layer = layers.Markers(points, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_labels(self, label_image, *args, **kwargs):
+        """Add a labels (segmentation) layer to the layers list.
+
+        See :class:`napari.layers.Labels` for a description of valid
+        arguments and keyword arguments.
+        """
+        layer = layers.Labels(label_image, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_shapes(self, shapes, **kwargs):
+        """Add a shapes layer to the layers list.
+
+        See :class:`napari.layers.Shapes` for a description of valid
+        arguments and keyword arguments.
+        """
+        layer = layers.Shapes(shapes, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_vectors(self, vectors, *args, **kwargs):
+        """Add a vectors layer to the layers list.
+
+        See :class:`napari.layers.Vectors` for a description of valid
+        arguments and keyword arguments.
+        """
+        layer = layers.Vectors(vectors, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
 
     def _new_markers(self):
         if self.dims.ndim == 0:

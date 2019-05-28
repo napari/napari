@@ -4,7 +4,6 @@ from xml.etree.ElementTree import Element
 import numpy as np
 
 from .._base_layer import Layer
-from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
 from vispy.color import get_color_names, Color
@@ -14,7 +13,6 @@ from .view import QtMarkersControls
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
 
-@add_to_viewer
 class Markers(Layer):
     """Markers layer.
 

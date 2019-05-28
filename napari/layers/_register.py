@@ -1,8 +1,6 @@
 import re
 import inspect
 
-from ..components import ViewerModel
-
 
 template = """def {name}(self, {signature}):
     layer = {cls_name}({call_args})
@@ -134,6 +132,7 @@ def create_func(cls, name=None, doc=None):
 
 
 def _register(cls, *, name=None, doc=None):
+    from ..components import ViewerModel
     func = create_func(cls, name=name, doc=doc)
     setattr(ViewerModel, func.__name__, func)
     return cls
