@@ -1,4 +1,4 @@
-from qtpy.QtCore import Qt, QMimeData
+from qtpy.QtCore import Qt, QMimeData, QPoint
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                             QFrame, QCheckBox, QScrollArea, QApplication)
 from qtpy.QtGui import QDrag
@@ -26,7 +26,7 @@ class QtLayersList(QScrollArea):
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
 
-        self.drag_start_position = (0, 0)
+        self.drag_start_position = QPoint(0, 0)
         self.drag_name = None
 
     def _add(self, event):
