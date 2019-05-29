@@ -148,16 +148,17 @@ class QtLayersList(QScrollArea):
         total = self.vbox_layout.count()//2 - 1
         insert = total - divider_index
         layer_name = event.mimeData().text()
-        index = self.layers.index(layer_name)
-        # If the widget being dragged hasn't moved above or below any other
-        # widgets then don't highlight any dividers
-        selected = (not (insert == index) and not (insert-1 == index))
-        # Set the selected state of all the dividers
-        for i in range(0, self.vbox_layout.count(), 2):
-            if i == 2*divider_index:
-                self.vbox_layout.itemAt(i).widget().setSelected(selected)
-            else:
-                self.vbox_layout.itemAt(i).widget().setSelected(False)
+        if layer_name in self.layers:
+            index = self.layers.index(layer_name)
+            # If the widget being dragged hasn't moved above or below any other
+            # widgets then don't highlight any dividers
+            selected = (not (insert == index) and not (insert-1 == index))
+            # Set the selected state of all the dividers
+            for i in range(0, self.vbox_layout.count(), 2):
+                if i == 2*divider_index:
+                    self.vbox_layout.itemAt(i).widget().setSelected(selected)
+                else:
+                    self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
         for i in range(0, self.vbox_layout.count(), 2):
@@ -168,12 +169,13 @@ class QtLayersList(QScrollArea):
         total = self.vbox_layout.count()//2 - 1
         insert = total - divider_index
         layer_name = event.mimeData().text()
-        index = self.layers.index(layer_name)
-        if index != insert and index+1 != insert:
-            if not self.layers[index].selected:
-                self.layers.unselect_all()
-                self.layers[index].selected = True
-            self.layers._move_layers(index, insert)
+        if layer_name in self.layers:
+            index = self.layers.index(layer_name)
+            if index != insert and index+1 != insert:
+                if not self.layers[index].selected:
+                    self.layers.unselect_all()
+                    self.layers[index].selected = True
+                self.layers._move_layers(index, insert)
         event.accept()
 
 
