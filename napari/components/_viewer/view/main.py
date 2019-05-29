@@ -92,9 +92,6 @@ class QtViewer(QSplitter):
             lambda event: self._update_palette(event.palette)
         )
         self.viewer.layers.events.reordered.connect(self._update_canvas)
-        self.viewer.layers.events.added.connect(
-            lambda e: self._update_palette(viewer.palette)
-        )  # TODO: remove this hack when range slider uses stylesheet
 
     def screenshot(self, region=None, size=None, bgcolor=None):
         """Render the scene to an offscreen buffer and return the image array.
@@ -151,18 +148,6 @@ class QtViewer(QSplitter):
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
         self.setStyleSheet(themed_stylesheet)
-
-        # set styles on clim slider
-        for layer in self.viewer.layers:
-            if has_clims(layer):
-                layer._qt_controls.climSlider.setColors(
-                    palette['foreground'],
-                    palette['highlight']
-                )
-
-        # set styles on dims sliders
-        for slider in self.dims.sliders:
-            slider.setColors(palette['foreground'], palette['highlight'])
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
