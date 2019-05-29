@@ -86,6 +86,8 @@ class Shapes(Layer):
         If False only shapes in the currently sliced layer are visible. While
         it is possible to swith between these two views, when you are in one
         view you will only be able to see and edit shapes in that view.
+    nshapes : int
+        Total number of shapes.
     mode : Mode
         Interactive mode.
 
@@ -300,6 +302,15 @@ class Shapes(Layer):
         self._broadcast = broadcast
         self.events.broadcast()
         self.refresh()
+
+    @property
+    def nshapes(self):
+        """int: total number of shapes.
+        """
+        nshapes = 0
+        for key, data in self.data.items():
+            nshapes = nshapes + len(data.shapes)
+        return nshapes
 
     @property
     def _nshapes_view(self):

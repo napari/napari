@@ -50,5 +50,5 @@ with app_context():
     layer._qt_properties.setExpanded(True)
 
 # Print the shape coordinate data
-print("your shapes are at:")
+print(layer.nshapes, "shapes at:")
 print(layer._data_view.to_list())
