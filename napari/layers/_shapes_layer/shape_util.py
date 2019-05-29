@@ -13,16 +13,20 @@ def slice_by_plane(data):
 
     Returns
     ----------
-    key : str | tuple of int | bool
-        If shape is 2D return the string '2D', otherwise return the tuple
+    key : tuple of int | bool
+        If shape is 2D returns an empty tuple, otherwise return the tuple
         of int defining the 2D plane if the shape is entirely definied
         within a single 2D plane. Otherwise return False
     value : np.ndarray | False
         Nx2 array of vertices specifying the shape in the 2D plane or False
         if no such specification exists.
     """
+    # TODO make which coordinate are the displayed 2D coordinates changable
+    # instead of assuming they are the last two dimensions. This feature
+    # will be implemented here after it is implemented on the main dims model.
+    # The key can then be a tuple: (slice_dims, coords)
     if data.shape[1] == 2:
-        return '2D', data
+        return (), data
     elif (data[:, :-2] == data[0, :-2]).all():
         return tuple(data[0, :-2]), data[:, -2:]
     else:

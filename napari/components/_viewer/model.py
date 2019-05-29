@@ -265,9 +265,7 @@ class ViewerModel:
         self.add_markers(empty_markers)
 
     def _new_shapes(self):
-        layer = self.add_shapes([])
-        layer.nd_data_dim = len(self.dims.indices)
-        layer.indices = self.dims.indices
+        layer = self.add_shapes([], ndims=self.dims.indices)
 
     def _new_labels(self):
         if self.dims.ndim == 0:

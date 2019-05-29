@@ -57,6 +57,8 @@ class Shapes(Layer):
         ontop of others. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
+    ndims : int, optional
+        Dimensions of shape data. Once set cannot be changed. Defaults to 2.
     name : str, keyword-only
         Name of the layer.
 
@@ -168,7 +170,7 @@ class Shapes(Layer):
 
     def __init__(self, data, *, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=0.7,
-                 z_index=0, name=None):
+                 z_index=0, ndims=2, name=None):
 
         # Create a compound visual with the following four subvisuals:
         # Markers: corresponding to the vertices of the interaction box or the
@@ -183,9 +185,9 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
             # Add the shape data
-            self.nd_data = {'2D': ShapeList()}
-            self.nd_data_dim = 2
-            self._data = self.nd_data['2D']
+            self._input_ndims = ndims
+            self.nd_data = {(): ShapeList()}
+            self._data = self.nd_data[()]
             self.add_shapes(data, shape_type=shape_type, edge_width=edge_width,
                             edge_color=edge_color, face_color=face_color,
                             opacity=opacity, z_index=z_index)
@@ -450,10 +452,10 @@ class Shapes(Layer):
             slice_shape = list(np.max(self.data._vertices, axis=0) + 1)
 
         if len(self.nd_data.keys()) == 1:
-            return [1] * (self.nd_data_dim-2) + slice_shape
+            return [1] * (self._input_ndims-2) + slice_shape
         else:
             keys = list(self.nd_data.keys())
-            keys.remove('2D')
+            keys.remove(())
             max_val = np.array(keys).max(axis=0)
             return list(max_val) + slice_shape
 
@@ -533,25 +535,27 @@ class Shapes(Layer):
                                             edge_colors, face_colors,
                                             opacities, z_indices):
             shape_cls = self.data._types[st]
+
+            # Slice data by 2D plane.
             key, data_2D = slice_by_plane(d)
             if key is not False:
                 shape = shape_cls(data_2D, edge_width=ew, edge_color=ec,
                                   face_color=fc, opacity=o, z_index=z)
-                if key == '2D':
+                # If data is being drawn in gui it will already be 2D and so
+                # should just be added to the current ShapeList
+                if key == ():
                     self.data.add(shape)
                 elif key in self.nd_data:
                     self.nd_data[key].add(shape)
                 else:
                     self.nd_data[key] = ShapeList()
                     self.nd_data[key].add(shape)
-                    if len(key) > self.nd_data_dim:
-                        self.nd_data_dim = len(key)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         with self.freeze_refresh():
             if len(self.indices) == 2:
-                self.data = self.nd_data['2D']
+                self.data = self.nd_data[()]
             else:
                 key = self.indices[:-2]
                 if key not in self.nd_data:
