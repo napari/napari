@@ -70,8 +70,8 @@ class Dims:
             return
         self.ndim = len(value)
         self._range = value
-        axes = list(range(self.ndim))
-        self.events.axis(axis=axes)
+        for axis in range(self.ndim):
+            self.events.axis(axis=axis)
 
     @property
     def point(self):
