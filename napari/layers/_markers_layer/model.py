@@ -12,7 +12,7 @@ from vispy.color import get_color_names, Color
 
 from .view import QtMarkersLayer
 from .view import QtMarkersControls
-from ._constants import Symbol, SYMBOL_ALIAS
+from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
 
 @add_to_viewer
@@ -77,7 +77,7 @@ class Markers(Layer):
             self.n_dimensional = n_dimensional
             self._colors = get_color_names()
             self._selected_markers = None
-            self._mode = 'pan/zoom'
+            self._mode = Mode.PAN_ZOOM
             self._mode_history = self._mode
             self._status = self._mode
             self._markers_view = np.empty((0, 2))
@@ -255,32 +255,32 @@ class Markers(Layer):
     def mode(self):
         """None, str: Interactive mode
         """
-        return self._mode
+        return str(self._mode)
 
     @mode.setter
     def mode(self, mode):
-        if mode == self.mode:
+        if isinstance(mode, str):
+            mode = Mode(mode.upper())
+        if mode == self._mode:
             return
-        if mode == 'add':
+
+        if mode == Mode.ADD:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-            self.status = mode
-            self._mode = mode
-        elif mode == 'select':
+        elif mode == Mode.SELECT:
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-            self.status = mode
-            self._mode = mode
-        elif mode == 'pan/zoom':
+        elif mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
             self.help = ''
-            self.status = mode
-            self._mode = mode
         else:
             raise ValueError("Mode not recognized")
+
+        self.status = str(mode)
+        self._mode = mode
 
         self.events.mode(mode=mode)
 
@@ -477,7 +477,7 @@ class Markers(Layer):
             return
         self.coordinates = event.pos
         coord = self.coordinates
-        if self.mode == 'select' and event.is_dragging:
+        if self._mode == Mode.SELECT and event.is_dragging:
             self._move(coord)
         else:
             self._selected_markers = self._select_marker(coord)
@@ -494,7 +494,7 @@ class Markers(Layer):
         self._selected_markers = self._select_marker(coord)
         shift = 'Shift' in event.modifiers
 
-        if self.mode == 'add':
+        if self._mode == Mode.ADD:
             if shift:
                 self._remove()
             else:
@@ -508,26 +508,26 @@ class Markers(Layer):
             return
         else:
             if event.key == ' ':
-                if self.mode != 'pan/zoom':
+                if self._mode != Mode.PAN_ZOOM:
                     self._mode_history = self.mode
-                    self.mode = 'pan/zoom'
+                    self.mode = Mode.PAN_ZOOM
                 else:
-                    self._mode_history = 'pan/zoom'
+                    self._mode_history = Mode.PAN_ZOOM
             elif event.key == 'Shift':
-                if self.mode == 'add':
+                if self._mode == Mode.ADD:
                     self.cursor = 'forbidden'
             elif event.key == 'a':
-                self.mode = 'add'
+                self.mode = Mode.ADD
             elif event.key == 's':
-                self.mode = 'select'
+                self.mode = Mode.SELECT
             elif event.key == 'z':
-                self.mode = 'pan/zoom'
+                self.mode = Mode.PAN_ZOOM
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
         """
         if event.key == ' ':
-            if self._mode_history != 'pan/zoom':
+            if self._mode_history != Mode.PAN_ZOOM:
                 self.mode = self._mode_history
         elif event.key == 'Shift':
             if self.mode == 'add':
