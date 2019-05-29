@@ -59,6 +59,11 @@ class Shapes(Layer):
         otherwise the same value will be used for all shapes.
     ndims : int, optional
         Dimensions of shape data. Once set cannot be changed. Defaults to 2.
+    broadcast : bool, optional
+        If True, shapes are broadcast across all dimensions if `ndims` > 2.
+        If False only shapes in the currently sliced layer are visible. While
+        it is possible to swith between these two views, when you are in one
+        view you will only be able to see and edit shapes in that view.
     name : str, keyword-only
         Name of the layer.
 
@@ -170,7 +175,7 @@ class Shapes(Layer):
 
     def __init__(self, data, *, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=0.7,
-                 z_index=0, ndims=2, name=None):
+                 z_index=0, ndims=2, broadcast=False, name=None):
 
         # Create a compound visual with the following four subvisuals:
         # Markers: corresponding to the vertices of the interaction box or the
@@ -188,6 +193,7 @@ class Shapes(Layer):
             self._input_ndims = ndims
             self.nd_data = {(): ShapeList()}
             self._data = self.nd_data[()]
+            self._broadcast = broadcast
             self.add_shapes(data, shape_type=shape_type, edge_width=edge_width,
                             edge_color=edge_color, face_color=face_color,
                             opacity=opacity, z_index=z_index)
@@ -248,7 +254,8 @@ class Shapes(Layer):
             self.events.add(mode=Event,
                             edge_width=Event,
                             edge_color=Event,
-                            face_color=Event)
+                            face_color=Event,
+                            broadcast=Event)
 
             self._qt_properties = QtShapesLayer(self)
             self._qt_controls = QtShapesControls(self)
@@ -267,6 +274,20 @@ class Shapes(Layer):
             return
         self._data = data
         self.events.data()
+        self.refresh()
+
+    @property
+    def broadcast(self):
+        """Bool: if shapes are broadcast across all dimensions.
+        """
+        return self._broadcast
+
+    @broadcast.setter
+    def broadcast(self, broadcast):
+        if self._broadcast == broadcast:
+            return
+        self._broadcast = broadcast
+        self.events.broadcast()
         self.refresh()
 
     @property
@@ -558,12 +579,17 @@ class Shapes(Layer):
             if len(self.indices) == 2:
                 self._data = self.nd_data[()]
             else:
-                key = self.indices[:-2]
-                if key not in self.nd_data:
-                    self.nd_data[key] = ShapeList()
-                if not self.data == self.nd_data[key]:
-                    self._data = self.nd_data[key]
-                    self._finish_drawing()
+                if self.broadcast:
+                    key = ()
+                    if not self.data == self.nd_data[key]:
+                        self._data = self.nd_data[key]
+                else:
+                    key = self.indices[:-2]
+                    if key not in self.nd_data:
+                        self.nd_data[key] = ShapeList()
+                    if not self.data == self.nd_data[key]:
+                        self._data = self.nd_data[key]
+                        self._finish_drawing()
 
         z_order = self.data._mesh.triangles_z_order
         faces = self.data._mesh.triangles[z_order]
