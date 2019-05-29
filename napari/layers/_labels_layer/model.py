@@ -247,7 +247,7 @@ class Labels(Layer):
 
         if mode == self._mode:
             return
-        old_mode = self._mode
+
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
