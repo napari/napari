@@ -266,6 +266,7 @@ class Shapes(Layer):
         if self._data == data:
             return
         self._data = data
+        self.events.data()
         self.refresh()
 
     @property
@@ -555,13 +556,13 @@ class Shapes(Layer):
         """Set the view given the slicing indices."""
         with self.freeze_refresh():
             if len(self.indices) == 2:
-                self.data = self.nd_data[()]
+                self._data = self.nd_data[()]
             else:
                 key = self.indices[:-2]
                 if key not in self.nd_data:
                     self.nd_data[key] = ShapeList()
                 if not self.data == self.nd_data[key]:
-                    self.data = self.nd_data[key]
+                    self._data = self.nd_data[key]
                     self._finish_drawing()
 
         z_order = self.data._mesh.triangles_z_order

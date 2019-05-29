@@ -1,6 +1,8 @@
 from qtpy.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel
 from qtpy.QtCore import Qt
 
+from ...util.theme import template
+
 
 class Window:
     """Application window that contains the menu bar and viewer.
@@ -34,9 +36,14 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
+        self._update_palette(qt_viewer.viewer.palette)
+
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
+        self.qt_viewer.viewer.events.palette.connect(
+            lambda event: self._update_palette(event.palette)
+        )
 
         if show:
             self.show()
@@ -59,6 +66,23 @@ class Window:
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
         self._qt_window.raise_()
+
+    def _update_palette(self, palette):
+        # set window styles which don't use the primary stylesheet
+        # FIXME: this is a problem with the stylesheet not using properties
+        self._status_bar.setStyleSheet(
+            template(
+                'QStatusBar { background: {{ background }}; '
+                'color: {{ text }}; }',
+                **palette
+            )
+        )
+        self._qt_center.setStyleSheet(
+            template(
+                'QWidget { background: {{ background }}; }',
+                **palette
+            )
+        )
 
     def _status_changed(self, event):
         """Update status bar.
