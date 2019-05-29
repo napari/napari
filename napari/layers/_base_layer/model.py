@@ -59,6 +59,7 @@ class Layer(VisualWrapper, ABC):
         self._interactive = True
         self._indices = ()
         self._cursor_position = (0, 0)
+        self._coordinates = (0, 0)
         self._name = ''
         self.events.add(select=Event,
                         deselect=Event,
@@ -110,6 +111,7 @@ class Layer(VisualWrapper, ABC):
         if indices == self.indices:
             return
         self._indices = indices[-self.ndim:]
+        self.coordinates = None
         self._set_view_slice()
 
     @property
@@ -120,14 +122,18 @@ class Layer(VisualWrapper, ABC):
         The setter expects the a 2-tuple of coordinates in canvas space
         ordered (x, y) and then transforms them to image space and inserts
         them into the correct position of the layer indices. The length of the
-        tuple is equal to the number of dimensions of the layer.
+        tuple is equal to the number of dimensions of the layer. If ``None`` is
+        passed then (0, 0) will replace necessary the layer indices.
         """
         return self._coordinates
 
     @coordinates.setter
     def coordinates(self, cursor_position):
-        transform = self._node.canvas.scene.node_transform(self._node)
-        position = tuple(transform.map(cursor_position)[:2])
+        if cursor_position is not None:
+            transform = self._node.canvas.scene.node_transform(self._node)
+            position = tuple(transform.map(cursor_position)[:2])
+        else:
+            position = (0, 0)
         coords = list(self.indices)
         coords[-2] = position[1]
         coords[-1] = position[0]

@@ -387,6 +387,8 @@ class Markers(Layer):
             face_color=self.face_color, scaling=True)
         self._need_visual_update = True
         self._update()
+        self.status = self.get_message(self.coordinates,
+                                       self._selected_markers)
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates

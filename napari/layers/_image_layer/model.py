@@ -16,7 +16,7 @@ from ...util.interpolation import (interpolation_names,
                                   interpolation_index_to_name as _index_to_name,  # noqa
                                   interpolation_name_to_index as _name_to_index)  # noqa
 from ...util.misc import guess_metadata
-from ...util.colormaps import matplotlib_colormaps
+from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
 from ...util.event import Event
 
@@ -66,10 +66,12 @@ def vispy_or_mpl_colormap(name):
     return cmap
 
 
-AVAILABLE_COLORMAPS = {k: vispy_or_mpl_colormap(k)
-                       for k in matplotlib_colormaps +
-                       list(vispy.color.get_colormaps())}
+# A dictionary mapping names to VisPy colormap objects
+ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
+ALL_COLORMAPS.update(simple_colormaps)
 
+# ... sorted alphabetically by name
+AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 
 @add_to_viewer
 class Image(Layer):
@@ -204,6 +206,9 @@ class Image(Layer):
         self._need_visual_update = True
         self._update()
 
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
+
     @property
     def multichannel(self):
         """bool: Whether the image is multichannel.
@@ -333,8 +338,11 @@ class Image(Layer):
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
-        coord[-2:] = np.clip(coord[-2:], 0,
-                             np.asarray(self._image_view.shape) - 1)
+        if self.multichannel:
+            shape = self._image_view.shape[:-1]
+        else:
+            shape = self._image_view.shape
+        coord[-2:] = np.clip(coord[-2:], 0, np.asarray(shape) - 1)
 
         value = self._image_view[tuple(coord[-2:])]
 
