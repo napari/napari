@@ -5,8 +5,6 @@ Range slider, extended QWidget slider for napari.
 from qtpy import QtCore, QtGui
 from qtpy.QtWidgets import QWidget
 
-from ...util.misc import str_to_rgb
-
 class QRangeSlider(QWidget):
     """
     QRangeSlider class, super class for QVRangeSlider and QHRangeSlider.
@@ -41,7 +39,12 @@ class QRangeSlider(QWidget):
         self.start_pos = None
         self.display_min = None
         self.display_max = None
-        self.setColors('rgb(100,100,100)', 'rgb(200,200,200)')
+
+        self.setBarColor(QtGui.QColor(200, 200, 200))
+        self.setBackgroundColor(QtGui.QColor(100, 100, 100))
+        self.setHandleColor(QtGui.QColor(200, 200, 200))
+        self.setHandleBorderColor(QtGui.QColor(200, 200, 200))
+
         self.setEnabled(True)
 
         if slider_range:
@@ -258,15 +261,45 @@ class QRangeSlider(QWidget):
         self.updateDisplayValues()
         self.update()
 
-    def setColors(self, background, foreground):
-        self.bar_color = QtGui.QColor(
-            *str_to_rgb(foreground))
-        self.background_color = QtGui.QColor(
-            *str_to_rgb(background))
-        self.handle_color = QtGui.QColor(
-            *str_to_rgb(foreground))
-        self.handle_border_color = QtGui.QColor(
-            *str_to_rgb(foreground))
+    def getBarColor(self):
+        return self.bar_color
+
+    def setBarColor(self, barColor):
+        self.bar_color = barColor
+
+    barColor = QtCore.Property(QtGui.QColor, getBarColor, setBarColor)
+
+    def getBackgroundColor(self):
+        return self.background_color
+
+    def setBackgroundColor(self, backgroundColor):
+        self.background_color = backgroundColor
+
+    backgroundColor = QtCore.Property(
+        QtGui.QColor,
+        getBackgroundColor,
+        setBackgroundColor
+    )
+
+    def getHandleColor(self):
+        return self.handle_color
+
+    def setHandleColor(self, handleColor):
+        self.handle_color = handleColor
+
+    handleColor = QtCore.Property(QtGui.QColor, getHandleColor, setHandleColor)
+
+    def getHandleBorderColor(self):
+        return self.handle_border_color
+
+    def setHandleBorderColor(self, handleBorderColor):
+        self.handle_border_color = handleBorderColor
+
+    handleBorderColor = QtCore.Property(
+        QtGui.QColor,
+        getHandleBorderColor,
+        setHandleBorderColor
+    )
 
     def setEnabled(self, bool):
         if bool:
