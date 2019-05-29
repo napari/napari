@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from scipy import ndimage as ndi
 from xml.etree.ElementTree import Element
@@ -235,10 +237,14 @@ class Labels(Layer):
         pixels will be changed to background and this tool functions like an
         eraser.
         """
-        return self._mode
+        return str(self._mode)
 
     @mode.setter
-    def mode(self, mode):
+    def mode(self, mode: Union[str, Mode]):
+
+        if isinstance(mode, str):
+            mode = Mode(mode.upper())
+
         if mode == self._mode:
             return
         old_mode = self._mode
@@ -542,18 +548,18 @@ class Labels(Layer):
         self.coordinates = event.pos
         coord, label = self.get_value()
 
-        if self.mode == Mode.PAN_ZOOM:
+        if self._mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
             pass
-        elif self.mode == Mode.PICKER:
+        elif self._mode == Mode.PICKER:
             self.selected_label = label
-        elif self.mode == Mode.PAINT:
+        elif self._mode == Mode.PAINT:
             # Start painting with new label
             new_label = self.selected_label
             self.paint(coord, new_label)
             self._last_cursor_coord = coord
             self.status = self.get_message(coord, new_label)
-        elif self.mode == Mode.FILL:
+        elif self._mode == Mode.FILL:
             # Fill clicked on region with new label
             old_label = label
             new_label = self.selected_label
@@ -576,7 +582,7 @@ class Labels(Layer):
         self.coordinates = event.pos
         coord, label = self.get_value()
 
-        if self.mode == Mode.PAINT and event.is_dragging:
+        if self._mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
             if self._last_cursor_coord is None:
                 interp_coord = [coord]
@@ -614,8 +620,8 @@ class Labels(Layer):
             return
         else:
             if event.key == ' ':
-                if self.mode != Mode.PAN_ZOOM:
-                    self._mode_history = self.mode
+                if self._mode != Mode.PAN_ZOOM:
+                    self._mode_history = self._mode
                     self.mode = Mode.PAN_ZOOM
                 else:
                     self._mode_history = Mode.PAN_ZOOM

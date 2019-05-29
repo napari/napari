@@ -1,8 +1,10 @@
-from enum import Enum
+from enum import auto
 import sys
 
+from ...util.misc import StringEnum
 
-class Mode(Enum):
+
+class Mode(StringEnum):
     """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
 
@@ -22,10 +24,10 @@ class Mode(Enum):
     pixel. If the background label `0` is selected than any pixels will be
     changed to background and this tool functions like an eraser.
     """
-    PAN_ZOOM = 0
-    PICKER = 1
-    PAINT = 2
-    FILL = 3
+    PAN_ZOOM = auto()
+    PICKER = auto()
+    PAINT = auto()
+    FILL = auto()
 
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
