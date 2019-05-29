@@ -93,6 +93,8 @@ class Shapes(Layer):
     ----------
     _data_view : ShapeList
         Object containing the currently viewed shape data.
+    _nshapes_view : int
+        Number of shapes in the current view.
     _mode_history : Mode
         Interactive mode captured on press of <space>.
     _selected_shapes_history : list
@@ -298,6 +300,12 @@ class Shapes(Layer):
         self._broadcast = broadcast
         self.events.broadcast()
         self.refresh()
+
+    @property
+    def _nshapes_view(self):
+        """int: number of shapes in the current view.
+        """
+        return len(self._data_view.shapes)
 
     @property
     def edge_width(self):
@@ -1018,7 +1026,7 @@ class Shapes(Layer):
     def _paste_shapes(self):
         """Paste any shapes from clipboard and then selects them.
         """
-        cur_shapes = len(self._data_view.shapes)
+        cur_shapes = self._nshapes_view
         for s in self._clipboard:
             self._data_view.add(s)
         self.selected_shapes = list(range(cur_shapes,
@@ -1272,7 +1280,7 @@ class Shapes(Layer):
                             edge_color=self.edge_color,
                             face_color=self.face_color,
                             opacity=self.opacity, z_index=new_z_index)
-            self.selected_shapes = [len(self._data_view.shapes)-1]
+            self.selected_shapes = [self._nshapes_view-1]
             ind = 4
             self._moving_shape = self.selected_shapes[0]
             self._moving_vertex = ind
@@ -1292,7 +1300,7 @@ class Shapes(Layer):
                                 face_color=self.face_color,
                                 opacity=self.opacity,
                                 z_index=new_z_index)
-                self.selected_shapes = [len(self._data_view.shapes)-1]
+                self.selected_shapes = [self._nshapes_view-1]
                 ind = 1
                 self._moving_shape = self.selected_shapes[0]
                 self._moving_vertex = ind
@@ -1528,7 +1536,8 @@ class Shapes(Layer):
                 else:
                     self.selected_shapes = []
             elif self._is_selecting:
-                self.selected_shapes = self._data_view.shapes_in_box(self._drag_box)
+                self.selected_shapes = self._data_view.shapes_in_box(
+                    self._drag_box)
                 self._is_selecting = False
                 self._set_highlight()
             self._is_moving = False
@@ -1549,7 +1558,8 @@ class Shapes(Layer):
                 else:
                     self.selected_shapes = []
             elif self._is_selecting:
-                self.selected_shapes = self._data_view.shapes_in_box(self._drag_box)
+                self.selected_shapes = self._data_view.shapes_in_box(
+                    self._drag_box)
                 self._is_selecting = False
                 self._set_highlight()
             self._is_moving = False
@@ -1632,7 +1642,7 @@ class Shapes(Layer):
                     self._paste_shapes()
             elif event.key == 'a':
                 if self.mode in [Mode.DIRECT, Mode.SELECT]:
-                    self.selected_shapes = list(range(len(self._data_view.shapes)))
+                    self.selected_shapes = list(range(self._nshapes_view))
                     self._set_highlight()
             elif event.key == 'Backspace':
                 self.remove_selected()
