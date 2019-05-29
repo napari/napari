@@ -4,12 +4,12 @@ Change image shape and dims directly on the layer
 
 import numpy as np
 from skimage import data
-from napari import ViewerApp
+from napari import Viewer
 from napari.util import app_context
 
 
 with app_context():
-    viewer = ViewerApp()
+    viewer = Viewer()
 
     # add data
     blobs = data.binary_blobs(length=128, blob_size_fraction=0.05,
