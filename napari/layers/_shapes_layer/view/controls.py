@@ -1,7 +1,5 @@
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
-                             QPushButton)
+                            QPushButton)
 
 from .._constants import Mode
 
