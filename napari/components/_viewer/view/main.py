@@ -1,3 +1,5 @@
+import os.path as osp
+
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
@@ -6,10 +8,15 @@ from vispy.scene import SceneCanvas, PanZoomCamera
 from ..._dims.view import QtDims
 from ..._layers_list.view import QtLayersList
 from ....resources import resources_dir
+from ....util.theme import template
+from ....util.misc import has_clims
 from .controls import QtControls
 from .buttons import QtLayersButtons
 
+
 class QtViewer(QSplitter):
+    with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
+        raw_stylesheet = f.read()
 
     def __init__(self, viewer):
         super().__init__()
@@ -76,9 +83,14 @@ class QtViewer(QSplitter):
                 'standard': QCursor()
             }
 
+        self._update_palette(viewer.palette)
+
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
         self.viewer.events.reset_view.connect(self._on_reset_view)
+        self.viewer.events.palette.connect(
+            lambda event: self._update_palette(event.palette)
+        )
         self.viewer.layers.events.reordered.connect(self._update_canvas)
 
     def screenshot(self, region=None, size=None, bgcolor=None):
@@ -131,6 +143,11 @@ class QtViewer(QSplitter):
         """
         self.canvas._draw_order.clear()
         self.canvas.update()
+
+    def _update_palette(self, palette):
+        # template and apply the primary stylesheet
+        themed_stylesheet = template(self.raw_stylesheet, **palette)
+        self.setStyleSheet(themed_stylesheet)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
