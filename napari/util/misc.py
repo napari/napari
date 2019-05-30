@@ -212,11 +212,13 @@ def segment_normal_vector(a, b):
         unit_norm = normal/norm
     return unit_norm
 
+
 class StringEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value
         """
         return name
+
     def __str__(self):
         """String representation: The string method returns the
         valid vispy symbol string for the Markers visual.
