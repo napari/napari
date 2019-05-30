@@ -35,7 +35,7 @@ with app_context():
                               name='shapes')
 
     # change some properties of the layer
-    layer.selected_shapes = list(range(len(layer._data_view.shapes)))
+    layer.selected_shapes = list(range(layer.nshapes))
     layer.edge_width = 5
     layer.opacity = 0.75
     layer.selected_shapes = []
@@ -51,4 +51,4 @@ with app_context():
 
 # Print the shape coordinate data
 print(layer.nshapes, "shapes at:")
-print(layer._data_view.to_list())
+print(layer.to_list())

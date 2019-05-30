@@ -21,5 +21,14 @@ with app_context():
     base_cols = ['red', 'green', 'blue', 'white', 'yellow', 'magenta', 'cyan']
     colors = [np.random.choice(base_cols) for i in range(128)]
 
-    viewer.add_shapes(np.array(shapes), shape_type='rectangle',
-                      face_color=colors)
+    layer = viewer.add_shapes(np.array(shapes), shape_type='rectangle',
+                              face_color=colors)
+
+    masks = layer.to_masks(mask_shape = (128, 128, 128))
+    labels = layer.to_labels(labels_shape = (128, 128, 128))
+    shape_array = np.array(layer.to_list())
+
+    print('nshapes', layer.nshapes,
+          'mask shape', masks.shape,
+          'labels_shape', labels.shape,
+          'array_shape', shape_array.shape)

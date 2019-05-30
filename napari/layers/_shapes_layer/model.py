@@ -57,10 +57,10 @@ class Shapes(Layer):
         ontop of others. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    ndims : int, optional
+    ndim : int, optional
         Dimensions of shape data. Once set cannot be changed. Defaults to 2.
     broadcast : bool, optional
-        If True, shapes are broadcast across all dimensions if `ndims` > 2.
+        If True, shapes are broadcast across all dimensions if `ndim` > 2.
         If False only shapes in the currently sliced layer are visible. While
         it is possible to swith between these two views, when you are in one
         view you will only be able to see and edit shapes in that view.
@@ -82,7 +82,7 @@ class Shapes(Layer):
     selected_shapes : list
         List of currently selected shapes.
     broadcast : bool
-        If True, shapes are broadcast across all dimensions if `ndims` > 2.
+        If True, shapes are broadcast across all dimensions if `ndim` > 2.
         If False only shapes in the currently sliced layer are visible. While
         it is possible to swith between these two views, when you are in one
         view you will only be able to see and edit shapes in that view.
@@ -176,7 +176,7 @@ class Shapes(Layer):
         box.
     _highlight_width : float
         Width of the edges used to highlight shapes.
-    _input_ndims : int
+    _input_ndim : int
         Dimensions of shape data.
     """
 
@@ -188,7 +188,7 @@ class Shapes(Layer):
 
     def __init__(self, data, *, shape_type='rectangle', edge_width=1,
                  edge_color='black', face_color='white', opacity=0.7,
-                 z_index=0, ndims=2, broadcast=False, name=None):
+                 z_index=0, ndim=2, broadcast=False, name=None):
 
         # Create a compound visual with the following four subvisuals:
         # Markers: corresponding to the vertices of the interaction box or the
@@ -203,7 +203,7 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
             # Add the shape data
-            self._input_ndims = ndims
+            self._input_ndim = ndim
             self._data = {(): ShapeList()}
             self._data_view = self.data[()]
             self._broadcast = broadcast
@@ -502,7 +502,7 @@ class Shapes(Layer):
             slice_shape = list(np.max(self._data_view._vertices, axis=0) + 1)
 
         if len(self.data.keys()) == 1:
-            return [1] * (self._input_ndims-2) + slice_shape
+            return [1] * (self._input_ndim-2) + slice_shape
         else:
             keys = list(self.data.keys())
             keys.remove(())
@@ -1231,6 +1231,140 @@ class Shapes(Layer):
             svg specification
         """
         return self._data_view.to_xml_list(shape_type=shape_type)
+
+    def to_masks(self, mask_shape=None, shape_type=None):
+        """Returns N binary masks, one for each shape, embedded in an array of
+        shape `mask_shape`. Passing a `shape_type` argument leads to only mask
+        from that particular `shape_type` being returned.
+
+        Parameters
+        ----------
+        mask_shape : np.ndarray | tuple | None
+            tuple defining shape of mask to be generated. If non specified,
+            takes the max of all the vertiecs
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
+
+        Returns
+        ----------
+        masks : np.ndarray
+            Array where there is one binary mask for each shape
+        """
+        if mask_shape is None:
+            mask_shape = self.shape
+
+        if self.ndim == 2:
+            # For 2D shapes just convert current view to masks
+            masks = self._data_view.to_masks(mask_shape=mask_shape,
+                                             shape_type=shape_type)
+        elif self.broadcast:
+            # For broadcast shapes convert current view to masks and
+            # broadcast across sliced dimensions
+            slices = self._data_view.to_masks(mask_shape=mask_shape[-2:],
+                                              shape_type=shape_type)
+            masks = []
+            for m in slices:
+                masks.append(np.broadcast_to(m, mask_shape))
+            masks = np.stack(masks, axis=0)
+        else:
+            # For nD insert each keyed slice into correctd place in volume
+            masks = []
+            for key, data in self.data.items():
+                if len(key) > 0:
+                    slices = data.to_masks(mask_shape=mask_shape[-2:],
+                                           shape_type=shape_type)
+                    for m in slices:
+                        vol = np.zeros(mask_shape)
+                        vol[key] = m
+                        masks.append(vol)
+            masks = np.stack(masks, axis=0)
+        return masks
+
+    def to_labels(self, labels_shape=None, shape_type=None):
+        """Returns a integer labels image, where each shape is embedded in an
+        array of shape labels_shape with the value of the index + 1
+        corresponding to it, and 0 for background. Passing a `shape_type`
+        argument leads to only labels from that particular `shape_type` being
+        returned. These labels will be renumbered appropriately. For
+        overlapping shapes z-ordering will be respected.
+
+        Parameters
+        ----------
+        labels_shape : np.ndarray | tuple | None
+            Tuple defining shape of labels image to be generated. If non
+            specified, takes the max of all the vertiecs
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
+
+        Returns
+        ----------
+        labels : np.ndarray
+            Integer array where each value is either 0 for background or an
+            integer up to N for points inside the corresponding shape.
+        """
+        if labels_shape is None:
+            labels_shape = self.shape
+
+        if self.ndim == 2:
+            # For 2D shapes just convert current view to labels
+            labels = self._data_view.to_labels(labels_shape=labels_shape,
+                                               shape_type=shape_type)
+        elif self.broadcast:
+            # For broadcast shapes convert current view to labels and
+            # broadcast across sliced dimensions
+            labels = self._data_view.to_labels(labels_shape=labels_shape[-2:],
+                                               shape_type=shape_type)
+            labels = np.broadcast_to(labels, labels_shape)
+        else:
+            # For nD insert each keyed slice into correctd place in volume
+            # and increment integer label of shape
+            labels = np.zeros(labels_shape)
+            nshapes = 0
+            for key, data in self.data.items():
+                if len(key) > 0:
+                    slices = data.to_labels(labels_shape=labels_shape[-2:],
+                                            shape_type=shape_type)
+                    slices[slices > 0] = slices[slices > 0] + nshapes
+                    labels[key] = slices
+                    nshapes = nshapes + len(data.shapes)
+        return labels
+
+    def to_list(self, shape_type=None):
+        """Returns the vertex data assoicated with the shapes as a list
+        where each element of the list corresponds to one shape. Passing a
+        `shape_type` argument leads to only that particular `shape_type`
+        being returned.
+
+        Parameters
+        ----------
+        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
+                     None, optional
+            String of shape type to be included.
+
+        Returns
+        ----------
+        data : list
+            List of shape data where each element of the list is an
+            `np.ndarray` corresponding to one shape
+        """
+        if self.ndim == 2:
+            # For 2D shapes just convert current view to a list
+            data = self._data_view.to_list(shape_type=shape_type)
+        elif self.broadcast:
+            # For broadcast shapes convert current view to a list
+            data = self._data_view.to_list(shape_type=shape_type)
+        else:
+            # For nD insert each key into shape indices in list
+            data = []
+            for key, d in self.data.items():
+                if len(key) > 0:
+                    shapes = d.to_labels(labels_shape=labels_shape[-2:],
+                                         shape_type=shape_type)
+                    for s in shapes:
+                        data.append(list(key) + s)
+        return data
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas. Converts the `event.pos`

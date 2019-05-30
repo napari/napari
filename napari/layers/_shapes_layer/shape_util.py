@@ -28,7 +28,7 @@ def slice_by_plane(data):
     if data.shape[1] == 2:
         return (), data
     elif (data[:, :-2] == data[0, :-2]).all():
-        return tuple(data[0, :-2]), data[:, -2:]
+        return tuple(data[0, :-2].astype('int')), data[:, -2:]
     else:
         return False, False
 
