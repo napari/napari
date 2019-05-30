@@ -1360,10 +1360,11 @@ class Shapes(Layer):
             data = []
             for key, d in self.data.items():
                 if len(key) > 0:
-                    shapes = d.to_labels(labels_shape=labels_shape[-2:],
-                                         shape_type=shape_type)
+                    shapes = d.to_list(shape_type=shape_type)
                     for s in shapes:
-                        data.append(list(key) + s)
+                        keys = np.tile(key, (len(s), 1))
+                        full_shape = np.concatenate((keys, s), axis=1)
+                        data.append(full_shape)
         return data
 
     def on_mouse_press(self, event):
