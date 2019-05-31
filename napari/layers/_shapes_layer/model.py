@@ -394,7 +394,7 @@ class Shapes(Layer):
     @mode.setter
     def mode(self, mode):
         if isinstance(mode, str):
-            mode = Mode(mode.upper())
+            mode = Mode(mode)
 
         if mode == self._mode:
             return

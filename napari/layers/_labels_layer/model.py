@@ -245,7 +245,7 @@ class Labels(Layer):
     def mode(self, mode: Union[str, Mode]):
 
         if isinstance(mode, str):
-            mode = Mode(mode.upper())
+            mode = Mode(mode)
 
         if mode == self._mode:
             return

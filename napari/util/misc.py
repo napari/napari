@@ -47,7 +47,7 @@ def is_iterable(arg, color=False):
     elif np.isscalar(arg):
         return False
     elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg)==4):
+        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
             return False
         else:
             return True
@@ -218,6 +218,13 @@ class StringEnum(Enum):
         """ autonaming function assigns each value its own name as a value
         """
         return name
+
+    @classmethod
+    def _missing_(cls, value):
+        """ function called with provided value does not match any of the class
+           member values. This function tries again with an upper case string.
+        """
+        return cls(value.upper())
 
     def __str__(self):
         """String representation: The string method returns the
