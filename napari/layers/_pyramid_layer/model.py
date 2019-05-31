@@ -238,7 +238,8 @@ class Pyramid(Image):
         return msg
 
     def on_draw(self, event):
-        """Called whenever the canvas is drawn.
+        """Called whenever the canvas is drawn, which happens whenever new
+        data is sent to the canvas or the camera is moved.
         """
         size = self._parent.camera.rect.size
         pyramid_level = self.compute_pyramid_level(size)

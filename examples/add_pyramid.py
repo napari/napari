@@ -3,22 +3,21 @@ Displays an image pyramid
 """
 
 from skimage import data
+from skimage.util import img_as_ubyte
+from skimage.color import rgb2gray
 from skimage.transform import pyramid_gaussian
 import napari
 from napari.util import app_context
 import numpy as np
 
 
-image = data.astronaut()
-rows, cols, dim = image.shape
-
 # create pyramid from astronaut image
-astronaut = data.astronaut().mean(axis=2) / 255
+astronaut = rgb2gray(data.astronaut())
 base = np.tile(astronaut, (16, 16))
 pyramid = list(pyramid_gaussian(base, downscale=2, max_layer=5,
                                 multichannel=False))
-pyramid = [(255*p).astype('uint8') for p in pyramid]
-print([p.shape[:2] for p in pyramid])
+pyramid = [img_as_ubyte(p) for p in pyramid]
+print('pyramid level shapes: ', [p.shape for p in pyramid])
 
 with app_context():
     # create the viewer
