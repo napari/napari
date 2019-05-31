@@ -407,11 +407,10 @@ class Image(Layer):
         return [xml]
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas. Converts the `event.pos`
-        from canvas coordinates to `self.coordinates` in image coordinates.
+        """Called whenever mouse moves over canvas.
         """
         if event.pos is None:
             return
-        self.coordinates = event.pos
+        self.position = tuple(event.pos)
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
