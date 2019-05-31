@@ -230,4 +230,4 @@ class StringEnum(Enum):
         """String representation: The string method returns the
         valid vispy symbol string for the Markers visual.
         """
-        return self.value
+        return self.value.lower()
