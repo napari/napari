@@ -24,8 +24,8 @@ with app_context():
     layer = viewer.add_shapes(np.array(shapes), shape_type='rectangle',
                               face_color=colors)
 
-    masks = layer.to_masks(mask_shape = (128, 128, 128))
-    labels = layer.to_labels(labels_shape = (128, 128, 128))
+    masks = layer.to_masks(mask_shape=(128, 128, 128))
+    labels = layer.to_labels(labels_shape=(128, 128, 128))
     shape_array = np.array(layer.to_list())
 
     print('nshapes', layer.nshapes,
