@@ -183,7 +183,7 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
             # Add the shape data
-            self.data = ShapeList()
+            self._data = ShapeList()
             self.add_shapes(data, shape_type=shape_type, edge_width=edge_width,
                             edge_color=edge_color, face_color=face_color,
                             opacity=opacity, z_index=z_index)
@@ -260,6 +260,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._data = data
+        self.events.data()
         self.refresh()
 
     @property

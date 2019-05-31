@@ -136,6 +136,7 @@ class Vectors(Layer):
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
 
+        self.events.data()
         self.refresh()
 
     def _convert_to_vector_type(self, vectors):
