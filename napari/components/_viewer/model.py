@@ -284,8 +284,8 @@ class ViewerModel:
         layer.events.name.connect(self._update_name)
         layer.events.data.connect(self._on_layers_change)
 
-        self.layers.append(layer)
         layer.parent = self._view
+        self.layers.append(layer)
         layer.indices = self.dims.indices
 
         if len(self.layers) == 1:
