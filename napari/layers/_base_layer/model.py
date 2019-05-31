@@ -40,6 +40,9 @@ class Layer(VisualWrapper, ABC):
     shape
     selected
     indices
+    coordinates : tuple of float
+        Coordinates of the cursor in the image space of each layer. The length
+        of the tuple is equal to the number of dimensions of the layer.
 
     Methods
     -------
@@ -59,7 +62,7 @@ class Layer(VisualWrapper, ABC):
         self._interactive = True
         self._indices = (0, 0)
         self._position = (0, 0)
-        self._coordinates = (0, 0)
+        self.coordinates = (0, 0)
         self._name = ''
         self.events.add(select=Event,
                         deselect=Event,
@@ -112,20 +115,6 @@ class Layer(VisualWrapper, ABC):
         self._indices = indices[-self.ndim:]
         self._update_coordinates()
         self._set_view_slice()
-
-    @property
-    def coordinates(self):
-        """Tuple of float: Coordinates of the cursor in the image space of each
-        layer. The length of the tuple is equal to the number of dimensions of
-        the layer.
-        """
-        return self._coordinates
-
-    @coordinates.setter
-    def coordinates(self, coordinates):
-        if self._coordinates == coordinates:
-            return
-        self._coordinates = coordinates
 
     @property
     def position(self):
