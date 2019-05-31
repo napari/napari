@@ -15,3 +15,4 @@ class Viewer(ViewerModel):
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
         self.screenshot = self.window.qt_viewer.screenshot
+        self.camera = self.window.qt_viewer.view.camera

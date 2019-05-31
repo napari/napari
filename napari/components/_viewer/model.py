@@ -68,7 +68,7 @@ class ViewerModel:
 
         # TODO: this should be eventually removed!
         # attached by QtViewer when it is constructed by the model
-        self._scene = None
+        self._view = None
 
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
@@ -284,9 +284,9 @@ class ViewerModel:
         layer.events.name.connect(self._update_name)
         layer.events.data.connect(self._on_layers_change)
 
+        layer.parent = self._view
         self.layers.append(layer)
         layer.indices = self.dims.indices
-        layer._parent = self._scene
 
         if len(self.layers) == 1:
             self.reset_view()
