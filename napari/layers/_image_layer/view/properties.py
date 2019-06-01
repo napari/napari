@@ -18,8 +18,8 @@ class QtImageLayer(QtLayer):
         comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
             lambda text=comboBox: self.changeColor(text))
-        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
-        self.grid_layout.addWidget(comboBox, 3, 1)
+        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0, 1, 2)
+        self.grid_layout.addWidget(comboBox, 3, 2, 1, 2)
         self.colormap_combobox = comboBox
 
         interp_comboBox = QComboBox()
@@ -31,8 +31,8 @@ class QtImageLayer(QtLayer):
         interp_comboBox.activated[str].connect(
             lambda text=interp_comboBox: self.changeInterpolation(text))
         self.interpComboBox = interp_comboBox
-        self.grid_layout.addWidget(QLabel('interpolation:'), 4, 0)
-        self.grid_layout.addWidget(interp_comboBox, 4, 1)
+        self.grid_layout.addWidget(QLabel('interpolation:'), 4, 0, 1, 2)
+        self.grid_layout.addWidget(interp_comboBox, 4, 2, 1, 2)
 
         self.setExpanded(False)
 

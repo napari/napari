@@ -28,8 +28,8 @@ class QtShapesLayer(QtLayer):
         sld.valueChanged[int].connect(lambda value=sld:
                                       self.changeWidth(value))
         self.widthSlider = sld
-        self.grid_layout.addWidget(QLabel('width:'), 3, 0)
-        self.grid_layout.addWidget(sld, 3, 1)
+        self.grid_layout.addWidget(QLabel('width:'), 3, 0, 1, 2)
+        self.grid_layout.addWidget(sld, 3, 2, 1, 2)
 
         face_comboBox = QComboBox()
         colors = self.layer._colors
@@ -42,8 +42,8 @@ class QtShapesLayer(QtLayer):
         face_comboBox.activated[str].connect(lambda text=face_comboBox:
                                              self.changeFaceColor(text))
         self.faceComboBox = face_comboBox
-        self.grid_layout.addWidget(QLabel('face_color:'), 4, 0)
-        self.grid_layout.addWidget(face_comboBox, 4, 1)
+        self.grid_layout.addWidget(QLabel('face_color:'), 4, 0, 1, 2)
+        self.grid_layout.addWidget(face_comboBox, 4, 2, 1, 2)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
@@ -56,8 +56,8 @@ class QtShapesLayer(QtLayer):
         edge_comboBox.activated[str].connect(lambda text=edge_comboBox:
                                              self.changeEdgeColor(text))
         self.edgeComboBox = edge_comboBox
-        self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0)
-        self.grid_layout.addWidget(edge_comboBox, 5, 1)
+        self.grid_layout.addWidget(QLabel('edge_color:'), 5, 0, 1, 2)
+        self.grid_layout.addWidget(edge_comboBox, 5, 2, 1, 2)
 
         self.setExpanded(False)
 
