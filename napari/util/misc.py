@@ -219,12 +219,11 @@ class StringEnum(Enum):
         """
         return name.lower()
 
-    @classmethod
-    def _missing_(cls, value):
+    def _missing_(self, value):
         """ function called with provided value does not match any of the class
            member values. This function tries again with an upper case string.
         """
-        return cls(value.lower())
+        return self(value.lower())
 
     def __str__(self):
         """String representation: The string method returns the
