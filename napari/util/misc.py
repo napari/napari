@@ -217,17 +217,17 @@ class StringEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value
         """
-        return name
+        return name.lower()
 
     @classmethod
     def _missing_(cls, value):
         """ function called with provided value does not match any of the class
            member values. This function tries again with an upper case string.
         """
-        return cls(value.upper())
+        return cls(value.lower())
 
     def __str__(self):
         """String representation: The string method returns the
         valid vispy symbol string for the Markers visual.
         """
-        return self.value.lower()
+        return self.value
