@@ -63,7 +63,7 @@ class Layer(VisualWrapper, ABC):
         self._indices = (0, 0)
         self._position = (0, 0)
         self.coordinates = (0, 0)
-        self._thumbnail_shape = (28, 28, 4)
+        self._thumbnail_shape = (28, 28, 3)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._name = ''
         self.events.add(select=Event,
@@ -166,8 +166,6 @@ class Layer(VisualWrapper, ABC):
 
     @thumbnail.setter
     def thumbnail(self, thumbnail):
-        if thumbnail == self.thumbnail:
-            return
         self._thumbnail = thumbnail
         self.events.thumbnail()
 

@@ -5,6 +5,7 @@ from imageio import imwrite
 
 import numpy as np
 from copy import copy
+from scipy.ndimage import zoom
 
 import vispy.color
 
@@ -208,6 +209,7 @@ class Image(Layer):
 
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
+        self._update_thumbnail()
 
     @property
     def multichannel(self):
@@ -263,6 +265,7 @@ class Image(Layer):
             name = self.colormap_name
         self.colormap_name = name
         self._node.cmap = self._colormaps[name]
+        #self._update_thumbnail()
         self.events.colormap()
 
     @property
@@ -284,6 +287,7 @@ class Image(Layer):
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
         self._node.clim = clim
+        self._update_thumbnail()
         self.events.clim()
 
     @property
@@ -325,6 +329,22 @@ class Image(Layer):
 
     def _clim_range_default(self):
         return [float(self.image.min()), float(self.image.max())]
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colormap.
+        """
+        print(self._image_view.shape)
+        thumbnail = zoom(self._image_view, np.array(self._thumbnail_shape[:2])/np.array(self._image_view.shape[:2]))
+        print(thumbnail.shape)
+        image = np.clip(thumbnail, self.clim[0], self.clim[1])
+        color_range = self.clim[1] - self.clim[0]
+        if color_range != 0:
+            image = image/color_range
+        mapped_image = (self.colormap[1].map(image)*255).astype('uint8')
+        mapped_image = mapped_image.reshape(list(thumbnail.shape) + [4])
+        print(mapped_image.shape)
+        #self.thumbnail = mapped_image
+        self.thumbnail[:, :, 1] = self._image_view[:28, :28]
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position

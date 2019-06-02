@@ -33,8 +33,8 @@ class QtLayer(QFrame):
         tb = QLabel(self)
         tb.setObjectName('thumbmnail')
         tb.setToolTip('Layer thumbmnail')
-        image = QImage(self.layer.thumbnail, self.layer._thumbnail_shape[0],
-                       self.layer._thumbnail_shape[1], QImage.Format_RGB888)
+        image = QImage(self.layer.thumbnail, self.layer.thumbnail.shape[0],
+                       self.layer.thumbnail.shape[1], QImage.Format_RGB888)
         tb.setPixmap(QPixmap.fromImage(image))
         self.thumbnail_label = tb
         self.grid_layout.addWidget(tb, 0, 1, 1, 1)
@@ -162,6 +162,6 @@ class QtLayer(QFrame):
             self.visibleCheckBox.setChecked(self.layer.visible)
 
     def _on_thumbnail_change(self, event):
-        image = QImage(self.layer.thumbnail, self.layer._thumbnail_shape[0],
-                       self.layer._thumbnail_shape[1], QImage.Format_RGB888)
+        image = QImage(self.layer.thumbnail, self.layer.thumbnail.shape[0],
+                       self.layer.thumbnail.shape[1], QImage.Format_RGB888)
         self.thumbnail_label.setPixmap(QPixmap.fromImage(image))
