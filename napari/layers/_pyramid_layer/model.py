@@ -223,7 +223,7 @@ class Pyramid(Image):
             String containing a message that can be used as a status update.
         """
         if isinstance(value, np.ndarray):
-            if value.dtype == np.int:
+            if isinstance(value[0], np.integer) or isinstance(value[0], int):
                 v_str = str(value)
             else:
                 v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
