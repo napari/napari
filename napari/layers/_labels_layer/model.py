@@ -79,6 +79,7 @@ class Labels(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
         self._qt_properties = QtLabelsLayer(self)
         self._qt_controls = QtLabelsControls(self)
 
@@ -161,8 +162,6 @@ class Labels(Layer):
         self._contiguous = contiguous
         self.events.contiguous()
 
-        self.refresh()
-
     @property
     def n_dimensional(self):
         """ bool: if True, edits labels not just in central plane but also
@@ -174,8 +173,6 @@ class Labels(Layer):
     def n_dimensional(self, n_dimensional):
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
-
-        self.refresh()
 
     @property
     def brush_size(self):
@@ -192,8 +189,6 @@ class Labels(Layer):
         self._brush_size = int(brush_size)
         self.cursor_size = self._brush_size / self.scale_factor
         self.events.brush_size()
-
-        self.refresh()
 
     @property
     def selected_label(self):
@@ -212,8 +207,6 @@ class Labels(Layer):
         else:
             self._selected_color = self.label_color(selected_label)[0]
         self.events.selected_label()
-
-        self.refresh()
 
     @property
     def mode(self):
@@ -325,6 +318,7 @@ class Labels(Layer):
 
         coord, label = self.get_value()
         self.status = self.get_message(coord, label)
+        self._update_thumbnail()
 
     @property
     def method(self):
@@ -506,6 +500,21 @@ class Labels(Layer):
         msg = f'{int_coord}, {self.name}, label {value}'
 
         return msg
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colors.
+        """
+        zoom_factor = np.divide(self._thumbnail_shape[:2],
+                                 self._image_view.shape[:2]).min()
+        thumbnail = np.round(ndi.zoom(self._image_view, zoom_factor))
+        thumbnail = self.raw_to_displayed(thumbnail)
+        mapped = self.colormap.map(thumbnail) * 255
+        mapped = mapped.reshape(list(thumbnail.shape) + [4])
+        total_padding = np.subtract(self.thumbnail.shape, mapped.shape)
+        padding = [(p//2, (p+1)//2) for p in total_padding]
+        padded = np.pad(mapped, padding, 'constant')
+        padded[:, :, 3] = padded[:, :, 3]*self.opacity
+        self.thumbnail = padded.astype('uint8')
 
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the

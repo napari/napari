@@ -42,11 +42,11 @@ QSplitter::handle:vertical {
 }
 
 QtDivider[selected=true] {
-  background-color: {{ text }}; 
+  background-color: {{ text }};
 }
 
 QtDivider[selected=false] {
-  background-color: {{ background }}; 
+  background-color: {{ background }};
 }
 
 /* ------------------------------------------------------ */
@@ -167,6 +167,7 @@ QtLayer > QLineEdit {
     border: none;
     border-radius: 0px;
     font-size: 18px;
+    margin-right: 10px;
     padding-right: 10px;
     qproperty-alignment: left;
 }

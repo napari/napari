@@ -20,6 +20,7 @@ class QtLayer(QFrame):
         self.setObjectName('layer')
 
         self.grid_layout = QGridLayout()
+        self.setContentsMargins(0, 0, 0, 0)
 
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
@@ -34,7 +35,7 @@ class QtLayer(QFrame):
         tb.setObjectName('thumbmnail')
         tb.setToolTip('Layer thumbmnail')
         image = QImage(self.layer.thumbnail, self.layer.thumbnail.shape[0],
-                       self.layer.thumbnail.shape[1], QImage.Format_RGB888)
+                       self.layer.thumbnail.shape[1], QImage.Format_RGBA8888)
         tb.setPixmap(QPixmap.fromImage(image))
         self.thumbnail_label = tb
         self.grid_layout.addWidget(tb, 0, 1, 1, 1)
@@ -128,10 +129,10 @@ class QtLayer(QFrame):
         if bool:
             self.expanded = True
             rows = self.grid_layout.rowCount()
-            self.setFixedHeight(55*(rows-1))
+            self.setFixedHeight(60*(rows-1) - 50)
         else:
             self.expanded = False
-            self.setFixedHeight(55)
+            self.setFixedHeight(60)
         rows = self.grid_layout.rowCount()
         for i in range(1, rows):
             for j in range(4):
@@ -163,5 +164,5 @@ class QtLayer(QFrame):
 
     def _on_thumbnail_change(self, event):
         image = QImage(self.layer.thumbnail, self.layer.thumbnail.shape[0],
-                       self.layer.thumbnail.shape[1], QImage.Format_RGB888)
+                       self.layer.thumbnail.shape[1], QImage.Format_RGBA8888)
         self.thumbnail_label.setPixmap(QPixmap.fromImage(image))
