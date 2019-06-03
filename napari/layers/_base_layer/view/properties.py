@@ -38,7 +38,7 @@ class QtLayer(QFrame):
                        self.layer.thumbnail.shape[0], QImage.Format_RGBA8888)
         tb.setPixmap(QPixmap.fromImage(image))
         self.thumbnail_label = tb
-        self.grid_layout.addWidget(tb, 0, 1, 1, 1)
+        self.grid_layout.addWidget(tb, 0, 1, 1, 1, Qt.AlignLeft)
 
         textbox = QLineEdit(self)
         textbox.setText(layer.name)
