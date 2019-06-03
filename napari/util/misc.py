@@ -1,5 +1,6 @@
 """Miscellaneous utility functions.
 """
+from enum import Enum
 import re
 import numpy as np
 import inspect
@@ -46,7 +47,7 @@ def is_iterable(arg, color=False):
     elif np.isscalar(arg):
         return False
     elif color and isinstance(arg, (list, np.ndarray)):
-        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg)==4):
+        if np.array(arg).ndim == 1 and (len(arg) == 3 or len(arg) == 4):
             return False
         else:
             return True
@@ -210,3 +211,22 @@ def segment_normal_vector(a, b):
     else:
         unit_norm = normal/norm
     return unit_norm
+
+
+class StringEnum(Enum):
+    def _generate_next_value_(name, start, count, last_values):
+        """ autonaming function assigns each value its own name as a value
+        """
+        return name.lower()
+
+    def _missing_(self, value):
+        """ function called with provided value does not match any of the class
+           member values. This function tries again with an upper case string.
+        """
+        return self(value.lower())
+
+    def __str__(self):
+        """String representation: The string method returns the
+        valid vispy symbol string for the Markers visual.
+        """
+        return self.value
