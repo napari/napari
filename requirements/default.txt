@@ -6,4 +6,3 @@ vispy>=0.5.3
 PyOpenGL>=3.1.0
 PyQt5>=5.10.1
 SIP>=0.1.5
-pre-commit>=1.16.1
