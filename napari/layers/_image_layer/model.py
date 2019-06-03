@@ -355,7 +355,7 @@ class Image(Layer):
                 zoomed = (zoomed - low) / color_range
             mapped = self.colormap[1].map(zoomed) * 255
             mapped = mapped.reshape(list(zoomed.shape) + [4])
-        mapped[:, :, 3] = mapped[:, :, 3]*self.opacity
+        mapped[:, :, 3] = mapped[:, :, 3] * self.opacity
         self.thumbnail = mapped.astype('uint8')
 
     def get_value(self):

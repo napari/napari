@@ -511,7 +511,7 @@ class Labels(Layer):
         zoomed = self.raw_to_displayed(zoomed)
         mapped = self.colormap.map(zoomed) * 255
         mapped = mapped.reshape(list(zoomed.shape) + [4])
-        mapped[:, :, 3] = mapped[:, :, 3]*self.opacity
+        mapped[:, :, 3] = mapped[:, :, 3] * self.opacity
         self.thumbnail = mapped.astype('uint8')
 
     def to_xml_list(self):
