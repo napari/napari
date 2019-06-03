@@ -506,15 +506,13 @@ class Labels(Layer):
         """
         zoom_factor = np.divide(self._thumbnail_shape[:2],
                                 self._image_view.shape[:2]).min()
-        thumbnail = np.round(ndi.zoom(self._image_view, zoom_factor))
-        thumbnail = self.raw_to_displayed(thumbnail)
-        mapped = self.colormap.map(thumbnail) * 255
-        mapped = mapped.reshape(list(thumbnail.shape) + [4])
-        total_padding = np.subtract(self.thumbnail.shape, mapped.shape)
-        padding = [(p//2, (p+1)//2) for p in total_padding]
-        padded = np.pad(mapped, padding, 'constant')
-        padded[:, :, 3] = padded[:, :, 3]*self.opacity
-        self.thumbnail = padded.astype('uint8')
+        zoomed = np.round(ndi.zoom(self._image_view, zoom_factor,
+                                   prefilter=False, order=0))
+        zoomed = self.raw_to_displayed(zoomed)
+        mapped = self.colormap.map(zoomed) * 255
+        mapped = mapped.reshape(list(zoomed.shape) + [4])
+        mapped[:, :, 3] = mapped[:, :, 3]*self.opacity
+        self.thumbnail = mapped.astype('uint8')
 
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the

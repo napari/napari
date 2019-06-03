@@ -338,27 +338,25 @@ class Image(Layer):
         zoom_factor = np.divide(self._thumbnail_shape[:2],
                                 self._image_view.shape[:2]).min()
         if self.multichannel:
-            thumbnail = ndi.zoom(self._image_view,
-                                 (zoom_factor, zoom_factor, 1))
+            zoomed = ndi.zoom(self._image_view, (zoom_factor, zoom_factor, 1),
+                              prefilter=False, order=0)
             if self._image_view.shape[2] == 4:
-                mapped = thumbnail
+                mapped = zoomed
             else:
-                mapped = np.pad(thumbnail, (0, 0, 255), 'constant',
-                                constant_values=1)
+                ones = 255 * np.ones(list(zoomed.shape[:2]) + [1])
+                mapped = np.concatenate([zoomed, ones], axis=2)
         else:
-            thumbnail = ndi.zoom(self._image_view, zoom_factor)
-            image = np.clip(thumbnail, self.clim[0], self.clim[1])
-            image = image - self.clim[0]
-            color_range = self.clim[1] - self.clim[0]
+            zoomed = ndi.zoom(self._image_view, zoom_factor,
+                              prefilter=False, order=0)
+            low, high = self.clim
+            zoomed = np.clip(zoomed, low, high)
+            color_range = high - low
             if color_range != 0:
-                image = image/color_range
-            mapped = self.colormap[1].map(image) * 255
-            mapped = mapped.reshape(list(thumbnail.shape) + [4])
-        total_padding = np.subtract(self.thumbnail.shape, mapped.shape)
-        padding = [(p//2, (p+1)//2) for p in total_padding]
-        padded = np.pad(mapped, padding, 'constant')
-        padded[:, :, 3] = padded[:, :, 3]*self.opacity
-        self.thumbnail = padded.astype('uint8')
+                zoomed = (zoomed - low) / color_range
+            mapped = self.colormap[1].map(zoomed) * 255
+            mapped = mapped.reshape(list(zoomed.shape) + [4])
+        mapped[:, :, 3] = mapped[:, :, 3]*self.opacity
+        self.thumbnail = mapped.astype('uint8')
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
