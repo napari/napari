@@ -20,7 +20,7 @@ def _remove(event):
     layers = event.source
     layer = event.item
     layer._order = 0
-    layer._view = None
+    layer._parent = None
 
 
 def _reorder(event):
