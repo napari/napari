@@ -505,7 +505,7 @@ class Labels(Layer):
         """Update thumbnail with current image data and colors.
         """
         zoom_factor = np.divide(self._thumbnail_shape[:2],
-                                 self._image_view.shape[:2]).min()
+                                self._image_view.shape[:2]).min()
         thumbnail = np.round(ndi.zoom(self._image_view, zoom_factor))
         thumbnail = self.raw_to_displayed(thumbnail)
         mapped = self.colormap.map(thumbnail) * 255

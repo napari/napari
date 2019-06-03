@@ -336,7 +336,7 @@ class Image(Layer):
         """Update thumbnail with current image data and colormap.
         """
         zoom_factor = np.divide(self._thumbnail_shape[:2],
-                                 self._image_view.shape[:2]).min()
+                                self._image_view.shape[:2]).min()
         if self.multichannel:
             thumbnail = ndi.zoom(self._image_view,
                                  (zoom_factor, zoom_factor, 1))
