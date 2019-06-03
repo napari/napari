@@ -506,11 +506,11 @@ class Labels(Layer):
         """
         zoom_factor = np.divide(self._thumbnail_shape[:2],
                                 self._image_view.shape[:2]).min()
-        zoomed = np.round(ndi.zoom(self._image_view, zoom_factor,
-                                   prefilter=False, order=0))
-        zoomed = self.raw_to_displayed(zoomed)
-        mapped = self.colormap.map(zoomed) * 255
-        mapped = mapped.reshape(list(zoomed.shape) + [4])
+        downsampled = np.round(ndi.zoom(self._image_view, zoom_factor,
+                                        prefilter=False, order=0))
+        downsampled = self.raw_to_displayed(downsampled)
+        mapped = self.colormap.map(downsampled) * 255
+        mapped = mapped.reshape(list(downsampled.shape) + [4])
         mapped[:, :, 3] = mapped[:, :, 3] * self.opacity
         self.thumbnail = mapped.astype('uint8')
 
