@@ -1,6 +1,6 @@
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame
+
+from .._constants import Mode
 
 
 class QtMarkersControls(QFrame):
@@ -33,11 +33,11 @@ class QtMarkersControls(QFrame):
 
     def set_mode(self, event):
         mode = event.mode
-        if mode == 'add':
+        if mode == Mode.ADD:
             self.addition_button.setChecked(True)
-        elif mode == 'select':
+        elif mode == Mode.SELECT:
             self.select_button.setChecked(True)
-        elif mode == 'pan/zoom':
+        elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
@@ -56,7 +56,7 @@ class QtPanZoomButton(QRadioButton):
     def _set_mode(self, bool):
         with self.layer.events.mode.blocker():
             if bool:
-                self.layer.mode = 'pan/zoom'
+                self.layer.mode = Mode.PAN_ZOOM
 
 
 class QtSelectButton(QRadioButton):
@@ -72,7 +72,7 @@ class QtSelectButton(QRadioButton):
     def _set_mode(self, bool):
         with self.layer.events.mode.blocker():
             if bool:
-                self.layer.mode = 'select'
+                self.layer.mode = Mode.SELECT
 
 
 class QtAdditionButton(QRadioButton):
@@ -88,4 +88,4 @@ class QtAdditionButton(QRadioButton):
     def _set_mode(self, bool):
         with self.layer.events.mode.blocker():
             if bool:
-                self.layer.mode = 'add'
+                self.layer.mode = Mode.ADD

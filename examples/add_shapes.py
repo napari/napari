@@ -47,6 +47,9 @@ with app_context():
                      opacity=0.75)
     layer.refresh()
 
+    # Set the layer mode with a string
+    layer.mode = 'select'
+
     layer._qt_properties.setExpanded(True)
 
 # Print the shape coordinate data
