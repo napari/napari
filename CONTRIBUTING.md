@@ -37,6 +37,10 @@ Install the `black` formatter hook with:
 pre-commit install
 ```
 
+With help of pre-commit, your future commits will be reformatted with our black configuration
+which includes settings like `skip-string-normalization = true` and `max-line-length = 79`.
+If you like to learn more please check [black](https://github.com/python/black).
+
 ## Building the dev-docs
 
 Go to documentation source
