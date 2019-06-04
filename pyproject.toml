@@ -1,3 +1,4 @@
 [tool.black]
 target-version = ['py36', 'py37']
 skip-string-normalization = true
+max-line-length = 79
