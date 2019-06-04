@@ -2,9 +2,11 @@
 """
 from enum import Enum
 import re
-import numpy as np
 import inspect
 import itertools
+
+import numpy as np
+import wrapt
 
 
 def str_to_rgb(arg):
@@ -351,3 +353,17 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
+
+
+class ReadOnlyWrapper(wrapt.ObjectProxy):
+    """
+    Disable item and attribute setting with the exception of  ``__wrapped__``.
+    """
+
+    def __setattr__(self, name, val):
+        if name != '__wrapped__':
+            raise TypeError(f'cannot set attribute {name}')
+        super().__setattr__(name, val)
+
+    def __setitem__(self, name, val):
+        raise TypeError(f'cannot set item {name}')

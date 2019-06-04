@@ -24,7 +24,7 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
-from ..util.misc import is_rgb
+from ..util.misc import is_rgb, ReadOnlyWrapper
 from ..util.keybindings import components_to_key_combo
 from ..util.io import read
 
@@ -289,19 +289,44 @@ class QtViewer(QSplitter):
         self.buttons.consoleButton.style().unpolish(self.buttons.consoleButton)
         self.buttons.consoleButton.style().polish(self.buttons.consoleButton)
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        layer = self.viewer.active_layer
-        if layer is not None:
-            self.layer_to_visual[layer].on_mouse_move(event)
-
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
+        if event.pos is None:
+            return
+
         layer = self.viewer.active_layer
         if layer is not None:
             self.layer_to_visual[layer].on_mouse_press(event)
+            event = ReadOnlyWrapper(event)
+            for mouse_drag_func in layer.mouse_drag_callbacks:
+                gen = mouse_drag_func(layer, event)
+                if inspect.isgeneratorfunction(mouse_drag_func):
+                    try:
+                        next(gen)
+                        layer._mouse_drag_gen[mouse_drag_func] = gen
+                        layer._persisted_mouse_event[gen] = event
+                    except StopIteration:
+                        pass
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            return
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            self.layer_to_visual[layer].on_mouse_move(event)
+            for mouse_move_func in layer.mouse_move_callbacks:
+                mouse_move_func(layer, event)
+            for func, gen in tuple(layer._mouse_drag_gen.items()):
+                layer._persisted_mouse_event[gen].__wrapped__ = event
+                try:
+                    next(gen)
+                except StopIteration:
+                    del layer._mouse_drag_gen[func]
+                    del layer._persisted_mouse_event[gen]
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -309,6 +334,14 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             self.layer_to_visual[layer].on_mouse_release(event)
+            for func, gen in tuple(layer._mouse_drag_gen.items()):
+                layer._persisted_mouse_event[gen].__wrapped__ = event
+                try:
+                    next(gen)
+                except StopIteration:
+                    pass
+                del layer._mouse_drag_gen[func]
+                del layer._persisted_mouse_event[gen]
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
