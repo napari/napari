@@ -16,7 +16,8 @@ def slice_by_plane(data):
     key : tuple of int | bool
         If shape is 2D returns an empty tuple, otherwise return the tuple
         of int defining the 2D plane if the shape is entirely definied
-        within a single 2D plane. Otherwise return False
+        within a single 2D plane. Otherwise return False as the shape is
+        invalid.
     value : np.ndarray | False
         Nx2 array of vertices specifying the shape in the 2D plane or False
         if no such specification exists.
