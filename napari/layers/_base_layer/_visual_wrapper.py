@@ -3,6 +3,8 @@ from vispy.visuals.transforms import STTransform
 from vispy.gloo import get_state_presets
 from ...util.event import EmitterGroup, Event
 
+from ._constants import Blending
+
 
 class VisualWrapper:
     """Wrapper around ``vispy.scene.VisualNode`` objects.
@@ -35,7 +37,7 @@ class VisualWrapper:
     """
     def __init__(self, central_node):
         self._node = central_node
-        self._blending = 'translucent'
+        self._blending = Blending.TRANSLUCENT
         self._parent = None
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
@@ -43,7 +45,6 @@ class VisualWrapper:
                                    opacity=Event,
                                    visible=Event)
 
-    _blending_modes = set(get_state_presets().keys())
 
     @property
     def _master_transform(self):
@@ -100,31 +101,30 @@ class VisualWrapper:
 
     @property
     def blending(self):
-        """{'opaque', 'translucent', 'additive'}: Blending mode.
+        """Blending: Blending mode.
             Selects a preset blending mode in vispy that determines how
             RGB and alpha values get mixed.
-            'opaque'
+            Blending.OPAQUE
                 Allows for only the top layer to be visible and corresponds to
                 depth_test=True, cull_face=False, blend=False.
-            'translucent'
+            Blending.TRANSLUCENT
                 Allows for multiple layers to be blended with different opacity
                 and corresponds to depth_test=True, cull_face=False,
                 blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            'additive'
+            Blending.ADDITIVE
                 Allows for multiple layers to be blended together with
                 different colors and opacity. Useful for creating overlays. It
                 corresponds to depth_test=False, cull_face=False, blend=True,
                 blend_func=('src_alpha', 'one').
         """
-        return self._blending
+        return str(self._blending)
 
     @blending.setter
     def blending(self, blending):
-        if blending not in self._blending_modes:
-            raise ValueError('expected one of '
-                             "{'opaque', 'translucent', 'additive'}; "
-                             f'got {blending}')
-        self._node.set_gl_state(blending)
+        if isinstance(blending, str):
+            blending = Blending(blending)
+
+        self._node.set_gl_state(blending.value)
         self._blending = blending
         self._node.update()
         self.events.blending()
