@@ -1,5 +1,5 @@
 from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
-                            QVBoxLayout, QCheckBox, QWidget, QComboBox)
+                            QCheckBox, QComboBox)
 from qtpy.QtCore import Qt
 
 from .._constants import Blending

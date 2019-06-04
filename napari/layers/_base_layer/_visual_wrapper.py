@@ -1,6 +1,5 @@
 # TODO: create & use our own transform class
 from vispy.visuals.transforms import STTransform
-from vispy.gloo import get_state_presets
 from ...util.event import EmitterGroup, Event
 
 from ._constants import Blending
@@ -44,7 +43,6 @@ class VisualWrapper:
                                    blending=Event,
                                    opacity=Event,
                                    visible=Event)
-
 
     @property
     def _master_transform(self):
