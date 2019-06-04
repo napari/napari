@@ -203,16 +203,7 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
             # Add the shape data
-            if len(data) == 0:
-                # If no shape data was passed
-                self._input_ndim = ndim
-            elif np.array(data[0]).ndim == 1:
-                #If a single shape was passed
-                self._input_ndim = np.array(data).shape[1]
-            else:
-                #If many shapes were passed
-                self._input_ndim = np.array(data[0]).shape[1]
-            print('dims', self._input_ndim)
+            self._input_ndim = ndim
             self._data = {(): ShapeList()}
             self.slice_data = self.data[()]
             self._broadcast = broadcast
@@ -605,7 +596,11 @@ class Shapes(Layer):
             if slice_key is not False:
                 shape = shape_cls(data_2D, edge_width=ew, edge_color=ec,
                                   face_color=fc, opacity=o, z_index=z)
-                if slice_key in self.data:
+                # If data is being drawn in gui it will already be 2D and so
+                # should just be added to the current ShapeList
+                if slice_key == ():
+                    self.slice_data.add(shape)
+                elif slice_key in self.data:
                     self.data[slice_key].add(shape)
                 else:
                     self.data[slice_key] = ShapeList()
@@ -618,22 +613,17 @@ class Shapes(Layer):
                 self.slice_data = self.data[()]
             else:
                 if self.broadcast:
-                    print('broadcast')
                     slice_key = ()
                     if not self.slice_data == self.data[slice_key]:
-                        print('change data')
                         self.slice_data = self.data[slice_key]
-                        print(self.slice_data.shapes)
-                        self._finish_drawing()
+                        #self._finish_drawing()
                 else:
-                    print('not broadcast')
                     slice_key = self.indices[:-2]
                     if slice_key not in self.data:
                         self.data[slice_key] = ShapeList()
                     if not self.slice_data == self.data[slice_key]:
-                        print('change data')
                         self.slice_data = self.data[slice_key]
-                        self._finish_drawing()
+                        #self._finish_drawing()
 
         z_order = self.slice_data._mesh.triangles_z_order
         faces = self.slice_data._mesh.triangles[z_order]
@@ -1279,9 +1269,7 @@ class Shapes(Layer):
             # broadcast across sliced dimensions
             slices = self.slice_data.to_masks(mask_shape=mask_shape[-2:],
                                               shape_type=shape_type)
-            masks = []
-            for m in slices:
-                masks.append(np.broadcast_to(m, mask_shape))
+            masks = [np.broadcast_to(m, mask_shape) for m in slices]
         else:
             # For nD insert each keyed slice into correct place in volume
             masks = []
@@ -1293,7 +1281,10 @@ class Shapes(Layer):
                         vol = np.zeros(mask_shape)
                         vol[slice_key] = m
                         masks.append(vol)
-        masks = np.stack(masks, axis=0)
+        if len(masks) == 0:
+            masks = np.array(masks)
+        else:
+            masks = np.stack(masks, axis=0)
         return masks
 
     def to_labels(self, labels_shape=None, shape_type=None):
