@@ -6,6 +6,7 @@ from imageio import imwrite
 import numpy as np
 from copy import copy
 from scipy import ndimage as ndi
+from skimage.util import img_as_ubyte
 
 import vispy.color
 
@@ -341,11 +342,14 @@ class Image(Layer):
             downsampled = ndi.zoom(self._image_view,
                                    (zoom_factor, zoom_factor, 1),
                                    prefilter=False, order=0)
-            if self._image_view.shape[2] == 4:
-                mapped = downsampled
-            else:
-                ones = 255 * np.ones(list(downsampled.shape[:2]) + [1])
-                mapped = np.concatenate([downsampled, ones], axis=2)
+            if self._image_view.shape[2] == 4: # image is RGBA
+                downsampled[..., 3] *= self.opacity
+                colormapped = img_as_ubyte(downsampled)
+            else: # image is RGB
+                colormapped = img_as_ubyte(downsampled)
+                alpha = np.full(downsampled.shape[:2] + (1,),
+                                int(255*self.opacity), dtype=np.uint8)
+                colormapped = np.concatenate([colormapped, alpha], axis=2)
         else:
             downsampled = ndi.zoom(self._image_view, zoom_factor,
                                    prefilter=False, order=0)
@@ -354,10 +358,11 @@ class Image(Layer):
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
-            mapped = self.colormap[1].map(downsampled) * 255
-            mapped = mapped.reshape(list(downsampled.shape) + [4])
-        mapped[:, :, 3] = mapped[:, :, 3] * self.opacity
-        self.thumbnail = mapped.astype('uint8')
+            colormapped = self.colormap[1].map(downsampled)
+            colormapped = colormapped.reshape(downsampled.shape + (4,))
+            colormapped[..., 3] *= self.opacity
+            colormapped = img_as_ubyte(colormapped)
+        self.thumbnail = colormapped
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position

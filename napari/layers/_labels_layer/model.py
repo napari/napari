@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import ndimage as ndi
+from skimage.util import img_as_ubyte
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
@@ -509,10 +510,10 @@ class Labels(Layer):
         downsampled = np.round(ndi.zoom(self._image_view, zoom_factor,
                                         prefilter=False, order=0))
         downsampled = self.raw_to_displayed(downsampled)
-        mapped = self.colormap.map(downsampled) * 255
-        mapped = mapped.reshape(list(downsampled.shape) + [4])
-        mapped[:, :, 3] = mapped[:, :, 3] * self.opacity
-        self.thumbnail = mapped.astype('uint8')
+        colormapped = self.colormap.map(downsampled)
+        colormapped = colormapped.reshape(downsampled.shape + (4,))
+        colormapped[..., 3] *= self.opacity
+        self.thumbnail = img_as_ubyte(colormapped)
 
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the

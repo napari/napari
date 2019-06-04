@@ -34,10 +34,8 @@ class QtLayer(QFrame):
         tb = QLabel(self)
         tb.setObjectName('thumbmnail')
         tb.setToolTip('Layer thumbmnail')
-        image = QImage(self.layer.thumbnail, self.layer.thumbnail.shape[1],
-                       self.layer.thumbnail.shape[0], QImage.Format_RGBA8888)
-        tb.setPixmap(QPixmap.fromImage(image))
         self.thumbnail_label = tb
+        self._on_thumbnail_change(None)
         self.grid_layout.addWidget(tb, 0, 1, 1, 1, Qt.AlignLeft)
 
         textbox = QLineEdit(self)
@@ -164,6 +162,8 @@ class QtLayer(QFrame):
             self.visibleCheckBox.setChecked(self.layer.visible)
 
     def _on_thumbnail_change(self, event):
-        image = QImage(self.layer.thumbnail, self.layer.thumbnail.shape[1],
-                       self.layer.thumbnail.shape[0], QImage.Format_RGBA8888)
+        thumbnail = self.layer.thumbnail
+        # Note that QImage expects the image width followed by height
+        image = QImage(thumbnail, thumbnail.shape[1], thumbnail.shape[0],
+                       QImage.Format_RGBA8888)
         self.thumbnail_label.setPixmap(QPixmap.fromImage(image))
