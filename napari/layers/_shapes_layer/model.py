@@ -307,9 +307,7 @@ class Shapes(Layer):
     def nshapes(self):
         """int: total number of shapes.
         """
-        nshapes = 0
-        for key, data in self.data.items():
-            nshapes = nshapes + len(data.shapes)
+        nshapes = sum(len(data.shapes) for data in self.data.values())
         return nshapes
 
     @property
@@ -594,11 +592,7 @@ class Shapes(Layer):
             if key is not False:
                 shape = shape_cls(data_2D, edge_width=ew, edge_color=ec,
                                   face_color=fc, opacity=o, z_index=z)
-                # If data is being drawn in gui it will already be 2D and so
-                # should just be added to the current ShapeList
-                if key == ():
-                    self._data_view.add(shape)
-                elif key in self.data:
+                if key in self.data:
                     self.data[key].add(shape)
                 else:
                     self.data[key] = ShapeList()
@@ -611,9 +605,12 @@ class Shapes(Layer):
                 self._data_view = self.data[()]
             else:
                 if self.broadcast:
+                    print('bbbb')
                     key = ()
                     if not self._data_view == self.data[key]:
+                        print('sssss')
                         self._data_view = self.data[key]
+                        print(self._data_view.shapes)
                 else:
                     key = self.indices[:-2]
                     if key not in self.data:

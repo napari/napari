@@ -22,13 +22,21 @@ with app_context():
     colors = [np.random.choice(base_cols) for i in range(128)]
 
     layer = viewer.add_shapes(np.array(shapes), shape_type='rectangle',
-                              face_color=colors)
+                              face_color=colors, name='sliced')
 
     masks = layer.to_masks(mask_shape=(128, 128, 128))
     labels = layer.to_labels(labels_shape=(128, 128, 128))
     shape_array = np.array(layer.to_list())
 
-    print('nshapes', layer.nshapes,
+    print('sliced nshapes', layer.nshapes,
+          'mask shape', masks.shape,
+          'labels_shape', labels.shape,
+          'array_shape', shape_array.shape)
+
+    layer = viewer.add_shapes(np.array(shapes[0]), shape_type='rectangle',
+                              broadcast=True, name='broadcasted')
+
+    print('broadcast nshapes', layer.nshapes,
           'mask shape', masks.shape,
           'labels_shape', labels.shape,
           'array_shape', shape_array.shape)
