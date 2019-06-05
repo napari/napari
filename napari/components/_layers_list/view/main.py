@@ -75,7 +75,8 @@ class QtLayersList(QScrollArea):
         # Layers Widget itself and should be ignored.
         widget = self.childAt(event.pos())
         layer = (getattr(widget, 'layer', None) or
-                 getattr(widget.parentWidget(), 'layer', None))
+                 getattr(widget.parentWidget(), 'layer', None) or
+                 getattr(widget.parentWidget().parentWidget(), 'layer', None))
 
         if layer is not None:
             self.drag_start_position = event.pos()

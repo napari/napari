@@ -5,6 +5,8 @@ from imageio import imwrite
 
 import numpy as np
 from copy import copy
+from scipy import ndimage as ndi
+from skimage.util import img_as_ubyte
 
 import vispy.color
 
@@ -118,7 +120,8 @@ class Image(Layer):
         self._image = image
         self._meta = meta
         self.colormap_name = Image.default_colormap
-        self.colormap = Image.default_colormap
+        self._colormap = Image.default_colormap
+        self._node.cmap = self._colormaps[self.colormap_name]
         self.interpolation = Image.default_interpolation
         self._interpolation_names = interpolation_names
 
@@ -135,6 +138,7 @@ class Image(Layer):
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
 
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
         self._qt_properties = QtImageLayer(self)
         self._qt_controls = QtImageControls(self)
 
@@ -208,6 +212,7 @@ class Image(Layer):
 
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
+        self._update_thumbnail()
 
     @property
     def multichannel(self):
@@ -263,6 +268,7 @@ class Image(Layer):
             name = self.colormap_name
         self.colormap_name = name
         self._node.cmap = self._colormaps[name]
+        self._update_thumbnail()
         self.events.colormap()
 
     @property
@@ -284,6 +290,7 @@ class Image(Layer):
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
         self._node.clim = clim
+        self._update_thumbnail()
         self.events.clim()
 
     @property
@@ -325,6 +332,37 @@ class Image(Layer):
 
     def _clim_range_default(self):
         return [float(self.image.min()), float(self.image.max())]
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colormap.
+        """
+        zoom_factor = np.divide(self._thumbnail_shape[:2],
+                                self._image_view.shape[:2]).min()
+        if self.multichannel:
+            downsampled = ndi.zoom(self._image_view,
+                                   (zoom_factor, zoom_factor, 1),
+                                   prefilter=False, order=0)
+            if self._image_view.shape[2] == 4: # image is RGBA
+                downsampled[..., 3] *= self.opacity
+                colormapped = img_as_ubyte(downsampled)
+            else: # image is RGB
+                colormapped = img_as_ubyte(downsampled)
+                alpha = np.full(downsampled.shape[:2] + (1,),
+                                int(255*self.opacity), dtype=np.uint8)
+                colormapped = np.concatenate([colormapped, alpha], axis=2)
+        else:
+            downsampled = ndi.zoom(self._image_view, zoom_factor,
+                                   prefilter=False, order=0)
+            low, high = self.clim
+            downsampled = np.clip(downsampled, low, high)
+            color_range = high - low
+            if color_range != 0:
+                downsampled = (downsampled - low) / color_range
+            colormapped = self.colormap[1].map(downsampled)
+            colormapped = colormapped.reshape(downsampled.shape + (4,))
+            colormapped[..., 3] *= self.opacity
+            colormapped = img_as_ubyte(colormapped)
+        self.thumbnail = colormapped
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -391,6 +429,7 @@ class Image(Layer):
             as a png according to the svg specification.
         """
         image = np.clip(self._image_view, self.clim[0], self.clim[1])
+        image = image - self.clim[0]
         color_range = self.clim[1] - self.clim[0]
         if color_range != 0:
             image = image/color_range
