@@ -1,6 +1,8 @@
 from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
-                            QVBoxLayout, QCheckBox, QWidget, QComboBox)
+                            QCheckBox, QComboBox)
 from qtpy.QtCore import Qt
+
+from .._constants import Blending
 
 
 class QtLayer(QFrame):
@@ -53,8 +55,8 @@ class QtLayer(QFrame):
         self.grid_layout.addWidget(sld, 1, 1)
 
         blend_comboBox = QComboBox()
-        for blend in self.layer._blending_modes:
-            blend_comboBox.addItem(blend)
+        for blend in Blending:
+            blend_comboBox.addItem(str(blend))
         index = blend_comboBox.findText(
             self.layer.blending, Qt.MatchFixedString)
         blend_comboBox.setCurrentIndex(index)
