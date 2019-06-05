@@ -26,8 +26,8 @@ class QtVectorsLayer(QtLayer):
         face_comboBox.activated[str].connect(
             lambda text=face_comboBox: self.change_face_color(text))
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('color:'), row, 0)
-        self.grid_layout.addWidget(face_comboBox, row, 1)
+        self.grid_layout.addWidget(QLabel('color:'), row, self.name_column)
+        self.grid_layout.addWidget(face_comboBox, row, self.property_column)
 
         # line width in pixels
         self.width_field = QDoubleSpinBox()
@@ -37,8 +37,8 @@ class QtVectorsLayer(QtLayer):
         self.width_field.setValue(value)
         self.width_field.valueChanged.connect(self.change_width)
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('width:'), row, 0)
-        self.grid_layout.addWidget(self.width_field, row, 1)
+        self.grid_layout.addWidget(QLabel('width:'), row, self.name_column)
+        self.grid_layout.addWidget(self.width_field, row, self.property_column)
 
         # averaging spinbox
         self.averaging_spinbox = QSpinBox()
@@ -47,8 +47,9 @@ class QtVectorsLayer(QtLayer):
         self.averaging_spinbox.setMinimum(1)
         self.averaging_spinbox.valueChanged.connect(self.change_average_type)
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('avg kernel'), row, 0)
-        self.grid_layout.addWidget(self.averaging_spinbox, row, 1)
+        self.grid_layout.addWidget(QLabel('avg kernel'), row, self.name_column)
+        self.grid_layout.addWidget(self.averaging_spinbox, row,
+                                   self.property_column)
 
         # line length
         self.length_field = QDoubleSpinBox()
@@ -58,8 +59,9 @@ class QtVectorsLayer(QtLayer):
         self.length_field.setMinimum(0.1)
         self.length_field.valueChanged.connect(self.change_length)
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('length:'), row, 0)
-        self.grid_layout.addWidget(self.length_field, row, 1)
+        self.grid_layout.addWidget(QLabel('length:'), row, self.name_column)
+        self.grid_layout.addWidget(self.length_field, row,
+                                   self.property_column)
 
         self.setExpanded(False)
 

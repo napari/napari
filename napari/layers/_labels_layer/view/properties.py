@@ -24,8 +24,9 @@ class QtLabelsLayer(QtLayer):
         shuffle_label = QLabel('shuffle colors:')
         shuffle_label.setObjectName('shuffle-label')
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(shuffle_label, row, 0)
-        self.grid_layout.addWidget(self.colormap_update, row, 1)
+        self.grid_layout.addWidget(shuffle_label, row, self.name_column)
+        self.grid_layout.addWidget(self.colormap_update, row,
+                                   self.property_column)
 
         # selection spinbox
         self.selection_spinbox = QSpinBox()
@@ -36,8 +37,8 @@ class QtLabelsLayer(QtLayer):
         self.selection_spinbox.setFixedWidth(75)
         self.selection_spinbox.valueChanged.connect(self.changeSelection)
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('label:'), row, 0)
-        self.grid_layout.addWidget(self.selection_spinbox, row, 1)
+        self.grid_layout.addWidget(QLabel('label:'), row, self.name_column)
+        self.grid_layout.addWidget(self.selection_spinbox, row, self.property_column)
 
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -54,8 +55,9 @@ class QtLabelsLayer(QtLayer):
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.brush_size_slider = sld
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('brush size:'), row, 0)
-        self.grid_layout.addWidget(sld, row, 1)
+        self.grid_layout.addWidget(QLabel('brush size:'), row,
+                                   self.name_column)
+        self.grid_layout.addWidget(sld, row, self.property_column)
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
@@ -64,8 +66,9 @@ class QtLabelsLayer(QtLayer):
                                        self.change_contig(state))
         self.contig_checkbox = contig_cb
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('contiguous:'), row, 0)
-        self.grid_layout.addWidget(contig_cb, row, 1)
+        self.grid_layout.addWidget(QLabel('contiguous:'), row,
+                                   self.name_column)
+        self.grid_layout.addWidget(contig_cb, row, self.property_column)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
@@ -74,8 +77,8 @@ class QtLabelsLayer(QtLayer):
                                      self.change_ndim(state))
         self.ndim_checkbox = ndim_cb
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('n-dim:'), row, 0)
-        self.grid_layout.addWidget(ndim_cb, row, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), row, self.name_column)
+        self.grid_layout.addWidget(ndim_cb, row, self.property_column)
 
         self.setExpanded(False)
 

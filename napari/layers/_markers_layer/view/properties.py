@@ -32,8 +32,8 @@ class QtMarkersLayer(QtLayer):
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.sizeSlider = sld
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('size:'), row, 0)
-        self.grid_layout.addWidget(sld, row, 1)
+        self.grid_layout.addWidget(QLabel('size:'), row, self.name_column)
+        self.grid_layout.addWidget(sld, row, self.property_column)
 
         face_comboBox = QComboBox()
         colors = self.layer._colors
@@ -46,8 +46,9 @@ class QtMarkersLayer(QtLayer):
             lambda text=face_comboBox: self.changeFaceColor(text))
         self.faceComboBox = face_comboBox
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('face_color:'), row, 0)
-        self.grid_layout.addWidget(face_comboBox, row, 1)
+        self.grid_layout.addWidget(QLabel('face_color:'), row,
+                                   self.name_column)
+        self.grid_layout.addWidget(face_comboBox, row, self.property_column)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
@@ -60,8 +61,9 @@ class QtMarkersLayer(QtLayer):
             lambda text=edge_comboBox: self.changeEdgeColor(text))
         self.edgeComboBox = edge_comboBox
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('edge_color:'), row, 0)
-        self.grid_layout.addWidget(edge_comboBox, row, 1)
+        self.grid_layout.addWidget(QLabel('edge_color:'), row,
+                                   self.name_column)
+        self.grid_layout.addWidget(edge_comboBox, row, self.property_column)
 
         symbol_comboBox = QComboBox()
         for s in Symbol:
@@ -73,8 +75,8 @@ class QtMarkersLayer(QtLayer):
             lambda text=symbol_comboBox: self.changeSymbol(text))
         self.symbolComboBox = symbol_comboBox
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('symbol:'), row, 0)
-        self.grid_layout.addWidget(symbol_comboBox, row, 1)
+        self.grid_layout.addWidget(QLabel('symbol:'), row, self.name_column)
+        self.grid_layout.addWidget(symbol_comboBox, row, self.property_column)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('N-dimensional markers')
@@ -83,8 +85,8 @@ class QtMarkersLayer(QtLayer):
                                      self.change_ndim(state))
         self.ndimCheckBox = ndim_cb
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('n-dim:'), row, 0)
-        self.grid_layout.addWidget(ndim_cb, row, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), row, self.name_column)
+        self.grid_layout.addWidget(ndim_cb, row, self.property_column)
 
         self.setExpanded(False)
 

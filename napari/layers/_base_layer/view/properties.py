@@ -1,8 +1,9 @@
 from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
-                            QVBoxLayout, QCheckBox, QWidget, QComboBox,
-                            QHBoxLayout)
+                            QVBoxLayout, QCheckBox, QComboBox, QHBoxLayout)
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
+
+from .._constants import Blending
 
 
 class QtLayer(QFrame):
@@ -35,6 +36,9 @@ class QtLayer(QFrame):
         self.grid.setLayout(self.grid_layout)
         self.setLayout(self.vbox_layout)
 
+        self.name_column = 0
+        self.property_column = 1
+
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
         cb.setToolTip('Layer visibility')
@@ -55,7 +59,6 @@ class QtLayer(QFrame):
         textbox.setText(layer.name)
         textbox.home(False)
         textbox.setToolTip('Layer name')
-        #textbox.setFixedWidth(122)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
@@ -63,10 +66,8 @@ class QtLayer(QFrame):
         self.top_layout.addWidget(textbox)
 
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('opacity:'), row, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        #sld.setFixedWidth(110)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -74,20 +75,22 @@ class QtLayer(QFrame):
         sld.valueChanged[int].connect(
             lambda value=sld: self.changeOpacity(value))
         self.opacitySilder = sld
-        self.grid_layout.addWidget(sld, row, 1)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('opacity:'), row, self.name_column)
+        self.grid_layout.addWidget(sld, row, self.property_column)
 
         row = self.grid_layout.rowCount()
         blend_comboBox = QComboBox()
-        for blend in self.layer._blending_modes:
-            blend_comboBox.addItem(blend)
+        for blend in Blending:
+            blend_comboBox.addItem(str(blend))
         index = blend_comboBox.findText(
             self.layer.blending, Qt.MatchFixedString)
         blend_comboBox.setCurrentIndex(index)
         blend_comboBox.activated[str].connect(
             lambda text=blend_comboBox: self.changeBlending(text))
         self.blendComboBox = blend_comboBox
-        self.grid_layout.addWidget(QLabel('blending:'), row, 0)
-        self.grid_layout.addWidget(blend_comboBox, row, 1)
+        self.grid_layout.addWidget(QLabel('blending:'), row, self.name_column)
+        self.grid_layout.addWidget(blend_comboBox, row, self.property_column)
 
         msg = 'Click to select\nDrag to rearrange\nDouble click to expand'
         self.setToolTip(msg)
