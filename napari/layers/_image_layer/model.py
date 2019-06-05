@@ -4,7 +4,6 @@ from base64 import b64encode
 from imageio import imwrite
 
 import numpy as np
-from copy import copy
 
 import vispy.color
 
@@ -12,9 +11,7 @@ from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 
 from ...util import is_multichannel
-from ...util.interpolation import (interpolation_names,
-                                  interpolation_index_to_name as _index_to_name,  # noqa
-                                  interpolation_name_to_index as _name_to_index)  # noqa
+
 from ...util.misc import guess_metadata
 from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
@@ -24,6 +21,7 @@ from .._register import add_to_viewer
 
 from .view import QtImageLayer
 from .view import QtImageControls
+from ._constants import Interpolation
 
 
 def _increment_unnamed_colormap(name, names):
@@ -73,6 +71,7 @@ ALL_COLORMAPS.update(simple_colormaps)
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 
+
 @add_to_viewer
 class Image(Layer):
     """Image layer.
@@ -98,7 +97,7 @@ class Image(Layer):
     _colormaps = AVAILABLE_COLORMAPS
 
     default_colormap = 'magma'
-    default_interpolation = 'nearest'
+    default_interpolation = Interpolation.NEAREST
 
     def __init__(self, image, meta=None, multichannel=None, *, name=None,
                  clim_range=None, **kwargs):
@@ -120,7 +119,6 @@ class Image(Layer):
         self.colormap_name = Image.default_colormap
         self.colormap = Image.default_colormap
         self.interpolation = Image.default_interpolation
-        self._interpolation_names = interpolation_names
 
         # update flags
         self._need_display_update = False
@@ -226,18 +224,6 @@ class Image(Layer):
         self._update()
 
     @property
-    def interpolation_index(self):
-        """int: Index of the current interpolation method equipped.
-        """
-        return self._interpolation_index
-
-    @interpolation_index.setter
-    def interpolation_index(self, interpolation_index):
-        intp_index = interpolation_index % len(interpolation_names)
-        self._interpolation_index = intp_index
-        self._node.interpolation = _index_to_name(intp_index)
-
-    @property
     def colormap(self):
         """string or ColorMap: Colormap to use for luminance images.
         """
@@ -312,16 +298,15 @@ class Image(Layer):
     def interpolation(self):
         """string: Equipped interpolation method's name.
         """
-        return _index_to_name(self.interpolation_index)
+        return str(self._interpolation)
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        self.interpolation_index = _name_to_index(interpolation)
+        if isinstance(interpolation, str):
+            interpolation = Interpolation(interpolation)
+        self._interpolation = interpolation
+        self._node.interpolation = interpolation.value
         self.events.interpolation()
-
-    @property
-    def interpolation_functions(self):
-        return tuple(interpolation_names)
 
     def _clim_range_default(self):
         return [float(self.image.min()), float(self.image.max())]

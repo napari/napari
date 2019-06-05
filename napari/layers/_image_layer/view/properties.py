@@ -1,6 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 from ..._base_layer import QtLayer
+from .._constants import Interpolation
 
 
 class QtImageLayer(QtLayer):
@@ -14,7 +15,8 @@ class QtImageLayer(QtLayer):
         for cmap in self.layer.colormaps:
             comboBox.addItem(cmap)
         comboBox._allitems = set(self.layer.colormaps)
-        index = comboBox.findText(self.layer.colormap_name, Qt.MatchFixedString)
+        index = comboBox.findText(
+            self.layer.colormap_name, Qt.MatchFixedString)
         comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
             lambda text=comboBox: self.changeColor(text))
@@ -23,8 +25,8 @@ class QtImageLayer(QtLayer):
         self.colormap_combobox = comboBox
 
         interp_comboBox = QComboBox()
-        for interp in self.layer._interpolation_names:
-            interp_comboBox.addItem(interp)
+        for interp in Interpolation:
+            interp_comboBox.addItem(str(interp))
         index = interp_comboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString)
         interp_comboBox.setCurrentIndex(index)
