@@ -36,17 +36,21 @@ class Pyramid(Image):
                  clim_range=None, **kwargs):
 
         self._pyramid = pyramid
-        self._image_shapes = np.array([im.shape[:2] for im in pyramid])
-        avg_shape = self._image_shapes.max(axis=1)
-        self._image_downsamples = avg_shape[0]/avg_shape
         self._pyramid_level = len(pyramid)-1
-
-        self._max_tile_shape = np.array([1600, 1600])
-        self._top_left = np.array([0, 0])
 
         super().__init__(pyramid[self._pyramid_level], meta=meta,
                          multichannel=multichannel, name=name,
                          clim_range=clim_range, **kwargs)
+
+        self._max_tile_shape = np.array([1600, 1600])
+        self._top_left = np.array([0, 0])
+
+        if self.multichannel:
+            self._image_shapes = np.array([im.shape[-3:-1] for im in pyramid])
+        else:
+            self._image_shapes = np.array([im.shape[-2:] for im in pyramid])
+        avg_shape = self._image_shapes.max(axis=1)
+        self._image_downsamples = avg_shape[0]/avg_shape
         self.scale = [self._image_downsamples[self._pyramid_level]] * 2
 
     @property
@@ -73,8 +77,9 @@ class Pyramid(Image):
             return
         self._pyramid_level = level
         self.scale = [self._image_downsamples[self.pyramid_level]] * 2
+        self._image = self.pyramid[self.pyramid_level]
         self._top_left = self.find_top_left()
-        self._update_image_from_pyramid()
+        #self.events.data()
         self._update_coordinates()
         self.refresh()
 
@@ -89,23 +94,38 @@ class Pyramid(Image):
         if np.all(self._top_left == top_left):
             return
         self._top_left = top_left
-        self._update_image_from_pyramid()
         self._update_coordinates()
         self.refresh()
 
-    def _update_image_from_pyramid(self):
-        """Updates the image data from the pyramid based on requested tile
-        and pyramid level
-        """
+    def _slice_image(self):
+        """Determines the slice of image from the indices."""
+
+        indices = list(self.indices)
+
+        for dim in range(len(indices)):
+            max_dim_index = self.image.shape[dim] - 1
+
+            try:
+                if indices[dim] > max_dim_index:
+                    indices[dim] = max_dim_index
+            except TypeError:
+                pass
+
+        top_image = self.pyramid[-1]
+        self._image_thumbnail = np.asarray(top_image[tuple(indices)])
+
         if np.any(self._image_shapes[self.pyramid_level] >
                   self._max_tile_shape):
-            slices = tuple(slice(self._top_left[i], self._top_left[i] +
-                           self._max_tile_shape[i], 1) for i in range(2))
-            self._image = self.pyramid[self.pyramid_level][slices]
+            slices = [slice(self._top_left[i], self._top_left[i] +
+                           self._max_tile_shape[i], 1) for i in range(2)]
+            indices[-2:] = slices
             self.translate = self._top_left[::-1]*self.scale[:2]
         else:
-            self._image = self.pyramid[self.pyramid_level]
             self.translate = [0, 0]
+
+        self._image_view = np.asarray(self.image[tuple(indices)])
+
+        return self._image_view
 
     def _get_shape(self):
         """Shape of base of pyramid
@@ -138,6 +158,7 @@ class Pyramid(Image):
             shape = self._image_view.shape[:-1]
         else:
             shape = self._image_view.shape
+
         coord[-2:] = np.clip(coord[-2:], 0, np.subtract(shape, 1))
         value = self._image_view[tuple(coord[-2:])]
 
@@ -146,8 +167,8 @@ class Pyramid(Image):
 
         # Make sure pos in slice doesn't go off edge
         shape = self._image_shapes[self._pyramid_level]
-        coord = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
-        coord = np.round(coord * self.scale[:2]).astype(int)
+        pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
+        coord[-2:] = np.round(pos_in_slice * self.scale[:2]).astype(int)
 
         return coord, value
 
