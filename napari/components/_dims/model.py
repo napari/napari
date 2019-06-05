@@ -65,11 +65,13 @@ class Dims:
         return copy(self._range)
 
     @range.setter
-    def range(self, range):
-        if range == self.range:
+    def range(self, value):
+        if value == self.range:
             return
-        self.ndim = len(range)
-        self._range = range
+        self.ndim = len(value)
+        self._range = value
+        for axis in range(self.ndim):
+            self.events.axis(axis=axis)
 
     @property
     def point(self):

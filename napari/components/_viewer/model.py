@@ -6,11 +6,10 @@ from xml.etree.ElementTree import Element, tostring
 
 from ...util.event import EmitterGroup, Event
 from ...util.theme import palettes
-from ...util.misc import has_clims
 from .._dims import Dims
 
 
-class Viewer:
+class ViewerModel:
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -22,32 +21,38 @@ class Viewer:
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
-    camera : vispy.scene.Camera
-        Viewer camera.
     key_bindings : dict of string: callable
         Custom key bindings. The dictionary key is a string containing the key
         pressed and the value is the function to be bound to the key event.
         The function should accept the viewer object as an input argument.
         These key bindings are executed instead of any layer specific key
         bindings.
+    themes : dict of str: dict of str: str
+        Preset color palettes.
     """
+    themes = palettes
+
     def __init__(self, title='napari'):
         super().__init__()
-        from .._layers import Layers
+        from .._layers_list import LayersList
 
         self.events = EmitterGroup(source=self,
                                    auto_connect=True,
                                    status=Event,
                                    help=Event,
                                    title=Event,
-                                   active_layer=Event)
+                                   interactive=Event,
+                                   cursor=Event,
+                                   reset_view=Event,
+                                   active_layer=Event,
+                                   palette=Event)
 
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
         self.dims = Dims(2)
         self.dims._set_2d_viewing()
 
-        self.layers = Layers()
+        self.layers = LayersList()
 
         self._status = 'Ready'
         self._help = ''
@@ -58,9 +63,12 @@ class Viewer:
         self._active_layer = None
         self.key_bindings = {}
 
+        self._palette = None
+        self.theme = 'dark'
+
         # TODO: this should be eventually removed!
-        # initialised by QtViewer when it is constructed by the model
-        self._qtviewer = None
+        # attached by QtViewer when it is constructed by the model
+        self._view = None
 
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
@@ -68,21 +76,39 @@ class Viewer:
         self.layers.events.added.connect(self._update_active_layer)
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
-        self.layers.events.reordered.connect(lambda e: self._update_canvas())
 
     @property
-    def _canvas(self):
-        return self._qtviewer.canvas
-
-    @property
-    def _view(self):
-        return self._qtviewer.view
-
-    @property
-    def camera(self):
-        """vispy.scene.Camera: Viewer camera.
+    def palette(self):
+        """dict of str: str : Color palette with which to style the viewer.
         """
-        return self._view.camera
+        return self._palette
+
+    @palette.setter
+    def palette(self, palette):
+        if palette == self.palette:
+            return
+
+        self._palette = palette
+        self.events.palette(palette=palette)
+
+    @property
+    def theme(self):
+        """string or None : Preset color palette.
+        """
+        for theme, palette in self.themes.items():
+            if palette == self.palette:
+                return theme
+
+    @theme.setter
+    def theme(self, theme):
+        if theme == self.theme:
+            return
+
+        try:
+            self.palette = self.themes[theme]
+        except KeyError:
+            raise ValueError(f"Theme '{theme}' not found; "
+                             f"options are {list(self.themes)}.")
 
     @property
     def status(self):
@@ -134,8 +160,8 @@ class Viewer:
     def interactive(self, interactive):
         if interactive == self.interactive:
             return
-        self._qtviewer.view.interactive = interactive
         self._interactive = interactive
+        self.events.interactive()
 
     @property
     def cursor(self):
@@ -147,8 +173,8 @@ class Viewer:
     def cursor(self, cursor):
         if cursor == self.cursor:
             return
-        self._qtviewer.set_cursor(cursor, self.cursor_size)
         self._cursor = cursor
+        self.events.cursor()
 
     @property
     def cursor_size(self):
@@ -160,8 +186,8 @@ class Viewer:
     def cursor_size(self, cursor_size):
         if cursor_size == self.cursor_size:
             return
-        self._qtviewer.set_cursor(self.cursor, cursor_size)
         self._cursor_size = cursor_size
+        self.events.cursor()
 
     @property
     def active_layer(self):
@@ -179,32 +205,7 @@ class Viewer:
     def reset_view(self):
         """Resets the camera's view.
         """
-        self._qtviewer.view.camera.set_range()
-
-    def screenshot(self, region=None, size=None, bgcolor=None):
-        """Render the scene to an offscreen buffer and return the image array.
-
-        Parameters
-        ----------
-        region : tuple | None
-            Specifies the region of the canvas to render. Format is
-            (x, y, w, h). By default, the entire canvas is rendered.
-        size : tuple | None
-            Specifies the size of the image array to return. If no size is
-            given, then the size of the *region* is used, multiplied by the
-            pixel scaling factor of the canvas (see `pixel_scale`). This
-            argument allows the scene to be rendered at resolutions different
-            from the native canvas resolution.
-        bgcolor : instance of Color | None
-            The background color to use.
-
-        Returns
-        -------
-        image : array
-            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
-            upper-left corner of the rendered region.
-        """
-        return self.canvas.render(region, size, bgcolor)
+        self.events.reset_view()
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be
@@ -281,15 +282,11 @@ class Viewer:
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.name.connect(self._update_name)
+        layer.events.data.connect(self._on_layers_change)
 
+        layer.parent = self._view
         self.layers.append(layer)
         layer.indices = self.dims.indices
-        layer._parent = self._view.scene
-
-        if self.theme is not None and has_clims(layer):
-            palette = palettes[self.theme]
-            layer._qt_controls.climSlider.setColors(
-                palette['foreground'], palette['highlight'])
 
         if len(self.layers) == 1:
             self.reset_view()
@@ -393,13 +390,6 @@ class Viewer:
                 max_dims = dims
 
         return max_dims
-
-    def _update_canvas(self):
-        """Clears draw order and refreshes canvas. Usefeul for when layers are
-        reoredered.
-        """
-        self._canvas._draw_order.clear()
-        self._canvas.update()
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""

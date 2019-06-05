@@ -6,14 +6,13 @@ your shapes.
 
 import numpy as np
 from skimage import data
-from skimage.color import rgb2gray
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 
 with app_context():
     # create the viewer and window
-    viewer = ViewerApp()
+    viewer = napari.Viewer()
 
     # add the image
     layer = viewer.add_image(data.camera(), name='photographer')
@@ -47,6 +46,9 @@ with app_context():
                      edge_color='coral', face_color='purple',
                      opacity=0.75)
     layer.refresh()
+
+    # Set the layer mode with a string
+    layer.mode = 'select'
 
     layer._qt_properties.setExpanded(True)
 

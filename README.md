@@ -10,6 +10,7 @@
 [![PyPI](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)
 [![Development Status](https://img.shields.io/pypi/status/napari.svg)](https://github.com/napari/napari)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 
 **napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of `PyQt` (for the GUI), `vispy` (for performant GPU-based rendering), and the scientific Python stack (`numpy`, `scipy`).
 
@@ -52,8 +53,8 @@ From inside an IPython shell or Jupyter notebook you can open up an interactive 
 ```python
 %gui qt5
 from skimage import data
-from napari import ViewerApp
-viewer = ViewerApp(data.astronaut())
+import napari
+viewer = napari.view(data.astronaut(), multichannel=True)
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -62,11 +63,11 @@ To do the same thing inside a script call
 
 ```python
 from skimage import data
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
-    viewer = ViewerApp(data.astronaut())
+    viewer = napari.view(data.astronaut())
 ```
 
 ## features
@@ -78,15 +79,15 @@ For example, you can add multiple images in different layers and adjust them
 ```python
 from skimage import data
 from skimage.color import rgb2gray
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
     # create the viewer with four layers
-    viewer = ViewerApp(astronaut=rgb2gray(data.astronaut()),
-                       photographer=data.camera(),
-                       coins=data.coins(),
-                       moon=data.moon())
+    viewer = napari.view(astronaut=rgb2gray(data.astronaut()),
+                         photographer=data.camera(),
+                         coins=data.coins(),
+                         moon=data.moon())
     # remove a layer
     viewer.layers.remove('coins')
     # swap layer order
@@ -98,14 +99,15 @@ with app_context():
 You can add markers on top of an image
 
 ```python
+import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
-    # setup viewer
-    viewer = ViewerApp()
+    # set up viewer
+    viewer = napari.Viewer()
     viewer.add_image(rgb2gray(data.astronaut()))
     # create three xy coordinates
     points = np.array([[100, 100], [200, 200], [333, 111]])
@@ -132,7 +134,7 @@ You can render and quickly browse slices of multi-dimensional arrays
 
 import numpy as np
 from skimage import data
-from napari import ViewerApp
+import napari
 from napari.util import app_context
 
 with app_context():
@@ -141,7 +143,7 @@ with app_context():
                                         n_dim=3, volume_fraction=f)
                      for f in np.linspace(0.05, 0.5, 10)], axis=-1)
     # add data to the viewer
-    viewer = ViewerApp(blobs.astype(float))
+    viewer = napari.view(blobs.astype(float))
 ```
 
 ![image](resources/screenshot-nD-image.png)

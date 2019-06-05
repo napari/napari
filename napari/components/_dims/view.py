@@ -170,10 +170,12 @@ class QtDims(QWidget):
         ----------
         number_of_sliders : new number of sliders
         """
-        for slider_num in range(self.nsliders, number_of_sliders):
+        # remove extra sliders so that only number_of_sliders are left
+        for slider_num in range(number_of_sliders, self.nsliders):
             slider = self.sliders.pop()
             self.layout().removeWidget(slider)
             slider.deleteLater()
+        self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
 
     def _create_range_slider_widget(self, axis):
         """

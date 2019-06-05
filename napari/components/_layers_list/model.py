@@ -20,7 +20,7 @@ def _remove(event):
     layers = event.source
     layer = event.item
     layer._order = 0
-    layer._parent = None
+    layer._node.parent = None
 
 
 def _reorder(event):
@@ -30,7 +30,7 @@ def _reorder(event):
         layers[i]._order = -i
 
 
-class Layers(ListModel):
+class LayersList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Attributes

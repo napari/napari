@@ -1,6 +1,8 @@
+from typing import Union
+
 import numpy as np
 from scipy import ndimage as ndi
-from copy import copy
+from skimage.util import img_as_ubyte
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
@@ -15,8 +17,7 @@ from .._register import add_to_viewer
 
 from .view import QtLabelsLayer
 from .view import QtLabelsControls
-from ._constants import Mode, BACKSPACE
-from vispy.color import Colormap
+from ._constants import Mode
 
 
 @add_to_viewer
@@ -81,6 +82,7 @@ class Labels(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
         self._qt_properties = QtLabelsLayer(self)
         self._qt_controls = QtLabelsControls(self)
 
@@ -125,6 +127,7 @@ class Labels(Layer):
     @image.setter
     def image(self, image):
         self._image = image
+        self.events.data()
         self.refresh()
 
     @property
@@ -147,6 +150,7 @@ class Labels(Layer):
     @data.setter
     def data(self, data):
         self._image, self._meta = data
+        self.events.data()
         self.refresh()
 
     @property
@@ -161,8 +165,6 @@ class Labels(Layer):
         self._contiguous = contiguous
         self.events.contiguous()
 
-        self.refresh()
-
     @property
     def n_dimensional(self):
         """ bool: if True, edits labels not just in central plane but also
@@ -174,8 +176,6 @@ class Labels(Layer):
     def n_dimensional(self, n_dimensional):
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
-
-        self.refresh()
 
     @property
     def brush_size(self):
@@ -192,8 +192,6 @@ class Labels(Layer):
         self._brush_size = int(brush_size)
         self.cursor_size = self._brush_size / self.scale_factor
         self.events.brush_size()
-
-        self.refresh()
 
     @property
     def selected_label(self):
@@ -212,8 +210,6 @@ class Labels(Layer):
         else:
             self._selected_color = self.label_color(selected_label)[0]
         self.events.selected_label()
-
-        self.refresh()
 
     @property
     def mode(self):
@@ -237,13 +233,17 @@ class Labels(Layer):
         pixels will be changed to background and this tool functions like an
         eraser.
         """
-        return self._mode
+        return str(self._mode)
 
     @mode.setter
-    def mode(self, mode):
+    def mode(self, mode: Union[str, Mode]):
+
+        if isinstance(mode, str):
+            mode = Mode(mode)
+
         if mode == self._mode:
             return
-        old_mode = self._mode
+
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
@@ -322,6 +322,10 @@ class Labels(Layer):
 
         self._need_visual_update = True
         self._update()
+
+        coord, label = self.get_value()
+        self.status = self.get_message(coord, label)
+        self._update_thumbnail()
 
     @property
     def method(self):
@@ -504,6 +508,19 @@ class Labels(Layer):
 
         return msg
 
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colors.
+        """
+        zoom_factor = np.divide(self._thumbnail_shape[:2],
+                                self._image_view.shape[:2]).min()
+        downsampled = np.round(ndi.zoom(self._image_view, zoom_factor,
+                                        prefilter=False, order=0))
+        downsampled = self.raw_to_displayed(downsampled)
+        colormapped = self.colormap.map(downsampled)
+        colormapped = colormapped.reshape(downsampled.shape + (4,))
+        colormapped[..., 3] *= self.opacity
+        self.thumbnail = img_as_ubyte(colormapped)
+
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the
         currently viewed image as a png according to the svg specification.
@@ -528,8 +545,7 @@ class Labels(Layer):
         return [xml]
 
     def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.  Converts the `event.pos`
-        from canvas coordinates to `self.coordinates` in image coordinates.
+        """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
@@ -538,21 +554,21 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        self.coordinates = event.pos
+        self.position = tuple(event.pos)
         coord, label = self.get_value()
 
-        if self.mode == Mode.PAN_ZOOM:
+        if self._mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
             pass
-        elif self.mode == Mode.PICKER:
+        elif self._mode == Mode.PICKER:
             self.selected_label = label
-        elif self.mode == Mode.PAINT:
+        elif self._mode == Mode.PAINT:
             # Start painting with new label
             new_label = self.selected_label
             self.paint(coord, new_label)
             self._last_cursor_coord = coord
             self.status = self.get_message(coord, new_label)
-        elif self.mode == Mode.FILL:
+        elif self._mode == Mode.FILL:
             # Fill clicked on region with new label
             old_label = label
             new_label = self.selected_label
@@ -562,8 +578,7 @@ class Labels(Layer):
             raise ValueError("Mode not recongnized")
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.  Converts the `event.pos`
-        from canvas coordinates to `self.coordinates` in image coordinates.
+        """Called whenever mouse moves over canvas.
 
         Parameters
         ----------
@@ -572,10 +587,10 @@ class Labels(Layer):
         """
         if event.pos is None:
             return
-        self.coordinates = event.pos
+        self.position = tuple(event.pos)
         coord, label = self.get_value()
 
-        if self.mode == Mode.PAINT and event.is_dragging:
+        if self._mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
             if self._last_cursor_coord is None:
                 interp_coord = [coord]
@@ -613,8 +628,8 @@ class Labels(Layer):
             return
         else:
             if event.key == ' ':
-                if self.mode != Mode.PAN_ZOOM:
-                    self._mode_history = self.mode
+                if self._mode != Mode.PAN_ZOOM:
+                    self._mode_history = self._mode
                     self.mode = Mode.PAN_ZOOM
                 else:
                     self._mode_history = Mode.PAN_ZOOM

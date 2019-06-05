@@ -16,7 +16,7 @@ green = vispy.color.Colormap([[0., 0., 0.], [0., 1., 0.]])
 blue = vispy.color.Colormap([[0., 0., 0.], [0., 0., 1.]])
 
 with napari.util.app_context():
-    v = napari.ViewerApp()
+    v = napari.Viewer()
 
     rlayer = v.add_image(rch, name='red channel')
     rlayer.blending = 'additive'
