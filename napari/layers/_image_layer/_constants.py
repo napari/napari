@@ -24,7 +24,5 @@ class Interpolation(StringEnum):
     LANCZOS = auto()
     MITCHELL = auto()
     NEAREST = auto()
-    QUADRIC = auto()
-    SINC = auto()
     SPLINE16 = auto()
     SPLINE36 = auto()
