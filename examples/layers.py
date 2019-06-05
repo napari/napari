@@ -11,10 +11,12 @@ from napari.util import app_context
 
 with app_context():
     # create the viewer with several image layers
-    viewer = view(astronaut=rgb2gray(data.astronaut()),
-                  photographer=data.camera(),
-                  coins=data.coins(),
-                  moon=data.moon())
+    viewer = view(
+        astronaut=rgb2gray(data.astronaut()),
+        photographer=data.camera(),
+        coins=data.coins(),
+        moon=data.moon(),
+    )
 
     # remove the coins layer
     viewer.layers.remove('coins')

@@ -38,12 +38,12 @@ class Dims:
         Tuple of slice objects for slicing arrays on each dimension, one for
         each dimension
     """
+
     def __init__(self, init_ndim=0):
         super().__init__()
 
         # Events:
-        self.events = EmitterGroup(source=self, auto_connect=True, axis=None,
-                                   ndim=None)
+        self.events = EmitterGroup(source=self, auto_connect=True, axis=None, ndim=None)
 
         self._range = []
         self._point = []
@@ -54,8 +54,9 @@ class Dims:
         self.ndim = init_ndim
 
     def __str__(self):
-        return "~~".join(map(str, [self.range, self.point, self.interval,
-                                   self.mode, self.display]))
+        return "~~".join(
+            map(str, [self.range, self.point, self.interval, self.mode, self.display])
+        )
 
     @property
     def range(self):
@@ -164,14 +165,16 @@ class Dims:
                     if interval is None:
                         slice_list.append(slice(None))
                     else:
-                        slice_list.append(slice(int(round(interval[0])),
-                                                int(round(interval[1]))))
+                        slice_list.append(
+                            slice(int(round(interval[0])), int(round(interval[1])))
+                        )
                 else:
                     if interval is None:
                         slice_list.append(slice(None))
                     else:
-                        slice_list.append(slice(int(round(interval[0])),
-                                                int(round(interval[1]))))
+                        slice_list.append(
+                            slice(int(round(interval[0])), int(round(interval[1])))
+                        )
 
         return tuple(slice_list)
 
@@ -248,7 +251,7 @@ class Dims:
     def _set_2d_viewing(self):
         """Sets the 2d viewing
         """
-        for i in range(len(self.display)-2):
+        for i in range(len(self.display) - 2):
             self.set_display(i, False)
         if len(self.display) >= 2:
             self.set_display(-1, True)

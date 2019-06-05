@@ -5,27 +5,21 @@ import numpy as np
 import vispy.color
 
 
-_matplotlib_list_file = os.path.join(os.path.dirname(__file__),
-                                     'matplotlib_cmaps.txt')
+_matplotlib_list_file = os.path.join(os.path.dirname(__file__), 'matplotlib_cmaps.txt')
 with open(_matplotlib_list_file) as fin:
     matplotlib_colormaps = [line.rstrip() for line in fin]
 
 
-primary_color_names = ['red', 'green', 'blue',
-                       'cyan', 'magenta', 'yellow']
-primary_colors = np.array([
-        (1, 0, 0),
-        (0, 1, 0),
-        (0, 0, 1),
-        (0, 1, 1),
-        (1, 0, 1),
-        (1, 1, 0),
-    ], dtype=float)
+primary_color_names = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
+primary_colors = np.array(
+    [(1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 0)], dtype=float
+)
 
 
-simple_colormaps = {name: vispy.color.Colormap([[0., 0., 0.], color])
-                    for name, color in
-                    zip(primary_color_names, primary_colors)}
+simple_colormaps = {
+    name: vispy.color.Colormap([[0.0, 0.0, 0.0], color])
+    for name, color in zip(primary_color_names, primary_colors)
+}
 
 
 def _all_rgb():
@@ -36,17 +30,17 @@ def _all_rgb():
 
 
 # obtained with colorconv.rgb2luv(_all_rgb().reshape((-1, 256, 3)))
-LUVMIN = np.array([0., -83.07790815, -134.09790293])
-LUVMAX = np.array([100., 175.01447356, 107.39905336])
+LUVMIN = np.array([0.0, -83.07790815, -134.09790293])
+LUVMAX = np.array([100.0, 175.01447356, 107.39905336])
 LUVRNG = LUVMAX - LUVMIN
 
 # obtained with colorconv.rgb2lab(_all_rgb().reshape((-1, 256, 3)))
-LABMIN = np.array([0., -86.18302974, -107.85730021])
-LABMAX = np.array([100., 98.23305386, 94.47812228])
+LABMIN = np.array([0.0, -86.18302974, -107.85730021])
+LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
 
 
-def _validate_rgb(colors, *, tolerance=0.):
+def _validate_rgb(colors, *, tolerance=0.0):
     """Return the subset of colors that is in [0, 1] for all channels.
 
     Parameters
@@ -104,7 +98,7 @@ def _low_discrepancy_image(image, seed=0.5):
     # Clipping slightly above 0 and below 1 is necessary to ensure that the
     # labels do not get mapped to 0 which is represented by the background
     # and is transparent
-    return np.clip(image_out, 0.00001, 1.0-0.00001)
+    return np.clip(image_out, 0.00001, 1.0 - 0.00001)
 
 
 def _low_discrepancy(dim, n, seed=0.5):
@@ -196,12 +190,14 @@ def label_colormap(num_colors=256, seed=0.5):
     """
     # Starting the control points slightly above 0 and below 1 is necessary
     # to ensure that the background pixel 0 is transparent
-    midpoints = np.linspace(0.00001, 1-0.00001, num_colors - 1)
-    control_points = np.concatenate(([0], midpoints, [1.]))
+    midpoints = np.linspace(0.00001, 1 - 0.00001, num_colors - 1)
+    control_points = np.concatenate(([0], midpoints, [1.0]))
     # make sure to add an alpha channel to the colors
-    colors = np.concatenate((_color_random(num_colors, seed=seed),
-                             np.full((num_colors, 1), 1)), axis=1)
+    colors = np.concatenate(
+        (_color_random(num_colors, seed=seed), np.full((num_colors, 1), 1)), axis=1
+    )
     colors[0, :] = 0  # ensure alpha is 0 for label 0
-    cmap = vispy.color.Colormap(colors=colors, controls=control_points,
-                                interpolation='zero')
+    cmap = vispy.color.Colormap(
+        colors=colors, controls=control_points, interpolation='zero'
+    )
     return cmap

@@ -41,9 +41,9 @@ class LayersList(ListModel):
             * removed(item): whenever an item is removed
             * reordered(): whenever the list is reordered
     """
+
     def __init__(self):
-        super().__init__(basetype=Layer,
-                         lookup={str: lambda q, e: q == e.name})
+        super().__init__(basetype=Layer, lookup={str: lambda q, e: q == e.name})
 
         self.events.added.connect(_add)
         self.events.removed.connect(_remove)

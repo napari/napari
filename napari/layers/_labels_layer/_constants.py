@@ -24,6 +24,7 @@ class Mode(StringEnum):
     pixel. If the background label `0` is selected than any pixels will be
     changed to background and this tool functions like an eraser.
     """
+
     PAN_ZOOM = auto()
     PICKER = auto()
     PAINT = auto()

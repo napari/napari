@@ -12,6 +12,7 @@ class List(list):
     
     TODO: handle operators (e.g. +, *, etc.)
     """
+
     def __contains__(self, key):
         try:
             self.index(key)

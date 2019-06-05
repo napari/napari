@@ -145,9 +145,17 @@ class ImageVisual(Visual):
     The colormap functionality through ``cmap`` and ``clim`` are only used
     if the data are 2D.
     """
-    def __init__(self, data=None, method='auto', grid=(1, 1),
-                 cmap='viridis', clim='auto',
-                 interpolation='nearest', **kwargs):
+
+    def __init__(
+        self,
+        data=None,
+        method='auto',
+        grid=(1, 1),
+        cmap='viridis',
+        clim='auto',
+        interpolation='nearest',
+        **kwargs,
+    ):
         self._data = None
 
         # load 'float packed rgba8' interpolation kernel
@@ -165,10 +173,8 @@ class ImageVisual(Visual):
 
         # create interpolation shader functions for available
         # interpolations
-        fun = [Function(_interpolation_template % n)
-               for n in self._interpolation_names]
-        self._interpolation_names = [n.lower()
-                                     for n in self._interpolation_names]
+        fun = [Function(_interpolation_template % n) for n in self._interpolation_names]
+        self._interpolation_names = [n.lower() for n in self._interpolation_names]
 
         self._interpolation_fun = dict(zip(self._interpolation_names, fun))
         self._interpolation_names.sort()
@@ -180,8 +186,9 @@ class ImageVisual(Visual):
         self._interpolation_fun['bilinear'] = Function(_texture_lookup)
 
         if interpolation not in self._interpolation_names:
-            raise ValueError("interpolation must be one of %s" %
-                             ', '.join(self._interpolation_names))
+            raise ValueError(
+                "interpolation must be one of %s" % ', '.join(self._interpolation_names)
+            )
 
         self._interpolation = interpolation
 
@@ -197,15 +204,16 @@ class ImageVisual(Visual):
         self._need_vertex_update = True
         self._need_colortransform_update = True
         self._need_interpolation_update = True
-        self._texture = Texture2D(np.zeros((1, 1, 4)),
-                                  interpolation=texture_interpolation)
+        self._texture = Texture2D(
+            np.zeros((1, 1, 4)), interpolation=texture_interpolation
+        )
         self._subdiv_position = VertexBuffer()
         self._subdiv_texcoord = VertexBuffer()
 
         # impostor quad covers entire viewport
-        vertices = np.array([[-1, -1], [1, -1], [1, 1],
-                             [-1, -1], [1, 1], [-1, 1]],
-                            dtype=np.float32)
+        vertices = np.array(
+            [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]], dtype=np.float32
+        )
         self._impostor_coords = VertexBuffer(vertices)
         self._null_tr = NullTransform()
 
@@ -250,8 +258,7 @@ class ImageVisual(Visual):
 
     @property
     def clim(self):
-        return (self._clim if isinstance(self._clim, string_types) else
-                tuple(self._clim))
+        return self._clim if isinstance(self._clim, string_types) else tuple(self._clim)
 
     @clim.setter
     def clim(self, clim):
@@ -298,8 +305,9 @@ class ImageVisual(Visual):
     @interpolation.setter
     def interpolation(self, i):
         if i not in self._interpolation_names:
-            raise ValueError("interpolation must be one of %s" %
-                             ', '.join(self._interpolation_names))
+            raise ValueError(
+                "interpolation must be one of %s" % ', '.join(self._interpolation_names)
+            )
         if self._interpolation != i:
             self._interpolation = i
             self._need_interpolation_update = True
@@ -345,19 +353,20 @@ class ImageVisual(Visual):
         w = 1.0 / grid[1]
         h = 1.0 / grid[0]
 
-        quad = np.array([[0, 0, 0], [w, 0, 0], [w, h, 0],
-                         [0, 0, 0], [w, h, 0], [0, h, 0]],
-                        dtype=np.float32)
+        quad = np.array(
+            [[0, 0, 0], [w, 0, 0], [w, h, 0], [0, 0, 0], [w, h, 0], [0, h, 0]],
+            dtype=np.float32,
+        )
         quads = np.empty((grid[1], grid[0], 6, 3), dtype=np.float32)
         quads[:] = quad
 
-        mgrid = np.mgrid[0.:grid[1], 0.:grid[0]].transpose(1, 2, 0)
+        mgrid = np.mgrid[0.0 : grid[1], 0.0 : grid[0]].transpose(1, 2, 0)
         mgrid = mgrid[:, :, np.newaxis, :]
         mgrid[..., 0] *= w
         mgrid[..., 1] *= h
 
         quads[..., :2] += mgrid
-        tex_coords = quads.reshape(grid[1]*grid[0]*6, 3)
+        tex_coords = quads.reshape(grid[1] * grid[0] * 6, 3)
         tex_coords = np.ascontiguousarray(tex_coords[:, :2])
         vertices = tex_coords * self.size
 
@@ -440,8 +449,9 @@ class ImageVisual(Visual):
             self._build_texture()
 
         if self._need_colortransform_update:
-            self.shared_program.frag['color_transform'] = \
-                _build_color_transform(self._data, self.cmap)
+            self.shared_program.frag['color_transform'] = _build_color_transform(
+                self._data, self.cmap
+            )
             self._need_colortransform_update = False
 
         if self._need_vertex_update:
