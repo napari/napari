@@ -63,11 +63,14 @@ class Layer(VisualWrapper, ABC):
         self._indices = (0, 0)
         self._position = (0, 0)
         self.coordinates = (0, 0)
+        self._thumbnail_shape = (32, 32, 4)
+        self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._name = ''
         self.events.add(select=Event,
                         deselect=Event,
                         data=Event,
                         name=Event,
+                        thumbnail=Event,
                         status=Event,
                         help=Event,
                         interactive=Event,
@@ -154,6 +157,17 @@ class Layer(VisualWrapper, ABC):
     @abstractmethod
     def _get_shape(self):
         raise NotImplementedError()
+
+    @property
+    def thumbnail(self):
+        """np.ndarray: Integer array of thumbnail for the layer
+        """
+        return self._thumbnail
+
+    @thumbnail.setter
+    def thumbnail(self, thumbnail):
+        self._thumbnail = thumbnail
+        self.events.thumbnail()
 
     @property
     def ndim(self):
