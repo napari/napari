@@ -25,8 +25,9 @@ class QtVectorsLayer(QtLayer):
             face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(
             lambda text=face_comboBox: self.change_face_color(text))
-        self.grid_layout.addWidget(QLabel('color:'), 3, 0, 1, 2)
-        self.grid_layout.addWidget(face_comboBox, 3, 2, 1, 2)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('color:'), row, 0)
+        self.grid_layout.addWidget(face_comboBox, row, 1)
 
         # line width in pixels
         self.width_field = QDoubleSpinBox()
@@ -35,8 +36,9 @@ class QtVectorsLayer(QtLayer):
         value = self.layer.width
         self.width_field.setValue(value)
         self.width_field.valueChanged.connect(self.change_width)
-        self.grid_layout.addWidget(QLabel('width:'), 4, 0, 1, 2)
-        self.grid_layout.addWidget(self.width_field, 4, 2, 1, 2)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('width:'), row, 0)
+        self.grid_layout.addWidget(self.width_field, row, 1)
 
         # averaging spinbox
         self.averaging_spinbox = QSpinBox()
@@ -44,8 +46,9 @@ class QtVectorsLayer(QtLayer):
         self.averaging_spinbox.setValue(1)
         self.averaging_spinbox.setMinimum(1)
         self.averaging_spinbox.valueChanged.connect(self.change_average_type)
-        self.grid_layout.addWidget(QLabel('avg kernel'), 5, 0, 1, 2)
-        self.grid_layout.addWidget(self.averaging_spinbox, 5, 2, 1, 2)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('avg kernel'), row, 0)
+        self.grid_layout.addWidget(self.averaging_spinbox, row, 1)
 
         # line length
         self.length_field = QDoubleSpinBox()
@@ -54,8 +57,9 @@ class QtVectorsLayer(QtLayer):
         self.length_field.setValue(value)
         self.length_field.setMinimum(0.1)
         self.length_field.valueChanged.connect(self.change_length)
-        self.grid_layout.addWidget(QLabel('length:'), 6, 0, 1, 2)
-        self.grid_layout.addWidget(self.length_field, 6, 2, 1, 2)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('length:'), row, 0)
+        self.grid_layout.addWidget(self.length_field, row, 1)
 
         self.setExpanded(False)
 

@@ -1,5 +1,6 @@
 from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
-                            QVBoxLayout, QCheckBox, QWidget, QComboBox)
+                            QVBoxLayout, QCheckBox, QWidget, QComboBox,
+                            QHBoxLayout)
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 
@@ -19,8 +20,20 @@ class QtLayer(QFrame):
 
         self.setObjectName('layer')
 
+        self.vbox_layout = QVBoxLayout()
+        self.top = QFrame()
+        self.top_layout = QHBoxLayout()
+        self.grid = QFrame()
         self.grid_layout = QGridLayout()
-        self.setContentsMargins(0, 0, 0, 0)
+        self.vbox_layout.addWidget(self.top)
+        self.vbox_layout.addWidget(self.grid)
+        self.vbox_layout.setSpacing(0)
+        self.top.setFixedHeight(38)
+        self.top_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.top.setLayout(self.top_layout)
+        self.grid.setLayout(self.grid_layout)
+        self.setLayout(self.vbox_layout)
 
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
@@ -29,30 +42,31 @@ class QtLayer(QFrame):
         cb.setProperty('mode', 'visibility')
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
         self.visibleCheckBox = cb
-        self.grid_layout.addWidget(cb, 0, 0, 1, 1)
+        self.top_layout.addWidget(cb)
 
         tb = QLabel(self)
         tb.setObjectName('thumbmnail')
         tb.setToolTip('Layer thumbmnail')
         self.thumbnail_label = tb
         self._on_thumbnail_change(None)
-        self.grid_layout.addWidget(tb, 0, 1, 1, 1, Qt.AlignLeft)
+        self.top_layout.addWidget(tb)
 
         textbox = QLineEdit(self)
         textbox.setText(layer.name)
         textbox.home(False)
         textbox.setToolTip('Layer name')
-        textbox.setFixedWidth(122)
+        #textbox.setFixedWidth(122)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
-        self.grid_layout.addWidget(textbox, 0, 2, 1, 2)
+        self.top_layout.addWidget(textbox)
 
-        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0, 1, 2)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('opacity:'), row, 0)
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(110)
+        #sld.setFixedWidth(110)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -60,8 +74,9 @@ class QtLayer(QFrame):
         sld.valueChanged[int].connect(
             lambda value=sld: self.changeOpacity(value))
         self.opacitySilder = sld
-        self.grid_layout.addWidget(sld, 1, 2, 1, 2)
+        self.grid_layout.addWidget(sld, row, 1)
 
+        row = self.grid_layout.rowCount()
         blend_comboBox = QComboBox()
         for blend in self.layer._blending_modes:
             blend_comboBox.addItem(blend)
@@ -71,10 +86,9 @@ class QtLayer(QFrame):
         blend_comboBox.activated[str].connect(
             lambda text=blend_comboBox: self.changeBlending(text))
         self.blendComboBox = blend_comboBox
-        self.grid_layout.addWidget(QLabel('blending:'), 2, 0, 1, 2)
-        self.grid_layout.addWidget(blend_comboBox, 2, 2, 1, 2)
+        self.grid_layout.addWidget(QLabel('blending:'), row, 0)
+        self.grid_layout.addWidget(blend_comboBox, row, 1)
 
-        self.setLayout(self.grid_layout)
         msg = 'Click to select\nDrag to rearrange\nDouble click to expand'
         self.setToolTip(msg)
         self.setExpanded(False)
@@ -127,20 +141,12 @@ class QtLayer(QFrame):
         if bool:
             self.expanded = True
             rows = self.grid_layout.rowCount()
-            self.setFixedHeight(60*(rows-1) - 50)
+            self.setFixedHeight(38 + 30 * rows)
+            self.grid.show()
         else:
             self.expanded = False
             self.setFixedHeight(60)
-        rows = self.grid_layout.rowCount()
-        columns = self.grid_layout.columnCount()
-        for i in range(1, rows):
-            for j in range(columns):
-                item = self.grid_layout.itemAtPosition(i, j)
-                if item is not None:
-                    if self.expanded:
-                        item.widget().show()
-                    else:
-                        item.widget().hide()
+            self.grid.hide()
 
     def _on_layer_name_change(self, event):
         with self.layer.events.name.blocker():
