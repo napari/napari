@@ -71,8 +71,9 @@ class QtShapesLayer(QtLayer):
         broadcast_cb.stateChanged.connect(lambda state=broadcast_cb:
                                           self.change_broadcast(state))
         self.broadcastCheckBox = broadcast_cb
-        self.grid_layout.addWidget(QLabel('broadcast:'), 6, 0)
-        self.grid_layout.addWidget(broadcast_cb, 6, 1)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('broadcast:'), row, self.name_column)
+        self.grid_layout.addWidget(broadcast_cb, row, self.property_column)
 
         self.setExpanded(False)
 
