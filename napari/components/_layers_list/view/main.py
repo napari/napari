@@ -1,7 +1,8 @@
-from qtpy.QtCore import Qt, QMimeData, QPoint
+from qtpy.QtCore import Qt, QMimeData
 from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                             QFrame, QCheckBox, QScrollArea, QApplication)
 from qtpy.QtGui import QDrag
+import numpy as np
 
 
 class QtLayersList(QScrollArea):
@@ -26,7 +27,7 @@ class QtLayersList(QScrollArea):
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
 
-        self.drag_start_position = QPoint(0, 0)
+        self.drag_start_position = np.zeros(2)
         self.drag_name = None
 
     def _add(self, event):
@@ -78,7 +79,8 @@ class QtLayersList(QScrollArea):
                  getattr(widget.parentWidget(), 'layer', None))
 
         if layer is not None:
-            self.drag_start_position = event.pos()
+            self.drag_start_position = np.array([event.pos().x(),
+                                                 event.pos().y()])
             self.drag_name = layer.name
         else:
             self.drag_name = None
@@ -112,7 +114,8 @@ class QtLayersList(QScrollArea):
             layer.selected = True
 
     def mouseMoveEvent(self, event):
-        distance = (event.pos() - self.drag_start_position).manhattanLength()
+        position = np.array([event.pos().x(), event.pos().y()])
+        distance = np.linalg.norm(position - self.drag_start_position)
         if (distance < QApplication.startDragDistance() or
             self.drag_name is None):
             return
