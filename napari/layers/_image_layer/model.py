@@ -187,16 +187,8 @@ class Image(Layer):
         """Determines the slice of image from the indices."""
 
         indices = list(self.indices)
-
-        for dim in range(len(indices)):
-            max_dim_index = self.image.shape[dim] - 1
-
-            try:
-                if indices[dim] > max_dim_index:
-                    indices[dim] = max_dim_index
-            except TypeError:
-                pass
-
+        indices[:-2] = np.clip(indices[:-2], 0,
+                               np.subtract(self.shape[:-2], 1))
         self._image_view = np.asarray(self.image[tuple(indices)])
         self._image_thumbnail = self._image_view
 

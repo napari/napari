@@ -46,12 +46,11 @@ class Pyramid(Image):
         self._top_left = np.array([0, 0])
 
         if self.multichannel:
-            self._image_shapes = np.array([im.shape[-3:-1] for im in pyramid])
+            self._image_shapes = np.array([im.shape[:-1] for im in pyramid])
         else:
-            self._image_shapes = np.array([im.shape[-2:] for im in pyramid])
-        avg_shape = self._image_shapes.max(axis=1)
-        self._image_downsamples = avg_shape[0]/avg_shape
-        self.scale = [self._image_downsamples[self._pyramid_level]] * 2
+            self._image_shapes = np.array([im.shape for im in pyramid])
+        self._image_downsamples = self._image_shapes[0] / self._image_shapes
+        self.scale = self._image_downsamples[self.pyramid_level, [-1, -2]]
 
     @property
     def pyramid(self):
@@ -76,11 +75,9 @@ class Pyramid(Image):
         if self._pyramid_level == level:
             return
         self._pyramid_level = level
-        self.scale = [self._image_downsamples[self.pyramid_level]] * 2
+        self.scale = self._image_downsamples[self.pyramid_level, [-1, -2]]
         self._image = self.pyramid[self.pyramid_level]
         self._top_left = self.find_top_left()
-        #self.events.data()
-        self._update_coordinates()
         self.refresh()
 
     @property
@@ -94,34 +91,32 @@ class Pyramid(Image):
         if np.all(self._top_left == top_left):
             return
         self._top_left = top_left
-        self._update_coordinates()
         self.refresh()
 
     def _slice_image(self):
         """Determines the slice of image from the indices."""
 
         indices = list(self.indices)
-
-        for dim in range(len(indices)):
-            max_dim_index = self.image.shape[dim] - 1
-
-            try:
-                if indices[dim] > max_dim_index:
-                    indices[dim] = max_dim_index
-            except TypeError:
-                pass
-
         top_image = self.pyramid[-1]
+        rescale = self._image_downsamples[-1, :-2]
+        indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
+        indices[:-2] = np.clip(indices[:-2], 0,
+                               np.subtract(top_image.shape[:-2], 1))
         self._image_thumbnail = np.asarray(top_image[tuple(indices)])
 
-        if np.any(self._image_shapes[self.pyramid_level] >
-                  self._max_tile_shape):
+        indices = list(self.indices)
+        rescale = self._image_downsamples[self.pyramid_level, :-2]
+        indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
+        indices[:-2] = np.clip(indices[:-2], 0,
+                               np.subtract(self.image.shape[:-2], 1))
+        if np.any(self.image.shape[-2:] > self._max_tile_shape):
             slices = [slice(self._top_left[i], self._top_left[i] +
                            self._max_tile_shape[i], 1) for i in range(2)]
             indices[-2:] = slices
             self.translate = self._top_left[::-1]*self.scale[:2]
         else:
             self.translate = [0, 0]
+        self._update_coordinates()
 
         self._image_view = np.asarray(self.image[tuple(indices)])
 
@@ -166,7 +161,7 @@ class Pyramid(Image):
                         + self.translate[[1, 0]] / self.scale[:2])
 
         # Make sure pos in slice doesn't go off edge
-        shape = self._image_shapes[self._pyramid_level]
+        shape = self._image_shapes[self.pyramid_level][-2:]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
         coord[-2:] = np.round(pos_in_slice * self.scale[:2]).astype(int)
 
@@ -196,7 +191,8 @@ class Pyramid(Image):
         diff = size - max_size + 1
 
         # Find closed downsample level to diff
-        level = np.argmin(abs(np.log2(self._image_downsamples) - diff))
+        ds = self._image_downsamples[:, -2:].max(axis=1)
+        level = np.argmin(abs(np.log2(ds) - diff))
 
         return level
 
@@ -214,7 +210,7 @@ class Pyramid(Image):
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
 
-        shape = self._image_shapes[0]
+        shape = self._image_shapes[0][-2:]
 
         # Clip according to the max image shape
         pos = [np.clip(pos[1], 0, shape[0] - 1),
