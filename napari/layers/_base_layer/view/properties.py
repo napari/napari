@@ -1,5 +1,6 @@
 from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
-                            QVBoxLayout, QCheckBox, QComboBox, QHBoxLayout)
+                            QVBoxLayout, QCheckBox, QComboBox, QHBoxLayout,
+                            QPushButton)
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 
@@ -64,6 +65,13 @@ class QtLayer(QFrame):
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
         self.top_layout.addWidget(textbox)
+
+        pb = QPushButton(self)
+        pb.setToolTip('Expand properties')
+        pb.clicked.connect(self.changeExpanded)
+        pb.setObjectName('expand')
+        self.expand_button = pb
+        self.top_layout.addWidget(pb)
 
         row = self.grid_layout.rowCount()
         sld = QSlider(Qt.Horizontal, self)
@@ -137,17 +145,19 @@ class QtLayer(QFrame):
     def mouseMoveEvent(self, event):
         event.ignore()
 
-    def mouseDoubleClickEvent(self, event):
+    def changeExpanded(self):
         self.setExpanded(not self.expanded)
 
     def setExpanded(self, bool):
         if bool:
             self.expanded = True
+            self.expand_button.setProperty('expanded', True)
             rows = self.grid_layout.rowCount()
             self.setFixedHeight(38 + 30 * rows)
             self.grid.show()
         else:
             self.expanded = False
+            self.expand_button.setProperty('expanded', False)
             self.setFixedHeight(60)
             self.grid.hide()
 
