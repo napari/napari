@@ -113,7 +113,8 @@ class QtLayersList(QScrollArea):
 
     def mouseMoveEvent(self, event):
         distance = (event.pos() - self.drag_start_position).manhattanLength()
-        if distance < QApplication.startDragDistance():
+        if (distance < QApplication.startDragDistance() or
+            self.drag_name is None):
             return
         mimeData = QMimeData()
         mimeData.setText(self.drag_name)
