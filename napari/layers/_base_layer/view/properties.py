@@ -145,7 +145,7 @@ class QtLayer(QFrame):
     def mouseMoveEvent(self, event):
         event.ignore()
 
-    def mouseDoubleClick(self, event):
+    def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)
 
     def changeExpanded(self):
