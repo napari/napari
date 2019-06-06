@@ -50,6 +50,7 @@ class Pyramid(Image):
         else:
             self._image_shapes = np.array([im.shape for im in pyramid])
         self._image_downsamples = self._image_shapes[0] / self._image_shapes
+        # TODO: Change dims selection when dims model changes
         self.scale = self._image_downsamples[self.pyramid_level, [-1, -2]]
 
     @property
@@ -75,6 +76,7 @@ class Pyramid(Image):
         if self._pyramid_level == level:
             return
         self._pyramid_level = level
+        # TODO: Change dims selection when dims model changes
         self.scale = self._image_downsamples[self.pyramid_level, [-1, -2]]
         self._image = self.pyramid[self.pyramid_level]
         self._top_left = self.find_top_left()
@@ -94,10 +96,11 @@ class Pyramid(Image):
         self.refresh()
 
     def _slice_image(self):
-        """Determines the slice of image from the indices."""
+        """Determine the slice of image from the indices."""
 
         indices = list(self.indices)
         top_image = self.pyramid[-1]
+        # TODO: Change dims selection when dims model changes
         rescale = self._image_downsamples[-1, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
         indices[:-2] = np.clip(indices[:-2], 0,
@@ -105,6 +108,7 @@ class Pyramid(Image):
         self._image_thumbnail = np.asarray(top_image[tuple(indices)])
 
         indices = list(self.indices)
+        # TODO: Change dims selection when dims model changes
         rescale = self._image_downsamples[self.pyramid_level, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
         indices[:-2] = np.clip(indices[:-2], 0,
@@ -154,6 +158,7 @@ class Pyramid(Image):
         else:
             shape = self._image_view.shape
 
+        # TODO: Change dims selection when dims model changes
         coord[-2:] = np.clip(coord[-2:], 0, np.subtract(shape, 1))
         value = self._image_view[tuple(coord[-2:])]
 
@@ -161,6 +166,7 @@ class Pyramid(Image):
                         + self.translate[[1, 0]] / self.scale[:2])
 
         # Make sure pos in slice doesn't go off edge
+        # TODO: Change dims selection when dims model changes
         shape = self._image_shapes[self.pyramid_level][-2:]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
         coord[-2:] = np.round(pos_in_slice * self.scale[:2]).astype(int)
@@ -191,6 +197,7 @@ class Pyramid(Image):
         diff = size - max_size + 1
 
         # Find closed downsample level to diff
+        # TODO: Change dims selection when dims model changes
         ds = self._image_downsamples[:, -2:].max(axis=1)
         level = np.argmin(abs(np.log2(ds) - diff))
 
@@ -210,6 +217,7 @@ class Pyramid(Image):
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
 
+        # TODO: Change dims selection when dims model changes
         shape = self._image_shapes[0][-2:]
 
         # Clip according to the max image shape
