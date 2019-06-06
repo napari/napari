@@ -25,7 +25,6 @@ icons = [
     'ellipse',
     'fill',
     'line',
-    'menu',
     'minus',
     'move_back',
     'move_front',
@@ -37,6 +36,8 @@ icons = [
     'picker',
     'plus',
     'polygon',
+    'properties_contract',
+    'properties_expand',
     'rectangle',
     'select',
     'select_marker',
@@ -54,7 +55,8 @@ for name, palette in palettes.items():
             css = insert.replace('{{ color }}', palette['text'])
         elif icon in ['visibility_off', 'menu']:
             css = insert.replace('{{ color }}', palette['highlight'])
-        elif icon in ['drop_down', 'plus', 'minus']:
+        elif icon in ['drop_down', 'plus', 'minus', 'properties_contract',
+                      'properties_expand']:
             css = insert.replace('{{ color }}', palette['secondary'])
         else:
             css = insert.replace('{{ color }}', palette['icon'])

@@ -10,7 +10,6 @@
     <file>icons/light/ellipse.svg</file>
     <file>icons/light/fill.svg</file>
     <file>icons/light/line.svg</file>
-    <file>icons/light/menu.svg</file>
     <file>icons/light/minus.svg</file>
     <file>icons/light/move_back.svg</file>
     <file>icons/light/move_front.svg</file>
@@ -22,6 +21,8 @@
     <file>icons/light/picker.svg</file>
     <file>icons/light/plus.svg</file>
     <file>icons/light/polygon.svg</file>
+    <file>icons/light/properties_contract.svg</file>
+    <file>icons/light/properties_expand.svg</file>
     <file>icons/light/rectangle.svg</file>
     <file>icons/light/select.svg</file>
     <file>icons/light/select_marker.svg</file>
@@ -50,6 +51,8 @@
     <file>icons/dark/picker.svg</file>
     <file>icons/dark/plus.svg</file>
     <file>icons/dark/polygon.svg</file>
+    <file>icons/dark/properties_contract.svg</file>
+    <file>icons/dark/properties_expand.svg</file>
     <file>icons/dark/rectangle.svg</file>
     <file>icons/dark/select.svg</file>
     <file>icons/dark/select_marker.svg</file>

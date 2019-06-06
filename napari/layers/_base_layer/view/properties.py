@@ -163,6 +163,8 @@ class QtLayer(QFrame):
             self.expand_button.setProperty('expanded', False)
             self.setFixedHeight(60)
             self.grid.hide()
+        self.expand_button.style().unpolish(self.expand_button)
+        self.expand_button.style().polish(self.expand_button)
 
     def _on_layer_name_change(self, event):
         with self.layer.events.name.blocker():
