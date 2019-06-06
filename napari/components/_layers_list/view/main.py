@@ -133,12 +133,15 @@ class QtLayersList(QScrollArea):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dragEnterEvent(self, event):
-        divs = []
-        for i in range(0, self.vbox_layout.count(), 2):
-            widget = self.vbox_layout.itemAt(i).widget()
-            divs.append(widget.y()+widget.frameGeometry().height()/2)
-        self.centers = [(divs[i+1]+divs[i])/2 for i in range(len(divs)-1)]
-        event.accept()
+        if event.source() == self:
+            event.accept()
+            divs = []
+            for i in range(0, self.vbox_layout.count(), 2):
+                widget = self.vbox_layout.itemAt(i).widget()
+                divs.append(widget.y()+widget.frameGeometry().height()/2)
+            self.centers = [(divs[i+1]+divs[i])/2 for i in range(len(divs)-1)]
+        else:
+            event.ignore()
 
     def dragMoveEvent(self, event):
         """Set the appropriate layers list divider to be highlighted when
@@ -152,17 +155,16 @@ class QtLayersList(QScrollArea):
         total = self.vbox_layout.count()//2 - 1
         insert = total - divider_index
         layer_name = event.mimeData().text()
-        if layer_name in self.layers:
-            index = self.layers.index(layer_name)
-            # If the widget being dragged hasn't moved above or below any other
-            # widgets then don't highlight any dividers
-            selected = (not (insert == index) and not (insert-1 == index))
-            # Set the selected state of all the dividers
-            for i in range(0, self.vbox_layout.count(), 2):
-                if i == 2*divider_index:
-                    self.vbox_layout.itemAt(i).widget().setSelected(selected)
-                else:
-                    self.vbox_layout.itemAt(i).widget().setSelected(False)
+        index = self.layers.index(layer_name)
+        # If the widget being dragged hasn't moved above or below any other
+        # widgets then don't highlight any dividers
+        selected = (not (insert == index) and not (insert-1 == index))
+        # Set the selected state of all the dividers
+        for i in range(0, self.vbox_layout.count(), 2):
+            if i == 2*divider_index:
+                self.vbox_layout.itemAt(i).widget().setSelected(selected)
+            else:
+                self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
         for i in range(0, self.vbox_layout.count(), 2):
@@ -173,13 +175,12 @@ class QtLayersList(QScrollArea):
         total = self.vbox_layout.count()//2 - 1
         insert = total - divider_index
         layer_name = event.mimeData().text()
-        if layer_name in self.layers:
-            index = self.layers.index(layer_name)
-            if index != insert and index+1 != insert:
-                if not self.layers[index].selected:
-                    self.layers.unselect_all()
-                    self.layers[index].selected = True
-                self.layers._move_layers(index, insert)
+        index = self.layers.index(layer_name)
+        if index != insert and index+1 != insert:
+            if not self.layers[index].selected:
+                self.layers.unselect_all()
+                self.layers[index].selected = True
+            self.layers._move_layers(index, insert)
         event.accept()
 
 
