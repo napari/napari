@@ -335,11 +335,10 @@ class Image(Layer):
         if self.multichannel:
             downsampled = ndi.zoom(image, (zoom_factor, zoom_factor, 1),
                                    prefilter=False, order=0)
-            if image.shape[2] == 4: # image is RGBA
+            if image.shape[2] == 4:  # image is RGBA
                 downsampled[..., 3] = downsampled[..., 3] * self.opacity
-                #downsampled[..., 3] *= self.opacity
                 colormapped = img_as_ubyte(downsampled)
-            else: # image is RGB
+            else:  # image is RGB
                 colormapped = img_as_ubyte(downsampled)
                 alpha = np.full(downsampled.shape[:2] + (1,),
                                 int(255*self.opacity), dtype=np.uint8)

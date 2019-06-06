@@ -111,7 +111,7 @@ class Pyramid(Image):
                                np.subtract(self.image.shape[:-2], 1))
         if np.any(self.image.shape[-2:] > self._max_tile_shape):
             slices = [slice(self._top_left[i], self._top_left[i] +
-                           self._max_tile_shape[i], 1) for i in range(2)]
+                            self._max_tile_shape[i], 1) for i in range(2)]
             indices[-2:] = slices
             self.translate = self._top_left[::-1]*self.scale[:2]
         else:
