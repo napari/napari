@@ -21,7 +21,6 @@ from .shapes import Rectangle, Ellipse, Line, Path, Polygon
 class Shapes(Layer):
     """Shapes layer.
 
-
     Parameters
     ----------
     data : np.array | list
