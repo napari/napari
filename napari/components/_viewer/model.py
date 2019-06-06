@@ -309,8 +309,9 @@ class ViewerModel:
         clim_range : list | array | None
             Length two list or array with the default color limit range for the
             image. If not passed will be calculated as the min and max of the
-            image. Passing a value prevents this calculation which can be useful
-            when working with very large datasets that are dynamically loaded.
+            image. Passing a value prevents this calculation which can be
+            useful when working with very large datasets that are dynamically
+            loaded.
         **kwargs : dict
             Parameters that will be translated to metadata.
 
@@ -339,8 +340,9 @@ class ViewerModel:
         clim_range : list | array | None
             Length two list or array with the default color limit range for the
             image. If not passed will be calculated as the min and max of the
-            image. Passing a value prevents this calculation which can be useful
-            when working with very large datasets that are dynamically loaded.
+            image. Passing a value prevents this calculation which can be
+            useful when working with very large datasets that are dynamically
+            loaded.
         **kwargs : dict
             Parameters that will be translated to metadata.
 
@@ -363,16 +365,16 @@ class ViewerModel:
         symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
                              'hbar', 'ring', 'square', 'star', 'tailed_arrow',
                              'triangle_down', 'triangle_up', 'vbar', 'x'}
-            Symbol to be used as a marker. If given as a string, must be one of the
-            following: arrow, clobber, cross, diamond, disc, hbar, ring, square,
-            star, tailed_arrow, triangle_down, triangle_up, vbar, x
+            Symbol to be used as a marker. If given as a string, must be one of
+            the following: arrow, clobber, cross, diamond, disc, hbar, ring,
+            square, star, tailed_arrow, triangle_down, triangle_up, vbar, x
         size : int, float, np.ndarray, list
-            Size of the marker. If given as a scalar, all markers are the
-            same size. If given as a list/array, size must be the same
-            length as coords and sets the marker size for each marker
-            in coords (element-wise). If n_dimensional is True then can be a list
-            of length dims or can be an array of shape Nxdims where N is the number
-            of markers and dims is the number of dimensions
+            Size of the marker. If given as a scalar, all markers are the same
+            size. If given as a list/array, size must be the same length as
+            coords and sets the marker size for each marker in coords
+            (element-wise). If n_dimensional is True then can be a list of
+            length dims or can be an array of shape Nxdims where N is the
+            number of markers and dims is the number of dimensions
         edge_width : int, float, None
             Width of the symbol edge in pixels.
         edge_color : Color, ColorArray
@@ -435,37 +437,40 @@ class ViewerModel:
         Parameters
         ----------
         data : np.array | list
-            List of np.array of data or np.array. Each element of the list
-            (or row of a 3D np.array) corresponds to one shape. If a 2D array is
+            List of np.array of data or np.array. Each element of the list (or
+            row of a 3D np.array) corresponds to one shape. If a 2D array is
             passed it corresponds to just a single shape.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
-            'ellipse', 'path', 'polygon'}". If a list is supplied it must be the
-            same length as the length of `data` and each element will be applied to
-            each shape otherwise the same value will be used for all shapes.
+            'ellipse', 'path', 'polygon'}". If a list is supplied it must be
+            the same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
         edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the same
-            length as the length of `data` and each element will be applied to each
-            shape otherwise the same value will be used for all shapes.
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
         edge_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
-            starting with `#`. If array-like must be 1-dimensional array with 3 or
-            4 elements. If a list is supplied it must be the same length as
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
         face_color : str | tuple | list
             If string can be any color name recognized by vispy or hex value if
-            starting with `#`. If array-like must be 1-dimensional array with 3 or
-            4 elements. If a list is supplied it must be the same length as
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
         opacity : float | list
             Opacity of the shapes, must be between 0 and 1.
         z_index : int | list
-            Specifier of z order priority. Shapes with higher z order are displayed
-            ontop of others. If a list is supplied it must be the same length as
-            the length of `data` and each element will be applied to each shape
-            otherwise the same value will be used for all shapes.
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
         name : str, keyword-only
             Name of the layer.
 
@@ -481,17 +486,18 @@ class ViewerModel:
     def add_vectors(self, vectors, *args, **kwargs):
         """Add a vectors layer to the layers list.
 
-        Properties
+        Parameters
         ----------
         vectors : np.ndarray of shape (N,4) or (N, M, 2)
             (N, 4) is a list of coordinates (y, x, v, u)
                 x and y are coordinates
                 u and v are y and x projections of the vector
             (N, M, 2) is an (N, M) image of (v, u) projections
-            Returns np.ndarray of the current display (including averaging, length)
+            Returns np.ndarray of the current display (including averaging,
+            length)
         averaging : int
-            (int, int) kernel over which to convolve and subsample the data
-            not implemented for (N, 4) data
+            (int, int) kernel over which to convolve and subsample the data not
+            implemented for (N, 4) data
         width : int
             width of the line in pixels
         length : float

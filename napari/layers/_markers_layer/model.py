@@ -23,16 +23,16 @@ class Markers(Layer):
     symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
                          'hbar', 'ring', 'square', 'star', 'tailed_arrow',
                          'triangle_down', 'triangle_up', 'vbar', 'x'}
-        Symbol to be used as a marker. If given as a string, must be one of the
-        following: arrow, clobber, cross, diamond, disc, hbar, ring, square,
-        star, tailed_arrow, triangle_down, triangle_up, vbar, x
+        Symbol to be used as a marker. If given as a string, must be one of
+        the following: arrow, clobber, cross, diamond, disc, hbar, ring,
+        square, star, tailed_arrow, triangle_down, triangle_up, vbar, x
     size : int, float, np.ndarray, list
-        Size of the marker. If given as a scalar, all markers are the
-        same size. If given as a list/array, size must be the same
-        length as coords and sets the marker size for each marker
-        in coords (element-wise). If n_dimensional is True then can be a list
-        of length dims or can be an array of shape Nxdims where N is the number
-        of markers and dims is the number of dimensions
+        Size of the marker. If given as a scalar, all markers are the same
+        size. If given as a list/array, size must be the same length as
+        coords and sets the marker size for each marker in coords
+        (element-wise). If n_dimensional is True then can be a list of
+        length dims or can be an array of shape Nxdims where N is the
+        number of markers and dims is the number of dimensions
     edge_width : int, float, None
         Width of the symbol edge in pixels.
     edge_color : Color, ColorArray

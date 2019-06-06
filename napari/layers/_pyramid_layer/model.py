@@ -25,8 +25,9 @@ class Pyramid(Image):
     clim_range : list | array | None
         Length two list or array with the default color limit range for the
         image. If not passed will be calculated as the min and max of the
-        image. Passing a value prevents this calculation which can be useful
-        when working with very large datasets that are dynamically loaded.
+        image. Passing a value prevents this calculation which can be
+        useful when working with very large datasets that are dynamically
+        loaded.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
