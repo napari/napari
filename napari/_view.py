@@ -1,14 +1,8 @@
 from .viewer import Viewer
 
 
-def view(
-    *images,
-    meta=None,
-    multichannel=None,
-    clim_range=None,
-    title='napari',
-    **named_images,
-):
+def view(*images, meta=None, multichannel=None, clim_range=None,
+         title='napari', **named_images):
     """View one or more input images.
 
     Parameters
@@ -49,15 +43,9 @@ def view(
     """
     viewer = Viewer(title=title)
     for image in images:
-        viewer.add_image(
-            image, meta=meta, multichannel=multichannel, clim_range=clim_range
-        )
+        viewer.add_image(image, meta=meta, multichannel=multichannel,
+                         clim_range=clim_range)
     for name, image in named_images.items():
-        viewer.add_image(
-            image,
-            meta=meta,
-            multichannel=multichannel,
-            clim_range=clim_range,
-            name=name,
-        )
+        viewer.add_image(image, meta=meta, multichannel=multichannel,
+                         clim_range=clim_range, name=name)
     return viewer

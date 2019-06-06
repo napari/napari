@@ -10,9 +10,8 @@ class QtImageControls(QWidget):
         self.layer.events.clim.connect(self.clim_slider_update)
 
         # Create clim slider
-        self.climSlider = QVRangeSlider(
-            slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
-        )
+        self.climSlider = QVRangeSlider(slider_range=[0, 1, 0.0001],
+                                        values=[0, 1], parent=self)
         self.climSlider.setEmitWhileMoving(True)
         self.climSlider.collapsable = False
         self.climSlider.setEnabled(True)

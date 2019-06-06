@@ -18,7 +18,7 @@ for filename in os.listdir(examples_dir):
 
 def path_id(name):
     if name.startswith(root_dir):
-        return name[len(root_dir) + 1 :]
+        return name[len(root_dir) + 1:]
     return name
 
 

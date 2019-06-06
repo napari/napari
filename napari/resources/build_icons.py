@@ -43,7 +43,7 @@ icons = [
     'vertex_remove',
     'visibility',
     'visibility_off',
-    'zoom',
+    'zoom'
 ]
 
 for name, palette in palettes.items():

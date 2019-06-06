@@ -10,7 +10,6 @@ class Viewer(ViewerModel):
     title : string
         The title of the viewer window.
     """
-
     def __init__(self, title='napari'):
         super().__init__(title=title)
         qt_viewer = QtViewer(self)

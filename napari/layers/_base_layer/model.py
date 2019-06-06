@@ -49,7 +49,6 @@ class Layer(VisualWrapper, ABC):
     refresh()
         Refresh the current view.
     """
-
     def __init__(self, central_node, name=None):
         super().__init__(central_node)
         self._selected = False
@@ -67,18 +66,16 @@ class Layer(VisualWrapper, ABC):
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._name = ''
-        self.events.add(
-            select=Event,
-            deselect=Event,
-            data=Event,
-            name=Event,
-            thumbnail=Event,
-            status=Event,
-            help=Event,
-            interactive=Event,
-            cursor=Event,
-            cursor_size=Event,
-        )
+        self.events.add(select=Event,
+                        deselect=Event,
+                        data=Event,
+                        name=Event,
+                        thumbnail=Event,
+                        status=Event,
+                        help=Event,
+                        interactive=Event,
+                        cursor=Event,
+                        cursor_size=Event)
         self.name = name
 
     def __str__(self):
@@ -119,7 +116,7 @@ class Layer(VisualWrapper, ABC):
     def indices(self, indices):
         if indices == self.indices:
             return
-        self._indices = indices[-self.ndim :]
+        self._indices = indices[-self.ndim:]
         self._update_coordinates()
         self._set_view_slice()
 
@@ -360,14 +357,11 @@ class Layer(VisualWrapper, ABC):
             shape = view_box[2:]
             min_shape = view_box[:2]
 
-        props = {
-            'xmlns': 'http://www.w3.org/2000/svg',
-            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-        }
+        props = {'xmlns': 'http://www.w3.org/2000/svg',
+                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
 
-        xml = Element(
-            'svg', height=f'{shape[0]}', width=f'{shape[1]}', version='1.1', **props
-        )
+        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
+                      version='1.1', **props)
 
         transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
@@ -377,12 +371,10 @@ class Layer(VisualWrapper, ABC):
             xml_transform.append(x)
         xml.append(xml_transform)
 
-        svg = (
-            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
-            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
-            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
-            + tostring(xml, encoding='unicode', method='xml')
-        )
+        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
+               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
+               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
+               tostring(xml, encoding='unicode', method='xml'))
 
         if file:
             # Save svg to file

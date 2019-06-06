@@ -1,11 +1,13 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox, QSpinBox, QGridLayout
+from qtpy.QtWidgets import (QLabel, QComboBox, QDoubleSpinBox, QSpinBox,
+                             QGridLayout)
 import numpy as np
 
 from ..._base_layer import QtLayer
 
 
 class QtVectorsLayer(QtLayer):
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -22,8 +24,7 @@ class QtVectorsLayer(QtLayer):
         if index >= 0:
             face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.change_face_color(text)
-        )
+            lambda text=face_comboBox: self.change_face_color(text))
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('color:'), row, self.name_column)
         self.grid_layout.addWidget(face_comboBox, row, self.property_column)
@@ -47,7 +48,8 @@ class QtVectorsLayer(QtLayer):
         self.averaging_spinbox.valueChanged.connect(self.change_average_type)
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('avg kernel'), row, self.name_column)
-        self.grid_layout.addWidget(self.averaging_spinbox, row, self.property_column)
+        self.grid_layout.addWidget(self.averaging_spinbox, row,
+                                   self.property_column)
 
         # line length
         self.length_field = QDoubleSpinBox()
@@ -58,7 +60,8 @@ class QtVectorsLayer(QtLayer):
         self.length_field.valueChanged.connect(self.change_length)
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('length:'), row, self.name_column)
-        self.grid_layout.addWidget(self.length_field, row, self.property_column)
+        self.grid_layout.addWidget(self.length_field, row,
+                                   self.property_column)
 
         self.setExpanded(False)
 

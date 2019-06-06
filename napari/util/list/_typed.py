@@ -18,7 +18,6 @@ class TypedList(List):
         Functions that determine if an object is a reference to an
         element of the list.
     """
-
     def __init__(self, basetype, iterable=(), lookup=None):
         if lookup is None:
             lookup = {}
@@ -41,9 +40,8 @@ class TypedList(List):
 
     def _check(self, e):
         if not isinstance(e, self._basetype):
-            raise TypeError(
-                f'expected {cpprint(self._basetype)}; ' f'got {cpprint(type(e))}'
-            )
+            raise TypeError(f'expected {cpprint(self._basetype)}; '
+                            f'got {cpprint(type(e))}')
         return e
 
     def insert(self, key, object):
@@ -65,11 +63,9 @@ class TypedList(List):
                 if isinstance(q, t):
                     break
             else:
-                raise TypeError(
-                    f'expected object of type {cpprint(basetype)} '
-                    f'or one of {set(cpprint(t) for t in lookup)}; '
-                    f'got {cpprint(type(q))}'
-                )
+                raise TypeError(f'expected object of type {cpprint(basetype)} '
+                                f'or one of {set(cpprint(t) for t in lookup)}; '
+                                f'got {cpprint(type(q))}')
 
             ref = lookup[t]
 

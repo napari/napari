@@ -77,16 +77,8 @@ class Shape(ABC):
         Tx3 array of vertex indices that form the triangles for the shape edge
     """
 
-    def __init__(
-        self,
-        *,
-        shape_type='rectangle',
-        edge_width=1,
-        edge_color='black',
-        face_color='white',
-        opacity=1,
-        z_index=0,
-    ):
+    def __init__(self, *, shape_type='rectangle', edge_width=1,
+                 edge_color='black', face_color='white', opacity=1, z_index=0):
 
         self._face_vertices = np.empty((0, 2))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
@@ -138,7 +130,7 @@ class Shape(ABC):
         if type(edge_color) is str:
             self._edge_color_name = edge_color
         else:
-            rgb = tuple([int(255 * x) for x in self._edge_color.rgba[:3]])
+            rgb = tuple([int(255*x) for x in self._edge_color.rgba[:3]])
             self._edge_color_name = '#%02x%02x%02x' % rgb
 
     @property
@@ -153,7 +145,7 @@ class Shape(ABC):
         if type(face_color) is str:
             self._face_color_name = face_color
         else:
-            rgb = tuple([int(255 * x) for x in self._face_color.rgba[:3]])
+            rgb = tuple([int(255*x) for x in self._face_color.rgba[:3]])
             self._face_color_name = '#%02x%02x%02x' % rgb
 
     @property
@@ -183,12 +175,8 @@ class Shape(ABC):
         # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
         # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
 
-        props = {
-            'fill': fill,
-            'stroke': stroke,
-            'stroke-width': width,
-            'opacity': opacity,
-        }
+        props = {'fill': fill, 'stroke': stroke, 'stroke-width': width,
+                 'opacity': opacity}
 
         return props
 
@@ -223,13 +211,8 @@ class Shape(ABC):
             self._edge_offsets = offsets
             self._edge_triangles = triangles
         if face:
-            clean_data = np.array(
-                [
-                    p
-                    for i, p in enumerate(data)
-                    if i == 0 or not np.all(p == data[i - 1])
-                ]
-            )
+            clean_data = np.array([p for i, p in enumerate(data) if i == 0 or
+                                   not np.all(p == data[i-1])])
             if not is_collinear(clean_data):
                 vertices, triangles = triangulate_face(clean_data)
                 if len(triangles) > 0:
@@ -250,7 +233,8 @@ class Shape(ABC):
 
         points = self._data
 
-        centers, offsets, triangles = triangulate_edge(points, closed=self._closed)
+        centers, offsets, triangles = triangulate_edge(points,
+                                                       closed=self._closed)
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
@@ -302,9 +286,8 @@ class Shape(ABC):
             length 2 list specifying coordinate of fixed point of the rotation.
         """
         theta = np.radians(angle)
-        transform = np.array(
-            [[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]]
-        )
+        transform = np.array([[np.cos(theta), np.sin(theta)],
+                             [-np.sin(theta), np.cos(theta)]])
         if center is None:
             self.transform(transform)
         else:
@@ -328,10 +311,8 @@ class Shape(ABC):
         elif axis == 1:
             transform = np.array([[-1, 0], [0, 1]])
         else:
-            raise ValueError(
-                """Axis not recognized, must be one of "{0, 1}"
-                             """
-            )
+            raise ValueError("""Axis not recognized, must be one of "{0, 1}"
+                             """)
         if center is None:
             self.transform(transform)
         else:

@@ -18,7 +18,7 @@ with app_context():
     n = 100
     m = 200
 
-    image = 0.2 * np.random.random((n, m)) + 0.5
+    image = 0.2*np.random.random((n, m)) + 0.5
     layer = viewer.add_image(image, clim_range=[0, 1], name='background')
     layer.colormap = 'gray'
 
@@ -26,8 +26,8 @@ with app_context():
     # n x m grid of slanted lines
     # random data on the open interval (-1, 1)
     pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
-    rand1 = 2 * (np.random.random_sample(n * m) - 0.5)
-    rand2 = 2 * (np.random.random_sample(n * m) - 0.5)
+    rand1 = 2*(np.random.random_sample(n * m)-0.5)
+    rand2 = 2*(np.random.random_sample(n * m)-0.5)
 
     # assign projections for each vector
     pos[:, :, 0] = rand1.reshape((n, m))

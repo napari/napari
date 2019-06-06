@@ -11,9 +11,9 @@ histo = data.astronaut() / 255
 
 rch, gch, bch = np.transpose(histo, (2, 0, 1))
 
-red = vispy.color.Colormap([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
-green = vispy.color.Colormap([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
-blue = vispy.color.Colormap([[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+red = vispy.color.Colormap([[0., 0., 0.], [1., 0., 0.]])
+green = vispy.color.Colormap([[0., 0., 0.], [0., 1., 0.]])
+blue = vispy.color.Colormap([[0., 0., 0.], [0., 0., 1.]])
 
 with napari.util.app_context():
     v = napari.Viewer()

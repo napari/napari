@@ -17,7 +17,6 @@ class Window:
     qt_viewer : QtViewer
         Contained viewer widget.
     """
-
     def __init__(self, qt_viewer, show=True):
 
         self.qt_viewer = qt_viewer
@@ -73,12 +72,16 @@ class Window:
         # FIXME: this is a problem with the stylesheet not using properties
         self._status_bar.setStyleSheet(
             template(
-                'QStatusBar { background: {{ background }}; ' 'color: {{ text }}; }',
-                **palette,
+                'QStatusBar { background: {{ background }}; '
+                'color: {{ text }}; }',
+                **palette
             )
         )
         self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **palette)
+            template(
+                'QWidget { background: {{ background }}; }',
+                **palette
+            )
         )
 
     def _status_changed(self, event):

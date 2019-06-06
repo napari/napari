@@ -23,21 +23,21 @@ class ListModel(MultiIndexList, TypedList):
         Group of events for adding, removing, and reordering elements
         within the list.
     """
-
     def __init__(self, basetype, iterable=(), lookup=None):
         super().__init__(basetype, iterable, lookup)
-        self.events = EmitterGroup(
-            source=self, auto_connect=True, added=None, removed=None, reordered=None
-        )
+        self.events = EmitterGroup(source=self,
+                                    auto_connect=True,
+                                    added=None,
+                                    removed=None,
+                                    reordered=None)
 
     def __setitem__(self, query, values):
         indices = tuple(self.__prsitem__(query))
         new_indices = tuple(values)
 
         if sorted(indices) != sorted(self.index(v) for v in new_indices):
-            raise TypeError(
-                'must be a reordering of indices; ' 'setting of list items not allowed'
-            )
+            raise TypeError('must be a reordering of indices; '
+                            'setting of list items not allowed')
 
         super().__setitem__(indices, new_indices)
         self.events.reordered()

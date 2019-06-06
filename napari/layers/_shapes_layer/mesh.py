@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Mesh:
+class Mesh():
     """Contains meshses of shapes that will ultimately get rendered.
 
     Attributes

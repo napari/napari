@@ -11,7 +11,8 @@ from napari.util import app_context
 
 with app_context():
     # create the viewer with an image
-    viewer = napari.view(astronaut=rgb2gray(data.astronaut()), title='napari example')
+    viewer = napari.view(astronaut=rgb2gray(data.astronaut()),
+                         title='napari example')
 
     # adjust some of the layer properties
     layer = viewer.layers[0]

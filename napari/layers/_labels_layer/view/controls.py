@@ -1,5 +1,6 @@
 from qtpy.QtGui import QPainter, QColor
-from qtpy.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame, QWidget
+from qtpy.QtWidgets import (QButtonGroup, QVBoxLayout, QRadioButton, QFrame,
+                            QWidget)
 
 from .._constants import Mode
 
@@ -11,12 +12,14 @@ class QtLabelsControls(QFrame):
         self.layer = layer
         self.layer.events.mode.connect(self.set_mode)
 
-        self.panzoom_button = QtModeButton(
-            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode'
-        )
-        self.pick_button = QtModeButton(layer, 'picker', Mode.PICKER, 'Pick mode')
-        self.paint_button = QtModeButton(layer, 'paint', Mode.PAINT, 'Paint mode')
-        self.fill_button = QtModeButton(layer, 'fill', Mode.FILL, 'Fill mode')
+        self.panzoom_button = QtModeButton(layer, 'zoom', Mode.PAN_ZOOM,
+                                           'Pan/zoom mode')
+        self.pick_button = QtModeButton(layer, 'picker', Mode.PICKER,
+                                        'Pick mode')
+        self.paint_button = QtModeButton(layer, 'paint', Mode.PAINT,
+                                         'Paint mode')
+        self.fill_button = QtModeButton(layer, 'fill', Mode.FILL,
+                                        'Fill mode')
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
@@ -99,12 +102,13 @@ class QtColorBox(QWidget):
         if self.layer._selected_color is None:
             painter.setPen(QColor(230, 230, 230))
             painter.setBrush(QColor(230, 230, 230))
-            for i in range(self._height // 6 + 1):
-                for j in range(self._height // 6 + 1):
-                    if (i % 2 == 0 and j % 2 == 0) or (i % 2 == 1 and j % 2 == 1):
-                        painter.drawRect(i * 6, j * 6, 5, 5)
+            for i in range(self._height//6+1):
+                for j in range(self._height//6+1):
+                    if ((i % 2 == 0 and j % 2 == 0) or (i % 2 == 1 and
+                                                        j % 2 == 1)):
+                        painter.drawRect(i*6, j*6, 5, 5)
         else:
-            color = 255 * self.layer._selected_color
+            color = 255*self.layer._selected_color
             color = color.astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))

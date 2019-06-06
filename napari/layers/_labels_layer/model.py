@@ -44,24 +44,17 @@ class Labels(Layer):
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
-
-    def __init__(
-        self, label_image, meta=None, *, name=None, num_colors=50, opacity=0.7, **kwargs
-    ):
+    def __init__(self, label_image, meta=None, *, name=None, num_colors=50,
+                 opacity=0.7, **kwargs):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
 
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
-        self.events.add(
-            colormap=Event,
-            mode=Event,
-            n_dimensional=Event,
-            contiguous=Event,
-            brush_size=Event,
-            selected_label=Event,
-        )
+        self.events.add(colormap=Event, mode=Event, n_dimensional=Event,
+                        contiguous=Event, brush_size=Event,
+                        selected_label=Event)
 
         self.seed = 0.5
         self._image = label_image
@@ -93,7 +86,7 @@ class Labels(Layer):
         self._qt_properties = QtLabelsLayer(self)
         self._qt_controls = QtLabelsControls(self)
 
-        self._node.clim = [0.0, 1.0]
+        self._node.clim = [0., 1.]
         self.events.colormap()
 
     def raw_to_displayed(self, raw):
@@ -111,7 +104,8 @@ class Labels(Layer):
         image : array
             Image mapped between 0 and 1 to be displayed
         """
-        image = np.where(raw > 0, colormaps._low_discrepancy_image(raw, self.seed), 0)
+        image = np.where(raw > 0, colormaps._low_discrepancy_image(raw,
+                         self.seed), 0)
         return image
 
     def new_colormap(self):
@@ -257,16 +251,19 @@ class Labels(Layer):
         elif mode == Mode.PICKER:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, ' 'click to pick a label'
+            self.help = ('hold <space> to pan/zoom, '
+                         'click to pick a label')
         elif mode == Mode.PAINT:
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, ' 'drag to paint a label'
+            self.help = ('hold <space> to pan/zoom, '
+                         'drag to paint a label')
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, ' 'click to fill a label'
+            self.help = ('hold <space> to pan/zoom, '
+                         'click to fill a label')
         else:
             raise ValueError("Mode not recongnized")
 
@@ -386,7 +383,8 @@ class Labels(Layer):
             labeled_matches, num_features = ndi.label(matches)
             if num_features != 1:
                 match_label = labeled_matches[slice_coord]
-                matches = np.logical_and(matches, labeled_matches == match_label)
+                matches = np.logical_and(matches,
+                                         labeled_matches == match_label)
 
         # Replace target pixels with new_label
         labels[matches] = new_label
@@ -428,28 +426,16 @@ class Labels(Layer):
             Value of the new label to be filled in.
         """
         if self.n_dimensional or self.ndim == 2:
-            slice_coord = tuple(
-                [
-                    slice(
-                        self._to_pix(ind - self.brush_size / 2, i),
-                        self._to_pix(ind + self.brush_size / 2, i),
-                        1,
-                    )
-                    for i, ind in enumerate(coord)
-                ]
-            )
+            slice_coord = tuple([slice(self._to_pix(ind-self.brush_size/2, i),
+                                       self._to_pix(ind+self.brush_size/2, i),
+                                       1) for i, ind in enumerate(coord)])
         else:
-            slice_coord = tuple(
-                list(np.array(coord[:-2]).astype(int))
-                + [
-                    slice(
-                        self._to_pix(ind - self.brush_size / 2, self.ndim - 2 + i),
-                        self._to_pix(ind + self.brush_size / 2, self.ndim - 2 + i),
-                        1,
-                    )
-                    for i, ind in enumerate(coord[-2:])
-                ]
-            )
+            slice_coord = tuple(list(np.array(coord[:-2]).astype(int)) +
+                                [slice(self._to_pix(ind-self.brush_size/2,
+                                                    self.ndim - 2 + i),
+                                       self._to_pix(ind+self.brush_size/2,
+                                                    self.ndim - 2 + i), 1)
+                                 for i, ind in enumerate(coord[-2:])])
 
         # update the labels image
         self._image[slice_coord] = new_label
@@ -472,13 +458,10 @@ class Labels(Layer):
         coords : np.array, Nx2
             List of coordinates to ensure painting is continous
         """
-        num_step = round(
-            max(abs(np.array(new_coord) - np.array(old_coord))) / self.brush_size * 4
-        )
-        coords = [
-            np.linspace(old_coord[i], new_coord[i], num=num_step + 1)
-            for i in range(len(new_coord))
-        ]
+        num_step = round(max(abs(np.array(new_coord) - np.array(old_coord)))
+                         / self.brush_size * 4)
+        coords = [np.linspace(old_coord[i], new_coord[i],
+                              num=num_step + 1) for i in range(len(new_coord))]
         coords = np.stack(coords).T
         if len(coords) > 1:
             coords = coords[1:]
@@ -497,7 +480,8 @@ class Labels(Layer):
             Value of the data at the coord.
         """
         coord = list(self.coordinates)
-        coord[-2:] = np.clip(coord[-2:], 0, np.asarray(self._image_view.shape) - 1)
+        coord[-2:] = np.clip(coord[-2:], 0,
+                             np.asarray(self._image_view.shape) - 1)
 
         value = self._image_view[tuple(np.round(coord[-2:]).astype(int))]
 
@@ -527,12 +511,10 @@ class Labels(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colors.
         """
-        zoom_factor = np.divide(
-            self._thumbnail_shape[:2], self._image_view.shape[:2]
-        ).min()
-        downsampled = np.round(
-            ndi.zoom(self._image_view, zoom_factor, prefilter=False, order=0)
-        )
+        zoom_factor = np.divide(self._thumbnail_shape[:2],
+                                self._image_view.shape[:2]).min()
+        downsampled = np.round(ndi.zoom(self._image_view, zoom_factor,
+                                        prefilter=False, order=0))
         downsampled = self.raw_to_displayed(downsampled)
         colormapped = self.colormap.map(downsampled)
         colormapped = colormapped.reshape(downsampled.shape + (4,))
@@ -550,7 +532,7 @@ class Labels(Layer):
             as a png according to the svg specification.
         """
         image = self.raw_to_displayed(self._image_view)
-        mapped_image = (self.colormap.map(image) * 255).astype('uint8')
+        mapped_image = (self.colormap.map(image)*255).astype('uint8')
         mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
@@ -558,7 +540,8 @@ class Labels(Layer):
         width = str(self.shape[-1])
         height = str(self.shape[-2])
         opacity = str(self.opacity)
-        xml = Element('image', width=width, height=height, opacity=opacity, **props)
+        xml = Element('image', width=width, height=height, opacity=opacity,
+                      **props)
         return [xml]
 
     def on_mouse_press(self, event):
@@ -612,7 +595,8 @@ class Labels(Layer):
             if self._last_cursor_coord is None:
                 interp_coord = [coord]
             else:
-                interp_coord = self._interp_coords(self._last_cursor_coord, coord)
+                interp_coord = self._interp_coords(self._last_cursor_coord,
+                                                   coord)
             with self.freeze_refresh():
                 for c in interp_coord:
                     self.paint(c, new_label)

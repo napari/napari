@@ -27,25 +27,12 @@ class Path(Shape):
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     """
+    def __init__(self, data, *, edge_width=1, edge_color='black',
+                 face_color='white', opacity=1, z_index=0):
 
-    def __init__(
-        self,
-        data,
-        *,
-        edge_width=1,
-        edge_color='black',
-        face_color='white',
-        opacity=1,
-        z_index=0,
-    ):
-
-        super().__init__(
-            edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            opacity=opacity,
-            z_index=z_index,
-        )
+        super().__init__(edge_width=edge_width, edge_color=edge_color,
+                         face_color=face_color, opacity=opacity,
+                         z_index=z_index)
         self.data = np.array(data)
         self.name = 'path'
 
@@ -58,10 +45,8 @@ class Path(Shape):
     @data.setter
     def data(self, data):
         if len(data) < 2:
-            raise ValueError(
-                """Data shape does not match a path. Path
-                             expects at least two vertices"""
-            )
+            raise ValueError("""Data shape does not match a path. Path
+                             expects at least two vertices""")
         else:
             # For path connect every all data
             self._set_meshes(data, face=False, closed=False)

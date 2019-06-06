@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QPushButton, QComboBox, QSlider, QCheckBox, QLabel, QSpinBox
+from qtpy.QtWidgets import (QPushButton, QComboBox, QSlider, QCheckBox,
+                             QLabel, QSpinBox)
 import numpy as np
 from collections import Iterable
 from ..._base_layer import QtLayer
@@ -24,7 +25,8 @@ class QtLabelsLayer(QtLayer):
         shuffle_label.setObjectName('shuffle-label')
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(shuffle_label, row, self.name_column)
-        self.grid_layout.addWidget(self.colormap_update, row, self.property_column)
+        self.grid_layout.addWidget(self.colormap_update, row,
+                                   self.property_column)
 
         # selection spinbox
         self.selection_spinbox = QSpinBox()
@@ -53,24 +55,26 @@ class QtLabelsLayer(QtLayer):
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.brush_size_slider = sld
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('brush size:'), row, self.name_column)
+        self.grid_layout.addWidget(QLabel('brush size:'), row,
+                                   self.name_column)
         self.grid_layout.addWidget(sld, row, self.property_column)
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
         contig_cb.setChecked(self.layer.contiguous)
-        contig_cb.stateChanged.connect(
-            lambda state=contig_cb: self.change_contig(state)
-        )
+        contig_cb.stateChanged.connect(lambda state=contig_cb:
+                                       self.change_contig(state))
         self.contig_checkbox = contig_cb
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('contiguous:'), row, self.name_column)
+        self.grid_layout.addWidget(QLabel('contiguous:'), row,
+                                   self.name_column)
         self.grid_layout.addWidget(contig_cb, row, self.property_column)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
         ndim_cb.setChecked(self.layer.n_dimensional)
-        ndim_cb.stateChanged.connect(lambda state=ndim_cb: self.change_ndim(state))
+        ndim_cb.stateChanged.connect(lambda state=ndim_cb:
+                                     self.change_ndim(state))
         self.ndim_checkbox = ndim_cb
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('n-dim:'), row, self.name_column)

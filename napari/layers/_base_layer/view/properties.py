@@ -1,14 +1,5 @@
-from qtpy.QtWidgets import (
-    QSlider,
-    QLineEdit,
-    QGridLayout,
-    QFrame,
-    QLabel,
-    QVBoxLayout,
-    QCheckBox,
-    QComboBox,
-    QHBoxLayout,
-)
+from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
+                            QVBoxLayout, QCheckBox, QComboBox, QHBoxLayout)
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 
@@ -80,8 +71,9 @@ class QtLayer(QFrame):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.setValue(self.layer.opacity * 100)
-        sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
+        sld.setValue(self.layer.opacity*100)
+        sld.valueChanged[int].connect(
+            lambda value=sld: self.changeOpacity(value))
         self.opacitySilder = sld
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('opacity:'), row, self.name_column)
@@ -91,11 +83,11 @@ class QtLayer(QFrame):
         blend_comboBox = QComboBox()
         for blend in Blending:
             blend_comboBox.addItem(str(blend))
-        index = blend_comboBox.findText(self.layer.blending, Qt.MatchFixedString)
+        index = blend_comboBox.findText(
+            self.layer.blending, Qt.MatchFixedString)
         blend_comboBox.setCurrentIndex(index)
         blend_comboBox.activated[str].connect(
-            lambda text=blend_comboBox: self.changeBlending(text)
-        )
+            lambda text=blend_comboBox: self.changeBlending(text))
         self.blendComboBox = blend_comboBox
         self.grid_layout.addWidget(QLabel('blending:'), row, self.name_column)
         self.grid_layout.addWidget(blend_comboBox, row, self.property_column)
@@ -122,7 +114,7 @@ class QtLayer(QFrame):
 
     def changeOpacity(self, value):
         with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value / 100
+            self.layer.opacity = value/100
 
     def changeVisible(self, state):
         if state == Qt.Checked:
@@ -166,13 +158,12 @@ class QtLayer(QFrame):
 
     def _on_opacity_change(self, event):
         with self.layer.events.opacity.blocker():
-            self.opacitySilder.setValue(self.layer.opacity * 100)
+            self.opacitySilder.setValue(self.layer.opacity*100)
 
     def _on_blending_change(self, event):
         with self.layer.events.blending.blocker():
             index = self.blendComboBox.findText(
-                self.layer.blending, Qt.MatchFixedString
-            )
+                self.layer.blending, Qt.MatchFixedString)
             self.blendComboBox.setCurrentIndex(index)
 
     def _on_visible_change(self, event):
@@ -182,7 +173,6 @@ class QtLayer(QFrame):
     def _on_thumbnail_change(self, event):
         thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height
-        image = QImage(
-            thumbnail, thumbnail.shape[1], thumbnail.shape[0], QImage.Format_RGBA8888
-        )
+        image = QImage(thumbnail, thumbnail.shape[1], thumbnail.shape[0],
+                       QImage.Format_RGBA8888)
         self.thumbnail_label.setPixmap(QPixmap.fromImage(image))
