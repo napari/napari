@@ -393,16 +393,9 @@ class VolumeVisual(Visual):
         but has lower performance on desktop platforms.
     """
 
-    def __init__(
-        self,
-        vol,
-        clim=None,
-        method='mip',
-        threshold=None,
-        relative_step_size=0.8,
-        cmap='grays',
-        emulate_texture=False,
-    ):
+    def __init__(self, vol, clim=None, method='mip', threshold=None,
+                 relative_step_size=0.8, cmap='grays',
+                 emulate_texture=False):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
 
@@ -417,23 +410,18 @@ class VolumeVisual(Visual):
         # Create gloo objects
         self._vertices = VertexBuffer()
         self._texcoord = VertexBuffer(
-            np.array(
-                [
-                    [0, 0, 0],
-                    [1, 0, 0],
-                    [0, 1, 0],
-                    [1, 1, 0],
-                    [0, 0, 1],
-                    [1, 0, 1],
-                    [0, 1, 1],
-                    [1, 1, 1],
-                ],
-                dtype=np.float32,
-            )
-        )
-        self._tex = tex_cls(
-            (10, 10, 10), interpolation='linear', wrapping='clamp_to_edge'
-        )
+            np.array([
+                [0, 0, 0],
+                [1, 0, 0],
+                [0, 1, 0],
+                [1, 1, 0],
+                [0, 0, 1],
+                [1, 0, 1],
+                [0, 1, 1],
+                [1, 1, 1],
+            ], dtype=np.float32))
+        self._tex = tex_cls((10, 10, 10), interpolation='linear',
+                            wrapping='clamp_to_edge')
 
         # Create program
         super(VolumeVisual, self).__init__(self, vcode=VERT_SHADER, fcode="")
@@ -485,7 +473,7 @@ class VolumeVisual(Visual):
         # Apply clim
         vol = np.array(vol, dtype='float32', copy=False)
         if self._clim[1] == self._clim[0]:
-            if self._clim[0] != 0.0:
+            if self._clim[0] != 0.:
                 vol *= 1.0 / self._clim[0]
         else:
             vol -= self._clim[0]
@@ -493,7 +481,8 @@ class VolumeVisual(Visual):
 
         # Apply to texture
         self._tex.set_data(vol)  # will be efficient if vol is same shape
-        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1], vol.shape[0])
+        self.shared_program['u_shape'] = (vol.shape[2], vol.shape[1],
+                                          vol.shape[0])
 
         shape = vol.shape[:3]
         if self._vol_shape != shape:
@@ -544,9 +533,8 @@ class VolumeVisual(Visual):
         # Check and save
         known_methods = list(frag_dict.keys())
         if method not in known_methods:
-            raise ValueError(
-                'Volume render method should be in %r, not %r' % (known_methods, method)
-            )
+            raise ValueError('Volume render method should be in %r, not %r' %
+                             (known_methods, method))
         self._method = method
         # Get rid of specific variables - they may become invalid
         if 'u_threshold' in self.shared_program:
@@ -604,19 +592,16 @@ class VolumeVisual(Visual):
         y0, y1 = -0.5, shape[1] - 0.5
         z0, z1 = -0.5, shape[0] - 0.5
 
-        pos = np.array(
-            [
-                [x0, y0, z0],
-                [x1, y0, z0],
-                [x0, y1, z0],
-                [x1, y1, z0],
-                [x0, y0, z1],
-                [x1, y0, z1],
-                [x0, y1, z1],
-                [x1, y1, z1],
-            ],
-            dtype=np.float32,
-        )
+        pos = np.array([
+            [x0, y0, z0],
+            [x1, y0, z0],
+            [x0, y1, z0],
+            [x1, y1, z0],
+            [x0, y0, z1],
+            [x1, y0, z1],
+            [x0, y1, z1],
+            [x1, y1, z1],
+        ], dtype=np.float32)
 
         """
           6-------7
@@ -630,7 +615,8 @@ class VolumeVisual(Visual):
 
         # Order is chosen such that normals face outward; front faces will be
         # culled.
-        indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7], dtype=np.uint32)
+        indices = np.array([2, 6, 0, 4, 5, 6, 7, 2, 3, 0, 1, 5, 3, 7],
+                           dtype=np.uint32)
 
         # Apply
         self._vertices.set_data(pos)

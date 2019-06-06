@@ -11,7 +11,6 @@ from vispy.visuals.shaders import Function
 class BaseFilter(object):
     """Superclass for all filters.
     """
-
     def _attach(self, visual):
         """Called when a filter should be attached to a visual.
 
@@ -45,7 +44,6 @@ class FilterMeta(type):
 
     These required attributes may be inherited.
     """
-
     def __new__(cls, name, bases, attrs):
         has_fshader = False
         has_vshader = False
@@ -62,37 +60,28 @@ class FilterMeta(type):
 
         if class_has_attr('FRAG_SHADER'):
             if not class_has_attr('FRAG_HOOK'):
-                raise ValueError(
-                    'If FRAG_SHADER is defined, '
-                    '%s must also define FRAG_HOOK.' % name
-                )
+                raise ValueError('If FRAG_SHADER is defined, '
+                                 '%s must also define FRAG_HOOK.' % name)
             has_fshader = True
 
         if class_has_attr('VERT_SHADER'):
             if not class_has_attr('VERT_HOOK'):
-                raise ValueError(
-                    'If VERT_SHADER is defined, '
-                    '%s must also define VERT_HOOK.' % name
-                )
+                raise ValueError('If VERT_SHADER is defined, '
+                                 '%s must also define VERT_HOOK.' % name)
             has_vshader = True
 
         if not has_fshader and class_has_attr('FRAG_POSITION'):
-            warn(
-                '%s inherits or defines FRAG_POSITION when no '
-                ' FRAG_SHADER set.' % name
-            )
+            warn('%s inherits or defines FRAG_POSITION when no '
+                 ' FRAG_SHADER set.' % name)
 
         if not has_vshader and class_has_attr('VERT_POSITION'):
-            warn(
-                '%s inherits or defines VERT_POSITION when no '
-                ' VERT_SHADER set.' % name
-            )
+            warn('%s inherits or defines VERT_POSITION when no '
+                 ' VERT_SHADER set.' % name)
 
         if not has_fshader and not has_vshader:
             if Filter is not None:  # if we are not creating Filter itself
-                raise ValueError(
-                    '%s must define either FRAG_SHADER or ' 'VERT_SHADER.' % name
-                )
+                raise ValueError('%s must define either FRAG_SHADER or '
+                                 'VERT_SHADER.' % name)
 
         return type.__new__(cls, name, bases, attrs)
 
@@ -112,7 +101,6 @@ class Filter(six.with_metaclass(FilterMeta, BaseFilter)):
     fshader (Function) and fshader_expr (FunctionCall) for fragment shaders
     and vshader (Function) and vshader_expr (FunctionCall) for vertex shaders.
     """
-
     def __new__(cls, *args, **kwargs):
         self = super(Filter, cls).__new__(cls)
 

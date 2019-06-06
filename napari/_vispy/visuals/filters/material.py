@@ -38,8 +38,7 @@ class GridContourComponent(VisualComponent):
             void grid_contour_support() {
                 $output_pos = local_position();
             }
-        """,
-    )
+        """)
 
     def __init__(self, spacing):
         super(GridContourComponent, self).__init__()
@@ -84,8 +83,7 @@ class ShadingComponent(VisualComponent):
                 vec4 specular = $light_color * 5.0 * pow(p, 100.);
                 return color * ($ambient + diffuse) + specular;
             }
-        """
-    )
+        """)
 
     def __init__(self, normal_comp, lights, ambient=0.2):
         super(ShadingComponent, self).__init__()

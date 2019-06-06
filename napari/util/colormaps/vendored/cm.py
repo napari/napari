@@ -71,7 +71,7 @@ def _reverse_cmap_spec(spec):
         return revcmap(spec)
     else:
         revspec = list(reversed(spec))
-        if len(revspec[0]) == 2:  # e.g., (1, (1.0, 0.0, 1.0))
+        if len(revspec[0]) == 2:    # e.g., (1, (1.0, 0.0, 1.0))
             revspec = [(1.0 - a, b) for a, b in revspec]
         return revspec
 
@@ -95,9 +95,8 @@ LUTSIZE = 256
 
 # Generate the reversed specifications (all at once, to avoid
 # modify-when-iterating).
-datad.update(
-    {cmapname + '_r': _reverse_cmap_spec(spec) for cmapname, spec in datad.items()}
-)
+datad.update({cmapname + '_r': _reverse_cmap_spec(spec)
+              for cmapname, spec in datad.items()})
 
 # Precache the cmaps with ``lutsize = LUTSIZE``.
 # Also add the reversed ones added in the section above:
@@ -179,8 +178,7 @@ def get_cmap(name=None, lut=None):
     else:
         raise ValueError(
             "Colormap %s is not recognized. Possible values are: %s"
-            % (name, ', '.join(sorted(cmap_d)))
-        )
+            % (name, ', '.join(sorted(cmap_d))))
 
 
 class ScalarMappable(object):
@@ -190,7 +188,6 @@ class ScalarMappable(object):
     RGBA colors from the given colormap.
 
     """
-
     def __init__(self, norm=None, cmap=None):
         r"""
 
@@ -266,20 +263,16 @@ class ScalarMappable(object):
                     raise ValueError("third dimension must be 3 or 4")
                 if xx.dtype.kind == 'f':
                     if norm and (xx.max() > 1 or xx.min() < 0):
-                        raise ValueError(
-                            "Floating point image RGB values "
-                            "must be in the 0..1 range."
-                        )
+                        raise ValueError("Floating point image RGB values "
+                                         "must be in the 0..1 range.")
                     if bytes:
                         xx = (xx * 255).astype(np.uint8)
                 elif xx.dtype == np.uint8:
                     if not bytes:
                         xx = xx.astype(np.float32) / 255
                 else:
-                    raise ValueError(
-                        "Image RGB array must be uint8 or "
-                        "floating point; found %s" % xx.dtype
-                    )
+                    raise ValueError("Image RGB array must be uint8 or "
+                                     "floating point; found %s" % xx.dtype)
                 return xx
         except AttributeError:
             # e.g., x is not an ndarray; so try mapping it

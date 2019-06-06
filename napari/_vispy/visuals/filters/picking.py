@@ -13,7 +13,6 @@ class PickingFilter(Filter):
     Note that the ID color uses the alpha channel, so this may not be used
     with blending enabled.
     """
-
     FRAG_SHADER = """
         void picking_filter() {
             if( $enabled == 0 )
@@ -39,7 +38,7 @@ class PickingFilter(Filter):
         if id < 1:
             raise ValueError('Picking ID must be integer > 0.')
         id_color = struct.unpack('<4B', struct.pack('<I', id))
-        self.fshader['id_color'] = [x / 255.0 for x in id_color]
+        self.fshader['id_color'] = [x/255. for x in id_color]
         self._id = id
         self._id_color = id_color
 

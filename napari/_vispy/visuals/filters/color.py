@@ -61,7 +61,7 @@ class IsolineFilter(Filter):
     """
     FRAG_HOOK = 'post'
 
-    def __init__(self, level=2.0, width=2.0, antialias=1.0, color='black'):
+    def __init__(self, level=2., width=2.0, antialias=1.0, color='black'):
         self.level = level
         self.width = width
         self.color = color
