@@ -135,7 +135,7 @@ class QtViewer(QSplitter):
         self.canvas.native.setCursor(q_cursor)
 
     def _on_reset_view(self, event):
-        self.view.camera.set_range()
+        self.view.camera.rect = event.viewbox
 
     def _update_canvas(self, event):
         """Clears draw order and refreshes canvas. Usefeul for when layers are
