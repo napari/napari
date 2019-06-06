@@ -21,6 +21,7 @@ class Mode(StringEnum):
     The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
     modes all allow for their corresponding shape type to be added.
     """
+
     PAN_ZOOM = auto()
     SELECT = auto()
     DIRECT = auto()
@@ -32,9 +33,11 @@ class Mode(StringEnum):
     VERTEX_INSERT = auto()
     VERTEX_REMOVE = auto()
 
-class Box():
+
+class Box:
     """Box: Constants associated with the vertices of the interaction box
     """
+
     WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]
     LINE = [0, 2, 4, 6, 0]
@@ -46,5 +49,6 @@ class Box():
     CENTER = 8
     HANDLE = 9
     LEN = 8
+
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'

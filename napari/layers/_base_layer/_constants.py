@@ -21,6 +21,7 @@ class Blending(StringEnum):
                 corresponds to depth_test=False, cull_face=False, blend=True,
                 blend_func=('src_alpha', 'one').
     """
+
     TRANSLUCENT = auto()
     ADDITIVE = auto()
     OPAQUE = auto()
