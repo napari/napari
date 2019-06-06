@@ -97,7 +97,7 @@ class Image(Layer):
     _colormaps = AVAILABLE_COLORMAPS
 
     default_colormap = 'magma'
-    default_interpolation = Interpolation.NEAREST
+    default_interpolation = str(Interpolation.NEAREST)
 
     def __init__(self, image, meta=None, multichannel=None, *, name=None,
                  clim_range=None, **kwargs):
@@ -296,7 +296,12 @@ class Image(Layer):
 
     @property
     def interpolation(self):
-        """string: Equipped interpolation method's name.
+        """{
+            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+            'nearest', 'spline16', 'spline36'
+            }: Equipped interpolation method's name.
+
         """
         return str(self._interpolation)
 
