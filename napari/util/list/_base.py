@@ -12,6 +12,7 @@ class List(list):
     
     TODO: handle operators (e.g. +, *, etc.)
     """
+
     def __contains__(self, key):
         try:
             self.index(key)
@@ -28,7 +29,9 @@ class List(list):
         can_iter = isinstance(indices, Iterable)
 
         if can_iter:
-            return self.__newlike__(super(List, self).__getitem__(i) for i in indices)
+            return self.__newlike__(
+                super(List, self).__getitem__(i) for i in indices
+            )
 
         return super().__getitem__(indices)
 
@@ -105,7 +108,9 @@ class List(list):
             key += len(self)
 
         if not (0 <= key < len(self)):
-            raise IndexError(f'expected index to be in [0, {len(self)}); got {key}')
+            raise IndexError(
+                f'expected index to be in [0, {len(self)}); got {key}'
+            )
 
         return key
 

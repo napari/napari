@@ -1,9 +1,13 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import (triangulate_edge, triangulate_ellipse,
-                          center_radii_to_corners, rectangle_to_box,
-                          poly_to_mask)
+from ..shape_util import (
+    triangulate_edge,
+    triangulate_ellipse,
+    center_radii_to_corners,
+    rectangle_to_box,
+    poly_to_mask,
+)
 
 
 class Ellipse(Shape):
@@ -31,12 +35,25 @@ class Ellipse(Shape):
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     """
-    def __init__(self, data, *, edge_width=1, edge_color='black',
-                 face_color='white', opacity=1, z_index=0):
 
-        super().__init__(edge_width=edge_width, edge_color=edge_color,
-                         face_color=face_color, opacity=opacity,
-                         z_index=z_index)
+    def __init__(
+        self,
+        data,
+        *,
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        opacity=1,
+        z_index=0,
+    ):
+
+        super().__init__(
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            opacity=opacity,
+            z_index=z_index,
+        )
 
         self._closed = True
         self.data = np.array(data)
@@ -53,8 +70,10 @@ class Ellipse(Shape):
         if len(data) == 2:
             data = center_radii_to_corners(data[0], data[1])
         if len(data) != 4:
-            raise ValueError("""Data shape does not match an ellipse.
-                             Ellipse expects four corner vertices""")
+            raise ValueError(
+                """Data shape does not match an ellipse.
+                             Ellipse expects four corner vertices"""
+            )
         else:
             # Build boundary vertices with num_segments
             vertices, triangles = triangulate_ellipse(data)
@@ -78,8 +97,9 @@ class Ellipse(Shape):
 
         points = self._face_vertices[1:-1]
 
-        centers, offsets, triangles = triangulate_edge(points,
-                                                       closed=self._closed)
+        centers, offsets, triangles = triangulate_edge(
+            points, closed=self._closed
+        )
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
@@ -127,8 +147,7 @@ class Ellipse(Shape):
 
             # rotate back to axis aligned
             c, s = np.cos(angle), np.sin(-angle)
-            rotation = np.array([[c, s],
-                                 [-s, c]])
+            rotation = np.array([[c, s], [-s, c]])
             coords = coords @ rotation.T
 
             # shift back to center

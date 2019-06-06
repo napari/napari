@@ -30,7 +30,7 @@ CLASSIFIERS = [
     'Operating System :: Microsoft :: Windows',
     'Operating System :: POSIX',
     'Operating System :: Unix',
-    'Operating System :: MacOS'
+    'Operating System :: MacOS',
 ]
 
 
@@ -43,21 +43,25 @@ import versioneer
 
 
 if sys.version_info < (3, 6):
-    sys.stderr.write(f'You are using Python '
-                     + "{'.'.join(str(v) for v in sys.version_info[:3])}.\n\n"
-                     + 'napari only supports Python 3.6 and above.\n\n'
-                     + 'Please install Python 3.6 using:\n'
-                     + '  $ pip install python==3.6\n\n')
+    sys.stderr.write(
+        f'You are using Python '
+        + "{'.'.join(str(v) for v in sys.version_info[:3])}.\n\n"
+        + 'napari only supports Python 3.6 and above.\n\n'
+        + 'Please install Python 3.6 using:\n'
+        + '  $ pip install python==3.6\n\n'
+    )
     sys.exit(1)
 
 
-PACKAGES = [package for package in find_packages()
-            if not package.startswith('gui')]
+PACKAGES = [
+    package for package in find_packages() if not package.startswith('gui')
+]
 
 
 with open(osp.join('requirements', 'default.txt')) as f:
-    requirements = [line.strip() for line in f
-                    if line and not line.startswith('#')]
+    requirements = [
+        line.strip() for line in f if line and not line.startswith('#')
+    ]
 
 
 INSTALL_REQUIRES = []
@@ -85,5 +89,5 @@ if __name__ == '__main__':
         python_requires=f'>={MIN_PY_VER}',
         packages=PACKAGES,
         include_package_data=True,
-        zip_safe=False  # the package can run out of an .egg file
+        zip_safe=False,  # the package can run out of an .egg file
     )
