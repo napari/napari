@@ -25,6 +25,7 @@ icons = [
     'ellipse',
     'fill',
     'line',
+    'menu',
     'minus',
     'move_back',
     'move_front',
@@ -51,9 +52,9 @@ for name, palette in palettes.items():
         file = icon + '.svg'
         if icon == 'visibility':
             css = insert.replace('{{ color }}', palette['text'])
-        elif icon == 'visibility_off':
+        elif icon in ['visibility_off', 'menu']:
             css = insert.replace('{{ color }}', palette['highlight'])
-        elif icon == 'drop_down' or icon == 'plus' or icon == 'minus':
+        elif icon in ['drop_down', 'plus', 'minus']:
             css = insert.replace('{{ color }}', palette['secondary'])
         else:
             css = insert.replace('{{ color }}', palette['icon'])

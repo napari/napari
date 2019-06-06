@@ -186,12 +186,19 @@ QtLayer > QFrame > QLineEdit:disabled {
 QtLayer > QFrame > QPushButton#expand {
   background-color: {{ secondary }};
   border: 3px solid {{ secondary }};
+  height: 20px;
+  image: url(":/icons/{{ folder }}/menu.svg");
+  padding: 0px;
   width: 20px;
-  height: 10px;
 }
 
 QtLayer > QFrame > QPushButton#expand:pressed {
   background-color: {{ foreground }};
+  border: 3px solid {{ secondary }};
+}
+
+QtLayer > QFrame > QPushButton#expand:hover {
+  background-color: {{ primary }};
   border: 3px solid {{ secondary }};
 }
 

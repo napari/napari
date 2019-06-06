@@ -10,6 +10,7 @@
     <file>icons/light/ellipse.svg</file>
     <file>icons/light/fill.svg</file>
     <file>icons/light/line.svg</file>
+    <file>icons/light/menu.svg</file>
     <file>icons/light/minus.svg</file>
     <file>icons/light/move_back.svg</file>
     <file>icons/light/move_front.svg</file>
@@ -37,6 +38,7 @@
     <file>icons/dark/ellipse.svg</file>
     <file>icons/dark/fill.svg</file>
     <file>icons/dark/line.svg</file>
+    <file>icons/dark/menu.svg</file>
     <file>icons/dark/minus.svg</file>
     <file>icons/dark/move_back.svg</file>
     <file>icons/dark/move_front.svg</file>
