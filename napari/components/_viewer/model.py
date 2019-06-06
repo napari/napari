@@ -323,6 +323,36 @@ class ViewerModel:
         self.add_layer(layer)
         return layer
 
+    def add_pyramid(self, pyramid, *args, **kwargs):
+        """Add image pyramid layer.
+
+        Parameters
+        ----------
+        pyramid : list
+            List of np.ndarry image data, with base of pyramid at `0`.
+        meta : dict, optional
+            Image metadata.
+        multichannel : bool, optional
+            Whether the image is multichannel. Guesses if None.
+        name : str, keyword-only
+            Name of the layer.
+        clim_range : list | array | None
+            Length two list or array with the default color limit range for the
+            image. If not passed will be calculated as the min and max of the
+            image. Passing a value prevents this calculation which can be useful
+            when working with very large datasets that are dynamically loaded.
+        **kwargs : dict
+            Parameters that will be translated to metadata.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Pyramid`
+            The newly-created pyramid layer.
+        """
+        layer = layers.Pyramid(pyramid, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
     def add_markers(self, points, *args, **kwargs):
         """Add a markers layer to the layers list.
 

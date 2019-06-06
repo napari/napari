@@ -9,7 +9,6 @@ from .._image_layer.view import QtImageLayer
 from .._image_layer.view import QtImageControls
 
 
-@add_to_viewer
 class Pyramid(Image):
     """Image pyramid layer.
 
