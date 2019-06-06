@@ -117,7 +117,7 @@ class QtLayersList(QScrollArea):
         position = np.array([event.pos().x(), event.pos().y()])
         distance = np.linalg.norm(position - self.drag_start_position)
         if (distance < QApplication.startDragDistance() or
-            self.drag_name is None):
+                self.drag_name is None):
             return
         mimeData = QMimeData()
         mimeData.setText(self.drag_name)
