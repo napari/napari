@@ -32,21 +32,34 @@ class Pyramid(Image):
         Parameters that will be translated to metadata.
     """
 
-    def __init__(self, pyramid, meta=None, multichannel=None, *, name=None,
-                 clim_range=None, **kwargs):
+    def __init__(
+        self,
+        pyramid,
+        meta=None,
+        multichannel=None,
+        *,
+        name=None,
+        clim_range=None,
+        **kwargs,
+    ):
 
         self._pyramid = pyramid
         self._image_shapes = np.array([im.shape[:2] for im in pyramid])
         avg_shape = self._image_shapes.max(axis=1)
-        self._image_downsamples = avg_shape[0]/avg_shape
-        self._pyramid_level = len(pyramid)-1
+        self._image_downsamples = avg_shape[0] / avg_shape
+        self._pyramid_level = len(pyramid) - 1
 
         self._max_tile_shape = np.array([1600, 1600])
         self._top_left = np.array([0, 0])
 
-        super().__init__(pyramid[self._pyramid_level], meta=meta,
-                         multichannel=multichannel, name=name,
-                         clim_range=clim_range, **kwargs)
+        super().__init__(
+            pyramid[self._pyramid_level],
+            meta=meta,
+            multichannel=multichannel,
+            name=name,
+            clim_range=clim_range,
+            **kwargs,
+        )
         self.scale = [self._image_downsamples[self._pyramid_level]] * 2
 
     @property
@@ -97,12 +110,13 @@ class Pyramid(Image):
         """Updates the image data from the pyramid based on requested tile
         and pyramid level
         """
-        if np.any(self._image_shapes[self.pyramid_level] >
-                  self._max_tile_shape):
-            slices = tuple(slice(self._top_left[i], self._top_left[i] +
-                           self._max_tile_shape[i], 1) for i in range(2))
+        if np.any(self._image_shapes[self.pyramid_level] > self._max_tile_shape):
+            slices = tuple(
+                slice(self._top_left[i], self._top_left[i] + self._max_tile_shape[i], 1)
+                for i in range(2)
+            )
             self._image = self.pyramid[self.pyramid_level][slices]
-            self.translate = self._top_left[::-1]*self.scale[:2]
+            self.translate = self._top_left[::-1] * self.scale[:2]
         else:
             self._image = self.pyramid[self.pyramid_level]
             self.translate = [0, 0]
@@ -141,8 +155,7 @@ class Pyramid(Image):
         coord[-2:] = np.clip(coord[-2:], 0, np.subtract(shape, 1))
         value = self._image_view[tuple(coord[-2:])]
 
-        pos_in_slice = (self.coordinates[-2:]
-                        + self.translate[[1, 0]] / self.scale[:2])
+        pos_in_slice = self.coordinates[-2:] + self.translate[[1, 0]] / self.scale[:2]
 
         # Make sure pos in slice doesn't go off edge
         shape = self._image_shapes[self._pyramid_level]
@@ -196,13 +209,12 @@ class Pyramid(Image):
         shape = self._image_shapes[0]
 
         # Clip according to the max image shape
-        pos = [np.clip(pos[1], 0, shape[0] - 1),
-               np.clip(pos[0], 0, shape[1] - 1)]
+        pos = [np.clip(pos[1], 0, shape[0] - 1), np.clip(pos[0], 0, shape[1] - 1)]
 
         # Convert to offset for image array
         top_left = np.array(pos)
-        scale = self._max_tile_shape/4
-        top_left = scale*np.floor(top_left/scale)
+        scale = self._max_tile_shape / 4
+        top_left = scale * np.floor(top_left / scale)
 
         return top_left.astype(int)
 

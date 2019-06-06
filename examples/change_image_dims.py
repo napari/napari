@@ -12,8 +12,9 @@ with app_context():
     viewer = Viewer()
 
     # add data
-    blobs = data.binary_blobs(length=128, blob_size_fraction=0.05,
-                              n_dim=3, volume_fraction=.25).astype(float)
+    blobs = data.binary_blobs(
+        length=128, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.25
+    ).astype(float)
 
     layer = viewer.add_image(blobs[:64])
 

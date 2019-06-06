@@ -50,17 +50,29 @@ class Markers(Layer):
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    def __init__(self, coords, symbol='o', size=10, edge_width=1,
-                 edge_color='black', face_color='white', n_dimensional=False,
-                 *, name=None):
+
+    def __init__(
+        self,
+        coords,
+        symbol='o',
+        size=10,
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        n_dimensional=False,
+        *,
+        name=None,
+    ):
         super().__init__(MarkersNode(), name)
 
-        self.events.add(mode=Event,
-                        size=Event,
-                        face_color=Event,
-                        edge_color=Event,
-                        symbol=Event,
-                        n_dimensional=Event)
+        self.events.add(
+            mode=Event,
+            size=Event,
+            face_color=Event,
+            edge_color=Event,
+            symbol=Event,
+            n_dimensional=Event,
+        )
 
         # Freeze refreshes
         with self.freeze_refresh():
@@ -104,12 +116,12 @@ class Markers(Layer):
             # If there are now less markers, remove the sizes of the missing
             # ones
             with self.freeze_refresh():
-                self.size = self._size[:len(coords)]
+                self.size = self._size[: len(coords)]
         elif len(coords) > len(self._size):
             # If there are now more markers, add the sizes of last one
             # or add the default size
             with self.freeze_refresh():
-                adding = len(coords)-len(self._size)
+                adding = len(coords) - len(self._size)
                 if len(self._size) > 0:
                     new_size = self._size[-1]
                 else:
@@ -245,8 +257,12 @@ class Markers(Layer):
         # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
         # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
 
-        props = {'fill': fill, 'stroke': stroke, 'stroke-width': width,
-                 'opacity': opacity}
+        props = {
+            'fill': fill,
+            'stroke': stroke,
+            'stroke-width': width,
+            'opacity': opacity,
+        }
 
         return props
 
@@ -318,12 +334,12 @@ class Markers(Layer):
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, :-2] - indices[:-2])
-                size_array = self._size[:, :-2]/2
+                size_array = self._size[:, :-2] / 2
                 matches = np.all(distances <= size_array, axis=1)
                 in_slice_markers = coords[matches, -2:]
                 size_match = size_array[matches]
                 size_match[size_match == 0] = 1
-                scale_per_dim = (size_match - distances[matches])/size_match
+                scale_per_dim = (size_match - distances[matches]) / size_match
                 scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
                 return in_slice_markers, matches, scale
@@ -347,9 +363,9 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            size_array = self._size[matches, -2:]*np.expand_dims(scale, axis=1)
+            size_array = self._size[matches, -2:] * np.expand_dims(scale, axis=1)
             distances = abs(in_slice_markers - indices[-2:])
-            in_slice_matches = np.all(distances <= size_array/2, axis=1)
+            in_slice_matches = np.all(distances <= size_array / 2, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
                 selection = np.where(matches)[0][indices[-1]]
@@ -368,7 +384,7 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            sizes = (self._size[matches, -2:].mean(axis=1)*scale)[::-1]
+            sizes = (self._size[matches, -2:].mean(axis=1) * scale)[::-1]
 
             # Update the markers node
             data = np.array(in_slice_markers)[::-1] + 0.5
@@ -381,13 +397,17 @@ class Markers(Layer):
         self._sizes_view = sizes
 
         self._node.set_data(
-            data[:, [1, 0]], size=sizes, edge_width=self.edge_width,
-            symbol=self.symbol, edge_color=self.edge_color,
-            face_color=self.face_color, scaling=True)
+            data[:, [1, 0]],
+            size=sizes,
+            edge_width=self.edge_width,
+            symbol=self.symbol,
+            edge_color=self.edge_color,
+            face_color=self.face_color,
+            scaling=True,
+        )
         self._need_visual_update = True
         self._update()
-        self.status = self.get_message(self.coordinates,
-                                       self._selected_markers)
+        self.status = self.get_message(self.coordinates, self._selected_markers)
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -422,7 +442,7 @@ class Markers(Layer):
         coord : sequence of indices to add marker at
         """
         self.data = np.append(self.data, [coord], axis=0)
-        self._selected_markers = len(self.data)-1
+        self._selected_markers = len(self.data) - 1
 
     def _remove(self):
         """Removes selected object if any.
@@ -462,7 +482,7 @@ class Markers(Layer):
         for d, s in zip(self._markers_view, self._sizes_view):
             cx = str(d[1])
             cy = str(d[0])
-            r = str(s/2)
+            r = str(s / 2)
             element = Element('circle', cx=cx, cy=cy, r=r, **self.svg_props)
             xml_list.append(element)
 
