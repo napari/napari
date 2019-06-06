@@ -34,4 +34,4 @@ with app_context():
     # corner position followed by width and height
     base_shape = pyramid[0].shape[1:]
     viewer.camera.rect = (-0.1 * base_shape[1], -0.1 * base_shape[0],
-                   1.2 * base_shape[1], 1.2 * base_shape[0])
+                          1.2 * base_shape[1], 1.2 * base_shape[0])
