@@ -41,7 +41,9 @@ class Vectors(Layer):
         control panel mode
     """
 
-    def __init__(self, vectors, width=1, color='red', averaging=1, length=1, name=None):
+    def __init__(
+        self, vectors, width=1, color='red', averaging=1, length=1, name=None
+    ):
 
         visual = Mesh()
         super().__init__(visual)
@@ -190,19 +192,27 @@ class Vectors(Layer):
         # rotate coordinates about midpoint to represent angle and length
         pos[0::2, 0] = (
             midpt[:, 0]
-            - (stride_x / 2) * (self._length / 2) * vect.reshape((xdim * ydim, 2))[:, 0]
+            - (stride_x / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 0]
         )
         pos[0::2, 1] = (
             midpt[:, 1]
-            - (stride_y / 2) * (self._length / 2) * vect.reshape((xdim * ydim, 2))[:, 1]
+            - (stride_y / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 1]
         )
         pos[1::2, 0] = (
             midpt[:, 0]
-            + (stride_x / 2) * (self._length / 2) * vect.reshape((xdim * ydim, 2))[:, 0]
+            + (stride_x / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 0]
         )
         pos[1::2, 1] = (
             midpt[:, 1]
-            + (stride_y / 2) * (self._length / 2) * vect.reshape((xdim * ydim, 2))[:, 1]
+            + (stride_y / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 1]
         )
 
         return pos
@@ -287,7 +297,8 @@ class Vectors(Layer):
             output_mat[:, :, 1] = output_mat_y
 
             self.vectors = output_mat[
-                x_offset : range_x - x_offset : x, y_offset : range_y - y_offset : y
+                x_offset : range_x - x_offset : x,
+                y_offset : range_y - y_offset : y,
             ]
 
     @property
@@ -337,7 +348,9 @@ class Vectors(Layer):
             return "length adjustment not allowed for coordinate-style data"
         elif self._data_type == 'image':
             self._vectors = self._convert_to_vector_type(self._current_data)
-            vertices, triangles = self._generate_meshes(self.vectors, self.width)
+            vertices, triangles = self._generate_meshes(
+                self.vectors, self.width
+            )
             self._mesh_vertices = vertices
             self._mesh_triangles = triangles
 
@@ -465,7 +478,9 @@ class Vectors(Layer):
             x2 = str(self.vectors[2 * i + 1, 0])
             y2 = str(self.vectors[2 * i + 1, 1])
 
-            element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props)
+            element = Element(
+                'line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props
+            )
             xml_list.append(element)
 
         return xml_list

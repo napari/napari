@@ -10,7 +10,9 @@ import itertools
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
     """
-    return list(map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups()))
+    return list(
+        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
+    )
 
 
 def ensure_iterable(arg, color=False):
@@ -147,7 +149,9 @@ def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
     frame = inspect.currentframe().f_back
     try:
-        obj.__doc__ = obj.__doc__.format(**{**frame.f_globals, **frame.f_locals})
+        obj.__doc__ = obj.__doc__.format(
+            **{**frame.f_globals, **frame.f_locals}
+        )
         return obj
     finally:
         del frame

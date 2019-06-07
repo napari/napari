@@ -363,7 +363,9 @@ class Markers(Layer):
         # Display markers if there are any in this slice
         if len(in_slice_markers) > 0:
             # Get the marker sizes
-            size_array = self._size[matches, -2:] * np.expand_dims(scale, axis=1)
+            size_array = self._size[matches, -2:] * np.expand_dims(
+                scale, axis=1
+            )
             distances = abs(in_slice_markers - indices[-2:])
             in_slice_matches = np.all(distances <= size_array / 2, axis=1)
             indices = np.where(in_slice_matches)[0]
@@ -407,7 +409,9 @@ class Markers(Layer):
         )
         self._need_visual_update = True
         self._update()
-        self.status = self.get_message(self.coordinates, self._selected_markers)
+        self.status = self.get_message(
+            self.coordinates, self._selected_markers
+        )
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates

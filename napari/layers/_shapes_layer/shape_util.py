@@ -326,8 +326,12 @@ def point_to_lines(point, lines):
 
     # for points not falling inside segment calculate distance to appropriate
     # endpoint
-    line_dist[line_loc < 0] = np.linalg.norm(point_vectors[line_loc < 0], axis=1)
-    line_dist[line_loc > 1] = np.linalg.norm(end_point_vectors[line_loc > 1], axis=1)
+    line_dist[line_loc < 0] = np.linalg.norm(
+        point_vectors[line_loc < 0], axis=1
+    )
+    line_dist[line_loc > 1] = np.linalg.norm(
+        end_point_vectors[line_loc > 1], axis=1
+    )
     line_dist[reject] = np.linalg.norm(point_vectors[reject], axis=1)
     line_loc[reject] = 0.5
 
@@ -499,7 +503,9 @@ def triangulate_ellipse(corners, num_segments=100):
     if len_vec > 0:
         # rotate to be axis aligned
         norm_vec = vec / len_vec
-        transform = np.array([[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]])
+        transform = np.array(
+            [[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]]
+        )
         adjusted = np.matmul(adjusted, transform)
     else:
         transform = np.eye(2)
@@ -581,7 +587,11 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     # Remove any equal adjacent points
     if len(path) > 2:
         clean_path = np.array(
-            [p for i, p in enumerate(path) if i == 0 or not np.all(p == path[i - 1])]
+            [
+                p
+                for i, p in enumerate(path)
+                if i == 0 or not np.all(p == path[i - 1])
+            ]
         )
         if clean_path.shape[0] == 1:
             clean_path = np.concatenate((clean_path, clean_path), axis=0)
@@ -645,7 +655,9 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
                 offset = 0.5 * offset / np.linalg.norm(offset)
                 flip = np.sign(np.dot(offset, full_normals[i]))
                 vertex_offsets.append(offset)
-                vertex_offsets.append(-flip * miters[i] / miter_lengths[i] * limit)
+                vertex_offsets.append(
+                    -flip * miters[i] / miter_lengths[i] * limit
+                )
                 vertex_offsets.append(-offset)
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])

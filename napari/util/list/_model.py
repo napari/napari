@@ -27,7 +27,11 @@ class ListModel(MultiIndexList, TypedList):
     def __init__(self, basetype, iterable=(), lookup=None):
         super().__init__(basetype, iterable, lookup)
         self.events = EmitterGroup(
-            source=self, auto_connect=True, added=None, removed=None, reordered=None
+            source=self,
+            auto_connect=True,
+            added=None,
+            removed=None,
+            reordered=None,
         )
 
     def __setitem__(self, query, values):
@@ -36,7 +40,8 @@ class ListModel(MultiIndexList, TypedList):
 
         if sorted(indices) != sorted(self.index(v) for v in new_indices):
             raise TypeError(
-                'must be a reordering of indices; ' 'setting of list items not allowed'
+                'must be a reordering of indices; '
+                'setting of list items not allowed'
             )
 
         super().__setitem__(indices, new_indices)

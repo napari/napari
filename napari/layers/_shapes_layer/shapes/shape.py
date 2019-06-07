@@ -250,7 +250,9 @@ class Shape(ABC):
 
         points = self._data
 
-        centers, offsets, triangles = triangulate_edge(points, closed=self._closed)
+        centers, offsets, triangles = triangulate_edge(
+            points, closed=self._closed
+        )
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles

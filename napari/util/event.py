@@ -305,7 +305,9 @@ class EventEmitter(object):
         else:
             self._source = weakref.ref(s)
 
-    def connect(self, callback, ref=False, position='first', before=None, after=None):
+    def connect(
+        self, callback, ref=False, position='first', before=None, after=None
+    ):
         """Connect this emitter to a new callback.
 
         Parameters
@@ -379,7 +381,9 @@ class EventEmitter(object):
 
         # positions
         if position not in ('first', 'last'):
-            raise ValueError('position must be "first" or "last", not %s' % position)
+            raise ValueError(
+                'position must be "first" or "last", not %s' % position
+            )
 
         # bounds
         bounds = list()  # upper & lower bnds (inclusive) of possible cb locs
@@ -404,14 +408,17 @@ class EventEmitter(object):
                         )
                 matches = [
                     ci
-                    for ci, (cn, cc) in enumerate(zip(callback_refs, callbacks))
+                    for ci, (cn, cc) in enumerate(
+                        zip(callback_refs, callbacks)
+                    )
                     if (cc in criteria or cn in criteria)
                 ]
                 bounds.append(matches[0] if ri == 0 else (matches[-1] + 1))
         if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
             raise RuntimeError(
                 'cannot place callback before "%s" '
-                'and after "%s" for callbacks: %s' % (before, after, callback_refs)
+                'and after "%s" for callbacks: %s'
+                % (before, after, callback_refs)
             )
         idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
 
@@ -444,7 +451,9 @@ class EventEmitter(object):
             callback = (callback.__self__, callback.__name__)
 
         # always use a weak ref
-        if isinstance(callback, tuple) and not isinstance(callback[0], weakref.ref):
+        if isinstance(callback, tuple) and not isinstance(
+            callback[0], weakref.ref
+        ):
             callback = (weakref.ref(callback[0]),) + callback[1:]
 
         return callback
@@ -768,7 +777,9 @@ class EmitterGroup(EventEmitter):
         for em in self._emitters.values():
             em.unblock()
 
-    def connect(self, callback, ref=False, position='first', before=None, after=None):
+    def connect(
+        self, callback, ref=False, position='first', before=None, after=None
+    ):
         """ Connect the callback to the event group. The callback will receive
         events from *all* of the emitters in the group.
 
@@ -776,7 +787,9 @@ class EmitterGroup(EventEmitter):
         for arguments.
         """
         self._connect_emitters(True)
-        return EventEmitter.connect(self, callback, ref, position, before, after)
+        return EventEmitter.connect(
+            self, callback, ref, position, before, after
+        )
 
     def disconnect(self, callback=None):
         """ Disconnect the callback from this group. See

@@ -136,5 +136,7 @@ class Rectangle(Shape):
         width = str(size[0])
         height = str(size[1])
 
-        element = Element('rect', x=x, y=y, width=width, height=height, **props)
+        element = Element(
+            'rect', x=x, y=y, width=width, height=height, **props
+        )
         return element

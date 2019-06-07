@@ -73,7 +73,8 @@ class Window:
         # FIXME: this is a problem with the stylesheet not using properties
         self._status_bar.setStyleSheet(
             template(
-                'QStatusBar { background: {{ background }}; ' 'color: {{ text }}; }',
+                'QStatusBar { background: {{ background }}; '
+                'color: {{ text }}; }',
                 **palette,
             )
         )

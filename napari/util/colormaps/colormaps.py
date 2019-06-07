@@ -5,14 +5,17 @@ import numpy as np
 import vispy.color
 
 
-_matplotlib_list_file = os.path.join(os.path.dirname(__file__), 'matplotlib_cmaps.txt')
+_matplotlib_list_file = os.path.join(
+    os.path.dirname(__file__), 'matplotlib_cmaps.txt'
+)
 with open(_matplotlib_list_file) as fin:
     matplotlib_colormaps = [line.rstrip() for line in fin]
 
 
 primary_color_names = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
 primary_colors = np.array(
-    [(1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 0)], dtype=float
+    [(1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 0)],
+    dtype=float,
 )
 
 
@@ -194,7 +197,8 @@ def label_colormap(num_colors=256, seed=0.5):
     control_points = np.concatenate(([0], midpoints, [1.0]))
     # make sure to add an alpha channel to the colors
     colors = np.concatenate(
-        (_color_random(num_colors, seed=seed), np.full((num_colors, 1), 1)), axis=1
+        (_color_random(num_colors, seed=seed), np.full((num_colors, 1), 1)),
+        axis=1,
     )
     colors[0, :] = 0  # ensure alpha is 0 for label 0
     cmap = vispy.color.Colormap(

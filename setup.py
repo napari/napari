@@ -53,11 +53,15 @@ if sys.version_info < (3, 6):
     sys.exit(1)
 
 
-PACKAGES = [package for package in find_packages() if not package.startswith('gui')]
+PACKAGES = [
+    package for package in find_packages() if not package.startswith('gui')
+]
 
 
 with open(osp.join('requirements', 'default.txt')) as f:
-    requirements = [line.strip() for line in f if line and not line.startswith('#')]
+    requirements = [
+        line.strip() for line in f if line and not line.startswith('#')
+    ]
 
 
 INSTALL_REQUIRES = []

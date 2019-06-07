@@ -43,7 +43,9 @@ class Dims:
         super().__init__()
 
         # Events:
-        self.events = EmitterGroup(source=self, auto_connect=True, axis=None, ndim=None)
+        self.events = EmitterGroup(
+            source=self, auto_connect=True, axis=None, ndim=None
+        )
 
         self._range = []
         self._point = []
@@ -55,7 +57,16 @@ class Dims:
 
     def __str__(self):
         return "~~".join(
-            map(str, [self.range, self.point, self.interval, self.mode, self.display])
+            map(
+                str,
+                [
+                    self.range,
+                    self.point,
+                    self.interval,
+                    self.mode,
+                    self.display,
+                ],
+            )
         )
 
     @property
@@ -166,14 +177,20 @@ class Dims:
                         slice_list.append(slice(None))
                     else:
                         slice_list.append(
-                            slice(int(round(interval[0])), int(round(interval[1])))
+                            slice(
+                                int(round(interval[0])),
+                                int(round(interval[1])),
+                            )
                         )
                 else:
                     if interval is None:
                         slice_list.append(slice(None))
                     else:
                         slice_list.append(
-                            slice(int(round(interval[0])), int(round(interval[1])))
+                            slice(
+                                int(round(interval[0])),
+                                int(round(interval[1])),
+                            )
                         )
 
         return tuple(slice_list)

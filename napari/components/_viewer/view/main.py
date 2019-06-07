@@ -129,7 +129,9 @@ class QtViewer(QSplitter):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(
-                    QPixmap(':/icons/cursor/cursor_square.png').scaledToHeight(size)
+                    QPixmap(':/icons/cursor/cursor_square.png').scaledToHeight(
+                        size
+                    )
                 )
         else:
             q_cursor = self._cursors[cursor]
@@ -174,7 +176,10 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
-        if event.text in self.viewer.key_bindings and not event.native.isAutoRepeat():
+        if (
+            event.text in self.viewer.key_bindings
+            and not event.native.isAutoRepeat()
+        ):
             self.viewer.key_bindings[event.text](self.viewer)
             return
 

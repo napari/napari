@@ -25,7 +25,9 @@ class QtShapesLayer(QtLayer):
                 value = np.asarray(value)
             value = value.mean()
         sld.setValue(int(value))
-        sld.valueChanged[int].connect(lambda value=sld: self.changeWidth(value))
+        sld.valueChanged[int].connect(
+            lambda value=sld: self.changeWidth(value)
+        )
         self.widthSlider = sld
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('width:'), row, self.name_column)
@@ -35,7 +37,9 @@ class QtShapesLayer(QtLayer):
         colors = self.layer._colors
         for c in colors:
             face_comboBox.addItem(c)
-        index = face_comboBox.findText(self.layer.face_color, Qt.MatchFixedString)
+        index = face_comboBox.findText(
+            self.layer.face_color, Qt.MatchFixedString
+        )
         if index >= 0:
             face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(
@@ -43,14 +47,18 @@ class QtShapesLayer(QtLayer):
         )
         self.faceComboBox = face_comboBox
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('face_color:'), row, self.name_column)
+        self.grid_layout.addWidget(
+            QLabel('face_color:'), row, self.name_column
+        )
         self.grid_layout.addWidget(face_comboBox, row, self.property_column)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
         for c in colors:
             edge_comboBox.addItem(c)
-        index = edge_comboBox.findText(self.layer.edge_color, Qt.MatchFixedString)
+        index = edge_comboBox.findText(
+            self.layer.edge_color, Qt.MatchFixedString
+        )
         if index >= 0:
             edge_comboBox.setCurrentIndex(index)
         edge_comboBox.activated[str].connect(
@@ -58,7 +66,9 @@ class QtShapesLayer(QtLayer):
         )
         self.edgeComboBox = edge_comboBox
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('edge_color:'), row, self.name_column)
+        self.grid_layout.addWidget(
+            QLabel('edge_color:'), row, self.name_column
+        )
         self.grid_layout.addWidget(edge_comboBox, row, self.property_column)
 
         self.setExpanded(False)

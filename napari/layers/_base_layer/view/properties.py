@@ -81,7 +81,9 @@ class QtLayer(QFrame):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.opacity * 100)
-        sld.valueChanged[int].connect(lambda value=sld: self.changeOpacity(value))
+        sld.valueChanged[int].connect(
+            lambda value=sld: self.changeOpacity(value)
+        )
         self.opacitySilder = sld
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('opacity:'), row, self.name_column)
@@ -91,7 +93,9 @@ class QtLayer(QFrame):
         blend_comboBox = QComboBox()
         for blend in Blending:
             blend_comboBox.addItem(str(blend))
-        index = blend_comboBox.findText(self.layer.blending, Qt.MatchFixedString)
+        index = blend_comboBox.findText(
+            self.layer.blending, Qt.MatchFixedString
+        )
         blend_comboBox.setCurrentIndex(index)
         blend_comboBox.activated[str].connect(
             lambda text=blend_comboBox: self.changeBlending(text)
@@ -183,6 +187,9 @@ class QtLayer(QFrame):
         thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height
         image = QImage(
-            thumbnail, thumbnail.shape[1], thumbnail.shape[0], QImage.Format_RGBA8888
+            thumbnail,
+            thumbnail.shape[1],
+            thumbnail.shape[0],
+            QImage.Format_RGBA8888,
         )
         self.thumbnail_label.setPixmap(QPixmap.fromImage(image))

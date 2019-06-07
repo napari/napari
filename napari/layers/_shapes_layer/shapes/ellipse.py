@@ -97,7 +97,9 @@ class Ellipse(Shape):
 
         points = self._face_vertices[1:-1]
 
-        centers, offsets, triangles = triangulate_edge(points, closed=self._closed)
+        centers, offsets, triangles = triangulate_edge(
+            points, closed=self._closed
+        )
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles

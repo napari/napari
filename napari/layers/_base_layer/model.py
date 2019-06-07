@@ -366,7 +366,11 @@ class Layer(VisualWrapper, ABC):
         }
 
         xml = Element(
-            'svg', height=f'{shape[0]}', width=f'{shape[1]}', version='1.1', **props
+            'svg',
+            height=f'{shape[0]}',
+            width=f'{shape[1]}',
+            version='1.1',
+            **props,
         )
 
         transform = f'translate({-min_shape[1]} {-min_shape[0]})'

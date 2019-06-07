@@ -194,7 +194,9 @@ class QtDims(QWidget):
         range = self.dims.range[axis]
         point = self.dims.point[axis]
 
-        slider = QHRangeSlider(slider_range=range, values=(point, point), parent=self)
+        slider = QHRangeSlider(
+            slider_range=range, values=(point, point), parent=self
+        )
 
         slider.setFocusPolicy(Qt.StrongFocus)
 
@@ -227,7 +229,9 @@ class QtDims(QWidget):
                 if interval is not None:
                     min, max = interval
                     self.dims.set_point(axis, (max + min) / 2)
-            self.dims.set_mode(axis, DimsMode.POINT if collapsed else DimsMode.INTERVAL)
+            self.dims.set_mode(
+                axis, DimsMode.POINT if collapsed else DimsMode.INTERVAL
+            )
 
         slider.collapsedChanged.connect(collapse_change_listener)
 

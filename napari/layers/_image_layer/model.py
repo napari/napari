@@ -63,7 +63,8 @@ def vispy_or_mpl_colormap(name):
             mpl_cmap = getattr(cm, name)
         except AttributeError:
             raise KeyError(
-                f'Colormap "{name}" not found in either vispy ' 'or matplotlib.'
+                f'Colormap "{name}" not found in either vispy '
+                'or matplotlib.'
             )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         cmap = vispy.color.Colormap(mpl_colors)
@@ -270,7 +271,9 @@ class Image(Layer):
             self._colormaps.update(colormap)
             name = list(colormap)[0]  # first key in dict
         elif isinstance(colormap, vispy.color.Colormap):
-            name = _increment_unnamed_colormap(name, list(self._colormaps.keys()))
+            name = _increment_unnamed_colormap(
+                name, list(self._colormaps.keys())
+            )
             self._colormaps[name] = colormap
         else:
             warn(f'invalid value for colormap: {colormap}')
@@ -458,7 +461,9 @@ class Image(Layer):
         width = str(self.shape[-1])
         height = str(self.shape[-2])
         opacity = str(self.opacity)
-        xml = Element('image', width=width, height=height, opacity=opacity, **props)
+        xml = Element(
+            'image', width=width, height=height, opacity=opacity, **props
+        )
         return [xml]
 
     def on_mouse_move(self, event):

@@ -1,4 +1,10 @@
-from qtpy.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame, QPushButton
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QVBoxLayout,
+    QRadioButton,
+    QFrame,
+    QPushButton,
+)
 
 from .._constants import Mode
 
@@ -10,7 +16,9 @@ class QtShapesControls(QFrame):
         self.layer = layer
         self.layer.events.mode.connect(self.set_mode)
 
-        self.select_button = QtModeButton(layer, 'select', Mode.SELECT, 'Select mode')
+        self.select_button = QtModeButton(
+            layer, 'select', Mode.SELECT, 'Select mode'
+        )
         self.direct_button = QtModeButton(
             layer, 'direct', Mode.DIRECT, 'Direct select mode'
         )
@@ -23,8 +31,12 @@ class QtShapesControls(QFrame):
         self.ellipse_button = QtModeButton(
             layer, 'ellipse', Mode.ADD_ELLIPSE, 'Add ellipses'
         )
-        self.line_button = QtModeButton(layer, 'line', Mode.ADD_LINE, 'Add lines')
-        self.path_button = QtModeButton(layer, 'path', Mode.ADD_PATH, 'Add paths')
+        self.line_button = QtModeButton(
+            layer, 'line', Mode.ADD_LINE, 'Add lines'
+        )
+        self.path_button = QtModeButton(
+            layer, 'path', Mode.ADD_PATH, 'Add paths'
+        )
         self.polygon_button = QtModeButton(
             layer, 'polygon', Mode.ADD_POLYGON, 'Add polygons'
         )

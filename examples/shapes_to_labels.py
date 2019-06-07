@@ -94,7 +94,9 @@ with app_context():
     masks = layer.data.to_masks([512, 512])
     masks_layer = viewer.add_image(masks.astype(float), name='masks')
     masks_layer.opacity = 0.7
-    masks_layer.colormap = Colormap([[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 1.0]])
+    masks_layer.colormap = Colormap(
+        [[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 1.0]]
+    )
 
     labels = layer.data.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')

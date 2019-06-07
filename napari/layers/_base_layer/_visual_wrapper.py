@@ -40,7 +40,11 @@ class VisualWrapper:
         self._blending = Blending.TRANSLUCENT
         self._parent = None
         self.events = EmitterGroup(
-            source=self, auto_connect=True, blending=Event, opacity=Event, visible=Event
+            source=self,
+            auto_connect=True,
+            blending=Event,
+            opacity=Event,
+            visible=Event,
         )
 
     @property
@@ -90,7 +94,9 @@ class VisualWrapper:
     @opacity.setter
     def opacity(self, opacity):
         if not 0.0 <= opacity <= 1.0:
-            raise ValueError('opacity must be between 0.0 and 1.0; ' f'got {opacity}')
+            raise ValueError(
+                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+            )
 
         self._node.opacity = opacity
         self.events.opacity()

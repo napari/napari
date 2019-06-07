@@ -1,5 +1,11 @@
 from qtpy.QtGui import QPainter, QColor
-from qtpy.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame, QWidget
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QVBoxLayout,
+    QRadioButton,
+    QFrame,
+    QWidget,
+)
 
 from .._constants import Mode
 
@@ -14,8 +20,12 @@ class QtLabelsControls(QFrame):
         self.panzoom_button = QtModeButton(
             layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode'
         )
-        self.pick_button = QtModeButton(layer, 'picker', Mode.PICKER, 'Pick mode')
-        self.paint_button = QtModeButton(layer, 'paint', Mode.PAINT, 'Paint mode')
+        self.pick_button = QtModeButton(
+            layer, 'picker', Mode.PICKER, 'Pick mode'
+        )
+        self.paint_button = QtModeButton(
+            layer, 'paint', Mode.PAINT, 'Paint mode'
+        )
         self.fill_button = QtModeButton(layer, 'fill', Mode.FILL, 'Fill mode')
 
         self.button_group = QButtonGroup(self)
@@ -101,7 +111,9 @@ class QtColorBox(QWidget):
             painter.setBrush(QColor(230, 230, 230))
             for i in range(self._height // 6 + 1):
                 for j in range(self._height // 6 + 1):
-                    if (i % 2 == 0 and j % 2 == 0) or (i % 2 == 1 and j % 2 == 1):
+                    if (i % 2 == 0 and j % 2 == 0) or (
+                        i % 2 == 1 and j % 2 == 1
+                    ):
                         painter.drawRect(i * 6, j * 6, 5, 5)
         else:
             color = 255 * self.layer._selected_color

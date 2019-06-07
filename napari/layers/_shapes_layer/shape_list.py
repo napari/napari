@@ -96,7 +96,9 @@ class ShapeList:
 
         # Add edges to mesh
         m = len(self._mesh.vertices)
-        vertices = shape._edge_vertices + shape.edge_width * shape._edge_offsets
+        vertices = (
+            shape._edge_vertices + shape.edge_width * shape._edge_offsets
+        )
         self._mesh.vertices = np.append(self._mesh.vertices, vertices, axis=0)
         vertices = shape._edge_vertices
         self._mesh.vertices_centers = np.append(
@@ -107,10 +109,14 @@ class ShapeList:
             self._mesh.vertices_offsets, vertices, axis=0
         )
         index = np.repeat([[shape_index, 1]], len(vertices), axis=0)
-        self._mesh.vertices_index = np.append(self._mesh.vertices_index, index, axis=0)
+        self._mesh.vertices_index = np.append(
+            self._mesh.vertices_index, index, axis=0
+        )
 
         triangles = shape._edge_triangles + m
-        self._mesh.triangles = np.append(self._mesh.triangles, triangles, axis=0)
+        self._mesh.triangles = np.append(
+            self._mesh.triangles, triangles, axis=0
+        )
         index = np.repeat([[shape_index, 1]], len(triangles), axis=0)
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
@@ -135,10 +141,14 @@ class ShapeList:
             self._mesh.vertices_offsets, vertices, axis=0
         )
         index = np.repeat([[shape_index, 0]], len(vertices), axis=0)
-        self._mesh.vertices_index = np.append(self._mesh.vertices_index, index, axis=0)
+        self._mesh.vertices_index = np.append(
+            self._mesh.vertices_index, index, axis=0
+        )
 
         triangles = shape._face_triangles + m
-        self._mesh.triangles = np.append(self._mesh.triangles, triangles, axis=0)
+        self._mesh.triangles = np.append(
+            self._mesh.triangles, triangles, axis=0
+        )
         index = np.repeat([[shape_index, 0]], len(triangles), axis=0)
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
@@ -195,7 +205,9 @@ class ShapeList:
         num_indices = len(indices)
         if num_indices > 0:
             indices = self._mesh.triangles > indices[0]
-            self._mesh.triangles[indices] = self._mesh.triangles[indices] - num_indices
+            self._mesh.triangles[indices] = (
+                self._mesh.triangles[indices] - num_indices
+            )
 
         if renumber:
             del self.shapes[index]
@@ -251,7 +263,9 @@ class ShapeList:
             self._mesh.triangles_z_order = np.empty((0), dtype=int)
         else:
             _, idx, counts = np.unique(
-                self._mesh.triangles_index[:, 0], return_index=True, return_counts=True
+                self._mesh.triangles_index[:, 0],
+                return_index=True,
+                return_counts=True,
             )
             triangles_z_order = [
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
@@ -480,18 +494,24 @@ class ShapeList:
         if type(indices) is list:
             meshes = self._mesh.triangles_index
             triangle_indices = [
-                i for i, x in enumerate(meshes) if x[0] in indices and x[1] == 1
+                i
+                for i, x in enumerate(meshes)
+                if x[0] in indices and x[1] == 1
             ]
             meshes = self._mesh.vertices_index
             vertices_indices = [
-                i for i, x in enumerate(meshes) if x[0] in indices and x[1] == 1
+                i
+                for i, x in enumerate(meshes)
+                if x[0] in indices and x[1] == 1
             ]
         else:
             triangle_indices = np.all(
                 self._mesh.triangles_index == [indices, 1], axis=1
             )
             triangle_indices = np.where(triangle_indices)[0]
-            vertices_indices = np.all(self._mesh.vertices_index == [indices, 1], axis=1)
+            vertices_indices = np.all(
+                self._mesh.vertices_index == [indices, 1], axis=1
+            )
             vertices_indices = np.where(vertices_indices)[0]
 
         offsets = self._mesh.vertices_offsets[vertices_indices]
@@ -626,7 +646,11 @@ class ShapeList:
             )
         else:
             cls = self._types[shape_type]
-            data = [s.to_mask(mask_shape) for s in self.shapes if isinstance(s, cls)]
+            data = [
+                s.to_mask(mask_shape)
+                for s in self.shapes
+                if isinstance(s, cls)
+            ]
         masks = np.array(data)
 
         return masks

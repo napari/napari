@@ -42,7 +42,8 @@ class TypedList(List):
     def _check(self, e):
         if not isinstance(e, self._basetype):
             raise TypeError(
-                f'expected {cpprint(self._basetype)}; ' f'got {cpprint(type(e))}'
+                f'expected {cpprint(self._basetype)}; '
+                f'got {cpprint(type(e))}'
             )
         return e
 
