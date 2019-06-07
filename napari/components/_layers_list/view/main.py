@@ -38,7 +38,7 @@ class QtLayersList(QScrollArea):
         self.drag_name = None
 
     def _add(self, event):
-        """Insert `event.widget` at index `event.index`."""
+        """Insert widget for layer `event.item` at index `event.index`."""
         layer = event.item
         index = event.index
         total = len(self.layers)
@@ -49,17 +49,18 @@ class QtLayersList(QScrollArea):
             self.vbox_layout.insertWidget(2 * (total - index), QtDivider())
 
     def _remove(self, event):
-        """Remove layer widget at index `event.index`."""
-        layer = event.item
-        if layer._qt_properties is not None:
-            index = self.vbox_layout.indexOf(layer._qt_properties)
-            divider = self.vbox_layout.itemAt(index + 1).widget()
-            self.vbox_layout.removeWidget(layer._qt_properties)
-            layer._qt_properties.deleteLater()
-            layer._qt_properties = None
-            self.vbox_layout.removeWidget(divider)
-            divider.deleteLater()
-            divider = None
+        """Remove widget for layer at index `event.index`."""
+        layer_index = event.index
+        total = len(self.layers)
+        index = 2 * (total - layer_index) + 1
+        widget = self.vbox_layout.itemAt(index).widget()
+        divider = self.vbox_layout.itemAt(index + 1).widget()
+        self.vbox_layout.removeWidget(widget)
+        widget.deleteLater()
+        widget = None
+        self.vbox_layout.removeWidget(divider)
+        divider.deleteLater()
+        divider = None
 
     def _reorder(self, event):
         """Reorders list of layer widgets by looping through all
