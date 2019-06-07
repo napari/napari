@@ -195,17 +195,11 @@ class Image(Layer):
         """Determines the slice of image from the indices."""
 
         indices = list(self.indices)
-
-        for dim in range(len(indices)):
-            max_dim_index = self.image.shape[dim] - 1
-
-            try:
-                if indices[dim] > max_dim_index:
-                    indices[dim] = max_dim_index
-            except TypeError:
-                pass
-
+        indices[:-2] = np.clip(
+            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
+        )
         self._image_view = np.asarray(self.image[tuple(indices)])
+        self._image_thumbnail = self._image_view
 
         return self._image_view
 
@@ -345,18 +339,16 @@ class Image(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap.
         """
+        image = self._image_thumbnail
         zoom_factor = np.divide(
-            self._thumbnail_shape[:2], self._image_view.shape[:2]
+            self._thumbnail_shape[:2], image.shape[:2]
         ).min()
         if self.multichannel:
             downsampled = ndi.zoom(
-                self._image_view,
-                (zoom_factor, zoom_factor, 1),
-                prefilter=False,
-                order=0,
+                image, (zoom_factor, zoom_factor, 1), prefilter=False, order=0
             )
-            if self._image_view.shape[2] == 4:  # image is RGBA
-                downsampled[..., 3] *= self.opacity
+            if image.shape[2] == 4:  # image is RGBA
+                downsampled[..., 3] = downsampled[..., 3] * self.opacity
                 colormapped = img_as_ubyte(downsampled)
             else:  # image is RGB
                 colormapped = img_as_ubyte(downsampled)
@@ -368,7 +360,7 @@ class Image(Layer):
                 colormapped = np.concatenate([colormapped, alpha], axis=2)
         else:
             downsampled = ndi.zoom(
-                self._image_view, zoom_factor, prefilter=False, order=0
+                image, zoom_factor, prefilter=False, order=0
             )
             low, high = self.clim
             downsampled = np.clip(downsampled, low, high)

@@ -208,9 +208,18 @@ class ViewerModel:
         self.events.active_layer(item=self._active_layer)
 
     def reset_view(self):
-        """Resets the camera's view.
+        """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
+        corner position followed by width and height of the camera
         """
-        self.events.reset_view()
+        min_shape, max_shape = self._calc_bbox()
+        # TODO: Change dims selection when dims model changes
+        min_shape = np.array(min_shape[-2:])
+        max_shape = np.array(max_shape[-2:])
+        shape = max_shape - min_shape
+        min_shape = min_shape - 0.05 * shape
+        shape = 1.1 * shape
+        rect = (min_shape[1], min_shape[0], shape[1], shape[0])
+        self.events.reset_view(viewbox=rect)
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be
