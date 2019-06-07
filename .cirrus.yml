@@ -2,25 +2,19 @@ task:
   auto_cancellation: true
 
   env:
-    matrix:
       PY_VER: "3.6"
-      PY_VER: "3.7"
 
-  matrix:
-    - name: Black Formatting
-      container:
-        image: gcc:latest
-      env:
-        PATH: $HOME/conda/bin:$PATH
-      system_script:
-        - apt-get update
-        - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5
-      conda_script:
-        - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
-        - bash install.sh -b -p $HOME/conda
-        - conda update -yn base conda
-        - conda install -y python=$PY_VER
-        - rm install.sh
+  name: Black Formatting
+  container:
+      image: python:latest
+  env:
+      PATH: $HOME/conda/bin:$PATH
+  conda_script:
+      - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
+      - bash install.sh -b -p $HOME/conda
+      - conda update -yn base conda
+      - conda install -y python=$PY_VER
+      - rm install.sh
 
   install_script:
     # pip >= 19.0 crashes on Linux with Python 3.7
