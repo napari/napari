@@ -34,15 +34,18 @@ class VisualWrapper:
     It is recommended to use the backported ``vispy`` nodes
     at ``_vispy.scene.visuals`` for various bug fixes.
     """
+
     def __init__(self, central_node):
         self._node = central_node
         self._blending = Blending.TRANSLUCENT
         self._parent = None
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   blending=Event,
-                                   opacity=Event,
-                                   visible=Event)
+        self.events = EmitterGroup(
+            source=self,
+            auto_connect=True,
+            blending=Event,
+            opacity=Event,
+            visible=Event,
+        )
 
     @property
     def _master_transform(self):
@@ -91,8 +94,9 @@ class VisualWrapper:
     @opacity.setter
     def opacity(self, opacity):
         if not 0.0 <= opacity <= 1.0:
-            raise ValueError('opacity must be between 0.0 and 1.0; '
-                             f'got {opacity}')
+            raise ValueError(
+                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+            )
 
         self._node.opacity = opacity
         self.events.opacity()

@@ -45,7 +45,7 @@ icons = [
     'vertex_remove',
     'visibility',
     'visibility_off',
-    'zoom'
+    'zoom',
 ]
 
 for name, palette in palettes.items():
@@ -55,8 +55,13 @@ for name, palette in palettes.items():
             css = insert.replace('{{ color }}', palette['text'])
         elif icon in ['visibility_off', 'menu']:
             css = insert.replace('{{ color }}', palette['highlight'])
-        elif icon in ['drop_down', 'plus', 'minus', 'properties_contract',
-                      'properties_expand']:
+        elif icon in [
+            'drop_down',
+            'plus',
+            'minus',
+            'properties_contract',
+            'properties_expand',
+        ]:
             css = insert.replace('{{ color }}', palette['secondary'])
         else:
             css = insert.replace('{{ color }}', palette['icon'])
