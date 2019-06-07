@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
     QHBoxLayout,
+    QPushButton,
 )
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
@@ -73,6 +74,13 @@ class QtLayer(QFrame):
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
         self.top_layout.addWidget(textbox)
+
+        pb = QPushButton(self)
+        pb.setToolTip('Expand properties')
+        pb.clicked.connect(self.changeExpanded)
+        pb.setObjectName('expand')
+        self.expand_button = pb
+        self.top_layout.addWidget(pb)
 
         row = self.grid_layout.rowCount()
         sld = QSlider(Qt.Horizontal, self)
@@ -152,16 +160,23 @@ class QtLayer(QFrame):
     def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)
 
+    def changeExpanded(self):
+        self.setExpanded(not self.expanded)
+
     def setExpanded(self, bool):
         if bool:
             self.expanded = True
+            self.expand_button.setProperty('expanded', True)
             rows = self.grid_layout.rowCount()
             self.setFixedHeight(38 + 30 * rows)
             self.grid.show()
         else:
             self.expanded = False
+            self.expand_button.setProperty('expanded', False)
             self.setFixedHeight(60)
             self.grid.hide()
+        self.expand_button.style().unpolish(self.expand_button)
+        self.expand_button.style().polish(self.expand_button)
 
     def _on_layer_name_change(self, event):
         with self.layer.events.name.blocker():

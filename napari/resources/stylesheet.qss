@@ -183,6 +183,22 @@ QtLayer > QFrame > QLineEdit:disabled {
     border-radius: 3px;
 }
 
+QtLayer > QFrame > QPushButton#expand {
+  background-color: {{ foreground }};
+  border: 0px;
+  height: 20px;
+  padding: 0px;
+  width: 20px;
+}
+
+QtLayer > QFrame > QPushButton#expand[expanded=true] {
+  image: url(":/icons/{{ folder }}/properties_expand.svg");
+}
+
+QtLayer > QFrame > QPushButton#expand[expanded=false] {
+  image: url(":/icons/{{ folder }}/properties_contract.svg");
+}
+
 QtLayer > QFrame > QComboBox {
    background-color: {{ primary }};
    padding-left: 6px;
