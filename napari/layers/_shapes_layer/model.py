@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from ...util.event import Event
 from ...util.misc import ensure_iterable
 from .._base_layer import Layer
-from .._register import add_to_viewer
 
 from ..._vispy.scene.visuals import Mesh, Markers, Compound
 from ..._vispy.scene.visuals import Line as VispyLine
@@ -19,44 +18,46 @@ from .shape_util import create_box, point_to_lines
 from .shapes import Rectangle, Ellipse, Line, Path, Polygon
 
 
-@add_to_viewer
 class Shapes(Layer):
     """Shapes layer.
 
     Parameters
     ----------
     data : np.array | list
-        List of np.array of data or np.array. Each element of the list
-        (or row of a 3D np.array) corresponds to one shape. If a 2D array is
+        List of np.array of data or np.array. Each element of the list (or
+        row of a 3D np.array) corresponds to one shape. If a 2D array is
         passed it corresponds to just a single shape.
     shape_type : string | list
         String of shape shape_type, must be one of "{'line', 'rectangle',
-        'ellipse', 'path', 'polygon'}". If a list is supplied it must be the
-        same length as the length of `data` and each element will be applied to
-        each shape otherwise the same value will be used for all shapes.
+        'ellipse', 'path', 'polygon'}". If a list is supplied it must be
+        the same length as the length of `data` and each element will be
+        applied to each shape otherwise the same value will be used for all
+        shapes.
     edge_width : float | list
-        thickness of lines and edges. If a list is supplied it must be the same
-        length as the length of `data` and each element will be applied to each
-        shape otherwise the same value will be used for all shapes.
+        thickness of lines and edges. If a list is supplied it must be the
+        same length as the length of `data` and each element will be
+        applied to each shape otherwise the same value will be used for all
+        shapes.
     edge_color : str | tuple | list
         If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements. If a list is supplied it must be the same length as
+        starting with `#`. If array-like must be 1-dimensional array with 3
+        or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
     face_color : str | tuple | list
         If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements. If a list is supplied it must be the same length as
+        starting with `#`. If array-like must be 1-dimensional array with 3
+        or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
     opacity : float | list
         Opacity of the shapes, must be between 0 and 1.
     z_index : int | list
-        Specifier of z order priority. Shapes with higher z order are displayed
-        ontop of others. If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape
-        otherwise the same value will be used for all shapes.
+        Specifier of z order priority. Shapes with higher z order are
+        displayed ontop of others. If a list is supplied it must be the
+        same length as the length of `data` and each element will be
+        applied to each shape otherwise the same value will be used for all
+        shapes.
     name : str, keyword-only
         Name of the layer.
 

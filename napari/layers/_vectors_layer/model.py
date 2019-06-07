@@ -5,7 +5,6 @@ import numpy as np
 from scipy import signal
 
 from .._base_layer import Layer
-from .._register import add_to_viewer
 from ..._vispy.scene.visuals import Mesh
 from ...util.event import Event
 from ...util import segment_normal
@@ -14,22 +13,22 @@ from vispy.color import get_color_names, Color
 from .view import QtVectorsLayer
 
 
-@add_to_viewer
 class Vectors(Layer):
     """
     Vectors layer renders lines onto the image.
 
-    Properties
+    Parameters
     ----------
     vectors : np.ndarray of shape (N,4) or (N, M, 2)
         (N, 4) is a list of coordinates (y, x, v, u)
             x and y are coordinates
             u and v are y and x projections of the vector
         (N, M, 2) is an (N, M) image of (v, u) projections
-        Returns np.ndarray of the current display (including averaging, length)
+        Returns np.ndarray of the current display (including averaging,
+        length)
     averaging : int
-        (int, int) kernel over which to convolve and subsample the data
-        not implemented for (N, 4) data
+        (int, int) kernel over which to convolve and subsample the data not
+        implemented for (N, 4) data
     width : int
         width of the line in pixels
     length : float
