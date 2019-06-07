@@ -30,22 +30,25 @@ class ViewerModel:
     themes : dict of str: dict of str: str
         Preset color palettes.
     """
+
     themes = palettes
 
     def __init__(self, title='napari'):
         super().__init__()
         from .._layers_list import LayersList
 
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   status=Event,
-                                   help=Event,
-                                   title=Event,
-                                   interactive=Event,
-                                   cursor=Event,
-                                   reset_view=Event,
-                                   active_layer=Event,
-                                   palette=Event)
+        self.events = EmitterGroup(
+            source=self,
+            auto_connect=True,
+            status=Event,
+            help=Event,
+            title=Event,
+            interactive=Event,
+            cursor=Event,
+            reset_view=Event,
+            active_layer=Event,
+            palette=Event,
+        )
 
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
@@ -107,8 +110,9 @@ class ViewerModel:
         try:
             self.palette = self.themes[theme]
         except KeyError:
-            raise ValueError(f"Theme '{theme}' not found; "
-                             f"options are {list(self.themes)}.")
+            raise ValueError(
+                f"Theme '{theme}' not found; " f"options are {list(self.themes)}."
+            )
 
     @property
     def status(self):
@@ -238,11 +242,14 @@ class ViewerModel:
             shape = view_box[2:]
             min_shape = view_box[:2]
 
-        props = {'xmlns': 'http://www.w3.org/2000/svg',
-                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+        props = {
+            'xmlns': 'http://www.w3.org/2000/svg',
+            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        }
 
-        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
-                      version='1.1', **props)
+        xml = Element(
+            'svg', height=f'{shape[0]}', width=f'{shape[1]}', version='1.1', **props
+        )
 
         transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
@@ -254,10 +261,12 @@ class ViewerModel:
                     xml_transform.append(x)
         xml.append(xml_transform)
 
-        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
-               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
-               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
-               tostring(xml, encoding='unicode', method='xml'))
+        svg = (
+            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
+            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
+            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
+            + tostring(xml, encoding='unicode', method='xml')
+        )
 
         if file:
             # Save svg to file
@@ -325,7 +334,7 @@ class ViewerModel:
         return layer
 
     def add_pyramid(self, pyramid, *args, **kwargs):
-        """Add image pyramid layer.
+        """Adds a pyramid layer to the layers list.
 
         Parameters
         ----------
@@ -581,13 +590,16 @@ class ViewerModel:
         """
 
         ndims = self._calc_layers_num_dims()
-        ranges = [(inf, -inf, inf)]*ndims
+        ranges = [(inf, -inf, inf)] * ndims
 
         for layer in self.layers:
             layer_range = layer.range[::-1]
-            ranges = [(min(a, b), max(c, d), min(e, f)) for
-                      (a, c, e), (b, d, f) in zip_longest(ranges, layer_range,
-                      fillvalue=(inf, -inf, inf))]
+            ranges = [
+                (min(a, b), max(c, d), min(e, f))
+                for (a, c, e), (b, d, f) in zip_longest(
+                    ranges, layer_range, fillvalue=(inf, -inf, inf)
+                )
+            ]
 
         return ranges[::-1]
 

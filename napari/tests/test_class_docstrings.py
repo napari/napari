@@ -1,19 +1,16 @@
-from napari.layers import (
-    Image,
-    Pyramid,
-    Markers,
-    Labels,
-    Shapes,
-    Vectors,
-)
+from napari.layers import Image, Pyramid, Markers, Labels, Shapes, Vectors
 from napari import Viewer
+
 
 def test_docstrings():
     for obj in (Image, Pyramid, Markers, Labels, Shapes, Vectors):
         method = f'add_{obj.__name__.lower()}'
         obj_doc = obj.__doc__
-        i = [idx for idx, section in enumerate(obj.__doc__.split('\n\n'))
-             if section.strip().startswith('Parameters')][0]
+        i = [
+            idx
+            for idx, section in enumerate(obj.__doc__.split('\n\n'))
+            if section.strip().startswith('Parameters')
+        ][0]
         # We only check the parameters section, which is the first
         # section after separating by empty line. We also strip empty
         # line and white space that occurs at the end of a class docstring
