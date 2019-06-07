@@ -339,7 +339,7 @@ class ViewerModel:
         return layer
 
     def add_pyramid(self, pyramid, *args, **kwargs):
-        """Adds a pyramid layer to the layers list.
+        """Adds an image pyramid layer to the layers list.
 
         Parameters
         ----------
