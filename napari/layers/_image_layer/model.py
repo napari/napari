@@ -5,6 +5,8 @@ from imageio import imwrite
 
 import numpy as np
 from copy import copy
+from scipy import ndimage as ndi
+from skimage.util import img_as_ubyte
 
 import vispy.color
 
@@ -12,9 +14,11 @@ from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 
 from ...util import is_multichannel
-from ...util.interpolation import (interpolation_names,
-                                  interpolation_index_to_name as _index_to_name,  # noqa
-                                  interpolation_name_to_index as _name_to_index)  # noqa
+from ...util.interpolation import (
+    interpolation_names,
+    interpolation_index_to_name as _index_to_name,  # noqa
+    interpolation_name_to_index as _name_to_index,
+)  # noqa
 from ...util.misc import guess_metadata
 from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
@@ -28,8 +32,7 @@ from .view import QtImageControls
 
 def _increment_unnamed_colormap(name, names):
     if name == '[unnamed colormap]':
-        past_names = [n for n in names
-                      if n.startswith('[unnamed colormap')]
+        past_names = [n for n in names if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
     return name
 
@@ -59,8 +62,10 @@ def vispy_or_mpl_colormap(name):
         try:
             mpl_cmap = getattr(cm, name)
         except AttributeError:
-            raise KeyError(f'Colormap "{name}" not found in either vispy '
-                           'or matplotlib.')
+            raise KeyError(
+                f'Colormap "{name}" not found in either vispy '
+                'or matplotlib.'
+            )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         cmap = vispy.color.Colormap(mpl_colors)
     return cmap
@@ -72,6 +77,7 @@ ALL_COLORMAPS.update(simple_colormaps)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
+
 
 @add_to_viewer
 class Image(Layer):
@@ -95,13 +101,22 @@ class Image(Layer):
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
+
     _colormaps = AVAILABLE_COLORMAPS
 
     default_colormap = 'magma'
     default_interpolation = 'nearest'
 
-    def __init__(self, image, meta=None, multichannel=None, *, name=None,
-                 clim_range=None, **kwargs):
+    def __init__(
+        self,
+        image,
+        meta=None,
+        multichannel=None,
+        *,
+        name=None,
+        clim_range=None,
+        **kwargs,
+    ):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -109,16 +124,15 @@ class Image(Layer):
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
 
-        self.events.add(clim=Event,
-                        colormap=Event,
-                        interpolation=Event)
+        self.events.add(clim=Event, colormap=Event, interpolation=Event)
 
         meta = guess_metadata(image, meta, multichannel, kwargs)
 
         self._image = image
         self._meta = meta
         self.colormap_name = Image.default_colormap
-        self.colormap = Image.default_colormap
+        self._colormap = Image.default_colormap
+        self._node.cmap = self._colormaps[self.colormap_name]
         self.interpolation = Image.default_interpolation
         self._interpolation_names = interpolation_names
 
@@ -135,6 +149,7 @@ class Image(Layer):
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
 
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
         self._qt_properties = QtImageLayer(self)
         self._qt_controls = QtImageControls(self)
 
@@ -147,7 +162,7 @@ class Image(Layer):
     @image.setter
     def image(self, image):
         self._image = image
-
+        self.events.data()
         self.refresh()
 
     @property
@@ -171,6 +186,7 @@ class Image(Layer):
     @data.setter
     def data(self, data):
         self._image, self._meta = data
+        self.events.data()
         self.refresh()
 
     def _get_shape(self):
@@ -207,6 +223,7 @@ class Image(Layer):
 
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
+        self._update_thumbnail()
 
     @property
     def multichannel(self):
@@ -254,14 +271,16 @@ class Image(Layer):
             self._colormaps.update(colormap)
             name = list(colormap)[0]  # first key in dict
         elif isinstance(colormap, vispy.color.Colormap):
-            name = _increment_unnamed_colormap(name,
-                                               list(self._colormaps.keys()))
+            name = _increment_unnamed_colormap(
+                name, list(self._colormaps.keys())
+            )
             self._colormaps[name] = colormap
         else:
             warn(f'invalid value for colormap: {colormap}')
             name = self.colormap_name
         self.colormap_name = name
         self._node.cmap = self._colormaps[name]
+        self._update_thumbnail()
         self.events.colormap()
 
     @property
@@ -283,6 +302,7 @@ class Image(Layer):
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
         self._node.clim = clim
+        self._update_thumbnail()
         self.events.clim()
 
     @property
@@ -324,6 +344,45 @@ class Image(Layer):
 
     def _clim_range_default(self):
         return [float(self.image.min()), float(self.image.max())]
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colormap.
+        """
+        zoom_factor = np.divide(
+            self._thumbnail_shape[:2], self._image_view.shape[:2]
+        ).min()
+        if self.multichannel:
+            downsampled = ndi.zoom(
+                self._image_view,
+                (zoom_factor, zoom_factor, 1),
+                prefilter=False,
+                order=0,
+            )
+            if self._image_view.shape[2] == 4:  # image is RGBA
+                downsampled[..., 3] *= self.opacity
+                colormapped = img_as_ubyte(downsampled)
+            else:  # image is RGB
+                colormapped = img_as_ubyte(downsampled)
+                alpha = np.full(
+                    downsampled.shape[:2] + (1,),
+                    int(255 * self.opacity),
+                    dtype=np.uint8,
+                )
+                colormapped = np.concatenate([colormapped, alpha], axis=2)
+        else:
+            downsampled = ndi.zoom(
+                self._image_view, zoom_factor, prefilter=False, order=0
+            )
+            low, high = self.clim
+            downsampled = np.clip(downsampled, low, high)
+            color_range = high - low
+            if color_range != 0:
+                downsampled = (downsampled - low) / color_range
+            colormapped = self.colormap[1].map(downsampled)
+            colormapped = colormapped.reshape(downsampled.shape + (4,))
+            colormapped[..., 3] *= self.opacity
+            colormapped = img_as_ubyte(colormapped)
+        self.thumbnail = colormapped
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -390,10 +449,11 @@ class Image(Layer):
             as a png according to the svg specification.
         """
         image = np.clip(self._image_view, self.clim[0], self.clim[1])
+        image = image - self.clim[0]
         color_range = self.clim[1] - self.clim[0]
         if color_range != 0:
-            image = image/color_range
-        mapped_image = (self.colormap[1].map(image)*255).astype('uint8')
+            image = image / color_range
+        mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
         mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
@@ -401,16 +461,16 @@ class Image(Layer):
         width = str(self.shape[-1])
         height = str(self.shape[-2])
         opacity = str(self.opacity)
-        xml = Element('image', width=width, height=height, opacity=opacity,
-                      **props)
+        xml = Element(
+            'image', width=width, height=height, opacity=opacity, **props
+        )
         return [xml]
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas. Converts the `event.pos`
-        from canvas coordinates to `self.coordinates` in image coordinates.
+        """Called whenever mouse moves over canvas.
         """
         if event.pos is None:
             return
-        self.coordinates = event.pos
+        self.position = tuple(event.pos)
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)

@@ -40,12 +40,16 @@ class Layer(VisualWrapper, ABC):
     shape
     selected
     indices
+    coordinates : tuple of float
+        Coordinates of the cursor in the image space of each layer. The length
+        of the tuple is equal to the number of dimensions of the layer.
 
     Methods
     -------
     refresh()
         Refresh the current view.
     """
+
     def __init__(self, central_node, name=None):
         super().__init__(central_node)
         self._selected = False
@@ -57,18 +61,24 @@ class Layer(VisualWrapper, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
-        self._indices = ()
-        self._cursor_position = (0, 0)
-        self._coordinates = (0, 0)
+        self._indices = (0, 0)
+        self._position = (0, 0)
+        self.coordinates = (0, 0)
+        self._thumbnail_shape = (32, 32, 4)
+        self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._name = ''
-        self.events.add(select=Event,
-                        deselect=Event,
-                        name=Event,
-                        status=Event,
-                        help=Event,
-                        interactive=Event,
-                        cursor=Event,
-                        cursor_size=Event)
+        self.events.add(
+            select=Event,
+            deselect=Event,
+            data=Event,
+            name=Event,
+            thumbnail=Event,
+            status=Event,
+            help=Event,
+            interactive=Event,
+            cursor=Event,
+            cursor_size=Event,
+        )
         self.name = name
 
     def __str__(self):
@@ -109,34 +119,32 @@ class Layer(VisualWrapper, ABC):
     def indices(self, indices):
         if indices == self.indices:
             return
-        self._indices = indices[-self.ndim:]
-        self.coordinates = None
+        self._indices = indices[-self.ndim :]
+        self._update_coordinates()
         self._set_view_slice()
 
     @property
-    def coordinates(self):
-        """Tuple of float: Coordinates of the cursor in the respective image
-        space of each layer.
+    def position(self):
+        """2-tuple of int: Cursor position in canvas ordered (x, y)."""
+        return self._position
 
-        The setter expects the a 2-tuple of coordinates in canvas space
-        ordered (x, y) and then transforms them to image space and inserts
-        them into the correct position of the layer indices. The length of the
-        tuple is equal to the number of dimensions of the layer. If ``None`` is
-        passed then (0, 0) will replace necessary the layer indices.
+    @position.setter
+    def position(self, position):
+        if self._position == position:
+            return
+        self._position = position
+        self._update_coordinates()
+
+    def _update_coordinates(self):
+        """Insert the cursor position (x, y) into the correct position in the
+        tuple of indices and update the cursor coordinates.
         """
-        return self._coordinates
-
-    @coordinates.setter
-    def coordinates(self, cursor_position):
-        if cursor_position is not None:
-            transform = self._node.canvas.scene.node_transform(self._node)
-            position = tuple(transform.map(cursor_position)[:2])
-        else:
-            position = (0, 0)
+        transform = self._node.canvas.scene.node_transform(self._node)
+        position = transform.map(list(self.position))[:2]
         coords = list(self.indices)
         coords[-2] = position[1]
         coords[-1] = position[0]
-        self._coordinates = tuple(coords)
+        self.coordinates = tuple(coords)
 
     @property
     @abstractmethod
@@ -152,6 +160,17 @@ class Layer(VisualWrapper, ABC):
     @abstractmethod
     def _get_shape(self):
         raise NotImplementedError()
+
+    @property
+    def thumbnail(self):
+        """np.ndarray: Integer array of thumbnail for the layer
+        """
+        return self._thumbnail
+
+    @thumbnail.setter
+    def thumbnail(self, thumbnail):
+        self._thumbnail = thumbnail
+        self.events.thumbnail()
 
     @property
     def ndim(self):
@@ -341,11 +360,18 @@ class Layer(VisualWrapper, ABC):
             shape = view_box[2:]
             min_shape = view_box[:2]
 
-        props = {'xmlns': 'http://www.w3.org/2000/svg',
-                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+        props = {
+            'xmlns': 'http://www.w3.org/2000/svg',
+            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        }
 
-        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
-                      version='1.1', **props)
+        xml = Element(
+            'svg',
+            height=f'{shape[0]}',
+            width=f'{shape[1]}',
+            version='1.1',
+            **props,
+        )
 
         transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
@@ -355,10 +381,12 @@ class Layer(VisualWrapper, ABC):
             xml_transform.append(x)
         xml.append(xml_transform)
 
-        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
-               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
-               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
-               tostring(xml, encoding='unicode', method='xml'))
+        svg = (
+            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
+            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
+            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
+            + tostring(xml, encoding='unicode', method='xml')
+        )
 
         if file:
             # Save svg to file
@@ -389,5 +417,10 @@ class Layer(VisualWrapper, ABC):
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
+        """
+        return
+
+    def on_draw(self, event):
+        """Called whenever the canvas is drawn.
         """
         return

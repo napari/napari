@@ -1,7 +1,8 @@
 # TODO: create & use our own transform class
 from vispy.visuals.transforms import STTransform
-from vispy.gloo import get_state_presets
 from ...util.event import EmitterGroup, Event
+
+from ._constants import Blending
 
 
 class VisualWrapper:
@@ -33,16 +34,18 @@ class VisualWrapper:
     It is recommended to use the backported ``vispy`` nodes
     at ``_vispy.scene.visuals`` for various bug fixes.
     """
+
     def __init__(self, central_node):
         self._node = central_node
-        self._blending = 'translucent'
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   blending=Event,
-                                   opacity=Event,
-                                   visible=Event)
-
-    _blending_modes = set(get_state_presets().keys())
+        self._blending = Blending.TRANSLUCENT
+        self._parent = None
+        self.events = EmitterGroup(
+            source=self,
+            auto_connect=True,
+            blending=Event,
+            opacity=Event,
+            visible=Event,
+        )
 
     @property
     def _master_transform(self):
@@ -72,14 +75,15 @@ class VisualWrapper:
         self._node.order = order
 
     @property
-    def _parent(self):
-        """vispy.scene.Node: Parent node.
+    def parent(self):
+        """vispy.View: View containing parent node and camera.
         """
-        return self._node.parent
+        return self._parent
 
-    @_parent.setter
-    def _parent(self, parent):
-        self._node.parent = parent
+    @parent.setter
+    def parent(self, parent):
+        self._parent = parent
+        self._node.parent = parent.scene
 
     @property
     def opacity(self):
@@ -90,39 +94,39 @@ class VisualWrapper:
     @opacity.setter
     def opacity(self, opacity):
         if not 0.0 <= opacity <= 1.0:
-            raise ValueError('opacity must be between 0.0 and 1.0; '
-                             f'got {opacity}')
+            raise ValueError(
+                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+            )
 
         self._node.opacity = opacity
         self.events.opacity()
 
     @property
     def blending(self):
-        """{'opaque', 'translucent', 'additive'}: Blending mode.
+        """Blending: Blending mode.
             Selects a preset blending mode in vispy that determines how
             RGB and alpha values get mixed.
-            'opaque'
+            Blending.OPAQUE
                 Allows for only the top layer to be visible and corresponds to
                 depth_test=True, cull_face=False, blend=False.
-            'translucent'
+            Blending.TRANSLUCENT
                 Allows for multiple layers to be blended with different opacity
                 and corresponds to depth_test=True, cull_face=False,
                 blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            'additive'
+            Blending.ADDITIVE
                 Allows for multiple layers to be blended together with
                 different colors and opacity. Useful for creating overlays. It
                 corresponds to depth_test=False, cull_face=False, blend=True,
                 blend_func=('src_alpha', 'one').
         """
-        return self._blending
+        return str(self._blending)
 
     @blending.setter
     def blending(self, blending):
-        if blending not in self._blending_modes:
-            raise ValueError('expected one of '
-                             "{'opaque', 'translucent', 'additive'}; "
-                             f'got {blending}')
-        self._node.set_gl_state(blending)
+        if isinstance(blending, str):
+            blending = Blending(blending)
+
+        self._node.set_gl_state(blending.value)
         self._blending = blending
         self._node.update()
         self.events.blending()

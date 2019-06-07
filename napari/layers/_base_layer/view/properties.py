@@ -1,6 +1,19 @@
-from qtpy.QtWidgets import (QSlider, QLineEdit, QGridLayout, QFrame, QLabel,
-                            QVBoxLayout, QCheckBox, QWidget, QComboBox)
+from qtpy.QtWidgets import (
+    QSlider,
+    QLineEdit,
+    QGridLayout,
+    QFrame,
+    QLabel,
+    QVBoxLayout,
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QPushButton,
+)
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QImage, QPixmap
+
+from .._constants import Blending
 
 
 class QtLayer(QFrame):
@@ -14,10 +27,27 @@ class QtLayer(QFrame):
         layer.events.blending.connect(self._on_blending_change)
         layer.events.opacity.connect(self._on_opacity_change)
         layer.events.visible.connect(self._on_visible_change)
+        layer.events.thumbnail.connect(self._on_thumbnail_change)
 
         self.setObjectName('layer')
 
+        self.vbox_layout = QVBoxLayout()
+        self.top = QFrame()
+        self.top_layout = QHBoxLayout()
+        self.grid = QFrame()
         self.grid_layout = QGridLayout()
+        self.vbox_layout.addWidget(self.top)
+        self.vbox_layout.addWidget(self.grid)
+        self.vbox_layout.setSpacing(0)
+        self.top.setFixedHeight(38)
+        self.top_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.top.setLayout(self.top_layout)
+        self.grid.setLayout(self.grid_layout)
+        self.setLayout(self.vbox_layout)
+
+        self.name_column = 0
+        self.property_column = 1
 
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
@@ -26,45 +56,62 @@ class QtLayer(QFrame):
         cb.setProperty('mode', 'visibility')
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
         self.visibleCheckBox = cb
-        self.grid_layout.addWidget(cb, 0, 0)
+        self.top_layout.addWidget(cb)
+
+        tb = QLabel(self)
+        tb.setObjectName('thumbmnail')
+        tb.setToolTip('Layer thumbmnail')
+        self.thumbnail_label = tb
+        self._on_thumbnail_change(None)
+        self.top_layout.addWidget(tb)
 
         textbox = QLineEdit(self)
         textbox.setText(layer.name)
         textbox.home(False)
         textbox.setToolTip('Layer name')
-        textbox.setFixedWidth(122)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
-        self.grid_layout.addWidget(textbox, 0, 1)
+        self.top_layout.addWidget(textbox)
 
-        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
+        pb = QPushButton(self)
+        pb.setToolTip('Expand properties')
+        pb.clicked.connect(self.changeExpanded)
+        pb.setObjectName('expand')
+        self.expand_button = pb
+        self.top_layout.addWidget(pb)
+
+        row = self.grid_layout.rowCount()
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(110)
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.setValue(self.layer.opacity*100)
+        sld.setValue(self.layer.opacity * 100)
         sld.valueChanged[int].connect(
-            lambda value=sld: self.changeOpacity(value))
+            lambda value=sld: self.changeOpacity(value)
+        )
         self.opacitySilder = sld
-        self.grid_layout.addWidget(sld, 1, 1)
+        row = self.grid_layout.rowCount()
+        self.grid_layout.addWidget(QLabel('opacity:'), row, self.name_column)
+        self.grid_layout.addWidget(sld, row, self.property_column)
 
+        row = self.grid_layout.rowCount()
         blend_comboBox = QComboBox()
-        for blend in self.layer._blending_modes:
-            blend_comboBox.addItem(blend)
+        for blend in Blending:
+            blend_comboBox.addItem(str(blend))
         index = blend_comboBox.findText(
-            self.layer.blending, Qt.MatchFixedString)
+            self.layer.blending, Qt.MatchFixedString
+        )
         blend_comboBox.setCurrentIndex(index)
         blend_comboBox.activated[str].connect(
-            lambda text=blend_comboBox: self.changeBlending(text))
+            lambda text=blend_comboBox: self.changeBlending(text)
+        )
         self.blendComboBox = blend_comboBox
-        self.grid_layout.addWidget(QLabel('blending:'), 2, 0)
-        self.grid_layout.addWidget(blend_comboBox, 2, 1)
+        self.grid_layout.addWidget(QLabel('blending:'), row, self.name_column)
+        self.grid_layout.addWidget(blend_comboBox, row, self.property_column)
 
-        self.setLayout(self.grid_layout)
         msg = 'Click to select\nDrag to rearrange\nDouble click to expand'
         self.setToolTip(msg)
         self.setExpanded(False)
@@ -87,7 +134,7 @@ class QtLayer(QFrame):
 
     def changeOpacity(self, value):
         with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value/100
+            self.layer.opacity = value / 100
 
     def changeVisible(self, state):
         if state == Qt.Checked:
@@ -113,21 +160,23 @@ class QtLayer(QFrame):
     def mouseDoubleClickEvent(self, event):
         self.setExpanded(not self.expanded)
 
+    def changeExpanded(self):
+        self.setExpanded(not self.expanded)
+
     def setExpanded(self, bool):
         if bool:
             self.expanded = True
+            self.expand_button.setProperty('expanded', True)
             rows = self.grid_layout.rowCount()
-            self.setFixedHeight(55*(rows-1))
+            self.setFixedHeight(38 + 30 * rows)
+            self.grid.show()
         else:
             self.expanded = False
-            self.setFixedHeight(55)
-        rows = self.grid_layout.rowCount()
-        for i in range(1, rows):
-            for j in range(2):
-                if self.expanded:
-                    self.grid_layout.itemAtPosition(i, j).widget().show()
-                else:
-                    self.grid_layout.itemAtPosition(i, j).widget().hide()
+            self.expand_button.setProperty('expanded', False)
+            self.setFixedHeight(60)
+            self.grid.hide()
+        self.expand_button.style().unpolish(self.expand_button)
+        self.expand_button.style().polish(self.expand_button)
 
     def _on_layer_name_change(self, event):
         with self.layer.events.name.blocker():
@@ -136,14 +185,26 @@ class QtLayer(QFrame):
 
     def _on_opacity_change(self, event):
         with self.layer.events.opacity.blocker():
-            self.opacitySilder.setValue(self.layer.opacity*100)
+            self.opacitySilder.setValue(self.layer.opacity * 100)
 
     def _on_blending_change(self, event):
         with self.layer.events.blending.blocker():
             index = self.blendComboBox.findText(
-                self.layer.blending, Qt.MatchFixedString)
+                self.layer.blending, Qt.MatchFixedString
+            )
             self.blendComboBox.setCurrentIndex(index)
 
     def _on_visible_change(self, event):
         with self.layer.events.visible.blocker():
             self.visibleCheckBox.setChecked(self.layer.visible)
+
+    def _on_thumbnail_change(self, event):
+        thumbnail = self.layer.thumbnail
+        # Note that QImage expects the image width followed by height
+        image = QImage(
+            thumbnail,
+            thumbnail.shape[1],
+            thumbnail.shape[0],
+            QImage.Format_RGBA8888,
+        )
+        self.thumbnail_label.setPixmap(QPixmap.fromImage(image))

@@ -35,19 +35,19 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
-
-        # TO DO: Remove
-        self.viewer._scene = self.view.scene
 
         # Set 2D camera (the camera will scale to the contents in the scene)
         self.view.camera = PanZoomCamera(aspect=1)
         # flip y-axis to have correct aligment
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
-
         self.view.camera.viewbox_key_event = viewbox_key_event
+
+        # TO DO: Remove
+        self.viewer._view = self.view
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -74,14 +74,14 @@ class QtViewer(QSplitter):
         self.addWidget(right)
 
         self._cursors = {
-                'disabled': QCursor(
-                    QPixmap(':/icons/cursor/cursor_disabled.png')
-                    .scaled(20, 20)),
-                'cross': Qt.CrossCursor,
-                'forbidden': Qt.ForbiddenCursor,
-                'pointing': Qt.PointingHandCursor,
-                'standard': QCursor()
-            }
+            'disabled': QCursor(
+                QPixmap(':/icons/cursor/cursor_disabled.png').scaled(20, 20)
+            ),
+            'cross': Qt.CrossCursor,
+            'forbidden': Qt.ForbiddenCursor,
+            'pointing': Qt.PointingHandCursor,
+            'standard': QCursor(),
+        }
 
         self._update_palette(viewer.palette)
 
@@ -92,9 +92,6 @@ class QtViewer(QSplitter):
             lambda event: self._update_palette(event.palette)
         )
         self.viewer.layers.events.reordered.connect(self._update_canvas)
-        self.viewer.layers.events.added.connect(
-            lambda e: self._update_palette(viewer.palette)
-        )  # TODO: remove this hack when range slider uses stylesheet
 
     def screenshot(self, region=None, size=None, bgcolor=None):
         """Render the scene to an offscreen buffer and return the image array.
@@ -131,8 +128,11 @@ class QtViewer(QSplitter):
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(QPixmap(':/icons/cursor/cursor_square.png')
-                                   .scaledToHeight(size))
+                q_cursor = QCursor(
+                    QPixmap(':/icons/cursor/cursor_square.png').scaledToHeight(
+                        size
+                    )
+                )
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
@@ -151,18 +151,6 @@ class QtViewer(QSplitter):
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
         self.setStyleSheet(themed_stylesheet)
-
-        # set styles on clim slider
-        for layer in self.viewer.layers:
-            if has_clims(layer):
-                layer._qt_controls.climSlider.setColors(
-                    palette['foreground'],
-                    palette['highlight']
-                )
-
-        # set styles on dims sliders
-        for slider in self.dims.sliders:
-            slider.setColors(palette['foreground'], palette['highlight'])
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -188,8 +176,10 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
-        if (event.text in self.viewer.key_bindings and not
-                event.native.isAutoRepeat()):
+        if (
+            event.text in self.viewer.key_bindings
+            and not event.native.isAutoRepeat()
+        ):
             self.viewer.key_bindings[event.text](self.viewer)
             return
 
@@ -203,6 +193,12 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             layer.on_key_release(event)
+
+    def on_draw(self, event):
+        """Called whenever drawn in canvas. Called for all layers, not just top
+        """
+        for layer in self.viewer.layers:
+            layer.on_draw(event)
 
 
 def viewbox_key_event(event):

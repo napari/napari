@@ -20,7 +20,7 @@ def _remove(event):
     layers = event.source
     layer = event.item
     layer._order = 0
-    layer._parent = None
+    layer._node.parent = None
 
 
 def _reorder(event):
@@ -41,9 +41,11 @@ class LayersList(ListModel):
             * removed(item): whenever an item is removed
             * reordered(): whenever the list is reordered
     """
+
     def __init__(self):
-        super().__init__(basetype=Layer,
-                         lookup={str: lambda q, e: q == e.name})
+        super().__init__(
+            basetype=Layer, lookup={str: lambda q, e: q == e.name}
+        )
 
         self.events.added.connect(_add)
         self.events.removed.connect(_remove)
