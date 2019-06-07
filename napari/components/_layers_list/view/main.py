@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
     QApplication,
 )
 from qtpy.QtGui import QDrag
+import numpy as np
 
 
 class QtLayersList(QScrollArea):
@@ -33,7 +34,7 @@ class QtLayersList(QScrollArea):
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
 
-        self.drag_start_position = (0, 0)
+        self.drag_start_position = np.zeros(2)
         self.drag_name = None
 
     def _add(self, event):
@@ -90,7 +91,9 @@ class QtLayersList(QScrollArea):
         )
 
         if layer is not None:
-            self.drag_start_position = event.pos()
+            self.drag_start_position = np.array(
+                [event.pos().x(), event.pos().y()]
+            )
             self.drag_name = layer.name
         else:
             self.drag_name = None
@@ -124,8 +127,12 @@ class QtLayersList(QScrollArea):
             layer.selected = True
 
     def mouseMoveEvent(self, event):
-        distance = (event.pos() - self.drag_start_position).manhattanLength()
-        if distance < QApplication.startDragDistance():
+        position = np.array([event.pos().x(), event.pos().y()])
+        distance = np.linalg.norm(position - self.drag_start_position)
+        if (
+            distance < QApplication.startDragDistance()
+            or self.drag_name is None
+        ):
             return
         mimeData = QMimeData()
         mimeData.setText(self.drag_name)
@@ -141,14 +148,17 @@ class QtLayersList(QScrollArea):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dragEnterEvent(self, event):
-        divs = []
-        for i in range(0, self.vbox_layout.count(), 2):
-            widget = self.vbox_layout.itemAt(i).widget()
-            divs.append(widget.y() + widget.frameGeometry().height() / 2)
-        self.centers = [
-            (divs[i + 1] + divs[i]) / 2 for i in range(len(divs) - 1)
-        ]
-        event.accept()
+        if event.source() == self:
+            event.accept()
+            divs = []
+            for i in range(0, self.vbox_layout.count(), 2):
+                widget = self.vbox_layout.itemAt(i).widget()
+                divs.append(widget.y() + widget.frameGeometry().height() / 2)
+            self.centers = [
+                (divs[i + 1] + divs[i]) / 2 for i in range(len(divs) - 1)
+            ]
+        else:
+            event.ignore()
 
     def dragMoveEvent(self, event):
         """Set the appropriate layers list divider to be highlighted when
