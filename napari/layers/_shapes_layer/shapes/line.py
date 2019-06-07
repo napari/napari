@@ -27,12 +27,25 @@ class Line(Shape):
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     """
-    def __init__(self, data, *, edge_width=1, edge_color='black',
-                 face_color='white', opacity=1, z_index=0):
 
-        super().__init__(edge_width=edge_width, edge_color=edge_color,
-                         face_color=face_color, opacity=opacity,
-                         z_index=z_index)
+    def __init__(
+        self,
+        data,
+        *,
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        opacity=1,
+        z_index=0,
+    ):
+
+        super().__init__(
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            opacity=opacity,
+            z_index=z_index,
+        )
         self.data = np.array(data)
         self.name = 'line'
 
@@ -45,8 +58,10 @@ class Line(Shape):
     @data.setter
     def data(self, data):
         if len(data) != 2:
-            raise ValueError("""Data shape does not match a line. Line
-                             expects two end vertices""")
+            raise ValueError(
+                """Data shape does not match a line. Line
+                             expects two end vertices"""
+            )
         else:
             # For line connect two points
             self._set_meshes(data, face=False, closed=False)
@@ -90,7 +105,6 @@ class Line(Shape):
         x2 = str(self.data[1, 0])
         y2 = str(self.data[1, 1])
 
-        element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2,
-                          **self.svg_props)
+        element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props)
 
         return element

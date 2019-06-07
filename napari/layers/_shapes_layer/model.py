@@ -186,9 +186,20 @@ class Shapes(Layer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
-    def __init__(self, data, *, shape_type='rectangle', edge_width=1,
-                 edge_color='black', face_color='white', opacity=0.7,
-                 z_index=0, ndim=2, broadcast=False, name=None):
+    def __init__(
+        self,
+        data,
+        *,
+        shape_type='rectangle',
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        opacity=0.7,
+        z_index=0,
+        ndim=2,
+        broadcast=False,
+        name=None,
+    ):
 
         # Create a compound visual with the following four subvisuals:
         # Markers: corresponding to the vertices of the interaction box or the
@@ -207,9 +218,15 @@ class Shapes(Layer):
             self._data = {(): ShapeList()}
             self.slice_data = self.data[()]
             self._broadcast = broadcast
-            self.add_shapes(data, shape_type=shape_type, edge_width=edge_width,
-                            edge_color=edge_color, face_color=face_color,
-                            opacity=opacity, z_index=z_index)
+            self.add_shapes(
+                data,
+                shape_type=shape_type,
+                edge_width=edge_width,
+                edge_color=edge_color,
+                face_color=face_color,
+                opacity=opacity,
+                z_index=z_index,
+            )
 
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
@@ -264,11 +281,13 @@ class Shapes(Layer):
             self._status = self.mode
             self._help = 'enter a selection mode to edit shape properties'
 
-            self.events.add(mode=Event,
-                            edge_width=Event,
-                            edge_color=Event,
-                            face_color=Event,
-                            broadcast=Event)
+            self.events.add(
+                mode=Event,
+                edge_width=Event,
+                edge_color=Event,
+                face_color=Event,
+                broadcast=Event,
+            )
 
             self._qt_properties = QtShapesLayer(self)
             self._qt_controls = QtShapesControls(self)
@@ -373,8 +392,9 @@ class Shapes(Layer):
     @opacity.setter
     def opacity(self, opacity):
         if not 0.0 <= opacity <= 1.0:
-            raise ValueError('opacity must be between 0.0 and 1.0; '
-                             f'got {opacity}')
+            raise ValueError(
+                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+            )
 
         self._opacity = opacity
         if self._update_properties:
@@ -396,29 +416,45 @@ class Shapes(Layer):
         self._selected_box = self.interaction_box(selected_shapes)
 
         # Update properties based on selected shapes
-        face_colors = list(set([self.slice_data.shapes[i]._face_color_name for
-                                i in selected_shapes]))
+        face_colors = list(
+            set(
+                [
+                    self.slice_data.shapes[i]._face_color_name
+                    for i in selected_shapes
+                ]
+            )
+        )
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
                 self.face_color = face_color
 
-        edge_colors = list(set([self.slice_data.shapes[i]._edge_color_name for
-                                i in selected_shapes]))
+        edge_colors = list(
+            set(
+                [
+                    self.slice_data.shapes[i]._edge_color_name
+                    for i in selected_shapes
+                ]
+            )
+        )
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
                 self.edge_color = edge_color
 
-        edge_width = list(set([self.slice_data.shapes[i].edge_width for i in
-                          selected_shapes]))
+        edge_width = list(
+            set(
+                [self.slice_data.shapes[i].edge_width for i in selected_shapes]
+            )
+        )
         if len(edge_width) == 1:
             edge_width = edge_width[0]
             with self.block_update_properties():
                 self.edge_width = edge_width
 
-        opacities = list(set([self.slice_data.shapes[i].opacity for i in
-                         selected_shapes]))
+        opacities = list(
+            set([self.slice_data.shapes[i].opacity for i in selected_shapes])
+        )
         if len(opacities) == 1:
             opacity = opacities[0]
             with self.block_update_properties():
@@ -459,8 +495,10 @@ class Shapes(Layer):
         elif mode in [Mode.SELECT, Mode.DIRECT]:
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = ('hold <space> to pan/zoom, '
-                         f'press <{BACKSPACE}> to remove selected')
+            self.help = (
+                'hold <space> to pan/zoom, '
+                f'press <{BACKSPACE}> to remove selected'
+            )
         elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self.cursor = 'cross'
             self.interactive = False
@@ -472,16 +510,21 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = ('hold <space> to pan/zoom, '
-                         'press <esc> to finish drawing')
+            self.help = (
+                'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
+            )
         else:
             raise ValueError("Mode not recongnized")
 
         self.status = str(mode)
         self._mode = mode
 
-        draw_modes = ([Mode.SELECT, Mode.DIRECT, Mode.VERTEX_INSERT,
-                      Mode.VERTEX_REMOVE])
+        draw_modes = [
+            Mode.SELECT,
+            Mode.DIRECT,
+            Mode.VERTEX_INSERT,
+            Mode.VERTEX_REMOVE,
+        ]
 
         self.events.mode(mode=mode)
         if not (mode in draw_modes and old_mode in draw_modes):
@@ -502,10 +545,10 @@ class Shapes(Layer):
         else:
             slice_shape = tuple(np.max(self.slice_data._vertices, axis=0) + 1)
 
-        if len(self.data.keys()) == 1: # or self.broadcast is True:
+        if len(self.data.keys()) == 1:  # or self.broadcast is True:
             # If in broadcast mode or only broadcast shapes are present
             # return the shape padded to the necessary dimensions
-            return (1,) * (self._input_ndim-2) + slice_shape
+            return (1,) * (self._input_ndim - 2) + slice_shape
         else:
             slice_keys = list(self.data.keys())
             slice_keys.remove(())
@@ -526,9 +569,17 @@ class Shapes(Layer):
 
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
 
-    def add_shapes(self, data, *, shape_type='rectangle', edge_width=1,
-                   edge_color='black', face_color='white', opacity=0.7,
-                   z_index=0):
+    def add_shapes(
+        self,
+        data,
+        *,
+        shape_type='rectangle',
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        opacity=0.7,
+        z_index=0,
+    ):
         """Add shapes to the current layer.
 
         Parameters
@@ -584,9 +635,15 @@ class Shapes(Layer):
         edge_colors = ensure_iterable(edge_color, color=True)
         face_colors = ensure_iterable(face_color, color=True)
 
-        for d, st, ew, ec, fc, o, z, in zip(data, shape_types, edge_widths,
-                                            edge_colors, face_colors,
-                                            opacities, z_indices):
+        for d, st, ew, ec, fc, o, z in zip(
+            data,
+            shape_types,
+            edge_widths,
+            edge_colors,
+            face_colors,
+            opacities,
+            z_indices,
+        ):
             shape_cls = self.slice_data._types[st]
 
             # Slice data by 2D plane.
@@ -594,8 +651,14 @@ class Shapes(Layer):
             # A False slice_key means the shape is invalid as it is not
             # confined to a single plane
             if slice_key is not False:
-                shape = shape_cls(data_2D, edge_width=ew, edge_color=ec,
-                                  face_color=fc, opacity=o, z_index=z)
+                shape = shape_cls(
+                    data_2D,
+                    edge_width=ew,
+                    edge_color=ec,
+                    face_color=fc,
+                    opacity=o,
+                    z_index=z,
+                )
                 # If data is being drawn in gui it will already be 2D and so
                 # should just be added to the current ShapeList
                 if slice_key == ():
@@ -616,14 +679,14 @@ class Shapes(Layer):
                     slice_key = ()
                     if not self.slice_data == self.data[slice_key]:
                         self.slice_data = self.data[slice_key]
-                        #self._finish_drawing()
+                        # self._finish_drawing()
                 else:
                     slice_key = self.indices[:-2]
                     if slice_key not in self.data:
                         self.data[slice_key] = ShapeList()
                     if not self.slice_data == self.data[slice_key]:
                         self.slice_data = self.data[slice_key]
-                        #self._finish_drawing()
+                        # self._finish_drawing()
 
         z_order = self.slice_data._mesh.triangles_z_order
         faces = self.slice_data._mesh.triangles[z_order]
@@ -632,8 +695,9 @@ class Shapes(Layer):
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
         else:
-            self._node._subvisuals[3].set_data(vertices=vertices, faces=faces,
-                                               face_colors=colors)
+            self._node._subvisuals[3].set_data(
+                vertices=vertices, faces=faces, face_colors=colors
+            )
         self._need_visual_update = True
         self._set_highlight(force=True)
         self._update()
@@ -672,12 +736,17 @@ class Shapes(Layer):
 
         if box is not None:
             rot = box[Box.TOP_CENTER]
-            length_box = np.linalg.norm(box[Box.BOTTOM_LEFT] -
-                                        box[Box.TOP_LEFT])
+            length_box = np.linalg.norm(
+                box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT]
+            )
             if length_box > 0:
                 r = self._rotation_handle_length * self.scale_factor
-                rot = rot-r*(box[Box.BOTTOM_LEFT] -
-                             box[Box.TOP_LEFT])/length_box
+                rot = (
+                    rot
+                    - r
+                    * (box[Box.BOTTOM_LEFT] - box[Box.TOP_LEFT])
+                    / length_box
+                )
             box = np.append(box, [rot], axis=0)
 
         return box
@@ -707,8 +776,9 @@ class Shapes(Layer):
                 index = self._hover_shape
 
             centers, offsets, triangles = self.slice_data.outline(index)
-            vertices = centers + (self.scale_factor * self._highlight_width *
-                                  offsets)
+            vertices = centers + (
+                self.scale_factor * self._highlight_width * offsets
+            )
             vertices = vertices[:, ::-1]
         else:
             vertices = None
@@ -751,10 +821,18 @@ class Shapes(Layer):
                 # the line around the edge
                 pos = box[Box.LINE_HANDLE][:, ::-1]
                 width = 1.5
-            elif self._mode in ([Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON,
-                                Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
-                                Mode.ADD_LINE, Mode.VERTEX_INSERT,
-                                Mode.VERTEX_REMOVE]):
+            elif self._mode in (
+                [
+                    Mode.DIRECT,
+                    Mode.ADD_PATH,
+                    Mode.ADD_POLYGON,
+                    Mode.ADD_RECTANGLE,
+                    Mode.ADD_ELLIPSE,
+                    Mode.ADD_LINE,
+                    Mode.VERTEX_INSERT,
+                    Mode.VERTEX_REMOVE,
+                ]
+            ):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(self.slice_data._index, self.selected_shapes)
                 vertices = self.slice_data._vertices[inds][:, ::-1]
@@ -809,10 +887,12 @@ class Shapes(Layer):
             Bool that forces a redraw to occur when `True`
         """
         # Check if any shape or vertex ids have changed since last call
-        if (self.selected_shapes == self._selected_shapes_stored and
-                self._hover_shape == self._hover_shape_stored and
-                self._hover_vertex == self._hover_vertex_stored and
-                np.all(self._drag_box == self._drag_box_stored)) and not force:
+        if (
+            self.selected_shapes == self._selected_shapes_stored
+            and self._hover_shape == self._hover_shape_stored
+            and self._hover_vertex == self._hover_vertex_stored
+            and np.all(self._drag_box == self._drag_box_stored)
+        ) and not force:
             return
         self._selected_shapes_stored = copy(self.selected_shapes)
         self._hover_shape_stored = copy(self._hover_shape)
@@ -821,20 +901,31 @@ class Shapes(Layer):
 
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self._outline_shapes()
-        self._node._subvisuals[2].set_data(vertices=vertices, faces=faces,
-                                           color=self._highlight_color)
+        self._node._subvisuals[2].set_data(
+            vertices=vertices, faces=faces, color=self._highlight_color
+        )
 
         # Compute the location and properties of the vertices and box that
         # need to get rendered
-        (vertices, face_color, edge_color, pos,
-            width) = self._compute_vertices_and_box()
-        self._node._subvisuals[0].set_data(vertices, size=self._vertex_size,
-                                           face_color=face_color,
-                                           edge_color=edge_color,
-                                           edge_width=1.5, symbol='square',
-                                           scaling=False)
-        self._node._subvisuals[1].set_data(pos=pos, color=edge_color,
-                                           width=width)
+        (
+            vertices,
+            face_color,
+            edge_color,
+            pos,
+            width,
+        ) = self._compute_vertices_and_box()
+        self._node._subvisuals[0].set_data(
+            vertices,
+            size=self._vertex_size,
+            face_color=face_color,
+            edge_color=edge_color,
+            edge_width=1.5,
+            symbol='square',
+            scaling=False,
+        )
+        self._node._subvisuals[1].set_data(
+            pos=pos, color=edge_color, width=width
+        )
 
     def _finish_drawing(self):
         """Reset properties used in shape drawing so new shapes can be drawn.
@@ -851,15 +942,17 @@ class Shapes(Layer):
         self._hover_shape = None
         self._hover_vertex = None
         if self._is_creating is True and self._mode == Mode.ADD_PATH:
-            vertices = self.slice_data._vertices[self.slice_data._index
-                                                 == index]
+            vertices = self.slice_data._vertices[
+                self.slice_data._index == index
+            ]
             if len(vertices) <= 2:
                 self.slice_data.remove(index)
             else:
                 self.slice_data.edit(index, vertices[:-1])
         if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
-            vertices = self.slice_data._vertices[self.slice_data._index
-                                                 == index]
+            vertices = self.slice_data._vertices[
+                self.slice_data._index == index
+            ]
             if len(vertices) <= 2:
                 self.slice_data.remove(index)
         self._is_creating = False
@@ -889,8 +982,9 @@ class Shapes(Layer):
             coordinates of center of rotation.
         """
         theta = np.radians(angle)
-        transform = np.array([[np.cos(theta), np.sin(theta)],
-                             [-np.sin(theta), np.cos(theta)]])
+        transform = np.array(
+            [[np.cos(theta), np.sin(theta)], [-np.sin(theta), np.cos(theta)]]
+        )
         box = self._selected_box - center
         self._selected_box = box @ transform.T + center
 
@@ -907,12 +1001,12 @@ class Shapes(Layer):
         if not isinstance(scale, (list, np.ndarray)):
             scale = [scale, scale]
         box = self._selected_box - center
-        box = np.array(box*scale)
+        box = np.array(box * scale)
         if not np.all(box[Box.TOP_CENTER] == box[Box.HANDLE]):
             r = self._rotation_handle_length * self.scale_factor
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
@@ -931,7 +1025,7 @@ class Shapes(Layer):
             r = self._rotation_handle_length * self.scale_factor
             handle_vec = box[Box.HANDLE] - box[Box.TOP_CENTER]
             cur_len = np.linalg.norm(handle_vec)
-            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec/cur_len
+            box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
     def _shape_at(self, coord):
@@ -966,8 +1060,9 @@ class Shapes(Layer):
                 matches = np.all(distances <= sizes, axis=1).nonzero()
                 if len(matches[0]) > 0:
                     return self.selected_shapes[0], matches[0][-1]
-            elif self._mode in ([Mode.DIRECT, Mode.VERTEX_INSERT,
-                                Mode.VERTEX_REMOVE]):
+            elif self._mode in (
+                [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
+            ):
                 # Check if inside vertex of shape
                 inds = np.isin(self.slice_data._index, self.selected_shapes)
                 vertices = self.slice_data._vertices[inds]
@@ -981,8 +1076,9 @@ class Shapes(Layer):
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
                     shape = self.slice_data._index[index]
-                    _, idx = np.unique(self.slice_data._index,
-                                       return_index=True)
+                    _, idx = np.unique(
+                        self.slice_data._index, return_index=True
+                    )
                     return shape, index - idx[shape]
 
         # Check if mouse inside shape
@@ -1037,8 +1133,9 @@ class Shapes(Layer):
     def _copy_shapes(self):
         """Copy selected shapes to clipboard.
         """
-        self._clipboard = ([deepcopy(self.slice_data.shapes[i]) for i in
-                           self._selected_shapes])
+        self._clipboard = [
+            deepcopy(self.slice_data.shapes[i]) for i in self._selected_shapes
+        ]
 
     def _paste_shapes(self):
         """Paste any shapes from clipboard and then selects them.
@@ -1046,8 +1143,9 @@ class Shapes(Layer):
         cur_shapes = self._nshapes_view
         for s in self._clipboard:
             self.slice_data.add(s)
-        self.selected_shapes = list(range(cur_shapes,
-                                    cur_shapes+len(self._clipboard)))
+        self.selected_shapes = list(
+            range(cur_shapes, cur_shapes + len(self._clipboard))
+        )
         self.move_to_front()
         self._copy_shapes()
 
@@ -1060,8 +1158,9 @@ class Shapes(Layer):
             Position of mouse cursor in image coordinates.
         """
         vertex = self._moving_vertex
-        if self._mode in ([Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
-                          Mode.ADD_LINE]):
+        if self._mode in (
+            [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
+        ):
             if len(self.selected_shapes) > 0:
                 self._is_moving = True
                 if vertex is None:
@@ -1079,13 +1178,15 @@ class Shapes(Layer):
                     # Corner / edge vertex is being dragged so resize object
                     box = self._selected_box
                     if self._fixed_vertex is None:
-                        self._fixed_index = (vertex+4) % Box.LEN
+                        self._fixed_index = (vertex + 4) % Box.LEN
                         self._fixed_vertex = box[self._fixed_index]
 
-                    size = (box[(self._fixed_index+4) % Box.LEN] -
-                            box[self._fixed_index])
+                    size = (
+                        box[(self._fixed_index + 4) % Box.LEN]
+                        - box[self._fixed_index]
+                    )
                     offset = box[Box.HANDLE] - box[Box.CENTER]
-                    offset = offset/np.linalg.norm(offset)
+                    offset = offset / np.linalg.norm(offset)
                     offset_perp = np.array([offset[1], -offset[0]])
 
                     fixed = self._fixed_vertex
@@ -1095,13 +1196,13 @@ class Shapes(Layer):
                         if (new - fixed)[0] == 0:
                             ratio = 1
                         else:
-                            ratio = abs((new - fixed)[1]/(new - fixed)[0])
+                            ratio = abs((new - fixed)[1] / (new - fixed)[0])
                         if ratio > self._aspect_ratio:
-                            r = self._aspect_ratio/ratio
-                            new[1] = fixed[1]+(new[1]-fixed[1])*r
+                            r = self._aspect_ratio / ratio
+                            new[1] = fixed[1] + (new[1] - fixed[1]) * r
                         else:
-                            r = ratio/self._aspect_ratio
-                            new[0] = fixed[0]+(new[0]-fixed[0])*r
+                            r = ratio / self._aspect_ratio
+                            new[0] = fixed[0] + (new[0] - fixed[0]) * r
 
                     if size @ offset == 0:
                         dist = 1
@@ -1111,8 +1212,9 @@ class Shapes(Layer):
                     if size @ offset_perp == 0:
                         dist_perp = 1
                     else:
-                        dist_perp = (((new - fixed) @ offset_perp) /
-                                     (size @ offset_perp))
+                        dist_perp = ((new - fixed) @ offset_perp) / (
+                            size @ offset_perp
+                        )
 
                     if self._fixed_index % 2 == 0:
                         # corner selected
@@ -1126,15 +1228,16 @@ class Shapes(Layer):
 
                     # prevent box from shrinking below a threshold size
                     threshold = self._vertex_size * self.scale_factor / 8
-                    scale[abs(scale*size[[1, 0]]) < threshold] = 1
+                    scale[abs(scale * size[[1, 0]]) < threshold] = 1
 
                     # check orientation of box
                     angle = -np.arctan2(offset[0], -offset[1])
                     c, s = np.cos(angle), np.sin(angle)
                     if angle == 0:
                         for index in self.selected_shapes:
-                            self.slice_data.scale(index, scale,
-                                            center=self._fixed_vertex)
+                            self.slice_data.scale(
+                                index, scale, center=self._fixed_vertex
+                            )
                         self._scale_box(scale, center=self._fixed_vertex)
                     else:
                         rotation = np.array([[c, s], [-s, c]])
@@ -1145,8 +1248,9 @@ class Shapes(Layer):
                             self.slice_data.shift(index, -self._fixed_vertex)
                             self.slice_data.transform(index, transform)
                             self.slice_data.shift(index, self._fixed_vertex)
-                        self._transform_box(transform,
-                                            center=self._fixed_vertex)
+                        self._transform_box(
+                            transform, center=self._fixed_vertex
+                        )
                     self.refresh()
                 elif vertex == 8:
                     # Rotation handle is being dragged so rotate object
@@ -1154,15 +1258,18 @@ class Shapes(Layer):
                     if self._drag_start is None:
                         self._fixed_vertex = self._selected_box[Box.CENTER]
                         offset = handle - self._fixed_vertex
-                        self._drag_start = -np.degrees(np.arctan2(offset[0],
-                                                       -offset[1]))
+                        self._drag_start = -np.degrees(
+                            np.arctan2(offset[0], -offset[1])
+                        )
 
                     new_offset = coord - self._fixed_vertex
-                    new_angle = -np.degrees(np.arctan2(new_offset[0],
-                                            -new_offset[1]))
+                    new_angle = -np.degrees(
+                        np.arctan2(new_offset[0], -new_offset[1])
+                    )
                     fixed_offset = handle - self._fixed_vertex
-                    fixed_angle = -np.degrees(np.arctan2(fixed_offset[0],
-                                              -fixed_offset[1]))
+                    fixed_angle = -np.degrees(
+                        np.arctan2(fixed_offset[0], -fixed_offset[1])
+                    )
 
                     if np.linalg.norm(new_offset) < 1:
                         angle = 0
@@ -1172,8 +1279,9 @@ class Shapes(Layer):
                         angle = new_angle - fixed_angle
 
                     for index in self.selected_shapes:
-                        self.slice_data.rotate(index, angle,
-                                         center=self._fixed_vertex)
+                        self.slice_data.rotate(
+                            index, angle, center=self._fixed_vertex
+                        )
                     self._rotate_box(angle, center=self._fixed_vertex)
                     self.refresh()
             else:
@@ -1199,8 +1307,9 @@ class Shapes(Layer):
                         indices = self.slice_data._index == index
                         vertices = self.slice_data._vertices[indices]
                         vertices[vertex] = coord
-                        self.slice_data.edit(index, vertices,
-                                             new_type=new_type)
+                        self.slice_data.edit(
+                            index, vertices, new_type=new_type
+                        )
                         shapes = self.selected_shapes
                         self._selected_box = self.interaction_box(shapes)
                         self.refresh()
@@ -1262,21 +1371,24 @@ class Shapes(Layer):
 
         if self.ndim == 2:
             # For 2D shapes just convert current view to masks
-            masks = self.slice_data.to_masks(mask_shape=mask_shape,
-                                             shape_type=shape_type)
+            masks = self.slice_data.to_masks(
+                mask_shape=mask_shape, shape_type=shape_type
+            )
         elif self.broadcast:
             # For broadcast shapes convert current view to masks and
             # broadcast across sliced dimensions
-            slices = self.slice_data.to_masks(mask_shape=mask_shape[-2:],
-                                              shape_type=shape_type)
+            slices = self.slice_data.to_masks(
+                mask_shape=mask_shape[-2:], shape_type=shape_type
+            )
             masks = [np.broadcast_to(m, mask_shape) for m in slices]
         else:
             # For nD insert each keyed slice into correct place in volume
             masks = []
             for slice_key, data in self.data.items():
                 if len(slice_key) > 0:
-                    slices = data.to_masks(mask_shape=mask_shape[-2:],
-                                           shape_type=shape_type)
+                    slices = data.to_masks(
+                        mask_shape=mask_shape[-2:], shape_type=shape_type
+                    )
                     for m in slices:
                         vol = np.zeros(mask_shape)
                         vol[slice_key] = m
@@ -1316,8 +1428,9 @@ class Shapes(Layer):
         if self.broadcast or self.ndim == 2:
             # For broadcast shapes or 2D shapes convert current view to labels
             # and broadcast across sliced dimensions
-            labels = self.slice_data.to_labels(labels_shape=labels_shape[-2:],
-                                               shape_type=shape_type)
+            labels = self.slice_data.to_labels(
+                labels_shape=labels_shape[-2:], shape_type=shape_type
+            )
             labels = np.broadcast_to(labels, labels_shape)
         else:
             # For nD insert each keyed slice into correct place in volume
@@ -1326,8 +1439,9 @@ class Shapes(Layer):
             nshapes = 0
             for slice_key, data in self.data.items():
                 if len(slice_key) > 0:
-                    slices = data.to_labels(labels_shape=labels_shape[-2:],
-                                            shape_type=shape_type)
+                    slices = data.to_labels(
+                        labels_shape=labels_shape[-2:], shape_type=shape_type
+                    )
                     slices[slices > 0] += nshapes
                     labels[slice_key] = slices
                     nshapes += len(data.shapes)
@@ -1406,26 +1520,31 @@ class Shapes(Layer):
                         self.selected_shapes = []
                 self._set_highlight()
                 self.status = self.get_message(coord, shape, vertex)
-        elif self._mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
-                            Mode.ADD_LINE]):
+        elif self._mode in (
+            [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
+        ):
             # Start drawing a rectangle / ellipse / line
             size = self._vertex_size * self.scale_factor / 4
             new_z_index = max(self.slice_data._z_index, default=-1) + 1
             if self._mode == Mode.ADD_RECTANGLE:
-                data = np.array([coord, coord+size])
+                data = np.array([coord, coord + size])
                 shape_type = 'rectangle'
             elif self._mode == Mode.ADD_ELLIPSE:
-                data = np.array([coord+size / 2, [size, size]])
+                data = np.array([coord + size / 2, [size, size]])
                 shape_type = 'ellipse'
             elif self._mode == Mode.ADD_LINE:
-                data = np.array([coord, coord+size])
+                data = np.array([coord, coord + size])
                 shape_type = 'line'
-            self.add_shapes(data, shape_type=shape_type,
-                            edge_width=self.edge_width,
-                            edge_color=self.edge_color,
-                            face_color=self.face_color,
-                            opacity=self.opacity, z_index=new_z_index)
-            self.selected_shapes = [self._nshapes_view-1]
+            self.add_shapes(
+                data,
+                shape_type=shape_type,
+                edge_width=self.edge_width,
+                edge_color=self.edge_color,
+                face_color=self.face_color,
+                opacity=self.opacity,
+                z_index=new_z_index,
+            )
+            self.selected_shapes = [self._nshapes_view - 1]
             ind = 4
             self._moving_shape = self.selected_shapes[0]
             self._moving_vertex = ind
@@ -1439,13 +1558,16 @@ class Shapes(Layer):
                 # Start drawing a path
                 data = np.array([coord, coord])
                 new_z_index = max(self.slice_data._z_index, default=-1) + 1
-                self.add_shapes(data, shape_type='path',
-                                edge_width=self.edge_width,
-                                edge_color=self.edge_color,
-                                face_color=self.face_color,
-                                opacity=self.opacity,
-                                z_index=new_z_index)
-                self.selected_shapes = [self._nshapes_view-1]
+                self.add_shapes(
+                    data,
+                    shape_type='path',
+                    edge_width=self.edge_width,
+                    edge_color=self.edge_color,
+                    face_color=self.face_color,
+                    opacity=self.opacity,
+                    z_index=new_z_index,
+                )
+                self.selected_shapes = [self._nshapes_view - 1]
                 ind = 1
                 self._moving_shape = self.selected_shapes[0]
                 self._moving_vertex = ind
@@ -1460,16 +1582,18 @@ class Shapes(Layer):
                     new_type = Polygon
                 else:
                     new_type = None
-                vertices = self.slice_data._vertices[self.slice_data._index
-                                                     == index]
-                vertices = np.concatenate((vertices, [coord]),  axis=0)
+                vertices = self.slice_data._vertices[
+                    self.slice_data._index == index
+                ]
+                vertices = np.concatenate((vertices, [coord]), axis=0)
                 # Change the selected vertex
                 self._moving_vertex = self._moving_vertex + 1
                 self._hover_vertex = self._hover_vertex + 1
                 self.slice_data.edit(index, vertices, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_shapes)
-            self.status = self.get_message(coord, self._hover_shape,
-                                           self._hover_vertex)
+            self.status = self.get_message(
+                coord, self._hover_shape, self._hover_vertex
+            )
         elif self._mode == Mode.VERTEX_INSERT:
             if len(self.selected_shapes) == 0:
                 # If none selected return immediately
@@ -1483,29 +1607,39 @@ class Shapes(Layer):
                     # Adding vertex to ellipse not implemented
                     pass
                 else:
-                    vertices = self.slice_data._vertices[self.slice_data._index
-                                                         == index]
+                    vertices = self.slice_data._vertices[
+                        self.slice_data._index == index
+                    ]
                     # Find which edge new vertex should inserted along
                     closed = shape_type != Path
                     n = len(vertices)
                     if closed:
-                        lines = np.array([[vertices[i],
-                                         vertices[(i+1) % n]] for i in
-                                         range(n)])
+                        lines = np.array(
+                            [
+                                [vertices[i], vertices[(i + 1) % n]]
+                                for i in range(n)
+                            ]
+                        )
                     else:
-                        lines = np.array([[vertices[i], vertices[i+1]] for i in
-                                         range(n-1)])
+                        lines = np.array(
+                            [
+                                [vertices[i], vertices[i + 1]]
+                                for i in range(n - 1)
+                            ]
+                        )
                     all_lines = np.append(all_lines, lines, axis=0)
-                    indices = np.array([np.repeat(index, len(lines)),
-                                       list(range(len(lines)))]).T
-                    all_lines_shape = np.append(all_lines_shape, indices,
-                                                axis=0)
+                    indices = np.array(
+                        [np.repeat(index, len(lines)), list(range(len(lines)))]
+                    ).T
+                    all_lines_shape = np.append(
+                        all_lines_shape, indices, axis=0
+                    )
             if len(all_lines) == 0:
                 # No appropriate shapes found
                 return
             ind, loc = point_to_lines(coord, all_lines)
             index = all_lines_shape[ind][0]
-            ind = all_lines_shape[ind][1]+1
+            ind = all_lines_shape[ind][1] + 1
             shape_type = type(self.slice_data.shapes[index])
             if shape_type == Line:
                 # Adding vertex to line turns it into a path
@@ -1516,12 +1650,13 @@ class Shapes(Layer):
             else:
                 new_type = None
             closed = shape_type != Path
-            vertices = self.slice_data._vertices[self.slice_data._index
-                                                 == index]
+            vertices = self.slice_data._vertices[
+                self.slice_data._index == index
+            ]
             if closed is not True:
                 if int(ind) == 1 and loc < 0:
                     ind = 0
-                elif int(ind) == len(vertices)-1 and loc > 1:
+                elif int(ind) == len(vertices) - 1 and loc > 1:
                     ind = ind + 1
 
             vertices = np.insert(vertices, ind, [coord], axis=0)
@@ -1542,8 +1677,9 @@ class Shapes(Layer):
                 if shape_type == Ellipse:
                     # Removing vertex from ellipse not implemented
                     return
-                vertices = self.slice_data._vertices[self.slice_data._index
-                                                     == index]
+                vertices = self.slice_data._vertices[
+                    self.slice_data._index == index
+                ]
                 if len(vertices) <= 2:
                     # If only 2 vertices present, remove whole shape
                     with self.freeze_refresh():
@@ -1569,8 +1705,9 @@ class Shapes(Layer):
                     # Remove clicked on vertex
                     vertices = np.delete(vertices, vertex, axis=0)
                     with self.freeze_refresh():
-                        self.slice_data.edit(index, vertices,
-                                             new_type=new_type)
+                        self.slice_data.edit(
+                            index, vertices, new_type=new_type
+                        )
                         shapes = self.selected_shapes
                         self._selected_box = self.interaction_box(shapes)
                 shape, vertex = self._shape_at(coord)
@@ -1625,8 +1762,9 @@ class Shapes(Layer):
                 self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
-        elif self._mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
-                            Mode.ADD_LINE]):
+        elif self._mode in (
+            [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
+        ):
             # While drawing a shape or doing nothing
             if self._is_creating and event.is_dragging:
                 # Drag any selected shapes
@@ -1680,7 +1818,8 @@ class Shapes(Layer):
                     self.selected_shapes = []
             elif self._is_selecting:
                 self.selected_shapes = self.slice_data.shapes_in_box(
-                    self._drag_box)
+                    self._drag_box
+                )
                 self._is_selecting = False
                 self._set_highlight()
             self._is_moving = False
@@ -1702,7 +1841,8 @@ class Shapes(Layer):
                     self.selected_shapes = []
             elif self._is_selecting:
                 self.selected_shapes = self.slice_data.shapes_in_box(
-                    self._drag_box)
+                    self._drag_box
+                )
                 self._is_selecting = False
                 self._set_highlight()
             self._is_moving = False
@@ -1715,13 +1855,20 @@ class Shapes(Layer):
             self._hover_vertex = shape
             self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
-        elif self._mode in ([Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE,
-                            Mode.ADD_LINE]):
+        elif self._mode in (
+            [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
+        ):
             self._finish_drawing()
             shape, vertex = self._shape_at(coord)
             self.status = self.get_message(coord, shape, vertex)
-        elif self._mode in ([Mode.ADD_PATH, Mode.ADD_POLYGON,
-                            Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]):
+        elif self._mode in (
+            [
+                Mode.ADD_PATH,
+                Mode.ADD_POLYGON,
+                Mode.VERTEX_INSERT,
+                Mode.VERTEX_REMOVE,
+            ]
+        ):
             pass
         else:
             raise ValueError("Mode not recongnized")
@@ -1748,7 +1895,7 @@ class Shapes(Layer):
                 self._fixed_aspect = True
                 box = self._selected_box
                 if box is not None:
-                    size = box[Box.BOTTOM_RIGHT]-box[Box.TOP_LEFT]
+                    size = box[Box.BOTTOM_RIGHT] - box[Box.TOP_LEFT]
                     if not np.any(size == np.zeros(2)):
                         self._aspect_ratio = abs(size[1] / size[0])
                     else:

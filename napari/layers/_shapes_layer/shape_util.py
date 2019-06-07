@@ -53,9 +53,9 @@ def inside_triangles(triangles):
     AC = triangles[:, 2, :] - triangles[:, 0, :]
     BC = triangles[:, 2, :] - triangles[:, 1, :]
 
-    s_AB = -AB[:, 0]*triangles[:, 0, 1] + AB[:, 1]*triangles[:, 0, 0] >= 0
-    s_AC = -AC[:, 0]*triangles[:, 0, 1] + AC[:, 1]*triangles[:, 0, 0] >= 0
-    s_BC = -BC[:, 0]*triangles[:, 1, 1] + BC[:, 1]*triangles[:, 1, 0] >= 0
+    s_AB = -AB[:, 0] * triangles[:, 0, 1] + AB[:, 1] * triangles[:, 0, 0] >= 0
+    s_AC = -AC[:, 0] * triangles[:, 0, 1] + AC[:, 1] * triangles[:, 0, 0] >= 0
+    s_BC = -BC[:, 0] * triangles[:, 1, 1] + BC[:, 1] * triangles[:, 1, 0] >= 0
 
     inside = np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
 
@@ -174,14 +174,15 @@ def triangle_edges_intersect_box(triangles, corners):
     for i in range(3):
         # check if each triangle edge
         p1 = triangles[:, i, :]
-        q1 = triangles[:, (i+1) % 3, :]
+        q1 = triangles[:, (i + 1) % 3, :]
 
         for j in range(4):
             # Check the four edges of the box
             p2 = box[j]
-            q2 = box[(j+1) % 3]
-            intersects[:, i*3+j] = ([lines_intersect(p1[k], q1[k], p2, q2)
-                                    for k in range(len(p1))])
+            q2 = box[(j + 1) % 3]
+            intersects[:, i * 3 + j] = [
+                lines_intersect(p1[k], q1[k], p2, q2) for k in range(len(p1))
+            ]
 
     return np.any(intersects, axis=1)
 
@@ -253,8 +254,12 @@ def on_segment(p, q, r):
     on : bool
         Bool indicating if q is on segment from p to r
     """
-    if (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and
-            q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1])):
+    if (
+        q[0] <= max(p[0], r[0])
+        and q[0] >= min(p[0], r[0])
+        and q[1] <= max(p[1], r[1])
+        and q[1] >= min(p[1], r[1])
+    ):
         on = True
     else:
         on = False
@@ -280,7 +285,7 @@ def orientation(p, q, r):
         One of (-1, 0, 1). 0 if p, q, r are collinear, 1 if clockwise, and -1
         if counterclockwise.
     """
-    val = (q[1] - p[1])*(r[0] - q[0]) - (q[0] - p[0])*(r[1] - q[1])
+    val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
     val = np.sign(val)
 
     return val
@@ -348,14 +353,16 @@ def point_to_lines(point, lines):
     line_dist = abs(np.cross(unit_lines, point_vectors))
 
     # calculate scale
-    line_loc = (unit_lines*point_vectors).sum(axis=1)/norm_lines.squeeze()
+    line_loc = (unit_lines * point_vectors).sum(axis=1) / norm_lines.squeeze()
 
     # for points not falling inside segment calculate distance to appropriate
     # endpoint
-    line_dist[line_loc < 0] = np.linalg.norm(point_vectors[line_loc < 0],
-                                             axis=1)
-    line_dist[line_loc > 1] = np.linalg.norm(end_point_vectors[line_loc > 1],
-                                             axis=1)
+    line_dist[line_loc < 0] = np.linalg.norm(
+        point_vectors[line_loc < 0], axis=1
+    )
+    line_dist[line_loc > 1] = np.linalg.norm(
+        end_point_vectors[line_loc > 1], axis=1
+    )
     line_dist[reject] = np.linalg.norm(point_vectors[reject], axis=1)
     line_loc[reject] = 0.5
 
@@ -387,8 +394,19 @@ def create_box(data):
     tr = np.array([max_val[0], min_val[1]])
     br = np.array([max_val[0], max_val[1]])
     bl = np.array([min_val[0], max_val[1]])
-    box = np.array([tl, (tl+tr)/2, tr, (tr+br)/2, br, (br+bl)/2, bl, (bl+tl)/2,
-                   (tl+tr+br+bl)/4])
+    box = np.array(
+        [
+            tl,
+            (tl + tr) / 2,
+            tr,
+            (tr + br) / 2,
+            br,
+            (br + bl) / 2,
+            bl,
+            (bl + tl) / 2,
+            (tl + tr + br + bl) / 4,
+        ]
+    )
     return box
 
 
@@ -410,11 +428,23 @@ def rectangle_to_box(data):
         upper-left corner. The last point is the center of the box
     """
     if not np.all(data.shape == (4, 2)):
-        raise ValueError("""Data shape does not match expected `[4, 2]`
-                         shape specifying corners for the rectangle""")
-    box = np.array([data[0], (data[0]+data[1])/2, data[1], (data[1]+data[2])/2,
-                    data[2], (data[2]+data[3])/2, data[3], (data[3]+data[0])/2,
-                    data.mean(axis=0)])
+        raise ValueError(
+            """Data shape does not match expected `[4, 2]`
+                         shape specifying corners for the rectangle"""
+        )
+    box = np.array(
+        [
+            data[0],
+            (data[0] + data[1]) / 2,
+            data[1],
+            (data[1] + data[2]) / 2,
+            data[2],
+            (data[2] + data[3]) / 2,
+            data[3],
+            (data[3] + data[0]) / 2,
+            data.mean(axis=0),
+        ]
+    )
     return box
 
 
@@ -457,7 +487,7 @@ def center_radii_to_corners(center, radii):
     corners : np.ndarray
         4x2 array of corners of the boudning box
     """
-    data = np.array([center+radii, center-radii])
+    data = np.array([center + radii, center - radii])
     corners = find_corners(data)
     return corners
 
@@ -491,8 +521,10 @@ def triangulate_ellipse(corners, num_segments=100):
         triangulation. Has length given by `num_segments`
     """
     if not np.all(corners.shape == (4, 2)):
-        raise ValueError("""Data shape does not match expected `[4, 2]`
-                         shape specifying corners for the ellipse""")
+        raise ValueError(
+            """Data shape does not match expected `[4, 2]`
+                         shape specifying corners for the ellipse"""
+        )
 
     center = corners.mean(axis=0)
     adjusted = corners - center
@@ -501,9 +533,10 @@ def triangulate_ellipse(corners, num_segments=100):
     len_vec = np.linalg.norm(vec)
     if len_vec > 0:
         # rotate to be axis aligned
-        norm_vec = vec/len_vec
-        transform = np.array([[norm_vec[0], -norm_vec[1]],
-                             [norm_vec[1], norm_vec[0]]])
+        norm_vec = vec / len_vec
+        transform = np.array(
+            [[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]]
+        )
         adjusted = np.matmul(adjusted, transform)
     else:
         transform = np.eye(2)
@@ -521,7 +554,7 @@ def triangulate_ellipse(corners, num_segments=100):
     # Shift back to center
     vertices = vertices + center
 
-    triangles = np.array([[0, i+1, i+2] for i in range(num_segments)])
+    triangles = np.array([[0, i + 1, i + 2] for i in range(num_segments)])
     triangles[-1, 2] = 1
 
     return vertices, triangles
@@ -584,8 +617,13 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     """
     # Remove any equal adjacent points
     if len(path) > 2:
-        clean_path = np.array([p for i, p in enumerate(path) if i == 0 or
-                              not np.all(p == path[i-1])])
+        clean_path = np.array(
+            [
+                p
+                for i, p in enumerate(path)
+                if i == 0 or not np.all(p == path[i - 1])
+            ]
+        )
         if clean_path.shape[0] == 1:
             clean_path = np.concatenate((clean_path, clean_path), axis=0)
     else:
@@ -594,33 +632,48 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     if closed:
         if np.all(clean_path[0] == clean_path[-1]) and len(clean_path) > 2:
             clean_path = clean_path[:-1]
-        full_path = np.concatenate(([clean_path[-1]], clean_path,
-                                    [clean_path[0]]), axis=0)
-        normals = ([segment_normal(full_path[i], full_path[i+1]) for i in
-                   range(len(clean_path))])
-        path_length = ([np.linalg.norm(full_path[i]-full_path[i+1]) for i in
-                       range(len(clean_path))])
+        full_path = np.concatenate(
+            ([clean_path[-1]], clean_path, [clean_path[0]]), axis=0
+        )
+        normals = [
+            segment_normal(full_path[i], full_path[i + 1])
+            for i in range(len(clean_path))
+        ]
+        path_length = [
+            np.linalg.norm(full_path[i] - full_path[i + 1])
+            for i in range(len(clean_path))
+        ]
         normals = np.array(normals)
         full_path = np.concatenate((clean_path, [clean_path[0]]), axis=0)
         full_normals = np.concatenate((normals, [normals[0]]), axis=0)
     else:
         full_path = np.concatenate((clean_path, [clean_path[-2]]), axis=0)
-        normals = ([segment_normal(full_path[i], full_path[i+1]) for i in
-                   range(len(clean_path))])
-        path_length = ([np.linalg.norm(full_path[i]-full_path[i+1]) for i in
-                       range(len(clean_path))])
+        normals = [
+            segment_normal(full_path[i], full_path[i + 1])
+            for i in range(len(clean_path))
+        ]
+        path_length = [
+            np.linalg.norm(full_path[i] - full_path[i + 1])
+            for i in range(len(clean_path))
+        ]
         normals[-1] = -normals[-1]
         normals = np.array(normals)
         full_path = clean_path
         full_normals = np.concatenate(([normals[0]], normals), axis=0)
 
-    miters = np.array([full_normals[i:i+2].mean(axis=0) for i in
-                      range(len(full_path))])
-    miters = np.array([miters[i]/np.dot(miters[i], full_normals[i])
-                      if np.dot(miters[i], full_normals[i]) != 0
-                      else full_normals[i] for i in range(len(full_path))])
+    miters = np.array(
+        [full_normals[i : i + 2].mean(axis=0) for i in range(len(full_path))]
+    )
+    miters = np.array(
+        [
+            miters[i] / np.dot(miters[i], full_normals[i])
+            if np.dot(miters[i], full_normals[i]) != 0
+            else full_normals[i]
+            for i in range(len(full_path))
+        ]
+    )
     miter_lengths = np.linalg.norm(miters, axis=1)
-    miters = 0.5*miters
+    miters = 0.5 * miters
     vertex_offsets = []
     central_path = []
     triangles = []
@@ -630,81 +683,83 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
         if i == 0:
             if (bevel or miter_lengths[i] > limit) and closed:
                 offset = np.array([miters[i, 1], -miters[i, 0]])
-                offset = 0.5*offset/np.linalg.norm(offset)
+                offset = 0.5 * offset / np.linalg.norm(offset)
                 flip = np.sign(np.dot(offset, full_normals[i]))
                 vertex_offsets.append(offset)
-                vertex_offsets.append(-flip*miters[i]/miter_lengths[i]*limit)
+                vertex_offsets.append(
+                    -flip * miters[i] / miter_lengths[i] * limit
+                )
                 vertex_offsets.append(-offset)
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
                 triangles.append([0, 1, 2])
-                m = m+1
+                m = m + 1
             else:
                 vertex_offsets.append(-miters[i])
                 vertex_offsets.append(miters[i])
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
-        elif i == len(full_path)-1:
+        elif i == len(full_path) - 1:
             if closed:
-                a = vertex_offsets[m+1]
+                a = vertex_offsets[m + 1]
                 b = vertex_offsets[1]
-                ray = full_path[i] - full_path[i-1]
-                if np.cross(a, ray)*np.cross(b, ray) > 0:
-                    triangles.append([m, m+1, 1])
+                ray = full_path[i] - full_path[i - 1]
+                if np.cross(a, ray) * np.cross(b, ray) > 0:
+                    triangles.append([m, m + 1, 1])
                     triangles.append([m, 0, 1])
                 else:
-                    triangles.append([m, m+1, 1])
-                    triangles.append([m+1, 0, 1])
+                    triangles.append([m, m + 1, 1])
+                    triangles.append([m + 1, 0, 1])
             else:
                 vertex_offsets.append(-miters[i])
                 vertex_offsets.append(miters[i])
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
-                a = vertex_offsets[m+1]
-                b = vertex_offsets[m+3]
-                ray = full_path[i] - full_path[i-1]
-                if np.cross(a, ray)*np.cross(b, ray) > 0:
-                    triangles.append([m, m+1, m+3])
-                    triangles.append([m, m+2, m+3])
+                a = vertex_offsets[m + 1]
+                b = vertex_offsets[m + 3]
+                ray = full_path[i] - full_path[i - 1]
+                if np.cross(a, ray) * np.cross(b, ray) > 0:
+                    triangles.append([m, m + 1, m + 3])
+                    triangles.append([m, m + 2, m + 3])
                 else:
-                    triangles.append([m, m+1, m+3])
-                    triangles.append([m+1, m+2, m+3])
-        elif (bevel or miter_lengths[i] > limit):
+                    triangles.append([m, m + 1, m + 3])
+                    triangles.append([m + 1, m + 2, m + 3])
+        elif bevel or miter_lengths[i] > limit:
             offset = np.array([miters[i, 1], -miters[i, 0]])
-            offset = 0.5*offset/np.linalg.norm(offset)
+            offset = 0.5 * offset / np.linalg.norm(offset)
             flip = np.sign(np.dot(offset, full_normals[i]))
             vertex_offsets.append(offset)
-            vertex_offsets.append(-flip*miters[i]/miter_lengths[i]*limit)
+            vertex_offsets.append(-flip * miters[i] / miter_lengths[i] * limit)
             vertex_offsets.append(-offset)
             central_path.append(full_path[i])
             central_path.append(full_path[i])
             central_path.append(full_path[i])
-            a = vertex_offsets[m+1]
-            b = vertex_offsets[m+3]
-            ray = full_path[i] - full_path[i-1]
-            if np.cross(a, ray)*np.cross(b, ray) > 0:
-                triangles.append([m, m+1, m+3])
-                triangles.append([m, m+2, m+3])
+            a = vertex_offsets[m + 1]
+            b = vertex_offsets[m + 3]
+            ray = full_path[i] - full_path[i - 1]
+            if np.cross(a, ray) * np.cross(b, ray) > 0:
+                triangles.append([m, m + 1, m + 3])
+                triangles.append([m, m + 2, m + 3])
             else:
-                triangles.append([m, m+1, m+3])
-                triangles.append([m+1, m+2, m+3])
-            triangles.append([m+2, m+3, m+4])
+                triangles.append([m, m + 1, m + 3])
+                triangles.append([m + 1, m + 2, m + 3])
+            triangles.append([m + 2, m + 3, m + 4])
             m = m + 3
         else:
             vertex_offsets.append(-miters[i])
             vertex_offsets.append(miters[i])
             central_path.append(full_path[i])
             central_path.append(full_path[i])
-            a = vertex_offsets[m+1]
-            b = vertex_offsets[m+3]
-            ray = full_path[i] - full_path[i-1]
-            if np.cross(a, ray)*np.cross(b, ray) > 0:
-                triangles.append([m, m+1, m+3])
-                triangles.append([m, m+2, m+3])
+            a = vertex_offsets[m + 1]
+            b = vertex_offsets[m + 3]
+            ray = full_path[i] - full_path[i - 1]
+            if np.cross(a, ray) * np.cross(b, ray) > 0:
+                triangles.append([m, m + 1, m + 3])
+                triangles.append([m, m + 2, m + 3])
             else:
-                triangles.append([m, m+1, m+3])
-                triangles.append([m+1, m+2, m+3])
+                triangles.append([m, m + 1, m + 3])
+                triangles.append([m + 1, m + 2, m + 3])
             m = m + 2
     centers = np.array(central_path)
     offsets = np.array(vertex_offsets)
@@ -736,7 +791,7 @@ def poly_to_mask(mask_shape, vertices):
     top = np.append([top], [mask_shape], axis=0).min(axis=0)
     if np.all(top > bottom):
         bb_mask = grid_points_in_poly(top - bottom, vertices - bottom)
-        mask[bottom[0]:top[0], bottom[1]:top[1]] = bb_mask
+        mask[bottom[0] : top[0], bottom[1] : top[1]] = bb_mask
     return mask
 
 
@@ -756,8 +811,9 @@ def grid_points_in_poly(shape, vertices):
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
-    points = np.array([(x, y) for x in range(shape[0])
-                      for y in range(shape[1])], dtype=int)
+    points = np.array(
+        [(x, y) for x in range(shape[0]) for y in range(shape[1])], dtype=int
+    )
     inside = points_in_poly(points, vertices)
     mask = inside.reshape(shape)
     return mask
@@ -780,22 +836,25 @@ def points_in_poly(points, vertices):
     """
     n_verts = len(vertices)
     inside = np.zeros(len(points), dtype=bool)
-    j = n_verts-1
+    j = n_verts - 1
     for i in range(n_verts):
         # Determine if a horizontal ray emanating from the point crosses the
         # line defined by vertices i-1 and vertices i.
-        cond_1 = np.logical_and(vertices[i, 1] <= points[:, 1],
-                                points[:, 1] < vertices[j, 1])
-        cond_2 = np.logical_and(vertices[j, 1] <= points[:, 1],
-                                points[:, 1] < vertices[i, 1])
+        cond_1 = np.logical_and(
+            vertices[i, 1] <= points[:, 1], points[:, 1] < vertices[j, 1]
+        )
+        cond_2 = np.logical_and(
+            vertices[j, 1] <= points[:, 1], points[:, 1] < vertices[i, 1]
+        )
         cond_3 = np.logical_or(cond_1, cond_2)
         d = vertices[j] - vertices[i]
         if d[1] == 0:
             # If y vertices are aligned avoid division by zero
             cond_4 = 0 < d[0] * (points[:, 1] - vertices[i, 1])
         else:
-            cond_4 = points[:, 0] < (d[0] * (points[:, 1] - vertices[i, 1]) /
-                                     d[1] + vertices[i, 0])
+            cond_4 = points[:, 0] < (
+                d[0] * (points[:, 1] - vertices[i, 1]) / d[1] + vertices[i, 0]
+            )
         cond_5 = np.logical_and(cond_3, cond_4)
         inside[cond_5] = 1 - inside[cond_5]
         j = i
