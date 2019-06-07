@@ -15,10 +15,10 @@ class Ellipse(Shape):
 
     Parameters
     ----------
-    data : np.ndarray
-        Either a 2x2 array specifying the center and radii of an axis aligned
-        ellipse, or a 4x2 array specifying the four corners of a boudning box
-        that contains the ellipse. These need not be axis aligned.
+    data : (4, 2) array or (2, 2) array.
+        Either a (2, 2) array specifying the center and radii of an axis
+        aligned ellipse, or a (4, 2) array specifying the four corners of a
+        boudning box that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -61,7 +61,7 @@ class Ellipse(Shape):
 
     @property
     def data(self):
-        """np.ndarray: 4x2 array of vertices.
+        """(4, 2) array: ellipse vertices.
         """
         return self._data
 

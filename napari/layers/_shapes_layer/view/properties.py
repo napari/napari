@@ -95,10 +95,7 @@ class QtShapesLayer(QtLayer):
         self.layer.edge_width = float(value) / 2
 
     def change_broadcast(self, state):
-        if state == Qt.Checked:
-            self.layer.broadcast = True
-        else:
-            self.layer.broadcast = False
+        self.layer.broadcast = state == Qt.Checked
 
     def _on_edge_width_change(self, event):
         with self.layer.events.edge_width.blocker():

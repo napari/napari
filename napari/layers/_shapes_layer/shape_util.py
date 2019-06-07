@@ -4,22 +4,22 @@ from vispy.geometry import PolygonData
 
 
 def slice_by_plane(data):
-    """Determine if shape is entirely definied within a single 2D plane
+    """Determine if shape is entirely defined within a single 2D plane
 
     Parameters
     ----------
-    data : np.ndarray
-        NxD array of vertices specifying the shape.
+    data : (N, D) array
+        Array of vertices specifying the shape.
 
     Returns
     ----------
-    key : tuple of int | bool
+    key : tuple of int or bool
         If shape is 2D returns an empty tuple, otherwise return the tuple
         of int defining the 2D plane if the shape is entirely definied
         within a single 2D plane. Otherwise return False as the shape is
         invalid.
-    value : np.ndarray | False
-        Nx2 array of vertices specifying the shape in the 2D plane or False
+    value : (N, 2) array or False
+        Array of vertices specifying the shape in the 2D plane or False
         if no such specification exists.
     """
     # TODO make which coordinate are the displayed 2D coordinates changable
@@ -28,7 +28,7 @@ def slice_by_plane(data):
     # The key can then be a tuple: (slice_dims, coords)
     if data.shape[1] == 2:
         return (), data
-    elif (data[:, :-2] == data[0, :-2]).all():
+    elif np.all(data[:, :-2] == data[0, :-2]):
         return tuple(data[0, :-2].astype('int')), data[:, -2:]
     else:
         return False, False
@@ -39,14 +39,13 @@ def inside_triangles(triangles):
 
     Parameters
     ----------
-    triangles : np.ndarray
-        Nx3x2 array of N triangles that should be checked
+    triangles : (N, 3, 2) array
+        Array of N triangles that should be checked
 
     Returns
     -------
-    inside : np.ndarray
-        Length N boolean array with `True` values for trinagles containg the
-        origin
+    inside : (N,) array of bool
+        Array with `True` values for trinagles containg the origin
     """
 
     AB = triangles[:, 1, :] - triangles[:, 0, :]
@@ -67,13 +66,13 @@ def inside_boxes(boxes):
 
     Parameters
     ----------
-    boxes : np.ndarray
-        Nx8x2 array of N boxes that should be checked
+    boxes : (N, 8, 2) array
+        Array of N boxes that should be checked
 
     Returns
     -------
-    inside : np.ndarray
-        Length N boolean array with `True` values for boxes containg the origin
+    inside : (N,) array of bool
+        Array with `True` values for boxes containg the origin
     """
 
     AB = boxes[:, 0] - boxes[:, 6]
@@ -101,16 +100,15 @@ def triangles_intersect_box(triangles, corners):
 
     Parameters
     ----------
-    triangles : np.ndarray
-        Nx3x2 array of vertices of triangles to be tested
-    corners : np.ndarray
-        2x2 array specifying corners of a box
+    triangles : (N, 3, 2) array
+        Array of vertices of triangles to be tested
+    corners : (2, 2) array
+        Array specifying corners of a box
 
     Returns
     -------
-    intersects : np.ndarray
-        Length N boolean array with `True` values for triangles intersecting
-        the box
+    intersects : (N,) array of bool
+        Array with `True` values for triangles intersecting the box
     """
 
     vertices_inside = triangle_vertices_inside_box(triangles, corners)
@@ -126,16 +124,15 @@ def triangle_vertices_inside_box(triangles, corners):
 
     Parameters
     ----------
-    triangles : np.ndarray
-        Nx3x2 array of vertices of triangles to be tested
-    corners : np.ndarray
-        2x2 array specifying corners of a box
+    triangles : (N, 3, 2) array
+        Array of vertices of triangles to be tested
+    corners : (2, 2) array
+        Array specifying corners of a box
 
     Returns
     -------
-    inside : np.ndarray
-        Length N boolean array with `True` values for triangles with
-        vertices inside the box
+    inside : (N,) array of bool
+        Array with `True` values for triangles with vertices inside the box
     """
     box = create_box(corners)[[0, 4]]
 
@@ -157,16 +154,16 @@ def triangle_edges_intersect_box(triangles, corners):
 
     Parameters
     ----------
-    triangles : np.ndarray
-        Nx3x2 array of vertices of triangles to be tested
-    corners : np.ndarray
-        2x2 array specifying corners of a box
+    triangles : (N, 3, 2) array
+        Array of vertices of triangles to be tested
+    corners : (2, 2) array
+        Array specifying corners of a box
 
     Returns
     -------
-    intersects : np.ndarray
-        Length N boolean array with `True` values for triangles with
-        edges that intersect the edges of the box.
+    intersects : (N,) array of bool
+        Array with `True` values for triangles with edges that intersect the
+        edges of the box.
     """
     box = create_box(corners)[[0, 2, 4, 6]]
 
@@ -192,14 +189,14 @@ def lines_intersect(p1, q1, p2, q2):
 
     Parameters
     -------
-    p1 : np.ndarray
-        Length 2 array of first point of first line segment
-    q1 : np.ndarray
-        Length 2 array of second point of first line segment
-    p2 : np.ndarray
-        Length 2 array of first point of second line segment
-    q2 : np.ndarray
-        Length 2 array of second point of second line segment
+    p1 : (2,) array
+        Array of first point of first line segment
+    q1 : (2,) array
+        Array of second point of first line segment
+    p2 : (2,) array
+        Array of first point of second line segment
+    q2 : (2,) array
+        Array of second point of second line segment
 
     Returns
     -------
@@ -242,12 +239,12 @@ def on_segment(p, q, r):
 
     Parameters
     -------
-    p : np.ndarray
-        Length 2 array of first point of segment
-    q : np.ndarray
-        Length 2 array of point to check if on segment
-    r : np.ndarray
-        Length 2 array of second point of segment
+    p : (2,) array
+        Array of first point of segment
+    q : (2,) array
+        Array of point to check if on segment
+    r : (2,) array
+        Array of second point of segment
 
     Returns
     -------
@@ -272,12 +269,12 @@ def orientation(p, q, r):
 
     Parameters
     -------
-    p : np.ndarray
-        Length 2 array of first point of triplet
-    q : np.ndarray
-        Length 2 array of second point of triplet
-    r : np.ndarray
-        Length 2 array of third point of triplet
+    p : (2,) array
+        Array of first point of triplet
+    q : (2,) array
+        Array of second point of triplet
+    r : (2,) array
+        Array of third point of triplet
 
     Returns
     -------
