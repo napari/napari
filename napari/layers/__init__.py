@@ -13,4 +13,3 @@ from ._vectors_layer import Vectors
 from ._shapes_layer import Shapes
 from ._labels_layer import Labels
 from ._pyramid_layer import Pyramid
-from ._register import add_to_viewer

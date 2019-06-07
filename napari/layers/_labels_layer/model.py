@@ -13,14 +13,11 @@ from ..._vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
 
-from .._register import add_to_viewer
-
 from .view import QtLabelsLayer
 from .view import QtLabelsControls
 from ._constants import Mode
 
 
-@add_to_viewer
 class Labels(Layer):
     """Labels (or segmentation) layer.
 
