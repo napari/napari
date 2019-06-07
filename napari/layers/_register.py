@@ -119,10 +119,12 @@ def create_func(cls, name=None, doc=None):
         doc += '\n\tAdded layer.'
         doc = doc.expandtabs(4)
 
-    src = template.format(name=name,
-                          signature=str(sig)[1:-1],
-                          cls_name=cls_name,
-                          call_args=str(call_args)[1:-1])
+    src = template.format(
+        name=name,
+        signature=str(sig)[1:-1],
+        cls_name=cls_name,
+        call_args=str(call_args)[1:-1],
+    )
 
     execdict = {cls_name: cls}
     exec(src, execdict)

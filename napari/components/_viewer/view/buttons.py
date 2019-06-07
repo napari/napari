@@ -1,7 +1,13 @@
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QFrame, QCheckBox)
+from qtpy.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QFrame,
+    QCheckBox,
+)
 
 from .... import resources
 
