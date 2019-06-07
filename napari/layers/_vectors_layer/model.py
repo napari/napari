@@ -40,21 +40,15 @@ class Vectors(Layer):
         control panel mode
     """
 
-    def __init__(self,
-                 vectors,
-                 width=1,
-                 color='red',
-                 averaging=1,
-                 length=1,
-                 name=None):
+    def __init__(
+        self, vectors, width=1, color='red', averaging=1, length=1, name=None
+    ):
 
         visual = Mesh()
         super().__init__(visual)
 
         # events for non-napari calculations
-        self.events.add(length=Event,
-                        width=Event,
-                        averaging=Event)
+        self.events.add(length=Event, width=Event, averaging=Event)
 
         # Store underlying data model
         self._data_types = ('image', 'coords')
@@ -155,8 +149,8 @@ class Vectors(Layer):
 
         else:
             raise TypeError(
-                "Vector data of shape %s is not supported" %
-                str(vectors.shape))
+                "Vector data of shape %s is not supported" % str(vectors.shape)
+            )
 
         return coord_list
 
@@ -181,8 +175,8 @@ class Vectors(Layer):
 
         # create coordinate spacing for x-y
         # double the num of elements by doubling x sampling
-        xspace = np.linspace(0, stride_x*xdim, 2 * xdim, endpoint=False)
-        yspace = np.linspace(0, stride_y*ydim, ydim, endpoint=False)
+        xspace = np.linspace(0, stride_x * xdim, 2 * xdim, endpoint=False)
+        yspace = np.linspace(0, stride_y * ydim, ydim, endpoint=False)
         xv, yv = np.meshgrid(xspace, yspace)
 
         # assign coordinates (pos) to all pixels
@@ -191,18 +185,34 @@ class Vectors(Layer):
 
         # pixel midpoints are the first x-values of positions
         midpt = np.zeros((xdim * ydim, 2), dtype=np.float32)
-        midpt[:, 0] = pos[0::2, 0]+(stride_x-1)/2
-        midpt[:, 1] = pos[0::2, 1]+(stride_y-1)/2
+        midpt[:, 0] = pos[0::2, 0] + (stride_x - 1) / 2
+        midpt[:, 1] = pos[0::2, 1] + (stride_y - 1) / 2
 
         # rotate coordinates about midpoint to represent angle and length
-        pos[0::2, 0] = midpt[:, 0] - (stride_x / 2) * (self._length/2) * \
-                       vect.reshape((xdim*ydim, 2))[:, 0]
-        pos[0::2, 1] = midpt[:, 1] - (stride_y / 2) * (self._length/2) * \
-                       vect.reshape((xdim*ydim, 2))[:, 1]
-        pos[1::2, 0] = midpt[:, 0] + (stride_x / 2) * (self._length/2) * \
-                       vect.reshape((xdim*ydim, 2))[:, 0]
-        pos[1::2, 1] = midpt[:, 1] + (stride_y / 2) * (self._length/2) * \
-                       vect.reshape((xdim*ydim, 2))[:, 1]
+        pos[0::2, 0] = (
+            midpt[:, 0]
+            - (stride_x / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 0]
+        )
+        pos[0::2, 1] = (
+            midpt[:, 1]
+            - (stride_y / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 1]
+        )
+        pos[1::2, 0] = (
+            midpt[:, 0]
+            + (stride_x / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 0]
+        )
+        pos[1::2, 1] = (
+            midpt[:, 1]
+            + (stride_y / 2)
+            * (self._length / 2)
+            * vect.reshape((xdim * ydim, 2))[:, 1]
+        )
 
         return pos
 
@@ -261,7 +271,7 @@ class Vectors(Layer):
 
             x, y = self._averaging, self._averaging
 
-            if (x,y) == (1, 1):
+            if (x, y) == (1, 1):
                 self.vectors = self._original_data
                 # calling original data
                 return
@@ -272,19 +282,23 @@ class Vectors(Layer):
             x_offset = int((x - 1) / 2)
             y_offset = int((y - 1) / 2)
 
-            kernel = np.ones(shape=(x, y)) / (x*y)
+            kernel = np.ones(shape=(x, y)) / (x * y)
 
             output_mat = np.zeros_like(tempdat)
-            output_mat_x = signal.convolve2d(tempdat[:, :, 0], kernel,
-                                             mode='same', boundary='wrap')
-            output_mat_y = signal.convolve2d(tempdat[:, :, 1], kernel,
-                                             mode='same', boundary='wrap')
+            output_mat_x = signal.convolve2d(
+                tempdat[:, :, 0], kernel, mode='same', boundary='wrap'
+            )
+            output_mat_y = signal.convolve2d(
+                tempdat[:, :, 1], kernel, mode='same', boundary='wrap'
+            )
 
             output_mat[:, :, 0] = output_mat_x
             output_mat[:, :, 1] = output_mat_y
 
-            self.vectors = (output_mat[x_offset:range_x-x_offset:x,
-                                       y_offset:range_y-y_offset:y])
+            self.vectors = output_mat[
+                x_offset : range_x - x_offset : x,
+                y_offset : range_y - y_offset : y,
+            ]
 
     @property
     def width(self) -> Union[int, float]:
@@ -333,8 +347,9 @@ class Vectors(Layer):
             return "length adjustment not allowed for coordinate-style data"
         elif self._data_type == 'image':
             self._vectors = self._convert_to_vector_type(self._current_data)
-            vertices, triangles = self._generate_meshes(self.vectors,
-                                                        self.width)
+            vertices, triangles = self._generate_meshes(
+                self.vectors, self.width
+            )
             self._mesh_vertices = vertices
             self._mesh_triangles = triangles
 
@@ -414,12 +429,17 @@ class Vectors(Layer):
         offsets = np.repeat(offsets, 4, axis=0)
         signs = np.ones((len(offsets), 2))
         signs[::2] = -1
-        offsets = offsets*signs
+        offsets = offsets * signs
 
-        vertices = centers + width*offsets/2
-        triangles = np.array([[2*i, 2*i+1, 2*i+2] if i % 2 == 0 else
-                              [2*i-1, 2*i, 2*i+1] for i in
-                              range(len(vectors))]).astype(np.uint32)
+        vertices = centers + width * offsets / 2
+        triangles = np.array(
+            [
+                [2 * i, 2 * i + 1, 2 * i + 2]
+                if i % 2 == 0
+                else [2 * i - 1, 2 * i, 2 * i + 1]
+                for i in range(len(vectors))
+            ]
+        ).astype(np.uint32)
 
         return vertices, triangles
 
@@ -432,8 +452,9 @@ class Vectors(Layer):
         if len(faces) == 0:
             self._node.set_data(vertices=None, faces=None)
         else:
-            self._node.set_data(vertices=vertices[:, ::-1], faces=faces,
-                                color=self.color)
+            self._node.set_data(
+                vertices=vertices[:, ::-1], faces=faces, color=self.color
+            )
 
         self._need_visual_update = True
         self._update()
@@ -450,14 +471,15 @@ class Vectors(Layer):
         """
         xml_list = []
 
-        for i in range(len(self.vectors)//2):
-            x1 = str(self.vectors[2*i, 0])
-            y1 = str(self.vectors[2*i, 1])
-            x2 = str(self.vectors[2*i+1, 0])
-            y2 = str(self.vectors[2*i+1, 1])
+        for i in range(len(self.vectors) // 2):
+            x1 = str(self.vectors[2 * i, 0])
+            y1 = str(self.vectors[2 * i, 1])
+            x2 = str(self.vectors[2 * i + 1, 0])
+            y2 = str(self.vectors[2 * i + 1, 1])
 
-            element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2,
-                              **self.svg_props)
+            element = Element(
+                'line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props
+            )
             xml_list.append(element)
 
         return xml_list

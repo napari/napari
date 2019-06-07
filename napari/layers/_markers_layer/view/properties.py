@@ -40,14 +40,17 @@ class QtMarkersLayer(QtLayer):
         for c in colors:
             face_comboBox.addItem(c)
         index = face_comboBox.findText(
-            self.layer.face_color, Qt.MatchFixedString)
+            self.layer.face_color, Qt.MatchFixedString
+        )
         face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.changeFaceColor(text))
+            lambda text=face_comboBox: self.changeFaceColor(text)
+        )
         self.faceComboBox = face_comboBox
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('face_color:'), row,
-                                   self.name_column)
+        self.grid_layout.addWidget(
+            QLabel('face_color:'), row, self.name_column
+        )
         self.grid_layout.addWidget(face_comboBox, row, self.property_column)
 
         edge_comboBox = QComboBox()
@@ -55,24 +58,29 @@ class QtMarkersLayer(QtLayer):
         for c in colors:
             edge_comboBox.addItem(c)
         index = edge_comboBox.findText(
-            self.layer.edge_color, Qt.MatchFixedString)
+            self.layer.edge_color, Qt.MatchFixedString
+        )
         edge_comboBox.setCurrentIndex(index)
         edge_comboBox.activated[str].connect(
-            lambda text=edge_comboBox: self.changeEdgeColor(text))
+            lambda text=edge_comboBox: self.changeEdgeColor(text)
+        )
         self.edgeComboBox = edge_comboBox
         row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('edge_color:'), row,
-                                   self.name_column)
+        self.grid_layout.addWidget(
+            QLabel('edge_color:'), row, self.name_column
+        )
         self.grid_layout.addWidget(edge_comboBox, row, self.property_column)
 
         symbol_comboBox = QComboBox()
         for s in Symbol:
             symbol_comboBox.addItem(str(s))
         index = symbol_comboBox.findText(
-            self.layer.symbol, Qt.MatchFixedString)
+            self.layer.symbol, Qt.MatchFixedString
+        )
         symbol_comboBox.setCurrentIndex(index)
         symbol_comboBox.activated[str].connect(
-            lambda text=symbol_comboBox: self.changeSymbol(text))
+            lambda text=symbol_comboBox: self.changeSymbol(text)
+        )
         self.symbolComboBox = symbol_comboBox
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('symbol:'), row, self.name_column)
@@ -81,8 +89,9 @@ class QtMarkersLayer(QtLayer):
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('N-dimensional markers')
         ndim_cb.setChecked(self.layer.n_dimensional)
-        ndim_cb.stateChanged.connect(lambda state=ndim_cb:
-                                     self.change_ndim(state))
+        ndim_cb.stateChanged.connect(
+            lambda state=ndim_cb: self.change_ndim(state)
+        )
         self.ndimCheckBox = ndim_cb
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(QLabel('n-dim:'), row, self.name_column)
@@ -117,7 +126,8 @@ class QtMarkersLayer(QtLayer):
     def _on_symbol_change(self, event):
         with self.layer.events.symbol.blocker():
             index = self.symbolComboBox.findText(
-                self.layer.symbol, Qt.MatchFixedString)
+                self.layer.symbol, Qt.MatchFixedString
+            )
             self.symbolComboBox.setCurrentIndex(index)
 
     def _on_size_change(self, event):
@@ -132,11 +142,13 @@ class QtMarkersLayer(QtLayer):
     def _on_edge_color_change(self, event):
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
-                self.layer.edge_color, Qt.MatchFixedString)
+                self.layer.edge_color, Qt.MatchFixedString
+            )
             self.edgeComboBox.setCurrentIndex(index)
 
     def _on_face_color_change(self, event):
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(
-                self.layer.face_color, Qt.MatchFixedString)
+                self.layer.face_color, Qt.MatchFixedString
+            )
             self.faceComboBox.setCurrentIndex(index)
