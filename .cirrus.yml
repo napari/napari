@@ -1,25 +1,14 @@
 task:
   auto_cancellation: true
 
-  env:
-      PY_VER: "3.6"
-
   name: Black Formatting
   container:
-      image: python:latest
-  env:
-      PATH: $HOME/conda/bin:$PATH
-  conda_script:
-      - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
-      - bash install.sh -b -p $HOME/conda
-      - conda update -yn base conda
-      - conda install -y python=$PY_VER
-      - rm install.sh
+      image: python3.6:latest
 
   install_script:
     # pip >= 19.0 crashes on Linux with Python 3.7
     - python -m pip install --retries 3 --upgrade "pip<19.0"
-    - pip install --retries 3 -r requirements.txt
+    - pip install `cat requirements/development.txt | grep black`
 
   test_script:
     - black -S -l 79 -t py36 --exclude vendored\|_vispy --check .
