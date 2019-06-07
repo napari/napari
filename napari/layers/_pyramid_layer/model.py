@@ -32,15 +32,28 @@ class Pyramid(Image):
         Parameters that will be translated to metadata.
     """
 
-    def __init__(self, pyramid, meta=None, multichannel=None, *, name=None,
-                 clim_range=None, **kwargs):
+    def __init__(
+        self,
+        pyramid,
+        meta=None,
+        multichannel=None,
+        *,
+        name=None,
+        clim_range=None,
+        **kwargs,
+    ):
 
         self._pyramid = pyramid
-        self._pyramid_level = len(pyramid)-1
+        self._pyramid_level = len(pyramid) - 1
 
-        super().__init__(pyramid[self._pyramid_level], meta=meta,
-                         multichannel=multichannel, name=name,
-                         clim_range=clim_range, **kwargs)
+        super().__init__(
+            pyramid[self._pyramid_level],
+            meta=meta,
+            multichannel=multichannel,
+            name=name,
+            clim_range=clim_range,
+            **kwargs,
+        )
 
         self._max_tile_shape = np.array([1600, 1600])
         self._top_left = np.array([0, 0])
@@ -103,21 +116,29 @@ class Pyramid(Image):
         # TODO: Change dims selection when dims model changes
         rescale = self._image_downsamples[-1, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
-        indices[:-2] = np.clip(indices[:-2], 0,
-                               np.subtract(top_image.shape[:-2], 1))
+        indices[:-2] = np.clip(
+            indices[:-2], 0, np.subtract(top_image.shape[:-2], 1)
+        )
         self._image_thumbnail = np.asarray(top_image[tuple(indices)])
 
         indices = list(self.indices)
         # TODO: Change dims selection when dims model changes
         rescale = self._image_downsamples[self.pyramid_level, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
-        indices[:-2] = np.clip(indices[:-2], 0,
-                               np.subtract(self.image.shape[:-2], 1))
+        indices[:-2] = np.clip(
+            indices[:-2], 0, np.subtract(self.image.shape[:-2], 1)
+        )
         if np.any(self.image.shape[-2:] > self._max_tile_shape):
-            slices = [slice(self._top_left[i], self._top_left[i] +
-                            self._max_tile_shape[i], 1) for i in range(2)]
+            slices = [
+                slice(
+                    self._top_left[i],
+                    self._top_left[i] + self._max_tile_shape[i],
+                    1,
+                )
+                for i in range(2)
+            ]
             indices[-2:] = slices
-            self.translate = self._top_left[::-1]*self.scale[:2]
+            self.translate = self._top_left[::-1] * self.scale[:2]
         else:
             self.translate = [0, 0]
         self._update_coordinates()
@@ -162,8 +183,9 @@ class Pyramid(Image):
         coord[-2:] = np.clip(coord[-2:], 0, np.subtract(shape, 1))
         value = self._image_view[tuple(coord[-2:])]
 
-        pos_in_slice = (self.coordinates[-2:]
-                        + self.translate[[1, 0]] / self.scale[:2])
+        pos_in_slice = (
+            self.coordinates[-2:] + self.translate[[1, 0]] / self.scale[:2]
+        )
 
         # Make sure pos in slice doesn't go off edge
         # TODO: Change dims selection when dims model changes
@@ -221,13 +243,15 @@ class Pyramid(Image):
         shape = self._image_shapes[0][-2:]
 
         # Clip according to the max image shape
-        pos = [np.clip(pos[1], 0, shape[0] - 1),
-               np.clip(pos[0], 0, shape[1] - 1)]
+        pos = [
+            np.clip(pos[1], 0, shape[0] - 1),
+            np.clip(pos[0], 0, shape[1] - 1),
+        ]
 
         # Convert to offset for image array
         top_left = np.array(pos)
-        scale = self._max_tile_shape/4
-        top_left = scale*np.floor(top_left/scale)
+        scale = self._max_tile_shape / 4
+        top_left = scale * np.floor(top_left / scale)
 
         return top_left.astype(int)
 

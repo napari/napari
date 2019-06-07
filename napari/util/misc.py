@@ -10,8 +10,9 @@ import itertools
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
     """
-    return list(map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)',
-                                  arg).groups()))
+    return list(
+        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
+    )
 
 
 def ensure_iterable(arg, color=False):
@@ -130,7 +131,7 @@ def compute_max_shape(shapes, max_dims=None):
     if max_dims is None:
         max_dims = max(len(shape) for shape in shapes)
 
-    max_shape = [0, ] * max_dims
+    max_shape = [0] * max_dims
 
     for dim in range(max_dims):
         for shape in shapes:
@@ -148,7 +149,9 @@ def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
     frame = inspect.currentframe().f_back
     try:
-        obj.__doc__ = obj.__doc__.format(**{**frame.f_globals, **frame.f_locals})
+        obj.__doc__ = obj.__doc__.format(
+            **{**frame.f_globals, **frame.f_locals}
+        )
         return obj
     finally:
         del frame
@@ -170,7 +173,7 @@ def segment_normal(a, b):
         Length the unit normal of the vector from a to b. If a == b,
         then returns [0, 0] or Nx2 array of vectors
     """
-    d = b-a
+    d = b - a
 
     if d.ndim == 1:
         normal = np.array([d[1], -d[0]])
@@ -182,7 +185,7 @@ def segment_normal(a, b):
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
-    unit_norm = normal/norm
+    unit_norm = normal / norm
 
     return unit_norm
 
@@ -203,13 +206,13 @@ def segment_normal_vector(a, b):
         Length the unit normal of the vector from a to b. If a == b,
         then returns [0, 0]
     """
-    d = b-a
+    d = b - a
     normal = np.array([d[1], -d[0]])
     norm = np.linalg.norm(normal)
     if norm == 0:
         unit_norm = np.array([0, 0])
     else:
-        unit_norm = normal/norm
+        unit_norm = normal / norm
     return unit_norm
 
 

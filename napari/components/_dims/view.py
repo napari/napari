@@ -53,10 +53,10 @@ class QtDims(QWidget):
         # occured before the view is initialised with the model.
 
         # First we set the dimenions of the view with respect to the model:
-        self._set_nsliders(dims.ndim-2)
+        self._set_nsliders(dims.ndim - 2)
 
         # Then we set the mode for each slider:
-        for axis in range(0, dims.ndim-2):
+        for axis in range(0, dims.ndim - 2):
             slider = self.sliders[axis]
             if self.dims.mode[axis] == DimsMode.POINT:
                 slider.collapse()
@@ -71,6 +71,7 @@ class QtDims(QWidget):
         # axis change listener
         def update_axis_listener(event):
             self.update_axis.emit(event.axis)
+
         self.dims.events.axis.connect(update_axis_listener)
 
         # What to do with the axis change events in terms of UI calls to the
@@ -80,6 +81,7 @@ class QtDims(QWidget):
         # ndim change listener
         def update_ndim_listener(event):
             self.update_ndim.emit()
+
         self.dims.events.ndim.connect(update_ndim_listener)
 
         # What to do with the ndim change events in terms of UI calls to the
@@ -130,7 +132,7 @@ class QtDims(QWidget):
         """
         Updates the number of sliders based on the number of dimensions
         """
-        self._set_nsliders(self.dims.ndim-2)
+        self._set_nsliders(self.dims.ndim - 2)
 
     def _set_nsliders(self, new_number_of_sliders):
         """
@@ -157,7 +159,7 @@ class QtDims(QWidget):
             slider = self._create_range_slider_widget(slider_num)
             for i in range(self.nsliders):
                 item = self.layout().takeAt(i)
-                self.layout().addWidget(item.widget(), i+1, 0)
+                self.layout().addWidget(item.widget(), i + 1, 0)
             self.layout().addWidget(slider, 0, 0)
             self.sliders.append(slider)
             self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
@@ -192,9 +194,9 @@ class QtDims(QWidget):
         range = self.dims.range[axis]
         point = self.dims.point[axis]
 
-        slider = QHRangeSlider(slider_range=range,
-                               values=(point, point),
-                               parent=self)
+        slider = QHRangeSlider(
+            slider_range=range, values=(point, point), parent=self
+        )
 
         slider.setFocusPolicy(Qt.StrongFocus)
 
@@ -226,9 +228,10 @@ class QtDims(QWidget):
                 interval = self.dims.interval[axis]
                 if interval is not None:
                     min, max = interval
-                    self.dims.set_point(axis, (max+min)/2)
-            self.dims.set_mode(axis, DimsMode.POINT if collapsed else
-                               DimsMode.INTERVAL)
+                    self.dims.set_point(axis, (max + min) / 2)
+            self.dims.set_mode(
+                axis, DimsMode.POINT if collapsed else DimsMode.INTERVAL
+            )
 
         slider.collapsedChanged.connect(collapse_change_listener)
 
