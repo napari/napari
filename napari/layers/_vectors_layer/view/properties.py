@@ -11,7 +11,7 @@ import numpy as np
 from ..._base_layer import QtLayerProperties
 
 
-class QtVectorsLayer(QtLayerProperties):
+class QtVectorsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

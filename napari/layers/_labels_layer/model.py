@@ -94,7 +94,7 @@ class Labels(Layer):
         self._need_visual_update = False
 
         self.events.opacity.connect(lambda e: self._update_thumbnail())
-        self._qt_properties = QtLabelsLayer(self)
+        self._qt_properties = QtLabelsProperties(self)
         self._qt_controls = QtLabelsControls(self)
 
         self._node.clim = [0.0, 1.0]

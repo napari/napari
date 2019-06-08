@@ -6,11 +6,11 @@ from qtpy.QtWidgets import (
     QFrame,
     QWidget,
 )
-
 from .._constants import Mode
+from ..._base_layer import QtLayerControls
 
 
-class QtLabelsControls(QFrame):
+class QtLabelsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__()
 

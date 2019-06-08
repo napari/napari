@@ -23,8 +23,8 @@ from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
 from ...util.event import Event
 
-from .view import QtImageProperties
-from .view import QtImageControls
+# from .view import QtImageProperties
+# from .view import QtImageControls
 
 
 def _increment_unnamed_colormap(name, names):
@@ -147,8 +147,8 @@ class Image(Layer):
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
 
         self.events.opacity.connect(lambda e: self._update_thumbnail())
-        self._qt_properties = QtImageProperties(self)
-        self._qt_controls = QtImageControls(self)
+        # self._qt_properties = QtImageProperties(self)
+        # self._qt_controls = QtImageControls(self)
 
     @property
     def image(self):

@@ -5,11 +5,11 @@ from qtpy.QtWidgets import (
     QFrame,
     QPushButton,
 )
-
+from ..._base_layer import QtLayerControls
 from .._constants import Mode
 
 
-class QtShapesControls(QFrame):
+class QtShapesControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__()
 

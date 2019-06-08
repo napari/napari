@@ -7,7 +7,7 @@ from ..._base_layer import QtLayerProperties
 from .._constants import Symbol
 
 
-class QtMarkersLayer(QtLayerProperties):
+class QtMarkersProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

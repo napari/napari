@@ -5,7 +5,7 @@ import numpy as np
 from ..._base_layer import QtLayerProperties
 
 
-class QtShapesLayer(QtLayerProperties):
+class QtShapesProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

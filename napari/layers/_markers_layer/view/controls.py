@@ -1,9 +1,9 @@
 from qtpy.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame
-
+from ..._base_layer import QtLayerControls
 from .._constants import Mode
 
 
-class QtMarkersControls(QFrame):
+class QtMarkersControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__()
 

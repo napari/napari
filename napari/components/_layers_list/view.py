@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QDrag
 import numpy as np
+from ...layers import get_qt_properties
 
 
 class QtLayersList(QScrollArea):
@@ -40,13 +41,11 @@ class QtLayersList(QScrollArea):
     def _add(self, event):
         """Insert widget for layer `event.item` at index `event.index`."""
         layer = event.item
-        index = event.index
         total = len(self.layers)
-        if layer._qt_properties is not None:
-            self.vbox_layout.insertWidget(
-                2 * (total - index) - 1, layer._qt_properties
-            )
-            self.vbox_layout.insertWidget(2 * (total - index), QtDivider())
+        index = 2 * (total - event.index) - 1
+        properties = get_qt_properties(layer)
+        self.vbox_layout.insertWidget(index, properties)
+        self.vbox_layout.insertWidget(index + 1, QtDivider())
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`."""

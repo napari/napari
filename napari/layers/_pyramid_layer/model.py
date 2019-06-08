@@ -1,11 +1,7 @@
 import numpy as np
 from copy import copy
-
 from ...util.event import Event
-
 from .._image_layer import Image
-from .._image_layer.view import QtImageProperties
-from .._image_layer.view import QtImageControls
 
 
 class Pyramid(Image):

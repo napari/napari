@@ -1,2 +1,2 @@
 from .model import Layer
-from .view import QtLayerProperties
+from .view import QtLayerProperties, QtLayerControls

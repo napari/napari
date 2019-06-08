@@ -1,8 +1,9 @@
-from qtpy.QtWidgets import QHBoxLayout, QWidget
+from qtpy.QtWidgets import QHBoxLayout
 from ...._qt import QVRangeSlider
+from ..._base_layer import QtLayerControls
 
 
-class QtImageControls(QWidget):
+class QtImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__()
 
