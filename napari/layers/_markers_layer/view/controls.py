@@ -5,9 +5,8 @@ from .._constants import Mode
 
 class QtMarkersControls(QtLayerControls):
     def __init__(self, layer):
-        super().__init__()
+        super().__init__(layer)
 
-        self.layer = layer
         self.layer.events.mode.connect(self.set_mode)
 
         self.select_button = QtSelectButton(layer)

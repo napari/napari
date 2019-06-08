@@ -5,9 +5,8 @@ from ..._base_layer import QtLayerControls
 
 class QtImageControls(QtLayerControls):
     def __init__(self, layer):
-        super().__init__()
+        super().__init__(layer)
 
-        self.layer = layer
         self.layer.events.clim.connect(self.clim_slider_update)
 
         # Create clim slider

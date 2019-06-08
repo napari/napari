@@ -15,3 +15,13 @@ def get_qt_properties(layer):
         properties = QtLayerProperties(layer)
 
     return properties
+
+
+def get_qt_controls(layer):
+    name = 'Qt' + type(layer).__name__ + 'Controls'
+    if name in locals():
+        controls = exec(name + '(layer)')
+    else:
+        controls = QtLayerControls(layer)
+
+    return controls
