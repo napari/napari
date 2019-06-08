@@ -13,7 +13,7 @@ from ..._vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
 
-from .view import QtLabelsLayer
+from .view import QtLabelsProperties
 from .view import QtLabelsControls
 from ._constants import Mode
 

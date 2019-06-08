@@ -86,13 +86,16 @@ class QtLayersList(QScrollArea):
             index = 2 * indices.index(i)
             widget = widgets[index]
             divider = widgets[index + 1]
-            # Remove that property widget and divider
-            self.vbox_layout.removeWidget(widget)
-            self.vbox_layout.removeWidget(divider)
-            # Insert the property widget and divider into new location
+            # Check if current index does not matche new index
+            index_current = self.vbox_layout.indexOf(widget)
             index_new = 2 * (total - i) - 1
-            self.vbox_layout.insertWidget(index_new, widget)
-            self.vbox_layout.insertWidget(index_new + 1, divider)
+            if index_current != index_new:
+                # Remove that property widget and divider
+                self.vbox_layout.removeWidget(widget)
+                self.vbox_layout.removeWidget(divider)
+                # Insert the property widget and divider into new location
+                self.vbox_layout.insertWidget(index_new, widget)
+                self.vbox_layout.insertWidget(index_new + 1, divider)
 
     def mousePressEvent(self, event):
         # Check if mouse press happens on a layer properties widget or

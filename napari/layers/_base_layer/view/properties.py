@@ -16,7 +16,7 @@ from qtpy.QtGui import QImage, QPixmap
 from .._constants import Blending
 
 
-class QtLayer(QFrame):
+class QtLayerProperties(QFrame):
     def __init__(self, layer):
         super().__init__()
 

@@ -3,11 +3,11 @@ from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
 from collections import Iterable
 import numpy as np
 
-from ..._base_layer import QtLayer
+from ..._base_layer import QtLayerProperties
 from .._constants import Symbol
 
 
-class QtMarkersLayer(QtLayer):
+class QtMarkersLayer(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 
