@@ -5,8 +5,6 @@ from .._base_layer import Layer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
 from vispy.color import get_color_names, Color
-from .view import QtMarkersProperties
-from .view import QtMarkersControls
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
 
@@ -92,9 +90,6 @@ class Markers(Layer):
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
-
-            self._qt_properties = QtMarkersProperties(self)
-            self._qt_controls = QtMarkersControls(self)
 
     @property
     def coords(self) -> np.ndarray:

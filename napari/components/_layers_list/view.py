@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QDrag
 import numpy as np
-from ...layers import get_qt_properties
+from ...layers import create_qt_properties
 
 
 class QtLayersList(QScrollArea):
@@ -43,7 +43,7 @@ class QtLayersList(QScrollArea):
         layer = event.item
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
-        properties = get_qt_properties(layer)
+        properties = create_qt_properties(layer)
         self.vbox_layout.insertWidget(index, properties)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
 

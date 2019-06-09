@@ -119,7 +119,6 @@ class QtLayerProperties(QFrame):
         self.setFixedWidth(250)
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
-        self.layer.selected = True
 
     def _on_select(self, event):
         self.setProperty('selected', True)

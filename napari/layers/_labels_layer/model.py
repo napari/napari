@@ -1,5 +1,4 @@
 from typing import Union
-
 import numpy as np
 from scipy import ndimage as ndi
 from skimage.util import img_as_ubyte
@@ -9,12 +8,8 @@ from imageio import imwrite
 
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
-
 from ...util.colormaps import colormaps
 from ...util.event import Event
-
-from .view import QtLabelsProperties
-from .view import QtLabelsControls
 from ._constants import Mode
 
 
@@ -94,8 +89,6 @@ class Labels(Layer):
         self._need_visual_update = False
 
         self.events.opacity.connect(lambda e: self._update_thumbnail())
-        self._qt_properties = QtLabelsProperties(self)
-        self._qt_controls = QtLabelsControls(self)
 
         self._node.clim = [0.0, 1.0]
         self.events.colormap()

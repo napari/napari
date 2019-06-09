@@ -5,13 +5,9 @@ from contextlib import contextmanager
 from ...util.event import Event
 from ...util.misc import ensure_iterable
 from .._base_layer import Layer
-
 from ..._vispy.scene.visuals import Mesh, Markers, Compound
 from ..._vispy.scene.visuals import Line as VispyLine
 from vispy.color import get_color_names
-
-from .view import QtShapesProperties
-from .view import QtShapesControls
 from ._constants import Mode, Box, BACKSPACE
 from .shape_list import ShapeList
 from .shape_util import create_box, point_to_lines
@@ -263,9 +259,6 @@ class Shapes(Layer):
                 edge_color=Event,
                 face_color=Event,
             )
-
-            self._qt_properties = QtShapesProperties(self)
-            self._qt_controls = QtShapesControls(self)
 
             self.events.deselect.connect(lambda x: self._finish_drawing())
 
