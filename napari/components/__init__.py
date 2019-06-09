@@ -11,6 +11,6 @@ ViewerModel
     layer-related controls.
 """
 from ._window import Window, QtApplication
-from ._viewer import ViewerModel
+from ._viewer import ViewerModel, QtViewer
 from ._layers_list import LayersList
 from ._dims import Dims

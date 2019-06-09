@@ -1,5 +1,4 @@
 import os.path as osp
-
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
