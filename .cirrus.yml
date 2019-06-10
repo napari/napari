@@ -1,6 +1,21 @@
 task:
   auto_cancellation: true
 
+  name: Black Formatting
+  container:
+      image: python:3.6
+
+  install_script:
+    # pip >= 19.0 crashes on Linux with Python 3.7
+    - python -m pip install --retries 3 --upgrade "pip<19.0"
+    - pip install `cat requirements/development.txt | grep black`
+
+  test_script:
+    - black --check .
+
+task:
+  auto_cancellation: true
+
   env:
     matrix:
       PY_VER: "3.6"
