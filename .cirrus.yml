@@ -11,7 +11,7 @@ task:
     - pip install `cat requirements/development.txt | grep black`
 
   test_script:
-    - black -S -l 79 -t py36 --exclude vendored\|_vispy --check .
+    - black --exclude vendored\|_vispy --check .
 
 task:
   auto_cancellation: true
