@@ -3,7 +3,7 @@ task:
 
   name: Black Formatting
   container:
-      image: python3.6:latest
+      image: python:3.6
 
   install_script:
     # pip >= 19.0 crashes on Linux with Python 3.7
