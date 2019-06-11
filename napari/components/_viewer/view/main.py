@@ -12,8 +12,12 @@ from ....util.misc import has_clims
 from .controls import QtControls
 from .buttons import QtLayersButtons
 import inspect
-from ...._vispy.app import Application
+from ...._vispy.app import use_app
 from ...._vispy.scene import SceneCanvas
+
+
+# set vispy application to the qtpy backend
+use_app('qtpy')
 
 
 class QtViewer(QSplitter):
@@ -28,9 +32,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
-        # set vispy application to the qtpy backend
-        app = Application('qtpy')
-        self.canvas = SceneCanvas(keys=None, vsync=True, app=app)
+        self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(100, 100)
 
         self.canvas.connect(self.on_mouse_move)

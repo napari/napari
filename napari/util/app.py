@@ -1,6 +1,7 @@
 import os
 import sys
 from contextlib import contextmanager
+
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import QTimer
 
