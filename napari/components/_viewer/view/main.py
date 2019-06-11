@@ -2,7 +2,7 @@ import os.path as osp
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
-from vispy.scene import SceneCanvas, PanZoomCamera
+from vispy.scene import PanZoomCamera
 
 from ..._dims.view import QtDims
 from ..._layers_list.view import QtLayersList
@@ -11,6 +11,9 @@ from ....util.theme import template
 from ....util.misc import has_clims
 from .controls import QtControls
 from .buttons import QtLayersButtons
+import inspect
+from ...._vispy.app import Application
+from ...._vispy.scene import SceneCanvas
 
 
 class QtViewer(QSplitter):
@@ -25,9 +28,10 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
-
-        self.canvas = SceneCanvas(keys=None, vsync=True)
-        self.canvas.native.setMinimumSize(QSize(100, 100))
+        # set vispy application to the qtpy backend
+        app = Application('qtpy')
+        self.canvas = SceneCanvas(keys=None, vsync=True, app=app)
+        self.canvas.native.setMinimumSize(100, 100)
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)

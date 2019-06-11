@@ -5,7 +5,6 @@ Custom layers must inherit from Layer and pass along the
 to the super constructor.
 """
 
-
 from ._base_layer import Layer
 from ._image_layer import Image
 from ._markers_layer import Markers

@@ -10,6 +10,7 @@ from napari.util import app_context
 
 
 with app_context():
+
     # create the viewer with an image
     viewer = napari.view(
         astronaut=rgb2gray(data.astronaut()), title='napari example'
