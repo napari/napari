@@ -39,7 +39,7 @@ pre-commit install
 
 With help of pre-commit, your future commits to this project will be reformatted with our black configuration,
 which includes settings `skip-string-normalization = true` and `max-line-length = 79`.
-On the command-line, this would be equivalent to `black -S -l 79 -t py36 .`.
+On the command-line, our configuration would be equivalent to `black -S -l 79 -t py36 --exclude vendored\|_vispy .`.
 To learn more, see the [black README](https://github.com/python/black).
 
 ## Building the dev-docs
