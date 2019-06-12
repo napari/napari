@@ -13,11 +13,7 @@ from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 
 from ...util import is_multichannel
-from ...util.interpolation import (
-    interpolation_names,
-    interpolation_index_to_name as _index_to_name,  # noqa
-    interpolation_name_to_index as _name_to_index,
-)  # noqa
+
 from ...util.misc import guess_metadata
 from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
@@ -25,6 +21,7 @@ from ...util.event import Event
 
 from .view import QtImageLayer
 from .view import QtImageControls
+from ._constants import Interpolation
 
 
 def _increment_unnamed_colormap(name, names):
@@ -102,7 +99,7 @@ class Image(Layer):
     _colormaps = AVAILABLE_COLORMAPS
 
     default_colormap = 'magma'
-    default_interpolation = 'nearest'
+    default_interpolation = str(Interpolation.NEAREST)
 
     def __init__(
         self,
@@ -131,7 +128,6 @@ class Image(Layer):
         self._colormap = Image.default_colormap
         self._node.cmap = self._colormaps[self.colormap_name]
         self.interpolation = Image.default_interpolation
-        self._interpolation_names = interpolation_names
 
         # update flags
         self._need_display_update = False
@@ -233,18 +229,6 @@ class Image(Layer):
         self._update()
 
     @property
-    def interpolation_index(self):
-        """int: Index of the current interpolation method equipped.
-        """
-        return self._interpolation_index
-
-    @interpolation_index.setter
-    def interpolation_index(self, interpolation_index):
-        intp_index = interpolation_index % len(interpolation_names)
-        self._interpolation_index = intp_index
-        self._node.interpolation = _index_to_name(intp_index)
-
-    @property
     def colormap(self):
         """string or ColorMap: Colormap to use for luminance images.
         """
@@ -320,18 +304,22 @@ class Image(Layer):
 
     @property
     def interpolation(self):
-        """string: Equipped interpolation method's name.
+        """{
+            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+            'nearest', 'spline16', 'spline36'
+            }: Equipped interpolation method's name.
+
         """
-        return _index_to_name(self.interpolation_index)
+        return str(self._interpolation)
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        self.interpolation_index = _name_to_index(interpolation)
+        if isinstance(interpolation, str):
+            interpolation = Interpolation(interpolation)
+        self._interpolation = interpolation
+        self._node.interpolation = interpolation.value
         self.events.interpolation()
-
-    @property
-    def interpolation_functions(self):
-        return tuple(interpolation_names)
 
     def _clim_range_default(self):
         return [float(self.image.min()), float(self.image.max())]
