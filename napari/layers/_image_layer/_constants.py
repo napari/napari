@@ -11,6 +11,7 @@ class Interpolation(StringEnum):
 
     https://github.com/vispy/vispy/blob/master/vispy/glsl/build-spatial-filters.py
     """
+
     BESSEL = auto()
     BICUBIC = auto()
     BILINEAR = auto()
