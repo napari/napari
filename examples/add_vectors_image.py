@@ -15,8 +15,8 @@ with app_context():
     # create the viewer and window
     viewer = napari.Viewer()
 
-    n = 100
-    m = 200
+    n = 10
+    m = 20
 
     image = 0.2 * np.random.random((n, m)) + 0.5
     layer = viewer.add_image(image, clim_range=[0, 1], name='background')

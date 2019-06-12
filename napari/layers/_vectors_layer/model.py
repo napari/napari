@@ -43,12 +43,13 @@ class Vectors(Layer):
     def __init__(
         self, vectors, width=1, color='red', averaging=1, length=1, name=None
     ):
-
+        print('0')
         visual = Mesh()
         super().__init__(visual)
 
         # events for non-napari calculations
         self.events.add(length=Event, width=Event, averaging=Event)
+        print('1')
 
         # Store underlying data model
         self._data_types = ('image', 'coords')
@@ -71,11 +72,13 @@ class Vectors(Layer):
         self._raw_data = None
         self._original_data = vectors
         self._current_data = vectors
+        print('2')
 
         self._vectors = self._convert_to_vector_type(vectors)
         vertices, triangles = self._generate_meshes(self._vectors, self.width)
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
+        print('3')
 
         if name is None:
             self.name = 'vectors'
@@ -445,6 +448,7 @@ class Vectors(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
+        print('44')
 
         vertices = self._mesh_vertices
         faces = self._mesh_triangles
@@ -455,9 +459,11 @@ class Vectors(Layer):
             self._node.set_data(
                 vertices=vertices[:, ::-1], faces=faces, color=self.color
             )
+        print('55')
 
         self._need_visual_update = True
         self._update()
+        print('66')
 
     def to_xml_list(self):
         """Convert the vectors to a list of xml elements according to the svg
