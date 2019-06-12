@@ -55,7 +55,7 @@ elif sys.platform.startswith('win'):
 
 def _check_imports(lib):
     # Make sure no conflicting libraries have been imported.
-    libs = ['PyQt4', 'PyQt5', 'PySide', 'qtpy']
+    libs = ['PyQt4', 'PySide', 'qtpy']
     libs.remove(lib)
     for lib2 in libs:
         lib2 += '.QtCore'
