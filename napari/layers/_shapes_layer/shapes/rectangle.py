@@ -27,12 +27,25 @@ class Rectangle(Shape):
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     """
-    def __init__(self, data, *, edge_width=1, edge_color='black',
-                 face_color='white', opacity=1, z_index=0):
 
-        super().__init__(edge_width=edge_width, edge_color=edge_color,
-                         face_color=face_color, opacity=opacity,
-                         z_index=z_index)
+    def __init__(
+        self,
+        data,
+        *,
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        opacity=1,
+        z_index=0,
+    ):
+
+        super().__init__(
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            opacity=opacity,
+            z_index=z_index,
+        )
 
         self._closed = True
         self.data = np.array(data)
@@ -49,8 +62,10 @@ class Rectangle(Shape):
         if len(data) == 2:
             data = find_corners(data)
         if len(data) != 4:
-            raise ValueError("""Data shape does not match a rectangle.
-                             Rectangle expects four corner vertices""")
+            raise ValueError(
+                """Data shape does not match a rectangle.
+                             Rectangle expects four corner vertices"""
+            )
         else:
             # Add four boundary lines and then two triangles for each
             self._set_meshes(data, face=False)
@@ -103,8 +118,7 @@ class Rectangle(Shape):
 
             # rotate back to axis aligned
             c, s = np.cos(angle), np.sin(-angle)
-            rotation = np.array([[c, s],
-                                 [-s, c]])
+            rotation = np.array([[c, s], [-s, c]])
             coords = coords @ rotation.T
 
             # shift back to center
@@ -122,6 +136,7 @@ class Rectangle(Shape):
         width = str(size[0])
         height = str(size[1])
 
-        element = Element('rect', x=x, y=y, width=width, height=height,
-                          **props)
+        element = Element(
+            'rect', x=x, y=y, width=width, height=height, **props
+        )
         return element

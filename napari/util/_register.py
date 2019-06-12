@@ -1,8 +1,6 @@
 import re
 import inspect
 
-from ..components import ViewerModel
-
 
 template = """def {name}(self, {signature}):
     layer = {cls_name}({call_args})
@@ -119,10 +117,12 @@ def create_func(cls, name=None, doc=None):
         doc += '\n\tAdded layer.'
         doc = doc.expandtabs(4)
 
-    src = template.format(name=name,
-                          signature=str(sig)[1:-1],
-                          cls_name=cls_name,
-                          call_args=str(call_args)[1:-1])
+    src = template.format(
+        name=name,
+        signature=str(sig)[1:-1],
+        cls_name=cls_name,
+        call_args=str(call_args)[1:-1],
+    )
 
     execdict = {cls_name: cls}
     exec(src, execdict)
@@ -134,6 +134,8 @@ def create_func(cls, name=None, doc=None):
 
 
 def _register(cls, *, name=None, doc=None):
+    from ..components import ViewerModel
+
     func = create_func(cls, name=name, doc=doc)
     setattr(ViewerModel, func.__name__, func)
     return cls

@@ -11,30 +11,38 @@ class QtImageLayer(QtLayer):
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.interpolation.connect(self._on_interpolation_change)
 
+        row = self.grid_layout.rowCount()
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
             comboBox.addItem(cmap)
         comboBox._allitems = set(self.layer.colormaps)
         index = comboBox.findText(
-            self.layer.colormap_name, Qt.MatchFixedString)
+            self.layer.colormap_name, Qt.MatchFixedString
+        )
         comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
-            lambda text=comboBox: self.changeColor(text))
-        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
-        self.grid_layout.addWidget(comboBox, 3, 1)
+            lambda text=comboBox: self.changeColor(text)
+        )
+        self.grid_layout.addWidget(QLabel('colormap:'), row, self.name_column)
+        self.grid_layout.addWidget(comboBox, row, self.property_column)
         self.colormap_combobox = comboBox
 
+        row = self.grid_layout.rowCount()
         interp_comboBox = QComboBox()
         for interp in Interpolation:
             interp_comboBox.addItem(str(interp))
         index = interp_comboBox.findText(
-            self.layer.interpolation, Qt.MatchFixedString)
+            self.layer.interpolation, Qt.MatchFixedString
+        )
         interp_comboBox.setCurrentIndex(index)
         interp_comboBox.activated[str].connect(
-            lambda text=interp_comboBox: self.changeInterpolation(text))
+            lambda text=interp_comboBox: self.changeInterpolation(text)
+        )
         self.interpComboBox = interp_comboBox
-        self.grid_layout.addWidget(QLabel('interpolation:'), 4, 0)
-        self.grid_layout.addWidget(interp_comboBox, 4, 1)
+        self.grid_layout.addWidget(
+            QLabel('interpolation:'), row, self.name_column
+        )
+        self.grid_layout.addWidget(interp_comboBox, row, self.property_column)
 
         self.setExpanded(False)
 
@@ -47,7 +55,8 @@ class QtImageLayer(QtLayer):
     def _on_interpolation_change(self, event):
         with self.layer.events.interpolation.blocker():
             index = self.interpComboBox.findText(
-                self.layer.interpolation, Qt.MatchFixedString)
+                self.layer.interpolation, Qt.MatchFixedString
+            )
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_colormap_change(self, event):

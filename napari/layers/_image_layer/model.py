@@ -4,6 +4,8 @@ from base64 import b64encode
 from imageio import imwrite
 
 import numpy as np
+from scipy import ndimage as ndi
+from skimage.util import img_as_ubyte
 
 import vispy.color
 
@@ -17,8 +19,6 @@ from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
 from ...util.event import Event
 
-from .._register import add_to_viewer
-
 from .view import QtImageLayer
 from .view import QtImageControls
 from ._constants import Interpolation
@@ -26,8 +26,7 @@ from ._constants import Interpolation
 
 def _increment_unnamed_colormap(name, names):
     if name == '[unnamed colormap]':
-        past_names = [n for n in names
-                      if n.startswith('[unnamed colormap')]
+        past_names = [n for n in names if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
     return name
 
@@ -57,8 +56,10 @@ def vispy_or_mpl_colormap(name):
         try:
             mpl_cmap = getattr(cm, name)
         except AttributeError:
-            raise KeyError(f'Colormap "{name}" not found in either vispy '
-                           'or matplotlib.')
+            raise KeyError(
+                f'Colormap "{name}" not found in either vispy '
+                'or matplotlib.'
+            )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         cmap = vispy.color.Colormap(mpl_colors)
     return cmap
@@ -72,7 +73,6 @@ ALL_COLORMAPS.update(simple_colormaps)
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 
 
-@add_to_viewer
 class Image(Layer):
     """Image layer.
 
@@ -89,18 +89,28 @@ class Image(Layer):
     clim_range : list | array | None
         Length two list or array with the default color limit range for the
         image. If not passed will be calculated as the min and max of the
-        image. Passing a value prevents this calculation which can be useful
-        when working with very large datasets that are dynamically loaded.
+        image. Passing a value prevents this calculation which can be
+        useful when working with very large datasets that are dynamically
+        loaded.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
+
     _colormaps = AVAILABLE_COLORMAPS
 
     default_colormap = 'magma'
     default_interpolation = str(Interpolation.NEAREST)
 
-    def __init__(self, image, meta=None, multichannel=None, *, name=None,
-                 clim_range=None, **kwargs):
+    def __init__(
+        self,
+        image,
+        meta=None,
+        multichannel=None,
+        *,
+        name=None,
+        clim_range=None,
+        **kwargs,
+    ):
         if name is None and meta is not None:
             if 'name' in meta:
                 name = meta['name']
@@ -108,16 +118,15 @@ class Image(Layer):
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
 
-        self.events.add(clim=Event,
-                        colormap=Event,
-                        interpolation=Event)
+        self.events.add(clim=Event, colormap=Event, interpolation=Event)
 
         meta = guess_metadata(image, meta, multichannel, kwargs)
 
         self._image = image
         self._meta = meta
         self.colormap_name = Image.default_colormap
-        self.colormap = Image.default_colormap
+        self._colormap = Image.default_colormap
+        self._node.cmap = self._colormaps[self.colormap_name]
         self.interpolation = Image.default_interpolation
 
         # update flags
@@ -133,6 +142,7 @@ class Image(Layer):
         cmin, cmax = self.clim
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
 
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
         self._qt_properties = QtImageLayer(self)
         self._qt_controls = QtImageControls(self)
 
@@ -181,17 +191,11 @@ class Image(Layer):
         """Determines the slice of image from the indices."""
 
         indices = list(self.indices)
-
-        for dim in range(len(indices)):
-            max_dim_index = self.image.shape[dim] - 1
-
-            try:
-                if indices[dim] > max_dim_index:
-                    indices[dim] = max_dim_index
-            except TypeError:
-                pass
-
+        indices[:-2] = np.clip(
+            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
+        )
         self._image_view = np.asarray(self.image[tuple(indices)])
+        self._image_thumbnail = self._image_view
 
         return self._image_view
 
@@ -206,6 +210,7 @@ class Image(Layer):
 
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
+        self._update_thumbnail()
 
     @property
     def multichannel(self):
@@ -241,14 +246,16 @@ class Image(Layer):
             self._colormaps.update(colormap)
             name = list(colormap)[0]  # first key in dict
         elif isinstance(colormap, vispy.color.Colormap):
-            name = _increment_unnamed_colormap(name,
-                                               list(self._colormaps.keys()))
+            name = _increment_unnamed_colormap(
+                name, list(self._colormaps.keys())
+            )
             self._colormaps[name] = colormap
         else:
             warn(f'invalid value for colormap: {colormap}')
             name = self.colormap_name
         self.colormap_name = name
         self._node.cmap = self._colormaps[name]
+        self._update_thumbnail()
         self.events.colormap()
 
     @property
@@ -270,6 +277,7 @@ class Image(Layer):
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
         self._node.clim = clim
+        self._update_thumbnail()
         self.events.clim()
 
     @property
@@ -315,6 +323,43 @@ class Image(Layer):
 
     def _clim_range_default(self):
         return [float(self.image.min()), float(self.image.max())]
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colormap.
+        """
+        image = self._image_thumbnail
+        zoom_factor = np.divide(
+            self._thumbnail_shape[:2], image.shape[:2]
+        ).min()
+        if self.multichannel:
+            downsampled = ndi.zoom(
+                image, (zoom_factor, zoom_factor, 1), prefilter=False, order=0
+            )
+            if image.shape[2] == 4:  # image is RGBA
+                downsampled[..., 3] = downsampled[..., 3] * self.opacity
+                colormapped = img_as_ubyte(downsampled)
+            else:  # image is RGB
+                colormapped = img_as_ubyte(downsampled)
+                alpha = np.full(
+                    downsampled.shape[:2] + (1,),
+                    int(255 * self.opacity),
+                    dtype=np.uint8,
+                )
+                colormapped = np.concatenate([colormapped, alpha], axis=2)
+        else:
+            downsampled = ndi.zoom(
+                image, zoom_factor, prefilter=False, order=0
+            )
+            low, high = self.clim
+            downsampled = np.clip(downsampled, low, high)
+            color_range = high - low
+            if color_range != 0:
+                downsampled = (downsampled - low) / color_range
+            colormapped = self.colormap[1].map(downsampled)
+            colormapped = colormapped.reshape(downsampled.shape + (4,))
+            colormapped[..., 3] *= self.opacity
+            colormapped = img_as_ubyte(colormapped)
+        self.thumbnail = colormapped
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -381,10 +426,11 @@ class Image(Layer):
             as a png according to the svg specification.
         """
         image = np.clip(self._image_view, self.clim[0], self.clim[1])
+        image = image - self.clim[0]
         color_range = self.clim[1] - self.clim[0]
         if color_range != 0:
-            image = image/color_range
-        mapped_image = (self.colormap[1].map(image)*255).astype('uint8')
+            image = image / color_range
+        mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
         mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
@@ -392,8 +438,9 @@ class Image(Layer):
         width = str(self.shape[-1])
         height = str(self.shape[-2])
         opacity = str(self.opacity)
-        xml = Element('image', width=width, height=height, opacity=opacity,
-                      **props)
+        xml = Element(
+            'image', width=width, height=height, opacity=opacity, **props
+        )
         return [xml]
 
     def on_mouse_move(self, event):

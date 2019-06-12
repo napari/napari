@@ -12,6 +12,7 @@ class Mode(StringEnum):
 
     SELECT allows the user to select markers by clicking on them
     """
+
     ADD = auto()
     SELECT = auto()
     PAN_ZOOM = auto()
@@ -22,6 +23,7 @@ class Symbol(Enum):
     The string method returns the valid vispy string.
 
     """
+
     ARROW = 'arrow'
     CLOBBER = 'clobber'
     CROSS = 'cross'
@@ -55,5 +57,5 @@ SYMBOL_ALIAS = {
     '^': Symbol.TRIANGLE_UP,
     'v': Symbol.TRIANGLE_DOWN,
     's': Symbol.SQUARE,
-    '|': Symbol.VBAR
+    '|': Symbol.VBAR,
 }

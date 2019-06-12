@@ -74,14 +74,14 @@ class QtViewer(QSplitter):
         self.addWidget(right)
 
         self._cursors = {
-                'disabled': QCursor(
-                    QPixmap(':/icons/cursor/cursor_disabled.png')
-                    .scaled(20, 20)),
-                'cross': Qt.CrossCursor,
-                'forbidden': Qt.ForbiddenCursor,
-                'pointing': Qt.PointingHandCursor,
-                'standard': QCursor()
-            }
+            'disabled': QCursor(
+                QPixmap(':/icons/cursor/cursor_disabled.png').scaled(20, 20)
+            ),
+            'cross': Qt.CrossCursor,
+            'forbidden': Qt.ForbiddenCursor,
+            'pointing': Qt.PointingHandCursor,
+            'standard': QCursor(),
+        }
 
         self._update_palette(viewer.palette)
 
@@ -128,14 +128,17 @@ class QtViewer(QSplitter):
             if size < 10 or size > 300:
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(QPixmap(':/icons/cursor/cursor_square.png')
-                                   .scaledToHeight(size))
+                q_cursor = QCursor(
+                    QPixmap(':/icons/cursor/cursor_square.png').scaledToHeight(
+                        size
+                    )
+                )
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
 
     def _on_reset_view(self, event):
-        self.view.camera.set_range()
+        self.view.camera.rect = event.viewbox
 
     def _update_canvas(self, event):
         """Clears draw order and refreshes canvas. Usefeul for when layers are
@@ -173,8 +176,10 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
-        if (event.text in self.viewer.key_bindings and not
-                event.native.isAutoRepeat()):
+        if (
+            event.text in self.viewer.key_bindings
+            and not event.native.isAutoRepeat()
+        ):
             self.viewer.key_bindings[event.text](self.viewer)
             return
 
@@ -194,6 +199,7 @@ class QtViewer(QSplitter):
         """
         for layer in self.viewer.layers:
             layer.on_draw(event)
+
 
 def viewbox_key_event(event):
     """ViewBox key event handler

@@ -1,0 +1,5 @@
+[tool.black]
+target-version = ['py36', 'py37']
+skip-string-normalization = true
+line-length = 79
+exclude = 'vendored|_vispy'

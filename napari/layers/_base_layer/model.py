@@ -3,8 +3,6 @@ from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
 
-import weakref
-
 from ...util.event import Event
 from ._visual_wrapper import VisualWrapper
 
@@ -49,6 +47,7 @@ class Layer(VisualWrapper, ABC):
     refresh()
         Refresh the current view.
     """
+
     def __init__(self, central_node, name=None):
         super().__init__(central_node)
         self._selected = False
@@ -63,16 +62,21 @@ class Layer(VisualWrapper, ABC):
         self._indices = (0, 0)
         self._position = (0, 0)
         self.coordinates = (0, 0)
+        self._thumbnail_shape = (32, 32, 4)
+        self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._name = ''
-        self.events.add(select=Event,
-                        deselect=Event,
-                        data=Event,
-                        name=Event,
-                        status=Event,
-                        help=Event,
-                        interactive=Event,
-                        cursor=Event,
-                        cursor_size=Event)
+        self.events.add(
+            select=Event,
+            deselect=Event,
+            data=Event,
+            name=Event,
+            thumbnail=Event,
+            status=Event,
+            help=Event,
+            interactive=Event,
+            cursor=Event,
+            cursor_size=Event,
+        )
         self.name = name
 
     def __str__(self):
@@ -113,7 +117,7 @@ class Layer(VisualWrapper, ABC):
     def indices(self, indices):
         if indices == self.indices:
             return
-        self._indices = indices[-self.ndim:]
+        self._indices = indices[-self.ndim :]
         self._update_coordinates()
         self._set_view_slice()
 
@@ -154,6 +158,17 @@ class Layer(VisualWrapper, ABC):
     @abstractmethod
     def _get_shape(self):
         raise NotImplementedError()
+
+    @property
+    def thumbnail(self):
+        """np.ndarray: Integer array of thumbnail for the layer
+        """
+        return self._thumbnail
+
+    @thumbnail.setter
+    def thumbnail(self, thumbnail):
+        self._thumbnail = thumbnail
+        self.events.thumbnail()
 
     @property
     def ndim(self):
@@ -343,11 +358,18 @@ class Layer(VisualWrapper, ABC):
             shape = view_box[2:]
             min_shape = view_box[:2]
 
-        props = {'xmlns': 'http://www.w3.org/2000/svg',
-                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+        props = {
+            'xmlns': 'http://www.w3.org/2000/svg',
+            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        }
 
-        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
-                      version='1.1', **props)
+        xml = Element(
+            'svg',
+            height=f'{shape[0]}',
+            width=f'{shape[1]}',
+            version='1.1',
+            **props,
+        )
 
         transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
@@ -357,10 +379,12 @@ class Layer(VisualWrapper, ABC):
             xml_transform.append(x)
         xml.append(xml_transform)
 
-        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
-               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
-               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
-               tostring(xml, encoding='unicode', method='xml'))
+        svg = (
+            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
+            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
+            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
+            + tostring(xml, encoding='unicode', method='xml')
+        )
 
         if file:
             # Save svg to file

@@ -5,6 +5,7 @@ from ._base import List
 class MultiIndexList(List):
     """Allow indexing with tuples.
     """
+
     def __prsitem__(self, keys):
         if not isinstance(keys, tuple):
             return super().__prsitem__(keys)
@@ -31,8 +32,9 @@ class MultiIndexList(List):
             if hasattr(value, '__getitem__') and hasattr(value, '__len__'):
                 # value is a vector
                 if len(value) != len(indices):
-                    raise ValueError(f'expected {len(indices)} values; '
-                                     f'got {len(value)}')
+                    raise ValueError(
+                        f'expected {len(indices)} values; ' f'got {len(value)}'
+                    )
                 for o, i in enumerate(indices):
                     super().__setitem__(i, value[o])
             else:

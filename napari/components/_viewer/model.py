@@ -1,8 +1,8 @@
 import numpy as np
 from math import inf
-from copy import copy
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
+from ... import layers
 
 from ...util.event import EmitterGroup, Event
 from ...util.theme import palettes
@@ -30,22 +30,25 @@ class ViewerModel:
     themes : dict of str: dict of str: str
         Preset color palettes.
     """
+
     themes = palettes
 
     def __init__(self, title='napari'):
         super().__init__()
         from .._layers_list import LayersList
 
-        self.events = EmitterGroup(source=self,
-                                   auto_connect=True,
-                                   status=Event,
-                                   help=Event,
-                                   title=Event,
-                                   interactive=Event,
-                                   cursor=Event,
-                                   reset_view=Event,
-                                   active_layer=Event,
-                                   palette=Event)
+        self.events = EmitterGroup(
+            source=self,
+            auto_connect=True,
+            status=Event,
+            help=Event,
+            title=Event,
+            interactive=Event,
+            cursor=Event,
+            reset_view=Event,
+            active_layer=Event,
+            palette=Event,
+        )
 
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
@@ -107,8 +110,10 @@ class ViewerModel:
         try:
             self.palette = self.themes[theme]
         except KeyError:
-            raise ValueError(f"Theme '{theme}' not found; "
-                             f"options are {list(self.themes)}.")
+            raise ValueError(
+                f"Theme '{theme}' not found; "
+                f"options are {list(self.themes)}."
+            )
 
     @property
     def status(self):
@@ -203,9 +208,18 @@ class ViewerModel:
         self.events.active_layer(item=self._active_layer)
 
     def reset_view(self):
-        """Resets the camera's view.
+        """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
+        corner position followed by width and height of the camera
         """
-        self.events.reset_view()
+        min_shape, max_shape = self._calc_bbox()
+        # TODO: Change dims selection when dims model changes
+        min_shape = np.array(min_shape[-2:])
+        max_shape = np.array(max_shape[-2:])
+        shape = max_shape - min_shape
+        min_shape = min_shape - 0.05 * shape
+        shape = 1.1 * shape
+        rect = (min_shape[1], min_shape[0], shape[1], shape[0])
+        self.events.reset_view(viewbox=rect)
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be
@@ -238,11 +252,18 @@ class ViewerModel:
             shape = view_box[2:]
             min_shape = view_box[:2]
 
-        props = {'xmlns': 'http://www.w3.org/2000/svg',
-                 'xmlns:xlink': 'http://www.w3.org/1999/xlink'}
+        props = {
+            'xmlns': 'http://www.w3.org/2000/svg',
+            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        }
 
-        xml = Element('svg', height=f'{shape[0]}', width=f'{shape[1]}',
-                      version='1.1', **props)
+        xml = Element(
+            'svg',
+            height=f'{shape[0]}',
+            width=f'{shape[1]}',
+            version='1.1',
+            **props,
+        )
 
         transform = f'translate({-min_shape[1]} {-min_shape[0]})'
         xml_transform = Element('g', transform=transform)
@@ -254,10 +275,12 @@ class ViewerModel:
                     xml_transform.append(x)
         xml.append(xml_transform)
 
-        svg = ('<?xml version=\"1.0\" standalone=\"no\"?>\n' +
-               '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n' +
-               '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n' +
-               tostring(xml, encoding='unicode', method='xml'))
+        svg = (
+            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
+            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
+            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
+            + tostring(xml, encoding='unicode', method='xml')
+        )
 
         if file:
             # Save svg to file
@@ -292,6 +315,230 @@ class ViewerModel:
             self.reset_view()
 
         self.layers.unselect_all(ignore=layer)
+
+    def add_image(self, image, *args, **kwargs):
+        """Add an image layer to the layers list.
+
+        Parameters
+        ----------
+        image : np.ndarray
+            Image data.
+        meta : dict, optional
+            Image metadata.
+        multichannel : bool, optional
+            Whether the image is multichannel. Guesses if None.
+        name : str, keyword-only
+            Name of the layer.
+        clim_range : list | array | None
+            Length two list or array with the default color limit range for the
+            image. If not passed will be calculated as the min and max of the
+            image. Passing a value prevents this calculation which can be
+            useful when working with very large datasets that are dynamically
+            loaded.
+        **kwargs : dict
+            Parameters that will be translated to metadata.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Image`
+            The newly-created image layer.
+        """
+        layer = layers.Image(image, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_pyramid(self, pyramid, *args, **kwargs):
+        """Adds an image pyramid layer to the layers list.
+
+        Parameters
+        ----------
+        pyramid : list
+            List of np.ndarry image data, with base of pyramid at `0`.
+        meta : dict, optional
+            Image metadata.
+        multichannel : bool, optional
+            Whether the image is multichannel. Guesses if None.
+        name : str, keyword-only
+            Name of the layer.
+        clim_range : list | array | None
+            Length two list or array with the default color limit range for the
+            image. If not passed will be calculated as the min and max of the
+            image. Passing a value prevents this calculation which can be
+            useful when working with very large datasets that are dynamically
+            loaded.
+        **kwargs : dict
+            Parameters that will be translated to metadata.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Pyramid`
+            The newly-created pyramid layer.
+        """
+        layer = layers.Pyramid(pyramid, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_markers(self, points, *args, **kwargs):
+        """Add a markers layer to the layers list.
+
+        Parameters
+        ----------
+        coords : np.ndarray
+            Coordinates for each marker.
+        symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
+                             'hbar', 'ring', 'square', 'star', 'tailed_arrow',
+                             'triangle_down', 'triangle_up', 'vbar', 'x'}
+            Symbol to be used as a marker. If given as a string, must be one of
+            the following: arrow, clobber, cross, diamond, disc, hbar, ring,
+            square, star, tailed_arrow, triangle_down, triangle_up, vbar, x
+        size : int, float, np.ndarray, list
+            Size of the marker. If given as a scalar, all markers are the same
+            size. If given as a list/array, size must be the same length as
+            coords and sets the marker size for each marker in coords
+            (element-wise). If n_dimensional is True then can be a list of
+            length dims or can be an array of shape Nxdims where N is the
+            number of markers and dims is the number of dimensions
+        edge_width : int, float, None
+            Width of the symbol edge in pixels.
+        edge_color : Color, ColorArray
+            Color of the marker border.
+        face_color : Color, ColorArray
+            Color of the marker body.
+        n_dimensional : bool
+            If True, renders markers not just in central plane but also in all
+            n-dimensions according to specified marker size.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Markers`
+            The newly-created markers layer.
+
+        Notes
+        -----
+        See vispy's marker visual docs for more details:
+        http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
+        """
+        layer = layers.Markers(points, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_labels(self, label_image, *args, **kwargs):
+        """Add a labels (or segmentation) layer to the layers list.
+
+        An image layer where every pixel contains an integer ID corresponding
+        to the region it belongs to.
+
+        Parameters
+        ----------
+        image : np.ndarray
+            Image data.
+        meta : dict, optional
+            Image metadata.
+        multichannel : bool, optional
+            Whether the image is multichannel. Guesses if None.
+        opacity : float, optional
+            Opacity of the labels, must be between 0 and 1.
+        name : str, keyword-only
+            Name of the layer.
+        num_colors : int, optional
+            Number of unique colors to use. Default used if not given.
+        **kwargs : dict
+            Parameters that will be translated to metadata.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Labels`
+            The newly-created labels layer.
+        """
+        layer = layers.Labels(label_image, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_shapes(self, shapes, **kwargs):
+        """Add a shapes layer to the layers list.
+
+        Parameters
+        ----------
+        data : np.array | list
+            List of np.array of data or np.array. Each element of the list (or
+            row of a 3D np.array) corresponds to one shape. If a 2D array is
+            passed it corresponds to just a single shape.
+        shape_type : string | list
+            String of shape shape_type, must be one of "{'line', 'rectangle',
+            'ellipse', 'path', 'polygon'}". If a list is supplied it must be
+            the same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        opacity : float | list
+            Opacity of the shapes, must be between 0 and 1.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        name : str, keyword-only
+            Name of the layer.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Shapes`
+            The newly-created shapes layer.
+        """
+        layer = layers.Shapes(shapes, **kwargs)
+        self.add_layer(layer)
+        return layer
+
+    def add_vectors(self, vectors, *args, **kwargs):
+        """Add a vectors layer to the layers list.
+
+        Parameters
+        ----------
+        vectors : np.ndarray of shape (N,4) or (N, M, 2)
+            (N, 4) is a list of coordinates (y, x, v, u)
+                x and y are coordinates
+                u and v are y and x projections of the vector
+            (N, M, 2) is an (N, M) image of (v, u) projections
+            Returns np.ndarray of the current display (including averaging,
+            length)
+        averaging : int
+            (int, int) kernel over which to convolve and subsample the data not
+            implemented for (N, 4) data
+        width : int
+            width of the line in pixels
+        length : float
+            length of the line
+            not implemented for (N, 4) data
+        color : str
+            one of "get_color_names" from vispy.color
+        mode : str
+            control panel mode
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Vectors`
+            The newly-created vectors layer.
+        """
+        layer = layers.Vectors(vectors, *args, **kwargs)
+        self.add_layer(layer)
+        return layer
 
     def _new_markers(self):
         if self.dims.ndim == 0:
@@ -357,13 +604,16 @@ class ViewerModel:
         """
 
         ndims = self._calc_layers_num_dims()
-        ranges = [(inf, -inf, inf)]*ndims
+        ranges = [(inf, -inf, inf)] * ndims
 
         for layer in self.layers:
             layer_range = layer.range[::-1]
-            ranges = [(min(a, b), max(c, d), min(e, f)) for
-                      (a, c, e), (b, d, f) in zip_longest(ranges, layer_range,
-                      fillvalue=(inf, -inf, inf))]
+            ranges = [
+                (min(a, b), max(c, d), min(e, f))
+                for (a, c, e), (b, d, f) in zip_longest(
+                    ranges, layer_range, fillvalue=(inf, -inf, inf)
+                )
+            ]
 
         return ranges[::-1]
 
