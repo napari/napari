@@ -21,17 +21,21 @@ use napari from any Python shell or from a Jupyter notebook, and
  </tr>
  <tr>
    <td>
-
-    import napari
-    from napari.util import app_context
+      
+```python
+import napari
+from napari.util import app_context
         
-    with app_context():
-        # Code Here
+with app_context():
+    # Code Here
+``` 
    </td>
    <td>
    
-    %gui qt5
-    import napari       
+```python
+%gui qt5
+import napari       
+```
    </td>
  </tr>
 </table>
