@@ -22,10 +22,10 @@ def create_qt_properties(layer):
             Qt propetry widget
     """
     name = 'Qt' + type(layer).__name__ + 'Properties'
-    if name in globals().keys():
+    try:
         qt_props = globals()[name]
         properties = qt_props(layer)
-    else:
+    except:
         properties = QtLayerProperties(layer)
 
     return properties
@@ -46,10 +46,10 @@ def create_qt_controls(layer):
             Qt controls widget
     """
     name = 'Qt' + type(layer).__name__ + 'Controls'
-    if name in globals().keys():
+    try:
         qt_controls = globals()[name]
         controls = qt_controls(layer)
-    else:
+    except:
         controls = QtLayerControls(layer)
 
     return controls

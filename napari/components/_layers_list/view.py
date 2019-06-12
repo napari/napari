@@ -73,6 +73,8 @@ class QtLayersList(QScrollArea):
         widgets = [
             self.vbox_layout.itemAt(i + 1).widget() for i in range(2 * total)
         ]
+        # Take every other widget to ignore the dividers and get just the
+        # property widgets
         indices = [
             self.layers.index(w.layer)
             for i, w in enumerate(widgets)
