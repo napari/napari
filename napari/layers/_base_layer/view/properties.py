@@ -42,6 +42,7 @@ class QtLayer(QFrame):
         self.top.setFixedHeight(38)
         self.top_layout.setContentsMargins(0, 0, 0, 0)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.top_layout.setAlignment(Qt.AlignCenter)
         self.top.setLayout(self.top_layout)
         self.grid.setLayout(self.grid_layout)
         self.setLayout(self.vbox_layout)
