@@ -17,8 +17,9 @@ base = np.tile(astronaut, (4, 4))
 base = np.array([base * (32 - i) / 32 for i in range(32)])
 print('base shape', base.shape)
 
-pyramid = list(pyramid_gaussian(base, downscale=2, max_layer=4,
-                                multichannel=False))
+pyramid = list(
+    pyramid_gaussian(base, downscale=2, max_layer=4, multichannel=False)
+)
 pyramid = [img_as_ubyte(p) for p in pyramid]
 print('pyramid level shapes: ', [p.shape for p in pyramid])
 
