@@ -92,8 +92,6 @@ with app_context():
     # Set the layer mode with a string
     layer.mode = 'select'
 
-    layer._qt_properties.setExpanded(True)
-
 # Print the shape coordinate data
 print(layer.nshapes, "shapes at:")
 print(layer.to_list())

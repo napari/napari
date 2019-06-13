@@ -29,9 +29,6 @@ with app_context():
     layer.selected = False
     layer.selected = True
 
-    # set the layer property widget to be expanded
-    layer._qt_properties.setExpanded(True)
-
     # change the layer opacity
     layer.opacity = 0.9
 

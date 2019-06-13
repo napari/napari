@@ -89,8 +89,6 @@ with app_context():
     )
     layer.refresh()
 
-    layer._qt_properties.setExpanded(True)
-
     masks = layer.to_masks([512, 512])
     masks_layer = viewer.add_image(masks.astype(float), name='masks')
     masks_layer.opacity = 0.7

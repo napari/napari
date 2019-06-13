@@ -2,11 +2,11 @@ import numpy as np
 from math import inf
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
+from .._dims import Dims
+from .._layers_list import LayersList
 from ... import layers
-
 from ...util.event import EmitterGroup, Event
 from ...util.theme import palettes
-from .._dims import Dims
 
 
 class ViewerModel:
@@ -35,7 +35,6 @@ class ViewerModel:
 
     def __init__(self, title='napari'):
         super().__init__()
-        from .._layers_list import LayersList
 
         self.events = EmitterGroup(
             source=self,

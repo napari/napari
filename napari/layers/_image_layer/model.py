@@ -18,9 +18,6 @@ from ...util.misc import guess_metadata
 from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
 from ...util.event import Event
-
-from .view import QtImageLayer
-from .view import QtImageControls
 from ._constants import Interpolation
 
 
@@ -143,8 +140,6 @@ class Image(Layer):
         self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
 
         self.events.opacity.connect(lambda e: self._update_thumbnail())
-        self._qt_properties = QtImageLayer(self)
-        self._qt_controls = QtImageControls(self)
 
     @property
     def image(self):

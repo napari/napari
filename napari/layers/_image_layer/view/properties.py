@@ -1,10 +1,10 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
-from ..._base_layer import QtLayer
+from ..._base_layer import QtLayerProperties
 from .._constants import Interpolation
 
 
-class QtImageLayer(QtLayer):
+class QtImageProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

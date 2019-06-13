@@ -1,1 +1,2 @@
-from .properties import QtLayer
+from .properties import QtLayerProperties
+from .controls import QtLayerControls

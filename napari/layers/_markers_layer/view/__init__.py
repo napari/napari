@@ -1,2 +1,2 @@
-from .properties import QtMarkersLayer
+from .properties import QtMarkersProperties
 from .controls import QtMarkersControls
