@@ -10,8 +10,6 @@ from ...util.event import Event
 from ...util import segment_normal
 from vispy.color import get_color_names, Color
 
-from .view import QtVectorsLayer
-
 
 class Vectors(Layer):
     """
@@ -81,8 +79,6 @@ class Vectors(Layer):
             self.name = 'vectors'
         else:
             self.name = name
-
-        self._qt_properties = QtVectorsLayer(self)
 
     # ====================== Property getter and setters =====================
     @property

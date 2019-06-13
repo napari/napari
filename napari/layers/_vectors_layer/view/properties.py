@@ -8,10 +8,10 @@ from qtpy.QtWidgets import (
 )
 import numpy as np
 
-from ..._base_layer import QtLayer
+from ..._base_layer import QtLayerProperties
 
 
-class QtVectorsLayer(QtLayer):
+class QtVectorsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

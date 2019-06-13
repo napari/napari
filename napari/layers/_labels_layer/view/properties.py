@@ -9,10 +9,10 @@ from qtpy.QtWidgets import (
 )
 import numpy as np
 from collections import Iterable
-from ..._base_layer import QtLayer
+from ..._base_layer import QtLayerProperties
 
 
-class QtLabelsLayer(QtLayer):
+class QtLabelsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

@@ -1,5 +1,6 @@
 from qtpy.QtWidgets import QHBoxLayout, QStackedWidget, QWidget
 from qtpy.QtCore import QSize
+from ....layers import create_qt_controls
 
 
 class QtControls(QStackedWidget):
@@ -11,6 +12,7 @@ class QtControls(QStackedWidget):
         self.setMouseTracking(True)
         self.setMinimumSize(QSize(40, 40))
         self.empty_widget = QWidget()
+        self.widgets = {}
         self.addWidget(self.empty_widget)
         self._display(None)
 
@@ -31,10 +33,11 @@ class QtControls(QStackedWidget):
         else:
             layer = event.item
 
-        if layer is None or layer._qt_controls is None:
+        if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
-            self.setCurrentWidget(layer._qt_controls)
+            controls = self.widgets[layer]
+            self.setCurrentWidget(controls)
 
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.
@@ -45,8 +48,9 @@ class QtControls(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        if layer._qt_controls is not None:
-            self.addWidget(layer._qt_controls)
+        controls = create_qt_controls(layer)
+        self.addWidget(controls)
+        self.widgets[layer] = controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -57,7 +61,8 @@ class QtControls(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        if layer._qt_controls is not None:
-            self.removeWidget(layer._qt_controls)
-            layer._qt_controls.deleteLater()
-            layer._qt_controls = None
+        controls = self.widgets[layer]
+        self.removeWidget(controls)
+        controls.deleteLater()
+        controls = None
+        del self.widgets[layer]
