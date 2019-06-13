@@ -57,10 +57,8 @@ class QtLayersList(QScrollArea):
         divider = self.vbox_layout.itemAt(index + 1).widget()
         self.vbox_layout.removeWidget(widget)
         widget.deleteLater()
-        widget = None
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
-        divider = None
 
     def _reorder(self, event):
         """Reorders list of layer widgets by looping through all
@@ -87,7 +85,7 @@ class QtLayersList(QScrollArea):
             index = 2 * indices.index(i)
             widget = widgets[index]
             divider = widgets[index + 1]
-            # Check if current index does not matche new index
+            # Check if current index does not match new index
             index_current = self.vbox_layout.indexOf(widget)
             index_new = 2 * (total - i) - 1
             if index_current != index_new:

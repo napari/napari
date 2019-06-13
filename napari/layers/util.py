@@ -25,7 +25,7 @@ def create_qt_properties(layer):
     try:
         qt_props = globals()[name]
         properties = qt_props(layer)
-    except:
+    except KeyError:
         properties = QtLayerProperties(layer)
 
     return properties
@@ -49,7 +49,7 @@ def create_qt_controls(layer):
     try:
         qt_controls = globals()[name]
         controls = qt_controls(layer)
-    except:
+    except KeyError:
         controls = QtLayerControls(layer)
 
     return controls
