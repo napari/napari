@@ -72,7 +72,7 @@ def inside_boxes(boxes):
     Returns
     -------
     inside : (N,) array of bool
-        Array with `True` values for boxes containg the origin
+        True if corresponding box contains the origin.
     """
 
     AB = boxes[:, 0] - boxes[:, 6]

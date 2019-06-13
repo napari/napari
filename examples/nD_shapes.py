@@ -39,14 +39,8 @@ with app_context():
     shape_array = np.array(layer.to_list())
 
     print(
-        'sliced nshapes',
-        layer.nshapes,
-        'mask shape',
-        masks.shape,
-        'labels_shape',
-        labels.shape,
-        'array_shape',
-        shape_array.shape,
+        f'sliced: nshapes {layer.nshapes}, mask shape {masks.shape}, '
+        f'labels_shape {labels.shape}, array_shape, {shape_array.shape}'
     )
 
     layer = viewer.add_shapes(
@@ -62,12 +56,6 @@ with app_context():
     shape_array = np.array(layer.to_list())
 
     print(
-        'broadcast nshapes',
-        layer.nshapes,
-        'mask shape',
-        masks.shape,
-        'labels_shape',
-        labels.shape,
-        'array_shape',
-        shape_array.shape,
+        f'broadcast: nshapes {layer.nshapes}, mask shape {masks.shape}, '
+        f'labels_shape {labels.shape}, array_shape, {shape_array.shape}'
     )
