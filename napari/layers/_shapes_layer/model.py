@@ -1340,9 +1340,7 @@ class Shapes(Layer):
         return self.slice_data.to_xml_list(shape_type=shape_type)
 
     def to_masks(self, mask_shape=None, shape_type=None):
-        """Returns N binary masks, one for each shape, embedded in an array of
-        shape `mask_shape`. Passing a `shape_type` argument leads to only mask
-        from that particular `shape_type` being returned.
+        """Return an array of binary masks, one for each shape.
 
         Parameters
         ----------
@@ -1392,12 +1390,7 @@ class Shapes(Layer):
         return masks
 
     def to_labels(self, labels_shape=None, shape_type=None):
-        """Returns a integer labels image, where each shape is embedded in an
-        array of shape labels_shape with the value of the index + 1
-        corresponding to it, and 0 for background. Passing a `shape_type`
-        argument leads to only labels from that particular `shape_type` being
-        returned. These labels will be renumbered appropriately. For
-        overlapping shapes z-ordering will be respected.
+        """Return an integer labels image.
 
         Parameters
         ----------
@@ -1412,7 +1405,8 @@ class Shapes(Layer):
         ----------
         labels : np.ndarray
             Integer array where each value is either 0 for background or an
-            integer up to N for points inside the corresponding shape.
+            integer up to N for points inside the shape at the index value - 1.
+            For overlapping shapes z-ordering will be respected.
         """
         if labels_shape is None:
             labels_shape = self.shape
