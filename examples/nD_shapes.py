@@ -15,17 +15,13 @@ with app_context():
 
     viewer = napari.view(blobs.astype(float))
 
-    # Create random rectangles
-    shapes = [
-        [
-            [i] + list(128 * np.random.random(2)),
-            [i] + list(128 * np.random.random(2)),
-        ]
-        for i in range(128)
-    ]
+    # create one random rectangle per "plane"
+    planes = np.tile(np.arange(128).reshape((128, 1, 1)), (1, 2, 1))
+    corners = np.random.uniform(0, 128, size=(128, 2, 2))
+    shapes = np.concatenate((planes, corners), axis=2)
 
     base_cols = ['red', 'green', 'blue', 'white', 'yellow', 'magenta', 'cyan']
-    colors = [np.random.choice(base_cols) for i in range(128)]
+    colors = np.random.choice(base_cols, size=128)
 
     layer = viewer.add_shapes(
         np.array(shapes),
@@ -43,8 +39,9 @@ with app_context():
         f'labels_shape {labels.shape}, array_shape, {shape_array.shape}'
     )
 
+    corners = np.random.uniform(0, 128, size=(2, 2))
     layer = viewer.add_shapes(
-        np.array(shapes[0])[:, 1:],
+        corners,
         shape_type='rectangle',
         ndim=3,
         broadcast=True,

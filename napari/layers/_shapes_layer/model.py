@@ -306,8 +306,7 @@ class Shapes(Layer):
 
     @property
     def broadcast(self):
-        """Bool: if shapes are broadcast across all dimensions.
-        """
+        """Bool: if shapes are broadcast across all dimensions."""
         return self._broadcast
 
     @broadcast.setter
@@ -624,22 +623,17 @@ class Shapes(Layer):
             data = [data]
 
         # Turn input arguments into iterables
-        shape_types = ensure_iterable(shape_type)
-        edge_widths = ensure_iterable(edge_width)
-        opacities = ensure_iterable(opacity)
-        z_indices = ensure_iterable(z_index)
-        edge_colors = ensure_iterable(edge_color, color=True)
-        face_colors = ensure_iterable(face_color, color=True)
-
-        for d, st, ew, ec, fc, o, z in zip(
+        shape_inputs = zip(
             data,
-            shape_types,
-            edge_widths,
-            edge_colors,
-            face_colors,
-            opacities,
-            z_indices,
-        ):
+            ensure_iterable(shape_type),
+            ensure_iterable(edge_width),
+            ensure_iterable(edge_color, color=True),
+            ensure_iterable(face_color, color=True),
+            ensure_iterable(opacity),
+            ensure_iterable(z_index),
+        )
+
+        for d, st, ew, ec, fc, o, z in shape_inputs:
             shape_cls = self.slice_data._types[st]
 
             # Slice data by 2D plane.
@@ -675,14 +669,16 @@ class Shapes(Layer):
                     slice_key = ()
                     if not self.slice_data == self.data[slice_key]:
                         self.slice_data = self.data[slice_key]
-                        # self._finish_drawing()
+                        # If data is changed unselect all shapes
+                        self._finish_drawing()
                 else:
                     slice_key = self.indices[:-2]
                     if slice_key not in self.data:
                         self.data[slice_key] = ShapeList()
                     if not self.slice_data == self.data[slice_key]:
                         self.slice_data = self.data[slice_key]
-                        # self._finish_drawing()
+                        # If data is changed unselect all shapes
+                        self._finish_drawing()
 
         z_order = self.slice_data._mesh.triangles_z_order
         faces = self.slice_data._mesh.triangles[z_order]
@@ -1444,10 +1440,7 @@ class Shapes(Layer):
         return labels
 
     def to_list(self, shape_type=None):
-        """Returns the vertex data assoicated with the shapes as a list
-        where each element of the list corresponds to one shape. Passing a
-        `shape_type` argument leads to only that particular `shape_type`
-        being returned.
+        """Return the vertex data assoicated with the shapes as a list.
 
         Parameters
         ----------
