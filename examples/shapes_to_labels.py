@@ -72,7 +72,7 @@ with app_context():
     )
 
     # change some properties of the layer
-    layer.selected_shapes = list(range(len(layer.data.shapes)))
+    layer.selected_shapes = list(range(layer.nshapes))
     layer.edge_width = 5
     layer.opacity = 0.75
     layer.selected_shapes = []
@@ -89,13 +89,13 @@ with app_context():
     )
     layer.refresh()
 
-    masks = layer.data.to_masks([512, 512])
+    masks = layer.to_masks([512, 512])
     masks_layer = viewer.add_image(masks.astype(float), name='masks')
     masks_layer.opacity = 0.7
     masks_layer.colormap = Colormap(
         [[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 1.0]]
     )
 
-    labels = layer.data.to_labels([512, 512])
+    labels = layer.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
     labels_layer.visible = False
