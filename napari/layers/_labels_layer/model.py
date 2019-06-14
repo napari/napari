@@ -88,10 +88,10 @@ class Labels(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
-        self.events.opacity.connect(lambda e: self._update_thumbnail())
-
         self._node.clim = [0.0, 1.0]
-        self.events.colormap()
+        self._node.cmap = self.colormap
+
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
 
     def raw_to_displayed(self, raw):
         """Determines displayed image from a saved raw image and a saved seed.
