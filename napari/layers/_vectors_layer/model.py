@@ -19,11 +19,11 @@ class Vectors(Layer):
     Parameters
     ----------
     vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
-        A (N, 2, D) array is interpted as "coordinate-like" data and a list of
-        N vectors with start point and projections of the vector in D
+        A (N, 2, D) array is interpted as "coordinate-like" data and a list
+        of N vectors with start point and projections of the vector in D
         dimensions. A (N1, N2, ..., ND, D) array is interpted as
-        "image-like" data where there is a length D vector of the projections
-        at each pixel.
+        "image-like" data where there is a length D vector of the
+        projections at each pixel.
     averaging : int
         Size of kernel over which to convolve and subsample the data not
         implemented for "coordinate-like" data
@@ -118,12 +118,10 @@ class Vectors(Layer):
             # an (N, 2, D) array that is coordinate-like
             coords = vectors
             self._data_type = self._data_types[1]
-
         elif vectors.shape[-1] == vectors.ndim - 1:
             # an (N1, N2, ..., ND, D) array that is image-like
             coords = self._convert_image_to_coordinates(vectors)
             self._data_type = self._data_types[0]
-
         else:
             raise TypeError(
                 "Vector data of shape %s is not supported" % str(vectors.shape)
@@ -148,21 +146,20 @@ class Vectors(Layer):
             A list of N vectors with start point and projections of the vector
             in D dimensions.
         """
-        # create coordinate spacing for x-y
-        xspace = np.linspace(
-            0, self._raw_data.shape[0], vect.shape[0], endpoint=False
-        )
-        yspace = np.linspace(
-            0, self._raw_data.shape[1], vect.shape[1], endpoint=False
-        )
-        xv, yv = np.meshgrid(xspace, yspace)
+        # create coordinate spacing for image
+        spacing = [
+            np.linspace(0, r, s, endpoint=False)
+            for r, s in zip(self._raw_data.shape[:-1], vect.shape[:-1])
+        ]
+        grid = np.meshgrid(*spacing)
 
         # create empty vector of necessary shape
-        pos = np.empty((len(xspace) * len(yspace), 2, 2), dtype=np.float32)
+        nvect = np.prod(vect.shape[:-1])
+        pos = np.empty((nvect, 2, vect.ndim - 1), dtype=np.float32)
 
         # assign coordinates (pos) to all pixels
-        pos[:, 0, 0] = xv.flatten() + 0.5
-        pos[:, 0, 1] = yv.flatten() + 0.5
+        for i, g in enumerate(grid):
+            pos[:, 0, i] = g.flatten() + 0.5
         pos[:, 1, :] = np.reshape(vect, (-1, 2))
 
         return pos
@@ -362,7 +359,7 @@ class Vectors(Layer):
         if len(self.data) == 0:
             faces = []
         elif self.ndim > 2:
-            matches = np.all(self.indices[:-2] == self.data[:, :-2], axis=1)
+            matches = np.all(self.indices[:-2] == self.data[:, 0, :-2], axis=1)
             matches = np.where(matches)[0]
             if len(matches) == 0:
                 faces = []
