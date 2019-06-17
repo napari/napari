@@ -354,44 +354,34 @@ class Vectors(Layer):
 
         return vertices, triangles
 
-    def _slice_vectors(self, indices):
-        """Determines the slice of vectors given the indices.
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
 
-        Parameters
-        ----------
-        indices : sequence of int or slice
-            Indices to slice with.
-        """
-        # Get a list of the coords for the markers in this slice
-        coords = self.data
-        if len(coords) > 0:
-            matches = np.all(indices[:-2] == self.data[:, :-2], axis=1)
+        vertices = self._mesh_vertices
+
+        if len(self.data) == 0:
+            faces = []
+        elif self.ndim > 2:
+            matches = np.all(self.indices[:-2] == self.data[:, :-2], axis=1)
             matches = np.where(matches)[0]
+            if len(matches) == 0:
+                faces = []
+            else:
+                keep_inds = np.repeat(2 * matches, 2)
+                keep_inds[1::2] = keep_inds[1::2] + 1
+                faces = self._mesh_triangles[keep_inds]
         else:
-            matches = []
-        self._in_slice_inds = matches
-        return matches
+            faces = self._mesh_triangles
 
-    # def _set_view_slice(self):
-    #     """Sets the view given the indices to slice with."""
-    #
-    #     in_slice_inds = self._slice_vectors(self.indices)
-    #     vertices = self._mesh_vertices
-    #     if len(in_slice_inds) > 0
-    #         keep_inds = np.concatenate((2 * in_slice_inds, 2 * in_slice_inds + 1))
-    #         faces = self._mesh_triangles[]
-    #     else:
-    #         faces = []
-    #
-    #     if len(faces) == 0:
-    #         self._node.set_data(vertices=None, faces=None)
-    #     else:
-    #         self._node.set_data(
-    #             vertices=vertices[:, ::-1], faces=faces, color=self.color
-    #         )
-    #
-    #     self._need_visual_update = True
-    #     self._update()
+        if len(faces) == 0:
+            self._node.set_data(vertices=None, faces=None)
+        else:
+            self._node.set_data(
+                vertices=vertices[:, ::-1], faces=faces, color=self.color
+            )
+
+        self._need_visual_update = True
+        self._update()
 
     def to_xml_list(self):
         """Convert the vectors to a list of xml elements according to the svg
@@ -405,7 +395,19 @@ class Vectors(Layer):
         """
         xml_list = []
 
-        for v in self.data[self._in_slice_inds]:
+        if len(self.data) == 0:
+            vectors = []
+        elif self.ndim > 2:
+            matches = np.all(self.indices[:-2] == self.data[:, :-2], axis=1)
+            matches = np.where(matches)[0]
+            if len(matches) == 0:
+                vectors = []
+            else:
+                vectors = self.data[matches]
+        else:
+            vectors = self.data
+
+        for v in vectors:
             x1 = str(v[0, -2])
             y1 = str(v[0, -1])
             x2 = str(v[0, -2] + self.length * v[1, -2])
