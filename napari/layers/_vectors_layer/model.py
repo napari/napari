@@ -67,16 +67,16 @@ class Vectors(Layer):
         # assign vector data and establish default behavior
         self._raw_data = vectors
         with self.freeze_refresh():
-            self.vectors = vectors
+            self.data = vectors
 
     # ====================== Property getter and setters =====================
 
     @property
-    def vectors(self) -> np.ndarray:
-        return self._vectors
+    def data(self) -> np.ndarray:
+        return self._data
 
-    @vectors.setter
-    def vectors(self, vectors: np.ndarray):
+    @data.setter
+    def data(self, vectors: np.ndarray):
         """(N, 2, D) or (N1, N2, ..., ND, D) array: a (N, 2, D) array is
         interpted as "coordinate-like" data and a list of N vectors with start
         point and projections of the vector in D dimensions. A
@@ -88,10 +88,10 @@ class Vectors(Layer):
         vectors : (N, 2, D) array
         """
 
-        self._vectors = self._convert_to_vector_type(vectors)
+        self._data = self._convert_to_vector_type(vectors)
 
         vertices, triangles = self._generate_meshes(
-            self._vectors, self.width, self.length
+            self._data, self.width, self.length
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
@@ -200,7 +200,7 @@ class Vectors(Layer):
             x, y = self._averaging, self._averaging
 
             if (x, y) == (1, 1):
-                self.vectors = self._raw_data
+                self.data = self._raw_data
                 # calling original data
                 return
 
@@ -223,7 +223,7 @@ class Vectors(Layer):
             output_mat[:, :, 0] = output_mat_x * x
             output_mat[:, :, 1] = output_mat_y * y
 
-            self.vectors = output_mat[
+            self.data = output_mat[
                 x_offset : range_x - x_offset, y_offset : range_y - y_offset
             ]
 
@@ -239,7 +239,7 @@ class Vectors(Layer):
         self._width = width
 
         vertices, triangles = self._generate_meshes(
-            self.vectors, self._width, self.length
+            self.data, self._width, self.length
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
@@ -262,7 +262,7 @@ class Vectors(Layer):
         self._length = length
 
         vertices, triangles = self._generate_meshes(
-            self.vectors, self.width, self._length
+            self.data, self.width, self._length
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
@@ -295,31 +295,24 @@ class Vectors(Layer):
         return props
 
     # =========================== Napari Layer ABC methods ===================
-    @property
-    def data(self) -> np.ndarray:
-        return self.vectors
-
-    @data.setter
-    def data(self, data: np.ndarray):
-        self.vectors = data
 
     def _get_shape(self):
-        if len(self.vectors) == 0:
-            return np.ones(2, dtype=int)
+        if len(self.data) == 0:
+            return np.ones(self.data.ndim, dtype=int)
         else:
-            return np.max(self.vectors[:, 0, :], axis=0) + 1
+            return np.max(self.data[:, 0, :], axis=0) + 1
 
     @property
     def range(self):
         """list of 3-tuple of int: ranges of data for slicing specifed by
         (min, max, step).
         """
-        if len(self.vectors) == 0:
-            maxs = [1, 1]
-            mins = [0, 0]
+        if len(self.data) == 0:
+            maxs = np.ones(self.data.ndim, dtype=int)
+            mins = np.zeros(self.data.ndim, dtype=int)
         else:
-            maxs = np.max(self.vectors[:, 0, :], axis=0) + 1
-            mins = np.min(self.vectors[:, 0, :], axis=0)
+            maxs = np.max(self.data[:, 0, :], axis=0) + 1
+            mins = np.min(self.data[:, 0, :], axis=0)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -343,7 +336,7 @@ class Vectors(Layer):
         triangles : (2N, 2) array
             Vertex indices that form the mesh triangles
         """
-        vectors = np.reshape(copy(vectors), (-1, vectors.shape[-1]))
+        vectors = np.reshape(copy(vectors[:, :, -2:]), (-1, 2))
         vectors[1::2] = vectors[::2] + length * vectors[1::2]
         centers = np.repeat(vectors, 2, axis=0)
         offsets = segment_normal(vectors[::2, :], vectors[1::2, :])
@@ -392,7 +385,7 @@ class Vectors(Layer):
         """
         xml_list = []
 
-        for v in self.vectors:
+        for v in self.data:
             x1 = str(v[0, 0])
             y1 = str(v[0, 1])
             x2 = str(v[0, 0] + self.length * v[1, 0])
