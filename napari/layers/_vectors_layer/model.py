@@ -3,6 +3,7 @@ from xml.etree.ElementTree import Element
 
 import numpy as np
 from scipy import signal
+from copy import copy
 
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Mesh
@@ -149,56 +150,22 @@ class Vectors(Layer):
             A list of N vectors with start point and projections of the vector
             in D dimensions.
         """
-        xdim = vect.shape[0]
-        ydim = vect.shape[1]
-
-        # stride is used during averaging and length adjustment
-        stride_x, stride_y = self._averaging, self._averaging
-
-        # create empty vector of necessary shape
-        # every "pixel" has 2 coordinates
-        pos = np.empty((2 * xdim * ydim, 2), dtype=np.float32)
-
         # create coordinate spacing for x-y
-        # double the num of elements by doubling x sampling
-        xspace = np.linspace(0, stride_x * xdim, 2 * xdim, endpoint=False)
-        yspace = np.linspace(0, stride_y * ydim, ydim, endpoint=False)
+        xspace = np.linspace(
+            0, self._raw_data.shape[0], vect.shape[0], endpoint=False
+        )
+        yspace = np.linspace(
+            0, self._raw_data.shape[1], vect.shape[1], endpoint=False
+        )
         xv, yv = np.meshgrid(xspace, yspace)
 
+        # create empty vector of necessary shape
+        pos = np.empty((len(xspace) * len(yspace), 2, 2), dtype=np.float32)
+
         # assign coordinates (pos) to all pixels
-        pos[:, 0] = xv.flatten()
-        pos[:, 1] = yv.flatten()
-
-        # pixel midpoints are the first x-values of positions
-        midpt = np.zeros((xdim * ydim, 2), dtype=np.float32)
-        midpt[:, 0] = pos[0::2, 0] + (stride_x - 1) / 2
-        midpt[:, 1] = pos[0::2, 1] + (stride_y - 1) / 2
-
-        # rotate coordinates about midpoint to represent angle and length
-        pos[0::2, 0] = (
-            midpt[:, 0]
-            - (stride_x / 2)
-            * (self._length / 2)
-            * vect.reshape((xdim * ydim, 2))[:, 0]
-        )
-        pos[0::2, 1] = (
-            midpt[:, 1]
-            - (stride_y / 2)
-            * (self._length / 2)
-            * vect.reshape((xdim * ydim, 2))[:, 1]
-        )
-        pos[1::2, 0] = (
-            midpt[:, 0]
-            + (stride_x / 2)
-            * (self._length / 2)
-            * vect.reshape((xdim * ydim, 2))[:, 0]
-        )
-        pos[1::2, 1] = (
-            midpt[:, 1]
-            + (stride_y / 2)
-            * (self._length / 2)
-            * vect.reshape((xdim * ydim, 2))[:, 1]
-        )
+        pos[:, 0, 0] = xv.flatten() + 0.5
+        pos[:, 0, 1] = yv.flatten() + 0.5
+        pos[:, 1, :] = np.reshape(vect, (-1, 2))
 
         return pos
 
@@ -226,18 +193,18 @@ class Vectors(Layer):
         Implemented ONLY for image-like vector data
         """
         if self._data_type == 'coords':
-            # default averaging is supported only for 'matrix' dataTypes
+            # default averaging is supported only for 'coordinate-like' data
             return
         elif self._data_type == 'image':
 
             x, y = self._averaging, self._averaging
 
             if (x, y) == (1, 1):
-                self.vectors = self._original_data
+                self.vectors = self._raw_data
                 # calling original data
                 return
 
-            tempdat = self._original_data
+            tempdat = self._raw_data
             range_x = tempdat.shape[0]
             range_y = tempdat.shape[1]
             x_offset = int((x - 1) / 2)
@@ -253,12 +220,11 @@ class Vectors(Layer):
                 tempdat[:, :, 1], kernel, mode='same', boundary='wrap'
             )
 
-            output_mat[:, :, 0] = output_mat_x
-            output_mat[:, :, 1] = output_mat_y
+            output_mat[:, :, 0] = output_mat_x * x
+            output_mat[:, :, 1] = output_mat_y * y
 
             self.vectors = output_mat[
-                x_offset : range_x - x_offset : x,
-                y_offset : range_y - y_offset : y,
+                x_offset : range_x - x_offset, y_offset : range_y - y_offset
             ]
 
     @property
@@ -341,7 +307,7 @@ class Vectors(Layer):
         if len(self.vectors) == 0:
             return np.ones(2, dtype=int)
         else:
-            return np.max(self.vectors, axis=0) + 1
+            return np.max(self.vectors[:, 0, :], axis=0) + 1
 
     @property
     def range(self):
@@ -377,7 +343,7 @@ class Vectors(Layer):
         triangles : (2N, 2) array
             Vertex indices that form the mesh triangles
         """
-        vectors = np.reshape(vectors, (-1, vectors.shape[-1]))
+        vectors = np.reshape(copy(vectors), (-1, vectors.shape[-1]))
         vectors[1::2] = vectors[::2] + length * vectors[1::2]
         centers = np.repeat(vectors, 2, axis=0)
         offsets = segment_normal(vectors[::2, :], vectors[1::2, :])
