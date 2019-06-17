@@ -17,21 +17,19 @@ class Vectors(Layer):
 
     Parameters
     ----------
-    vectors : np.ndarray of shape (N,4) or (N, M, 2)
-        (N, 4) is a list of coordinates (y, x, v, u)
-            x and y are coordinates
-            u and v are y and x projections of the vector
-        (N, M, 2) is an (N, M) image of (v, u) projections
-        Returns np.ndarray of the current display (including averaging,
-        length)
+    vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
+        A (N, 2, D) array is interpted as "coordinate-like" data and a list of
+        N vectors with start point and projections of the vector in D
+        dimensions. A (N1, N2, ..., ND, D) array is interpted as
+        "image-like" data where there is a length D vector of the projections
+        at each pixel.
     averaging : int
-        (int, int) kernel over which to convolve and subsample the data not
-        implemented for (N, 4) data
+        Size of kernel over which to convolve and subsample the data not
+        implemented for "coordinate-like" data
     width : int
         width of the line in pixels
     length : float
-        length of the line
-        not implemented for (N, 4) data
+        multiplier on length of the line
     color : str
         one of "get_color_names" from vispy.color
     mode : str
@@ -66,37 +64,11 @@ class Vectors(Layer):
         self._need_visual_update = False
 
         # assign vector data and establish default behavior
-        self._raw_data = None
-        self._original_data = vectors
-        self._current_data = vectors
-
-        self._vectors = self._convert_to_vector_type(vectors)
-        vertices, triangles = self._generate_meshes(self._vectors, self.width)
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-
-        if name is None:
-            self.name = 'vectors'
-        else:
-            self.name = name
+        self._raw_data = vectors
+        with self.freeze_refresh():
+            self.vectors = vectors
 
     # ====================== Property getter and setters =====================
-    @property
-    def _original_data(self) -> np.ndarray:
-        return self._raw_data
-
-    @_original_data.setter
-    def _original_data(self, data: np.ndarray):
-        """Must preserve data used at construction. Specifically for default
-        averaging/length adjustments.
-        averaging/length adjustments recalculate the underlying data
-
-        Parameters
-        ----------
-        data : np.ndarray
-        """
-        if self._raw_data is None:
-            self._raw_data = data
 
     @property
     def vectors(self) -> np.ndarray:
@@ -104,24 +76,22 @@ class Vectors(Layer):
 
     @vectors.setter
     def vectors(self, vectors: np.ndarray):
-        """Can accept two data types:
-            1) (N, 4) array with elements (y, x, v, u),
-                where x-y are position (center) and u-v are x-y projections of
-                    the vector
-            2) (N, M, 2) array with elements (v, u)
-                where u-v are x-y projections of the vector
-                vector position is one per-pixel in the NxM array
+        """(N, 2, D) or (N1, N2, ..., ND, D) array: a (N, 2, D) array is
+        interpted as "coordinate-like" data and a list of N vectors with start
+        point and projections of the vector in D dimensions. A
+        (N1, N2, ..., ND, D) array is interpted as "image-like" data where
+        there is a length D vector of the projections at each pixel.
 
         Parameters
         ----------
-        vectors : np.ndarray
+        vectors : (N, 2, D) array
         """
-        self._original_data = vectors
-        self._current_data = vectors
 
-        self._vectors = self._convert_to_vector_type(self._current_data)
+        self._vectors = self._convert_to_vector_type(vectors)
 
-        vertices, triangles = self._generate_meshes(self._vectors, self.width)
+        vertices, triangles = self._generate_meshes(
+            self._vectors, self.width, self.length
+        )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
 
@@ -133,14 +103,26 @@ class Vectors(Layer):
 
         Parameters
         ----------
-        vectors : np.ndarray
+        vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
+            A (N, 2, D) array is interpted as "coordinate-like" data and a list
+            of N vectors with start point and projections of the vector in D
+            dimensions. A (N1, N2, ..., ND, D) array is interpted as
+            "image-like" data where there is a length D vector of the
+            projections at each pixel.
+
+        Returns
+        coords : (N, 2, D) array
+            A list of N vectors with start point and projections of the vector
+            in D dimensions.
         """
-        if vectors.shape[-1] == 4 and vectors.ndim == 2:
-            coord_list = self._convert_coords_to_coordinates(vectors)
+        if vectors.shape[-2] == 2 and vectors.ndim == 3:
+            # an (N, 2, D) array that is coordinate-like
+            coords = vectors
             self._data_type = self._data_types[1]
 
-        elif vectors.shape[-1] == 2 and vectors.ndim == 3:
-            coord_list = self._convert_image_to_coordinates(vectors)
+        elif vectors.shape[-1] == vectors.ndim - 1:
+            # an (N1, N2, ..., ND, D) array that is image-like
+            coords = self._convert_image_to_coordinates(vectors)
             self._data_type = self._data_types[0]
 
         else:
@@ -148,16 +130,24 @@ class Vectors(Layer):
                 "Vector data of shape %s is not supported" % str(vectors.shape)
             )
 
-        return coord_list
+        return coords
 
-    def _convert_image_to_coordinates(self, vect) -> np.ndarray:
+    def _convert_image_to_coordinates(self, vect):
         """To convert an image-like array with elements (y-proj, x-proj) into a
         position list of coordinates
         Every pixel position (n, m) results in two output coordinates of (N,2)
 
         Parameters
         ----------
-        vect : np.ndarray of shape (N, M, 2)
+        vectors : (N1, N2, ..., ND, D) array
+            "image-like" data where there is a length D vector of the
+            projections at each pixel.
+
+        Returns
+        ----------
+        coords : (N, 2, D) array
+            A list of N vectors with start point and projections of the vector
+            in D dimensions.
         """
         xdim = vect.shape[0]
         ydim = vect.shape[1]
@@ -209,31 +199,6 @@ class Vectors(Layer):
             * (self._length / 2)
             * vect.reshape((xdim * ydim, 2))[:, 1]
         )
-
-        return pos
-
-    def _convert_coords_to_coordinates(self, vect) -> np.ndarray:
-        """To convert a list of coordinates of shape
-        (y-center, x-center, y-proj, x-proj) into a list of coordinates
-        Input coordinate of (N,4) becomes two output coordinates of (N,2)
-
-        Parameters
-        ----------
-        vect : np.ndarray of shape (N, 4)
-        """
-        # create empty vector of necessary shape
-        # one coordinate for each endpoint of the vector
-        pos = np.empty((2 * len(vect), 2), dtype=np.float32)
-
-        # create pairs of points
-        pos[0::2, 0] = vect[:, 0]
-        pos[1::2, 0] = vect[:, 0]
-        pos[0::2, 1] = vect[:, 1]
-        pos[1::2, 1] = vect[:, 1]
-
-        # adjust second of each pair according to x-y projection
-        pos[1::2, 0] += vect[:, 2]
-        pos[1::2, 1] += vect[:, 3]
 
         return pos
 
@@ -307,12 +272,13 @@ class Vectors(Layer):
         """
         self._width = width
 
-        vertices, triangles = self._generate_meshes(self.vectors, self._width)
+        vertices, triangles = self._generate_meshes(
+            self.vectors, self._width, self.length
+        )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
 
         self.events.width()
-
         self.refresh()
 
     @property
@@ -328,26 +294,15 @@ class Vectors(Layer):
         length : int or float multiplicative factor
         """
         self._length = length
-        self._update_length()
+
+        vertices, triangles = self._generate_meshes(
+            self.vectors, self.width, self._length
+        )
+        self._mesh_vertices = vertices
+        self._mesh_triangles = triangles
+
         self.events.length()
-
         self.refresh()
-
-    def _update_length(self):
-        """
-        Method for calculating vector lengths
-        Implemented ONLY for image-like vector data
-        """
-
-        if self._data_type == 'coords':
-            return "length adjustment not allowed for coordinate-style data"
-        elif self._data_type == 'image':
-            self._vectors = self._convert_to_vector_type(self._current_data)
-            vertices, triangles = self._generate_meshes(
-                self.vectors, self.width
-            )
-            self._mesh_vertices = vertices
-            self._mesh_triangles = triangles
 
     @property
     def color(self) -> str:
@@ -397,29 +352,33 @@ class Vectors(Layer):
             maxs = [1, 1]
             mins = [0, 0]
         else:
-            maxs = np.max(self.vectors, axis=0) + 1
-            mins = np.min(self.vectors, axis=0)
+            maxs = np.max(self.vectors[:, 0, :], axis=0) + 1
+            mins = np.min(self.vectors[:, 0, :], axis=0)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
-    def _generate_meshes(self, vectors, width):
+    def _generate_meshes(self, vectors, width, length):
         """Generates list of mesh vertices and triangles from a list of vectors
 
         Parameters
         ----------
-        vectors : np.ndarray
-            Nx2 array where each pair of vertices corresponds to an independent
-            line segment
+        vectors : (N, 2, D) array
+            A list of N vectors with start point and projections of the vector
+            in D dimensions.
         width : float
             width of the line to be drawn
+        length : float
+            length multiplier of the line to be drawn
 
         Returns
         ----------
-        vertices : np.ndarray
-            2Nx2 array of vertices of all triangles for the lines
-        triangles : np.ndarray
-            Nx3 array of vertex indices that form the mesh triangles
+        vertices : (4N, 2) array
+            Vertices of all triangles for the lines
+        triangles : (2N, 2) array
+            Vertex indices that form the mesh triangles
         """
+        vectors = np.reshape(vectors, (-1, vectors.shape[-1]))
+        vectors[1::2] = vectors[::2] + length * vectors[1::2]
         centers = np.repeat(vectors, 2, axis=0)
         offsets = segment_normal(vectors[::2, :], vectors[1::2, :])
         offsets = np.repeat(offsets, 4, axis=0)
@@ -467,11 +426,11 @@ class Vectors(Layer):
         """
         xml_list = []
 
-        for i in range(len(self.vectors) // 2):
-            x1 = str(self.vectors[2 * i, 0])
-            y1 = str(self.vectors[2 * i, 1])
-            x2 = str(self.vectors[2 * i + 1, 0])
-            y2 = str(self.vectors[2 * i + 1, 1])
+        for v in self.vectors:
+            x1 = str(v[0, 0])
+            y1 = str(v[0, 1])
+            x2 = str(v[0, 0] + self.length * v[1, 0])
+            y2 = str(v[0, 1] + self.length * v[1, 1])
 
             element = Element(
                 'line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props
