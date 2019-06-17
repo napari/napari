@@ -69,8 +69,6 @@ class Vectors(Layer):
         with self.freeze_refresh():
             self.data = vectors
 
-    # ====================== Property getter and setters =====================
-
     @property
     def data(self) -> np.ndarray:
         return self._data
@@ -168,6 +166,26 @@ class Vectors(Layer):
         pos[:, 1, :] = np.reshape(vect, (-1, 2))
 
         return pos
+
+    def _get_shape(self):
+        if len(self.data) == 0:
+            return np.ones(self.data.ndim, dtype=int)
+        else:
+            return np.max(self.data[:, 0, :], axis=0) + 1
+
+    @property
+    def range(self):
+        """list of 3-tuple of int: ranges of data for slicing specifed by
+        (min, max, step).
+        """
+        if len(self.data) == 0:
+            maxs = np.ones(self.data.ndim, dtype=int)
+            mins = np.zeros(self.data.ndim, dtype=int)
+        else:
+            maxs = np.max(self.data[:, 0, :], axis=0) + 1
+            mins = np.min(self.data[:, 0, :], axis=0)
+
+        return [(min, max, 1) for min, max in zip(mins, maxs)]
 
     @property
     def averaging(self) -> int:
@@ -293,28 +311,6 @@ class Vectors(Layer):
         props = {'stroke': stroke, 'stroke-width': width, 'opacity': opacity}
 
         return props
-
-    # =========================== Napari Layer ABC methods ===================
-
-    def _get_shape(self):
-        if len(self.data) == 0:
-            return np.ones(self.data.ndim, dtype=int)
-        else:
-            return np.max(self.data[:, 0, :], axis=0) + 1
-
-    @property
-    def range(self):
-        """list of 3-tuple of int: ranges of data for slicing specifed by
-        (min, max, step).
-        """
-        if len(self.data) == 0:
-            maxs = np.ones(self.data.ndim, dtype=int)
-            mins = np.zeros(self.data.ndim, dtype=int)
-        else:
-            maxs = np.max(self.data[:, 0, :], axis=0) + 1
-            mins = np.min(self.data[:, 0, :], axis=0)
-
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
 
     def _generate_meshes(self, vectors, width, length):
         """Generates list of mesh vertices and triangles from a list of vectors
