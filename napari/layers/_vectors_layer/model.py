@@ -41,8 +41,7 @@ class Vectors(Layer):
         self, vectors, width=1, color='red', averaging=1, length=1, name=None
     ):
 
-        visual = Mesh()
-        super().__init__(visual)
+        super().__init__(Mesh(), name)
 
         # events for non-napari calculations
         self.events.add(length=Event, width=Event, averaging=Event)
