@@ -41,11 +41,7 @@ with app_context():
 
     corners = np.random.uniform(0, 128, size=(2, 2))
     layer = viewer.add_shapes(
-        corners,
-        shape_type='rectangle',
-        ndim=3,
-        broadcast=True,
-        name='broadcasted',
+        corners, shape_type='rectangle', name='broadcasted'
     )
 
     masks = layer.to_masks(mask_shape=(128, 128, 128))

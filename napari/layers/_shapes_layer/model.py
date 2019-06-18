@@ -57,12 +57,6 @@ class Shapes(Layer):
     ndim : int, optional
         Dimensions of shape data. Once set cannot be changed. Defaults to
         2.
-    broadcast : bool, optional
-        If True, shapes are broadcast across all dimensions if `ndim`
-        > 2. If False only shapes in the currently sliced layer are
-        visible. While it is possible to swith between these two views,
-        when you are in one view you will only be able to see and edit
-        shapes in that view.
     name : str, keyword-only
         Name of the layer.
 
@@ -82,11 +76,6 @@ class Shapes(Layer):
         Opacity value between 0.0 and 1.0.
     selected_shapes : list
         List of currently selected shapes.
-    broadcast : bool
-        If True, shapes are broadcast across all dimensions if `ndim` > 2.
-        If False only shapes in the currently sliced layer are visible. While
-        it is possible to swith between these two views, when you are in one
-        view you will only be able to see and edit shapes in that view.
     nshapes : int
         Total number of shapes.
     mode : Mode
@@ -196,7 +185,6 @@ class Shapes(Layer):
         opacity=0.7,
         z_index=0,
         ndim=2,
-        broadcast=False,
         name=None,
     ):
 
@@ -212,11 +200,13 @@ class Shapes(Layer):
 
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
+
             # Add the shape data
             self._input_ndim = ndim
-            self._data = {(): ShapeList()}
-            self.slice_data = self.data[()]
-            self._broadcast = broadcast
+            init_index = (0,) * (ndim - 2)
+            self._data = {init_index: ShapeList()}
+            self.slice_data = self.data[init_index]
+
             self.add_shapes(
                 data,
                 shape_type=shape_type,
@@ -226,6 +216,10 @@ class Shapes(Layer):
                 opacity=opacity,
                 z_index=z_index,
             )
+
+            if len(self._data) > 1:
+                if () in self._data:
+                    del self._data[()]
 
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
@@ -285,7 +279,6 @@ class Shapes(Layer):
                 edge_width=Event,
                 edge_color=Event,
                 face_color=Event,
-                broadcast=Event,
             )
 
             self.events.deselect.connect(lambda x: self._finish_drawing())
@@ -302,19 +295,6 @@ class Shapes(Layer):
             return
         self._data = data
         self.events.data()
-        self.refresh()
-
-    @property
-    def broadcast(self):
-        """Bool: if shapes are broadcast across all dimensions."""
-        return self._broadcast
-
-    @broadcast.setter
-    def broadcast(self, broadcast):
-        if self._broadcast == broadcast:
-            return
-        self._broadcast = broadcast
-        self.events.broadcast()
         self.refresh()
 
     @property
@@ -540,13 +520,13 @@ class Shapes(Layer):
         else:
             slice_shape = tuple(np.max(self.slice_data._vertices, axis=0) + 1)
 
-        if len(self.data.keys()) == 1:  # or self.broadcast is True:
-            # If in broadcast mode or only broadcast shapes are present
+        if len(self.data.keys()) == 1:
             # return the shape padded to the necessary dimensions
             return (1,) * (self._input_ndim - 2) + slice_shape
         else:
             slice_keys = list(self.data.keys())
-            slice_keys.remove(())
+            if () in slice_keys:
+                slice_keys.remove(())
             max_val = np.array(slice_keys).max(axis=0)
             return tuple(max_val) + slice_shape
 
@@ -662,23 +642,13 @@ class Shapes(Layer):
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         with self.freeze_refresh():
-            if len(self.indices) == 2:
-                self.slice_data = self.data[()]
-            else:
-                if self.broadcast:
-                    slice_key = ()
-                    if not self.slice_data == self.data[slice_key]:
-                        self.slice_data = self.data[slice_key]
-                        # If data is changed unselect all shapes
-                        self._finish_drawing()
-                else:
-                    slice_key = self.indices[:-2]
-                    if slice_key not in self.data:
-                        self.data[slice_key] = ShapeList()
-                    if not self.slice_data == self.data[slice_key]:
-                        self.slice_data = self.data[slice_key]
-                        # If data is changed unselect all shapes
-                        self._finish_drawing()
+            slice_key = self.indices[:-2]
+            if slice_key not in self.data:
+                self.data[slice_key] = ShapeList()
+            if not self.slice_data == self.data[slice_key]:
+                self.slice_data = self.data[slice_key]
+                # If data is changed unselect all shapes
+                self._finish_drawing()
 
         z_order = self.slice_data._mesh.triangles_z_order
         faces = self.slice_data._mesh.triangles[z_order]
@@ -1360,12 +1330,7 @@ class Shapes(Layer):
             mask_shape = self.shape
 
         if self.ndim == 2:
-            # For 2D shapes just convert current view to masks
-            masks = self.slice_data.to_masks(
-                mask_shape=mask_shape, shape_type=shape_type
-            )
-        elif self.broadcast:
-            # For broadcast shapes convert current view to masks and
+            # For 2D shapes just convert current view to masks and
             # broadcast across sliced dimensions
             slices = self.slice_data.to_masks(
                 mask_shape=mask_shape[-2:], shape_type=shape_type
@@ -1411,8 +1376,8 @@ class Shapes(Layer):
         if labels_shape is None:
             labels_shape = self.shape
 
-        if self.broadcast or self.ndim == 2:
-            # For broadcast shapes or 2D shapes convert current view to labels
+        if self.ndim == 2:
+            # For 2D shapes convert current view to labels
             # and broadcast across sliced dimensions
             labels = self.slice_data.to_labels(
                 labels_shape=labels_shape[-2:], shape_type=shape_type
@@ -1424,13 +1389,12 @@ class Shapes(Layer):
             labels = np.zeros(labels_shape)
             nshapes = 0
             for slice_key, data in self.data.items():
-                if len(slice_key) > 0:
-                    slices = data.to_labels(
-                        labels_shape=labels_shape[-2:], shape_type=shape_type
-                    )
-                    slices[slices > 0] += nshapes
-                    labels[slice_key] = slices
-                    nshapes += len(data.shapes)
+                slices = data.to_labels(
+                    labels_shape=labels_shape[-2:], shape_type=shape_type
+                )
+                slices[slices > 0] += nshapes
+                labels[slice_key] = slices
+                nshapes += len(data.shapes)
         return labels
 
     def to_list(self, shape_type=None):
@@ -1449,19 +1413,18 @@ class Shapes(Layer):
             `np.ndarray` corresponding to one shape
         """
 
-        if self.broadcast or self.ndim == 2:
-            # For broadcast shapes or 2D shapes convert current view to a list
+        if self.ndim == 2:
+            # For 2D shapes convert current view to a list
             data = self.slice_data.to_list(shape_type=shape_type)
         else:
             # For nD insert each slice_key into shape indices in list
             data = []
             for slice_key, d in self.data.items():
-                if len(slice_key) > 0:
-                    shapes = d.to_list(shape_type=shape_type)
-                    for s in shapes:
-                        slice_keys = np.tile(slice_key, (len(s), 1))
-                        full_shape = np.concatenate((slice_keys, s), axis=1)
-                        data.append(full_shape)
+                shapes = d.to_list(shape_type=shape_type)
+                for s in shapes:
+                    slice_keys = np.tile(slice_key, (len(s), 1))
+                    full_shape = np.concatenate((slice_keys, s), axis=1)
+                    data.append(full_shape)
         return data
 
     def on_mouse_press(self, event):
