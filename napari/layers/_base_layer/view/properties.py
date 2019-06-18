@@ -120,6 +120,8 @@ class QtLayerProperties(QFrame):
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
 
+        self._on_select(None)
+
     def _on_select(self, event):
         self.setProperty('selected', True)
         self.nameTextBox.setEnabled(True)
