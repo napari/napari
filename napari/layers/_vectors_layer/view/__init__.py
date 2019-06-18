@@ -1,1 +1,1 @@
-from .properties import QtVectorsLayer
+from .properties import QtVectorsProperties

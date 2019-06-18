@@ -27,6 +27,3 @@ with napari.util.app_context():
     blayer = v.add_image(bch, name='blue channel')
     blayer.blending = 'additive'
     blayer.colormap = {'blue': blue}
-
-    # set the blayer property widget to be expanded
-    blayer._qt_properties.setExpanded(True)

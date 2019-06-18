@@ -72,7 +72,7 @@ with app_context():
     )
 
     # change some properties of the layer
-    layer.selected_shapes = list(range(len(layer.data.shapes)))
+    layer.selected_shapes = list(range(layer.nshapes))
     layer.edge_width = 5
     layer.opacity = 0.75
     layer.selected_shapes = []
@@ -92,8 +92,6 @@ with app_context():
     # Set the layer mode with a string
     layer.mode = 'select'
 
-    layer._qt_properties.setExpanded(True)
-
 # Print the shape coordinate data
-print("your shapes are at:")
-print(layer.data.to_list())
+print(layer.nshapes, "shapes at:")
+print(layer.to_list())

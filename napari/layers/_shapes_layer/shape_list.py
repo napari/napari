@@ -614,7 +614,7 @@ class ShapeList:
 
     def to_masks(self, mask_shape=None, shape_type=None):
         """Returns N binary masks, one for each shape, embedded in an array of
-        shape mask_shape Passing a `shape_type` argument leads to only mask
+        shape `mask_shape`. Passing a `shape_type` argument leads to only mask
         from that particular `shape_type` being returned.
 
         Parameters

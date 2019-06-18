@@ -1,9 +1,10 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
-from ..._base_layer import QtLayer
+from ..._base_layer import QtLayerProperties
+from .._constants import Interpolation
 
 
-class QtImageLayer(QtLayer):
+class QtImageProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -28,8 +29,8 @@ class QtImageLayer(QtLayer):
 
         row = self.grid_layout.rowCount()
         interp_comboBox = QComboBox()
-        for interp in self.layer._interpolation_names:
-            interp_comboBox.addItem(interp)
+        for interp in Interpolation:
+            interp_comboBox.addItem(str(interp))
         index = interp_comboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString
         )

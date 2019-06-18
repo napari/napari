@@ -6,15 +6,14 @@ from qtpy.QtWidgets import (
     QFrame,
     QWidget,
 )
-
 from .._constants import Mode
+from ..._base_layer import QtLayerControls
 
 
-class QtLabelsControls(QFrame):
+class QtLabelsControls(QtLayerControls):
     def __init__(self, layer):
-        super().__init__()
+        super().__init__(layer)
 
-        self.layer = layer
         self.layer.events.mode.connect(self.set_mode)
 
         self.panzoom_button = QtModeButton(

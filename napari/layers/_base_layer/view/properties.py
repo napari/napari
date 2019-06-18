@@ -16,7 +16,7 @@ from qtpy.QtGui import QImage, QPixmap
 from .._constants import Blending
 
 
-class QtLayer(QFrame):
+class QtLayerProperties(QFrame):
     def __init__(self, layer):
         super().__init__()
 
@@ -119,7 +119,6 @@ class QtLayer(QFrame):
         self.setFixedWidth(250)
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
-        self.layer.selected = True
 
     def _on_select(self, event):
         self.setProperty('selected', True)

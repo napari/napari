@@ -2,11 +2,11 @@ import numpy as np
 from math import inf
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
+from .._dims import Dims
+from .._layers_list import LayersList
 from ... import layers
-
 from ...util.event import EmitterGroup, Event
 from ...util.theme import palettes
-from .._dims import Dims
 
 
 class ViewerModel:
@@ -35,7 +35,6 @@ class ViewerModel:
 
     def __init__(self, title='napari'):
         super().__init__()
-        from .._layers_list import LayersList
 
         self.events = EmitterGroup(
             source=self,
@@ -494,6 +493,15 @@ class ViewerModel:
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
+        ndim : int, optional
+            Dimensions of shape data. Once set cannot be changed. Defaults to
+            2.
+        broadcast : bool, optional
+            If True, shapes are broadcast across all dimensions if `ndim`
+            > 2. If False only shapes in the currently sliced layer are
+            visible. While it is possible to swith between these two views,
+            when you are in one view you will only be able to see and edit
+            shapes in that view.
         name : str, keyword-only
             Name of the layer.
 
@@ -548,7 +556,7 @@ class ViewerModel:
         self.add_markers(empty_markers)
 
     def _new_shapes(self):
-        self.add_shapes([])
+        layer = self.add_shapes([], ndim=self.dims.ndim)
 
     def _new_labels(self):
         if self.dims.ndim == 0:

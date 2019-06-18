@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QDrag
 import numpy as np
+from ...layers import create_qt_properties
 
 
 class QtLayersList(QScrollArea):
@@ -38,28 +39,26 @@ class QtLayersList(QScrollArea):
         self.drag_name = None
 
     def _add(self, event):
-        """Insert `event.widget` at index `event.index`."""
+        """Insert widget for layer `event.item` at index `event.index`."""
         layer = event.item
-        index = event.index
         total = len(self.layers)
-        if layer._qt_properties is not None:
-            self.vbox_layout.insertWidget(
-                2 * (total - index) - 1, layer._qt_properties
-            )
-            self.vbox_layout.insertWidget(2 * (total - index), QtDivider())
+        index = 2 * (total - event.index) - 1
+        properties = create_qt_properties(layer)
+        self.vbox_layout.insertWidget(index, properties)
+        self.vbox_layout.insertWidget(index + 1, QtDivider())
 
     def _remove(self, event):
-        """Remove layer widget at index `event.index`."""
-        layer = event.item
-        if layer._qt_properties is not None:
-            index = self.vbox_layout.indexOf(layer._qt_properties)
-            divider = self.vbox_layout.itemAt(index + 1).widget()
-            self.vbox_layout.removeWidget(layer._qt_properties)
-            layer._qt_properties.deleteLater()
-            layer._qt_properties = None
-            self.vbox_layout.removeWidget(divider)
-            divider.deleteLater()
-            divider = None
+        """Remove widget for layer at index `event.index`."""
+        layer_index = event.index
+        total = len(self.layers)
+        # Find property widget and divider for layer to be removed
+        index = 2 * (total - layer_index) + 1
+        widget = self.vbox_layout.itemAt(index).widget()
+        divider = self.vbox_layout.itemAt(index + 1).widget()
+        self.vbox_layout.removeWidget(widget)
+        widget.deleteLater()
+        self.vbox_layout.removeWidget(divider)
+        divider.deleteLater()
 
     def _reorder(self, event):
         """Reorders list of layer widgets by looping through all
@@ -67,17 +66,35 @@ class QtLayersList(QScrollArea):
         them into the correct place in final list.
         """
         total = len(self.layers)
+
+        # Create list of the current property and divider widgets
+        widgets = [
+            self.vbox_layout.itemAt(i + 1).widget() for i in range(2 * total)
+        ]
+        # Take every other widget to ignore the dividers and get just the
+        # property widgets
+        indices = [
+            self.layers.index(w.layer)
+            for i, w in enumerate(widgets)
+            if i % 2 == 0
+        ]
+
+        # Move through the layers in order
         for i in range(total):
-            layer = self.layers[i]
-            if layer._qt_properties is not None:
-                index = self.vbox_layout.indexOf(layer._qt_properties)
-                divider = self.vbox_layout.itemAt(index + 1).widget()
-                self.vbox_layout.removeWidget(layer._qt_properties)
+            # Find index of property widget in list of the current layer
+            index = 2 * indices.index(i)
+            widget = widgets[index]
+            divider = widgets[index + 1]
+            # Check if current index does not match new index
+            index_current = self.vbox_layout.indexOf(widget)
+            index_new = 2 * (total - i) - 1
+            if index_current != index_new:
+                # Remove that property widget and divider
+                self.vbox_layout.removeWidget(widget)
                 self.vbox_layout.removeWidget(divider)
-                self.vbox_layout.insertWidget(
-                    2 * (total - i) - 1, layer._qt_properties
-                )
-                self.vbox_layout.insertWidget(2 * (total - i), divider)
+                # Insert the property widget and divider into new location
+                self.vbox_layout.insertWidget(index_new, widget)
+                self.vbox_layout.insertWidget(index_new + 1, divider)
 
     def mousePressEvent(self, event):
         # Check if mouse press happens on a layer properties widget or

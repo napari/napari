@@ -1,12 +1,12 @@
-from qtpy.QtWidgets import QHBoxLayout, QWidget
+from qtpy.QtWidgets import QHBoxLayout
 from ...._qt import QVRangeSlider
+from ..._base_layer import QtLayerControls
 
 
-class QtImageControls(QWidget):
+class QtImageControls(QtLayerControls):
     def __init__(self, layer):
-        super().__init__()
+        super().__init__(layer)
 
-        self.layer = layer
         self.layer.events.clim.connect(self.clim_slider_update)
 
         # Create clim slider
