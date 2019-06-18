@@ -47,9 +47,7 @@ def view(
     :class:`napari.Viewer` class (preferred), or update the layers directly on
     the returned :class:`napari.Viewer` object.
     """
-
     viewer = Viewer(title=title)
-
     for image in images:
         viewer.add_image(
             image, meta=meta, multichannel=multichannel, clim_range=clim_range
