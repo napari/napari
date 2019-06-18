@@ -520,9 +520,9 @@ class ViewerModel:
         Parameters
         ----------
         vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
-            A (N, 2, D) array is interpted as "coordinate-like" data and a list
-            of N vectors with start point and projections of the vector in D
-            dimensions. A (N1, N2, ..., ND, D) array is interpted as
+            An (N, 2, D) array is interpreted as "coordinate-like" data and a
+            list of N vectors with start point and projections of the vector in
+            D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
         averaging : int

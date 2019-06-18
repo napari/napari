@@ -19,11 +19,11 @@ class Vectors(Layer):
     Parameters
     ----------
     vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
-        A (N, 2, D) array is interpted as "coordinate-like" data and a list
-        of N vectors with start point and projections of the vector in D
-        dimensions. A (N1, N2, ..., ND, D) array is interpted as
-        "image-like" data where there is a length D vector of the
-        projections at each pixel.
+            An (N, 2, D) array is interpreted as "coordinate-like" data and a
+            list of N vectors with start point and projections of the vector in
+            D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
+            "image-like" data where there is a length D vector of the
+            projections at each pixel.
     averaging : int
         Size of kernel over which to convolve and subsample the data not
         implemented for "coordinate-like" data
@@ -76,9 +76,9 @@ class Vectors(Layer):
     @data.setter
     def data(self, vectors: np.ndarray):
         """(N, 2, D) or (N1, N2, ..., ND, D) array: a (N, 2, D) array is
-        interpted as "coordinate-like" data and a list of N vectors with start
+        interpreted as "coordinate-like" data and a list of N vectors with start
         point and projections of the vector in D dimensions. A
-        (N1, N2, ..., ND, D) array is interpted as "image-like" data where
+        (N1, N2, ..., ND, D) array is interpreted as "image-like" data where
         there is a length D vector of the projections at each pixel.
 
         Parameters
@@ -103,9 +103,9 @@ class Vectors(Layer):
         Parameters
         ----------
         vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
-            A (N, 2, D) array is interpted as "coordinate-like" data and a list
+            A (N, 2, D) array is interpreted as "coordinate-like" data and a list
             of N vectors with start point and projections of the vector in D
-            dimensions. A (N1, N2, ..., ND, D) array is interpted as
+            dimensions. A (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
 
