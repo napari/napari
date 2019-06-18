@@ -218,6 +218,8 @@ class Shapes(Layer):
             )
 
             if len(self._data) > 1:
+                # If multiple ShapeLists present and 2D slice key still there
+                # from initialization then remove 2D slice key
                 if () in self._data:
                     del self._data[()]
 
@@ -525,8 +527,6 @@ class Shapes(Layer):
             return (1,) * (self._input_ndim - 2) + slice_shape
         else:
             slice_keys = list(self.data.keys())
-            if () in slice_keys:
-                slice_keys.remove(())
             max_val = np.array(slice_keys).max(axis=0)
             return tuple(max_val) + slice_shape
 
