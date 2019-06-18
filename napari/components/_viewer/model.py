@@ -496,12 +496,6 @@ class ViewerModel:
         ndim : int, optional
             Dimensions of shape data. Once set cannot be changed. Defaults to
             2.
-        broadcast : bool, optional
-            If True, shapes are broadcast across all dimensions if `ndim`
-            > 2. If False only shapes in the currently sliced layer are
-            visible. While it is possible to swith between these two views,
-            when you are in one view you will only be able to see and edit
-            shapes in that view.
         name : str, keyword-only
             Name of the layer.
 
