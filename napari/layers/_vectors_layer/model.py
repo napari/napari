@@ -2,7 +2,7 @@ from typing import Union
 from xml.etree.ElementTree import Element
 
 import numpy as np
-from scipy import signal
+from scipy import ndimage as ndi
 from copy import copy
 
 from .._base_layer import Layer
@@ -159,8 +159,8 @@ class Vectors(Layer):
 
         # assign coordinates (pos) to all pixels
         for i, g in enumerate(grid):
-            pos[:, 0, i] = g.flatten() + 0.5
-        pos[:, 1, :] = np.reshape(vect, (-1, 2))
+            pos[:, 0, i] = g.flatten()
+        pos[:, 1, :] = np.reshape(vect, (-1, vect.ndim - 1))
 
         return pos
 
@@ -208,39 +208,17 @@ class Vectors(Layer):
         Implemented ONLY for image-like vector data
         """
         if self._data_type == 'coords':
-            # default averaging is supported only for 'coordinate-like' data
+            # averaging is not supported for 'coordinate-like' data
             return
         elif self._data_type == 'image':
-
-            x, y = self._averaging, self._averaging
-
-            if (x, y) == (1, 1):
+            if self.averaging == 1:
+                # use original data
                 self.data = self._raw_data
-                # calling original data
-                return
-
-            tempdat = self._raw_data
-            range_x = tempdat.shape[0]
-            range_y = tempdat.shape[1]
-            x_offset = int((x - 1) / 2)
-            y_offset = int((y - 1) / 2)
-
-            kernel = np.ones(shape=(x, y)) / (x * y)
-
-            output_mat = np.zeros_like(tempdat)
-            output_mat_x = signal.convolve2d(
-                tempdat[:, :, 0], kernel, mode='same', boundary='wrap'
-            )
-            output_mat_y = signal.convolve2d(
-                tempdat[:, :, 1], kernel, mode='same', boundary='wrap'
-            )
-
-            output_mat[:, :, 0] = output_mat_x * x
-            output_mat[:, :, 1] = output_mat_y * y
-
-            self.data = output_mat[
-                x_offset : range_x - x_offset, y_offset : range_y - y_offset
-            ]
+            else:
+                # average original data
+                size = (self.averaging,) * self.ndim + (1,)
+                kernal = np.ones(size) / np.product(size)
+                self.data = ndi.convolve(self._raw_data, kernal)
 
     @property
     def width(self) -> Union[int, float]:
@@ -374,7 +352,7 @@ class Vectors(Layer):
             self._node.set_data(vertices=None, faces=None)
         else:
             self._node.set_data(
-                vertices=vertices[:, ::-1], faces=faces, color=self.color
+                vertices=vertices[:, ::-1] + 0.5, faces=faces, color=self.color
             )
 
         self._need_visual_update = True
