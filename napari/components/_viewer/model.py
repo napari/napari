@@ -391,21 +391,21 @@ class ViewerModel:
             the following: arrow, clobber, cross, diamond, disc, hbar, ring,
             square, star, tailed_arrow, triangle_down, triangle_up, vbar, x
         size : int, float, np.ndarray, list
-            Size of the point. If given as a scalar, all points are the same
+            Size of the point marker. If given as a scalar, all points are the same
             size. If given as a list/array, size must be the same length as
-            coords and sets the point size for each point in coords
+            coords and sets the point marker size for each point in coords
             (element-wise). If n_dimensional is True then can be a list of
             length dims or can be an array of shape Nxdims where N is the
             number of points and dims is the number of dimensions
         edge_width : int, float, None
             Width of the symbol edge in pixels.
         edge_color : Color, ColorArray
-            Color of the point border.
+            Color of the point marker border.
         face_color : Color, ColorArray
-            Color of the point body.
+            Color of the point marker body.
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
-            n-dimensions according to specified point size.
+            n-dimensions according to specified point marker size.
 
         Returns
         -------

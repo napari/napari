@@ -135,7 +135,7 @@ class Points(Layer):
     @property
     def n_dimensional(self) -> str:
         """ bool: if True, renders points not just in central plane but also
-        in all n dimensions according to specified point size
+        in all n dimensions according to specified point marker size
         """
         return self._n_dimensional
 
@@ -169,7 +169,7 @@ class Points(Layer):
 
     @property
     def size(self) -> Union[int, float, np.ndarray, list]:
-        """float, ndarray: size of the point symbol in px
+        """float, ndarray: size of the point marker symbol in px
         """
 
         return self._size_original
@@ -204,7 +204,7 @@ class Points(Layer):
 
     @property
     def edge_color(self) -> str:
-        """Color, ColorArray: the point edge color
+        """Color, ColorArray: the point marker edge color
         """
 
         return self._edge_color
@@ -218,7 +218,7 @@ class Points(Layer):
 
     @property
     def face_color(self) -> str:
-        """Color, ColorArray: color of the body of the point
+        """Color, ColorArray: color of the body of the point marker body
         """
 
         return self._face_color
