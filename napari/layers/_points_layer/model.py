@@ -8,35 +8,35 @@ from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
 
-class Markers(Layer):
-    """Markers layer.
+class Points(Layer):
+    """Points layer.
 
     Parameters
     ----------
     coords : np.ndarray
-        Coordinates for each marker.
+        Coordinates for each point.
     symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
                          'hbar', 'ring', 'square', 'star', 'tailed_arrow',
                          'triangle_down', 'triangle_up', 'vbar', 'x'}
-        Symbol to be used as a marker. If given as a string, must be one of
+        Symbol to be used as a point. If given as a string, must be one of
         the following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x
     size : int, float, np.ndarray, list
-        Size of the marker. If given as a scalar, all markers are the same
+        Size of the point marker. If given as a scalar, all points are the same
         size. If given as a list/array, size must be the same length as
-        coords and sets the marker size for each marker in coords
+        coords and sets the point marker size for each point in coords
         (element-wise). If n_dimensional is True then can be a list of
         length dims or can be an array of shape Nxdims where N is the
-        number of markers and dims is the number of dimensions
+        number of points and dims is the number of dimensions
     edge_width : int, float, None
         Width of the symbol edge in pixels.
     edge_color : Color, ColorArray
-        Color of the marker border.
+        Color of the point marker border.
     face_color : Color, ColorArray
-        Color of the marker body.
+        Color of the point marker body.
     n_dimensional : bool
-        If True, renders markers not just in central plane but also in all
-        n-dimensions according to specified marker size.
+        If True, renders points not just in central plane but also in all
+        n-dimensions according to specified point marker size.
 
     Notes
     -----
@@ -69,10 +69,10 @@ class Markers(Layer):
 
         # Freeze refreshes
         with self.freeze_refresh():
-            # Save the marker coordinates
+            # Save the point coordinates
             self._coords = coords
 
-            # Save the marker style params
+            # Save the point style params
             self.symbol = symbol
             self.size = size
             self.edge_width = edge_width
@@ -80,11 +80,11 @@ class Markers(Layer):
             self.face_color = face_color
             self.n_dimensional = n_dimensional
             self._colors = get_color_names()
-            self._selected_markers = None
+            self._selected_points = None
             self._mode = Mode.PAN_ZOOM
             self._mode_history = self._mode
             self._status = self._mode
-            self._markers_view = np.empty((0, 2))
+            self._points_view = np.empty((0, 2))
             self._sizes_view = 0
 
             # update flags
@@ -93,7 +93,7 @@ class Markers(Layer):
 
     @property
     def coords(self) -> np.ndarray:
-        """ndarray: coordinates of the marker centroids
+        """ndarray: coordinates of the point centroids
         """
         return self._coords
 
@@ -101,14 +101,14 @@ class Markers(Layer):
     def coords(self, coords: np.ndarray):
         self._coords = coords
 
-        # Adjust the size array when the number of markers has changed
+        # Adjust the size array when the number of points has changed
         if len(coords) < len(self._size):
-            # If there are now less markers, remove the sizes of the missing
+            # If there are now less points, remove the sizes of the missing
             # ones
             with self.freeze_refresh():
                 self.size = self._size[: len(coords)]
         elif len(coords) > len(self._size):
-            # If there are now more markers, add the sizes of last one
+            # If there are now more points, add the sizes of last one
             # or add the default size
             with self.freeze_refresh():
                 adding = len(coords) - len(self._size)
@@ -124,7 +124,7 @@ class Markers(Layer):
 
     @property
     def data(self) -> np.ndarray:
-        """ndarray: coordinates of the marker centroids
+        """ndarray: coordinates of the point centroids
         """
         return self._coords
 
@@ -134,8 +134,8 @@ class Markers(Layer):
 
     @property
     def n_dimensional(self) -> str:
-        """ bool: if True, renders markers not just in central plane but also
-        in all n dimensions according to specified marker size
+        """ bool: if True, renders points not just in central plane but also
+        in all n dimensions according to specified point marker size
         """
         return self._n_dimensional
 
@@ -148,7 +148,7 @@ class Markers(Layer):
 
     @property
     def symbol(self) -> str:
-        """ str: marker symbol
+        """ str: point symbol
         """
         return str(self._symbol)
 
@@ -169,7 +169,7 @@ class Markers(Layer):
 
     @property
     def size(self) -> Union[int, float, np.ndarray, list]:
-        """float, ndarray: size of the marker symbol in px
+        """float, ndarray: size of the point marker symbol in px
         """
 
         return self._size_original
@@ -204,7 +204,7 @@ class Markers(Layer):
 
     @property
     def edge_color(self) -> str:
-        """Color, ColorArray: the marker edge color
+        """Color, ColorArray: the point marker edge color
         """
 
         return self._edge_color
@@ -218,7 +218,7 @@ class Markers(Layer):
 
     @property
     def face_color(self) -> str:
-        """Color, ColorArray: color of the body of the marker
+        """Color, ColorArray: color of the body of the point marker body
         """
 
         return self._face_color
@@ -291,7 +291,7 @@ class Markers(Layer):
 
     def _get_shape(self):
         if len(self.coords) == 0:
-            # when no markers given, return (1,) * dim
+            # when no points given, return (1,) * dim
             # we use coords.shape[1] as the dimensionality of the image
             return np.ones(self.coords.shape[1], dtype=int)
         else:
@@ -311,52 +311,52 @@ class Markers(Layer):
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
-    def _slice_markers(self, indices):
-        """Determines the slice of markers given the indices.
+    def _slice_points(self, indices):
+        """Determines the slice of points given the indices.
 
         Parameters
         ----------
         indices : sequence of int or slice
             Indices to slice with.
         """
-        # Get a list of the coords for the markers in this slice
+        # Get a list of the coords for the points in this slice
         coords = self.coords
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, :-2] - indices[:-2])
                 size_array = self._size[:, :-2] / 2
                 matches = np.all(distances <= size_array, axis=1)
-                in_slice_markers = coords[matches, -2:]
+                in_slice_points = coords[matches, -2:]
                 size_match = size_array[matches]
                 size_match[size_match == 0] = 1
                 scale_per_dim = (size_match - distances[matches]) / size_match
                 scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
-                return in_slice_markers, matches, scale
+                return in_slice_points, matches, scale
             else:
                 matches = np.all(coords[:, :-2] == indices[:-2], axis=1)
-                in_slice_markers = coords[matches, -2:]
-                return in_slice_markers, matches, 1
+                in_slice_points = coords[matches, -2:]
+                return in_slice_points, matches, 1
         else:
             return [], [], []
 
-    def _select_marker(self, indices):
-        """Determines selected markers selected given indices.
+    def _select_point(self, indices):
+        """Determines selected points selected given indices.
 
         Parameters
         ----------
         indices : sequence of int
-            Indices to check if marker at.
+            Indices to check if point at.
         """
-        in_slice_markers, matches, scale = self._slice_markers(indices)
+        in_slice_points, matches, scale = self._slice_points(indices)
 
-        # Display markers if there are any in this slice
-        if len(in_slice_markers) > 0:
-            # Get the marker sizes
+        # Display points if there are any in this slice
+        if len(in_slice_points) > 0:
+            # Get the point sizes
             size_array = self._size[matches, -2:] * np.expand_dims(
                 scale, axis=1
             )
-            distances = abs(in_slice_markers - indices[-2:])
+            distances = abs(in_slice_points - indices[-2:])
             in_slice_matches = np.all(distances <= size_array / 2, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
@@ -371,21 +371,21 @@ class Markers(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        in_slice_markers, matches, scale = self._slice_markers(self.indices)
+        in_slice_points, matches, scale = self._slice_points(self.indices)
 
-        # Display markers if there are any in this slice
-        if len(in_slice_markers) > 0:
-            # Get the marker sizes
+        # Display points if there are any in this slice
+        if len(in_slice_points) > 0:
+            # Get the point sizes
             sizes = (self._size[matches, -2:].mean(axis=1) * scale)[::-1]
 
-            # Update the markers node
-            data = np.array(in_slice_markers)[::-1] + 0.5
+            # Update the points node
+            data = np.array(in_slice_points)[::-1] + 0.5
 
         else:
-            # if no markers in this slice send dummy data
+            # if no points in this slice send dummy data
             data = np.empty((0, 2))
             sizes = 0
-        self._markers_view = data
+        self._points_view = data
         self._sizes_view = sizes
 
         self._node.set_data(
@@ -399,9 +399,7 @@ class Markers(Layer):
         )
         self._need_visual_update = True
         self._update()
-        self.status = self.get_message(
-            self.coordinates, self._selected_markers
-        )
+        self.status = self.get_message(self.coordinates, self._selected_points)
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -433,47 +431,47 @@ class Markers(Layer):
         and set of indices.
         Parameters
         ----------
-        coord : sequence of indices to add marker at
+        coord : sequence of indices to add point at
         """
         self.data = np.append(self.data, [coord], axis=0)
-        self._selected_markers = len(self.data) - 1
+        self._selected_points = len(self.data) - 1
 
     def _remove(self):
         """Removes selected object if any.
         """
-        index = self._selected_markers
+        index = self._selected_points
         if index is not None:
             self._size = np.delete(self._size, index, axis=0)
             self.data = np.delete(self.data, index, axis=0)
-            self._selected_markers = None
+            self._selected_points = None
 
     def _move(self, coord):
         """Moves object at given mouse position
         and set of indices.
         Parameters
         ----------
-        coord : sequence of indices to move marker to
+        coord : sequence of indices to move point to
         """
-        index = self._selected_markers
+        index = self._selected_points
         if index is not None:
             self.data[index] = coord
             self.refresh()
 
     def to_xml_list(self):
-        """Convert the markers to a list of xml elements according to the svg
-        specification. Z ordering of the markers will be taken into account.
-        Each marker is represented by a circle. Support for other symbols is
+        """Convert the points to a list of xml elements according to the svg
+        specification. Z ordering of the points will be taken into account.
+        Each point is represented by a circle. Support for other symbols is
         not yet implemented.
 
         Returns
         ----------
         xml : list
-            List of xml elements defining each marker according to the
+            List of xml elements defining each point according to the
             svg specification
         """
         xml_list = []
 
-        for d, s in zip(self._markers_view, self._sizes_view):
+        for d, s in zip(self._points_view, self._sizes_view):
             cx = str(d[1])
             cy = str(d[0])
             r = str(s / 2)
@@ -492,8 +490,8 @@ class Markers(Layer):
         if self._mode == Mode.SELECT and event.is_dragging:
             self._move(coord)
         else:
-            self._selected_markers = self._select_marker(coord)
-        self.status = self.get_message(coord, self._selected_markers)
+            self._selected_points = self._select_point(coord)
+        self.status = self.get_message(coord, self._selected_points)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -502,7 +500,7 @@ class Markers(Layer):
             return
         self.position = tuple(event.pos)
         coord = self.coordinates
-        self._selected_markers = self._select_marker(coord)
+        self._selected_points = self._select_point(coord)
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.ADD:
@@ -510,7 +508,7 @@ class Markers(Layer):
                 self._remove()
             else:
                 self._add(coord)
-        self.status = self.get_message(coord, self._selected_markers)
+        self.status = self.get_message(coord, self._selected_points)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.

@@ -14,7 +14,7 @@
     <file>icons/light/move_back.svg</file>
     <file>icons/light/move_front.svg</file>
     <file>icons/light/new_labels.svg</file>
-    <file>icons/light/new_markers.svg</file>
+    <file>icons/light/new_points.svg</file>
     <file>icons/light/new_shapes.svg</file>
     <file>icons/light/paint.svg</file>
     <file>icons/light/path.svg</file>
@@ -25,7 +25,7 @@
     <file>icons/light/properties_expand.svg</file>
     <file>icons/light/rectangle.svg</file>
     <file>icons/light/select.svg</file>
-    <file>icons/light/select_marker.svg</file>
+    <file>icons/light/select_point.svg</file>
     <file>icons/light/vertex_insert.svg</file>
     <file>icons/light/vertex_remove.svg</file>
     <file>icons/light/visibility.svg</file>
@@ -44,7 +44,7 @@
     <file>icons/dark/move_back.svg</file>
     <file>icons/dark/move_front.svg</file>
     <file>icons/dark/new_labels.svg</file>
-    <file>icons/dark/new_markers.svg</file>
+    <file>icons/dark/new_points.svg</file>
     <file>icons/dark/new_shapes.svg</file>
     <file>icons/dark/paint.svg</file>
     <file>icons/dark/path.svg</file>
@@ -55,7 +55,7 @@
     <file>icons/dark/properties_expand.svg</file>
     <file>icons/dark/rectangle.svg</file>
     <file>icons/dark/select.svg</file>
-    <file>icons/dark/select_marker.svg</file>
+    <file>icons/dark/select_point.svg</file>
     <file>icons/dark/vertex_insert.svg</file>
     <file>icons/dark/vertex_remove.svg</file>
     <file>icons/dark/visibility.svg</file>

@@ -7,7 +7,7 @@ from ..._base_layer import QtLayerProperties
 from .._constants import Symbol
 
 
-class QtMarkersProperties(QtLayerProperties):
+class QtPointsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -87,7 +87,7 @@ class QtMarkersProperties(QtLayerProperties):
         self.grid_layout.addWidget(symbol_comboBox, row, self.property_column)
 
         ndim_cb = QCheckBox()
-        ndim_cb.setToolTip('N-dimensional markers')
+        ndim_cb.setToolTip('N-dimensional points')
         ndim_cb.setChecked(self.layer.n_dimensional)
         ndim_cb.stateChanged.connect(
             lambda state=ndim_cb: self.change_ndim(state)
@@ -109,7 +109,7 @@ class QtMarkersProperties(QtLayerProperties):
         self.layer.symbol = text
 
     def changeSize(self, value):
-        """Rescale marker sizes according to the value of the size slider."""
+        """Rescale point sizes according to the value of the size slider."""
         avg = np.mean(self.layer.size) or 1
         self.layer.size = self.layer.size / avg * value
 

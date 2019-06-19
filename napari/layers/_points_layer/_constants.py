@@ -8,9 +8,9 @@ class Mode(StringEnum):
     Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
 
-    ADD allows markers to be added by clicking
+    ADD allows points to be added by clicking
 
-    SELECT allows the user to select markers by clicking on them
+    SELECT allows the user to select points by clicking on them
     """
 
     ADD = auto()
@@ -19,7 +19,7 @@ class Mode(StringEnum):
 
 
 class Symbol(Enum):
-    """Symbol: Valid symbol/marker types for the Markers layer.
+    """Symbol: Valid symbol/marker types for the Points layer.
     The string method returns the valid vispy string.
 
     """

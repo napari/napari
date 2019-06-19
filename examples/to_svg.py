@@ -100,9 +100,9 @@ with app_context():
     labels = layer.to_labels([512, 512])
     labels_layer = viewer.add_labels(labels, name='labels')
 
-    markers = np.array([[100, 100], [200, 200], [333, 111]])
+    points = np.array([[100, 100], [200, 200], [333, 111]])
     size = np.array([10, 20, 20])
-    viewer.add_markers(markers, size=size)
+    viewer.add_points(points, size=size)
 
     n = 100
     pos = np.zeros((n, 4), dtype=np.float32)

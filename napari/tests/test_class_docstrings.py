@@ -1,9 +1,9 @@
-from napari.layers import Image, Pyramid, Markers, Labels, Shapes, Vectors
+from napari.layers import Image, Pyramid, Points, Labels, Shapes, Vectors
 from napari import Viewer
 
 
 def test_docstrings():
-    for obj in (Image, Pyramid, Markers, Labels, Shapes, Vectors):
+    for obj in (Image, Pyramid, Points, Labels, Shapes, Vectors):
         method = f'add_{obj.__name__.lower()}'
         obj_doc = obj.__doc__
         i = [

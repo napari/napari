@@ -6,82 +6,66 @@ Subpackages
 
 .. toctree::
 
-    napari.util.colormaps
-    napari.util.list
-    napari.util.tests
+   napari.util.colormaps
+   napari.util.list
+   napari.util.tests
 
 Submodules
 ----------
+
+napari.util.\_register module
+-----------------------------
+
+.. automodule:: napari.util._register
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 napari.util.app module
 ----------------------
 
 .. automodule:: napari.util.app
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-napari.util.async\_utils module
--------------------------------
-
-.. automodule:: napari.util.async_utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 napari.util.event module
 ------------------------
 
 .. automodule:: napari.util.event
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-napari.util.example\_data\_utils module
----------------------------------------
-
-.. automodule:: napari.util.example_data_utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-napari.util.interpolation module
---------------------------------
-
-.. automodule:: napari.util.interpolation
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 napari.util.misc module
 -----------------------
 
 .. automodule:: napari.util.misc
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 napari.util.naming module
 -------------------------
 
 .. automodule:: napari.util.naming
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-napari.util.range\_slider module
---------------------------------
+napari.util.theme module
+------------------------
 
-.. automodule:: napari.util.range_slider
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: napari.util.theme
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 Module contents
 ---------------
 
 .. automodule:: napari.util
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
