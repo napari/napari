@@ -1,4 +1,4 @@
-napari.layers.\_labels\_layer package
+napari.layers.\_points\_layer package
 =====================================
 
 Subpackages
@@ -6,23 +6,23 @@ Subpackages
 
 .. toctree::
 
-   napari.layers._labels_layer.view
+   napari.layers._points_layer.view
 
 Submodules
 ----------
 
-napari.layers.\_labels\_layer.\_constants module
+napari.layers.\_points\_layer.\_constants module
 ------------------------------------------------
 
-.. automodule:: napari.layers._labels_layer._constants
+.. automodule:: napari.layers._points_layer._constants
    :members:
    :undoc-members:
    :show-inheritance:
 
-napari.layers.\_labels\_layer.model module
+napari.layers.\_points\_layer.model module
 ------------------------------------------
 
-.. automodule:: napari.layers._labels_layer.model
+.. automodule:: napari.layers._points_layer.model
    :members:
    :undoc-members:
    :show-inheritance:
@@ -31,7 +31,7 @@ napari.layers.\_labels\_layer.model module
 Module contents
 ---------------
 
-.. automodule:: napari.layers._labels_layer
+.. automodule:: napari.layers._points_layer
    :members:
    :undoc-members:
    :show-inheritance:

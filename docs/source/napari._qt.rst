@@ -1,18 +1,17 @@
-napari.\_vispy package
-======================
+napari.\_qt package
+===================
 
 Subpackages
 -----------
 
 .. toctree::
 
-   napari._vispy.scene
-   napari._vispy.visuals
+   napari._qt.range_slider
 
 Module contents
 ---------------
 
-.. automodule:: napari._vispy
+.. automodule:: napari._qt
    :members:
    :undoc-members:
    :show-inheritance:
