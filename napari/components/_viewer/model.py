@@ -377,47 +377,47 @@ class ViewerModel:
         self.add_layer(layer)
         return layer
 
-    def add_markers(self, points, *args, **kwargs):
-        """Add a markers layer to the layers list.
+    def add_points(self, points, *args, **kwargs):
+        """Add a points layer to the layers list.
 
         Parameters
         ----------
         coords : np.ndarray
-            Coordinates for each marker.
+            Coordinates for each point.
         symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
                              'hbar', 'ring', 'square', 'star', 'tailed_arrow',
                              'triangle_down', 'triangle_up', 'vbar', 'x'}
-            Symbol to be used as a marker. If given as a string, must be one of
+            Symbol to be used as a point. If given as a string, must be one of
             the following: arrow, clobber, cross, diamond, disc, hbar, ring,
             square, star, tailed_arrow, triangle_down, triangle_up, vbar, x
         size : int, float, np.ndarray, list
-            Size of the marker. If given as a scalar, all markers are the same
+            Size of the point. If given as a scalar, all points are the same
             size. If given as a list/array, size must be the same length as
-            coords and sets the marker size for each marker in coords
+            coords and sets the point size for each point in coords
             (element-wise). If n_dimensional is True then can be a list of
             length dims or can be an array of shape Nxdims where N is the
-            number of markers and dims is the number of dimensions
+            number of points and dims is the number of dimensions
         edge_width : int, float, None
             Width of the symbol edge in pixels.
         edge_color : Color, ColorArray
-            Color of the marker border.
+            Color of the point border.
         face_color : Color, ColorArray
-            Color of the marker body.
+            Color of the point body.
         n_dimensional : bool
-            If True, renders markers not just in central plane but also in all
-            n-dimensions according to specified marker size.
+            If True, renders points not just in central plane but also in all
+            n-dimensions according to specified point size.
 
         Returns
         -------
-        layer : :class:`napari.layers.Markers`
-            The newly-created markers layer.
+        layer : :class:`napari.layers.Points`
+            The newly-created points layer.
 
         Notes
         -----
         See vispy's marker visual docs for more details:
         http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
-        layer = layers.Markers(points, *args, **kwargs)
+        layer = layers.Points(points, *args, **kwargs)
         self.add_layer(layer)
         return layer
 
@@ -548,12 +548,12 @@ class ViewerModel:
         self.add_layer(layer)
         return layer
 
-    def _new_markers(self):
+    def _new_points(self):
         if self.dims.ndim == 0:
-            empty_markers = np.empty((0, 2))
+            empty_points = np.empty((0, 2))
         else:
-            empty_markers = np.empty((0, self.dims.ndim))
-        self.add_markers(empty_markers)
+            empty_points = np.empty((0, self.dims.ndim))
+        self.add_points(empty_points)
 
     def _new_shapes(self):
         layer = self.add_shapes([], ndim=self.dims.ndim)

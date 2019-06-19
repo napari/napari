@@ -1,6 +1,6 @@
 """
-Display one markers layer ontop of one 4-D image layer using the
-add_markers and add_image APIs, where the markes are visible as nD objects
+Display one points layer ontop of one 4-D image layer using the
+add_points and add_image APIs, where the markes are visible as nD objects
 accross the dimensions, specified by their size
 """
 
@@ -22,8 +22,8 @@ with app_context():
     )
     viewer = napari.view(blobs.astype(float))
 
-    # add the markers
-    markers = np.array(
+    # add the points
+    points = np.array(
         [
             [0, 0, 100, 100],
             [0, 0, 50, 120],
@@ -32,6 +32,6 @@ with app_context():
             [9, 8, 80, 100],
         ]
     )
-    viewer.add_markers(
-        markers, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
+    viewer.add_points(
+        points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
     )

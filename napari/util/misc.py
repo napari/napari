@@ -229,7 +229,7 @@ class StringEnum(Enum):
         return self(value.lower())
 
     def __str__(self):
-        """String representation: The string method returns the
-        valid vispy symbol string for the Markers visual.
+        """String representation: The string method returns the lowercase
+        string of the Enum name
         """
         return self.value

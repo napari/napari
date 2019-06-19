@@ -3,7 +3,7 @@ from ..._base_layer import QtLayerControls
 from .._constants import Mode
 
 
-class QtMarkersControls(QtLayerControls):
+class QtPointsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 

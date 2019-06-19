@@ -117,7 +117,7 @@ QtPanZoomButton::indicator {
 }
 
 QtSelectButton::indicator {
-    image: url(":/icons/{{ folder }}/select_marker.svg");
+    image: url(":/icons/{{ folder }}/select_point.svg");
 }
 
 QtAdditionButton::indicator {
@@ -336,8 +336,8 @@ QtDeleteButton {
    image: url(":/icons/{{ folder }}/delete.svg");
 }
 
-QtNewMarkersButton {
-   image: url(":/icons/{{ folder }}/new_markers.svg");
+QtNewPointsButton {
+   image: url(":/icons/{{ folder }}/new_points.svg");
 }
 
 QtNewShapesButton {

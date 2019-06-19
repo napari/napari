@@ -96,7 +96,7 @@ with app_context():
 
 ![image](resources/screenshot-layers.png)
 
-You can add markers on top of an image
+You can add points on top of an image
 
 ```python
 import numpy as np
@@ -114,15 +114,15 @@ with app_context():
     # specify three sizes
     size = np.array([10, 20, 20])
     # add them to the viewer
-    markers = viewer.add_markers(points, size=size)
+    points = viewer.add_points(points, size=size)
 ```
 
-![image](resources/screenshot-add-markers.png)
+![image](resources/screenshot-add-points.png)
 
-**napari** supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the markers, including any additional ones you have drawn, by calling
+**napari** supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the points, including any additional ones you have drawn, by calling
 
 ```python
->>> markers.coords
+>>> points.coords
 [[100, 100],
  [200, 200],
  [333, 111]]

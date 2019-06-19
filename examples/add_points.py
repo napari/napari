@@ -1,5 +1,5 @@
 """
-Display a markers layer on top of an image layer using the add_markers and
+Display a points layer on top of an image layer using the add_points and
 add_image APIs
 """
 
@@ -16,15 +16,15 @@ with app_context():
 
     # add the image
     viewer.add_image(rgb2gray(data.astronaut()))
-    # add the markers
-    markers = np.array([[100, 100], [200, 200], [333, 111]])
+    # add the points
+    points = np.array([[100, 100], [200, 200], [333, 111]])
     size = np.array([10, 20, 20])
-    viewer.add_markers(markers, size=size)
+    viewer.add_points(points, size=size)
 
     # unselect the image layer
     viewer.layers[0].selected = False
 
-    # adjust some of the marker layer properties
+    # adjust some of the points layer properties
     layer = viewer.layers[1]
 
     # change the layer name
@@ -45,19 +45,19 @@ with app_context():
     layer.blending = 'opaque'
     layer.blending = 'translucent'
 
-    # change the layer marker face color
+    # change the layer point face color
     layer.face_color = 'white'
 
-    # change the layer marker edge color
+    # change the layer point edge color
     layer.edge_color = 'blue'
 
-    # change the layer marker symbol using an alias
+    # change the layer point symbol using an alias
     layer.symbol = '+'
 
-    # change the layer marker n_dimensional status
+    # change the layer point n_dimensional status
     layer.n_dimensional = True
 
-    # change the layer marker size
+    # change the layer point size
     layer.size = 20
     layer.size = np.array([10, 50, 20])
 
