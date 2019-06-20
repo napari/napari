@@ -173,6 +173,13 @@ class Shapes(Layer):
     _rotation_handle_length = 20
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
+    _types = {
+        'rectangle': Rectangle,
+        'ellipse': Ellipse,
+        'line': Line,
+        'path': Path,
+        'polygon': Polygon,
+    }
 
     def __init__(
         self,
@@ -184,7 +191,7 @@ class Shapes(Layer):
         face_color='white',
         opacity=0.7,
         z_index=0,
-        ndim=2,
+        ndim=None,
         name=None,
     ):
 
@@ -203,9 +210,7 @@ class Shapes(Layer):
 
             # Add the shape data
             self._input_ndim = ndim
-            init_index = (0,) * (ndim - 2)
-            self._data = {init_index: ShapeList()}
-            self.slice_data = self.data[init_index]
+            self._data = {}
 
             self.add_shapes(
                 data,
@@ -217,11 +222,15 @@ class Shapes(Layer):
                 z_index=z_index,
             )
 
-            if len(self._data) > 1:
-                # If multiple ShapeLists present and 2D slice key still there
-                # from initialization then remove 2D slice key
-                if () in self._data:
-                    del self._data[()]
+            # If input_ndim has not been set, default to 2
+            if self._input_ndim is None:
+                self._input_ndim = 2
+
+            # Set currently viewed slice to top slice
+            init_index = (0,) * (self._input_ndim - 2)
+            if init_index not in self.data:
+                self.data[init_index] = ShapeList()
+            self.slice_data = self.data[init_index]
 
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
@@ -595,49 +604,62 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
-        if len(data) == 0:
-            return
+        if len(data) > 0:
+            if np.array(data[0]).ndim == 1:
+                # If a single array for a shape has been passed turn into list
+                data = [data]
 
-        if np.array(data[0]).ndim == 1:
-            # If a single array for a shape has been passed turn into list
-            data = [data]
+            # Turn input arguments into iterables
+            shape_inputs = zip(
+                data,
+                ensure_iterable(shape_type),
+                ensure_iterable(edge_width),
+                ensure_iterable(edge_color, color=True),
+                ensure_iterable(face_color, color=True),
+                ensure_iterable(opacity),
+                ensure_iterable(z_index),
+            )
 
-        # Turn input arguments into iterables
-        shape_inputs = zip(
-            data,
-            ensure_iterable(shape_type),
-            ensure_iterable(edge_width),
-            ensure_iterable(edge_color, color=True),
-            ensure_iterable(face_color, color=True),
-            ensure_iterable(opacity),
-            ensure_iterable(z_index),
-        )
+            for d, st, ew, ec, fc, o, z in shape_inputs:
+                shape_cls = self._types[st]
 
-        for d, st, ew, ec, fc, o, z in shape_inputs:
-            shape_cls = self.slice_data._types[st]
-
-            # Slice data by 2D plane.
-            slice_key, data_2D = slice_by_plane(d)
-            # A False slice_key means the shape is invalid as it is not
-            # confined to a single plane
-            if slice_key is not False:
-                shape = shape_cls(
-                    data_2D,
-                    edge_width=ew,
-                    edge_color=ec,
-                    face_color=fc,
-                    opacity=o,
-                    z_index=z,
-                )
-                # If data is being drawn in gui it will already be 2D and so
-                # should just be added to the current ShapeList
-                if slice_key == ():
-                    self.slice_data.add(shape)
-                elif slice_key in self.data:
-                    self.data[slice_key].add(shape)
-                else:
-                    self.data[slice_key] = ShapeList()
-                    self.data[slice_key].add(shape)
+                # Slice data by 2D plane.
+                slice_key, data_2D = slice_by_plane(d)
+                # A False slice_key means the shape is invalid as it is not
+                # confined to a single plane
+                if slice_key is not False:
+                    shape = shape_cls(
+                        data_2D,
+                        edge_width=ew,
+                        edge_color=ec,
+                        face_color=fc,
+                        opacity=o,
+                        z_index=z,
+                    )
+                    # If data is being drawn in gui it will already be 2D and
+                    # so should just be added to the current ShapeList
+                    if slice_key == ():
+                        if len(self.data) == 0:
+                            # If input dim not initialized, set value
+                            if self._input_ndim is None:
+                                self._input_ndim = 2
+                            self.data[slice_key] = ShapeList()
+                            self.slice_data = self.data[slice_key]
+                        self.slice_data.add(shape)
+                    elif slice_key in self.data:
+                        self.data[slice_key].add(shape)
+                    else:
+                        # If input dim not initialized, set value
+                        if self._input_ndim is None:
+                            self._input_ndim = 2 + len(slice_key)
+                        # Check shape has correct dimensions
+                        if self._input_ndim == 2 + len(slice_key):
+                            self.data[slice_key] = ShapeList()
+                            self.data[slice_key].add(shape)
+                        else:
+                            raise ValueError(
+                                'all shapes must have the same dimension'
+                            )
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
