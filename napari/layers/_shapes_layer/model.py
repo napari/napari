@@ -552,7 +552,7 @@ class Shapes(Layer):
         max_val = np.array(slice_keys).max(axis=0)
 
         mins = tuple(min_val) + tuple(mins)
-        mins = tuple(max_val) + tuple(mins)
+        mins = tuple(max_val) + tuple(maxs)
 
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
 
