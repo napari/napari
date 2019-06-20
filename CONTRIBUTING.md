@@ -73,12 +73,14 @@ Make sure that the file `napari/resources/icons/res.qrc` has a list of all the i
 Finally, compile all the icons for use in the app by calling either
 
 ```sh
+# for PySide2 users
 pyside2-rcc -o napari/resources/qt.py napari/resources/res.qrc
 ```
 
 or
 
 ```sh
+# for PyQt5 users
 pyrcc5 -o napari/resources/qt.py napari/resources/res.qrc
 ```
 
