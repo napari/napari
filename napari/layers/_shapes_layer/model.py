@@ -531,13 +531,9 @@ class Shapes(Layer):
         else:
             slice_shape = tuple(np.max(self.slice_data._vertices, axis=0) + 1)
 
-        if len(self.data.keys()) == 1:
-            # return the shape padded to the necessary dimensions
-            return (1,) * (self._input_ndim - 2) + slice_shape
-        else:
-            slice_keys = list(self.data.keys())
-            max_val = np.array(slice_keys).max(axis=0)
-            return tuple(max_val) + slice_shape
+        slice_keys = list(self.data.keys())
+        max_val = np.array(slice_keys).max(axis=0)
+        return tuple(max_val) + slice_shape
 
     @property
     def range(self):
