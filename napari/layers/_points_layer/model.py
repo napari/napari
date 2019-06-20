@@ -3,7 +3,6 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from scipy import ndimage as ndi
 from skimage.util import img_as_ubyte
-from copy import copy
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
@@ -436,6 +435,7 @@ class Points(Layer):
         """Update thumbnail with current points and colors.
         """
         colormapped = np.zeros(self._thumbnail_shape)
+        colormapped[..., 3] = 1
         if len(self._points_view) > 0:
             min_vals = [self.range[-2][0], self.range[-1][0]]
             shape = np.ceil(
