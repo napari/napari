@@ -57,12 +57,6 @@ class Shapes(Layer):
     ndim : int, optional
         Dimensions of shape data. Once set cannot be changed. Defaults to
         2.
-    broadcast : bool, optional
-        If True, shapes are broadcast across all dimensions if `ndim`
-        > 2. If False only shapes in the currently sliced layer are
-        visible. While it is possible to swith between these two views,
-        when you are in one view you will only be able to see and edit
-        shapes in that view.
     name : str, keyword-only
         Name of the layer.
 
@@ -82,11 +76,6 @@ class Shapes(Layer):
         Opacity value between 0.0 and 1.0.
     selected_shapes : list
         List of currently selected shapes.
-    broadcast : bool
-        If True, shapes are broadcast across all dimensions if `ndim` > 2.
-        If False only shapes in the currently sliced layer are visible. While
-        it is possible to swith between these two views, when you are in one
-        view you will only be able to see and edit shapes in that view.
     nshapes : int
         Total number of shapes.
     mode : Mode
@@ -184,6 +173,13 @@ class Shapes(Layer):
     _rotation_handle_length = 20
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
+    _types = {
+        'rectangle': Rectangle,
+        'ellipse': Ellipse,
+        'line': Line,
+        'path': Path,
+        'polygon': Polygon,
+    }
 
     def __init__(
         self,
@@ -195,8 +191,7 @@ class Shapes(Layer):
         face_color='white',
         opacity=0.7,
         z_index=0,
-        ndim=2,
-        broadcast=False,
+        ndim=None,
         name=None,
     ):
 
@@ -212,11 +207,11 @@ class Shapes(Layer):
 
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
+
             # Add the shape data
             self._input_ndim = ndim
-            self._data = {(): ShapeList()}
-            self.slice_data = self.data[()]
-            self._broadcast = broadcast
+            self._data = {}
+
             self.add_shapes(
                 data,
                 shape_type=shape_type,
@@ -226,6 +221,16 @@ class Shapes(Layer):
                 opacity=opacity,
                 z_index=z_index,
             )
+
+            # If input_ndim has not been set, default to 2
+            if self._input_ndim is None:
+                self._input_ndim = 2
+
+            # Set currently viewed slice to top slice
+            init_index = (0,) * (self._input_ndim - 2)
+            if init_index not in self.data:
+                self.data[init_index] = ShapeList()
+            self.slice_data = self.data[init_index]
 
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
@@ -285,7 +290,6 @@ class Shapes(Layer):
                 edge_width=Event,
                 edge_color=Event,
                 face_color=Event,
-                broadcast=Event,
             )
 
             self.events.deselect.connect(lambda x: self._finish_drawing())
@@ -302,19 +306,6 @@ class Shapes(Layer):
             return
         self._data = data
         self.events.data()
-        self.refresh()
-
-    @property
-    def broadcast(self):
-        """Bool: if shapes are broadcast across all dimensions."""
-        return self._broadcast
-
-    @broadcast.setter
-    def broadcast(self, broadcast):
-        if self._broadcast == broadcast:
-            return
-        self._broadcast = broadcast
-        self.events.broadcast()
         self.refresh()
 
     @property
@@ -540,15 +531,9 @@ class Shapes(Layer):
         else:
             slice_shape = tuple(np.max(self.slice_data._vertices, axis=0) + 1)
 
-        if len(self.data.keys()) == 1:  # or self.broadcast is True:
-            # If in broadcast mode or only broadcast shapes are present
-            # return the shape padded to the necessary dimensions
-            return (1,) * (self._input_ndim - 2) + slice_shape
-        else:
-            slice_keys = list(self.data.keys())
-            slice_keys.remove(())
-            max_val = np.array(slice_keys).max(axis=0)
-            return tuple(max_val) + slice_shape
+        slice_keys = list(self.data.keys())
+        max_val = np.array(slice_keys).max(axis=0)
+        return tuple(max_val) + slice_shape
 
     @property
     def range(self):
@@ -561,6 +546,13 @@ class Shapes(Layer):
         else:
             maxs = np.max(self.slice_data._vertices, axis=0) + 1
             mins = np.min(self.slice_data._vertices, axis=0)
+
+        slice_keys = list(self.data.keys())
+        min_val = np.array(slice_keys).min(axis=0)
+        max_val = np.array(slice_keys).max(axis=0)
+
+        mins = tuple(min_val) + tuple(mins)
+        mins = tuple(max_val) + tuple(maxs)
 
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
 
@@ -615,70 +607,73 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
-        if len(data) == 0:
-            return
+        if len(data) > 0:
+            if np.array(data[0]).ndim == 1:
+                # If a single array for a shape has been passed turn into list
+                data = [data]
 
-        if np.array(data[0]).ndim == 1:
-            # If a single array for a shape has been passed turn into list
-            data = [data]
+            # Turn input arguments into iterables
+            shape_inputs = zip(
+                data,
+                ensure_iterable(shape_type),
+                ensure_iterable(edge_width),
+                ensure_iterable(edge_color, color=True),
+                ensure_iterable(face_color, color=True),
+                ensure_iterable(opacity),
+                ensure_iterable(z_index),
+            )
 
-        # Turn input arguments into iterables
-        shape_inputs = zip(
-            data,
-            ensure_iterable(shape_type),
-            ensure_iterable(edge_width),
-            ensure_iterable(edge_color, color=True),
-            ensure_iterable(face_color, color=True),
-            ensure_iterable(opacity),
-            ensure_iterable(z_index),
-        )
+            for d, st, ew, ec, fc, o, z in shape_inputs:
+                shape_cls = self._types[st]
 
-        for d, st, ew, ec, fc, o, z in shape_inputs:
-            shape_cls = self.slice_data._types[st]
-
-            # Slice data by 2D plane.
-            slice_key, data_2D = slice_by_plane(d)
-            # A False slice_key means the shape is invalid as it is not
-            # confined to a single plane
-            if slice_key is not False:
-                shape = shape_cls(
-                    data_2D,
-                    edge_width=ew,
-                    edge_color=ec,
-                    face_color=fc,
-                    opacity=o,
-                    z_index=z,
-                )
-                # If data is being drawn in gui it will already be 2D and so
-                # should just be added to the current ShapeList
-                if slice_key == ():
-                    self.slice_data.add(shape)
-                elif slice_key in self.data:
-                    self.data[slice_key].add(shape)
-                else:
-                    self.data[slice_key] = ShapeList()
-                    self.data[slice_key].add(shape)
+                # Slice data by 2D plane.
+                slice_key, data_2D = slice_by_plane(d)
+                # A False slice_key means the shape is invalid as it is not
+                # confined to a single plane
+                if slice_key is not False:
+                    shape = shape_cls(
+                        data_2D,
+                        edge_width=ew,
+                        edge_color=ec,
+                        face_color=fc,
+                        opacity=o,
+                        z_index=z,
+                    )
+                    # If data is being drawn in gui it will already be 2D and
+                    # so should just be added to the current ShapeList
+                    if slice_key == ():
+                        if len(self.data) == 0:
+                            # If input dim not initialized, set value
+                            if self._input_ndim is None:
+                                self._input_ndim = 2
+                            self.data[slice_key] = ShapeList()
+                            self.slice_data = self.data[slice_key]
+                        self.slice_data.add(shape)
+                    elif slice_key in self.data:
+                        self.data[slice_key].add(shape)
+                    else:
+                        # If input dim not initialized, set value
+                        if self._input_ndim is None:
+                            self._input_ndim = 2 + len(slice_key)
+                        # Check shape has correct dimensions
+                        if self._input_ndim == 2 + len(slice_key):
+                            self.data[slice_key] = ShapeList()
+                            self.data[slice_key].add(shape)
+                        else:
+                            raise ValueError(
+                                'all shapes must have the same dimension'
+                            )
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         with self.freeze_refresh():
-            if len(self.indices) == 2:
-                self.slice_data = self.data[()]
-            else:
-                if self.broadcast:
-                    slice_key = ()
-                    if not self.slice_data == self.data[slice_key]:
-                        self.slice_data = self.data[slice_key]
-                        # If data is changed unselect all shapes
-                        self._finish_drawing()
-                else:
-                    slice_key = self.indices[:-2]
-                    if slice_key not in self.data:
-                        self.data[slice_key] = ShapeList()
-                    if not self.slice_data == self.data[slice_key]:
-                        self.slice_data = self.data[slice_key]
-                        # If data is changed unselect all shapes
-                        self._finish_drawing()
+            slice_key = self.indices[:-2]
+            if slice_key not in self.data:
+                self.data[slice_key] = ShapeList()
+            if not self.slice_data == self.data[slice_key]:
+                self.slice_data = self.data[slice_key]
+                # If data is changed unselect all shapes
+                self._finish_drawing()
 
         z_order = self.slice_data._mesh.triangles_z_order
         faces = self.slice_data._mesh.triangles[z_order]
@@ -1360,12 +1355,7 @@ class Shapes(Layer):
             mask_shape = self.shape
 
         if self.ndim == 2:
-            # For 2D shapes just convert current view to masks
-            masks = self.slice_data.to_masks(
-                mask_shape=mask_shape, shape_type=shape_type
-            )
-        elif self.broadcast:
-            # For broadcast shapes convert current view to masks and
+            # For 2D shapes just convert current view to masks and
             # broadcast across sliced dimensions
             slices = self.slice_data.to_masks(
                 mask_shape=mask_shape[-2:], shape_type=shape_type
@@ -1411,8 +1401,8 @@ class Shapes(Layer):
         if labels_shape is None:
             labels_shape = self.shape
 
-        if self.broadcast or self.ndim == 2:
-            # For broadcast shapes or 2D shapes convert current view to labels
+        if self.ndim == 2:
+            # For 2D shapes convert current view to labels
             # and broadcast across sliced dimensions
             labels = self.slice_data.to_labels(
                 labels_shape=labels_shape[-2:], shape_type=shape_type
@@ -1424,13 +1414,12 @@ class Shapes(Layer):
             labels = np.zeros(labels_shape)
             nshapes = 0
             for slice_key, data in self.data.items():
-                if len(slice_key) > 0:
-                    slices = data.to_labels(
-                        labels_shape=labels_shape[-2:], shape_type=shape_type
-                    )
-                    slices[slices > 0] += nshapes
-                    labels[slice_key] = slices
-                    nshapes += len(data.shapes)
+                slices = data.to_labels(
+                    labels_shape=labels_shape[-2:], shape_type=shape_type
+                )
+                slices[slices > 0] += nshapes
+                labels[slice_key] = slices
+                nshapes += len(data.shapes)
         return labels
 
     def to_list(self, shape_type=None):
@@ -1449,19 +1438,18 @@ class Shapes(Layer):
             `np.ndarray` corresponding to one shape
         """
 
-        if self.broadcast or self.ndim == 2:
-            # For broadcast shapes or 2D shapes convert current view to a list
+        if self.ndim == 2:
+            # For 2D shapes convert current view to a list
             data = self.slice_data.to_list(shape_type=shape_type)
         else:
             # For nD insert each slice_key into shape indices in list
             data = []
             for slice_key, d in self.data.items():
-                if len(slice_key) > 0:
-                    shapes = d.to_list(shape_type=shape_type)
-                    for s in shapes:
-                        slice_keys = np.tile(slice_key, (len(s), 1))
-                        full_shape = np.concatenate((slice_keys, s), axis=1)
-                        data.append(full_shape)
+                shapes = d.to_list(shape_type=shape_type)
+                for s in shapes:
+                    slice_keys = np.tile(slice_key, (len(s), 1))
+                    full_shape = np.concatenate((slice_keys, s), axis=1)
+                    data.append(full_shape)
         return data
 
     def on_mouse_press(self, event):

@@ -12,7 +12,6 @@ class QtShapesProperties(QtLayerProperties):
         self.layer.events.edge_width.connect(self._on_edge_width_change)
         self.layer.events.edge_color.connect(self._on_edge_color_change)
         self.layer.events.face_color.connect(self._on_face_color_change)
-        self.layer.events.broadcast.connect(self._on_broadcast_change)
 
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -72,17 +71,6 @@ class QtShapesProperties(QtLayerProperties):
         )
         self.grid_layout.addWidget(edge_comboBox, row, self.property_column)
 
-        broadcast_cb = QCheckBox()
-        broadcast_cb.setToolTip('broadcast shapes')
-        broadcast_cb.setChecked(self.layer.broadcast)
-        broadcast_cb.stateChanged.connect(
-            lambda state=broadcast_cb: self.change_broadcast(state)
-        )
-        self.broadcastCheckBox = broadcast_cb
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('broadcast:'), row, self.name_column)
-        self.grid_layout.addWidget(broadcast_cb, row, self.property_column)
-
         self.setExpanded(False)
 
     def changeFaceColor(self, text):
@@ -93,9 +81,6 @@ class QtShapesProperties(QtLayerProperties):
 
     def changeWidth(self, value):
         self.layer.edge_width = float(value) / 2
-
-    def change_broadcast(self, state):
-        self.layer.broadcast = state == Qt.Checked
 
     def _on_edge_width_change(self, event):
         with self.layer.events.edge_width.blocker():
@@ -116,7 +101,3 @@ class QtShapesProperties(QtLayerProperties):
                 self.layer.face_color, Qt.MatchFixedString
             )
             self.faceComboBox.setCurrentIndex(index)
-
-    def _on_broadcast_change(self, event):
-        with self.layer.events.broadcast.blocker():
-            self.broadcastCheckBox.setChecked(self.layer.broadcast)
