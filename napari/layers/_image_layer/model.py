@@ -1,4 +1,4 @@
-from warnings import warn
+import warnings
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
@@ -246,7 +246,7 @@ class Image(Layer):
             )
             self._colormaps[name] = colormap
         else:
-            warn(f'invalid value for colormap: {colormap}')
+            warnings.warn(f'invalid value for colormap: {colormap}')
             name = self.colormap_name
         self.colormap_name = name
         self._node.cmap = self._colormaps[name]
@@ -332,9 +332,14 @@ class Image(Layer):
             )
             if image.shape[2] == 4:  # image is RGBA
                 downsampled[..., 3] = downsampled[..., 3] * self.opacity
-                colormapped = img_as_ubyte(downsampled)
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    colormapped = img_as_ubyte(downsampled)
             else:  # image is RGB
-                colormapped = img_as_ubyte(downsampled)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    colormapped = img_as_ubyte(downsampled)
                 alpha = np.full(
                     downsampled.shape[:2] + (1,),
                     int(255 * self.opacity),
@@ -353,7 +358,10 @@ class Image(Layer):
             colormapped = self.colormap[1].map(downsampled)
             colormapped = colormapped.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
-            colormapped = img_as_ubyte(colormapped)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                colormapped = img_as_ubyte(colormapped)
         self.thumbnail = colormapped
 
     def get_value(self):
