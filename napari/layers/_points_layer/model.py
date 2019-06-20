@@ -448,6 +448,9 @@ class Points(Layer):
             coords = np.floor(
                 (self._points_view - min_vals + 0.5) * zoom_factor
             ).astype(int)
+            coords = np.clip(
+                coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
+            )
             for c in coords:
                 colormapped[c[0], c[1], :] = Color(self.face_color).rgba
         colormapped[..., 3] *= self.opacity
