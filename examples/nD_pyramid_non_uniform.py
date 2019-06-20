@@ -1,6 +1,7 @@
 """
 Displays an image pyramid
 """
+import warnings
 
 from skimage import data
 from skimage.util import img_as_ubyte
@@ -20,7 +21,10 @@ pyramid = list(
 pyramid = [
     np.array([p * (abs(5 - i) + 1) / 6 for i in range(10)]) for p in pyramid
 ]
-pyramid = [img_as_ubyte(p) for p in pyramid]
+# ignore skimage precision loss warning
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    pyramid = [img_as_ubyte(p) for p in pyramid]
 print('pyramid level shapes: ', [p.shape for p in pyramid])
 
 with app_context():
