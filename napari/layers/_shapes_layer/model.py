@@ -547,6 +547,13 @@ class Shapes(Layer):
             maxs = np.max(self.slice_data._vertices, axis=0) + 1
             mins = np.min(self.slice_data._vertices, axis=0)
 
+        slice_keys = list(self.data.keys())
+        min_val = np.array(slice_keys).min(axis=0)
+        max_val = np.array(slice_keys).max(axis=0)
+
+        mins = tuple(min_val) + tuple(mins)
+        mins = tuple(max_val) + tuple(mins)
+
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
 
     def add_shapes(
