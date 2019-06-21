@@ -1,6 +1,8 @@
 from typing import Union
 from xml.etree.ElementTree import Element
 import numpy as np
+from scipy import ndimage as ndi
+from skimage.util import img_as_ubyte
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
@@ -90,6 +92,8 @@ class Points(Layer):
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
+
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
 
     @property
     def coords(self) -> np.ndarray:
@@ -400,6 +404,7 @@ class Points(Layer):
         self._need_visual_update = True
         self._update()
         self.status = self.get_message(self.coordinates, self._selected_points)
+        self._update_thumbnail()
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -425,6 +430,32 @@ class Points(Layer):
         else:
             msg = msg + ', index ' + str(value)
         return msg
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current points and colors.
+        """
+        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped[..., 3] = 1
+        if len(self._points_view) > 0:
+            min_vals = [self.range[-2][0], self.range[-1][0]]
+            shape = np.ceil(
+                [
+                    self.range[-2][1] - self.range[-2][0] + 1,
+                    self.range[-1][1] - self.range[-1][0] + 1,
+                ]
+            ).astype(int)
+            zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+            coords = np.floor(
+                (self._points_view - min_vals + 0.5) * zoom_factor
+            ).astype(int)
+            coords = np.clip(
+                coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
+            )
+            for c in coords:
+                colormapped[c[0], c[1], :] = Color(self.face_color).rgba
+        colormapped[..., 3] *= self.opacity
+        colormapped = img_as_ubyte(colormapped)
+        self.thumbnail = colormapped
 
     def _add(self, coord):
         """Adds object at given mouse position
