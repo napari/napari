@@ -21,8 +21,8 @@ class QtLayerProperties(QFrame):
         super().__init__()
 
         self.layer = layer
-        layer.events.select.connect(self._on_select)
-        layer.events.deselect.connect(self._on_deselect)
+        layer.events.select.connect(lambda v: self.setSelected(True))
+        layer.events.deselect.connect(lambda v: self.setSelected(False))
         layer.events.name.connect(self._on_layer_name_change)
         layer.events.blending.connect(self._on_blending_change)
         layer.events.opacity.connect(self._on_opacity_change)
@@ -120,15 +120,11 @@ class QtLayerProperties(QFrame):
         self.grid_layout.setColumnMinimumWidth(0, 100)
         self.grid_layout.setColumnMinimumWidth(1, 100)
 
-    def _on_select(self, event):
-        self.setProperty('selected', True)
-        self.nameTextBox.setEnabled(True)
-        self.style().unpolish(self)
-        self.style().polish(self)
+        self.setSelected(True)
 
-    def _on_deselect(self, event):
-        self.setProperty('selected', False)
-        self.nameTextBox.setEnabled(False)
+    def setSelected(self, state):
+        self.setProperty('selected', state)
+        self.nameTextBox.setEnabled(state)
         self.style().unpolish(self)
         self.style().polish(self)
 
