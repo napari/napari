@@ -1,4 +1,12 @@
-from qtpy.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QAction
+from qtpy.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QHBoxLayout,
+    QLabel,
+    QAction,
+    QShortcut,
+)
+from qtpy.QtGui import QKeySequence
 
 from ...util.theme import template
 
@@ -17,7 +25,7 @@ class Window:
         Contained viewer widget.
     """
 
-    def __init__(self, qt_viewer, show=True):
+    def __init__(self, qt_viewer, *, show=True, hide_menubar=True):
 
         self.qt_viewer = qt_viewer
 
@@ -28,7 +36,8 @@ class Window:
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = self._qt_window.statusBar()
-        self.main_menu = self._qt_window.menuBar()
+
+        self._add_menubar(hidden=hide_menubar)
 
         self._add_window_menu()
         self._add_view_menu()
@@ -52,6 +61,37 @@ class Window:
         if show:
             self.show()
 
+    def _add_menubar(self, *, hidden=True):
+        self.main_menu = self._qt_window.menuBar()
+        # Menubar shortcuts are only active when the menubar is visible.
+        # Therefore, we set a global shortcut not associated with the menubar
+        # to toggle visibility, *but*, in order to not shadow the menubar
+        # shortcut, we disable it, and only enable it when the menubar is
+        # hidden.
+        self._main_menu_shortcut = QShortcut(
+            QKeySequence('Ctrl+M'), self._qt_window
+        )
+        self._main_menu_shortcut.activated.connect(
+            self._toggle_menubar_visible
+        )
+        self._main_menu_shortcut.setEnabled(False)
+        if hidden:
+            self._toggle_menubar_visible()
+
+    def _toggle_menubar_visible(self):
+        """Toggle visibility of app menubar.
+
+        This function also disables or enables a global keyboard shortcut to
+        show the menubar, since menubar shortcuts are only available while the
+        menubar is visible.
+        """
+        if self.main_menu.isVisible():
+            self.main_menu.setVisible(False)
+            self._main_menu_shortcut.setEnabled(True)
+        else:
+            self.main_menu.setVisible(True)
+            self._main_menu_shortcut.setEnabled(False)
+
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
@@ -62,11 +102,9 @@ class Window:
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
-        toggle_visible.setShortcut('Alt')
-        toggle_visible.setStatusTip('Show/hide the menubar')
-        toggle_visible.triggered.connect(
-            lambda: self.main_menu.setVisible(not self.main_menu.isVisible())
-        )
+        toggle_visible.setShortcut('Ctrl+M')
+        toggle_visible.setStatusTip('Hide Menubar')
+        toggle_visible.triggered.connect(self._toggle_menubar_visible)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
 
