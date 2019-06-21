@@ -1,5 +1,8 @@
 """
-Display one 4-D image layer using the add_image API
+Display two vectors layers ontop of a 4-D image layer. One of the vectors
+layers is 3D and "sliced" with a different set of vectors appearing on
+different 3D slices. Another is 2D and "broadcast" with the same vectors
+apprearing on each slice.
 """
 
 import numpy as np

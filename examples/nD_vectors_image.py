@@ -1,9 +1,8 @@
 """
 This example generates an image of vectors
-Vector data is an array of shape (N, M, 2)
-Each vector position is defined by an (x-proj, y-proj) element
-    where x-proj and y-proj are the vector projections at each center
-    where each vector is centered on a pixel of the NxM grid
+Vector data is an array of shape (M, N, P, 3)
+Each vector position is defined by an (x-proj, y-proj, z-proj) element
+which are vector projections centered on a pixel of the MxNxP grid
 """
 
 import napari
