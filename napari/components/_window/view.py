@@ -67,7 +67,8 @@ class Window:
         # Therefore, we set a global shortcut not associated with the menubar
         # to toggle visibility, *but*, in order to not shadow the menubar
         # shortcut, we disable it, and only enable it when the menubar is
-        # hidden.
+        # hidden. See this stackoverflow link for details:
+        # https://stackoverflow.com/questions/50537642/how-to-keep-the-shortcuts-of-a-hidden-widget-in-pyqt5
         self._main_menu_shortcut = QShortcut(
             QKeySequence('Ctrl+M'), self._qt_window
         )
