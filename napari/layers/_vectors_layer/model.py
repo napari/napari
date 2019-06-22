@@ -9,6 +9,7 @@ from .._base_layer import Layer
 from ..._vispy.scene.visuals import Mesh
 from ...util.event import Event
 from ...util import segment_normal
+from .vectors_util import vectors_to_coordinates
 from vispy.color import get_color_names, Color
 
 
@@ -24,9 +25,6 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
-    averaging : int
-        Size of kernel over which to convolve and subsample the data not
-        implemented for "coordinate-like" data
     width : int
         width of the line in pixels
     length : float
@@ -37,26 +35,19 @@ class Vectors(Layer):
         control panel mode
     """
 
-    def __init__(
-        self, vectors, width=1, color='red', averaging=1, length=1, name=None
-    ):
+    def __init__(self, vectors, width=1, color='red', length=1, name=None):
 
         super().__init__(Mesh(), name)
 
         # events for non-napari calculations
-        self.events.add(length=Event, width=Event, averaging=Event)
-
-        # Store underlying data model
-        self._data_types = ('image', 'coords')
-        self._data_type = None
+        self.events.add(length=Event, width=Event)
 
         # Save the line style params
         self._width = width
         self._color = color
         self._colors = get_color_names()
 
-        # averaging and length attributes
-        self._averaging = averaging
+        # length attribute
         self._length = length
 
         # update flags
@@ -85,7 +76,7 @@ class Vectors(Layer):
         vectors : (N, 2, D) array
         """
 
-        self._data = self._convert_to_vector_type(vectors)
+        self._data = vectors_to_coordinates(vectors)
 
         vertices, triangles = self._generate_meshes(
             self._data, self.width, self.length
@@ -95,73 +86,6 @@ class Vectors(Layer):
 
         self.events.data()
         self.refresh()
-
-    def _convert_to_vector_type(self, vectors):
-        """Check on input data for proper shape and dtype
-
-        Parameters
-        ----------
-        vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
-            A (N, 2, D) array is interpreted as "coordinate-like" data and a list
-            of N vectors with start point and projections of the vector in D
-            dimensions. A (N1, N2, ..., ND, D) array is interpreted as
-            "image-like" data where there is a length D vector of the
-            projections at each pixel.
-
-        Returns
-        coords : (N, 2, D) array
-            A list of N vectors with start point and projections of the vector
-            in D dimensions.
-        """
-        if vectors.shape[-2] == 2 and vectors.ndim == 3:
-            # an (N, 2, D) array that is coordinate-like
-            coords = vectors
-            self._data_type = self._data_types[1]
-        elif vectors.shape[-1] == vectors.ndim - 1:
-            # an (N1, N2, ..., ND, D) array that is image-like
-            coords = self._convert_image_to_coordinates(vectors)
-            self._data_type = self._data_types[0]
-        else:
-            raise TypeError(
-                "Vector data of shape %s is not supported" % str(vectors.shape)
-            )
-
-        return coords
-
-    def _convert_image_to_coordinates(self, vect):
-        """To convert an image-like array with elements (y-proj, x-proj) into a
-        position list of coordinates
-        Every pixel position (n, m) results in two output coordinates of (N,2)
-
-        Parameters
-        ----------
-        vectors : (N1, N2, ..., ND, D) array
-            "image-like" data where there is a length D vector of the
-            projections at each pixel.
-
-        Returns
-        ----------
-        coords : (N, 2, D) array
-            A list of N vectors with start point and projections of the vector
-            in D dimensions.
-        """
-        # create coordinate spacing for image
-        spacing = [
-            np.linspace(0, r, s, endpoint=False)
-            for r, s in zip(self._raw_data.shape[:-1], vect.shape[:-1])
-        ]
-        grid = np.meshgrid(*spacing)
-
-        # create empty vector of necessary shape
-        nvect = np.prod(vect.shape[:-1])
-        pos = np.empty((nvect, 2, vect.ndim - 1), dtype=np.float32)
-
-        # assign coordinates (pos) to all pixels
-        for i, g in enumerate(grid):
-            pos[:, 0, i] = g.flatten()
-        pos[:, 1, :] = np.reshape(vect, (-1, vect.ndim - 1))
-
-        return pos
 
     def _get_shape(self):
         if len(self.data) == 0:
@@ -182,42 +106,6 @@ class Vectors(Layer):
             mins = np.min(self.data[:, 0, :], axis=0)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
-
-    @property
-    def averaging(self) -> int:
-        return self._averaging
-
-    @averaging.setter
-    def averaging(self, value: int):
-        """Calculates an average vector over a kernel
-
-        Parameters
-        ----------
-        value : int that defines (int, int) kernel
-        """
-        self._averaging = value
-
-        self.events.averaging()
-        self._update_avg()
-
-        self.refresh()
-
-    def _update_avg(self):
-        """Method for calculating average
-        Implemented ONLY for image-like vector data
-        """
-        if self._data_type == 'coords':
-            # averaging is not supported for 'coordinate-like' data
-            return
-        elif self._data_type == 'image':
-            if self.averaging == 1:
-                # use original data
-                self.data = self._raw_data
-            else:
-                # average original data
-                size = (self.averaging,) * self.ndim + (1,)
-                kernal = np.ones(size) / np.product(size)
-                self.data = ndi.convolve(self._raw_data, kernal)
 
     @property
     def width(self) -> Union[int, float]:
@@ -372,6 +260,7 @@ class Vectors(Layer):
         if len(self.data) == 0:
             vectors = []
         elif self.ndim > 2:
+            # Determine which vectors are in the currently viewed plane
             matches = np.all(self.indices[:-2] == self.data[:, :-2], axis=1)
             matches = np.where(matches)[0]
             if len(matches) == 0:
