@@ -55,7 +55,6 @@ class Vectors(Layer):
         self._need_visual_update = False
 
         # assign vector data and establish default behavior
-        self._raw_data = vectors
         with self.freeze_refresh():
             self.data = vectors
 
