@@ -47,21 +47,8 @@ class QtDims(QWidget):
         self.setLayout(layout)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
-        # First we need to make sure that the current state of the model is
-        # correctly reflected in the view. This is important because in the
-        # general case, we might not have model and view synced if changes have
-        # occured before the view is initialised with the model.
-
-        # First we set the dimenions of the view with respect to the model:
-        self._set_nsliders(dims.ndim - 2)
-
-        # Then we set the mode for each slider:
-        for axis in range(0, dims.ndim - 2):
-            slider = self.sliders[axis]
-            if self.dims.mode[axis] == DimsMode.POINT:
-                slider.collapse()
-            else:
-                slider.expand()
+        # Update the number of sliders now that the dims have been added
+        self._update_nsliders()
 
         # The next lines connect events coming from the model to the Qt event
         # system: We need to go through Qt signals so that these events are run
@@ -112,21 +99,16 @@ class QtDims(QWidget):
 
         slider = self.sliders[slider_index]
 
-        if slider is None:
-            return
-
-        if slider_index < self.dims.ndim:
-
-            mode = self.dims.mode[slider_index]
-            if mode == DimsMode.POINT:
-                slider.collapse()
-                slider.setValue(self.dims.point[slider_index])
-            elif mode == DimsMode.INTERVAL:
-                slider.expand()
-                slider.setValues(self.dims.interval[slider_index])
-            slider_range = self.dims.range[slider_index]
-            if slider_range not in (None, (None, None, None)):
-                slider.setRange(slider_range)
+        mode = self.dims.mode[slider_index]
+        if mode == DimsMode.POINT:
+            slider.collapse()
+            slider.setValue(self.dims.point[slider_index])
+        elif mode == DimsMode.INTERVAL:
+            slider.expand()
+            slider.setValues(self.dims.interval[slider_index])
+        slider_range = self.dims.range[slider_index]
+        if slider_range not in (None, (None, None, None)):
+            slider.setRange(slider_range)
 
     def _update_nsliders(self):
         """
@@ -142,6 +124,7 @@ class QtDims(QWidget):
         ----------
         new_number_of_sliders :
         """
+        print('ada', new_number_of_sliders)
         if self.nsliders < new_number_of_sliders:
             self._create_sliders(new_number_of_sliders)
         elif self.nsliders > new_number_of_sliders:
@@ -155,13 +138,18 @@ class QtDims(QWidget):
         ----------
         number_of_sliders : new number of sliders
         """
+        # add extra sliders so that number_of_sliders are present
+        # add to the beginning of the list
         for slider_num in range(self.nsliders, number_of_sliders):
-            slider = self._create_range_slider_widget(slider_num)
-            for i in range(self.nsliders):
-                item = self.layout().takeAt(i)
-                self.layout().addWidget(item.widget(), i + 1, 0)
-            self.layout().addWidget(slider, 0, 0)
-            self.sliders.append(slider)
+            print(slider_num, number_of_sliders - slider_num - 1)
+            slider = self._create_range_slider_widget(
+                number_of_sliders - slider_num - 1
+            )
+            # for i in range(self.nsliders):
+            #     item = self.layout().takeAt(i)
+            #     self.layout().addWidget(item.widget(), i + 1, 0)
+            self.layout().addWidget(slider)
+            self.sliders.insert(0, slider)
             self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
@@ -173,8 +161,10 @@ class QtDims(QWidget):
         number_of_sliders : new number of sliders
         """
         # remove extra sliders so that only number_of_sliders are left
+        # remove from the beginning of the list
         for slider_num in range(number_of_sliders, self.nsliders):
-            slider = self.sliders.pop()
+            slider = self.sliders[0]
+            self.sliders = self.sliders[1:]
             self.layout().removeWidget(slider)
             slider.deleteLater()
         self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)

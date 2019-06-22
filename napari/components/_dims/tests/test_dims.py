@@ -4,7 +4,7 @@ from napari.components._dims._constants import DimsMode
 
 def test_ndim():
     """
-    Tests number of dimensions including after adding and removing dimensions.
+    Test number of dimensions including after adding and removing dimensions.
     """
     dims = Dims()
     assert dims.ndim == 0
@@ -24,7 +24,7 @@ def test_ndim():
 
 def test_display():
     """
-    Tests display setting.
+    Test display setting.
     """
     dims = Dims(4)
     assert dims.display == [False] * 4
@@ -40,7 +40,7 @@ def test_display():
 
 def test_point():
     """
-    Tests point setting.
+    Test point setting.
     """
     dims = Dims(4)
     assert dims.point == [0.0] * 4
@@ -54,7 +54,7 @@ def test_point():
 
 def test_mode():
     """
-    Tests mode setting.
+    Test mode setting.
     """
     dims = Dims(4)
     assert dims.mode == [DimsMode.POINT] * 4
@@ -76,7 +76,7 @@ def test_range():
 
 def test_interval():
     """
-    Tests interval setting.
+    Test interval setting.
     """
     dims = Dims(4)
     assert dims.interval == [(0.3, 0.7)] * 4
@@ -87,7 +87,7 @@ def test_interval():
 
 def test_indices():
     """
-    Tests indices values.
+    Test indices values.
     """
     dims = Dims(4)
     # On instantiation no dims are displayed and the indices default to 0
@@ -101,3 +101,20 @@ def test_indices():
     dims.set_point(1, 3)
     # Set the values of the first two dims in point mode
     assert dims.indices == (2, 3) + (slice(None, None, None),) * 2
+
+
+def test_order_when_changing_ndim():
+    """
+    Test order of the dims when changing the number of dimensions.
+    """
+    dims = Dims(4)
+    dims.set_point(0, 2)
+
+    dims.ndim = 5
+    # Test that new dims get appended to the beginning of lists
+    assert dims.point == [0, 2, 0, 0, 0]
+
+    dims.set_point(2, 3)
+    dims.ndim = 3
+    # Test that dims get removed from the beginning of lists
+    assert dims.point == [3, 0, 0]
