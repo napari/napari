@@ -124,7 +124,6 @@ class QtDims(QWidget):
         ----------
         new_number_of_sliders :
         """
-        print('ada', new_number_of_sliders)
         if self.nsliders < new_number_of_sliders:
             self._create_sliders(new_number_of_sliders)
         elif self.nsliders > new_number_of_sliders:
@@ -141,13 +140,8 @@ class QtDims(QWidget):
         # add extra sliders so that number_of_sliders are present
         # add to the beginning of the list
         for slider_num in range(self.nsliders, number_of_sliders):
-            print(slider_num, number_of_sliders - slider_num - 1)
-            slider = self._create_range_slider_widget(
-                number_of_sliders - slider_num - 1
-            )
-            # for i in range(self.nsliders):
-            #     item = self.layout().takeAt(i)
-            #     self.layout().addWidget(item.widget(), i + 1, 0)
+            dim_axis = number_of_sliders - slider_num - 1
+            slider = self._create_range_slider_widget(dim_axis)
             self.layout().addWidget(slider)
             self.sliders.insert(0, slider)
             self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
