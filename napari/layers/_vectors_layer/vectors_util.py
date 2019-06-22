@@ -51,7 +51,7 @@ def convert_image_to_coordinates(vectors):
         in D dimensions.
     """
     # create coordinate spacing for image
-    spacing = [np.linspace(0, r, endpoint=False) for r in vectors.shape[:-1]]
+    spacing = [list(range(r)) for r in vectors.shape[:-1]]
     grid = np.meshgrid(*spacing)
 
     # create empty vector of necessary shape
