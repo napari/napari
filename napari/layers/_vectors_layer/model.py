@@ -2,7 +2,6 @@ from typing import Union
 from xml.etree.ElementTree import Element
 
 import numpy as np
-from scipy import ndimage as ndi
 from copy import copy
 
 from .._base_layer import Layer
