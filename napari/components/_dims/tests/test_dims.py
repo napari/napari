@@ -32,7 +32,6 @@ def test_display():
     dims.set_display(0, True)
     dims.set_display(1, True)
     assert dims.display == [True, True, False, False]
-    assert dims.displayed == [0, 1]
 
     dims._set_2d_viewing()
     assert dims.display == [False, False, True, True]
@@ -43,13 +42,13 @@ def test_point():
     Test point setting.
     """
     dims = Dims(4)
-    assert dims.point == [0.0] * 4
+    assert dims.point == [0] * 4
 
-    dims.set_point(3, 2.5)
-    assert dims.point == [0.0, 0.0, 0.0, 2.5]
+    dims.set_point(3, 4)
+    assert dims.point == [0, 0, 0, 4]
 
-    dims.set_point(2, 0.5)
-    assert dims.point == [0.0, 0.0, 0.5, 2.5]
+    dims.set_point(2, 1)
+    assert dims.point == [0, 0, 1, 4]
 
 
 def test_mode():
@@ -68,10 +67,10 @@ def test_range():
     Tests range setting.
     """
     dims = Dims(4)
-    assert dims.range == [(0.0, 1.0, 0.01)] * 4
+    assert dims.range == [(0, 2, 1)] * 4
 
-    dims.set_range(3, (0.0, 2.0, 0.5))
-    assert dims.range == [(0.0, 1.0, 0.01)] * 3 + [(0.0, 2.0, 0.5)]
+    dims.set_range(3, (0, 4, 2))
+    assert dims.range == [(0, 2, 1)] * 3 + [(0, 4, 2)]
 
 
 def test_interval():
@@ -79,10 +78,10 @@ def test_interval():
     Test interval setting.
     """
     dims = Dims(4)
-    assert dims.interval == [(0.3, 0.7)] * 4
+    assert dims.interval == [(0, 1)] * 4
 
-    dims.set_interval(3, (0.2, 0.8))
-    assert dims.interval == [(0.3, 0.7)] * 3 + [(0.2, 0.8)]
+    dims.set_interval(3, (0, 3))
+    assert dims.interval == [(0, 1)] * 3 + [(0, 3)]
 
 
 def test_indices():
@@ -91,11 +90,11 @@ def test_indices():
     """
     dims = Dims(4)
     # On instantiation no dims are displayed and the indices default to 0
-    assert dims.indices == (0.0,) * 4
+    assert dims.indices == (0,) * 4
 
     dims._set_2d_viewing()
     # On 2D viewing the last two dims are now set to sliced mode
-    assert dims.indices == (0.0,) * 2 + (slice(None, None, None),) * 2
+    assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
 
     dims.set_point(0, 2)
     dims.set_point(1, 3)

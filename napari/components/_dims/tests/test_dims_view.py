@@ -54,12 +54,12 @@ def test_slider_values():
 
         # Check that values of the dimension slider matches the values of the
         # dims point after the point has been moved within the dims
-        view.dims.set_point(0, 0.5)
+        view.dims.set_point(0, 2)
         assert view.sliders[0].getValues() == [view.dims.point[0]] * 2
 
         # Check that values of the dimension slider matches the values of the
         # dims point after the point has been moved within the slider
-        view.sliders[0].setValue(0.4)
+        view.sliders[0].setValue(1)
         assert view.sliders[0].getValues() == [view.dims.point[0]] * 2
 
 
@@ -74,14 +74,20 @@ def test_slider_range():
         # Check the range of slider matches the values of the range of the dims
         # at initialization
         assert view.sliders[0].start == view.dims.range[0][0]
-        assert view.sliders[0].end == view.dims.range[0][1]
+        assert (
+            view.sliders[0].end
+            == view.dims.range[0][1] - view.dims.range[0][2]
+        )
         assert view.sliders[0].single_step == view.dims.range[0][2]
 
         # Check the range of slider stays matched to the values of the range of
         # the dims
-        view.dims.set_range(0, (1, 2, 0.5))
+        view.dims.set_range(0, (1, 5, 2))
         assert view.sliders[0].start == view.dims.range[0][0]
-        assert view.sliders[0].end == view.dims.range[0][1]
+        assert (
+            view.sliders[0].end
+            == view.dims.range[0][1] - view.dims.range[0][2]
+        )
         assert view.sliders[0].single_step == view.dims.range[0][2]
 
 
@@ -95,8 +101,8 @@ def test_order_when_changing_ndim():
 
         # Check that values of the dimension slider matches the values of the
         # dims point after the point has been moved within the dims
-        view.dims.set_point(0, 0.5)
-        view.dims.set_point(1, 0.4)
+        view.dims.set_point(0, 2)
+        view.dims.set_point(1, 1)
         for i in range(view.dims.ndim - 2):
             assert view.sliders[i].getValues() == [view.dims.point[i]] * 2
 

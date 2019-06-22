@@ -106,9 +106,13 @@ class QtDims(QWidget):
         elif mode == DimsMode.INTERVAL:
             slider.expand()
             slider.setValues(self.dims.interval[slider_index])
-        slider_range = self.dims.range[slider_index]
-        if slider_range not in (None, (None, None, None)):
-            slider.setRange(slider_range)
+        # Set the maximum values of the range slider to be one step less than
+        # the range of the layer as otherwise the slider can move beyond the
+        # shape of the layer as the endpoint is included
+        range = self.dims.range[slider_index]
+        range = (range[0], range[1] - range[2], range[2])
+        if range not in (None, (None, None, None)):
+            slider.setRange(range)
 
     def _update_nsliders(self):
         """
@@ -176,6 +180,10 @@ class QtDims(QWidget):
         slider : range slider
         """
         range = self.dims.range[axis]
+        # Set the maximum values of the range slider to be one step less than
+        # the range of the layer as otherwise the slider can move beyond the
+        # shape of the layer as the endpoint is included
+        range = (range[0], range[1] - range[2], range[2])
         point = self.dims.point[axis]
 
         slider = QHRangeSlider(
