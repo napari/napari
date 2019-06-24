@@ -68,7 +68,7 @@ class Path(Shape):
             self._box = create_box(data)
         self._data = data
 
-    def to_mask(self, mask_shape=None):
+    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Converts the shape vertices to a boolean mask with `True` for points
         lying inside the shape. For a Path returns an array of `False` as
         a Path has no interior.
@@ -77,8 +77,14 @@ class Path(Shape):
         ----------
         mask_shape : np.ndarray | tuple | None
             1x2 array of shape of mask to be generated. If non specified, takes
-            the max of the vertiecs
-
+            the max of the vertices.
+        zoom_factor : float
+            Premultiplier applied to coordinates before generating mask. Used
+            for generating as downsampled mask.
+        offset : 2-tuple
+            Offset preapplied to coordinates before multiplying by the
+            zoom_factor. Used for putting negative coordinates into the mask.
+            
         Returns
         ----------
         mask : np.ndarray

@@ -342,7 +342,7 @@ class Shape(ABC):
             self.shift(-center)
 
     @abstractmethod
-    def to_mask(self, mask_shape=None):
+    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         # user writes own docstring
         raise NotImplementedError()
 

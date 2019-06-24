@@ -545,6 +545,7 @@ class Labels(Layer):
         downsampled = self.raw_to_displayed(downsampled)
         colormapped = self.colormap.map(downsampled)
         colormapped = colormapped.reshape(downsampled.shape + (4,))
+        colormapped[..., 3] = 1
         colormapped[..., 3] *= self.opacity
         self.thumbnail = img_as_ubyte(colormapped)
 
