@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import create_box
+from ..shape_util import create_box, path_to_mask
 
 
 class Path(Shape):
@@ -84,7 +84,7 @@ class Path(Shape):
         offset : 2-tuple
             Offset preapplied to coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-            
+
         Returns
         ----------
         mask : np.ndarray
@@ -93,7 +93,7 @@ class Path(Shape):
         if mask_shape is None:
             mask_shape = self.data.max(axis=0).astype('int')
 
-        mask = np.zeros(mask_shape, dtype=bool)
+        mask = path_to_mask(mask_shape, (self.data - offset) * zoom_factor)
 
         return mask
 

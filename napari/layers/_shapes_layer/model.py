@@ -210,6 +210,25 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
 
+            # The following shape properties are for the new shapes that will
+            # be drawn. Each shape has a corresponding property with the
+            # value for itself
+            if np.isscalar(edge_width):
+                self._edge_width = edge_width
+            else:
+                self._edge_width = 1
+
+            if type(edge_color) is str:
+                self._edge_color = edge_color
+            else:
+                self._edge_color = 'black'
+
+            if type(face_color) is str:
+                self._face_color = face_color
+            else:
+                self._face_color = 'white'
+            self._opacity = opacity
+
             # Add the shape data
             self._input_ndim = ndim
             self._data = {}
@@ -233,25 +252,6 @@ class Shapes(Layer):
             if init_index not in self.data:
                 self.data[init_index] = ShapeList()
             self.slice_data = self.data[init_index]
-
-            # The following shape properties are for the new shapes that will
-            # be drawn. Each shape has a corresponding property with the
-            # value for itself
-            if np.isscalar(edge_width):
-                self._edge_width = edge_width
-            else:
-                self._edge_width = 1
-
-            if type(edge_color) is str:
-                self._edge_color = edge_color
-            else:
-                self._edge_color = 'black'
-
-            if type(face_color) is str:
-                self._face_color = face_color
-            else:
-                self._face_color = 'white'
-            self._opacity = opacity
 
             # update flags
             self._need_display_update = False
@@ -667,6 +667,7 @@ class Shapes(Layer):
                             raise ValueError(
                                 'all shapes must have the same dimension'
                             )
+            self._update_thumbnail()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""

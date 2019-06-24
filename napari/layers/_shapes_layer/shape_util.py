@@ -765,6 +765,29 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     return centers, offsets, triangles
 
 
+def path_to_mask(mask_shape, vertices):
+    """Converts a path to a boolean mask with `True` for points lying along
+    each edge.
+
+    Parameters
+    ----------
+    mask_shape : array (2,)
+        Shape of mask to be generated.
+    vertices : array (N, 2)
+        Vertices of the path.
+
+    Returns
+    ----------
+    mask : np.ndarray
+        Boolean array with `True` for points along the path
+    """
+    mask = np.zeros(mask_shape, dtype=bool)
+    coords = np.round(vertices).astype('int')
+    for c in coords:
+        mask[tuple(c)] = 1
+    return mask
+
+
 def poly_to_mask(mask_shape, vertices):
     """Converts a polygon to a boolean mask with `True` for points
     lying inside the shape. Uses the bounding box of the vertices to reduce

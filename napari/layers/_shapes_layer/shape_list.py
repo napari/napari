@@ -770,7 +770,11 @@ class ShapeList:
                 mask = self.shapes[ind].to_mask(
                     colors_shape, zoom_factor=zoom_factor, offset=offset
                 )
-                colors[mask, :] = self.shapes[ind].face_color.rgba
+                if type(self.shapes[ind]) in [Path, Line]:
+                    col = self.shapes[ind].edge_color.rgba
+                else:
+                    col = self.shapes[ind].face_color.rgba
+                colors[mask, :] = col
         elif shape_type not in self._types.keys():
             raise ValueError(
                 """shape_type not recognized, must be one of
@@ -786,7 +790,11 @@ class ShapeList:
                     mask = shape.to_mask(
                         colors_shape, zoom_factor=zoom_factor, offset=offset
                     )
-                    colors[mask, :] = self.shapes[ind].face_color.rgba
+                    if type(self.shapes[ind]) in [Path, Line]:
+                        col = self.shapes[ind].edge_color.rgba
+                    else:
+                        col = self.shapes[ind].face_color.rgba
+                    colors[mask, :] = col
 
         return colors
 
