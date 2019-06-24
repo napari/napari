@@ -525,9 +525,6 @@ class ViewerModel:
             D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
-        averaging : int
-            Size of kernel over which to convolve and subsample the data not
-            implemented for "coordinate-like" data
         width : int
             width of the line in pixels
         length : float
