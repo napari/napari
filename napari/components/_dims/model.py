@@ -22,9 +22,11 @@ class Dims:
     range : list of 3-tuple
         List of tuples (min, max, step), one for each dimension
     point : list of float
-        List of floats, one for each dimension
+        List of floats setting the current value of the range slider when in
+        POINT mode, one for each dimension
     interval : list of 2-tuple
-        List of tuples (min, max), one for each dimension
+        List of tuples (min, max) setting the current selection of the range
+        slider when in INTERVAL mode, one for each dimension
     mode : list of DimsMode
         List of DimsMode, one for each dimension
     display : list of bool
@@ -32,8 +34,6 @@ class Dims:
         dimension
     ndim : int
         Number of dimensions
-    displayed : list of int
-        Array of the displayed dimensions
     indices : tuple of slice object
         Tuple of slice objects for slicing arrays on each dimension, one for
         each dimension
@@ -71,8 +71,8 @@ class Dims:
 
     @property
     def range(self):
-        """list of 3-tuple: List of tuples (min, max, step), one for each
-        dimension
+        """list of 3-tuple (min, max, step): total range and step size of each
+        dimension.
         """
         return copy(self._range)
 
@@ -87,13 +87,14 @@ class Dims:
 
     @property
     def point(self):
-        """list of float: List of floats, one for each dimension
+        """list of int: value of each dimension if in POINT mode.
         """
         return copy(self._point)
 
     @property
     def interval(self):
-        """list of 2-tuple: List of tuples (min, max), one for each dimension
+        """list of 2-tuple (min, max): Selection range of each dimension if in
+        INTERVAL mode.
         """
         return copy(self._interval)
 
@@ -125,9 +126,15 @@ class Dims:
     def ndim(self, ndim):
         if ndim > self.ndim:
             for i in range(self.ndim, ndim):
-                self._range.insert(0, (0.0, 1.0, 0.01))
-                self._point.insert(0, 0.0)
-                self._interval.insert(0, (0.3, 0.7))
+                # Insert default values for the new axis at the beginning of
+                # the lists
+                # Range value is (min, max, step) for the entire slider
+                self._range.insert(0, (0, 2, 1))
+                # Point is the slider value if in point mode
+                self._point.insert(0, 0)
+                # Interval value is the (min, max) of the slider selction
+                # if in interval mode
+                self._interval.insert(0, (0, 1))
                 self._mode.insert(0, DimsMode.POINT)
                 self._display.insert(0, False)
 
@@ -149,49 +156,24 @@ class Dims:
             self.events.ndim()
 
     @property
-    def displayed(self):
-        """Returns the displayed dimensions
-
-        Returns
-        -------
-        displayed : list
-            Displayed dimensions
-        """
-        displayed = [i for i, d in enumerate(self.display) if d is True]
-        return displayed
-
-    @property
     def indices(self):
         """Tuple of slice objects for slicing arrays on each dimension."""
         slice_list = []
-        z = zip(self.mode, self.display, self.point, self.interval, self.range)
-        for (mode, display, point, interval, range) in z:
-            if mode == DimsMode.POINT or mode is None:
+        z = zip(self.mode, self.display, self.point, self.interval)
+        for (mode, display, point, interval) in z:
+            if mode == DimsMode.POINT:
                 if display:
                     slice_list.append(slice(None, None, None))
                 else:
                     slice_list.append(int(round(point)))
             elif mode == DimsMode.INTERVAL:
                 if display:
-                    if interval is None:
-                        slice_list.append(slice(None))
-                    else:
-                        slice_list.append(
-                            slice(
-                                int(round(interval[0])),
-                                int(round(interval[1])),
-                            )
-                        )
+                    slice_list.append(slice(None, None, None))
+
                 else:
-                    if interval is None:
-                        slice_list.append(slice(None))
-                    else:
-                        slice_list.append(
-                            slice(
-                                int(round(interval[0])),
-                                int(round(interval[1])),
-                            )
-                        )
+                    slice_list.append(
+                        slice(int(round(interval[0])), int(round(interval[1])))
+                    )
 
         return tuple(slice_list)
 
