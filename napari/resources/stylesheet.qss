@@ -117,7 +117,7 @@ QtPanZoomButton::indicator {
 }
 
 QtSelectButton::indicator {
-    image: url(":/icons/{{ folder }}/select_point.svg");
+    image: url(":/icons/{{ folder }}/select.svg");
 }
 
 QtAdditionButton::indicator {

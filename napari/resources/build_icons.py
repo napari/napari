@@ -40,7 +40,6 @@ icons = [
     'properties_expand',
     'rectangle',
     'select',
-    'select_point',
     'vertex_insert',
     'vertex_remove',
     'visibility',
