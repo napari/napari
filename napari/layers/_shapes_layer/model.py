@@ -243,16 +243,6 @@ class Shapes(Layer):
                 z_index=z_index,
             )
 
-            # If input_ndim has not been set, default to 2
-            if self._input_ndim is None:
-                self._input_ndim = 2
-
-            # Set currently viewed slice to top slice
-            init_index = (0,) * (self._input_ndim - 2)
-            if init_index not in self.data:
-                self.data[init_index] = ShapeList()
-            self.slice_data = self.data[init_index]
-
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
@@ -668,7 +658,20 @@ class Shapes(Layer):
                             raise ValueError(
                                 'all shapes must have the same dimension'
                             )
-            self._update_thumbnail()
+
+        # If input_ndim has not been set, default to 2
+        if self._input_ndim is None:
+            self._input_ndim = 2
+
+        # If slice_data has not yet been definied,
+        # set the currently viewed slice to top slice
+        if not hasattr(self, 'slice_data'):
+            init_index = (0,) * (self._input_ndim - 2)
+            if init_index not in self.data:
+                self.data[init_index] = ShapeList()
+            self.slice_data = self.data[init_index]
+
+        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
