@@ -165,7 +165,7 @@ class Layer(VisualWrapper, ABC):
 
     @thumbnail.setter
     def thumbnail(self, thumbnail):
-        if thumbnail.dtype != 'uint8':
+        if thumbnail.dtype != np.uint8:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 thumbnail = img_as_ubyte(thumbnail)
