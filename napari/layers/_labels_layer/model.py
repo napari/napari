@@ -1,7 +1,6 @@
 from typing import Union
 import numpy as np
 from scipy import ndimage as ndi
-from skimage.util import img_as_ubyte
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
@@ -546,7 +545,7 @@ class Labels(Layer):
         colormapped = self.colormap.map(downsampled)
         colormapped = colormapped.reshape(downsampled.shape + (4,))
         colormapped[..., 3] *= self.opacity
-        self.thumbnail = img_as_ubyte(colormapped)
+        self.thumbnail = colormapped
 
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the

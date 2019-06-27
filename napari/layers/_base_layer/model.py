@@ -1,7 +1,9 @@
+import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
+from skimage import img_as_ubyte
 
 from ...util.event import Event
 from ._visual_wrapper import VisualWrapper
@@ -163,6 +165,10 @@ class Layer(VisualWrapper, ABC):
 
     @thumbnail.setter
     def thumbnail(self, thumbnail):
+        if thumbnail.dtype != 'uint8':
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                thumbnail = img_as_ubyte(thumbnail)
         self._thumbnail = thumbnail
         self.events.thumbnail()
 

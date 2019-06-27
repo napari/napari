@@ -2,7 +2,6 @@ from typing import Union
 from xml.etree.ElementTree import Element
 import numpy as np
 from scipy import ndimage as ndi
-from skimage.util import img_as_ubyte
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Markers as MarkersNode
 from ...util.event import Event
@@ -454,7 +453,6 @@ class Points(Layer):
             for c in coords:
                 colormapped[c[0], c[1], :] = Color(self.face_color).rgba
         colormapped[..., 3] *= self.opacity
-        colormapped = img_as_ubyte(colormapped)
         self.thumbnail = colormapped
 
     def _add(self, coord):
