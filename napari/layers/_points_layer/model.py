@@ -298,9 +298,12 @@ class Points(Layer):
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
         self._edge_color = edge_color
+        if self._update_properties:
+            index = self._indices_view[self.selected_points]
+            for i in index:
+                self._edge_color_list[i] = edge_color
+            self.refresh()
         self.events.edge_color()
-
-        self.refresh()
 
     @property
     def face_color(self) -> str:
@@ -312,9 +315,12 @@ class Points(Layer):
     @face_color.setter
     def face_color(self, face_color: str) -> None:
         self._face_color = face_color
+        if self._update_properties:
+            index = self._indices_view[self.selected_points]
+            for i in index:
+                self._face_color_list[i] = face_color
+            self.refresh()
         self.events.face_color()
-
-        self.refresh()
 
     @property
     def selected_points(self):
@@ -326,8 +332,9 @@ class Points(Layer):
     def selected_points(self, selected_points):
         self._selected_points = selected_points
         self._selected_box = self.interaction_box(selected_points)
-        #
-        # # Update properties based on selected shapes
+        index = self._indices_view[self._selected_points]
+
+        # # Update properties based on selected points
         # face_colors = list(
         #     set(
         #         [
@@ -354,23 +361,11 @@ class Points(Layer):
         #     with self.block_update_properties():
         #         self.edge_color = edge_color
         #
-        # edge_width = list(
-        #     set(
-        #         [self.slice_data.shapes[i].edge_width for i in selected_points]
-        #     )
-        # )
-        # if len(edge_width) == 1:
-        #     edge_width = edge_width[0]
-        #     with self.block_update_properties():
-        #         self.edge_width = edge_width
-        #
-        # opacities = list(
-        #     set([self.slice_data.shapes[i].opacity for i in selected_points])
-        # )
-        # if len(opacities) == 1:
-        #     opacity = opacities[0]
-        #     with self.block_update_properties():
-        #         self.opacity = opacity
+        size = list(set([self.size_array[i, -2:].mean() for i in index]))
+        if len(size) == 1:
+            size = size[0]
+            with self.block_update_properties():
+                self.size = size
 
     def interaction_box(self, index):
         """Create the interaction box around a list of points.
@@ -594,8 +589,8 @@ class Points(Layer):
             size=sizes,
             edge_width=self.edge_width,
             symbol=self.symbol,
-            edge_color=self.edge_color,
-            face_color=self.face_color,
+            edge_color=self._edge_color_list[self._indices_view],
+            face_color=self._face_color_list[self._indices_view],
             scaling=True,
         )
         self._need_visual_update = True
@@ -653,7 +648,7 @@ class Points(Layer):
             edge_width=width,
             symbol=self.symbol,
             edge_color=self._highlight_color,
-            face_color=self._face_color,
+            face_color=self._highlight_color,
             scaling=True,
         )
 
