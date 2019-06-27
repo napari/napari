@@ -24,10 +24,6 @@ class QtPointsProperties(QtLayerProperties):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         value = self.layer.size
-        if isinstance(value, Iterable):
-            if isinstance(value, list):
-                value = np.asarray(value)
-            value = value.mean()
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.sizeSlider = sld
@@ -109,9 +105,7 @@ class QtPointsProperties(QtLayerProperties):
         self.layer.symbol = text
 
     def changeSize(self, value):
-        """Rescale point sizes according to the value of the size slider."""
-        avg = np.mean(self.layer.size) or 1
-        self.layer.size = self.layer.size / avg * value
+        self.layer.size = value
 
     def change_ndim(self, state):
         if state == Qt.Checked:
@@ -133,10 +127,6 @@ class QtPointsProperties(QtLayerProperties):
     def _on_size_change(self, event):
         with self.layer.events.size.blocker():
             value = self.layer.size
-            if isinstance(value, Iterable):
-                if isinstance(value, list):
-                    value = np.asarray(value)
-                value = value.mean()
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event):

@@ -2,11 +2,13 @@ from typing import Union
 from xml.etree.ElementTree import Element
 import numpy as np
 from copy import copy
+from contextlib import contextmanager
 from scipy import ndimage as ndi
 from skimage.util import img_as_ubyte
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Line, Markers, Compound
 from ...util.event import Event
+from ...util.misc import ensure_iterable
 from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
@@ -78,6 +80,8 @@ class Points(Layer):
             symbol=Event,
             n_dimensional=Event,
         )
+        self._colors = get_color_names()
+        self._update_properties = True
 
         # Freeze refreshes
         with self.freeze_refresh():
@@ -86,15 +90,41 @@ class Points(Layer):
 
             # Save the point style params
             self.symbol = symbol
-            self.size = size
-            self.edge_width = edge_width
-            self.edge_color = edge_color
-            self.face_color = face_color
-            self._face_color_list = []
-            self._edge_color_list = []
-            self._size_list = []
             self.n_dimensional = n_dimensional
-            self._colors = get_color_names()
+            self.edge_width = edge_width
+
+            self.size_array = size
+            self._edge_color_list = [
+                s
+                for i, s in zip(
+                    range(len(coords)), ensure_iterable(edge_color, color=True)
+                )
+            ]
+            self._face_color_list = [
+                s
+                for i, s in zip(
+                    range(len(coords)), ensure_iterable(face_color, color=True)
+                )
+            ]
+
+            # The following point properties are for the new points that will
+            # be added. Each point also has a corresponding property with the
+            # value for itself
+            if np.isscalar(size):
+                self._size = size
+            else:
+                self._size = 1
+
+            if type(edge_color) is str:
+                self._edge_color = edge_color
+            else:
+                self._edge_color = 'black'
+
+            if type(face_color) is str:
+                self._face_color = face_color
+            else:
+                self._face_color = 'white'
+
             # Indices of selected points within the currently viewed slice
             self._selected_points = []
             self._selected_points_stored = []
@@ -118,6 +148,7 @@ class Points(Layer):
 
             self._drag_box = None
             self._drag_box_stored = None
+            self._is_selecting = False
 
             # update flags
             self._need_display_update = False
@@ -136,23 +167,25 @@ class Points(Layer):
         self._coords = coords
 
         # Adjust the size array when the number of points has changed
-        if len(coords) < len(self._size):
+        if len(coords) < len(self._size_array):
             # If there are now less points, remove the sizes of the missing
             # ones
             with self.freeze_refresh():
-                self.size = self._size[: len(coords)]
-        elif len(coords) > len(self._size):
+                self.size_array = self._size_array[: len(coords)]
+        elif len(coords) > len(self._size_array):
             # If there are now more points, add the sizes of last one
             # or add the default size
             with self.freeze_refresh():
-                adding = len(coords) - len(self._size)
-                if len(self._size) > 0:
-                    new_size = self._size[-1]
+                adding = len(coords) - len(self._size_array)
+                if len(self._size_array) > 0:
+                    new_size = self._size_array[-1]
                 else:
                     # Add the default size, with a value for each dimension
-                    new_size = np.repeat(10, self._size.shape[1])
+                    new_size = np.repeat(self.size, self._size_array.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
-                self.size = np.concatenate((self._size, size), axis=0)
+                self.size_array = np.concatenate(
+                    (self._size_array, size), axis=0
+                )
         self.events.data()
         self.refresh()
 
@@ -201,27 +234,46 @@ class Points(Layer):
 
         self.refresh()
 
+    @contextmanager
+    def block_update_properties(self):
+        self._update_properties = False
+        yield
+        self._update_properties = True
+
     @property
-    def size(self) -> Union[int, float, np.ndarray, list]:
-        """float, ndarray: size of the point marker symbol in px
+    def size_array(self) -> Union[int, float, np.ndarray, list]:
+        """ndarray: size of the point marker symbol in px
         """
+        return self._size_array
 
-        return self._size_original
-
-    @size.setter
-    def size(self, size: Union[int, float, np.ndarray, list]) -> None:
-
+    @size_array.setter
+    def size_array(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
-            self._size = np.broadcast_to(size, self._coords.shape)
+            self._size_array = np.broadcast_to(size, self._coords.shape).copy()
         except:
             try:
-                self._size = np.broadcast_to(size, self._coords.shape[::-1]).T
+                self._size_array = np.broadcast_to(
+                    size, self._coords.shape[::-1]
+                ).T.copy()
             except:
                 raise ValueError("Size is not compatible for broadcasting")
-        self._size_original = size
-        self.events.size()
-
         self.refresh()
+
+    @property
+    def size(self) -> Union[int, float]:
+        """int, float: size of the point in px
+        """
+        return self._size
+
+    @size.setter
+    def size(self, size: Union[None, float]) -> None:
+        self._size = size
+        if self._update_properties:
+            index = self._indices_view[self.selected_points]
+            for i in index:
+                self.size_array[i, :] = size
+            self.refresh()
+        self.events.size()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -464,7 +516,7 @@ class Points(Layer):
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, :-2] - indices[:-2])
-                size_array = self._size[:, :-2] / 2
+                size_array = self.size_array[:, :-2] / 2
                 matches = np.all(distances <= size_array, axis=1)
                 in_slice_points = coords[matches, -2:]
                 size_match = size_array[matches]
@@ -523,7 +575,7 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(in_slice_points) > 0:
             # Get the point sizes
-            sizes = (self._size[indices, -2:].mean(axis=1) * scale)[::-1]
+            sizes = (self.size_array[indices, -2:].mean(axis=1) * scale)[::-1]
 
             # Update the points node
             data = np.array(in_slice_points)[::-1] + 0.5
@@ -606,9 +658,11 @@ class Points(Layer):
         )
 
         pos = self._selected_box
-        if pos is None:
+        if pos is None and not self._is_selecting:
             width = 0
             pos = np.empty((0, 2))
+        elif self._is_selecting:
+            pos = create_box(self._drag_box)
 
         self._node._subvisuals[0].set_data(
             pos=pos[:, [1, 0]], color=self._highlight_color, width=width
@@ -680,7 +734,7 @@ class Points(Layer):
         """
         index = self.selected_points
         if index is not None:
-            self._size = np.delete(self._size, index, axis=0)
+            self._size_array = np.delete(self._size_array, index, axis=0)
             self.data = np.delete(self.data, index, axis=0)
 
     def _move(self, coord):
@@ -699,6 +753,12 @@ class Points(Layer):
             shift = coord - center - self._drag_start
             self.data[index, -2:] = self.data[index, -2:] + shift
             self.refresh()
+        else:
+            self._is_selecting = True
+            if self._drag_start is None:
+                self._drag_start = coord
+            self._drag_box = np.array([self._drag_start, coord])
+            self._set_highlight()
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg
@@ -778,6 +838,12 @@ class Points(Layer):
         if event.pos is None:
             return
         self._drag_start = None
+        if self._is_selecting:
+            self._is_selecting = False
+            self.selected_points = points_in_box(
+                self._points_view, self._drag_box
+            )
+            self._set_highlight(force=True)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
@@ -814,3 +880,34 @@ class Points(Layer):
                 self.mode = self._mode_history
                 self.selected_points = self._selected_points_history
                 self._set_highlight()
+
+
+def create_box(data):
+    """Creates the axis aligned interaction box of a list of points
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Nx2 array of points whose interaction box is to be found
+
+    Returns
+    -------
+    box : np.ndarray
+        5x2 array of vertices of the box
+    """
+    min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
+    max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
+    tl = np.array([min_val[0], min_val[1]])
+    tr = np.array([max_val[0], min_val[1]])
+    br = np.array([max_val[0], max_val[1]])
+    bl = np.array([min_val[0], max_val[1]])
+    box = np.array([tl, tr, br, bl, tl])
+    return box
+
+
+def points_in_box(points, corners):
+    box = create_box(corners)[[0, 2]]
+    below_top = np.all(box[1] >= points, axis=1)
+    above_bottom = np.all(points >= box[0], axis=1)
+    inside = np.logical_and(below_top, above_bottom)
+    return list(np.where(inside)[0])
