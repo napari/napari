@@ -689,7 +689,7 @@ class Points(Layer):
         index = self._indices_view[self.selected_points]
         if len(index) > 0:
             delta = np.subtract(coord, self._prev_coord)
-            self.data[index] = self.data[index] + delta
+            self.data[index, -2:] = self.data[index, -2:] + delta
             self._selected_box = self.interaction_box(self.selected_points)
             self._prev_coord = coord
             self.refresh()
@@ -724,13 +724,15 @@ class Points(Layer):
             return
         self.position = tuple(event.pos)
         coord = self.coordinates
-        self._hover_point = self._select_point(coord[-2:])
 
         if self._mode == Mode.SELECT:
             if event.is_dragging:
                 self._move(coord)
             else:
+                self._hover_point = self._select_point(coord[-2:])
                 self._set_highlight()
+        else:
+            self._hover_point = self._select_point(coord[-2:])
         self.status = self.get_message(coord, self._hover_point)
 
     def on_mouse_press(self, event):
