@@ -107,6 +107,8 @@ class Points(Layer):
             self._mode_history = self._mode
             self._status = self._mode
 
+            self._drag_start = None
+
             # Nx2 array of points in the currently viewed slice
             self._points_view = np.empty((0, 2))
             # Sizes of points in the currently viewed slice
@@ -340,16 +342,16 @@ class Points(Layer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             min_val = np.array(
-                [data[:, 1].min(axis=0), data[:, 0].min(axis=0)]
+                [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
             )
             max_val = np.array(
-                [data[:, 1].max(axis=0), data[:, 0].max(axis=0)]
+                [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
             )
             min_size_ind = np.array(
-                [data[:, 1].argmin(axis=0), data[:, 0].argmin(axis=0)]
+                [data[:, 0].argmin(axis=0), data[:, 1].argmin(axis=0)]
             )
             max_size_ind = np.array(
-                [data[:, 1].argmax(axis=0), data[:, 0].argmax(axis=0)]
+                [data[:, 0].argmax(axis=0), data[:, 1].argmax(axis=0)]
             )
             min_val = min_val - size[min_size_ind] / 2
             max_val = max_val + size[max_size_ind] / 2
@@ -458,7 +460,7 @@ class Points(Layer):
             Indices to slice with.
         """
         # Get a list of the coords for the points in this slice
-        coords = self.coords
+        coords = self.data
         if len(coords) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(coords[:, :-2] - indices[:-2])
@@ -505,7 +507,7 @@ class Points(Layer):
             )
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                selection = indices[-1]
+                selection = indices[0]
             else:
                 selection = None
         else:
@@ -533,6 +535,7 @@ class Points(Layer):
         self._points_view = data
         self._sizes_view = sizes
         self._indices_view = indices[::-1]
+        self._selected_box = self.interaction_box(self.selected_points)
 
         self._node._subvisuals[2].set_data(
             data[:, [1, 0]],
@@ -605,9 +608,10 @@ class Points(Layer):
         pos = self._selected_box
         if pos is None:
             width = 0
+            pos = np.empty((0, 2))
 
         self._node._subvisuals[0].set_data(
-            pos=pos, color=self._highlight_color, width=width
+            pos=pos[:, [1, 0]], color=self._highlight_color, width=width
         )
 
     def get_message(self, coord, value):
@@ -688,10 +692,12 @@ class Points(Layer):
         """
         index = self._indices_view[self.selected_points]
         if len(index) > 0:
-            delta = np.subtract(coord, self._prev_coord)
-            self.data[index, -2:] = self.data[index, -2:] + delta
-            self._selected_box = self.interaction_box(self.selected_points)
-            self._prev_coord = coord
+            if self._drag_start is None:
+                center = self.data[index, -2:].mean(axis=0)
+                self._drag_start = np.array(coord) - center
+            center = self.data[index, -2:].mean(axis=0)
+            shift = coord - center - self._drag_start
+            self.data[index, -2:] = self.data[index, -2:] + shift
             self.refresh()
 
     def to_xml_list(self):
@@ -745,7 +751,6 @@ class Points(Layer):
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.SELECT:
-            self._prev_coord = coord
             point = self._select_point(coord[-2:])
             if shift and point is not None:
                 if point in self.selected_points:
@@ -766,6 +771,13 @@ class Points(Layer):
             else:
                 self._add(coord)
         # self.status = self.get_message(coord, self._hover_point)
+
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
+        """
+        if event.pos is None:
+            return
+        self._drag_start = None
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
