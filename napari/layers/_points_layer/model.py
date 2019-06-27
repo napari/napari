@@ -1,10 +1,11 @@
 from typing import Union
 from xml.etree.ElementTree import Element
 import numpy as np
+from copy import copy
 from scipy import ndimage as ndi
 from skimage.util import img_as_ubyte
 from .._base_layer import Layer
-from ..._vispy.scene.visuals import Markers as MarkersNode
+from ..._vispy.scene.visuals import Line, Markers, Compound
 from ...util.event import Event
 from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
@@ -46,6 +47,8 @@ class Points(Layer):
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
 
+    _highlight_color = (0, 0.6, 1)
+
     def __init__(
         self,
         coords,
@@ -58,7 +61,14 @@ class Points(Layer):
         *,
         name=None,
     ):
-        super().__init__(MarkersNode(), name)
+
+        # Create a compound visual with the following four subvisuals:
+        # Lines: The lines of the interaction box used for highlights.
+        # Markers: The the outlines for each point used for highlights.
+        # Markers: The actual markers of each point.
+        visual = Compound([Line(), Markers(), Markers()])
+
+        super().__init__(visual, name)
 
         self.events.add(
             mode=Event,
@@ -80,14 +90,32 @@ class Points(Layer):
             self.edge_width = edge_width
             self.edge_color = edge_color
             self.face_color = face_color
+            self._face_color_list = []
+            self._edge_color_list = []
+            self._size_list = []
             self.n_dimensional = n_dimensional
             self._colors = get_color_names()
-            self._selected_points = None
+            # Indices of selected points within the currently viewed slice
+            self._selected_points = []
+            self._selected_points_stored = []
+            self._selected_points_history = []
+            # Index of hovered point within the currently viewed slice
+            self._hover_point = None
+            self._hover_point_stored = None
+            self._selected_box = None
             self._mode = Mode.PAN_ZOOM
             self._mode_history = self._mode
             self._status = self._mode
+
+            # Nx2 array of points in the currently viewed slice
             self._points_view = np.empty((0, 2))
+            # Sizes of points in the currently viewed slice
             self._sizes_view = 0
+            # Full data indices of points located in the currently viewed slice
+            self._indices_view = []
+
+            self._drag_box = None
+            self._drag_box_stored = None
 
             # update flags
             self._need_display_update = False
@@ -235,6 +263,107 @@ class Points(Layer):
         self.refresh()
 
     @property
+    def selected_points(self):
+        """list: list of currently selected points
+        """
+        return self._selected_points
+
+    @selected_points.setter
+    def selected_points(self, selected_points):
+        self._selected_points = selected_points
+        self._selected_box = self.interaction_box(selected_points)
+        #
+        # # Update properties based on selected shapes
+        # face_colors = list(
+        #     set(
+        #         [
+        #             self.slice_data.shapes[i]._face_color_name
+        #             for i in selected_points
+        #         ]
+        #     )
+        # )
+        # if len(face_colors) == 1:
+        #     face_color = face_colors[0]
+        #     with self.block_update_properties():
+        #         self.face_color = face_color
+        #
+        # edge_colors = list(
+        #     set(
+        #         [
+        #             self.slice_data.shapes[i]._edge_color_name
+        #             for i in selected_points
+        #         ]
+        #     )
+        # )
+        # if len(edge_colors) == 1:
+        #     edge_color = edge_colors[0]
+        #     with self.block_update_properties():
+        #         self.edge_color = edge_color
+        #
+        # edge_width = list(
+        #     set(
+        #         [self.slice_data.shapes[i].edge_width for i in selected_points]
+        #     )
+        # )
+        # if len(edge_width) == 1:
+        #     edge_width = edge_width[0]
+        #     with self.block_update_properties():
+        #         self.edge_width = edge_width
+        #
+        # opacities = list(
+        #     set([self.slice_data.shapes[i].opacity for i in selected_points])
+        # )
+        # if len(opacities) == 1:
+        #     opacity = opacities[0]
+        #     with self.block_update_properties():
+        #         self.opacity = opacity
+
+    def interaction_box(self, index):
+        """Create the interaction box around a list of points.
+
+        Parameters
+        ----------
+        index : list
+            List of points around which to construct the interaction box.
+
+        Returns
+        ----------
+        box : np.ndarray
+            5x2 array of corners of the interaction box in clockwise order
+            starting in the upper-left corner and duplicating the first corner
+        """
+        if len(index) == 0:
+            box = None
+        else:
+            data = self._points_view[index]
+            size = self._sizes_view[index]
+            if data.ndim == 1:
+                data = np.expand_dims(data, axis=0)
+            min_val = np.array(
+                [data[:, 1].min(axis=0), data[:, 0].min(axis=0)]
+            )
+            max_val = np.array(
+                [data[:, 1].max(axis=0), data[:, 0].max(axis=0)]
+            )
+            min_size_ind = np.array(
+                [data[:, 1].argmin(axis=0), data[:, 0].argmin(axis=0)]
+            )
+            max_size_ind = np.array(
+                [data[:, 1].argmax(axis=0), data[:, 0].argmax(axis=0)]
+            )
+            min_val = min_val - size[min_size_ind] / 2
+            max_val = max_val + size[max_size_ind] / 2
+
+            tl = np.array([min_val[0], min_val[1]])
+            tr = np.array([max_val[0], min_val[1]])
+            br = np.array([max_val[0], max_val[1]])
+            bl = np.array([min_val[0], max_val[1]])
+
+            box = np.array([tl, tr, br, bl, tl])
+
+        return box
+
+    @property
     def svg_props(self):
         """dict: color and width properties in the svg specification
         """
@@ -272,6 +401,7 @@ class Points(Layer):
             mode = Mode(mode)
         if mode == self._mode:
             return
+        old_mode = self._mode
 
         if mode == Mode.ADD:
             self.cursor = 'cross'
@@ -287,6 +417,10 @@ class Points(Layer):
             self.help = ''
         else:
             raise ValueError("Mode not recognized")
+
+        if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
+            self.selected_points = []
+            self._set_highlight()
 
         self.status = str(mode)
         self._mode = mode
@@ -336,35 +470,42 @@ class Points(Layer):
                 scale_per_dim = (size_match - distances[matches]) / size_match
                 scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
-                return in_slice_points, matches, scale
+                indices = np.where(matches)[0]
+                return in_slice_points, indices, scale
             else:
                 matches = np.all(coords[:, :-2] == indices[:-2], axis=1)
                 in_slice_points = coords[matches, -2:]
-                return in_slice_points, matches, 1
+                indices = np.where(matches)[0]
+                return in_slice_points, indices, 1
         else:
             return [], [], []
 
-    def _select_point(self, indices):
+    def _select_point(self, coord):
         """Determines selected points selected given indices.
 
         Parameters
         ----------
-        indices : sequence of int
-            Indices to check if point at.
+        coord : 2-tuple
+            Indices to check if point at for currently viewed points.
+
+        Returns
+        ----------
+        selection : int or None
+            Index of point that is at the current coordinate if any.
         """
-        in_slice_points, matches, scale = self._slice_points(indices)
+        in_slice_points = self._points_view
 
         # Display points if there are any in this slice
-        if len(in_slice_points) > 0:
+        if len(self._points_view) > 0:
             # Get the point sizes
-            size_array = self._size[matches, -2:] * np.expand_dims(
-                scale, axis=1
+            distances = abs(self._points_view - coord)
+            in_slice_matches = np.all(
+                distances <= np.expand_dims(self._sizes_view, axis=1) / 2,
+                axis=1,
             )
-            distances = abs(in_slice_points - indices[-2:])
-            in_slice_matches = np.all(distances <= size_array / 2, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                selection = np.where(matches)[0][indices[-1]]
+                selection = indices[-1]
             else:
                 selection = None
         else:
@@ -375,12 +516,12 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        in_slice_points, matches, scale = self._slice_points(self.indices)
+        in_slice_points, indices, scale = self._slice_points(self.indices)
 
         # Display points if there are any in this slice
         if len(in_slice_points) > 0:
             # Get the point sizes
-            sizes = (self._size[matches, -2:].mean(axis=1) * scale)[::-1]
+            sizes = (self._size[indices, -2:].mean(axis=1) * scale)[::-1]
 
             # Update the points node
             data = np.array(in_slice_points)[::-1] + 0.5
@@ -391,8 +532,9 @@ class Points(Layer):
             sizes = 0
         self._points_view = data
         self._sizes_view = sizes
+        self._indices_view = indices[::-1]
 
-        self._node.set_data(
+        self._node._subvisuals[2].set_data(
             data[:, [1, 0]],
             size=sizes,
             edge_width=self.edge_width,
@@ -402,9 +544,71 @@ class Points(Layer):
             scaling=True,
         )
         self._need_visual_update = True
+        self._set_highlight(force=True)
         self._update()
         self.status = self.get_message(self.coordinates, self._selected_points)
         self._update_thumbnail()
+
+    def _set_highlight(self, force=False):
+        """Render highlights of shapes including boundaries, vertices,
+        interaction boxes, and the drag selection box when appropriate
+
+        Parameters
+        ----------
+        force : bool
+            Bool that forces a redraw to occur when `True`
+        """
+        # Check if any point ids have changed since last call
+        if (
+            self.selected_points == self._selected_points_stored
+            and self._hover_point == self._hover_point_stored
+            and np.all(self._drag_box == self._drag_box_stored)
+        ) and not force:
+            return
+        self._selected_points_stored = copy(self.selected_points)
+        self._hover_point_stored = copy(self._hover_point)
+        self._drag_box_stored = copy(self._drag_box)
+
+        if self._hover_point is not None or len(self.selected_points) > 0:
+            if len(self.selected_points) > 0:
+                index = copy(self.selected_points)
+                if self._hover_point is not None:
+                    if self._hover_point in index:
+                        pass
+                    else:
+                        index.append(self._hover_point)
+                index.sort()
+            else:
+                index = self._hover_point
+
+            # Color the hovered or selected points
+            data = self._points_view[index]
+            if data.ndim == 1:
+                data = np.expand_dims(data, axis=0)
+            size = self._sizes_view[index]
+        else:
+            data = np.empty((0, 2))
+            size = 1
+
+        width = 2.5
+
+        self._node._subvisuals[1].set_data(
+            data[:, [1, 0]],
+            size=size,
+            edge_width=width,
+            symbol=self.symbol,
+            edge_color=self._highlight_color,
+            face_color=self._face_color,
+            scaling=True,
+        )
+
+        pos = self._selected_box
+        if pos is None:
+            width = 0
+
+        self._node._subvisuals[0].set_data(
+            pos=pos, color=self._highlight_color, width=width
+        )
 
     def get_message(self, coord, value):
         """Returns coordinate and value string for given mouse coordinates
@@ -428,7 +632,8 @@ class Points(Layer):
         if value is None:
             pass
         else:
-            msg = msg + ', index ' + str(value)
+            index = self._indices_view[value]
+            msg = msg + ', index ' + str(index)
         return msg
 
     def _update_thumbnail(self):
@@ -465,16 +670,14 @@ class Points(Layer):
         coord : sequence of indices to add point at
         """
         self.data = np.append(self.data, [coord], axis=0)
-        self._selected_points = len(self.data) - 1
 
     def _remove(self):
         """Removes selected object if any.
         """
-        index = self._selected_points
+        index = self.selected_points
         if index is not None:
             self._size = np.delete(self._size, index, axis=0)
             self.data = np.delete(self.data, index, axis=0)
-            self._selected_points = None
 
     def _move(self, coord):
         """Moves object at given mouse position
@@ -483,9 +686,12 @@ class Points(Layer):
         ----------
         coord : sequence of indices to move point to
         """
-        index = self._selected_points
-        if index is not None:
-            self.data[index] = coord
+        index = self._indices_view[self.selected_points]
+        if len(index) > 0:
+            delta = np.subtract(coord, self._prev_coord)
+            self.data[index] = self.data[index] + delta
+            self._selected_box = self.interaction_box(self.selected_points)
+            self._prev_coord = coord
             self.refresh()
 
     def to_xml_list(self):
@@ -518,11 +724,14 @@ class Points(Layer):
             return
         self.position = tuple(event.pos)
         coord = self.coordinates
-        if self._mode == Mode.SELECT and event.is_dragging:
-            self._move(coord)
-        else:
-            self._selected_points = self._select_point(coord)
-        self.status = self.get_message(coord, self._selected_points)
+        self._hover_point = self._select_point(coord[-2:])
+
+        if self._mode == Mode.SELECT:
+            if event.is_dragging:
+                self._move(coord)
+            else:
+                self._set_highlight()
+        self.status = self.get_message(coord, self._hover_point)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -531,15 +740,30 @@ class Points(Layer):
             return
         self.position = tuple(event.pos)
         coord = self.coordinates
-        self._selected_points = self._select_point(coord)
         shift = 'Shift' in event.modifiers
 
-        if self._mode == Mode.ADD:
+        if self._mode == Mode.SELECT:
+            self._prev_coord = coord
+            point = self._select_point(coord[-2:])
+            if shift and point is not None:
+                if point in self.selected_points:
+                    self.selected_points.remove(point)
+                else:
+                    self.selected_points.append(point)
+                self._selected_box = self.interaction_box(self.selected_points)
+            elif point is not None:
+                if point not in self.selected_points:
+                    self.selected_points = [point]
+            else:
+                self.selected_points = []
+            self._set_highlight()
+            # self.status = self.get_message(coord, point)
+        elif self._mode == Mode.ADD:
             if shift:
                 self._remove()
             else:
                 self._add(coord)
-        self.status = self.get_message(coord, self._selected_points)
+        # self.status = self.get_message(coord, self._hover_point)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
@@ -550,18 +774,23 @@ class Points(Layer):
             if event.key == ' ':
                 if self._mode != Mode.PAN_ZOOM:
                     self._mode_history = self.mode
+                    self._selected_points_history = copy(self.selected_points)
                     self.mode = Mode.PAN_ZOOM
                 else:
                     self._mode_history = Mode.PAN_ZOOM
             elif event.key == 'Shift':
                 if self._mode == Mode.ADD:
                     self.cursor = 'forbidden'
-            elif event.key == 'a':
+            elif event.key == 'p':
                 self.mode = Mode.ADD
             elif event.key == 's':
                 self.mode = Mode.SELECT
             elif event.key == 'z':
                 self.mode = Mode.PAN_ZOOM
+            elif event.key == 'a':
+                if self._mode == Mode.SELECT:
+                    self.selected_points = list(range(len(self._points_view)))
+                    self._set_highlight()
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
@@ -569,6 +798,5 @@ class Points(Layer):
         if event.key == ' ':
             if self._mode_history != Mode.PAN_ZOOM:
                 self.mode = self._mode_history
-        elif event.key == 'Shift':
-            if self.mode == 'add':
-                self.cursor = 'cross'
+                self.selected_points = self._selected_points_history
+                self._set_highlight()
