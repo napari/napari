@@ -330,16 +330,14 @@ class Image(Layer):
                 image, (zoom_factor, zoom_factor, 1), prefilter=False, order=0
             )
             if image.shape[2] == 4:  # image is RGBA
-                downsampled[..., 3] = downsampled[..., 3] * self.opacity
-                colormapped = downsampled
+                colormapped[..., 3] = downsampled[..., 3] * self.opacity
             else:  # image is RGB
-                colormapped = downsampled
                 alpha = np.full(
                     downsampled.shape[:2] + (1,),
                     int(255 * self.opacity),
                     dtype=np.uint8,
                 )
-                colormapped = np.concatenate([colormapped, alpha], axis=2)
+                colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
             downsampled = ndi.zoom(
                 image, zoom_factor, prefilter=False, order=0
