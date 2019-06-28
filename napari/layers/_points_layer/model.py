@@ -164,21 +164,26 @@ class Points(Layer):
 
     @coords.setter
     def coords(self, coords: np.ndarray):
+        cur_npoints = len(self._coords)
         self._coords = coords
 
         # Adjust the size array when the number of points has changed
-        if len(coords) < len(self._size_array):
+        if len(coords) < cur_npoints:
             # If there are now less points, remove the sizes of the missing
             # ones
             with self.freeze_refresh():
                 self.size_array = self._size_array[: len(coords)]
-        elif len(coords) > len(self._size_array):
+                self._edge_color_list = self._edge_color_list[: len(coords)]
+                self._face_color_list = self._face_color_list[: len(coords)]
+
+        elif len(coords) > cur_npoints:
             # If there are now more points, add the sizes of last one
             # or add the default size
             with self.freeze_refresh():
-                adding = len(coords) - len(self._size_array)
+                adding = len(coords) - cur_npoints
                 if len(self._size_array) > 0:
-                    new_size = self._size_array[-1]
+                    new_size = copy(self._size_array[-1])
+                    new_size[-2:] = self.size
                 else:
                     # Add the default size, with a value for each dimension
                     new_size = np.repeat(self.size, self._size_array.shape[1])
@@ -186,6 +191,13 @@ class Points(Layer):
                 self.size_array = np.concatenate(
                     (self._size_array, size), axis=0
                 )
+                self._edge_color_list += [
+                    self.edge_color for i in range(adding)
+                ]
+                self._face_color_list += [
+                    self.face_color for i in range(adding)
+                ]
+
         self.events.data()
         self.refresh()
 
@@ -268,7 +280,7 @@ class Points(Layer):
     @size.setter
     def size(self, size: Union[None, float]) -> None:
         self._size = size
-        if self._update_properties:
+        if self._update_properties and len(self.selected_points) > 0:
             index = self._indices_view[self.selected_points]
             for i in index:
                 self.size_array[i, :] = size
@@ -298,7 +310,7 @@ class Points(Layer):
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
         self._edge_color = edge_color
-        if self._update_properties:
+        if self._update_properties and len(self.selected_points) > 0:
             index = self._indices_view[self.selected_points]
             for i in index:
                 self._edge_color_list[i] = edge_color
@@ -315,7 +327,7 @@ class Points(Layer):
     @face_color.setter
     def face_color(self, face_color: str) -> None:
         self._face_color = face_color
-        if self._update_properties:
+        if self._update_properties and len(self.selected_points) > 0:
             index = self._indices_view[self.selected_points]
             for i in index:
                 self._face_color_list[i] = face_color
@@ -332,7 +344,10 @@ class Points(Layer):
     def selected_points(self, selected_points):
         self._selected_points = selected_points
         self._selected_box = self.interaction_box(selected_points)
-        index = self._indices_view[self._selected_points]
+        if len(self._indices_view) > 0:
+            index = self._indices_view[self._selected_points]
+        else:
+            index = []
 
         # Update properties based on selected points
         edge_colors = list(set([self._edge_color_list[i] for i in index]))
@@ -439,11 +454,11 @@ class Points(Layer):
         old_mode = self._mode
 
         if mode == Mode.ADD:
-            self.cursor = 'cross'
+            self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
         elif mode == Mode.SELECT:
-            self.cursor = 'pointing'
+            self.cursor = 'standard'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
         elif mode == Mode.PAN_ZOOM:
@@ -570,19 +585,26 @@ class Points(Layer):
         self._indices_view = indices[::-1]
         self._selected_box = self.interaction_box(self.selected_points)
 
+        if len(data) > 0:
+            edge_color = [self._edge_color_list[i] for i in self._indices_view]
+            face_color = [self._face_color_list[i] for i in self._indices_view]
+        else:
+            edge_color = 'white'
+            face_color = 'white'
+
         self._node._subvisuals[2].set_data(
             data[:, [1, 0]],
             size=sizes,
             edge_width=self.edge_width,
             symbol=self.symbol,
-            edge_color=[self._edge_color_list[i] for i in self._indices_view],
-            face_color=[self._face_color_list[i] for i in self._indices_view],
+            edge_color=edge_color,
+            face_color=face_color,
             scaling=True,
         )
         self._need_visual_update = True
         self._set_highlight(force=True)
         self._update()
-        self.status = self.get_message(self.coordinates, self._selected_points)
+        self.status = self.get_message(self.coordinates, self._hover_point)
         self._update_thumbnail()
 
     def _set_highlight(self, force=False):
@@ -605,7 +627,9 @@ class Points(Layer):
         self._hover_point_stored = copy(self._hover_point)
         self._drag_box_stored = copy(self._drag_box)
 
-        if self._hover_point is not None or len(self.selected_points) > 0:
+        if self._mode == Mode.SELECT and (
+            self._hover_point is not None or len(self.selected_points) > 0
+        ):
             if len(self.selected_points) > 0:
                 index = copy(self.selected_points)
                 if self._hover_point is not None:
@@ -706,7 +730,7 @@ class Points(Layer):
         self.thumbnail = colormapped
 
     def _add(self, coord):
-        """Adds object at given mouse position
+        """Adds point at given mouse position
         and set of indices.
         Parameters
         ----------
@@ -714,20 +738,26 @@ class Points(Layer):
         """
         self.data = np.append(self.data, [coord], axis=0)
 
-    def _remove(self):
-        """Removes selected object if any.
+    def remove_selected(self):
+        """Removes selected points if any.
         """
-        index = self.selected_points
+        index = self._indices_view[self.selected_points]
         if index is not None:
             self._size_array = np.delete(self._size_array, index, axis=0)
+            for i in index:
+                del self._edge_color_list[i]
+                del self._face_color_list[i]
+            if self._hover_point in self.selected_points:
+                self._hover_point = None
+            self.selected_points = []
             self.data = np.delete(self.data, index, axis=0)
 
     def _move(self, coord):
-        """Moves object at given mouse position
-        and set of indices.
+        """Moves selected points.
+
         Parameters
         ----------
-        coord : sequence of indices to move point to
+        coord : sequence of indices to move points to
         """
         index = self._indices_view[self.selected_points]
         if len(index) > 0:
@@ -744,6 +774,37 @@ class Points(Layer):
                 self._drag_start = coord
             self._drag_box = np.array([self._drag_start, coord])
             self._set_highlight()
+
+    def _copy_points(self):
+        """Copy selected points to clipboard.
+        """
+        if len(self.selected_points) > 0:
+            index = self._indices_view[self.selected_points]
+            self._clipboard = {
+                'coord': deepcopy(self.data[index]),
+                'size': deepcopy(self.size_array[index]),
+                'edge_color': deepcopy(self._edge_color_list[index]),
+                'face_color': deepcopy(self._face_color_list[index]),
+            }
+
+    def _paste_points(self):
+        """Paste any point from clipboard and select them.
+        """
+        npoints = len(self.data)
+
+        self._coords = np.append(self.data, self._clipboard['coord'], axis=0)
+        self._size_array = np.append(
+            self.size_array, self._clipboard['size'], axis=0
+        )
+        self._edge_color_list = (
+            self._edge_color_list + self._clipboard['edge_color']
+        )
+        self._face_color_list = (
+            self._face_color_list + self._clipboard['face_color']
+        )
+        self.selected_points = list(range(npoints, len(self.data)))
+        self.refresh()
+        self._copy_shapes()
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg
@@ -811,10 +872,7 @@ class Points(Layer):
             self._set_highlight()
             # self.status = self.get_message(coord, point)
         elif self._mode == Mode.ADD:
-            if shift:
-                self._remove()
-            else:
-                self._add(coord)
+            self._add(coord)
         # self.status = self.get_message(coord, self._hover_point)
 
     def on_mouse_release(self, event):
@@ -852,10 +910,19 @@ class Points(Layer):
                 self.mode = Mode.SELECT
             elif event.key == 'z':
                 self.mode = Mode.PAN_ZOOM
+            elif event.key == 'c' and 'Control' in event.modifiers:
+                if self._mode == Mode.SELECT:
+                    self._copy_points()
+            elif event.key == 'v' and 'Control' in event.modifiers:
+                if self._mode == Mode.SELECT:
+                    self._paste_points()
             elif event.key == 'a':
                 if self._mode == Mode.SELECT:
                     self.selected_points = list(range(len(self._points_view)))
                     self._set_highlight()
+            elif event.key == 'Backspace':
+                if self._mode == Mode.SELECT:
+                    self.remove_selected()
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.

@@ -1899,7 +1899,7 @@ class Shapes(Layer):
                 if self._mode in [Mode.DIRECT, Mode.SELECT]:
                     self._copy_shapes()
             elif event.key == 'v' and 'Control' in event.modifiers:
-                if self.mode in [Mode.DIRECT, Mode.SELECT]:
+                if self._mode in [Mode.DIRECT, Mode.SELECT]:
                     self._paste_shapes()
             elif event.key == 'a':
                 if self._mode in [Mode.DIRECT, Mode.SELECT]:
