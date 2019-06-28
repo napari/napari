@@ -1,7 +1,7 @@
 from typing import Union
 from xml.etree.ElementTree import Element
 import numpy as np
-from copy import copy
+from copy import copy, deepcopy
 from contextlib import contextmanager
 from scipy import ndimage as ndi
 from skimage.util import img_as_ubyte
@@ -149,6 +149,7 @@ class Points(Layer):
             self._drag_box = None
             self._drag_box_stored = None
             self._is_selecting = False
+            self._clipboard = {}
 
             # update flags
             self._need_display_update = False
@@ -555,7 +556,7 @@ class Points(Layer):
             )
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                selection = indices[0]
+                selection = indices[-1]
             else:
                 selection = None
         else:
@@ -571,30 +572,34 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(in_slice_points) > 0:
             # Get the point sizes
-            sizes = (self.size_array[indices, -2:].mean(axis=1) * scale)[::-1]
+            sizes = self.size_array[indices, -2:].mean(axis=1) * scale
 
             # Update the points node
-            data = np.array(in_slice_points)[::-1] + 0.5
+            data = np.array(in_slice_points) + 0.5
 
         else:
             # if no points in this slice send dummy data
             data = np.empty((0, 2))
-            sizes = 0
+            sizes = [0]
         self._points_view = data
         self._sizes_view = sizes
-        self._indices_view = indices[::-1]
+        self._indices_view = indices
         self._selected_box = self.interaction_box(self.selected_points)
 
         if len(data) > 0:
-            edge_color = [self._edge_color_list[i] for i in self._indices_view]
-            face_color = [self._face_color_list[i] for i in self._indices_view]
+            edge_color = [
+                self._edge_color_list[i] for i in self._indices_view[::-1]
+            ]
+            face_color = [
+                self._face_color_list[i] for i in self._indices_view[::-1]
+            ]
         else:
             edge_color = 'white'
             face_color = 'white'
 
         self._node._subvisuals[2].set_data(
-            data[:, [1, 0]],
-            size=sizes,
+            data[::-1, [1, 0]],
+            size=sizes[::-1],
             edge_width=self.edge_width,
             symbol=self.symbol,
             edge_color=edge_color,
@@ -783,28 +788,37 @@ class Points(Layer):
             self._clipboard = {
                 'coord': deepcopy(self.data[index]),
                 'size': deepcopy(self.size_array[index]),
-                'edge_color': deepcopy(self._edge_color_list[index]),
-                'face_color': deepcopy(self._face_color_list[index]),
+                'edge_color': deepcopy(
+                    [self._edge_color_list[i] for i in index]
+                ),
+                'face_color': deepcopy(
+                    [self._face_color_list[i] for i in index]
+                ),
             }
+        else:
+            self._clipboard = {}
 
     def _paste_points(self):
         """Paste any point from clipboard and select them.
         """
         npoints = len(self.data)
 
-        self._coords = np.append(self.data, self._clipboard['coord'], axis=0)
-        self._size_array = np.append(
-            self.size_array, self._clipboard['size'], axis=0
-        )
-        self._edge_color_list = (
-            self._edge_color_list + self._clipboard['edge_color']
-        )
-        self._face_color_list = (
-            self._face_color_list + self._clipboard['face_color']
-        )
-        self.selected_points = list(range(npoints, len(self.data)))
-        self.refresh()
-        self._copy_shapes()
+        if len(self._clipboard.keys()) > 0:
+            self._coords = np.append(
+                self.data, self._clipboard['coord'], axis=0
+            )
+            self._size_array = np.append(
+                self.size_array, self._clipboard['size'], axis=0
+            )
+            self._edge_color_list = (
+                self._edge_color_list + self._clipboard['edge_color']
+            )
+            self._face_color_list = (
+                self._face_color_list + self._clipboard['face_color']
+            )
+            self._selected_points = list(range(npoints, len(self.data)))
+            self.refresh()
+            self._copy_points()
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg
@@ -870,10 +884,8 @@ class Points(Layer):
             else:
                 self.selected_points = []
             self._set_highlight()
-            # self.status = self.get_message(coord, point)
         elif self._mode == Mode.ADD:
             self._add(coord)
-        # self.status = self.get_message(coord, self._hover_point)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
