@@ -334,33 +334,19 @@ class Points(Layer):
         self._selected_box = self.interaction_box(selected_points)
         index = self._indices_view[self._selected_points]
 
-        # # Update properties based on selected points
-        # face_colors = list(
-        #     set(
-        #         [
-        #             self.slice_data.shapes[i]._face_color_name
-        #             for i in selected_points
-        #         ]
-        #     )
-        # )
-        # if len(face_colors) == 1:
-        #     face_color = face_colors[0]
-        #     with self.block_update_properties():
-        #         self.face_color = face_color
-        #
-        # edge_colors = list(
-        #     set(
-        #         [
-        #             self.slice_data.shapes[i]._edge_color_name
-        #             for i in selected_points
-        #         ]
-        #     )
-        # )
-        # if len(edge_colors) == 1:
-        #     edge_color = edge_colors[0]
-        #     with self.block_update_properties():
-        #         self.edge_color = edge_color
-        #
+        # Update properties based on selected points
+        edge_colors = list(set([self._edge_color_list[i] for i in index]))
+        if len(edge_colors) == 1:
+            edge_color = edge_colors[0]
+            with self.block_update_properties():
+                self.edge_color = edge_color
+
+        face_colors = list(set([self._face_color_list[i] for i in index]))
+        if len(face_colors) == 1:
+            face_color = face_colors[0]
+            with self.block_update_properties():
+                self.face_color = face_color
+
         size = list(set([self.size_array[i, -2:].mean() for i in index]))
         if len(size) == 1:
             size = size[0]
@@ -519,12 +505,12 @@ class Points(Layer):
                 scale_per_dim = (size_match - distances[matches]) / size_match
                 scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
-                indices = np.where(matches)[0]
+                indices = np.where(matches)[0].astype(int)
                 return in_slice_points, indices, scale
             else:
                 matches = np.all(coords[:, :-2] == indices[:-2], axis=1)
                 in_slice_points = coords[matches, -2:]
-                indices = np.where(matches)[0]
+                indices = np.where(matches)[0].astype(int)
                 return in_slice_points, indices, 1
         else:
             return [], [], []
@@ -589,8 +575,8 @@ class Points(Layer):
             size=sizes,
             edge_width=self.edge_width,
             symbol=self.symbol,
-            edge_color=self._edge_color_list[self._indices_view],
-            face_color=self._face_color_list[self._indices_view],
+            edge_color=[self._edge_color_list[i] for i in self._indices_view],
+            face_color=[self._face_color_list[i] for i in self._indices_view],
             scaling=True,
         )
         self._need_visual_update = True
@@ -629,16 +615,20 @@ class Points(Layer):
                         index.append(self._hover_point)
                 index.sort()
             else:
-                index = self._hover_point
+                index = [self._hover_point]
 
             # Color the hovered or selected points
             data = self._points_view[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self._sizes_view[index]
+            face_color = [
+                self._face_color_list[i] for i in self._indices_view[index]
+            ]
         else:
             data = np.empty((0, 2))
             size = 1
+            face_color = 'white'
 
         width = 2.5
 
@@ -648,7 +638,7 @@ class Points(Layer):
             edge_width=width,
             symbol=self.symbol,
             edge_color=self._highlight_color,
-            face_color=self._highlight_color,
+            face_color=face_color,
             scaling=True,
         )
 
