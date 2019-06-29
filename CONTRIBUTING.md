@@ -19,7 +19,7 @@ $ cd napari
 
 Set the `upstream` remote to the base `napari` repository:
 ```sh
-$ git add upstream https://github.com/napari/napari.git
+$ git remote add upstream https://github.com/napari/napari.git
 ```
 
 Install the required dependencies:

@@ -15,7 +15,6 @@ class QtVectorsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.averaging.connect(self._on_avg_change)
         self.layer.events.width.connect(self._on_width_change)
         self.layer.events.length.connect(self._on_len_change)
 
@@ -45,18 +44,6 @@ class QtVectorsProperties(QtLayerProperties):
         self.grid_layout.addWidget(QLabel('width:'), row, self.name_column)
         self.grid_layout.addWidget(self.width_field, row, self.property_column)
 
-        # averaging spinbox
-        self.averaging_spinbox = QSpinBox()
-        self.averaging_spinbox.setSingleStep(1)
-        self.averaging_spinbox.setValue(1)
-        self.averaging_spinbox.setMinimum(1)
-        self.averaging_spinbox.valueChanged.connect(self.change_average_type)
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('avg kernel'), row, self.name_column)
-        self.grid_layout.addWidget(
-            self.averaging_spinbox, row, self.property_column
-        )
-
         # line length
         self.length_field = QDoubleSpinBox()
         self.length_field.setSingleStep(0.1)
@@ -78,18 +65,11 @@ class QtVectorsProperties(QtLayerProperties):
     def change_connector_type(self, text):
         self.layer.connector = text
 
-    def change_average_type(self, value):
-        self.layer.averaging = value
-
     def change_width(self, value):
         self.layer.width = value
 
     def change_length(self, value):
         self.layer.length = value
-
-    def _on_avg_change(self, event):
-        with self.layer.events.averaging.blocker():
-            self.averaging_spinbox.setValue(self.layer.averaging)
 
     def _on_len_change(self, event):
         with self.layer.events.length.blocker():

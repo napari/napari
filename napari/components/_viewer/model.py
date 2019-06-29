@@ -513,21 +513,16 @@ class ViewerModel:
 
         Parameters
         ----------
-        vectors : np.ndarray of shape (N,4) or (N, M, 2)
-            (N, 4) is a list of coordinates (y, x, v, u)
-                x and y are coordinates
-                u and v are y and x projections of the vector
-            (N, M, 2) is an (N, M) image of (v, u) projections
-            Returns np.ndarray of the current display (including averaging,
-            length)
-        averaging : int
-            (int, int) kernel over which to convolve and subsample the data not
-            implemented for (N, 4) data
+        vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
+            An (N, 2, D) array is interpreted as "coordinate-like" data and a
+            list of N vectors with start point and projections of the vector in
+            D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
+            "image-like" data where there is a length D vector of the
+            projections at each pixel.
         width : int
             width of the line in pixels
         length : float
-            length of the line
-            not implemented for (N, 4) data
+            multiplier on length of the line
         color : str
             one of "get_color_names" from vispy.color
         mode : str

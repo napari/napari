@@ -5,7 +5,6 @@ from imageio import imwrite
 
 import numpy as np
 from scipy import ndimage as ndi
-from skimage.util import img_as_ubyte
 
 import vispy.color
 
@@ -331,16 +330,14 @@ class Image(Layer):
                 image, (zoom_factor, zoom_factor, 1), prefilter=False, order=0
             )
             if image.shape[2] == 4:  # image is RGBA
-                downsampled[..., 3] = downsampled[..., 3] * self.opacity
-                colormapped = img_as_ubyte(downsampled)
+                colormapped[..., 3] = downsampled[..., 3] * self.opacity
             else:  # image is RGB
-                colormapped = img_as_ubyte(downsampled)
                 alpha = np.full(
                     downsampled.shape[:2] + (1,),
                     int(255 * self.opacity),
                     dtype=np.uint8,
                 )
-                colormapped = np.concatenate([colormapped, alpha], axis=2)
+                colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
             downsampled = ndi.zoom(
                 image, zoom_factor, prefilter=False, order=0
@@ -353,7 +350,6 @@ class Image(Layer):
             colormapped = self.colormap[1].map(downsampled)
             colormapped = colormapped.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
-            colormapped = img_as_ubyte(colormapped)
         self.thumbnail = colormapped
 
     def get_value(self):
