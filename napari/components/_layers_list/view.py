@@ -33,7 +33,7 @@ class QtLayersList(QScrollArea):
 
         self.layers.events.added.connect(self._add)
         self.layers.events.removed.connect(self._remove)
-        self.layers.events.reordered.connect(self._reorder)
+        self.layers.events.reordered.connect(lambda e: self._reorder())
 
         self.drag_start_position = np.zeros(2)
         self.drag_name = None
@@ -60,7 +60,7 @@ class QtLayersList(QScrollArea):
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
 
-    def _reorder(self, event):
+    def _reorder(self):
         """Reorders list of layer widgets by looping through all
         widgets in list sequentially removing them and inserting
         them into the correct place in final list.
