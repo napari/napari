@@ -50,6 +50,7 @@ class Points(Layer):
     """
 
     _highlight_color = (0, 0.6, 1)
+    _highlight_width = 1.5
 
     def __init__(
         self,
@@ -129,6 +130,7 @@ class Points(Layer):
             self._selected_points = []
             self._selected_points_stored = []
             self._selected_points_history = []
+            self._cur_selected = []
             # Index of hovered point within the currently viewed slice
             self._hover_point = None
             self._hover_point_stored = None
@@ -284,7 +286,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_points) > 0:
             index = self._indices_view[self.selected_points]
             for i in index:
-                self.size_array[i, :] = size
+                self.size_array[i, :] = (self.size_array[i, :] > 0) * size
             self.refresh()
         self.events.size()
 
@@ -347,8 +349,10 @@ class Points(Layer):
         self._selected_box = self.interaction_box(selected_points)
         if len(self._indices_view) > 0:
             index = self._indices_view[self._selected_points]
+            self._cur_selected = self._indices_view[self._selected_points]
         else:
             index = []
+            self._cur_selected = []
 
         # Update properties based on selected points
         edge_colors = list(set([self._edge_color_list[i] for i in index]))
@@ -390,20 +394,13 @@ class Points(Layer):
             size = self._sizes_view[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
+            data = points_to_squares(data, size)
             min_val = np.array(
                 [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
             )
             max_val = np.array(
                 [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
             )
-            min_size_ind = np.array(
-                [data[:, 0].argmin(axis=0), data[:, 1].argmin(axis=0)]
-            )
-            max_size_ind = np.array(
-                [data[:, 0].argmax(axis=0), data[:, 1].argmax(axis=0)]
-            )
-            min_val = min_val - size[min_size_ind] / 2
-            max_val = max_val + size[max_size_ind] / 2
 
             tl = np.array([min_val[0], min_val[1]])
             tr = np.array([max_val[0], min_val[1]])
@@ -416,13 +413,9 @@ class Points(Layer):
 
     @property
     def svg_props(self):
-        """dict: color and width properties in the svg specification
+        """dict: opacity and width properties in the svg specification
         """
         width = str(self.edge_width)
-        face_color = (255 * Color(self.face_color).rgba).astype(np.int)
-        fill = f'rgb{tuple(face_color[:3])}'
-        edge_color = (255 * Color(self.edge_color).rgba).astype(np.int)
-        stroke = f'rgb{tuple(edge_color[:3])}'
         opacity = str(self.opacity)
 
         # Currently not using fill or stroke opacity - only global opacity
@@ -431,12 +424,7 @@ class Points(Layer):
         # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
         # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
 
-        props = {
-            'fill': fill,
-            'stroke': stroke,
-            'stroke-width': width,
-            'opacity': opacity,
-        }
+        props = {'stroke-width': width, 'opacity': opacity}
 
         return props
 
@@ -584,7 +572,16 @@ class Points(Layer):
         self._points_view = data
         self._sizes_view = sizes
         self._indices_view = indices
+        # Make sure if changing planes any selected points not in the current
+        # plane are removed
+        selected = []
+        for c in self._cur_selected:
+            if c in self._indices_view:
+                ind = list(self._indices_view).index(c)
+                selected.append(ind)
+        self._selected_points = selected
         self._selected_box = self.interaction_box(self.selected_points)
+        self._cur_selected = self._indices_view[self.selected_points]
 
         if len(data) > 0:
             edge_color = [
@@ -659,7 +656,7 @@ class Points(Layer):
             size = 1
             face_color = 'white'
 
-        width = 2.5
+        width = self._highlight_width
 
         self._node._subvisuals[1].set_data(
             data[:, [1, 0]],
@@ -728,8 +725,9 @@ class Points(Layer):
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
-            for c in coords:
-                colormapped[c[0], c[1], :] = Color(self.face_color).rgba
+            for i, c in enumerate(coords):
+                col = self._face_color_list[self._indices_view[i]]
+                colormapped[c[0], c[1], :] = Color(col).rgba
         colormapped[..., 3] *= self.opacity
         colormapped = img_as_ubyte(colormapped)
         self.thumbnail = colormapped
@@ -749,7 +747,7 @@ class Points(Layer):
         index = self._indices_view[self.selected_points]
         if index is not None:
             self._size_array = np.delete(self._size_array, index, axis=0)
-            for i in index:
+            for i in index[::-1]:
                 del self._edge_color_list[i]
                 del self._face_color_list[i]
             if self._hover_point in self.selected_points:
@@ -768,16 +766,16 @@ class Points(Layer):
         if len(index) > 0:
             if self._drag_start is None:
                 center = self.data[index, -2:].mean(axis=0)
-                self._drag_start = np.array(coord) - center
+                self._drag_start = np.array(coord[-2:]) - center
             center = self.data[index, -2:].mean(axis=0)
-            shift = coord - center - self._drag_start
+            shift = coord[-2:] - center - self._drag_start
             self.data[index, -2:] = self.data[index, -2:] + shift
             self.refresh()
         else:
             self._is_selecting = True
             if self._drag_start is None:
-                self._drag_start = coord
-            self._drag_box = np.array([self._drag_start, coord])
+                self._drag_start = coord[-2:]
+            self._drag_box = np.array([self._drag_start, coord[-2:]])
             self._set_highlight()
 
     def _copy_points(self):
@@ -794,6 +792,7 @@ class Points(Layer):
                 'face_color': deepcopy(
                     [self._face_color_list[i] for i in index]
                 ),
+                'indices': self.indices,
             }
         else:
             self._clipboard = {}
@@ -801,12 +800,16 @@ class Points(Layer):
     def _paste_points(self):
         """Paste any point from clipboard and select them.
         """
-        npoints = len(self.data)
+        npoints = len(self._points_view)
+        totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            self._coords = np.append(
-                self.data, self._clipboard['coord'], axis=0
+            coords = self._clipboard['coord']
+            offset = np.subtract(
+                self.indices[:-2], self._clipboard['indices'][:-2]
             )
+            coords[:, :-2] = coords[:, :-2] + offset
+            self._coords = np.append(self.data, coords, axis=0)
             self._size_array = np.append(
                 self.size_array, self._clipboard['size'], axis=0
             )
@@ -816,7 +819,12 @@ class Points(Layer):
             self._face_color_list = (
                 self._face_color_list + self._clipboard['face_color']
             )
-            self._selected_points = list(range(npoints, len(self.data)))
+            self._selected_points = list(
+                range(npoints, npoints + len(self._clipboard['coord']))
+            )
+            self._cur_selected = list(
+                range(totpoints, totpoints + len(self._clipboard['coord']))
+            )
             self.refresh()
             self._copy_points()
 
@@ -834,11 +842,29 @@ class Points(Layer):
         """
         xml_list = []
 
-        for d, s in zip(self._points_view, self._sizes_view):
+        for i, d, s in zip(
+            self._indices_view, self._points_view, self._sizes_view
+        ):
             cx = str(d[1])
             cy = str(d[0])
             r = str(s / 2)
-            element = Element('circle', cx=cx, cy=cy, r=r, **self.svg_props)
+            face_color = (255 * Color(self._face_color_list[i]).rgba).astype(
+                np.int
+            )
+            fill = f'rgb{tuple(face_color[:3])}'
+            edge_color = (255 * Color(self._edge_color_list[i]).rgba).astype(
+                np.int
+            )
+            stroke = f'rgb{tuple(edge_color[:3])}'
+            element = Element(
+                'circle',
+                cx=cx,
+                cy=cy,
+                r=r,
+                stroke=stroke,
+                fill=fill,
+                **self.svg_props,
+            )
             xml_list.append(element)
 
         return xml_list
@@ -874,10 +900,9 @@ class Points(Layer):
             point = self._select_point(coord[-2:])
             if shift and point is not None:
                 if point in self.selected_points:
-                    self.selected_points.remove(point)
+                    self.selected_points -= [point]
                 else:
-                    self.selected_points.append(point)
-                self._selected_box = self.interaction_box(self.selected_points)
+                    self.selected_points += [point]
             elif point is not None:
                 if point not in self.selected_points:
                     self.selected_points = [point]
@@ -896,7 +921,7 @@ class Points(Layer):
         if self._is_selecting:
             self._is_selecting = False
             self.selected_points = points_in_box(
-                self._points_view, self._drag_box
+                self._drag_box, self._points_view, self._sizes_view
             )
             self._set_highlight(force=True)
 
@@ -947,17 +972,17 @@ class Points(Layer):
 
 
 def create_box(data):
-    """Creates the axis aligned interaction box of a list of points
+    """Create the axis aligned interaction box of a list of points
 
     Parameters
     ----------
-    data : np.ndarray
-        Nx2 array of points whose interaction box is to be found
+    data : (N, 2) array
+        Points around which the interaction box is created
 
     Returns
     -------
-    box : np.ndarray
-        5x2 array of vertices of the box
+    box : (5, 2) array
+        Vertices of the interaction box with the top left corner duplicated
     """
     min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
     max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
@@ -969,9 +994,52 @@ def create_box(data):
     return box
 
 
-def points_in_box(points, corners):
+def points_to_squares(points, sizes):
+    """Expand points to squares defined by their size
+
+    Parameters
+    ----------
+    points : (N, 2) array
+        Points to be turned into squares
+    sizes : (N,) array
+        Size of each point
+
+    Returns
+    -------
+    rect : (4N, 2) array
+        Vertices of the expanded points
+    """
+    rect = np.concatenate(
+        [
+            points + np.array([sizes / 2, sizes / 2]).T,
+            points + np.array([sizes / 2, -sizes / 2]).T,
+            points + np.array([-sizes / 2, sizes / 2]).T,
+            points + np.array([-sizes / 2, -sizes / 2]).T,
+        ],
+        axis=0,
+    )
+    return rect
+
+
+def points_in_box(corners, points, sizes):
+    """Determine which points are in an axis aligned box defined by the corners
+
+    Parameters
+    ----------
+    points : (N, 2) array
+        Points to be checked
+    sizes : (N,) array
+        Size of each point
+
+    Returns
+    -------
+    inside : list
+        Indices of points inside the box
+    """
     box = create_box(corners)[[0, 2]]
-    below_top = np.all(box[1] >= points, axis=1)
-    above_bottom = np.all(points >= box[0], axis=1)
+    rect = points_to_squares(points, sizes)
+    below_top = np.all(box[1] >= rect, axis=1)
+    above_bottom = np.all(rect >= box[0], axis=1)
     inside = np.logical_and(below_top, above_bottom)
-    return list(np.where(inside)[0])
+    inside = np.unique(np.where(inside)[0] % len(points))
+    return list(inside)

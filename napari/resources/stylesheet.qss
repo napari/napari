@@ -436,3 +436,7 @@ QtMoveFrontButton {
 QtDeleteShapeButton {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
+
+QtDeletePointsButton {
+   image: url(":/icons/{{ folder }}/delete_shape.svg");
+}
