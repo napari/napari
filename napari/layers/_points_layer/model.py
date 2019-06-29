@@ -581,7 +581,10 @@ class Points(Layer):
                 selected.append(ind)
         self._selected_points = selected
         self._selected_box = self.interaction_box(self.selected_points)
-        self._cur_selected = self._indices_view[self.selected_points]
+        if len(self.selected_points) > 0:
+            self._cur_selected = self._indices_view[self.selected_points]
+        else:
+            self._cur_selected = []
 
         if len(data) > 0:
             edge_color = [
