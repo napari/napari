@@ -13,6 +13,8 @@ def _add(event):
     layer = event.item
     layer.name = layers._coerce_name(layer.name, layer)
     layer._order = -len(layers)
+    layer.events.name.connect(lambda e: layers._update_name(e))
+    layers.unselect_all(ignore=layer)
 
 
 def _remove(event):
@@ -77,14 +79,20 @@ class LayersList(ListModel):
 
         return name
 
-    def _move_layers(self, index, insert):
+    def _update_name(self, event):
+        """Coerce name of the layer in `event.layer`."""
+        layer = event.source
+        layer.name = self._coerce_name(layer.name, layer)
+
+    def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
         at the insert index. If additional items are selected these will
         get inserted at the insert index too. This allows for rearranging
         the list based on dragging and dropping a selection of items, where
         index is the index of the primary item being dragged, and insert is
         the index of the drop location, and the selection indicates if
-        multiple items are being dragged.
+        multiple items are being dragged. If the moved layer is not selected
+        select it.
 
         Parameters
         ----------
@@ -95,15 +103,20 @@ class LayersList(ListModel):
         """
         total = len(self)
         indices = list(range(total))
-        if self[index].selected:
-            selected = [i for i in range(total) if self[i].selected]
-        else:
-            selected = [index]
+        if not self[index].selected:
+            self.unselect_all()
+            self[index].selected = True
+        selected = [i for i in range(total) if self[i].selected]
+
+        # remove all indices to be moved
         for i in selected:
             indices.remove(i)
-        offset = sum([i < insert for i in selected])
+        # adjust offset based on selected indices to move
+        offset = sum([i < insert and i != index for i in selected])
+        # insert indices to be moved at correct start
         for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
             indices.insert(insert_idx, elem_idx)
+        # reorder list
         self[:] = self[tuple(indices)]
 
     def unselect_all(self, ignore=None):

@@ -84,7 +84,7 @@ class Points(Layer):
             self._selected_points = None
             self._mode = Mode.PAN_ZOOM
             self._mode_history = self._mode
-            self._status = self._mode
+            self._status = self.mode
             self._points_view = np.empty((0, 2))
             self._sizes_view = 0
 

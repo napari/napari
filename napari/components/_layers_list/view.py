@@ -211,10 +211,9 @@ class QtLayersList(QScrollArea):
         layer_name = event.mimeData().text()
         index = self.layers.index(layer_name)
         if index != insert and index + 1 != insert:
-            if not self.layers[index].selected:
-                self.layers.unselect_all()
-                self.layers[index].selected = True
-            self.layers._move_layers(index, insert)
+            if insert >= index:
+                insert = insert - 1
+            self.layers.move_selected(index, insert)
         event.accept()
 
 
