@@ -1,7 +1,6 @@
 import numpy as np
 from copy import copy, deepcopy
 from contextlib import contextmanager
-from skimage.util import img_as_ubyte
 from scipy import ndimage as ndi
 
 from ...util.event import Event
@@ -974,7 +973,6 @@ class Shapes(Layer):
         )
 
         colormapped[..., 3] *= self.opacity
-        colormapped = img_as_ubyte(colormapped)
         self.thumbnail = colormapped
 
     def remove_selected(self):
