@@ -1,4 +1,4 @@
-# SciPy Code of Conduct - How to follow up on a report
+# napari Code of Conduct - How to follow up on a report
 This is the manual followed by napari's Code of Conduct Committee. It’s used when we respond to an issue to make sure we’re consistent and fair.
 
 Enforcing the Code of Conduct impacts our community today and for the future. It’s an action that we do not take lightly. When reviewing enforcement measures, the Code of Conduct Committee will keep the following values and guidelines in mind:
@@ -75,9 +75,9 @@ Possible responses may include:
 
 * Taking no further action
 
-- if we determine no violations have occurred.
+  * if we determine no violations have occurred.
 
-- if the matter has been resolved publicly while the committee was considering responses.
+  * if the matter has been resolved publicly while the committee was considering responses.
 
 * Coordinating voluntary mediation: if all involved parties agree, the Committee may facilitate a mediation process as detailed above.
 
