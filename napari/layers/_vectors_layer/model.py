@@ -34,6 +34,8 @@ class Vectors(Layer):
         control panel mode
     """
 
+    _max_vectors_thumbnail = 1024
+
     def __init__(self, vectors, width=1, color='red', length=1, name=None):
 
         super().__init__(Mesh(), name)
@@ -46,6 +48,8 @@ class Vectors(Layer):
         self._color = color
         self._colors = get_color_names()
 
+        self._vectors_view = np.empty((0, 2, 2))
+
         # length attribute
         self._length = length
 
@@ -56,6 +60,8 @@ class Vectors(Layer):
         # assign vector data and establish default behavior
         with self.freeze_refresh():
             self.data = vectors
+
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
 
     @property
     def data(self) -> np.ndarray:
@@ -89,7 +95,10 @@ class Vectors(Layer):
         if len(self.data) == 0:
             return np.ones(self.data.ndim, dtype=int)
         else:
-            return np.max(self.data[:, 0, :], axis=0) + 1
+            data = copy(self.data)
+            data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
+            maxs = np.max(data, axis=(0, 1)) + 1
+            return maxs
 
     @property
     def range(self):
@@ -100,8 +109,10 @@ class Vectors(Layer):
             maxs = np.ones(self.data.ndim, dtype=int)
             mins = np.zeros(self.data.ndim, dtype=int)
         else:
-            maxs = np.max(self.data[:, 0, :], axis=0) + 1
-            mins = np.min(self.data[:, 0, :], axis=0)
+            data = copy(self.data)
+            data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
+            maxs = np.max(data, axis=(0, 1)) + 1
+            mins = np.min(data, axis=(0, 1)) + 1
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -221,9 +232,11 @@ class Vectors(Layer):
 
         if len(self.data) == 0:
             faces = []
+            self._vectors_view = np.empty((0, 2, 2))
         elif self.ndim > 2:
             matches = np.all(self.indices[:-2] == self.data[:, 0, :-2], axis=1)
             matches = np.where(matches)[0]
+            self._vectors_view = self.data[matches, :, -2:]
             if len(matches) == 0:
                 faces = []
             else:
@@ -232,6 +245,7 @@ class Vectors(Layer):
                 faces = self._mesh_triangles[keep_inds]
         else:
             faces = self._mesh_triangles
+            self._vectors_view = self.data[:, :, -2:]
 
         if len(faces) == 0:
             self._node.set_data(vertices=None, faces=None)
@@ -242,6 +256,50 @@ class Vectors(Layer):
 
         self._need_visual_update = True
         self._update()
+        self._update_thumbnail()
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current points and colors.
+        """
+        # calculate min vals for the vertices and pad with 0.5
+        # the offset is needed to ensure that the top left corner of the shapes
+        # corresponds to the top left corner of the thumbnail
+        offset = np.array([self.range[-2][0], self.range[-1][0]]) - 0.5
+        # calculate range of values for the vertices and pad with 1
+        # padding ensures the entire shape can be represented in the thumbnail
+        # without getting clipped
+        shape = np.ceil(
+            [
+                self.range[-2][1] - self.range[-2][0] + 1,
+                self.range[-1][1] - self.range[-1][0] + 1,
+            ]
+        ).astype(int)
+        zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+
+        vectors = copy(self._vectors_view)
+        vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
+        downsampled = (vectors - offset) * zoom_factor
+        downsampled = np.clip(
+            downsampled, 0, np.subtract(self._thumbnail_shape[:2], 1)
+        )
+        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped[..., 3] = 1
+        col = Color(self.color).rgba
+        if len(downsampled) > self._max_vectors_thumbnail:
+            inds = np.random.randint(
+                0, len(downsampled), self._max_vectors_thumbnail
+            )
+            downsampled = downsampled[inds]
+        for v in downsampled:
+            start = v[0]
+            stop = v[1]
+            step = np.ceil(np.max(abs(stop - start)))
+            x_vals = np.linspace(start[0], stop[0], step)
+            y_vals = np.linspace(start[1], stop[1], step)
+            for x, y in zip(x_vals, y_vals):
+                colormapped[int(x), int(y), :] = col
+        colormapped[..., 3] *= self.opacity
+        self.thumbnail = colormapped
 
     def to_xml_list(self):
         """Convert the vectors to a list of xml elements according to the svg
@@ -255,20 +313,7 @@ class Vectors(Layer):
         """
         xml_list = []
 
-        if len(self.data) == 0:
-            vectors = []
-        elif self.ndim > 2:
-            # Determine which vectors are in the currently viewed plane
-            matches = np.all(self.indices[:-2] == self.data[:, :-2], axis=1)
-            matches = np.where(matches)[0]
-            if len(matches) == 0:
-                vectors = []
-            else:
-                vectors = self.data[matches]
-        else:
-            vectors = self.data
-
-        for v in vectors:
+        for v in self._vectors_view:
             x1 = str(v[0, -2])
             y1 = str(v[0, -1])
             x2 = str(v[0, -2] + self.length * v[1, -2])
