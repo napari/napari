@@ -93,6 +93,8 @@ class QtViewer(QSplitter):
         )
         self.viewer.layers.events.reordered.connect(self._update_canvas)
 
+        self.setAcceptDrops(True)
+
     def screenshot(self, region=None, size=None, bgcolor=None):
         """Render the scene to an offscreen buffer and return the image array.
 
@@ -199,6 +201,20 @@ class QtViewer(QSplitter):
         """
         for layer in self.viewer.layers:
             layer.on_draw(event)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile()
+            if osp.isfile(path):
+                print('file: ' + path)
+            elif osp.isdir(path):
+                print('dir: ' + path)
 
 
 def viewbox_key_event(event):
