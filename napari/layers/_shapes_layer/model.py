@@ -957,7 +957,13 @@ class Shapes(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors.
         """
+        # calculate min vals for the vertices and pad with 0.5
+        # the offset is needed to ensure that the top left corner of the shapes
+        # corresponds to the top left corner of the thumbnail
         offset = np.array([self.range[-2][0], self.range[-1][0]]) - 0.5
+        # calculate range of values for the vertices and pad with 1
+        # padding ensures the entire shape can be represented in the thumbnail
+        # without getting clipped
         shape = np.ceil(
             [
                 self.range[-2][1] - self.range[-2][0] + 1,

@@ -106,7 +106,8 @@ class Ellipse(Shape):
 
     def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Converts the shape vertices to a boolean mask with `True` for points
-        lying inside the shape.
+        lying inside the shape. Negative points or points outside the
+        mask_shape after the zoom and offset are clipped.
 
         Parameters
         ----------
@@ -117,9 +118,9 @@ class Ellipse(Shape):
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
         offset : 2-tuple
-            Offset preapplied to coordinates before multiplying by the
+            Offset added to coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-            
+
         Returns
         ----------
         mask : np.ndarray
