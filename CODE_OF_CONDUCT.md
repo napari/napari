@@ -20,16 +20,17 @@ We strive to:
 
 5. Be careful in the words that we choose. We are careful and respectful in our communication and we take responsibility for our own speech. Be kind to others. Do not insult or put down other participants. We will not accept harassment or other exclusionary behaviour, such as:
 
+
 > * Violent threats or language directed against another person.
-* Sexist, racist, or otherwise discriminatory jokes and language.
-* Posting sexually explicit or violent material.
-* Posting (or threatening to post) other people’s personally identifying information (“doxing”).
-* Sharing private content, such as emails sent privately or non-publicly, or unlogged forums such as IRC channel history, without the sender’s consent.
-* Personal insults, especially those using racist or sexist terms.
-* Unwelcome sexual attention.
-* Excessive profanity. Please avoid swearwords; people differ greatly in their sensitivity to swearing.
-* Repeated harassment of others. In general, if someone asks you to stop, then stop.
-* Advocating for, or encouraging, any of the above behaviour.
+> * Sexist, racist, or otherwise discriminatory jokes and language.
+> * Posting sexually explicit or violent material.
+> * Posting (or threatening to post) other people’s personally identifying information (“doxing”).
+> * Sharing private content, such as emails sent privately or non-publicly, or unlogged forums such as IRC channel history, without the sender’s consent.
+> * Personal insults, especially those using racist or sexist terms.
+> * Unwelcome sexual attention.
+> * Excessive profanity. Please avoid swearwords; people differ greatly in their sensitivity to swearing.
+> * Repeated harassment of others. In general, if someone asks you to stop, then stop.
+> * Advocating for, or encouraging, any of the above behaviour.
 
 ## Diversity Statement
 The napari project welcomes and encourages participation by everyone. We are committed to being a community that everyone enjoys being part of. Although we may not always be able to accommodate each individual’s preferences, we try our best to treat everyone kindly.
