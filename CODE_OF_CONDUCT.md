@@ -69,13 +69,13 @@ In case of severe and obvious breaches, e.g. personal threat or violent, sexist 
 
 In cases not involving clear severe and obvious breaches of this code of conduct, the process for acting on any received code of conduct violation report will be:
 
-acknowledge report is received
+1. acknowledge report is received
 
-reasonable discussion/feedback
+2. reasonable discussion/feedback
 
-mediation (if feedback didn’t help, and only if both reporter and reportee agree to this)
+3. mediation (if feedback didn’t help, and only if both reporter and reportee agree to this)
 
-enforcement via transparent decision (see [Resolutions](https://github.com/napari/napari/blob/master/REPORT_HANDLING_MANUAL.md#resolutions)) by the Code of Conduct Committee
+4. enforcement via transparent decision (see [Resolutions](https://github.com/napari/napari/blob/master/REPORT_HANDLING_MANUAL.md#resolutions)) by the Code of Conduct Committee
 
 The committee will respond to any report as soon as possible, and at most within 72 hours.
 
