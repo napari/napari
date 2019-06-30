@@ -91,7 +91,7 @@ class Rectangle(Shape):
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
         offset : 2-tuple
-            Offset added to coordinates before multiplying by the
+            Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
 
         Returns

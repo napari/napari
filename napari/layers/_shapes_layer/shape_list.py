@@ -628,7 +628,7 @@ class ShapeList:
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
         offset : 2-tuple
-            Offset preapplied to coordinates before multiplying by the
+            Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
         shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
                      None, optional
@@ -685,7 +685,7 @@ class ShapeList:
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
         offset : 2-tuple
-            Offset preapplied to coordinates before multiplying by the
+            Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
         shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
                      None, optional
@@ -747,7 +747,7 @@ class ShapeList:
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
         offset : 2-tuple
-            Offset preapplied to coordinates before multiplying by the
+            Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
         shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
                      None, optional
