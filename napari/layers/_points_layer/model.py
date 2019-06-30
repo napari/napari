@@ -1,6 +1,7 @@
 from typing import Union
 from xml.etree.ElementTree import Element
 import numpy as np
+import itertools
 from copy import copy, deepcopy
 from contextlib import contextmanager
 from scipy import ndimage as ndi
@@ -95,26 +96,25 @@ class Points(Layer):
             self.edge_width = edge_width
 
             self.size_array = size
-            self._edge_color_list = [
-                s
-                for i, s in zip(
-                    range(len(coords)), ensure_iterable(edge_color, color=True)
+            self._edge_color_list = list(
+                itertools.islice(
+                    ensure_iterable(edge_color, color=True), 0, len(coords)
                 )
-            ]
-            self._face_color_list = [
-                s
-                for i, s in zip(
-                    range(len(coords)), ensure_iterable(face_color, color=True)
+            )
+            self._face_color_list = list(
+                itertools.islice(
+                    ensure_iterable(face_color, color=True), 0, len(coords)
                 )
-            ]
+            )
 
             # The following point properties are for the new points that will
-            # be added. Each point also has a corresponding property with the
-            # value for itself
+            # be added. For any given property, if a list is passed to the
+            # constructor so each point gets its own value then the default
+            # value is used when adding new points
             if np.isscalar(size):
                 self._size = size
             else:
-                self._size = 1
+                self._size = 10
 
             if type(edge_color) is str:
                 self._edge_color = edge_color
@@ -172,16 +172,16 @@ class Points(Layer):
 
         # Adjust the size array when the number of points has changed
         if len(coords) < cur_npoints:
-            # If there are now less points, remove the sizes of the missing
-            # ones
+            # If there are now less points, remove the sizes and colors of the
+            # extra ones
             with self.freeze_refresh():
                 self.size_array = self._size_array[: len(coords)]
                 self._edge_color_list = self._edge_color_list[: len(coords)]
                 self._face_color_list = self._face_color_list[: len(coords)]
 
         elif len(coords) > cur_npoints:
-            # If there are now more points, add the sizes of last one
-            # or add the default size
+            # If there are now more points, add the sizes and colors of the
+            # new ones
             with self.freeze_refresh():
                 adding = len(coords) - cur_npoints
                 if len(self._size_array) > 0:
@@ -495,6 +495,17 @@ class Points(Layer):
         ----------
         indices : sequence of int or slice
             Indices to slice with.
+
+        Returns
+        ----------
+        in_slice_points : (N, 2) array
+            Coordinates of points in the currently viewed slice.
+        slice_indices : list
+            Indices of points in the currently viewed slice.
+        scale : float, (N, ) array
+            If in `n_dimensional` mode then the scale factor of points, where
+            values of 1 corresponds to points located in the slice, and values
+            less than 1 correspond to points located in neighboring slices.
         """
         # Get a list of the coords for the points in this slice
         coords = self.data
@@ -597,6 +608,9 @@ class Points(Layer):
             edge_color = 'white'
             face_color = 'white'
 
+        # Set vispy data, noting that the order of the points needs to be
+        # reversed to make the most recently added point appear on top
+        # and the rows / columns need to be switch for vispys x / y ordering
         self._node._subvisuals[2].set_data(
             data[::-1, [1, 0]],
             size=sizes[::-1],
@@ -676,7 +690,7 @@ class Points(Layer):
             width = 0
             pos = np.empty((0, 2))
         elif self._is_selecting:
-            pos = create_box(self._drag_box)
+            pos = create_box(self._drag_box)[list(range(4)) + [0]]
 
         self._node._subvisuals[0].set_data(
             pos=pos[:, [1, 0]], color=self._highlight_color, width=width
@@ -704,6 +718,8 @@ class Points(Layer):
         if value is None:
             pass
         else:
+            # map from the index of the point in the slice to the index of the
+            # point in the full list of points
             index = self._indices_view[value]
             msg = msg + ', index ' + str(index)
         return msg
@@ -807,20 +823,20 @@ class Points(Layer):
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            coords = self._clipboard['coord']
+            coords = deepcopy(self._clipboard['coord'])
             offset = np.subtract(
                 self.indices[:-2], self._clipboard['indices'][:-2]
             )
             coords[:, :-2] = coords[:, :-2] + offset
             self._coords = np.append(self.data, coords, axis=0)
             self._size_array = np.append(
-                self.size_array, self._clipboard['size'], axis=0
+                self.size_array, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge_color_list = (
-                self._edge_color_list + self._clipboard['edge_color']
+            self._edge_color_list = self._edge_color_list + deepcopy(
+                self._clipboard['edge_color']
             )
-            self._face_color_list = (
-                self._face_color_list + self._clipboard['face_color']
+            self._face_color_list = self._face_color_list + deepcopy(
+                self._clipboard['face_color']
             )
             self._selected_points = list(
                 range(npoints, npoints + len(self._clipboard['coord']))
@@ -829,7 +845,6 @@ class Points(Layer):
                 range(totpoints, totpoints + len(self._clipboard['coord']))
             )
             self.refresh()
-            self._copy_points()
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg
@@ -984,16 +999,16 @@ def create_box(data):
 
     Returns
     -------
-    box : (5, 2) array
-        Vertices of the interaction box with the top left corner duplicated
+    box : (4, 2) array
+        Vertices of the interaction box
     """
-    min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
-    max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
+    min_val = data.min(axis=0)
+    max_val = data.max(axis=0)
     tl = np.array([min_val[0], min_val[1]])
     tr = np.array([max_val[0], min_val[1]])
     br = np.array([max_val[0], max_val[1]])
     bl = np.array([min_val[0], max_val[1]])
-    box = np.array([tl, tr, br, bl, tl])
+    box = np.array([tl, tr, br, bl])
     return box
 
 
