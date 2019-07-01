@@ -1,8 +1,6 @@
 import os.path
 from pathlib import Path
 import numpy as np
-from skimage import io
-from glob import glob
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
@@ -14,6 +12,8 @@ from ..._layers_list.view import QtLayersList
 from ....resources import resources_dir
 from ....util.theme import template
 from ....util.misc import guess_multichannel
+from ....util.io import read
+
 from .controls import QtControls
 from .buttons import QtLayersButtons
 
@@ -126,26 +126,32 @@ class QtViewer(QSplitter):
         """
         return self.canvas.render(region, size, bgcolor)
 
-    def _open_images(self):
-        """Add an image layer to the viewer.
-
-        Whether the image is multichannel is determined by
-        :func:`napari.util.misc.guess_multichannel`.
-
-        If multiple images are selected, they are stacked along the 0th
-        axis.
+    def _open_files(self):
+        """Add an files from the menubar.
         """
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
+        self._add_files(filenames)
+
+    def _add_files(self, filenames):
+        """Adds an image layer to the viewer.
+
+        Whether the image is multichannel is determined by
+        :func:`napari.util.misc.guess_multichannel`.
+
+        If multiple images are selected, they are stacked along the 0th
+        axis.
+
+        Parameters
+        -------
+        filenames : list
+            List of filenames to be opened
+        """
         if len(filenames) > 0:
-            images = [io.imread(filename) for filename in filenames]
-            if len(images) == 1:
-                image = images[0]
-            else:
-                image = np.stack(images)
+            image = read(filenames)
             self.viewer.add_image(
                 image, multichannel=guess_multichannel(image.shape)
             )
@@ -240,24 +246,16 @@ class QtViewer(QSplitter):
             event.ignore()
 
     def dropEvent(self, event):
-        images = []
+        """Add an files from the drag and drop.
+        """
+        filenames = []
         for url in event.mimeData().urls():
             path = url.toLocalFile()
             if os.path.isfile(path):
-                images.append(io.imread(path))
-                self._last_visited_dir = os.path.dirname(path)
+                filenames.append(path)
             elif os.path.isdir(path):
-                files = glob(os.path.join(path, '*'))
-                for f in files:
-                    images.append(io.imread(f))
-                    self._last_visited_dir = os.path.dirname(f)
-        if len(images) == 1:
-            image = images[0]
-        else:
-            image = np.stack(images)
-        self.viewer.add_image(
-            image, multichannel=guess_multichannel(image.shape)
-        )
+                filenames = filenames + list(glob(os.path.join(path, '*')))
+        self._add_files(filenames)
 
 
 def viewbox_key_event(event):

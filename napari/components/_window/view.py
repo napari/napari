@@ -96,7 +96,7 @@ class Window:
         open_images = QAction('Open', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open image file(s)')
-        open_images.triggered.connect(self.qt_viewer._open_images)
+        open_images.triggered.connect(self.qt_viewer._open_files)
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
 
