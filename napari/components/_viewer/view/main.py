@@ -1,5 +1,6 @@
 import os.path
 from pathlib import Path
+import numpy as np
 from skimage import io
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
@@ -75,7 +76,7 @@ class QtViewer(QSplitter):
 
         self.addWidget(right)
 
-        self._last_visited_dir = Path.home()
+        self._last_visited_dir = str(Path.home())
 
         self._cursors = {
             'disabled': QCursor(
@@ -131,17 +132,19 @@ class QtViewer(QSplitter):
         If multiple images are selected, they are stacked along the 0th
         axis.
         """
-        filenames = QFileDialog.getOpenFileNames(
+        filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
         if len(filenames) > 0:
-            if len(filenames) == 1:
-                filenames = filenames[0]
-            image = io.imread_collection(filenames).concatenate(axis=0)
+            images = [io.imread(filename) for filename in filenames]
+            if len(images) == 1:
+                image = images[0]
+            else:
+                image = np.stack(images)
             self.viewer.add_image(
-                image, multichannel=guess_multichannel(image)
+                image, multichannel=guess_multichannel(image.shape)
             )
             self._last_visited_dir = os.path.dirname(filenames[0])
 
