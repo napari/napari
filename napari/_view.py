@@ -3,10 +3,10 @@ from .viewer import Viewer
 
 def view(
     *images,
+    title='napari',
     meta=None,
     multichannel=None,
     clim_range=None,
-    title='napari',
     **named_images,
 ):
     """View one or more input images.
