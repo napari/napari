@@ -68,9 +68,10 @@ def is_multichannel(meta):
 def guess_multichannel(shape):
     """If last dim is 3 or 4 assume image is multichannel.
     """
+    ndim = len(shape)
     last_dim = shape[-1]
 
-    if last_dim in (3, 4):
+    if ndim > 2 and last_dim < 5:
         return True
     else:
         return False

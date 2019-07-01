@@ -1129,12 +1129,11 @@ class Shapes(Layer):
         """
         cur_shapes = self._nshapes_view
         for s in self._clipboard:
-            self.slice_data.add(s)
+            self.slice_data.add(deepcopy(s))
         self.selected_shapes = list(
             range(cur_shapes, cur_shapes + len(self._clipboard))
         )
         self.move_to_front()
-        self._copy_shapes()
 
     def _move(self, coord):
         """Moves object at given mouse position and set of indices.
@@ -1899,7 +1898,7 @@ class Shapes(Layer):
                 if self._mode in [Mode.DIRECT, Mode.SELECT]:
                     self._copy_shapes()
             elif event.key == 'v' and 'Control' in event.modifiers:
-                if self.mode in [Mode.DIRECT, Mode.SELECT]:
+                if self._mode in [Mode.DIRECT, Mode.SELECT]:
                     self._paste_shapes()
             elif event.key == 'a':
                 if self._mode in [Mode.DIRECT, Mode.SELECT]:
