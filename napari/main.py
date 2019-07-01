@@ -11,7 +11,7 @@ from . import Viewer
 
 def main():
     parser = argparse.ArgumentParser(usage=__doc__)
-    parser.add_argument('images', nargs='+', help='Images to view.')
+    parser.add_argument('images', nargs='*', help='Images to view.')
     parser.add_argument(
         '--layers',
         action='store_true',
@@ -31,8 +31,9 @@ def main():
             for image in images:
                 v.add_image(image, multichannel=args.multichannel)
         else:
-            if len(images) == 1:
-                image = images[0]
-            else:
-                image = np.stack(images, axis=0)
-            v.add_image(image, multichannel=args.multichannel)
+            if len(images) > 0:
+                if len(images) == 1:
+                    image = images[0]
+                else:
+                    image = np.stack(images, axis=0)
+                v.add_image(image, multichannel=args.multichannel)
