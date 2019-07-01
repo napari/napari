@@ -39,8 +39,9 @@ class Window:
 
         self._add_menubar()
 
-        self._add_window_menu()
+        self._add_file_menu()
         self._add_view_menu()
+        self._add_window_menu()
 
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
@@ -91,13 +92,13 @@ class Window:
             self.main_menu.setVisible(True)
             self._main_menu_shortcut.setEnabled(False)
 
-    def _add_window_menu(self):
-        exit_action = QAction("Close window", self._qt_window)
-        exit_action.setShortcut("Ctrl+W")
-        exit_action.setStatusTip('Close napari window')
-        exit_action.triggered.connect(self._qt_window.close)
-        self.window_menu = self.main_menu.addMenu('&Window')
-        self.window_menu.addAction(exit_action)
+    def _add_file_menu(self):
+        open_images = QAction('Open', self._qt_window)
+        open_images.setShortcut('Ctrl+O')
+        open_images.setStatusTip('Open image file(s)')
+        open_images.triggered.connect(self.qt_viewer._open_images)
+        self.file_menu = self.main_menu.addMenu('&File')
+        self.file_menu.addAction(open_images)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
@@ -106,6 +107,14 @@ class Window:
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
+
+    def _add_window_menu(self):
+        exit_action = QAction("Close window", self._qt_window)
+        exit_action.setShortcut("Ctrl+W")
+        exit_action.setStatusTip('Close napari window')
+        exit_action.triggered.connect(self._qt_window.close)
+        self.window_menu = self.main_menu.addMenu('&Window')
+        self.window_menu.addAction(exit_action)
 
     def resize(self, width, height):
         """Resize the window.
