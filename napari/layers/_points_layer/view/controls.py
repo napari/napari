@@ -1,4 +1,10 @@
-from qtpy.QtWidgets import QButtonGroup, QVBoxLayout, QRadioButton, QFrame
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QVBoxLayout,
+    QRadioButton,
+    QFrame,
+    QPushButton,
+)
 from ..._base_layer import QtLayerControls
 from .._constants import Mode
 
@@ -12,6 +18,7 @@ class QtPointsControls(QtLayerControls):
         self.select_button = QtSelectButton(layer)
         self.addition_button = QtAdditionButton(layer)
         self.panzoom_button = QtPanZoomButton(layer)
+        self.delete_button = QtDeletePointsButton(layer)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -23,6 +30,7 @@ class QtPointsControls(QtLayerControls):
         layout.addWidget(self.panzoom_button)
         layout.addWidget(self.select_button)
         layout.addWidget(self.addition_button)
+        layout.addWidget(self.delete_button)
         layout.addStretch(0)
         self.setLayout(layout)
         self.setMouseTracking(True)
@@ -88,3 +96,14 @@ class QtAdditionButton(QRadioButton):
         with self.layer.events.mode.blocker():
             if bool:
                 self.layer.mode = Mode.ADD
+
+
+class QtDeletePointsButton(QPushButton):
+    def __init__(self, layer):
+        super().__init__()
+
+        self.layer = layer
+        self.setFixedWidth(28)
+        self.setFixedHeight(28)
+        self.setToolTip('Delete selected')
+        self.clicked.connect(self.layer.remove_selected)
