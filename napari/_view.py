@@ -4,7 +4,6 @@ from .viewer import Viewer
 def view(
     *images,
     title='napari',
-    hide_menubar=True,
     meta=None,
     multichannel=None,
     clim_range=None,
@@ -18,8 +17,6 @@ def view(
         Arrays to render as image layers.
     title : string, optional
         The title of the viewer window.
-    hide_menubar : bool, optional
-        If False, a menubar will be shown.
     meta : dictionary, optional
         A dictionary of metadata attributes. If multiple images are provided,
         the metadata applies to all of them.
@@ -50,7 +47,7 @@ def view(
     :class:`napari.Viewer` class (preferred), or update the layers directly on
     the returned :class:`napari.Viewer` object.
     """
-    viewer = Viewer(title=title, hide_menubar=hide_menubar)
+    viewer = Viewer(title=title)
     for image in images:
         viewer.add_image(
             image, meta=meta, multichannel=multichannel, clim_range=clim_range

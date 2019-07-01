@@ -25,7 +25,7 @@ def main():
     )
     args = parser.parse_args()
     with app_context():
-        v = Viewer(hide_menubar=False)
+        v = Viewer()
         images = io.ImageCollection(args.images, conserve_memory=False)
         if args.layers:
             for image in images:
@@ -35,6 +35,4 @@ def main():
                 image = images[0]
             else:
                 image = np.stack(images, axis=0)
-            v.add_image(
-                image, multichannel=args.multichannel, hide_menubar=False
-            )
+            v.add_image(image, multichannel=args.multichannel)

@@ -25,7 +25,7 @@ class Window:
         Contained viewer widget.
     """
 
-    def __init__(self, qt_viewer, *, show=True, hide_menubar=True):
+    def __init__(self, qt_viewer, *, show=True):
 
         self.qt_viewer = qt_viewer
 
@@ -37,7 +37,7 @@ class Window:
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = self._qt_window.statusBar()
 
-        self._add_menubar(hidden=hide_menubar)
+        self._add_menubar()
 
         self._add_window_menu()
         self._add_view_menu()
@@ -61,7 +61,7 @@ class Window:
         if show:
             self.show()
 
-    def _add_menubar(self, *, hidden=True):
+    def _add_menubar(self):
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
@@ -76,8 +76,6 @@ class Window:
             self._toggle_menubar_visible
         )
         self._main_menu_shortcut.setEnabled(False)
-        if hidden:
-            self._toggle_menubar_visible()
 
     def _toggle_menubar_visible(self):
         """Toggle visibility of app menubar.
