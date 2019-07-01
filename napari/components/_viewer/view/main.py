@@ -1,7 +1,10 @@
-import os.path as osp
+import os.path
+from pathlib import Path
+import numpy as np
+from skimage import io
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QSlider, QVBoxLayout, QSplitter
+from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
@@ -9,13 +12,13 @@ from ..._dims.view import QtDims
 from ..._layers_list.view import QtLayersList
 from ....resources import resources_dir
 from ....util.theme import template
-from ....util.misc import has_clims
+from ....util.misc import guess_multichannel
 from .controls import QtControls
 from .buttons import QtLayersButtons
 
 
 class QtViewer(QSplitter):
-    with open(osp.join(resources_dir, 'stylesheet.qss'), 'r') as f:
+    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
         raw_stylesheet = f.read()
 
     def __init__(self, viewer):
@@ -73,6 +76,8 @@ class QtViewer(QSplitter):
 
         self.addWidget(right)
 
+        self._last_visited_dir = str(Path.home())
+
         self._cursors = {
             'disabled': QCursor(
                 QPixmap(':/icons/cursor/cursor_disabled.png').scaled(20, 20)
@@ -119,6 +124,31 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         return self.canvas.render(region, size, bgcolor)
+
+    def _open_images(self):
+        """Add an image layer to the viewer.
+
+        Whether the image is multichannel is determined by
+        :func:`napari.util.misc.guess_multichannel`.
+
+        If multiple images are selected, they are stacked along the 0th
+        axis.
+        """
+        filenames, _ = QFileDialog.getOpenFileNames(
+            parent=self,
+            caption='Select image(s)...',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if len(filenames) > 0:
+            images = [io.imread(filename) for filename in filenames]
+            if len(images) == 1:
+                image = images[0]
+            else:
+                image = np.stack(images)
+            self.viewer.add_image(
+                image, multichannel=guess_multichannel(image.shape)
+            )
+            self._last_visited_dir = os.path.dirname(filenames[0])
 
     def _on_interactive(self, event):
         self.view.interactive = self.viewer.interactive

@@ -59,7 +59,7 @@ with app_context():
 
     # change the layer point size
     layer.size = 20
-    layer.size = np.array([10, 50, 20])
+    layer.size_array = np.array([10, 50, 20])
 
     # change the layer mode
     layer.mode = 'add'
