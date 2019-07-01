@@ -136,7 +136,7 @@ class Points(Layer):
             self._selected_box = None
             self._mode = Mode.PAN_ZOOM
             self._mode_history = self._mode
-            self._status = self._mode
+            self._status = self.mode
 
             self._drag_start = None
 
