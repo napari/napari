@@ -16,7 +16,7 @@ def check_layout_layers(layout, layers):
     ----------
     layout : QLayout
         Layout to test
-    layers : napar.components.LayersList
+    layers : napari.components.LayersList
         LayersList to compare to
 
     Returns
@@ -28,7 +28,7 @@ def check_layout_layers(layout, layers):
         layout.itemAt(2 * i - 1).widget().layer
         for i in range(len(layers), 0, -1)
     ]
-    return layers_layout == [l for l in layers]
+    return layers_layout == list(layers)
 
 
 def check_layout_dividers(layout, nlayers):
@@ -165,14 +165,10 @@ def test_reordering_layers():
         layers = LayersList()
         view = QtLayersList(layers)
 
-        layer_a = Image(np.random.random((10, 10)))
-        layer_a.name = 'image_a'
-        layer_b = Image(np.random.random((15, 15)))
-        layer_b.name = 'image_b'
-        layer_c = Image(np.random.random((15, 15)))
-        layer_c.name = 'image_c'
-        layer_d = Image(np.random.random((15, 15)))
-        layer_d.name = 'image_d'
+        layer_a = Image(np.random.random((10, 10)), name='image_a')
+        layer_b = Image(np.random.random((15, 15)), name='image_b')
+        layer_c = Image(np.random.random((15, 15)), name='image_c')
+        layer_d = Image(np.random.random((15, 15)), name='image_d')
         layers.append(layer_a)
         layers.append(layer_b)
         layers.append(layer_c)
