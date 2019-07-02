@@ -126,9 +126,8 @@ class QtViewer(QSplitter):
         """
         return self.canvas.render(region, size, bgcolor)
 
-    def _open_files(self):
-        """Add an files from the menubar.
-        """
+    def _open_images(self):
+        """Adds image files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select image(s)...',
@@ -246,15 +245,16 @@ class QtViewer(QSplitter):
             event.ignore()
 
     def dropEvent(self, event):
-        """Add an files from the drag and drop.
-        """
+        """Add local files and web URLS with drag and drop."""
         filenames = []
         for url in event.mimeData().urls():
-            path = url.toLocalFile()
+            path = url.toString()
             if os.path.isfile(path):
                 filenames.append(path)
             elif os.path.isdir(path):
                 filenames = filenames + list(glob(os.path.join(path, '*')))
+            else:
+                filenames.append(path)
         self._add_files(filenames)
 
 
