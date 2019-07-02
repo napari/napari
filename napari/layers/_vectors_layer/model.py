@@ -34,6 +34,8 @@ class Vectors(Layer):
         control panel mode
     """
 
+    # The max number of vectors that will ever be used to render the thumbnail
+    # If more vectors are present then they are randomly subsampled
     _max_vectors_thumbnail = 1024
 
     def __init__(self, vectors, width=1, color='red', length=1, name=None):
@@ -48,6 +50,7 @@ class Vectors(Layer):
         self._color = color
         self._colors = get_color_names()
 
+        # Data containing vectors in the currently viewed slice
         self._vectors_view = np.empty((0, 2, 2))
 
         # length attribute
@@ -92,13 +95,7 @@ class Vectors(Layer):
         self.refresh()
 
     def _get_shape(self):
-        if len(self.data) == 0:
-            return np.ones(self.data.ndim, dtype=int)
-        else:
-            data = copy(self.data)
-            data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
-            maxs = np.max(data, axis=(0, 1)) + 1
-            return maxs
+        return [r[1] for r in self.range]
 
     @property
     def range(self):
@@ -109,10 +106,11 @@ class Vectors(Layer):
             maxs = np.ones(self.data.ndim, dtype=int)
             mins = np.zeros(self.data.ndim, dtype=int)
         else:
+            # Convert from projections to endpoints using the current length
             data = copy(self.data)
             data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
-            maxs = np.max(data, axis=(0, 1)) + 1
-            mins = np.min(data, axis=(0, 1)) + 1
+            maxs = np.max(data, axis=(0, 1))
+            mins = np.min(data, axis=(0, 1))
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -259,14 +257,13 @@ class Vectors(Layer):
         self._update_thumbnail()
 
     def _update_thumbnail(self):
-        """Update thumbnail with current points and colors.
-        """
+        """Update thumbnail with current points and colors."""
         # calculate min vals for the vertices and pad with 0.5
-        # the offset is needed to ensure that the top left corner of the shapes
-        # corresponds to the top left corner of the thumbnail
-        offset = np.array([self.range[-2][0], self.range[-1][0]]) - 0.5
+        # the offset is needed to ensure that the top left corner of the
+        # vectors corresponds to the top left corner of the thumbnail
+        offset = np.array([self.range[-2][0], self.range[-1][0]]) + 0.5
         # calculate range of values for the vertices and pad with 1
-        # padding ensures the entire shape can be represented in the thumbnail
+        # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
             [
