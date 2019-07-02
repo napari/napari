@@ -732,11 +732,12 @@ class ShapeList:
     def to_colors(
         self, colors_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None
     ):
-        """Returns an rgba image, where each shape is embedded in an
-        array of shape colors_shape with the rgba value of the shape,
-        and 0 for background. Passing a `shape_type` argument leads to only
-        colors from that particular `shape_type` being returned. For
-        overlapping shapes z-ordering will be respected.
+        """Rasterize shapes to an RGBA image array.
+
+        Each shape is embedded in an array of shape `colors_shape` with the
+        RGBA value of the shape, and 0 for background. Passing a `shape_type`
+        argument leads to only colors from that particular `shape_type` being
+        returned. For overlapping shapes z-ordering will be respected.
 
         Parameters
         ----------

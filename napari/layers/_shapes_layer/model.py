@@ -955,8 +955,7 @@ class Shapes(Layer):
         self._update_thumbnail()
 
     def _update_thumbnail(self):
-        """Update thumbnail with current points and colors.
-        """
+        """Update thumbnail with current points and colors."""
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the shapes
         # corresponds to the top left corner of the thumbnail

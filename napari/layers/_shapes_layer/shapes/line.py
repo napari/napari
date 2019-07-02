@@ -69,9 +69,10 @@ class Line(Shape):
         self._data = data
 
     def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
-        """Converts the shape vertices to a boolean mask with `True` for points
-        lying along the edge of the line. Negative points or points outside the
-        mask_shape after the zoom and offset are clipped.
+        """Convert the shape vertices to a boolean mask.
+
+        Set points lying along the edge of the line as `True`. Negative points
+        or points outside the mask_shape after the zoom and offset are clipped.
 
         Parameters
         ----------
