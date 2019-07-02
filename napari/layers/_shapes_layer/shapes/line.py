@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import create_box
+from ..shape_util import create_box, path_to_mask
 
 
 class Line(Shape):
@@ -68,16 +68,23 @@ class Line(Shape):
             self._box = create_box(data)
         self._data = data
 
-    def to_mask(self, mask_shape=None):
-        """Converts the shape vertices to a boolean mask with `True` for points
-        lying inside the shape. For a Line returns an array of `False` as
-        a Line has no interior.
+    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
+        """Convert the shape vertices to a boolean mask.
+
+        Set points lying along the edge of the line as `True`. Negative points
+        or points outside the mask_shape after the zoom and offset are clipped.
 
         Parameters
         ----------
         mask_shape : np.ndarray | tuple | None
             1x2 array of shape of mask to be generated. If non specified, takes
-            the max of the vertiecs
+            the max of the vertices.
+        zoom_factor : float
+            Premultiplier applied to coordinates before generating mask. Used
+            for generating as downsampled mask.
+        offset : 2-tuple
+            Offset subtracted from coordinates before multiplying by the
+            zoom_factor. Used for putting negative coordinates into the mask.
 
         Returns
         ----------
@@ -87,7 +94,7 @@ class Line(Shape):
         if mask_shape is None:
             mask_shape = self.data.max(axis=0).astype('int')
 
-        mask = np.zeros(mask_shape, dtype=bool)
+        mask = path_to_mask(mask_shape, (self.data - offset) * zoom_factor)
 
         return mask
 

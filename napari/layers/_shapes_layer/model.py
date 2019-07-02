@@ -1,6 +1,7 @@
 import numpy as np
 from copy import copy, deepcopy
 from contextlib import contextmanager
+from scipy import ndimage as ndi
 
 from ...util.event import Event
 from ...util.misc import ensure_iterable
@@ -208,30 +209,6 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
 
-            # Add the shape data
-            self._input_ndim = ndim
-            self._data = {}
-
-            self.add_shapes(
-                data,
-                shape_type=shape_type,
-                edge_width=edge_width,
-                edge_color=edge_color,
-                face_color=face_color,
-                opacity=opacity,
-                z_index=z_index,
-            )
-
-            # If input_ndim has not been set, default to 2
-            if self._input_ndim is None:
-                self._input_ndim = 2
-
-            # Set currently viewed slice to top slice
-            init_index = (0,) * (self._input_ndim - 2)
-            if init_index not in self.data:
-                self.data[init_index] = ShapeList()
-            self.slice_data = self.data[init_index]
-
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
             # value for itself
@@ -250,6 +227,20 @@ class Shapes(Layer):
             else:
                 self._face_color = 'white'
             self._opacity = opacity
+
+            # Add the shape data
+            self._input_ndim = ndim
+            self._data = {}
+
+            self.add_shapes(
+                data,
+                shape_type=shape_type,
+                edge_width=edge_width,
+                edge_color=edge_color,
+                face_color=face_color,
+                opacity=opacity,
+                z_index=z_index,
+            )
 
             # update flags
             self._need_display_update = False
@@ -293,6 +284,9 @@ class Shapes(Layer):
             )
 
             self.events.deselect.connect(lambda x: self._finish_drawing())
+            self.events.opacity.connect(lambda e: self._update_thumbnail())
+            self.events.face_color.connect(lambda e: self._update_thumbnail())
+            self.events.edge_color.connect(lambda e: self._update_thumbnail())
 
     @property
     def data(self):
@@ -552,7 +546,7 @@ class Shapes(Layer):
         max_val = np.array(slice_keys).max(axis=0)
 
         mins = tuple(min_val) + tuple(mins)
-        mins = tuple(max_val) + tuple(maxs)
+        maxs = tuple(max_val) + tuple(maxs)
 
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
 
@@ -663,6 +657,20 @@ class Shapes(Layer):
                             raise ValueError(
                                 'all shapes must have the same dimension'
                             )
+
+        # If input_ndim has not been set, default to 2
+        if self._input_ndim is None:
+            self._input_ndim = 2
+
+        # If slice_data has not yet been definied,
+        # set the currently viewed slice to top slice
+        if not hasattr(self, 'slice_data'):
+            init_index = (0,) * (self._input_ndim - 2)
+            if init_index not in self.data:
+                self.data[init_index] = ShapeList()
+            self.slice_data = self.data[init_index]
+
+        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -944,6 +952,33 @@ class Shapes(Layer):
                 self.slice_data.remove(index)
         self._is_creating = False
         self.refresh()
+        self._update_thumbnail()
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current points and colors."""
+        # calculate min vals for the vertices and pad with 0.5
+        # the offset is needed to ensure that the top left corner of the shapes
+        # corresponds to the top left corner of the thumbnail
+        offset = np.array([self.range[-2][0], self.range[-1][0]]) - 0.5
+        # calculate range of values for the vertices and pad with 1
+        # padding ensures the entire shape can be represented in the thumbnail
+        # without getting clipped
+        shape = np.ceil(
+            [
+                self.range[-2][1] - self.range[-2][0] + 1,
+                self.range[-1][1] - self.range[-1][0] + 1,
+            ]
+        ).astype(int)
+        zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+
+        colormapped = self.slice_data.to_colors(
+            colors_shape=self._thumbnail_shape[:2],
+            zoom_factor=zoom_factor,
+            offset=offset,
+        )
+
+        colormapped[..., 3] *= self.opacity
+        self.thumbnail = colormapped
 
     def remove_selected(self):
         """Remove any selected shapes.
@@ -956,7 +991,7 @@ class Shapes(Layer):
         self._hover_shape = shape
         self._hover_vertex = vertex
         self.status = self.get_message(self.coordinates[-2:], shape, vertex)
-        self.refresh()
+        self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
         """Perfrom a rotation on the selected box.
@@ -1802,6 +1837,7 @@ class Shapes(Layer):
             self._hover_vertex = shape
             self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
+            self._update_thumbnail()
         elif self._mode == Mode.DIRECT:
             shape, vertex = self._shape_at(coord)
             if not self._is_moving and not self._is_selecting and not shift:
@@ -1825,6 +1861,7 @@ class Shapes(Layer):
             self._hover_vertex = shape
             self._set_highlight()
             self.status = self.get_message(coord, shape, vertex)
+            self._update_thumbnail()
         elif self._mode in (
             [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
         ):

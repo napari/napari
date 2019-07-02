@@ -544,6 +544,8 @@ class Labels(Layer):
         downsampled = self.raw_to_displayed(downsampled)
         colormapped = self.colormap.map(downsampled)
         colormapped = colormapped.reshape(downsampled.shape + (4,))
+        # render background as black instead of transparent
+        colormapped[..., 3] = 1
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 

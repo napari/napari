@@ -765,6 +765,35 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     return centers, offsets, triangles
 
 
+def path_to_mask(mask_shape, vertices):
+    """Converts a path to a boolean mask with `True` for points lying along
+    each edge.
+
+    Parameters
+    ----------
+    mask_shape : array (2,)
+        Shape of mask to be generated.
+    vertices : array (N, 2)
+        Vertices of the path.
+
+    Returns
+    ----------
+    mask : np.ndarray
+        Boolean array with `True` for points along the path
+    """
+    mask = np.zeros(mask_shape, dtype=bool)
+    vertices = np.clip(vertices, 0, np.subtract(mask_shape, 1))
+    for i in range(len(vertices) - 1):
+        start = vertices[i]
+        stop = vertices[i + 1]
+        step = np.ceil(np.max(abs(stop - start)))
+        x_vals = np.linspace(start[0], stop[0], step)
+        y_vals = np.linspace(start[1], stop[1], step)
+        for x, y in zip(x_vals, y_vals):
+            mask[int(x), int(y)] = 1
+    return mask
+
+
 def poly_to_mask(mask_shape, vertices):
     """Converts a polygon to a boolean mask with `True` for points
     lying inside the shape. Uses the bounding box of the vertices to reduce
@@ -784,8 +813,10 @@ def poly_to_mask(mask_shape, vertices):
     """
     mask = np.zeros(mask_shape, dtype=bool)
     bottom = vertices.min(axis=0).astype('int')
+    bottom = np.clip(bottom, 0, np.subtract(mask_shape, 1))
     top = np.ceil(vertices.max(axis=0)).astype('int')
-    top = np.append([top], [mask_shape], axis=0).min(axis=0)
+    # top = np.append([top], [mask_shape], axis=0).min(axis=0)
+    top = np.clip(top, 0, np.subtract(mask_shape, 1))
     if np.all(top > bottom):
         bb_mask = grid_points_in_poly(top - bottom, vertices - bottom)
         mask[bottom[0] : top[0], bottom[1] : top[1]] = bb_mask
