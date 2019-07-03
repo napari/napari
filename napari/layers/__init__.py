@@ -7,10 +7,10 @@ to the super constructor.
 
 
 from ._base_layer import Layer
-from ._image_layer import Image
-from ._points_layer import Points
-from ._vectors_layer import Vectors
-from ._shapes_layer import Shapes
-from ._labels_layer import Labels
-from ._pyramid_layer import Pyramid
+from .image import Image
+from .points import Points
+from .vectors import Vectors
+from .shapes import Shapes
+from .labels import Labels
+from .pyramid import Pyramid
 from .util import create_qt_properties, create_qt_controls

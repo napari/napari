@@ -1,7 +1,7 @@
 import numpy as np
 from copy import copy
 from ...util.event import Event
-from .._image_layer import Image
+from ..image import Image
 
 
 class Pyramid(Image):

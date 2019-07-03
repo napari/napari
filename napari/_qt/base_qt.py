@@ -1,4 +1,3 @@
-from qtpy.QtWidgets import QFrame
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
@@ -14,7 +13,7 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 
-from .._constants import Blending
+from ..layers.base._constants import Blending
 
 
 class QtLayerControls(QFrame):
