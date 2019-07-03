@@ -4,6 +4,7 @@ from base64 import b64encode
 from imageio import imwrite
 
 import numpy as np
+from copy import copy
 from scipy import ndimage as ndi
 
 import vispy.color
@@ -100,7 +101,6 @@ class Image(Layer):
         self,
         image,
         colormap='magma',
-        colormap_name='magma',
         clim=None,
         clim_range=None,
         multichannel=None,
@@ -124,12 +124,9 @@ class Image(Layer):
             )
             self._image_thumbnail = self._image_view
 
-            self.colormap_name = colormap_name
-            self._colormap = colormap
-            self._node.cmap = self._colormaps[self.colormap_name]
-            self.interpolation = interpolation
-
+            self._colormap_name = ''
             self._clim_msg = ''
+
             if clim_range is None:
                 self._clim_range = self._clim_range_default()
             else:
@@ -139,6 +136,9 @@ class Image(Layer):
                 self.clim = self._clim_range
             else:
                 self.clim = clim
+
+            self.colormap = colormap
+            self.interpolation = interpolation
 
         # update flags
         self._need_display_update = False
@@ -206,9 +206,9 @@ class Image(Layer):
 
     @property
     def colormap(self):
-        """string or ColorMap: Colormap to use for luminance images.
+        """tuple of str, vispy.color.Colormap: colormap for luminance images.
         """
-        return self.colormap_name, self._node.cmap
+        return self._colormap_name, self._node.cmap
 
     @colormap.setter
     def colormap(self, colormap):
@@ -228,8 +228,8 @@ class Image(Layer):
             self._colormaps[name] = colormap
         else:
             warn(f'invalid value for colormap: {colormap}')
-            name = self.colormap_name
-        self.colormap_name = name
+            name = self._colormap_name
+        self._colormap_name = name
         self._node.cmap = self._colormaps[name]
         self._update_thumbnail()
         self.events.colormap()
@@ -243,16 +243,20 @@ class Image(Layer):
     # wrap visual properties:
     @property
     def clim(self):
-        """string or tuple of float: Limits to use for the colormap.
+        """list of float: Limits to use for the colormap.
         Can be 'auto' to auto-set bounds to the min and max of the data.
         """
-        return self._node.clim
+        return list(self._node.clim)
 
     @clim.setter
     def clim(self, clim):
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
         self._node.clim = clim
+        if clim[0] < self._clim_range[0]:
+            self._clim_range[0] = copy(clim[0])
+        if clim[1] > self._clim_range[1]:
+            self._clim_range[1] = copy(clim[1])
         self._update_thumbnail()
         self.events.clim()
 

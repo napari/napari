@@ -1,5 +1,6 @@
-from napari.layers import Image
 import numpy as np
+from napari.layers import Image
+from vispy.color import Colormap
 
 
 def test_random_image():
@@ -160,18 +161,84 @@ def test_interpolation():
     assert layer.interpolation == 'bilinear'
 
 
+def test_colormaps():
+    """Test setting test_colormaps."""
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer.colormap[0] == 'magma'
+    assert type(layer.colormap[1]) == Colormap
+
+    layer.colormap = 'gray'
+    assert layer.colormap[0] == 'gray'
+    assert type(layer.colormap[1]) == Colormap
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
+    layer.colormap = 'custom', cmap
+    assert layer.colormap[0] == 'custom'
+    assert layer.colormap[1] == cmap
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
+    layer.colormap = {'new': cmap}
+    assert layer.colormap[0] == 'new'
+    assert layer.colormap[1] == cmap
+
+    layer = Image(data, colormap='gray')
+    assert layer.colormap[0] == 'gray'
+    assert type(layer.colormap[1]) == Colormap
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
+    layer = Image(data, colormap=('custom', cmap))
+    assert layer.colormap[0] == 'custom'
+    assert layer.colormap[1] == cmap
+
+    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
+    layer = Image(data, colormap={'new': cmap})
+    assert layer.colormap[0] == 'new'
+    assert layer.colormap[1] == cmap
+
+
+def test_clims():
+    """Test setting color limits."""
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer.clim[0] >= 0
+    assert layer.clim[1] <= 1
+    assert layer.clim[0] < layer.clim[1]
+    assert layer.clim == layer._clim_range
+
+    # Change clim property
+    clim = [0, 2]
+    layer.clim = clim
+    assert layer.clim == clim
+    assert layer._clim_range == clim
+
+    # Set clim as keyword argument
+    layer = Image(data, clim=clim)
+    assert layer.clim == clim
+    assert layer._clim_range == clim
+
+
 def test_clim_range():
-    """Test setting color limit range."""
+    """Test setting color limits range."""
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer._clim_range[0] >= 0
     assert layer._clim_range[1] <= 1
     assert layer._clim_range[0] < layer._clim_range[1]
 
+    # If all data is the same value the clim_range and clim defaults to [0, 1]
     data = np.zeros((10, 15))
     layer = Image(data)
     assert layer._clim_range == [0, 1]
+    assert layer.clim == [0.0, 1.0]
 
+    # Set clim_range as keyword argument
     data = np.random.random((10, 15))
     layer = Image(data, clim_range=[0, 2])
+    assert layer._clim_range == [0, 2]
+
+    # Set clim and clim_range as keyword arguments
+    data = np.random.random((10, 15))
+    layer = Image(data, clim=[0.3, 0.6], clim_range=[0, 2])
+    assert layer.clim == [0.3, 0.6]
     assert layer._clim_range == [0, 2]

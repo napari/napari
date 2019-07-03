@@ -17,7 +17,7 @@ class QtImageProperties(QtLayerProperties):
             comboBox.addItem(cmap)
         comboBox._allitems = set(self.layer.colormaps)
         index = comboBox.findText(
-            self.layer.colormap_name, Qt.MatchFixedString
+            self.layer._colormap_name, Qt.MatchFixedString
         )
         comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
@@ -60,7 +60,7 @@ class QtImageProperties(QtLayerProperties):
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_colormap_change(self, event):
-        name = self.layer.colormap_name
+        name = self.layer._colormap_name
         if name not in self.colormap_combobox._allitems:
             self.colormap_combobox._allitems.add(name)
             self.colormap_combobox.addItem(name)
