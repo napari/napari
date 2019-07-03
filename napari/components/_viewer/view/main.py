@@ -1,6 +1,6 @@
 import os.path
+from glob import glob
 from pathlib import Path
-import numpy as np
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
