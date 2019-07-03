@@ -92,19 +92,20 @@ def test_non_rgb_image():
     assert layer.multichannel == False
 
 
-# def test_non_multichannel_image():
-#     """Test forcing Image layer to be 3D and not multichannel."""
-#     # If multichannel is set to be True in constructor but the last dim has a
-#     # size > 4 then data cannot actually be multichannel
-#     shape = (10, 15, 6)
-#     data = np.random.random(shape)
-#     layer = Image(data, multichannel=True)
-#     assert np.all(layer.image == data)
-#     assert layer.ndim == len(shape)
-#     assert layer.shape == shape
-#     assert layer.multichannel == False
+def test_non_multichannel_image():
+    """Test forcing Image layer to be 3D and not multichannel."""
+    # If multichannel is set to be True in constructor but the last dim has a
+    # size > 4 then data cannot actually be multichannel
+    shape = (10, 15, 6)
+    data = np.random.random(shape)
+    layer = Image(data, multichannel=True)
+    assert np.all(layer.image == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.multichannel == False
 
 
+# TEST FAILS AS TRIGGERS REFRESH
 # def test_changing_image_data():
 #     """Test changing Image data."""
 #     shape_a = (10, 15)
