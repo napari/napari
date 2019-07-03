@@ -1,3 +1,6 @@
+from qtpy.QtWidgets import QFrame
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
     QSlider,
     QLineEdit,
@@ -10,10 +13,15 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
 
 from .._constants import Blending
+
+
+class QtLayerControls(QFrame):
+    def __init__(self, layer):
+        super().__init__()
+
+        self.layer = layer
 
 
 class QtLayerProperties(QFrame):
