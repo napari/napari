@@ -11,9 +11,9 @@ import vispy.color
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 
-from ...util import is_multichannel
+# from ...util import is_multichannel
 
-from ...util.misc import guess_metadata
+from ...util.misc import guess_multichannel
 from ...util.colormaps import matplotlib_colormaps, simple_colormaps
 from ...util.colormaps.vendored import cm
 from ...util.event import Event
@@ -94,51 +94,55 @@ class Image(Layer):
 
     _colormaps = AVAILABLE_COLORMAPS
 
-    default_colormap = 'magma'
     default_interpolation = str(Interpolation.NEAREST)
 
     def __init__(
         self,
         image,
-        meta=None,
+        colormap='magma',
+        colormap_name='magma',
+        clim=None,
+        clim_range=None,
         multichannel=None,
+        interpolation='nearest',
         *,
         name=None,
-        clim_range=None,
         **kwargs,
     ):
-        if name is None and meta is not None:
-            if 'name' in meta:
-                name = meta['name']
 
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
 
         self.events.add(clim=Event, colormap=Event, interpolation=Event)
 
-        meta = guess_metadata(image, meta, multichannel, kwargs)
+        with self.freeze_refresh():
+            self._image = image
+            self.multichannel = multichannel
+            # Intitialize image views and thumbnails with zeros
+            self._image_view = np.zeros(
+                (1, 1) + (self.shape[-1],) * self.multichannel
+            )
+            self._image_thumbnail = self._image_view
 
-        self._image = image
-        self._meta = meta
-        self.colormap_name = Image.default_colormap
-        self._colormap = Image.default_colormap
-        self._node.cmap = self._colormaps[self.colormap_name]
-        self.interpolation = Image.default_interpolation
+            self.colormap_name = colormap_name
+            self._colormap = colormap
+            self._node.cmap = self._colormaps[self.colormap_name]
+            self.interpolation = interpolation
+
+            self._clim_msg = ''
+            if clim_range is None:
+                self._clim_range = self._clim_range_default()
+            else:
+                self._clim_range = clim_range
+
+            if clim is None:
+                self.clim = self._clim_range
+            else:
+                self.clim = clim
 
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
-
-        if clim_range is None:
-            self._clim_range = self._clim_range_default()
-        else:
-            self._clim_range = clim_range
-        self._node.clim = self._clim_range
-
-        cmin, cmax = self.clim
-        self._clim_msg = f'{cmin: 0.3}, {cmax: 0.3}'
-
-        self.events.opacity.connect(lambda e: self._update_thumbnail())
 
     @property
     def image(self):
@@ -149,30 +153,8 @@ class Image(Layer):
     @image.setter
     def image(self, image):
         self._image = image
-        self.events.data()
-        self.refresh()
-
-    @property
-    def meta(self):
-        """dict: Image metadata.
-        """
-        return self._meta
-
-    @meta.setter
-    def meta(self, meta):
-        self._meta = meta
-
-        self.refresh()
-
-    @property
-    def data(self):
-        """tuple of np.ndarray, dict: Image data and metadata.
-        """
-        return self.image, self.meta
-
-    @data.setter
-    def data(self, data):
-        self._image, self._meta = data
+        if self.multichannel:
+            self._multichannel = guess_multichannel(image.shape)
         self.events.data()
         self.refresh()
 
@@ -210,17 +192,17 @@ class Image(Layer):
     def multichannel(self):
         """bool: Whether the image is multichannel.
         """
-        return is_multichannel(self.meta)
+        return self._multichannel
 
     @multichannel.setter
-    def multichannel(self, val):
-        if val == self.multichannel:
-            return
-
-        self.meta['itype'] = 'multi'
-
-        self._need_display_update = True
-        self._update()
+    def multichannel(self, multichannel):
+        if multichannel is False:
+            self._multichannel = multichannel
+        else:
+            # If multichannel is True or None then guess if multichannel
+            # allowed or not, and if allowed set it to be true
+            self._multichannel = guess_multichannel(self.image.shape)
+        self.refresh()
 
     @property
     def colormap(self):
@@ -338,6 +320,7 @@ class Image(Layer):
                     dtype=np.uint8,
                 )
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
+            colormapped = colormapped.astype(np.uint8)
         else:
             downsampled = ndi.zoom(
                 image, zoom_factor, prefilter=False, order=0

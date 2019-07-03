@@ -156,8 +156,6 @@ class Points(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-        self.events.opacity.connect(lambda e: self._update_thumbnail())
-
     @property
     def coords(self) -> np.ndarray:
         """ndarray: coordinates of the point centroids

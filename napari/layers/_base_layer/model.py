@@ -77,6 +77,8 @@ class Layer(VisualWrapper, ABC):
         )
         self.name = name
 
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
+
     def __str__(self):
         """Return self.name
         """
@@ -88,7 +90,7 @@ class Layer(VisualWrapper, ABC):
 
     @classmethod
     def _basename(cls):
-        return f'{cls.__name__} 0'
+        return f'{cls.__name__}'
 
     @property
     def name(self):
@@ -142,16 +144,16 @@ class Layer(VisualWrapper, ABC):
         coords[-1] = position[0]
         self.coordinates = tuple(coords)
 
-    @property
-    @abstractmethod
-    def data(self):
-        # user writes own docstring
-        raise NotImplementedError()
-
-    @data.setter
-    @abstractmethod
-    def data(self, data):
-        raise NotImplementedError()
+    # @property
+    # @abstractmethod
+    # def data(self):
+    #     # user writes own docstring
+    #     raise NotImplementedError()
+    #
+    # @data.setter
+    # @abstractmethod
+    # def data(self, data):
+    #     raise NotImplementedError()
 
     @abstractmethod
     def _get_shape(self):
@@ -189,7 +191,7 @@ class Layer(VisualWrapper, ABC):
         """list of 3-tuple of int: ranges of data for slicing specifed by
         (min, max, step).
         """
-        return [(0, max, 1) for max in self.shape]
+        return tuple((0, max, 1) for max in self.shape)
 
     @property
     def selected(self):
@@ -298,6 +300,10 @@ class Layer(VisualWrapper, ABC):
 
     @abstractmethod
     def _set_view_slice(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _update_thumbnail(self):
         raise NotImplementedError()
 
     def refresh(self):

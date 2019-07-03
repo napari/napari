@@ -64,8 +64,6 @@ class Vectors(Layer):
         with self.freeze_refresh():
             self.data = vectors
 
-        self.events.opacity.connect(lambda e: self._update_thumbnail())
-
     @property
     def data(self) -> np.ndarray:
         return self._data
