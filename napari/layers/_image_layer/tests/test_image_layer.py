@@ -135,7 +135,7 @@ def test_non_rgb_image():
 
 
 def test_name():
-    """Test layer name."""
+    """Test setting layer name."""
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.name == 'Image'
@@ -148,7 +148,7 @@ def test_name():
 
 
 def test_interpolation():
-    """Test image interpolation mode."""
+    """Test setting image interpolation mode."""
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.interpolation == 'nearest'
@@ -160,4 +160,18 @@ def test_interpolation():
     assert layer.interpolation == 'bilinear'
 
 
-#
+def test_clim_range():
+    """Test setting color limit range."""
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer._clim_range[0] >= 0
+    assert layer._clim_range[1] <= 1
+    assert layer._clim_range[0] < layer._clim_range[1]
+
+    data = np.zeros((10, 15))
+    layer = Image(data)
+    assert layer._clim_range == [0, 1]
+
+    data = np.random.random((10, 15))
+    layer = Image(data, clim_range=[0, 2])
+    assert layer._clim_range == [0, 2]

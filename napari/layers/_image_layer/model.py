@@ -298,7 +298,12 @@ class Image(Layer):
         self.events.interpolation()
 
     def _clim_range_default(self):
-        return [float(self.image.min()), float(self.image.max())]
+        min = self.image.min()
+        max = self.image.max()
+        if min == max:
+            min = 0
+            max = 1
+        return [float(min), float(max)]
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap.
