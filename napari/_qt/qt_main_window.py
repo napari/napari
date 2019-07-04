@@ -1,3 +1,14 @@
+"""
+Custom Qt widgets that serve as native objects that the public-facing elements
+wrap.
+"""
+# set vispy to use same backend as qtpy
+from qtpy import API_NAME
+from vispy import app
+
+app.use_app(API_NAME)
+del app
+
 from qtpy.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -8,7 +19,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QKeySequence
 
-from ...util.theme import template
+from ..util.theme import template
 
 
 class Window:

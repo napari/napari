@@ -10,7 +10,6 @@ ViewerModel
     Data viewer displaying the currently rendered scene and
     layer-related controls.
 """
-from ._window import Window, QtApplication
 from ._viewer import ViewerModel
 from ._layers_list import LayersList
 from ._dims import Dims
