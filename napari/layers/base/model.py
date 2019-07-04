@@ -333,7 +333,6 @@ class Layer(VisualWrapper, ABC):
     def to_svg(self, file=None, canvas_shape=None):
         """Convert the current layer state to an SVG.
 
-
         Parameters
         ----------
         file : path-like object, optional
@@ -341,7 +340,7 @@ class Layer(VisualWrapper, ABC):
             either a str or bytes object representing a path, or an object
             implementing the `os.PathLike` protocol. If passed the svg will be
             written to this file
-        view_box : 4-tuple, optional
+        canvas_shape : 4-tuple, optional
             View box of SVG canvas to be generated specified as `min-x`,
             `min-y`, `width` and `height`. If not specified, calculated
             from the last two dimensions of the layer.
@@ -352,13 +351,13 @@ class Layer(VisualWrapper, ABC):
             SVG representation of the layer.
         """
 
-        if view_box is None:
+        if canvas_shape is None:
             min_shape = [r[0] for r in self.range[-2:]]
-            max_shape = [r[1] for f in self.range[-2:]]
+            max_shape = [r[1] for r in self.range[-2:]]
             shape = np.subtract(max_shape, min_shape)
         else:
-            shape = view_box[2:]
-            min_shape = view_box[:2]
+            shape = canvas_shape[2:]
+            min_shape = canvas_shape[:2]
 
         props = {
             'xmlns': 'http://www.w3.org/2000/svg',
