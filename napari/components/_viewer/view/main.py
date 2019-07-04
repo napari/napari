@@ -11,7 +11,7 @@ from ..._dims.view import QtDims
 from ..._layers_list.view import QtLayersList
 from ....resources import resources_dir
 from ....util.theme import template
-from ....util.misc import guess_multichannel
+from ....util.misc import is_multichannel
 from ....util.io import read
 
 from .controls import QtControls
@@ -139,7 +139,7 @@ class QtViewer(QSplitter):
         """Adds an image layer to the viewer.
 
         Whether the image is multichannel is determined by
-        :func:`napari.util.misc.guess_multichannel`.
+        :func:`napari.util.misc.is_multichannel`.
 
         If multiple images are selected, they are stacked along the 0th
         axis.
@@ -152,7 +152,7 @@ class QtViewer(QSplitter):
         if len(filenames) > 0:
             image = read(filenames)
             self.viewer.add_image(
-                image, multichannel=guess_multichannel(image.shape)
+                image, multichannel=is_multichannel(image.shape)
             )
             self._last_visited_dir = os.path.dirname(filenames[0])
 

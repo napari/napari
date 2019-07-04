@@ -56,16 +56,7 @@ def is_iterable(arg, color=False):
         return True
 
 
-def is_multichannel(meta):
-    """Determines if an image is RGB after checking its metadata.
-    """
-    try:
-        return meta['itype'] in ('rgb', 'rgba', 'multi', 'multichannel')
-    except KeyError:
-        return False
-
-
-def guess_multichannel(shape):
+def is_multichannel(shape):
     """If last dim is 3 or 4 assume image is multichannel.
     """
     ndim = len(shape)
@@ -77,38 +68,46 @@ def guess_multichannel(shape):
         return False
 
 
-def guess_metadata(image, meta, multichannel, kwargs):
-    """Guesses an image's metadata.
+def increment_unnamed_colormap(name, names):
+    """Increment name for unnamed colormap.
 
     Parameters
     ----------
-    image : np.ndarray
-        Image data.
-    meta : dict or None
-        Image metadata.
-    multichannel : bool or None
-        Whether the image is multichannel. Guesses if None.
-    kwargs : dict
-        Parameters that will be translated to metadata.
+    name : str
+        Name of colormap to be incremented.
+    names : str
+        Names of existing colormaps.
 
     Returns
     -------
-    meta : dict
-        Guessed image metadata.
+    name : str
+        Name of colormap after incrementing.
     """
-    if isinstance(meta, dict):
-        meta = dict(meta, **kwargs)
+    if name == '[unnamed colormap]':
+        past_names = [n for n in names if n.startswith('[unnamed colormap')]
+        name = f'[unnamed colormap {len(past_names)}]'
+    return name
 
-    if meta is None:
-        meta = kwargs
 
-    if multichannel is None:
-        multichannel = guess_multichannel(image.shape)
+def calc_data_range(data):
+    """Calculate range of data values. If all values are equal return [0, 1].
 
-    if multichannel:
-        meta['itype'] = 'multi'
+    Parameters
+    -------
+    data : array
+        Data to calculate range of values over.
 
-    return meta
+    Returns
+    -------
+    values : list of float
+        Range of values.
+    """
+    min = data.min()
+    max = data.max()
+    if min == max:
+        min = 0
+        max = 1
+    return [float(min), float(max)]
 
 
 def compute_max_shape(shapes, max_dims=None):

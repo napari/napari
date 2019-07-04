@@ -1,6 +1,5 @@
 import os
-
-from .vendored import colorconv
+from .vendored import colorconv, cm
 import numpy as np
 import vispy.color
 
@@ -205,3 +204,45 @@ def label_colormap(num_colors=256, seed=0.5):
         colors=colors, controls=control_points, interpolation='zero'
     )
     return cmap
+
+
+def vispy_or_mpl_colormap(name):
+    """Try to get a colormap from vispy, or convert an mpl one to vispy format.
+
+    Parameters
+    ----------
+    name : str
+        The name of the colormap.
+
+    Returns
+    -------
+    cmap : vispy.color.Colormap
+        The found colormap.
+
+    Raises
+    ------
+    KeyError
+        If no colormap with that name is found within vispy or matplotlib.
+    """
+    vispy_cmaps = vispy.color.get_colormaps()
+    if name in vispy_cmaps:
+        cmap = vispy.color.get_colormap(name)
+    else:
+        try:
+            mpl_cmap = getattr(cm, name)
+        except AttributeError:
+            raise KeyError(
+                f'Colormap "{name}" not found in either vispy '
+                'or matplotlib.'
+            )
+        mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
+        cmap = vispy.color.Colormap(mpl_colors)
+    return cmap
+
+
+# A dictionary mapping names to VisPy colormap objects
+ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
+ALL_COLORMAPS.update(simple_colormaps)
+
+# ... sorted alphabetically by name
+AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}

@@ -1,6 +1,7 @@
 import numpy as np
-from napari.layers import Image
+from xml.etree.ElementTree import Element
 from vispy.color import Colormap
+from napari.layers import Image
 
 
 def test_random_image():
@@ -253,3 +254,42 @@ def test_metadata():
 
     layer = Image(data, metadata={'unit': 'cm'})
     assert layer.metadata == {'unit': 'cm'}
+
+
+# NOTE VALUE NOT ACTUALLY COMPUTED ON DATA AS SLICING HAS NOT HAPPENED
+def test_value():
+    """Test getting the value of the data at the current coordinates."""
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    coord, value = layer.get_value()
+    assert np.all(coord == [0, 0])
+    assert value == 0
+
+
+def test_message():
+    """Test converting value and coords to message."""
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    coord, value = layer.get_value()
+    msg = layer.get_message(coord, value)
+    assert type(msg) == str
+
+
+# NOTE THUMBNAIL NOT ACTUALLY COMPUTED ON DATA AS SLICING HAS NOT HAPPENED
+def test_thumbnail():
+    """Test the image thumbnail for square data."""
+    data = np.random.random((30, 30))
+    layer = Image(data)
+    layer._update_thumbnail()
+    assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+# NOTE XML NOT ACTUALLY GENERATED ON DATA AS SLICING HAS NOT HAPPENED
+def test_xml_list():
+    """Test the xml generation."""
+    data = np.random.random((15, 30))
+    layer = Image(data)
+    xml = layer.to_xml_list()
+    assert type(xml) == list
+    assert len(xml) == 1
+    assert type(xml[0]) == Element

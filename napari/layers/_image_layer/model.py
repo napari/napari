@@ -2,72 +2,19 @@ from warnings import warn
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
-
 import numpy as np
 from copy import copy
 from scipy import ndimage as ndi
-
 import vispy.color
-
 from .._base_layer import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
-
-# from ...util import is_multichannel
-
-from ...util.misc import guess_multichannel
-from ...util.colormaps import matplotlib_colormaps, simple_colormaps
-from ...util.colormaps.vendored import cm
+from ...util.misc import (
+    is_multichannel,
+    calc_data_range,
+    increment_unnamed_colormap,
+)
 from ...util.event import Event
-from ._constants import Interpolation
-
-
-def _increment_unnamed_colormap(name, names):
-    if name == '[unnamed colormap]':
-        past_names = [n for n in names if n.startswith('[unnamed colormap')]
-        name = f'[unnamed colormap {len(past_names)}]'
-    return name
-
-
-def vispy_or_mpl_colormap(name):
-    """Try to get a colormap from vispy, or convert an mpl one to vispy format.
-
-    Parameters
-    ----------
-    name : str
-        The name of the colormap.
-
-    Returns
-    -------
-    cmap : vispy.color.Colormap
-        The found colormap.
-
-    Raises
-    ------
-    KeyError
-        If no colormap with that name is found within vispy or matplotlib.
-    """
-    vispy_cmaps = vispy.color.get_colormaps()
-    if name in vispy_cmaps:
-        cmap = vispy.color.get_colormap(name)
-    else:
-        try:
-            mpl_cmap = getattr(cm, name)
-        except AttributeError:
-            raise KeyError(
-                f'Colormap "{name}" not found in either vispy '
-                'or matplotlib.'
-            )
-        mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
-        cmap = vispy.color.Colormap(mpl_colors)
-    return cmap
-
-
-# A dictionary mapping names to VisPy colormap objects
-ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
-ALL_COLORMAPS.update(simple_colormaps)
-
-# ... sorted alphabetically by name
-AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
+from ._constants import Interpolation, AVAILABLE_COLORMAPS
 
 
 class Image(Layer):
@@ -75,37 +22,50 @@ class Image(Layer):
 
     Parameters
     ----------
-    image : np.ndarray
-        Image data.
+    image : array
+        Image data. Can be N dimensional. If the last dimension has length 3
+        or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
     metadata : dict, optional
         Image metadata.
     multichannel : bool, optional
-        Whether the image is multichannel. Guesses if None.
+        Whether the image is multichannel RGB or RGBA if multichannel. If not
+        specified by user and the last dimension of the data has length 3 or 4
+        it will be set as `True`.
+    colormap : str, vispy.Color.Colormap, tuple, dict, optional
+        Colormap to use for luminance images. If a string must be the name of
+        a supported colormap from vispy or matplotlib. If a tuple the first
+        value must be a string to assign as a name to a colormap and the second
+        item must be a Colormap. If a dict the key must be a string to assign
+        as a name to a colormap and the value must be a Colormap. If the image
+        is multichannel the colormap is ignored.
+    clim : list (2,), optional
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image. If the image is multichannel the clim is ignored.
+    clim_range : list (2,), optional
+        Range for the color limits. If not passed is be calculated as the min
+        and max of the image. Passing a value prevents this calculation which
+        can be useful when working with very large datasets that are
+        dynamically loaded. If the image is multichannel the clim_range is
+        ignored.
+    interpolation : str, optional
+        Interpolation mode used by vispy. Must be one of our supported modes.
     name : str, keyword-only
         Name of the layer.
-    clim_range : list | array | None
-        Length two list or array with the default color limit range for the
-        image. If not passed will be calculated as the min and max of the
-        image. Passing a value prevents this calculation which can be
-        useful when working with very large datasets that are dynamically
-        loaded.
-    **kwargs : dict
-        Parameters that will be translated to metadata.
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-
     default_interpolation = str(Interpolation.NEAREST)
 
     def __init__(
         self,
         image,
+        metadata={},
+        multichannel=None,
         colormap='gray',
         clim=None,
         clim_range=None,
-        multichannel=None,
         interpolation='nearest',
-        metadata={},
         *,
         name=None,
         **kwargs,
@@ -130,7 +90,7 @@ class Image(Layer):
             self._clim_msg = ''
 
             if clim_range is None:
-                self._clim_range = self._clim_range_default()
+                self._clim_range = calc_data_range(self.data)
             else:
                 self._clim_range = clim_range
 
@@ -148,15 +108,14 @@ class Image(Layer):
 
     @property
     def data(self):
-        """np.ndarray: Image data.
-        """
+        """array: Image data."""
         return self._data
 
     @data.setter
     def data(self, data):
         self._data = data
         if self.multichannel:
-            self._multichannel = guess_multichannel(data.shape)
+            self._multichannel = is_multichannel(data.shape)
         self.events.data()
         self.refresh()
 
@@ -165,35 +124,9 @@ class Image(Layer):
             return self.data.shape[:-1]
         return self.data.shape
 
-    def _slice_data(self):
-        """Determines the slice of data from the indices."""
-
-        indices = list(self.indices)
-        indices[:-2] = np.clip(
-            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
-        )
-        self._data_view = np.asarray(self.data[tuple(indices)])
-        self._data_thumbnail = self._data_view
-
-        return self._data_view
-
-    def _set_view_slice(self):
-        """Sets the view given the indices to slice with."""
-        sliced_data = self._slice_data()
-
-        self._node.set_data(sliced_data)
-
-        self._need_visual_update = True
-        self._update()
-
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)
-        self._update_thumbnail()
-
     @property
     def multichannel(self):
-        """bool: Whether the image is multichannel.
-        """
+        """bool: Whether the image is multichannel."""
         return self._multichannel
 
     @multichannel.setter
@@ -202,8 +135,8 @@ class Image(Layer):
             self._multichannel = multichannel
         else:
             # If multichannel is True or None then guess if multichannel
-            # allowed or not, and if allowed set it to be true
-            self._multichannel = guess_multichannel(self.data.shape)
+            # allowed or not, and if allowed set it to be True
+            self._multichannel = is_multichannel(self.data.shape)
         self.refresh()
 
     @property
@@ -224,7 +157,7 @@ class Image(Layer):
             self._colormaps.update(colormap)
             name = list(colormap)[0]  # first key in dict
         elif isinstance(colormap, vispy.color.Colormap):
-            name = _increment_unnamed_colormap(
+            name = increment_unnamed_colormap(
                 name, list(self._colormaps.keys())
             )
             self._colormaps[name] = colormap
@@ -238,16 +171,13 @@ class Image(Layer):
 
     @property
     def colormaps(self):
-        """tuple of str: names of available colormaps.
-        """
+        """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
 
     # wrap visual properties:
     @property
     def clim(self):
-        """list of float: Limits to use for the colormap.
-        Can be 'auto' to auto-set bounds to the min and max of the data.
-        """
+        """list of float: Limits to use for the colormap."""
         return list(self._node.clim)
 
     @clim.setter
@@ -291,7 +221,6 @@ class Image(Layer):
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
             'nearest', 'spline16', 'spline36'
             }: Equipped interpolation method's name.
-
         """
         return str(self._interpolation)
 
@@ -303,17 +232,33 @@ class Image(Layer):
         self._node.interpolation = interpolation.value
         self.events.interpolation()
 
-    def _clim_range_default(self):
-        min = self.data.min()
-        max = self.data.max()
-        if min == max:
-            min = 0
-            max = 1
-        return [float(min), float(max)]
+    def _slice_data(self):
+        """Determine the slice of data from the indices."""
+
+        indices = list(self.indices)
+        indices[:-2] = np.clip(
+            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
+        )
+        self._data_view = np.asarray(self.data[tuple(indices)])
+        self._data_thumbnail = self._data_view
+
+        return self._data_view
+
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with."""
+        sliced_data = self._slice_data()
+
+        self._node.set_data(sliced_data)
+
+        self._need_visual_update = True
+        self._update()
+
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
+        self._update_thumbnail()
 
     def _update_thumbnail(self):
-        """Update thumbnail with current image data and colormap.
-        """
+        """Update thumbnail with current image data and colormap."""
         image = self._data_thumbnail
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
@@ -429,8 +374,7 @@ class Image(Layer):
         return [xml]
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
+        """Called whenever mouse moves over canvas."""
         if event.pos is None:
             return
         self.position = tuple(event.pos)
