@@ -5,7 +5,7 @@ from .._image_layer import Image
 
 
 class Pyramid(Image):
-    """Pyramid layer.
+    """Image pyramid layer.
 
     Parameters
     ----------
