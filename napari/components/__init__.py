@@ -4,8 +4,11 @@ with.
 
 Classes
 -------
-Window
-    Window containing file menus, toolbars, and viewers.
+Dims
+    Current indices along each data dimension, together with which dimensions
+    are being displayed, projected, sliced...
+LayersList
+    List of layers currently present in the viewer.
 ViewerModel
     Data viewer displaying the currently rendered scene and
     layer-related controls.
