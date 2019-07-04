@@ -4,7 +4,7 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from copy import copy
 
-from .._base_layer import Layer
+from ..base import Layer
 from ..._vispy.scene.visuals import Mesh
 from ...util.event import Event
 from ...util import segment_normal

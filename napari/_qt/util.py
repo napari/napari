@@ -1,10 +1,13 @@
-from ._base_layer import QtLayerProperties, QtLayerControls
-from .image import QtImageProperties, QtImageControls
-from .points import QtPointsProperties, QtPointsControls
-from .vectors import QtVectorsProperties
-from .shapes import QtShapesProperties, QtShapesControls
-from .labels import QtLabelsProperties, QtLabelsControls
-from .pyramid import QtPyramidProperties, QtPyramidControls
+from .base_qt import QtLayerProperties, QtLayerControls
+from .image_qt import QtImageProperties, QtImageControls
+from .points_qt import QtPointsProperties, QtPointsControls
+from .vectors_qt import QtVectorsProperties
+from .shapes_qt import QtShapesProperties, QtShapesControls
+from .labels_qt import QtLabelsProperties, QtLabelsControls
+from .image_qt import (
+    QtImageProperties as QtPyramidProperties,
+    QtImageControls as QtPyramidControls,
+)
 
 
 def create_qt_properties(layer):

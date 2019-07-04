@@ -6,11 +6,10 @@ to the super constructor.
 """
 
 
-from ._base_layer import Layer
+from .base import Layer
 from .image import Image
 from .points import Points
 from .vectors import Vectors
 from .shapes import Shapes
 from .labels import Labels
 from .pyramid import Pyramid
-from .util import create_qt_properties, create_qt_controls
