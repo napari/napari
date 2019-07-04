@@ -77,7 +77,7 @@ class Image(Layer):
     ----------
     image : np.ndarray
         Image data.
-    meta : dict, optional
+    metadata : dict, optional
         Image metadata.
     multichannel : bool, optional
         Whether the image is multichannel. Guesses if None.
@@ -100,11 +100,12 @@ class Image(Layer):
     def __init__(
         self,
         image,
-        colormap='magma',
+        colormap='gray',
         clim=None,
         clim_range=None,
         multichannel=None,
         interpolation='nearest',
+        metadata={},
         *,
         name=None,
         **kwargs,
@@ -116,13 +117,14 @@ class Image(Layer):
         self.events.add(clim=Event, colormap=Event, interpolation=Event)
 
         with self.freeze_refresh():
-            self._image = image
+            self._data = image
+            self.metadata = metadata
             self.multichannel = multichannel
             # Intitialize image views and thumbnails with zeros
-            self._image_view = np.zeros(
+            self._data_view = np.zeros(
                 (1, 1) + (self.shape[-1],) * self.multichannel
             )
-            self._image_thumbnail = self._image_view
+            self._data_thumbnail = self._data_view
 
             self._colormap_name = ''
             self._clim_msg = ''
@@ -145,41 +147,41 @@ class Image(Layer):
         self._need_visual_update = False
 
     @property
-    def image(self):
+    def data(self):
         """np.ndarray: Image data.
         """
-        return self._image
+        return self._data
 
-    @image.setter
-    def image(self, image):
-        self._image = image
+    @data.setter
+    def data(self, data):
+        self._data = data
         if self.multichannel:
-            self._multichannel = guess_multichannel(image.shape)
+            self._multichannel = guess_multichannel(data.shape)
         self.events.data()
         self.refresh()
 
     def _get_shape(self):
         if self.multichannel:
-            return self.image.shape[:-1]
-        return self.image.shape
+            return self.data.shape[:-1]
+        return self.data.shape
 
-    def _slice_image(self):
-        """Determines the slice of image from the indices."""
+    def _slice_data(self):
+        """Determines the slice of data from the indices."""
 
         indices = list(self.indices)
         indices[:-2] = np.clip(
             indices[:-2], 0, np.subtract(self.shape[:-2], 1)
         )
-        self._image_view = np.asarray(self.image[tuple(indices)])
-        self._image_thumbnail = self._image_view
+        self._data_view = np.asarray(self.data[tuple(indices)])
+        self._data_thumbnail = self._data_view
 
-        return self._image_view
+        return self._data_view
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        sliced_image = self._slice_image()
+        sliced_data = self._slice_data()
 
-        self._node.set_data(sliced_image)
+        self._node.set_data(sliced_data)
 
         self._need_visual_update = True
         self._update()
@@ -201,7 +203,7 @@ class Image(Layer):
         else:
             # If multichannel is True or None then guess if multichannel
             # allowed or not, and if allowed set it to be true
-            self._multichannel = guess_multichannel(self.image.shape)
+            self._multichannel = guess_multichannel(self.data.shape)
         self.refresh()
 
     @property
@@ -302,8 +304,8 @@ class Image(Layer):
         self.events.interpolation()
 
     def _clim_range_default(self):
-        min = self.image.min()
-        max = self.image.max()
+        min = self.data.min()
+        max = self.data.max()
         if min == max:
             min = 0
             max = 1
@@ -312,7 +314,7 @@ class Image(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap.
         """
-        image = self._image_thumbnail
+        image = self._data_thumbnail
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
@@ -357,12 +359,12 @@ class Image(Layer):
         """
         coord = np.round(self.coordinates).astype(int)
         if self.multichannel:
-            shape = self._image_view.shape[:-1]
+            shape = self._data_view.shape[:-1]
         else:
-            shape = self._image_view.shape
+            shape = self._data_view.shape
         coord[-2:] = np.clip(coord[-2:], 0, np.asarray(shape) - 1)
 
-        value = self._image_view[tuple(coord[-2:])]
+        value = self._data_view[tuple(coord[-2:])]
 
         return coord, value
 
@@ -408,13 +410,13 @@ class Image(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        image = np.clip(self._image_view, self.clim[0], self.clim[1])
+        image = np.clip(self._data_view, self.clim[0], self.clim[1])
         image = image - self.clim[0]
         color_range = self.clim[1] - self.clim[0]
         if color_range != 0:
             image = image / color_range
         mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
-        mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
+        mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}

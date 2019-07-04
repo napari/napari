@@ -19,10 +19,10 @@ with app_context():
     layer = viewer.add_image(blobs[:64])
 
     # switch number of displayed dimensions
-    layer.image = blobs[0]
+    layer.data = blobs[0]
 
     # switch number of displayed dimensions
-    layer.image = blobs[:64]
+    layer.data = blobs[:64]
 
     # switch the shape of the displayed data
-    layer.image = blobs[:3]
+    layer.data = blobs[:3]

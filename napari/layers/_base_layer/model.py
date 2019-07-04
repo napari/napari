@@ -144,16 +144,16 @@ class Layer(VisualWrapper, ABC):
         coords[-1] = position[0]
         self.coordinates = tuple(coords)
 
-    # @property
-    # @abstractmethod
-    # def data(self):
-    #     # user writes own docstring
-    #     raise NotImplementedError()
-    #
-    # @data.setter
-    # @abstractmethod
-    # def data(self, data):
-    #     raise NotImplementedError()
+    @property
+    @abstractmethod
+    def data(self):
+        # user writes own docstring
+        raise NotImplementedError()
+
+    @data.setter
+    @abstractmethod
+    def data(self, data):
+        raise NotImplementedError()
 
     @abstractmethod
     def _get_shape(self):
