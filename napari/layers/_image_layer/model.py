@@ -30,28 +30,61 @@ class Image(Layer):
     multichannel : bool, optional
         Whether the image is multichannel RGB or RGBA if multichannel. If not
         specified by user and the last dimension of the data has length 3 or 4
-        it will be set as `True`.
+        it will be set as `True`. If `False` the image is interpreted as a
+        luminance image.
     colormap : str, vispy.Color.Colormap, tuple, dict, optional
         Colormap to use for luminance images. If a string must be the name of
         a supported colormap from vispy or matplotlib. If a tuple the first
         value must be a string to assign as a name to a colormap and the second
         item must be a Colormap. If a dict the key must be a string to assign
-        as a name to a colormap and the value must be a Colormap. If the image
-        is multichannel the colormap is ignored.
+        as a name to a colormap and the value must be a Colormap.
     clim : list (2,), optional
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
-        the image. If the image is multichannel the clim is ignored.
+        the image.
     clim_range : list (2,), optional
         Range for the color limits. If not passed is be calculated as the min
         and max of the image. Passing a value prevents this calculation which
         can be useful when working with very large datasets that are
-        dynamically loaded. If the image is multichannel the clim_range is
-        ignored.
+        dynamically loaded.
     interpolation : str, optional
         Interpolation mode used by vispy. Must be one of our supported modes.
     name : str, keyword-only
         Name of the layer.
+
+    Attributes
+    ----------
+    data : array
+        Image data. Can be N dimensional. If the last dimension has length 3
+        or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
+    metadata : dict
+        Image metadata.
+    multichannel : bool
+        Whether the image is multichannel RGB or RGBA if multichannel. If not
+        specified by user and the last dimension of the data has length 3 or 4
+        it will be set as `True`. If `False` the image is interpreted as a
+        luminance image.
+    colormap : tuple (2,) of str, vispy.color.Colormap
+        The first is the name of the current colormap, and the second value is
+        the colormap. Colormaps are used for luminance images, if the image is
+        multichannel the colormap is ignored.
+    colormaps : tuple of str
+        Names of the available colormaps.
+    clim : list (2,) of float
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If the image is multichannel the clim is ignored.
+    clim_range : list (2,) of float
+        Range for the color limits for luminace images. If the image is
+        multichannel the clim_range is ignored.
+    interpolation : str
+        Interpolation mode used by vispy. Must be one of our supported modes.
+
+    Extended Summary
+    ----------
+    _data_view : array (N, M), (N, M, 3), or (N, M, 4)
+        Image data for the currently viewer slice. Must be 2D image data, but
+        can be multidimensional for RGB or RGBA images if multidimensional is
+        `True`.
     """
 
     _colormaps = AVAILABLE_COLORMAPS
@@ -191,28 +224,6 @@ class Image(Layer):
             self._clim_range[1] = copy(clim[1])
         self._update_thumbnail()
         self.events.clim()
-
-    @property
-    def method(self):
-        """string: Selects method of rendering image in case of non-linear
-        transforms. Each method produces similar results, but may trade
-        efficiency and accuracy. If the transform is linear, this parameter
-        is ignored and a single quad is drawn around the area of the image.
-
-            * 'auto': Automatically select 'impostor' if the image is drawn
-              with a nonlinear transform; otherwise select 'subdivide'.
-            * 'subdivide': ImageVisual is represented as a grid of triangles
-              with texture coordinates linearly mapped.
-            * 'impostor': ImageVisual is represented as a quad covering the
-              entire view, with texture coordinates determined by the
-              transform. This produces the best transformation results, but may
-              be slow.
-        """
-        return self._node.method
-
-    @method.setter
-    def method(self, method):
-        self._node.method = method
 
     @property
     def interpolation(self):
