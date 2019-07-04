@@ -5,7 +5,7 @@ from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
 
-from .._base_layer import Layer
+from ..base import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event

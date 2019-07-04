@@ -1,6 +1,4 @@
 import numpy as np
-from copy import copy
-from ...util.event import Event
 from ..image import Image
 
 

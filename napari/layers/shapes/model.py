@@ -1,11 +1,10 @@
 import numpy as np
 from copy import copy, deepcopy
 from contextlib import contextmanager
-from scipy import ndimage as ndi
 
 from ...util.event import Event
 from ...util.misc import ensure_iterable
-from .._base_layer import Layer
+from ..base import Layer
 from ..._vispy.scene.visuals import Mesh, Markers, Compound
 from ..._vispy.scene.visuals import Line as VispyLine
 from vispy.color import get_color_names

@@ -4,8 +4,7 @@ import numpy as np
 import itertools
 from copy import copy, deepcopy
 from contextlib import contextmanager
-from scipy import ndimage as ndi
-from .._base_layer import Layer
+from ..base import Layer
 from ..._vispy.scene.visuals import Line, Markers, Compound
 from ...util.event import Event
 from ...util.misc import ensure_iterable

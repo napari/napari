@@ -8,7 +8,7 @@ from scipy import ndimage as ndi
 
 import vispy.color
 
-from .._base_layer import Layer
+from ..base import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 
 from ...util import is_multichannel
@@ -330,6 +330,7 @@ class Image(Layer):
                 image, (zoom_factor, zoom_factor, 1), prefilter=False, order=0
             )
             if image.shape[2] == 4:  # image is RGBA
+                colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
             else:  # image is RGB
                 alpha = np.full(
