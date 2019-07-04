@@ -32,7 +32,7 @@ class Image(Layer):
         not specified by user and the last dimension of the data has length
         3 or 4 it will be set as `True`. If `False` the image is
         interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, tuple, dict, optional
+    colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -66,7 +66,7 @@ class Image(Layer):
         specified by user and the last dimension of the data has length 3 or 4
         it will be set as `True`. If `False` the image is interpreted as a
         luminance image.
-    colormap : tuple (2,) of str, vispy.color.Colormap
+    colormap : 2-tuple of str, vispy.color.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
         multichannel the colormap is ignored.
@@ -176,7 +176,7 @@ class Image(Layer):
 
     @property
     def colormap(self):
-        """tuple of str, vispy.color.Colormap: colormap for luminance images.
+        """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
         """
         return self._colormap_name, self._node.cmap
 
@@ -310,7 +310,7 @@ class Image(Layer):
 
         Returns
         ----------
-        coord : tuple of int
+        coord : 2-tuple of int
             Position of cursor in image space.
         value : int, float, or sequence of int or float
             Value of the data at the coord.

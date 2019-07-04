@@ -46,8 +46,7 @@ class Pyramid(Image):
 
     @property
     def data(self):
-        """list: List of array image data, with base of pyramid at `0`.
-        """
+        """list of array: Image pyramid with base at `0`."""
         return self._data
 
     @data.setter
@@ -58,8 +57,7 @@ class Pyramid(Image):
 
     @property
     def data_level(self):
-        """int: Level of pyramid to show, with base of pyramid at `0`.
-        """
+        """int: Current level of pyramid."""
         return self._data_level
 
     @data_level.setter
@@ -74,8 +72,7 @@ class Pyramid(Image):
 
     @property
     def top_left(self):
-        """int: Location of top left pixel.
-        """
+        """2-tuple: Location of top left canvas pixel in image."""
         return self._top_left
 
     @top_left.setter
@@ -87,7 +84,6 @@ class Pyramid(Image):
 
     def _slice_data(self):
         """Determine the slice of image from the indices."""
-
         indices = list(self.indices)
         top_image = self.data[-1]
         # TODO: Change dims selection when dims model changes
@@ -131,11 +127,11 @@ class Pyramid(Image):
         return self._data_view
 
     def _get_shape(self):
-        """Shape of base of pyramid
+        """Shape of the base of pyramid.
 
         Returns
         ----------
-        shape : np.ndarry
+        shape : list
             Shape of base of pyramid
         """
         if self.multichannel:
