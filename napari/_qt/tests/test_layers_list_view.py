@@ -1,6 +1,6 @@
 import os
 from napari.components import LayersList
-from napari.components._layers_list.qtlayerlist import QtLayersList, QtDivider
+from napari._qt.qtlayerlist import QtLayersList, QtDivider
 from napari.util import app_context
 from napari.layers import Image
 import numpy as np

@@ -2,16 +2,13 @@ from qtpy.QtCore import Qt, QMimeData
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
     QFrame,
-    QCheckBox,
     QScrollArea,
     QApplication,
 )
 from qtpy.QtGui import QDrag
 import numpy as np
-from ...layers import create_qt_properties
+from .util import create_qt_properties
 
 
 class QtLayersList(QScrollArea):
