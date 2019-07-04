@@ -5,26 +5,80 @@ from .._image_layer import Image
 
 
 class Pyramid(Image):
-    """Image pyramid layer.
+    """Pyramid layer.
 
     Parameters
     ----------
     pyramid : list
-        List of np.ndarry image data, with base of pyramid at `0`.
-    meta : dict, optional
+        Pyramid data. List of array like image date. Each image can be N
+        dimensional. If the last dimensions of the images have length 3
+        or 4 they can be interpreted as RGB or RGBA if multichannel is
+        `True`.
+    metadata : dict, optional
         Image metadata.
     multichannel : bool, optional
-        Whether the image is multichannel. Guesses if None.
+        Whether the image is multichannel RGB or RGBA if multichannel. If
+        not specified by user and the last dimension of the data has length
+        3 or 4 it will be set as `True`. If `False` the image is
+        interpreted as a luminance image.
+    colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
+        Colormap to use for luminance images. If a string must be the name
+        of a supported colormap from vispy or matplotlib. If a tuple the
+        first value must be a string to assign as a name to a colormap and
+        the second item must be a Colormap. If a dict the key must be a
+        string to assign as a name to a colormap and the value must be a
+        Colormap.
+    clim : list (2,), optional
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image.
+    clim_range : list (2,), optional
+        Range for the color limits. If not passed is be calculated as the
+        min and max of the images. Passing a value prevents this calculation
+        which can be useful when working with very large datasets that are
+        dynamically loaded.
+    interpolation : str, optional
+        Interpolation mode used by vispy. Must be one of our supported
+        modes.
     name : str, keyword-only
         Name of the layer.
-    clim_range : list | array | None
-        Length two list or array with the default color limit range for the
-        image. If not passed will be calculated as the min and max of the
-        image. Passing a value prevents this calculation which can be
-        useful when working with very large datasets that are dynamically
-        loaded.
-    **kwargs : dict
-        Parameters that will be translated to metadata.
+
+    Attributes
+    ----------
+    data : list
+        Pyramid data. List of array like image date. Each image can be N
+        dimensional. If the last dimensions of the images have length 3
+        or 4 they can be interpreted as RGB or RGBA if multichannel is `True`.
+    metadata : dict
+        Image metadata.
+    multichannel : bool
+        Whether the images are multichannel RGB or RGBA if multichannel. If not
+        specified by user and the last dimension of the data has length 3 or 4
+        it will be set as `True`. If `False` the image is interpreted as a
+        luminance image.
+    colormap : 2-tuple of str, vispy.color.Colormap
+        The first is the name of the current colormap, and the second value is
+        the colormap. Colormaps are used for luminance images, if the images
+        are multichannel the colormap is ignored.
+    colormaps : tuple of str
+        Names of the available colormaps.
+    clim : list (2,) of float
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If the image are multichannel the clim is ignored.
+    clim_range : list (2,) of float
+        Range for the color limits for luminace images. If the image are
+        multichannel the clim_range is ignored.
+    interpolation : str
+        Interpolation mode used by vispy. Must be one of our supported modes.
+
+    Extended Summary
+    ----------
+    _data_view : array (N, M), (N, M, 3), or (N, M, 4)
+        Image data for the currently viewer slice. Must be 2D image data, but
+        can be multidimensional for RGB or RGBA images if multidimensional is
+        `True`.
+    _data_level : int
+        Level of the currently viewed slice from the pyramid
     """
 
     def __init__(self, pyramid, *args, **kwargs):
