@@ -11,7 +11,7 @@ from vispy.color import get_color_names
 from ._constants import Mode, Box, BACKSPACE
 from .shape_list import ShapeList
 from .shape_util import create_box, point_to_lines, slice_by_plane
-from .shapes import Rectangle, Ellipse, Line, Path, Polygon
+from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
 
 
 class Shapes(Layer):
