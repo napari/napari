@@ -1,6 +1,5 @@
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QWidget, QGridLayout, QRadioButton, QSizePolicy
-from typing import Union
+from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
 
 from ..._qt import QHRangeSlider
 from .model import Dims

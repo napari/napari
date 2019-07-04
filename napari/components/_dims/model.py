@@ -1,6 +1,5 @@
-import numpy as np
 from copy import copy
-from typing import Union, Tuple, Iterable, Sequence
+from typing import Union, Sequence
 
 from ._constants import DimsMode
 from ...util.event import EmitterGroup
