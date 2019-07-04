@@ -1,15 +1,4 @@
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QFrame,
-    QCheckBox,
-)
-
-from .... import resources
+from qtpy.QtWidgets import QHBoxLayout, QPushButton, QFrame
 
 
 class QtLayersButtons(QFrame):

@@ -1,6 +1,6 @@
-from qtpy.QtWidgets import QHBoxLayout, QStackedWidget, QWidget
+from qtpy.QtWidgets import QStackedWidget, QWidget
 from qtpy.QtCore import QSize
-from ....layers import create_qt_controls
+from ..util import create_qt_controls
 
 
 class QtControls(QStackedWidget):
