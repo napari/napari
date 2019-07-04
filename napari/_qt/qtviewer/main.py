@@ -8,7 +8,7 @@ from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from napari._qt.qtdims import QtDims
-from ...components._layers_list.view import QtLayersList
+from ...components._layers_list.qtlayerlist import QtLayersList
 from ...resources import resources_dir
 from ...util.theme import template
 from ...util.misc import guess_multichannel
