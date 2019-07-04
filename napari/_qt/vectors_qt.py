@@ -1,14 +1,7 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QLabel,
-    QComboBox,
-    QDoubleSpinBox,
-    QSpinBox,
-    QGridLayout,
-)
-import numpy as np
+from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox
 
-from ..._base_layer import QtLayerProperties
+from .base_qt import QtLayerProperties
 
 
 class QtVectorsProperties(QtLayerProperties):

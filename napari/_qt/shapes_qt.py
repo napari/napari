@@ -5,16 +5,14 @@ from qtpy.QtWidgets import (
     QButtonGroup,
     QVBoxLayout,
     QRadioButton,
-    QFrame,
     QPushButton,
-    Qlabel,
+    QLabel,
     QComboBox,
     QSlider,
-    QCheckBox,
 )
 
-from ..._base_layer import QtLayerControls, QtLayerProperties
-from .._constants import Mode
+from .base_qt import QtLayerControls, QtLayerProperties
+from ..layers.shapes._constants import Mode
 
 
 class QtShapesControls(QtLayerControls):

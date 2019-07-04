@@ -1,12 +1,17 @@
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
+    QLabel,
+    QComboBox,
+    QSlider,
+    QCheckBox,
     QButtonGroup,
     QVBoxLayout,
     QRadioButton,
-    QFrame,
     QPushButton,
 )
-from ..._base_layer import QtLayerControls
-from .._constants import Mode
+
+from .base_qt import QtLayerControls, QtLayerProperties
+from ..layers.points._constants import Mode, Symbol
 
 
 class QtPointsControls(QtLayerControls):
@@ -107,15 +112,6 @@ class QtDeletePointsButton(QPushButton):
         self.setFixedHeight(28)
         self.setToolTip('Delete selected')
         self.clicked.connect(self.layer.remove_selected)
-
-
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QCheckBox
-from collections import Iterable
-import numpy as np
-
-from ..._base_layer import QtLayerProperties
-from .._constants import Symbol
 
 
 class QtPointsProperties(QtLayerProperties):

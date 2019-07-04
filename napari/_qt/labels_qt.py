@@ -3,10 +3,8 @@ from qtpy.QtWidgets import (
     QButtonGroup,
     QVBoxLayout,
     QRadioButton,
-    QFrame,
     QWidget,
     QPushButton,
-    QComboBox,
     QSlider,
     QCheckBox,
     QLabel,
@@ -16,9 +14,8 @@ from qtpy.QtCore import Qt
 
 import numpy as np
 from collections import Iterable
-from ..._base_layer import QtLayerProperties
-from .._constants import Mode
-from ..._base_layer import QtLayerControls
+from .base_qt import QtLayerControls, QtLayerProperties
+from ..layers.labels._constants import Mode
 
 
 class QtLabelsControls(QtLayerControls):
