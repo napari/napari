@@ -1,1 +1,1 @@
-from .model import Pyramid
+from .pyramid import Pyramid

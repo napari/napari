@@ -1,1 +1,1 @@
-from .model import Shapes
+from .shapes import Shapes

@@ -1,1 +1,1 @@
-from .model import Labels
+from .labels import Labels

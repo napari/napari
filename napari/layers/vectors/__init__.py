@@ -1,1 +1,1 @@
-from .model import Vectors
+from .vectors import Vectors

@@ -1,1 +1,1 @@
-from .model import Points
+from .points import Points

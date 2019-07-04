@@ -1,1 +1,1 @@
-from .model import Image
+from .image import Image
