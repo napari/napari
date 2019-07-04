@@ -32,7 +32,7 @@ class Image(Layer):
         not specified by user and the last dimension of the data has length
         3 or 4 it will be set as `True`. If `False` the image is
         interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
+    colormap : str, vispy.Color.Colormap, tuple, dict, optional
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
