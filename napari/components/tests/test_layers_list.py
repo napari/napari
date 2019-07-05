@@ -1,13 +1,13 @@
-from napari.components import LayersList
+from napari.components import LayerList
 from napari.layers import Image
 import numpy as np
 
 
 def test_empty_layers_list():
     """
-    Test instantiating an empty LayersList object
+    Test instantiating an empty LayerList object
     """
-    layers = LayersList()
+    layers = LayerList()
 
     assert len(layers) == 0
 
@@ -16,7 +16,7 @@ def test_adding_layer():
     """
     Test adding a Layer
     """
-    layers = LayersList()
+    layers = LayerList()
     layer = Image(np.random.random((10, 10)))
     layers.append(layer)
 
@@ -27,7 +27,7 @@ def test_removing_layer():
     """
     Test removing a Layer
     """
-    layers = LayersList()
+    layers = LayerList()
     layer = Image(np.random.random((10, 10)))
     layers.append(layer)
     layers.remove(layer)
@@ -39,7 +39,7 @@ def test_indexing():
     """
     Test indexing into a LayerList
     """
-    layers = LayersList()
+    layers = LayerList()
     layer = Image(np.random.random((10, 10)), name='image')
     layers.append(layer)
 
@@ -51,7 +51,7 @@ def test_insert():
     """
     Test inserting into a LayerList
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)), name='image_a')
     layer_b = Image(np.random.random((15, 15)), name='image_b')
     layers.append(layer_a)
@@ -64,7 +64,7 @@ def test_get_index():
     """
     Test getting indexing from LayerList
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)), name='image_a')
     layer_b = Image(np.random.random((15, 15)), name='image_b')
     layers.append(layer_a)
@@ -80,7 +80,7 @@ def test_reordering():
     """
     Test indexing into a LayerList by name
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)), name='image_a')
     layer_b = Image(np.random.random((15, 15)), name='image_b')
     layer_c = Image(np.random.random((15, 15)), name='image_c')
@@ -105,7 +105,7 @@ def test_naming():
     """
     Test unique naming in LayerList
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)), name='img')
     layer_b = Image(np.random.random((15, 15)), name='img')
     layers.append(layer_a)
@@ -124,7 +124,7 @@ def test_selection():
     """
     Test only last added is selected.
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)))
     layers.append(layer_a)
     assert layers[0].selected == True
@@ -148,7 +148,7 @@ def test_unselect_all():
     """
     Test unselecting
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)))
     layer_b = Image(np.random.random((15, 15)))
     layer_c = Image(np.random.random((15, 15)))
@@ -169,7 +169,7 @@ def test_remove_selected():
     """
     Test removing selected layers
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)))
     layer_b = Image(np.random.random((15, 15)))
     layer_c = Image(np.random.random((15, 15)))
@@ -220,7 +220,7 @@ def test_move_selected():
     """
     Test removing selected layers
     """
-    layers = LayersList()
+    layers = LayerList()
     layer_a = Image(np.random.random((10, 10)))
     layer_b = Image(np.random.random((15, 15)))
     layer_c = Image(np.random.random((15, 15)))

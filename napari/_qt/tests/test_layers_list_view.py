@@ -1,5 +1,5 @@
 import os
-from napari.components import LayersList
+from napari.components import LayerList
 from napari._qt.qt_layerlist import QtLayersList, QtDivider
 from napari.util import app_context
 from napari.layers import Image
@@ -16,7 +16,7 @@ def check_layout_layers(layout, layers):
     ----------
     layout : QLayout
         Layout to test
-    layers : napari.components.LayersList
+    layers : napari.components.LayerList
         LayersList to compare to
 
     Returns
@@ -78,7 +78,7 @@ def test_creating_empty_view():
     Test creating LayerList view.
     """
     with app_context():
-        layers = LayersList()
+        layers = LayerList()
         view = QtLayersList(layers)
 
         # Check that the layers model has been appended to the layers view
@@ -95,7 +95,7 @@ def test_adding_layers():
     Test adding layers.
     """
     with app_context():
-        layers = LayersList()
+        layers = LayerList()
         view = QtLayersList(layers)
 
         # Check that new layer and divider get added to vbox_layout
@@ -122,7 +122,7 @@ def test_removing_layers():
     Test removing layers.
     """
     with app_context():
-        layers = LayersList()
+        layers = LayerList()
         view = QtLayersList(layers)
 
         layer_a = Image(np.random.random((10, 10)))
@@ -162,7 +162,7 @@ def test_reordering_layers():
     Test reordering layers.
     """
     with app_context():
-        layers = LayersList()
+        layers = LayerList()
         view = QtLayersList(layers)
 
         layer_a = Image(np.random.random((10, 10)), name='image_a')

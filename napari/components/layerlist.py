@@ -32,7 +32,7 @@ def _reorder(event):
         layers[i]._order = -i
 
 
-class LayersList(ListModel):
+class LayerList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Attributes

@@ -3,7 +3,7 @@ from math import inf
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
 from .dims import Dims
-from .layerlist import LayersList
+from .layerlist import LayerList
 from .. import layers
 from ..util.event import EmitterGroup, Event
 from ..util.theme import palettes
@@ -17,7 +17,7 @@ class ViewerModel:
     ----------
     window : Window
         Parent window.
-    layers : LayersList
+    layers : LayerList
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
@@ -54,7 +54,7 @@ class ViewerModel:
         self.dims = Dims(2)
         self.dims._set_2d_viewing()
 
-        self.layers = LayersList()
+        self.layers = LayerList()
 
         self._status = 'Ready'
         self._help = ''
