@@ -1,2 +1,2 @@
 from .misc import is_multichannel, segment_normal
-from .app import gui_qt
+from .qt_event_loop import gui_qt
