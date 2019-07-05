@@ -8,7 +8,7 @@ from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
 from .qt_dims import QtDims
-from .qt_layerlist import QtLayersList
+from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
 from ..util.misc import guess_multichannel
@@ -68,7 +68,7 @@ class QtViewer(QSplitter):
 
         right = QWidget()
         right_layout = QVBoxLayout()
-        self.layers = QtLayersList(self.viewer.layers)
+        self.layers = QtLayerList(self.viewer.layers)
         right_layout.addWidget(self.layers)
         self.buttons = QtLayersButtons(viewer)
         right_layout.addWidget(self.buttons)

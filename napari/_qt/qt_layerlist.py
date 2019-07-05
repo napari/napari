@@ -11,7 +11,7 @@ import numpy as np
 from .util import create_qt_properties
 
 
-class QtLayersList(QScrollArea):
+class QtLayerList(QScrollArea):
     def __init__(self, layers):
         super().__init__()
 
