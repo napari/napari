@@ -1,1 +1,1 @@
-from .model import LayersList
+from .layers_list import LayersList
