@@ -7,8 +7,8 @@ from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-from napari._qt.qtdims import QtDims
-from napari._qt.qtlayerlist import QtLayersList
+from napari._qt.qt_dims import QtDims
+from napari._qt.qt_layers_list import QtLayersList
 from ...resources import resources_dir
 from ...util.theme import template
 from ...util.misc import guess_multichannel

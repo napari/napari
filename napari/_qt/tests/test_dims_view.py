@@ -1,6 +1,6 @@
 import os
 from napari.components import Dims
-from napari._qt.qtdims import QtDims
+from napari._qt.qt_dims import QtDims
 from napari.util import app_context
 
 os.environ['NAPARI_TEST'] = '1'
