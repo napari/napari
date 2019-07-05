@@ -8,7 +8,7 @@ with warnings.catch_warnings():
     )
     from .viewer import Viewer
 
-from ._view import view
+from .view_function import view
 
 from ._version import get_versions
 
