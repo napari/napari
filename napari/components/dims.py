@@ -2,7 +2,7 @@ from copy import copy
 from typing import Union, Sequence
 
 from .dims_constants import DimsMode
-from ...util.event import EmitterGroup
+from ..util.event import EmitterGroup
 
 
 class Dims:

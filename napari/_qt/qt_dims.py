@@ -2,8 +2,8 @@ from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
 
 from . import QHRangeSlider
-from ..components._dims.dims import Dims
-from ..components._dims.dims_constants import DimsMode
+from ..components.dims import Dims
+from ..components.dims_constants import DimsMode
 
 
 class QtDims(QWidget):

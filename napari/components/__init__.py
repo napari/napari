@@ -15,4 +15,4 @@ ViewerModel
 """
 from ._viewer import ViewerModel
 from ._layers_list import LayersList
-from ._dims import Dims
+from .dims import Dims
