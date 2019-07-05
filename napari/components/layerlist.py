@@ -1,10 +1,7 @@
-import weakref
-from collections.abc import Iterable, Sequence
+from ..layers import Layer
 
-from napari.layers import Layer
-
-from napari.util.naming import inc_name_count
-from napari.util.list import ListModel
+from ..util.naming import inc_name_count
+from ..util.list import ListModel
 
 
 def _add(event):

@@ -1,4 +1,4 @@
-"""The elements module provides the public-facing GUI widgets, windows,
+"""napari.components provides the public-facing models for widgets
 and other utilities that the user will be able to programmatically interact
 with.
 
