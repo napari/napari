@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 
-from .base_qt import QtLayerControls, QtLayerProperties
+from .qt_base_layer import QtLayerControls, QtLayerProperties
 from ..layers.points._constants import Mode, Symbol
 
 

@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QHBoxLayout
 from . import QVRangeSlider
-from .base_qt import QtLayerControls, QtLayerProperties
+from .qt_base_layer import QtLayerControls, QtLayerProperties
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 from ..layers.image._constants import Interpolation

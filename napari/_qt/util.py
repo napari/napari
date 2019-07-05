@@ -1,10 +1,10 @@
-from .base_qt import QtLayerProperties, QtLayerControls
-from .image_qt import QtImageProperties, QtImageControls
-from .points_qt import QtPointsProperties, QtPointsControls
-from .vectors_qt import QtVectorsProperties
-from .shapes_qt import QtShapesProperties, QtShapesControls
-from .labels_qt import QtLabelsProperties, QtLabelsControls
-from .image_qt import (
+from .qt_base_layer import QtLayerProperties, QtLayerControls
+from .qt_image_layer import QtImageProperties, QtImageControls
+from .qt_points_layer import QtPointsProperties, QtPointsControls
+from .qt_vectors_layer import QtVectorsProperties
+from .qt_shapes_layer import QtShapesProperties, QtShapesControls
+from .qt_labels_layer import QtLabelsProperties, QtLabelsControls
+from .qt_image_layer import (
     QtImageProperties as QtPyramidProperties,
     QtImageControls as QtPyramidControls,
 )

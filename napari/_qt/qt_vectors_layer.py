@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox
 
-from .base_qt import QtLayerProperties
+from .qt_base_layer import QtLayerProperties
 
 
 class QtVectorsProperties(QtLayerProperties):
