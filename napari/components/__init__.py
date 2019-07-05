@@ -1,16 +1,18 @@
-"""The elements module provides the public-facing GUI widgets, windows,
+"""napari.components provides the public-facing models for widgets
 and other utilities that the user will be able to programmatically interact
 with.
 
 Classes
 -------
-Window
-    Window containing file menus, toolbars, and viewers.
+Dims
+    Current indices along each data dimension, together with which dimensions
+    are being displayed, projected, sliced...
+LayerList
+    List of layers currently present in the viewer.
 ViewerModel
     Data viewer displaying the currently rendered scene and
     layer-related controls.
 """
-from ._window import Window, QtApplication
-from ._viewer import ViewerModel
-from ._layers_list import LayersList
-from ._dims import Dims
+from .viewer_model import ViewerModel
+from .layerlist import LayerList
+from .dims import Dims
