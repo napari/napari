@@ -290,7 +290,7 @@ class Vectors(Layer):
         for v in downsampled:
             start = v[0]
             stop = v[1]
-            step = np.ceil(np.max(abs(stop - start)))
+            step = int(np.ceil(np.max(abs(stop - start))))
             x_vals = np.linspace(start[0], stop[0], step)
             y_vals = np.linspace(start[1], stop[1], step)
             for x, y in zip(x_vals, y_vals):
