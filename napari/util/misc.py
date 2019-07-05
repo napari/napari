@@ -216,6 +216,34 @@ def segment_normal_vector(a, b):
     return unit_norm
 
 
+def slice_image(data, indices, multichannel=False):
+    """Determine the slice of image from the indices.
+
+    Parameters
+    ----------
+    data : array
+        Image data array to be sliced.
+    indices : tuple
+        Indices to slice array at.
+    multichannel : bool, optional
+        Flag if image is multichannel, for example RGB or RGBA.
+
+    Returns
+    -------
+    data_view : array
+        Sliced image data.
+    """
+    shape = data.shape
+    if multichannel:
+        shape = shape[:-1]
+
+    indices = list(indices)
+    indices[:-2] = np.clip(indices[:-2], 0, np.subtract(shape[:-2], 1))
+    data_view = np.asarray(data[tuple(indices)])
+
+    return data_view
+
+
 class StringEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value

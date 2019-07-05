@@ -57,7 +57,7 @@ class Layer(VisualWrapper, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
-        self._indices = (0, 0)
+        self._indices = (slice(None, None, None), slice(None, None, None))
         self._position = (0, 0)
         self.coordinates = (0, 0)
         self._thumbnail_shape = (32, 32, 4)
@@ -137,12 +137,13 @@ class Layer(VisualWrapper, ABC):
         """Insert the cursor position (x, y) into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
-        transform = self._node.canvas.scene.node_transform(self._node)
-        position = transform.map(list(self.position))[:2]
-        coords = list(self.indices)
-        coords[-2] = position[1]
-        coords[-1] = position[0]
-        self.coordinates = tuple(coords)
+        if self._node.canvas is not None:
+            transform = self._node.canvas.scene.node_transform(self._node)
+            position = transform.map(list(self.position))[:2]
+            coords = list(self.indices)
+            coords[-2] = position[1]
+            coords[-1] = position[0]
+            self.coordinates = tuple(coords)
 
     @property
     @abstractmethod

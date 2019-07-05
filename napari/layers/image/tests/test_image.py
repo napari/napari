@@ -14,6 +14,7 @@ def test_random_image():
     assert layer.shape == shape
     assert layer.range == tuple((0, m, 1) for m in shape)
     assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
 
 
 def test_all_zeros_image():
@@ -25,6 +26,7 @@ def test_all_zeros_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
 
 
 def test_integer_image():
@@ -36,6 +38,7 @@ def test_integer_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
 
 
 def test_3D_image():
@@ -47,6 +50,7 @@ def test_3D_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
 
 
 def test_4D_image():
@@ -58,6 +62,7 @@ def test_4D_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
 
 
 def test_rgb_image():
@@ -69,6 +74,7 @@ def test_rgb_image():
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
     assert layer.multichannel == True
+    assert layer._data_view.shape == shape[-3:]
 
 
 def test_rgba_image():
@@ -80,6 +86,7 @@ def test_rgba_image():
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
     assert layer.multichannel == True
+    assert layer._data_view.shape == shape[-3:]
 
 
 def test_non_rgb_image():
@@ -91,6 +98,7 @@ def test_non_rgb_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
 
 
 def test_non_multichannel_image():
@@ -104,37 +112,42 @@ def test_non_multichannel_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
 
 
-# TEST FAILS AS TRIGGERS REFRESH
-# def test_changing_image_data():
-#     """Test changing Image data."""
-#     shape_a = (10, 15)
-#     shape_b = (20, 12)
-#     data_a = np.random.random(shape_a)
-#     data_b = np.random.random(shape_b)
-#     layer = Image(data_a)
-#     layer.data = data_b
-#     assert np.all(layer.data == data_b)
-#     assert layer.ndim == len(shape_b)
-#     assert layer.shape == shape_b
-#     assert layer.range == tuple((0, m, 1) for m in shape_b)
-#     assert layer.multichannel == False
+def test_changing_image():
+    """Test changing Image data."""
+    shape_a = (10, 15)
+    shape_b = (20, 12)
+    data_a = np.random.random(shape_a)
+    data_b = np.random.random(shape_b)
+    layer = Image(data_a)
+    layer.data = data_b
+    assert np.all(layer.data == data_b)
+    assert layer.ndim == len(shape_b)
+    assert layer.shape == shape_b
+    assert layer.range == tuple((0, m, 1) for m in shape_b)
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape_b[-2:]
 
-# TEST FAILS AS TRIGGERS REFRESH
-# def test_changing_image_dims():
-#     """Test changing Image data."""
-#     shape_a = (10, 15)
-#     shape_b = (20, 12, 6)
-#     data_a = np.random.random(shape_a)
-#     data_b = np.random.random(shape_b)
-#     layer = Image(data_a)
-#     layer.data = data_b
-#     assert np.all(layer.data == data_b)
-#     assert layer.ndim == len(shape_b)
-#     assert layer.shape == shape_b
-#     assert layer.range == tuple((0, m, 1) for m in shape_b)
-#     assert layer.multichannel == False
+
+def test_changing_image_dims():
+    """Test changing Image data including dimensionality."""
+    shape_a = (10, 15)
+    shape_b = (20, 12, 6)
+    data_a = np.random.random(shape_a)
+    data_b = np.random.random(shape_b)
+    layer = Image(data_a)
+
+    # Prep indices for swtich to 3D
+    layer._indices = (0,) + layer._indices
+    layer.data = data_b
+    assert np.all(layer.data == data_b)
+    assert layer.ndim == len(shape_b)
+    assert layer.shape == shape_b
+    assert layer.range == tuple((0, m, 1) for m in shape_b)
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape_b[-2:]
 
 
 def test_name():
@@ -256,14 +269,13 @@ def test_metadata():
     assert layer.metadata == {'unit': 'cm'}
 
 
-# NOTE VALUE NOT ACTUALLY COMPUTED ON DATA AS SLICING HAS NOT HAPPENED
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     data = np.random.random((10, 15))
     layer = Image(data)
     coord, value = layer.get_value()
     assert np.all(coord == [0, 0])
-    assert value == 0
+    assert value == data[0, 0]
 
 
 def test_message():
@@ -275,7 +287,6 @@ def test_message():
     assert type(msg) == str
 
 
-# NOTE THUMBNAIL NOT ACTUALLY COMPUTED ON DATA AS SLICING HAS NOT HAPPENED
 def test_thumbnail():
     """Test the image thumbnail for square data."""
     data = np.random.random((30, 30))
@@ -284,7 +295,6 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
-# NOTE XML NOT ACTUALLY GENERATED ON DATA AS SLICING HAS NOT HAPPENED
 def test_xml_list():
     """Test the xml generation."""
     data = np.random.random((15, 30))

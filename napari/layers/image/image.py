@@ -12,6 +12,7 @@ from ...util.misc import (
     is_multichannel,
     calc_data_range,
     increment_unnamed_colormap,
+    slice_image,
 )
 from ...util.event import Event
 from ._constants import Interpolation, AVAILABLE_COLORMAPS
@@ -112,34 +113,44 @@ class Image(Layer):
         self.events.add(clim=Event, colormap=Event, interpolation=Event)
 
         with self.freeze_refresh():
+            # Set data
             self._data = image
             self.metadata = metadata
             self.multichannel = multichannel
+
             # Intitialize image views and thumbnails with zeros
-            self._data_view = np.zeros(
-                (1, 1) + (self.shape[-1],) * self.multichannel
-            )
+            if self.multichannel:
+                self._data_view = np.zeros((1, 1) + (self.shape[-1],))
+            else:
+                self._data_view = np.zeros((1, 1))
             self._data_thumbnail = self._data_view
 
+            # Set clims and colormaps
             self._colormap_name = ''
             self._clim_msg = ''
-
             if clim_range is None:
                 self._clim_range = calc_data_range(self.data)
             else:
                 self._clim_range = clim_range
-
             if clim is None:
                 self.clim = self._clim_range
             else:
                 self.clim = clim
-
             self.colormap = colormap
             self.interpolation = interpolation
 
-        # update flags
-        self._need_display_update = False
-        self._need_visual_update = False
+            # Set update flags
+            self._need_display_update = False
+            self._need_visual_update = False
+
+            # Re intitialize indices depending on image dims
+            self._indices = (0,) * (self.ndim - 2) + (
+                slice(None, None, None),
+                slice(None, None, None),
+            )
+
+            # Trigger generation of view slice and thumbnail
+            self._set_view_slice()
 
     @property
     def data(self):
@@ -245,29 +256,20 @@ class Image(Layer):
         self._node.interpolation = interpolation.value
         self.events.interpolation()
 
-    def _slice_data(self):
-        """Determine the slice of data from the indices."""
-
-        indices = list(self.indices)
-        indices[:-2] = np.clip(
-            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
-        )
-        self._data_view = np.asarray(self.data[tuple(indices)])
-        self._data_thumbnail = self._data_view
-
-        return self._data_view
-
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        sliced_data = self._slice_data()
-
-        self._node.set_data(sliced_data)
+        self._data_view = slice_image(
+            self.data, self.indices, self.multichannel
+        )
+        self._node.set_data(self._data_view)
 
         self._need_visual_update = True
         self._update()
 
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
+
+        self._data_thumbnail = self._data_view
         self._update_thumbnail()
 
     def _update_thumbnail(self):
@@ -283,14 +285,18 @@ class Image(Layer):
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
+                if downsampled.dtype == np.uint8:
+                    colormapped = colormapped.astype(np.uint8)
             else:  # image is RGB
-                alpha = np.full(
-                    downsampled.shape[:2] + (1,),
-                    int(255 * self.opacity),
-                    dtype=np.uint8,
-                )
+                if downsampled.dtype == np.uint8:
+                    alpha = np.full(
+                        downsampled.shape[:2] + (1,),
+                        int(255 * self.opacity),
+                        dtype=np.uint8,
+                    )
+                else:
+                    alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
-            colormapped = colormapped.astype(np.uint8)
         else:
             downsampled = ndi.zoom(
                 image, zoom_factor, prefilter=False, order=0

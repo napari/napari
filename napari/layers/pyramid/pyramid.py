@@ -79,22 +79,28 @@ class Pyramid(Image):
         Level of the currently viewed slice from the pyramid
     """
 
+    _max_tile_shape = np.array([1600, 1600])
+
     def __init__(self, pyramid, *args, **kwargs):
 
-        super().__init__(pyramid[-1], *args, **kwargs)
-        self._data = pyramid
-        self._data_level = len(pyramid) - 1
+        with self.freeze_refresh():
+            self._data_level = 0
+            super().__init__(np.array([pyramid[-1]]), *args, **kwargs)
+            self._data = pyramid
+            self._data_level = len(pyramid) - 1
+            self._top_left = np.array([0, 0])
 
-        self._max_tile_shape = np.array([1600, 1600])
-        self._top_left = np.array([0, 0])
+            # TODO: Change dims selection when dims model changes
+            self.scale = self.level_downsamples[self.data_level, [-1, -2]]
 
-        if self.multichannel:
-            self._level_shapes = np.array([im.shape[:-1] for im in pyramid])
-        else:
-            self._level_shapes = np.array([im.shape for im in pyramid])
-        self._level_downsamples = self._level_shapes[0] / self._level_shapes
-        # TODO: Change dims selection when dims model changes
-        self.scale = self._level_downsamples[self.data_level, [-1, -2]]
+            # Re intitialize indices depending on image dims
+            self._indices = (0,) * (self.ndim - 2) + (
+                slice(None, None, None),
+                slice(None, None, None),
+            )
+
+            # Trigger generation of view slice and thumbnail
+            self._set_view_slice()
 
     @property
     def data(self):
@@ -118,9 +124,23 @@ class Pyramid(Image):
             return
         self._data_level = level
         # TODO: Change dims selection when dims model changes
-        self.scale = self._level_downsamples[self.data_level, [-1, -2]]
+        self.scale = self.level_downsamples[self.data_level, [-1, -2]]
         self._top_left = self.find_top_left()
         self.refresh()
+
+    @property
+    def level_shapes(self):
+        """list: Shapes of each level of the pyramid."""
+        if self.multichannel:
+            shapes = [im.shape[:-1] for im in self.data]
+        else:
+            shapes = [im.shape for im in self.data]
+        return shapes
+
+    @property
+    def level_downsamples(self):
+        """list: Downsample factors for each level of the pyramid."""
+        return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
     def top_left(self):
@@ -138,25 +158,26 @@ class Pyramid(Image):
         """Determine the slice of image from the indices."""
         indices = list(self.indices)
         top_image = self.data[-1]
+        top_image_shape = self.level_shapes[-1][:-2]
         # TODO: Change dims selection when dims model changes
-        rescale = self._level_downsamples[-1, :-2]
+        rescale = self.level_downsamples[-1, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
         indices[:-2] = np.clip(
-            indices[:-2], 0, np.subtract(top_image.shape[:-2], 1)
+            indices[:-2], 0, np.subtract(top_image_shape, 1)
         )
         self._data_thumbnail = np.asarray(top_image[tuple(indices)])
 
         indices = list(self.indices)
         # TODO: Change dims selection when dims model changes
-        rescale = self._level_downsamples[self.data_level, :-2]
+        rescale = self.level_downsamples[self.data_level, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
         indices[:-2] = np.clip(
             indices[:-2],
             0,
-            np.subtract(self.data[self.data_level].shape[:-2], 1),
+            np.subtract(self.level_shapes[self.data_level][:-2], 1),
         )
         if np.any(
-            self.data[self.data_level].shape[-2:] > self._max_tile_shape
+            self.level_shapes[self.data_level][-2:] > self._max_tile_shape
         ):
             slices = [
                 slice(
@@ -176,7 +197,17 @@ class Pyramid(Image):
             self.data[self.data_level][tuple(indices)]
         )
 
-        return self._data_view
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with."""
+        self._slice_data()
+        self._node.set_data(self._data_view)
+
+        self._need_visual_update = True
+        self._update()
+
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
+        self._update_thumbnail()
 
     def _get_shape(self):
         """Shape of the base of pyramid.
@@ -220,7 +251,7 @@ class Pyramid(Image):
 
         # Make sure pos in slice doesn't go off edge
         # TODO: Change dims selection when dims model changes
-        shape = self._level_shapes[self.data_level][-2:]
+        shape = self.level_shapes[self.data_level][-2:]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
         coord[-2:] = np.round(pos_in_slice * self.scale[:2]).astype(int)
 
@@ -251,7 +282,7 @@ class Pyramid(Image):
 
         # Find closed downsample level to diff
         # TODO: Change dims selection when dims model changes
-        ds = self._level_downsamples[:, -2:].max(axis=1)
+        ds = self.level_downsamples[:, -2:].max(axis=1)
         level = np.argmin(abs(np.log2(ds) - diff))
 
         return level
@@ -271,7 +302,7 @@ class Pyramid(Image):
         pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
 
         # TODO: Change dims selection when dims model changes
-        shape = self._level_shapes[0][-2:]
+        shape = self.level_shapes[0][-2:]
 
         # Clip according to the max image shape
         pos = [

@@ -13,6 +13,7 @@ def test_random_pyramid():
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.multichannel == False
+    assert layer._data_view.ndim == 2
 
 
 def test_3D_pyramid():
@@ -24,6 +25,7 @@ def test_3D_pyramid():
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.multichannel == False
+    assert layer._data_view.ndim == 2
 
 
 def test_non_uniform_3D_pyramid():
@@ -35,6 +37,7 @@ def test_non_uniform_3D_pyramid():
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.multichannel == False
+    assert layer._data_view.ndim == 2
 
 
 def test_rgb_pyramid():
@@ -46,6 +49,7 @@ def test_rgb_pyramid():
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
     assert layer.multichannel == True
+    assert layer._data_view.ndim == 3
 
 
 def test_3D_rgb_pyramid():
@@ -57,6 +61,7 @@ def test_3D_rgb_pyramid():
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
     assert layer.multichannel == True
+    assert layer._data_view.ndim == 3
 
 
 def test_non_rgb_image():
@@ -198,7 +203,6 @@ def test_metadata():
     assert layer.metadata == {'unit': 'cm'}
 
 
-# NOTE VALUE NOT ACTUALLY COMPUTED ON DATA AS SLICING HAS NOT HAPPENED
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     shapes = [(40, 20), (20, 10), (10, 5)]
@@ -206,7 +210,7 @@ def test_value():
     layer = Pyramid(data)
     coord, value = layer.get_value()
     assert np.all(coord == [0, 0])
-    assert value == 0
+    assert value == data[-1][0, 0]
 
 
 def test_message():
@@ -219,17 +223,15 @@ def test_message():
     assert type(msg) == str
 
 
-# NOTE THUMBNAIL NOT ACTUALLY COMPUTED ON DATA AS SLICING HAS NOT HAPPENED
 def test_thumbnail():
     """Test the image thumbnail for square data."""
-    shapes = [(40, 20), (20, 10), (10, 5)]
+    shapes = [(40, 40), (20, 20), (10, 10)]
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
-# NOTE XML NOT ACTUALLY GENERATED ON DATA AS SLICING HAS NOT HAPPENED
 def test_xml_list():
     """Test the xml generation."""
     shapes = [(40, 20), (20, 10), (10, 5)]
