@@ -2,11 +2,11 @@ import numpy as np
 from math import inf
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
-from .._dims import Dims
-from .._layers_list import LayersList
-from ... import layers
-from ...util.event import EmitterGroup, Event
-from ...util.theme import palettes
+from .dims import Dims
+from .layers_list import LayersList
+from .. import layers
+from ..util.event import EmitterGroup, Event
+from ..util.theme import palettes
 
 
 class ViewerModel:
