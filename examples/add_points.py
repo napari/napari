@@ -7,10 +7,10 @@ import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
 import napari
-from napari.util import app_context
+from napari.util import gui_qt
 
 
-with app_context():
+with gui_qt():
     # create the viewer window
     viewer = napari.Viewer()
 

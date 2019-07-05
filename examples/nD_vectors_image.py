@@ -6,11 +6,11 @@ which are vector projections centered on a pixel of the MxNxP grid
 """
 
 import napari
-from napari.util import app_context
+from napari.util import gui_qt
 
 import numpy as np
 
-with app_context():
+with gui_qt():
     # create the viewer and window
     viewer = napari.Viewer()
 

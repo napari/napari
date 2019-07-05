@@ -1,7 +1,7 @@
 import os
 from napari.components import LayerList
 from napari._qt.qt_layerlist import QtLayerList, QtDivider
-from napari.util import app_context
+from napari.util import gui_qt
 from napari.layers import Image
 import numpy as np
 
@@ -57,7 +57,7 @@ def test_divider():
     """
     Test creating the divider.
     """
-    with app_context():
+    with gui_qt():
         divider = QtDivider()
 
         # Check divider was created properly
@@ -77,7 +77,7 @@ def test_creating_empty_view():
     """
     Test creating LayerList view.
     """
-    with app_context():
+    with gui_qt():
         layers = LayerList()
         view = QtLayerList(layers)
 
@@ -94,7 +94,7 @@ def test_adding_layers():
     """
     Test adding layers.
     """
-    with app_context():
+    with gui_qt():
         layers = LayerList()
         view = QtLayerList(layers)
 
@@ -121,7 +121,7 @@ def test_removing_layers():
     """
     Test removing layers.
     """
-    with app_context():
+    with gui_qt():
         layers = LayerList()
         view = QtLayerList(layers)
 
@@ -161,7 +161,7 @@ def test_reordering_layers():
     """
     Test reordering layers.
     """
-    with app_context():
+    with gui_qt():
         layers = LayerList()
         view = QtLayerList(layers)
 

@@ -5,10 +5,10 @@ Change image shape and dims directly on the layer
 import numpy as np
 from skimage import data
 from napari import Viewer
-from napari.util import app_context
+from napari.util import gui_qt
 
 
-with app_context():
+with gui_qt():
     viewer = Viewer()
 
     # add data

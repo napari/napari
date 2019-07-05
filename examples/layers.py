@@ -6,10 +6,10 @@ using the layers swap method and remove one
 from skimage import data
 from skimage.color import rgb2gray
 from napari import view
-from napari.util import app_context
+from napari.util import gui_qt
 
 
-with app_context():
+with gui_qt():
     # create the viewer with several image layers
     viewer = view(
         astronaut=rgb2gray(data.astronaut()),

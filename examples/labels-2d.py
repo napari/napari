@@ -7,10 +7,10 @@ from skimage import data
 from skimage.color import rgb2gray
 from skimage.segmentation import slic
 import napari
-from napari.util import app_context
+from napari.util import gui_qt
 
 
-with app_context():
+with gui_qt():
     astro = data.astronaut()
 
     # initialise viewer with astro image

@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 from skimage import io
 
-from .util import app_context
+from .util import gui_qt
 from . import Viewer
 
 
@@ -24,7 +24,7 @@ def main():
         action='store_true',
     )
     args = parser.parse_args()
-    with app_context():
+    with gui_qt():
         v = Viewer()
         images = io.ImageCollection(args.images, conserve_memory=False)
         if args.layers:

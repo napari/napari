@@ -5,10 +5,10 @@ Display one 4-D image layer using the add_image API
 import dask.array as da
 import zarr
 import napari
-from napari.util import app_context
+from napari.util import gui_qt
 
 
-with app_context():
+with gui_qt():
     data = zarr.zeros((102_000, 200, 210), chunks=(100, 200, 210))
     data[53_000:53_100, 100:110, 110:120] = 1
 

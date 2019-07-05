@@ -4,10 +4,10 @@ Display one 4-D image layer using the add_image API
 
 from skimage import data
 import napari
-from napari.util import app_context
+from napari.util import gui_qt
 
 
-with app_context():
+with gui_qt():
     viewer = napari.Viewer()
     blobs = data.binary_blobs(
         length=128, blob_size_fraction=0.05, n_dim=2, volume_fraction=0.25
