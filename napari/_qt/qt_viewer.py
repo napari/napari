@@ -7,12 +7,12 @@ from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
 from vispy.scene import SceneCanvas, PanZoomCamera
 
-from napari._qt.qt_dims import QtDims
-from napari._qt.qt_layers_list import QtLayersList
-from ...resources import resources_dir
-from ...util.theme import template
-from ...util.misc import guess_multichannel
-from ...util.io import read
+from .qt_dims import QtDims
+from .qt_layers_list import QtLayersList
+from ..resources import resources_dir
+from ..util.theme import template
+from ..util.misc import guess_multichannel
+from ..util.io import read
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons

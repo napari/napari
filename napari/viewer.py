@@ -1,4 +1,4 @@
-from napari._qt.qtviewer import QtViewer
+from ._qt.qt_viewer import QtViewer
 from ._qt.qt_main_window import Window
 from .components import ViewerModel
 
