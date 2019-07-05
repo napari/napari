@@ -14,5 +14,5 @@ ViewerModel
     layer-related controls.
 """
 from ._viewer import ViewerModel
-from ._layers_list import LayersList
+from .layers_list import LayersList
 from .dims import Dims
