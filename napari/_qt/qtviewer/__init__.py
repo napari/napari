@@ -1,1 +1,1 @@
-from .main import QtViewer
+from .qt_viewer import QtViewer

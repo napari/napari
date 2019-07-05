@@ -14,8 +14,8 @@ from ...util.theme import template
 from ...util.misc import guess_multichannel
 from ...util.io import read
 
-from .controls import QtControls
-from .buttons import QtLayersButtons
+from .qt_controls import QtControls
+from .qt_layer_buttons import QtLayersButtons
 
 
 class QtViewer(QSplitter):
