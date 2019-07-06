@@ -8,90 +8,143 @@ class Pyramid(Image):
     Parameters
     ----------
     pyramid : list
-        List of np.ndarry image data, with base of pyramid at `0`.
-    meta : dict, optional
+        Pyramid data. List of array like image date. Each image can be N
+        dimensional. If the last dimensions of the images have length 3
+        or 4 they can be interpreted as RGB or RGBA if multichannel is
+        `True`.
+    metadata : dict, optional
         Image metadata.
     multichannel : bool, optional
-        Whether the image is multichannel. Guesses if None.
+        Whether the image is multichannel RGB or RGBA if multichannel. If
+        not specified by user and the last dimension of the data has length
+        3 or 4 it will be set as `True`. If `False` the image is
+        interpreted as a luminance image.
+    colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
+        Colormap to use for luminance images. If a string must be the name
+        of a supported colormap from vispy or matplotlib. If a tuple the
+        first value must be a string to assign as a name to a colormap and
+        the second item must be a Colormap. If a dict the key must be a
+        string to assign as a name to a colormap and the value must be a
+        Colormap.
+    clim : list (2,), optional
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image.
+    clim_range : list (2,), optional
+        Range for the color limits. If not passed is be calculated as the
+        min and max of the images. Passing a value prevents this calculation
+        which can be useful when working with very large datasets that are
+        dynamically loaded.
+    interpolation : str, optional
+        Interpolation mode used by vispy. Must be one of our supported
+        modes.
     name : str, keyword-only
         Name of the layer.
-    clim_range : list | array | None
-        Length two list or array with the default color limit range for the
-        image. If not passed will be calculated as the min and max of the
-        image. Passing a value prevents this calculation which can be
-        useful when working with very large datasets that are dynamically
-        loaded.
-    **kwargs : dict
-        Parameters that will be translated to metadata.
+
+    Attributes
+    ----------
+    data : list
+        Pyramid data. List of array like image date. Each image can be N
+        dimensional. If the last dimensions of the images have length 3
+        or 4 they can be interpreted as RGB or RGBA if multichannel is `True`.
+    metadata : dict
+        Image metadata.
+    multichannel : bool
+        Whether the images are multichannel RGB or RGBA if multichannel. If not
+        specified by user and the last dimension of the data has length 3 or 4
+        it will be set as `True`. If `False` the image is interpreted as a
+        luminance image.
+    colormap : 2-tuple of str, vispy.color.Colormap
+        The first is the name of the current colormap, and the second value is
+        the colormap. Colormaps are used for luminance images, if the images
+        are multichannel the colormap is ignored.
+    colormaps : tuple of str
+        Names of the available colormaps.
+    clim : list (2,) of float
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If the image are multichannel the clim is ignored.
+    clim_range : list (2,) of float
+        Range for the color limits for luminace images. If the image are
+        multichannel the clim_range is ignored.
+    interpolation : str
+        Interpolation mode used by vispy. Must be one of our supported modes.
+
+    Extended Summary
+    ----------
+    _data_view : array (N, M), (N, M, 3), or (N, M, 4)
+        Image data for the currently viewer slice. Must be 2D image data, but
+        can be multidimensional for RGB or RGBA images if multidimensional is
+        `True`.
+    _data_level : int
+        Level of the currently viewed slice from the pyramid
     """
 
-    def __init__(
-        self,
-        pyramid,
-        meta=None,
-        multichannel=None,
-        *,
-        name=None,
-        clim_range=None,
-        **kwargs,
-    ):
+    _max_tile_shape = np.array([1600, 1600])
 
-        self._pyramid = pyramid
-        self._pyramid_level = len(pyramid) - 1
+    def __init__(self, pyramid, *args, **kwargs):
 
-        super().__init__(
-            pyramid[self._pyramid_level],
-            meta=meta,
-            multichannel=multichannel,
-            name=name,
-            clim_range=clim_range,
-            **kwargs,
-        )
+        with self.freeze_refresh():
+            self._data_level = 0
+            super().__init__(np.array([pyramid[-1]]), *args, **kwargs)
+            self._data = pyramid
+            self._data_level = len(pyramid) - 1
+            self._top_left = np.array([0, 0])
 
-        self._max_tile_shape = np.array([1600, 1600])
-        self._top_left = np.array([0, 0])
+            # TODO: Change dims selection when dims model changes
+            self.scale = self.level_downsamples[self.data_level, [-1, -2]]
 
-        if self.multichannel:
-            self._image_shapes = np.array([im.shape[:-1] for im in pyramid])
-        else:
-            self._image_shapes = np.array([im.shape for im in pyramid])
-        self._image_downsamples = self._image_shapes[0] / self._image_shapes
-        # TODO: Change dims selection when dims model changes
-        self.scale = self._image_downsamples[self.pyramid_level, [-1, -2]]
+            # Re intitialize indices depending on image dims
+            self._indices = (0,) * (self.ndim - 2) + (
+                slice(None, None, None),
+                slice(None, None, None),
+            )
+
+            # Trigger generation of view slice and thumbnail
+            self._set_view_slice()
 
     @property
-    def pyramid(self):
-        """list: List of np.ndarry image data, with base of pyramid at `0`.
-        """
-        return self._pyramid
+    def data(self):
+        """list of array: Image pyramid with base at `0`."""
+        return self._data
 
-    @pyramid.setter
-    def pyramid(self, pyramid):
-        self._pyramid = pyramid
+    @data.setter
+    def data(self, data):
+        self._data = data
 
         self.refresh()
 
     @property
-    def pyramid_level(self):
-        """int: Level of pyramid to show, with base of pyramid at `0`.
-        """
-        return self._pyramid_level
+    def data_level(self):
+        """int: Current level of pyramid."""
+        return self._data_level
 
-    @pyramid_level.setter
-    def pyramid_level(self, level):
-        if self._pyramid_level == level:
+    @data_level.setter
+    def data_level(self, level):
+        if self._data_level == level:
             return
-        self._pyramid_level = level
+        self._data_level = level
         # TODO: Change dims selection when dims model changes
-        self.scale = self._image_downsamples[self.pyramid_level, [-1, -2]]
-        self._image = self.pyramid[self.pyramid_level]
+        self.scale = self.level_downsamples[self.data_level, [-1, -2]]
         self._top_left = self.find_top_left()
         self.refresh()
 
     @property
+    def level_shapes(self):
+        """list: Shapes of each level of the pyramid."""
+        if self.multichannel:
+            shapes = [im.shape[:-1] for im in self.data]
+        else:
+            shapes = [im.shape for im in self.data]
+        return shapes
+
+    @property
+    def level_downsamples(self):
+        """list: Downsample factors for each level of the pyramid."""
+        return np.divide(self.level_shapes[0], self.level_shapes)
+
+    @property
     def top_left(self):
-        """int: Location of top left pixel.
-        """
+        """2-tuple: Location of top left canvas pixel in image."""
         return self._top_left
 
     @top_left.setter
@@ -101,27 +154,31 @@ class Pyramid(Image):
         self._top_left = top_left
         self.refresh()
 
-    def _slice_image(self):
+    def _slice_data(self):
         """Determine the slice of image from the indices."""
-
         indices = list(self.indices)
-        top_image = self.pyramid[-1]
+        top_image = self.data[-1]
+        top_image_shape = self.level_shapes[-1][:-2]
         # TODO: Change dims selection when dims model changes
-        rescale = self._image_downsamples[-1, :-2]
+        rescale = self.level_downsamples[-1, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
         indices[:-2] = np.clip(
-            indices[:-2], 0, np.subtract(top_image.shape[:-2], 1)
+            indices[:-2], 0, np.subtract(top_image_shape, 1)
         )
-        self._image_thumbnail = np.asarray(top_image[tuple(indices)])
+        self._data_thumbnail = np.asarray(top_image[tuple(indices)])
 
         indices = list(self.indices)
         # TODO: Change dims selection when dims model changes
-        rescale = self._image_downsamples[self.pyramid_level, :-2]
+        rescale = self.level_downsamples[self.data_level, :-2]
         indices[:-2] = np.round(indices[:-2] / rescale).astype(int)
         indices[:-2] = np.clip(
-            indices[:-2], 0, np.subtract(self.image.shape[:-2], 1)
+            indices[:-2],
+            0,
+            np.subtract(self.level_shapes[self.data_level][:-2], 1),
         )
-        if np.any(self.image.shape[-2:] > self._max_tile_shape):
+        if np.any(
+            self.level_shapes[self.data_level][-2:] > self._max_tile_shape
+        ):
             slices = [
                 slice(
                     self._top_left[i],
@@ -136,21 +193,33 @@ class Pyramid(Image):
             self.translate = [0, 0]
         self._update_coordinates()
 
-        self._image_view = np.asarray(self.image[tuple(indices)])
+        self._data_view = np.asarray(
+            self.data[self.data_level][tuple(indices)]
+        )
 
-        return self._image_view
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with."""
+        self._slice_data()
+        self._node.set_data(self._data_view)
+
+        self._need_visual_update = True
+        self._update()
+
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
+        self._update_thumbnail()
 
     def _get_shape(self):
-        """Shape of base of pyramid
+        """Shape of the base of pyramid.
 
         Returns
         ----------
-        shape : np.ndarry
+        shape : list
             Shape of base of pyramid
         """
         if self.multichannel:
-            return self.pyramid[0].shape[:-1]
-        return self.pyramid[0].shape
+            return self.data[0].shape[:-1]
+        return self.data[0].shape
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -168,13 +237,13 @@ class Pyramid(Image):
         """
         coord = np.round(self.coordinates).astype(int)
         if self.multichannel:
-            shape = self._image_view.shape[:-1]
+            shape = self._data_view.shape[:-1]
         else:
-            shape = self._image_view.shape
+            shape = self._data_view.shape
 
         # TODO: Change dims selection when dims model changes
         coord[-2:] = np.clip(coord[-2:], 0, np.subtract(shape, 1))
-        value = self._image_view[tuple(coord[-2:])]
+        value = self._data_view[tuple(coord[-2:])]
 
         pos_in_slice = (
             self.coordinates[-2:] + self.translate[[1, 0]] / self.scale[:2]
@@ -182,13 +251,13 @@ class Pyramid(Image):
 
         # Make sure pos in slice doesn't go off edge
         # TODO: Change dims selection when dims model changes
-        shape = self._image_shapes[self.pyramid_level][-2:]
+        shape = self.level_shapes[self.data_level][-2:]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
         coord[-2:] = np.round(pos_in_slice * self.scale[:2]).astype(int)
 
         return coord, value
 
-    def compute_pyramid_level(self, size):
+    def compute_data_level(self, size):
         """Computed what level of the pyramid should be viewed given the
         current size of the requested field of view.
 
@@ -213,7 +282,7 @@ class Pyramid(Image):
 
         # Find closed downsample level to diff
         # TODO: Change dims selection when dims model changes
-        ds = self._image_downsamples[:, -2:].max(axis=1)
+        ds = self.level_downsamples[:, -2:].max(axis=1)
         level = np.argmin(abs(np.log2(ds) - diff))
 
         return level
@@ -233,7 +302,7 @@ class Pyramid(Image):
         pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
 
         # TODO: Change dims selection when dims model changes
-        shape = self._image_shapes[0][-2:]
+        shape = self.level_shapes[0][-2:]
 
         # Clip according to the max image shape
         pos = [
@@ -275,7 +344,7 @@ class Pyramid(Image):
             else:
                 v_str = f'{value:0.3}'
 
-        msg = f'{coord}, {self.pyramid_level}, {self.name}, value {v_str}'
+        msg = f'{coord}, {self.data_level}, {self.name}, value {v_str}'
         return msg
 
     def on_draw(self, event):
@@ -283,8 +352,8 @@ class Pyramid(Image):
         data is sent to the canvas or the camera is moved.
         """
         size = self._parent.camera.rect.size
-        pyramid_level = self.compute_pyramid_level(size)
-        if pyramid_level != self.pyramid_level:
-            self.pyramid_level = pyramid_level
+        data_level = self.compute_data_level(size)
+        if data_level != self.data_level:
+            self.data_level = data_level
         else:
             self.top_left = self.find_top_left()

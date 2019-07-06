@@ -57,7 +57,7 @@ class Layer(VisualWrapper, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
-        self._indices = (0, 0)
+        self._indices = (slice(None, None, None), slice(None, None, None))
         self._position = (0, 0)
         self.coordinates = (0, 0)
         self._thumbnail_shape = (32, 32, 4)
@@ -77,6 +77,8 @@ class Layer(VisualWrapper, ABC):
         )
         self.name = name
 
+        self.events.opacity.connect(lambda e: self._update_thumbnail())
+
     def __str__(self):
         """Return self.name
         """
@@ -88,7 +90,7 @@ class Layer(VisualWrapper, ABC):
 
     @classmethod
     def _basename(cls):
-        return f'{cls.__name__} 0'
+        return f'{cls.__name__}'
 
     @property
     def name(self):
@@ -135,12 +137,13 @@ class Layer(VisualWrapper, ABC):
         """Insert the cursor position (x, y) into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
-        transform = self._node.canvas.scene.node_transform(self._node)
-        position = transform.map(list(self.position))[:2]
-        coords = list(self.indices)
-        coords[-2] = position[1]
-        coords[-1] = position[0]
-        self.coordinates = tuple(coords)
+        if self._node.canvas is not None:
+            transform = self._node.canvas.scene.node_transform(self._node)
+            position = transform.map(list(self.position))[:2]
+            coords = list(self.indices)
+            coords[-2] = position[1]
+            coords[-1] = position[0]
+            self.coordinates = tuple(coords)
 
     @property
     @abstractmethod
@@ -189,7 +192,7 @@ class Layer(VisualWrapper, ABC):
         """list of 3-tuple of int: ranges of data for slicing specifed by
         (min, max, step).
         """
-        return [(0, max, 1) for max in self.shape]
+        return tuple((0, max, 1) for max in self.shape)
 
     @property
     def selected(self):
@@ -298,6 +301,10 @@ class Layer(VisualWrapper, ABC):
 
     @abstractmethod
     def _set_view_slice(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _update_thumbnail(self):
         raise NotImplementedError()
 
     def refresh(self):

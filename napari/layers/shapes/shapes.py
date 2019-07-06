@@ -283,7 +283,6 @@ class Shapes(Layer):
             )
 
             self.events.deselect.connect(lambda x: self._finish_drawing())
-            self.events.opacity.connect(lambda e: self._update_thumbnail())
             self.events.face_color.connect(lambda e: self._update_thumbnail())
             self.events.edge_color.connect(lambda e: self._update_thumbnail())
 

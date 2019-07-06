@@ -30,7 +30,7 @@ with napari.gui_qt():
         blobs = data.binary_blobs(
             length=128, blob_size_fraction=0.05, n_dim=2, volume_fraction=0.25
         ).astype(float)
-        viewer.layers[0].image = blobs
+        viewer.layers[0].data = blobs
 
     custom_key_bindings = {'a': accept_image, 'r': reject_image}
     viewer.key_bindings = custom_key_bindings

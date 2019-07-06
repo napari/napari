@@ -1,6 +1,6 @@
 from enum import auto
-
 from ...util.misc import StringEnum
+from ...util.colormaps import AVAILABLE_COLORMAPS
 
 
 class Interpolation(StringEnum):

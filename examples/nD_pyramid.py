@@ -11,16 +11,16 @@ import numpy as np
 
 
 # create pyramid from astronaut image
-astronaut = rgb2gray(data.astronaut())
-base = np.tile(astronaut, (4, 4))
-base = np.array([base * (32 - i) / 32 for i in range(32)])
-print('base shape', base.shape)
-
-pyramid = list(
-    pyramid_gaussian(base, downscale=2, max_layer=4, multichannel=False)
+astronaut = data.astronaut()
+base = np.tile(astronaut, (3, 3, 1)).astype('float')
+base = np.round(np.array([base * (16 - i) / 16 for i in range(16)])).astype(
+    np.uint8
 )
-pyramid = [img_as_ubyte(p) for p in pyramid]
-print('pyramid level shapes: ', [p.shape for p in pyramid])
+print('base shape', base.shape)
+pyramid = list(
+    pyramid_gaussian(base, downscale=2, max_layer=3, multichannel=True)
+)
+print('pyramid level shapes: ', [p.shape[:-1] for p in pyramid])
 
 with napari.gui_qt():
     # create the viewer
