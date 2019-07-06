@@ -18,7 +18,7 @@ We're developing **napari** in the open! But the project is in a **pre-alpha** s
 
 ## installation
 
-**napari** can be installed on most Mac OS X and Linux systems with Python 3.6 or 3.7 by calling 
+**napari** can be installed on most Mac OS X and Linux systems with Python 3.6 or 3.7 by calling
 
 ```sh
 $ pip install napari
@@ -64,9 +64,8 @@ To do the same thing inside a script call
 ```python
 from skimage import data
 import napari
-from napari.util import app_context
 
-with app_context():
+with napari.gui_qt():
     viewer = napari.view(data.astronaut())
 ```
 
@@ -80,9 +79,8 @@ For example, you can add multiple images in different layers and adjust them
 from skimage import data
 from skimage.color import rgb2gray
 import napari
-from napari.util import app_context
 
-with app_context():
+with napari.gui_qt():
     # create the viewer with four layers
     viewer = napari.view(astronaut=rgb2gray(data.astronaut()),
                          photographer=data.camera(),
@@ -103,9 +101,8 @@ import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
 import napari
-from napari.util import app_context
 
-with app_context():
+with napari.gui_qt():
     # set up viewer
     viewer = napari.Viewer()
     viewer.add_image(rgb2gray(data.astronaut()))
@@ -135,9 +132,8 @@ You can render and quickly browse slices of multi-dimensional arrays
 import numpy as np
 from skimage import data
 import napari
-from napari.util import app_context
 
-with app_context():
+with napari.gui_qt():
     # create fake 3d data
     blobs = np.stack([data.binary_blobs(length=128, blob_size_fraction=0.05,
                                         n_dim=3, volume_fraction=f)
@@ -162,7 +158,7 @@ You can change the theme after creating the viewer by setting the `viewer.theme`
 
 ## plans
 
-We're working on several features, including 
+We're working on several features, including
 
 - support for 3D volumetric rendering
 - support for multiple canvases
