@@ -16,16 +16,14 @@ class Labels(Layer):
     """Labels (or segmentation) layer.
 
     An image layer where every pixel contains an integer ID corresponding
-    to the region it belongs to.
+    to the region it belongs to. The label 0 is rendered as transparent.
 
     Parameters
     ----------
-    image : np.ndarray
+    labels : array
         Image data.
-    meta : dict, optional
+    metadata : dict, optional
         Image metadata.
-    multichannel : bool, optional
-        Whether the image is multichannel. Guesses if None.
     opacity : float, optional
         Opacity of the labels, must be between 0 and 1.
     name : str, keyword-only
@@ -38,17 +36,14 @@ class Labels(Layer):
 
     def __init__(
         self,
-        label_image,
-        meta=None,
-        *,
-        name=None,
+        labels,
+        metadata={},
         num_colors=50,
         opacity=0.7,
+        *,
+        name=None,
         **kwargs,
     ):
-        if name is None and meta is not None:
-            if 'name' in meta:
-                name = meta['name']
 
         visual = ImageNode(None, method='auto')
         super().__init__(visual, name)
@@ -61,13 +56,19 @@ class Labels(Layer):
             selected_label=Event,
         )
 
-        self.seed = 0.5
-        self._image = label_image
-        self._image_view = None
-        self._meta = meta
+        self._data = labels
+        self._data_view = np.zeros((1, 1))
+        self.metadata = metadata
         self.interpolation = 'nearest'
-        self.colormap_name = 'random'
-        self.colormap = colormaps.label_colormap(num_colors)
+        self.seed = 0.5
+
+        self._colormap_name = 'random'
+        self.colormap = (
+            self._colormap_name,
+            colormaps.label_colormap(num_colors),
+        )
+        self._node.clim = [0.0, 1.0]
+        self._node.cmap = self.colormap[1]
 
         self._node.opacity = opacity
         self._n_dimensional = True
@@ -80,78 +81,22 @@ class Labels(Layer):
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
-        self._status = str(self._mode)
+        self._status = self.mode
         self._help = 'enter paint or fill mode to edit labels'
 
         # update flags
         self._need_display_update = False
         self._need_visual_update = False
 
-        self._node.clim = [0.0, 1.0]
-        self._node.cmap = self.colormap
-
-    def raw_to_displayed(self, raw):
-        """Determines displayed image from a saved raw image and a saved seed.
-        This function ensures that the 0 label gets mapped to the 0 displayed
-        pixel
-
-        Parameters
-        -------
-        raw : array | int
-            Raw input image
-
-        Returns
-        -------
-        image : array
-            Image mapped between 0 and 1 to be displayed
-        """
-        image = np.where(
-            raw > 0, colormaps._low_discrepancy_image(raw, self.seed), 0
-        )
-        return image
-
-    def new_colormap(self):
-        self.seed = np.random.rand()
-
-        self.refresh()
-
-    def label_color(self, label):
-        """Return the color corresponding to a specific label."""
-        val = self.raw_to_displayed(np.array([label]))
-        return self.colormap.map(val)
-
-    @property
-    def image(self):
-        """np.ndarray: Image data.
-        """
-        return self._image
-
-    @image.setter
-    def image(self, image):
-        self._image = image
-        self.events.data()
-        self.refresh()
-
-    @property
-    def meta(self):
-        """dict: Image metadata.
-        """
-        return self._meta
-
-    @meta.setter
-    def meta(self, meta):
-        self._meta = meta
-        self.refresh()
-
     @property
     def data(self):
-        """tuple of np.ndarray, dict: Image data and metadata.
+        """array: Labels data.
         """
-        return self.image, self.meta
+        return self._data
 
     @data.setter
     def data(self, data):
-        self._image, self._meta = data
+        self._data = data
         self.events.data()
         self.refresh()
 
@@ -273,7 +218,36 @@ class Labels(Layer):
         self.refresh()
 
     def _get_shape(self):
-        return self.image.shape
+        return self.data.shape
+
+    def raw_to_displayed(self, raw):
+        """Determines displayed image from a saved raw image and a saved seed.
+        This function ensures that the 0 label gets mapped to the 0 displayed
+        pixel
+
+        Parameters
+        -------
+        raw : array | int
+            Raw input image
+
+        Returns
+        -------
+        image : array
+            Image mapped between 0 and 1 to be displayed
+        """
+        image = np.where(
+            raw > 0, colormaps._low_discrepancy_image(raw, self.seed), 0
+        )
+        return image
+
+    def new_colormap(self):
+        self.seed = np.random.rand()
+        self.refresh()
+
+    def label_color(self, label):
+        """Return the color corresponding to a specific label."""
+        val = self.raw_to_displayed(np.array([label]))
+        return self.colormap[1].map(val)
 
     def _get_indices(self):
         """Gets the slice indices.
@@ -286,7 +260,7 @@ class Labels(Layer):
         indices = list(self.indices)
 
         for dim in range(len(indices)):
-            max_dim_index = self.image.shape[dim] - 1
+            max_dim_index = self.data.shape[dim] - 1
 
             try:
                 if indices[dim] > max_dim_index:
@@ -297,7 +271,7 @@ class Labels(Layer):
         slice_indices = tuple(indices)
         return slice_indices
 
-    def _slice_image(self):
+    def _slice_data(self):
         """Determines the slice of image from the indices.
 
         Returns
@@ -307,16 +281,16 @@ class Labels(Layer):
         """
         slice_indices = self._get_indices()
 
-        self._image_view = np.asarray(self.image[slice_indices])
+        self._data_view = np.asarray(self.data[slice_indices])
 
-        sliced = self.raw_to_displayed(self._image_view)
+        sliced = self.raw_to_displayed(self._data_view)
 
         return sliced
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        sliced_image = self._slice_image()
+        sliced_image = self._slice_data()
         self._node.set_data(sliced_image)
 
         self._need_visual_update = True
@@ -368,12 +342,12 @@ class Labels(Layer):
 
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
-            labels = self._image
+            labels = self._data
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
             slice_indices = self._get_indices()
-            labels = self._image_view
+            labels = self._data_view
             slice_coord = tuple(int_coord[-2:])
 
         matches = labels == old_label
@@ -390,8 +364,8 @@ class Labels(Layer):
         labels[matches] = new_label
 
         if not (self.n_dimensional or self.ndim == 2):
-            # if working with just the slice, update the rest of the raw image
-            self._image[slice_indices] = labels
+            # if working with just the slice, update the rest of the raw data
+            self._data[slice_indices] = labels
 
         self.refresh()
 
@@ -454,7 +428,7 @@ class Labels(Layer):
             )
 
         # update the labels image
-        self._image[slice_coord] = new_label
+        self._data[slice_coord] = new_label
 
         self.refresh()
 
@@ -502,10 +476,10 @@ class Labels(Layer):
         """
         coord = list(self.coordinates)
         coord[-2:] = np.clip(
-            coord[-2:], 0, np.asarray(self._image_view.shape) - 1
+            coord[-2:], 0, np.asarray(self._data_view.shape) - 1
         )
 
-        value = self._image_view[tuple(np.round(coord[-2:]).astype(int))]
+        value = self._data_view[tuple(np.round(coord[-2:]).astype(int))]
 
         return coord, value
 
@@ -534,13 +508,13 @@ class Labels(Layer):
         """Update thumbnail with current image data and colors.
         """
         zoom_factor = np.divide(
-            self._thumbnail_shape[:2], self._image_view.shape[:2]
+            self._thumbnail_shape[:2], self._data_view.shape[:2]
         ).min()
         downsampled = np.round(
-            ndi.zoom(self._image_view, zoom_factor, prefilter=False, order=0)
+            ndi.zoom(self._data_view, zoom_factor, prefilter=False, order=0)
         )
         downsampled = self.raw_to_displayed(downsampled)
-        colormapped = self.colormap.map(downsampled)
+        colormapped = self.colormap[1].map(downsampled)
         colormapped = colormapped.reshape(downsampled.shape + (4,))
         # render background as black instead of transparent
         colormapped[..., 3] = 1
@@ -557,9 +531,9 @@ class Labels(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        image = self.raw_to_displayed(self._image_view)
-        mapped_image = (self.colormap.map(image) * 255).astype('uint8')
-        mapped_image = mapped_image.reshape(list(self._image_view.shape) + [4])
+        image = self.raw_to_displayed(self._data_view)
+        mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
+        mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
