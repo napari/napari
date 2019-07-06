@@ -7,10 +7,10 @@ your shapes.
 import numpy as np
 from skimage import data
 import napari
-from napari.util import gui_qt
 from vispy.color import Colormap
 
-with gui_qt():
+
+with napari.gui_qt():
     # create the viewer and window
     viewer = napari.Viewer()
 

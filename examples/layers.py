@@ -5,8 +5,7 @@ using the layers swap method and remove one
 
 from skimage import data
 from skimage.color import rgb2gray
-from napari import view
-from napari.util import gui_qt
+from napari import view, gui_qt
 
 
 with gui_qt():

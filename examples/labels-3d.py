@@ -6,10 +6,9 @@ add_image APIs
 from skimage import data
 from scipy import ndimage as ndi
 import napari
-from napari.util import gui_qt
 
 
-with gui_qt():
+with napari.gui_qt():
     blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=3)
     v = napari.view(blobs=blobs.astype(float))
     v.layers[0].colormap = 'gray'

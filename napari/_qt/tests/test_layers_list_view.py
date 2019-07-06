@@ -1,7 +1,7 @@
 import os
 from napari.components import LayerList
 from napari._qt.qt_layerlist import QtLayerList, QtDivider
-from napari.util import gui_qt
+from napari import gui_qt
 from napari.layers import Image
 import numpy as np
 

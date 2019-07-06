@@ -7,7 +7,6 @@ from skimage.util import img_as_ubyte
 from skimage.color import rgb2gray
 from skimage.transform import pyramid_gaussian
 import napari
-from napari.util import gui_qt
 import numpy as np
 
 
@@ -20,7 +19,7 @@ pyramid = list(
 pyramid = [img_as_ubyte(p) for p in pyramid]
 print('pyramid level shapes: ', [p.shape for p in pyramid])
 
-with gui_qt():
+with napari.gui_qt():
     # create the viewer
     viewer = napari.Viewer()
 

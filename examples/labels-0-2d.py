@@ -9,10 +9,9 @@ from skimage.segmentation import clear_border
 from skimage.measure import label
 from skimage.morphology import closing, square, remove_small_objects
 import napari
-from napari.util import gui_qt
 
 
-with gui_qt():
+with napari.gui_qt():
     image = data.coins()[50:-50, 50:-50]
 
     # apply threshold

@@ -8,13 +8,11 @@ Each vector position is defined by an (x, y, x-proj, y-proj) element
 """
 
 import napari
-from napari.util import gui_qt
 from skimage import data
-
 import numpy as np
 
 
-with gui_qt():
+with napari.gui_qt():
     # create the viewer and window
     viewer = napari.Viewer()
 
