@@ -1,7 +1,7 @@
 import os
 from napari.components import Dims
 from napari._qt.qt_dims import QtDims
-from napari.util import app_context
+from napari import gui_qt
 
 os.environ['NAPARI_TEST'] = '1'
 
@@ -10,7 +10,7 @@ def test_creating_view():
     """
     Test creating dims view.
     """
-    with app_context():
+    with gui_qt():
         ndim = 4
         dims = Dims(ndim)
         view = QtDims(dims)
@@ -26,7 +26,7 @@ def test_changing_ndim():
     """
     Test changing the number of dimensions
     """
-    with app_context():
+    with gui_qt():
         ndim = 4
         view = QtDims(Dims(ndim))
 
@@ -43,7 +43,7 @@ def test_slider_values():
     """
     Test the values of a slider stays matched to the values of the dims point.
     """
-    with app_context():
+    with gui_qt():
         ndim = 4
         view = QtDims(Dims(ndim))
 
@@ -66,7 +66,7 @@ def test_slider_range():
     """
     Tests range of the slider is matched to the range of the dims
     """
-    with app_context():
+    with gui_qt():
         ndim = 4
         view = QtDims(Dims(ndim))
 
@@ -94,7 +94,7 @@ def test_order_when_changing_ndim():
     """
     Test order of the sliders when changing the number of dimensions.
     """
-    with app_context():
+    with gui_qt():
         ndim = 4
         view = QtDims(Dims(ndim))
 

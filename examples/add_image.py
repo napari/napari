@@ -6,10 +6,9 @@ properties
 from skimage import data
 from skimage.color import rgb2gray
 import napari
-from napari.util import app_context
 
 
-with app_context():
+with napari.gui_qt():
     # create the viewer with an image
     viewer = napari.view(
         astronaut=rgb2gray(data.astronaut()), title='napari example'

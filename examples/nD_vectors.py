@@ -8,10 +8,9 @@ apprearing on each slice.
 import numpy as np
 from skimage import data
 import napari
-from napari.util import app_context
 
 
-with app_context():
+with napari.gui_qt():
     blobs = np.stack(
         [
             data.binary_blobs(

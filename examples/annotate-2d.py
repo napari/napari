@@ -6,11 +6,11 @@ add_image APIs
 import numpy as np
 from skimage import data
 import napari
-from napari.util import app_context
+
 
 print("click to add points; close the window when finished.")
 
-with app_context():
+with napari.gui_qt():
     viewer = napari.view(data.astronaut(), multichannel=True)
     points = viewer.add_points(np.zeros((0, 2)))
     points.mode = 'add'
