@@ -96,7 +96,7 @@ class Image(Layer):
     def __init__(
         self,
         image,
-        metadata={},
+        metadata=None,
         multichannel=None,
         colormap='gray',
         clim=None,
@@ -115,7 +115,10 @@ class Image(Layer):
         with self.freeze_refresh():
             # Set data
             self._data = image
-            self.metadata = metadata
+            if metadata is None:
+                self.metadata = {}
+            else:
+                self.metadata = metadata
             self.multichannel = multichannel
 
             # Intitialize image views and thumbnails with zeros

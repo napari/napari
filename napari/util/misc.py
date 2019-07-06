@@ -216,7 +216,7 @@ def segment_normal_vector(a, b):
     return unit_norm
 
 
-def slice_image(data, indices, multichannel=False):
+def slice_image(data, indices, multichannel=False, return_indices=False):
     """Determine the slice of image from the indices.
 
     Parameters
@@ -227,11 +227,13 @@ def slice_image(data, indices, multichannel=False):
         Indices to slice array at.
     multichannel : bool, optional
         Flag if image is multichannel, for example RGB or RGBA.
+    return_indices : bool, optional
+        Flag if returning sliced image data or a slice tuple.
 
     Returns
     -------
-    data_view : array
-        Sliced image data.
+    view : array or tuple
+        Sliced image data or tuple of slice indices.
     """
     shape = data.shape
     if multichannel:
@@ -239,9 +241,12 @@ def slice_image(data, indices, multichannel=False):
 
     indices = list(indices)
     indices[:-2] = np.clip(indices[:-2], 0, np.subtract(shape[:-2], 1))
-    data_view = np.asarray(data[tuple(indices)])
+    if return_indices:
+        view = tuple(indices)
+    else:
+        view = np.asarray(data[tuple(indices)])
 
-    return data_view
+    return view
 
 
 class StringEnum(Enum):

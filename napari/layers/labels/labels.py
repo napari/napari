@@ -1,4 +1,5 @@
 from typing import Union
+import warnings
 import numpy as np
 from scipy import ndimage as ndi
 from xml.etree.ElementTree import Element
@@ -9,6 +10,7 @@ from ..base import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
+from ...util.misc import slice_image
 from ._constants import Mode
 
 
@@ -37,7 +39,7 @@ class Labels(Layer):
     def __init__(
         self,
         labels,
-        metadata={},
+        metadata=None,
         num_colors=50,
         opacity=0.7,
         *,
@@ -58,9 +60,11 @@ class Labels(Layer):
 
         self._data = labels
         self._data_view = np.zeros((1, 1))
-        self.metadata = metadata
-        self.interpolation = 'nearest'
-        self.seed = 0.5
+        if metadata is None:
+            self.metadata = {}
+        else:
+            self.metadata = metadata
+        self._seed = 0.5
 
         self._colormap_name = 'random'
         self.colormap = (
@@ -88,10 +92,18 @@ class Labels(Layer):
         self._need_display_update = False
         self._need_visual_update = False
 
+        # Re intitialize indices depending on image dims
+        self._indices = (0,) * (self.ndim - 2) + (
+            slice(None, None, None),
+            slice(None, None, None),
+        )
+
+        # Trigger generation of view slice and thumbnail
+        self._set_view_slice()
+
     @property
     def data(self):
-        """array: Labels data.
-        """
+        """array: Labels data."""
         return self._data
 
     @data.setter
@@ -102,9 +114,7 @@ class Labels(Layer):
 
     @property
     def contiguous(self):
-        """ bool: if True, fill changes only pixels of the same label that are
-        contiguous with the one clicked on.
-        """
+        """bool: fill bucket changes connected pixels of the same label."""
         return self._contiguous
 
     @contiguous.setter
@@ -114,9 +124,7 @@ class Labels(Layer):
 
     @property
     def n_dimensional(self):
-        """ bool: if True, edits labels not just in central plane but also
-        in all n dimensions according to specified brush size or fill.
-        """
+        """bool: paint and fill edits labels in all dimensions."""
         return self._n_dimensional
 
     @n_dimensional.setter
@@ -126,11 +134,12 @@ class Labels(Layer):
 
     @property
     def brush_size(self):
-        """ float | list: Size of the paint brush. If a float, then if
-        `n_dimensional` is False applies just to the visible dimensions, if
-        `n_dimensional` is True applies to all dimensions. If a list, must be
-        the same length as the number of dimensions of the layer, and size
-        applies to each dimension scaled by the appropriate amount.
+        """float or tuple: Size of the paint brush.
+
+        If a float, then if `n_dimensional` is False applies just to the
+        visible dimensions, if `n_dimensional` is True applies to all
+        dimensions. If a tuple, must be the same length as the number of
+        dimensions of the layer, and size applies to each dimension.
         """
         return self._brush_size
 
@@ -142,9 +151,11 @@ class Labels(Layer):
 
     @property
     def selected_label(self):
-        """ int: Index of selected label. If `0` corresponds to the transparent
-        background. If greater than the current maximum label then if used to
-        fill or paint a region this label will be added to the new labels
+        """int: Index of selected label.
+
+        If `0` corresponds to the transparent background. If greater than the
+        current maximum label then if used to fill or paint a region this label
+        will be added to the new labels.
         """
         return self._selected_label
 
@@ -220,78 +231,42 @@ class Labels(Layer):
     def _get_shape(self):
         return self.data.shape
 
-    def raw_to_displayed(self, raw):
-        """Determines displayed image from a saved raw image and a saved seed.
+    def _raw_to_displayed(self, raw):
+        """Determine displayed image from a saved raw image and a saved seed.
+
         This function ensures that the 0 label gets mapped to the 0 displayed
-        pixel
+        pixel.
 
         Parameters
         -------
-        raw : array | int
-            Raw input image
+        raw : array or int
+            Raw integer input image.
 
         Returns
         -------
         image : array
-            Image mapped between 0 and 1 to be displayed
+            Image mapped between 0 and 1 to be displayed.
         """
         image = np.where(
-            raw > 0, colormaps._low_discrepancy_image(raw, self.seed), 0
+            raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
         )
         return image
 
     def new_colormap(self):
-        self.seed = np.random.rand()
+        self._seed = np.random.rand()
         self.refresh()
 
     def label_color(self, label):
         """Return the color corresponding to a specific label."""
-        val = self.raw_to_displayed(np.array([label]))
+        val = self._raw_to_displayed(np.array([label]))
         return self.colormap[1].map(val)
-
-    def _get_indices(self):
-        """Gets the slice indices.
-
-        Returns
-        -------
-        slice_indices : tuple
-            Tuple of indices corresponding to the slice
-        """
-        indices = list(self.indices)
-
-        for dim in range(len(indices)):
-            max_dim_index = self.data.shape[dim] - 1
-
-            try:
-                if indices[dim] > max_dim_index:
-                    indices[dim] = max_dim_index
-            except TypeError:
-                pass
-
-        slice_indices = tuple(indices)
-        return slice_indices
-
-    def _slice_data(self):
-        """Determines the slice of image from the indices.
-
-        Returns
-        -------
-        sliced : array or value
-            The requested slice.
-        """
-        slice_indices = self._get_indices()
-
-        self._data_view = np.asarray(self.data[slice_indices])
-
-        sliced = self.raw_to_displayed(self._data_view)
-
-        return sliced
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        sliced_image = self._slice_data()
-        self._node.set_data(sliced_image)
+        self._data_view = slice_image(self.data, self.indices)
+        image = self._raw_to_displayed(self._data_view)
+        self._node.set_data(image)
 
         self._need_visual_update = True
         self._update()
@@ -299,28 +274,6 @@ class Labels(Layer):
         coord, label = self.get_value()
         self.status = self.get_message(coord, label)
         self._update_thumbnail()
-
-    @property
-    def method(self):
-        """string: Selects method of rendering image in case of non-linear
-        transforms. Each method produces similar results, but may trade
-        efficiency and accuracy. If the transform is linear, this parameter
-        is ignored and a single quad is drawn around the area of the image.
-
-            * 'auto': Automatically select 'impostor' if the image is drawn
-              with a nonlinear transform; otherwise select 'subdivide'.
-            * 'subdivide': ImageVisual is represented as a grid of triangles
-              with texture coordinates linearly mapped.
-            * 'impostor': ImageVisual is represented as a quad covering the
-              entire view, with texture coordinates determined by the
-              transform. This produces the best transformation results, but may
-              be slow.
-        """
-        return self._node.method
-
-    @method.setter
-    def method(self, method):
-        self._node.method = method
 
     def fill(self, coord, old_label, new_label):
         """Replace an existing label with a new label, either just at the
@@ -342,11 +295,10 @@ class Labels(Layer):
 
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
-            labels = self._data
+            labels = self.data
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
-            slice_indices = self._get_indices()
             labels = self._data_view
             slice_coord = tuple(int_coord[-2:])
 
@@ -365,7 +317,10 @@ class Labels(Layer):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            self._data[slice_indices] = labels
+            slice_indices = slice_image(
+                self.data, self.indices, return_indices=True
+            )
+            self.data[slice_indices] = labels
 
         self.refresh()
 
@@ -384,7 +339,7 @@ class Labels(Layer):
             Rounded pixel value
         """
 
-        pix = np.clip(int(round(pos)), 0, self._get_shape()[axis])
+        pix = np.clip(int(round(pos)), 0, self.shape[axis])
         return pix
 
     def paint(self, coord, new_label):
@@ -428,7 +383,7 @@ class Labels(Layer):
             )
 
         # update the labels image
-        self._data[slice_coord] = new_label
+        self.data[slice_coord] = new_label
 
         self.refresh()
 
@@ -510,10 +465,14 @@ class Labels(Layer):
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], self._data_view.shape[:2]
         ).min()
-        downsampled = np.round(
-            ndi.zoom(self._data_view, zoom_factor, prefilter=False, order=0)
-        )
-        downsampled = self.raw_to_displayed(downsampled)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            downsampled = np.round(
+                ndi.zoom(
+                    self._data_view, zoom_factor, prefilter=False, order=0
+                )
+            )
+        downsampled = self._raw_to_displayed(downsampled)
         colormapped = self.colormap[1].map(downsampled)
         colormapped = colormapped.reshape(downsampled.shape + (4,))
         # render background as black instead of transparent
@@ -531,7 +490,7 @@ class Labels(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        image = self.raw_to_displayed(self._data_view)
+        image = self._raw_to_displayed(self._data_view)
         mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
         mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')
@@ -643,6 +602,15 @@ class Labels(Layer):
                 self.mode = Mode.PAN_ZOOM
             elif event.key == 'l':
                 self.mode = Mode.PICKER
+            elif event.key == 'e':
+                self.selected_label = 0
+            elif event.key == 'm':
+                self.selected_label = self.data.max() + 1
+            elif event.key == 'd':
+                if self.selected_label > 0:
+                    self.selected_label = self.selected_label - 1
+            elif event.key == 'i':
+                self.selected_label = self.selected_label + 1
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
