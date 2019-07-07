@@ -158,6 +158,20 @@ def test_symbol():
     assert layer.symbol == 'star'
 
 
+def test_size():
+    """Test setting size."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.size == 10
+
+    layer.size = 20
+    assert layer.size == 20
+
+    layer = Points(data, size=15)
+    assert layer.size == 15
+
+
 #
 #
 # def test_num_colors():
