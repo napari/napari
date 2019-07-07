@@ -123,12 +123,13 @@ class Points(Layer):
             else:
                 self._face_color = 'white'
 
-            # Indices of selected points within the currently viewed slice
+            # Indices of selected points
             self._selected_data = []
             self._selected_data_stored = []
             self._selected_data_history = []
-            self._cur_selected = []
-            # Index of hovered point within the currently viewed slice
+            # Indices of selected points within the currently viewed slice
+            self._selected_view = []
+            # Index of hovered point
             self._hover_point = None
             self._hover_point_stored = None
             self._selected_box = None
@@ -272,8 +273,7 @@ class Points(Layer):
     def size(self, size: Union[None, float]) -> None:
         self._size = size
         if self._update_properties and len(self.selected_data) > 0:
-            index = self._indices_view[self.selected_data]
-            for i in index:
+            for i in self.selected_data:
                 self.size_array[i, :] = (self.size_array[i, :] > 0) * size
             self.refresh()
         self.events.size()
@@ -302,8 +302,7 @@ class Points(Layer):
     def edge_color(self, edge_color: str) -> None:
         self._edge_color = edge_color
         if self._update_properties and len(self.selected_data) > 0:
-            index = self._indices_view[self.selected_data]
-            for i in index:
+            for i in self.selected_data:
                 self._edge_color_list[i] = edge_color
             self.refresh()
         self.events.edge_color()
@@ -319,8 +318,7 @@ class Points(Layer):
     def face_color(self, face_color: str) -> None:
         self._face_color = face_color
         if self._update_properties and len(self.selected_data) > 0:
-            index = self._indices_view[self.selected_data]
-            for i in index:
+            for i in self.selected_data:
                 self._face_color_list[i] = face_color
             self.refresh()
         self.events.face_color()
@@ -333,16 +331,17 @@ class Points(Layer):
 
     @selected_data.setter
     def selected_data(self, selected_data):
-        self._selected_data = selected_data
-        self._selected_box = self.interaction_box(selected_data)
-        if len(self._indices_view) > 0:
-            index = self._indices_view[self._selected_data]
-            self._cur_selected = self._indices_view[self._selected_data]
-        else:
-            index = []
-            self._cur_selected = []
+        self._selected_data = list(selected_data)
+        selected = []
+        for c in self._selected_data:
+            if c in self._indices_view:
+                ind = list(self._indices_view).index(c)
+                selected.append(ind)
+        self._selected_view = selected
+        self._selected_box = self.interaction_box(self._selected_view)
 
         # Update properties based on selected points
+        index = self._selected_data
         edge_colors = list(set([self._edge_color_list[i] for i in index]))
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
@@ -362,7 +361,7 @@ class Points(Layer):
                 self.size = size
 
     def interaction_box(self, index):
-        """Create the interaction box around a list of points.
+        """Create the interaction box around a list of points in view.
 
         Parameters
         ----------
@@ -508,7 +507,7 @@ class Points(Layer):
             )
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
-                selection = indices[-1]
+                selection = self._indices_view[indices[-1]]
             else:
                 selection = None
         else:
@@ -539,16 +538,14 @@ class Points(Layer):
         # Make sure if changing planes any selected points not in the current
         # plane are removed
         selected = []
-        for c in self._cur_selected:
+        for c in self.selected_data:
             if c in self._indices_view:
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
-        self._selected_data = selected
-        self._selected_box = self.interaction_box(self.selected_data)
-        if len(self.selected_data) > 0:
-            self._cur_selected = self._indices_view[self.selected_data]
-        else:
-            self._cur_selected = []
+        self._selected_view = selected
+        if len(selected) == 0:
+            self.selected_data
+        self._selected_box = self.interaction_box(self._selected_view)
 
         if len(data) > 0:
             edge_color = [
@@ -600,18 +597,22 @@ class Points(Layer):
         self._drag_box_stored = copy(self._drag_box)
 
         if self._mode == Mode.SELECT and (
-            self._hover_point is not None or len(self.selected_data) > 0
+            self._hover_point is not None or len(self._selected_view) > 0
         ):
-            if len(self.selected_data) > 0:
-                index = copy(self.selected_data)
+            if len(self._selected_view) > 0:
+                index = copy(self._selected_view)
                 if self._hover_point is not None:
-                    if self._hover_point in index:
+                    hover_point = list(self._indices_view).index(
+                        self._hover_point
+                    )
+                    if hover_point in index:
                         pass
                     else:
-                        index.append(self._hover_point)
+                        index.append(hover_point)
                 index.sort()
             else:
-                index = [self._hover_point]
+                hover_point = list(self._indices_view).index(self._hover_point)
+                index = [hover_point]
 
             # Color the hovered or selected points
             data = self._data_view[index]
@@ -659,8 +660,8 @@ class Points(Layer):
         ----------
         coord : sequence of int
             Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
+        value : int
+            Index of the point at the coord if any.
 
         Returns
         ----------
@@ -673,10 +674,7 @@ class Points(Layer):
         if value is None:
             pass
         else:
-            # map from the index of the point in the slice to the index of the
-            # point in the full list of points
-            index = self._indices_view[value]
-            msg = msg + ', index ' + str(index)
+            msg = msg + ', index ' + str(value)
         return msg
 
     def _update_thumbnail(self):
@@ -718,8 +716,9 @@ class Points(Layer):
     def remove_selected(self):
         """Removes selected points if any.
         """
-        index = self._indices_view[self.selected_data]
-        if index is not None:
+        index = copy(self.selected_data)
+        index.sort()
+        if len(index) > 0:
             self._size_array = np.delete(self._size_array, index, axis=0)
             for i in index[::-1]:
                 del self._edge_color_list[i]
@@ -729,14 +728,16 @@ class Points(Layer):
             self.selected_data = []
             self.data = np.delete(self.data, index, axis=0)
 
-    def _move(self, coord):
-        """Moves selected points.
+    def _move(self, index, coord):
+        """Moves points relative drag start location.
 
         Parameters
         ----------
-        coord : sequence of indices to move points to
+        index : list
+            Integer indices of points to move
+        coord : tuple
+            Coordinates to move points to
         """
-        index = self._indices_view[self.selected_data]
         if len(index) > 0:
             if self._drag_start is None:
                 center = self.data[index, -2:].mean(axis=0)
@@ -745,26 +746,19 @@ class Points(Layer):
             shift = coord[-2:] - center - self._drag_start
             self.data[index, -2:] = self.data[index, -2:] + shift
             self.refresh()
-        else:
-            self._is_selecting = True
-            if self._drag_start is None:
-                self._drag_start = coord[-2:]
-            self._drag_box = np.array([self._drag_start, coord[-2:]])
-            self._set_highlight()
 
     def _copy_data(self):
         """Copy selected points to clipboard.
         """
         if len(self.selected_data) > 0:
-            index = self._indices_view[self.selected_data]
             self._clipboard = {
-                'data': deepcopy(self.data[index]),
-                'size': deepcopy(self.size_array[index]),
+                'data': deepcopy(self.data[self.selected_data]),
+                'size': deepcopy(self.size_array[self.selected_data]),
                 'edge_color': deepcopy(
-                    [self._edge_color_list[i] for i in index]
+                    [self._edge_color_list[i] for i in self.selected_data]
                 ),
                 'face_color': deepcopy(
-                    [self._face_color_list[i] for i in index]
+                    [self._face_color_list[i] for i in self.selected_data]
                 ),
                 'indices': self.indices,
             }
@@ -793,10 +787,10 @@ class Points(Layer):
             self._face_color_list = self._face_color_list + deepcopy(
                 self._clipboard['face_color']
             )
-            self._selected_data = list(
+            self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._cur_selected = list(
+            self._selected_data = list(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()
@@ -849,7 +843,16 @@ class Points(Layer):
 
         if self._mode == Mode.SELECT:
             if event.is_dragging:
-                self._move(self.coordinates)
+                if len(self.selected_data) > 0:
+                    self._move(self.selected_data, self.coordinates)
+                else:
+                    self._is_selecting = True
+                    if self._drag_start is None:
+                        self._drag_start = self.coordinates[-2:]
+                    self._drag_box = np.array(
+                        [self._drag_start, self.coordinates[-2:]]
+                    )
+                    self._set_highlight()
             else:
                 self._hover_point = self.get_value()
                 self._set_highlight()
@@ -866,7 +869,7 @@ class Points(Layer):
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.SELECT:
-            point = self.get_value(self.coordinates)
+            point = self.get_value()
             if shift and point is not None:
                 if point in self.selected_data:
                     self.selected_data -= [point]
@@ -889,9 +892,13 @@ class Points(Layer):
         self._drag_start = None
         if self._is_selecting:
             self._is_selecting = False
-            self.selected_data = points_in_box(
-                self._drag_box, self._data_view, self._sizes_view
-            )
+            if len(self._data_view) > 0:
+                selection = points_in_box(
+                    self._drag_box, self._data_view, self._sizes_view
+                )
+                self.selected_data = self._indices_view[selection]
+            else:
+                self.selected_data = []
             self._set_highlight(force=True)
 
     def on_key_press(self, event):
@@ -924,7 +931,9 @@ class Points(Layer):
                     self._paste_data()
             elif event.key == 'a':
                 if self._mode == Mode.SELECT:
-                    self.selected_data = list(range(len(self._data_view)))
+                    self.selected_data = self._indices_view[
+                        list(range(len(self._data_view)))
+                    ]
                     self._set_highlight()
             elif event.key == 'Backspace':
                 if self._mode == Mode.SELECT:

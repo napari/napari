@@ -1,4 +1,5 @@
 import numpy as np
+from copy import copy
 from xml.etree.ElementTree import Element
 from napari.layers import Points
 
@@ -84,6 +85,15 @@ def test_changing_points():
     assert len(layer.data) == 20
 
 
+def test_selecting_points():
+    """Test selecting points."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    layer.selected_data = [0, 1]
+    assert layer.selected_data == [0, 1]
+
+
 def test_adding_points():
     """Test adding Points data."""
     shape = (10, 2)
@@ -108,6 +118,50 @@ def test_adding_points_to_empty():
     layer.add(coord)
     assert len(layer.data) == 1
     assert np.all(layer.data[0] == coord)
+
+
+def test_removing_selected_points():
+    """Test selecting points."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # With nothing selected no points should be removed
+    layer.remove_selected()
+    assert len(layer.data) == shape[0]
+
+    # Select two points and remove them
+    layer.selected_data = [0, 3]
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 2
+    assert len(layer.selected_data) == 0
+    keep = [1, 2] + list(range(4, 10))
+    assert np.all(layer.data == data[keep])
+
+    # Select another point and remove it
+    layer.selected_data = [4]
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 3
+
+
+def test_move():
+    """Test moving points."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    unmoved = copy(data)
+    layer = Points(data)
+
+    # Move one point relative to an initial drag start location
+    layer._move([0], [0, 0])
+    layer._move([0], [10, 10])
+    layer._drag_start = None
+    assert np.all(layer.data[0] == unmoved[0] + [10, 10])
+    assert np.all(layer.data[1:] == unmoved[1:])
+
+    # Move two points relative to an initial drag start location
+    layer._move([1, 2], [2, 2])
+    layer._move([1, 2], np.add([2, 2], [-3, 4]))
+    assert np.all(layer.data[1:2] == unmoved[1:2] + [-3, 4])
 
 
 def test_changing_modes():
@@ -143,15 +197,6 @@ def test_name():
 
     layer.name = 'pts'
     assert layer.name == 'pts'
-
-
-def test_selecting_points():
-    """Test selecting points."""
-    shape = (10, 2)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    layer.selected_data = [0, 1]
-    assert layer.selected_data == [0, 1]
 
 
 def test_symbol():
@@ -255,6 +300,13 @@ def test_edge_color():
     assert len(layer._edge_color_list) == shape[0] + 1
     assert layer._edge_color_list == col_list + ['blue']
 
+    # Check removing data adjusts colors correctly
+    layer.selected_data = [0, 2]
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 1
+    assert len(layer._edge_color_list) == shape[0] - 1
+    assert layer._edge_color_list == [col_list[1]] + col_list[3:] + ['blue']
+
 
 def test_face_color():
     """Test setting face color."""
@@ -303,6 +355,13 @@ def test_face_color():
     layer.add(coord)
     assert len(layer._face_color_list) == shape[0] + 1
     assert layer._face_color_list == col_list + ['blue']
+
+    # Check removing data adjusts colors correctly
+    layer.selected_data = [0, 2]
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 1
+    assert len(layer._face_color_list) == shape[0] - 1
+    assert layer._face_color_list == [col_list[1]] + col_list[3:] + ['blue']
 
 
 def test_size():
@@ -395,6 +454,14 @@ def test_size_with_arrays():
     assert layer.size_array.shape == (11, 2)
     assert np.unique(layer.size_array[2:10])[0] == 5
     assert np.unique(layer.size_array[:2])[0] == 16
+
+    # Check removing data adjusts colors correctly
+    layer.selected_data = [0, 2]
+    layer.remove_selected()
+    assert len(layer.data) == 9
+    assert len(layer.size_array) == 9
+    assert np.all(layer.size_array[0] == [16, 16])
+    assert np.all(layer.size_array[1] == [5, 5])
 
 
 def test_size_with_3D_arrays():
