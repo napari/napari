@@ -216,42 +216,10 @@ def segment_normal_vector(a, b):
     return unit_norm
 
 
-def slice_image(data, indices, multichannel=False, return_indices=False):
-    """Determine the slice of image from the indices.
-
-    Parameters
-    ----------
-    data : array
-        Image data array to be sliced.
-    indices : tuple
-        Indices to slice array at.
-    multichannel : bool, optional
-        Flag if image is multichannel, for example RGB or RGBA.
-    return_indices : bool, optional
-        Flag if returning sliced image data or a slice tuple.
-
-    Returns
-    -------
-    sliced : array or tuple
-        Sliced image data or tuple of slice indices.
-    """
-    shape = data.shape
-    if multichannel:
-        shape = shape[:-1]
-
-    indices = list(indices)
-    indices[:-2] = np.clip(indices[:-2], 0, np.subtract(shape[:-2], 1))
-    if return_indices:
-        sliced = tuple(indices)
-    else:
-        sliced = np.asarray(data[tuple(indices)])
-
-    return sliced
-
-
 def interpolate_coordinates(old_coord, new_coord, brush_size):
-    """Interpolates coordinates between old and new, useful for ensuring
-    painting is continous. Depends on the current brush size
+    """Interpolates coordinates depending on brush size.
+
+    Useful for ensuring painting is continuous in labels layer.
 
     Parameters
     ----------

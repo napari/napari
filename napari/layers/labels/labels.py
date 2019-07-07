@@ -10,7 +10,7 @@ from ..base import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
-from ...util.misc import slice_image, interpolate_coordinates
+from ...util.misc import interpolate_coordinates
 from ._constants import Mode
 
 
@@ -24,13 +24,13 @@ class Labels(Layer):
     ----------
     labels : array
         Labels data.
-    metadata : dict, optional
+    metadata : dict, keyword-only
         Labels metadata.
-    num_colors : int, optional
+    num_colors : int, keyword-only
         Number of unique colors to use in colormap.
-    seed : float, optional
+    seed : float, keyword-only
         Seed for colormap random generator.
-    opacity : float, optional
+    opacity : float, keyword-only
         Opacity of the labels, must be between 0 and 1.
     name : str, keyword-only
         Name of the layer.
@@ -93,11 +93,11 @@ class Labels(Layer):
     def __init__(
         self,
         labels,
+        *,
         metadata=None,
         num_colors=50,
         seed=0.5,
         opacity=0.7,
-        *,
         name=None,
         **kwargs,
     ):
@@ -115,10 +115,7 @@ class Labels(Layer):
 
         self._data = labels
         self._data_view = np.zeros((1, 1))
-        if metadata is None:
-            self.metadata = {}
-        else:
-            self.metadata = metadata
+        self.metadata = metadata or {}
         self._seed = seed
 
         self._colormap_name = 'random'
@@ -336,8 +333,12 @@ class Labels(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
+        indices = list(self.indices)
+        indices[:-2] = np.clip(
+            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
+        )
+        self._data_view = np.asarray(self.data[tuple(indices)])
 
-        self._data_view = slice_image(self.data, self.indices)
         image = self._raw_to_displayed(self._data_view)
         self._node.set_data(image)
 
@@ -390,10 +391,11 @@ class Labels(Layer):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            slice_indices = slice_image(
-                self.data, self.indices, return_indices=True
+            indices = list(self.indices)
+            indices[:-2] = np.clip(
+                indices[:-2], 0, np.subtract(self.shape[:-2], 1)
             )
-            self.data[slice_indices] = labels
+            self.data[tuple(indices)] = labels
 
         self.refresh()
 
@@ -493,6 +495,7 @@ class Labels(Layer):
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], self._data_view.shape[:2]
         ).min()
+        # warning filter can be removed with scipy 1.4
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             downsampled = np.round(
