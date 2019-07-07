@@ -1,4 +1,4 @@
-from warnings import warn
+import warnings
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 from imageio import imwrite
@@ -12,7 +12,6 @@ from ...util.misc import (
     is_multichannel,
     calc_data_range,
     increment_unnamed_colormap,
-    slice_image,
 )
 from ...util.event import Event
 from ._constants import Interpolation, AVAILABLE_COLORMAPS
@@ -26,30 +25,30 @@ class Image(Layer):
     image : array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-    metadata : dict, optional
+    metadata : dict, keyword-only
         Image metadata.
-    multichannel : bool, optional
+    multichannel : bool, keyword-only
         Whether the image is multichannel RGB or RGBA if multichannel. If
         not specified by user and the last dimension of the data has length
         3 or 4 it will be set as `True`. If `False` the image is
         interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, tuple, dict, optional
+    colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
-    clim : list (2,), optional
+    clim : list (2,), keyword-only
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
-    clim_range : list (2,), optional
+    clim_range : list (2,), keyword-only
         Range for the color limits. If not passed is be calculated as the
         min and max of the image. Passing a value prevents this calculation
         which can be useful when working with very large datasets that are
         dynamically loaded.
-    interpolation : str, optional
+    interpolation : str, keyword-only
         Interpolation mode used by vispy. Must be one of our supported
         modes.
     name : str, keyword-only
@@ -85,7 +84,7 @@ class Image(Layer):
     Extended Summary
     ----------
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
-        Image data for the currently viewer slice. Must be 2D image data, but
+        Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
         `True`.
     """
@@ -96,13 +95,13 @@ class Image(Layer):
     def __init__(
         self,
         image,
-        metadata={},
+        *,
+        metadata=None,
         multichannel=None,
         colormap='gray',
         clim=None,
         clim_range=None,
         interpolation='nearest',
-        *,
         name=None,
         **kwargs,
     ):
@@ -115,7 +114,7 @@ class Image(Layer):
         with self.freeze_refresh():
             # Set data
             self._data = image
-            self.metadata = metadata
+            self.metadata = metadata or {}
             self.multichannel = multichannel
 
             # Intitialize image views and thumbnails with zeros
@@ -208,7 +207,7 @@ class Image(Layer):
             )
             self._colormaps[name] = colormap
         else:
-            warn(f'invalid value for colormap: {colormap}')
+            warnings.warn(f'invalid value for colormap: {colormap}')
             name = self._colormap_name
         self._colormap_name = name
         self._node.cmap = self._colormaps[name]
@@ -258,9 +257,12 @@ class Image(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        self._data_view = slice_image(
-            self.data, self.indices, self.multichannel
+        indices = list(self.indices)
+        indices[:-2] = np.clip(
+            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
         )
+        self._data_view = np.asarray(self.data[tuple(indices)])
+
         self._node.set_data(self._data_view)
 
         self._need_visual_update = True
@@ -279,9 +281,15 @@ class Image(Layer):
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
         if self.multichannel:
-            downsampled = ndi.zoom(
-                image, (zoom_factor, zoom_factor, 1), prefilter=False, order=0
-            )
+            # warning filter can be removed with scipy 1.4
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                downsampled = ndi.zoom(
+                    image,
+                    (zoom_factor, zoom_factor, 1),
+                    prefilter=False,
+                    order=0,
+                )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
@@ -298,9 +306,12 @@ class Image(Layer):
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
-            downsampled = ndi.zoom(
-                image, zoom_factor, prefilter=False, order=0
-            )
+            # warning filter can be removed with scipy 1.4
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                downsampled = ndi.zoom(
+                    image, zoom_factor, prefilter=False, order=0
+                )
             low, high = self.clim
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low

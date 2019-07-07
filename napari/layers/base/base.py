@@ -283,10 +283,12 @@ class Layer(VisualWrapper, ABC):
         """float: Conversion factor from canvas coordinates to image
         coordinates, which depends on the current zoom level.
         """
-        transform = self._node.canvas.scene.node_transform(self._node)
-        scale_factor = transform.map([1, 1])[:2] - transform.map([0, 0])[:2]
-
-        return scale_factor[0]
+        if self._node.canvas is not None:
+            transform = self._node.canvas.scene.node_transform(self._node)
+            scale_factor = transform.map([1, 1])[0] - transform.map([0, 0])[0]
+        else:
+            scale_factor = 1
+        return scale_factor
 
     @contextmanager
     def block_update_properties(self):
