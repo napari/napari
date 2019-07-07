@@ -438,7 +438,7 @@ class Points(Layer):
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
-    def _slice_points(self, indices):
+    def _slice_data(self, indices):
         """Determines the slice of points given the indices.
 
         Parameters
@@ -448,7 +448,7 @@ class Points(Layer):
 
         Returns
         ----------
-        in_slice_points : (N, 2) array
+        in_slice_data : (N, 2) array
             Coordinates of points in the currently viewed slice.
         slice_indices : list
             Indices of points in the currently viewed slice.
@@ -463,23 +463,23 @@ class Points(Layer):
                 distances = abs(self.data[:, :-2] - indices[:-2])
                 size_array = self.size_array[:, :-2] / 2
                 matches = np.all(distances <= size_array, axis=1)
-                in_slice_points = self.data[matches, -2:]
+                in_slice_data = self.data[matches, -2:]
                 size_match = size_array[matches]
                 size_match[size_match == 0] = 1
                 scale_per_dim = (size_match - distances[matches]) / size_match
                 scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
                 indices = np.where(matches)[0].astype(int)
-                return in_slice_points, indices, scale
+                return in_slice_data, indices, scale
             else:
                 matches = np.all(self.data[:, :-2] == indices[:-2], axis=1)
-                in_slice_points = self.data[matches, -2:]
+                in_slice_data = self.data[matches, -2:]
                 indices = np.where(matches)[0].astype(int)
-                return in_slice_points, indices, 1
+                return in_slice_data, indices, 1
         else:
             return [], [], []
 
-    def _select_point(self, coord):
+    def _select_data(self, coord):
         """Determines selected points selected given indices.
 
         Parameters
@@ -492,7 +492,7 @@ class Points(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        in_slice_points = self._data_view
+        in_slice_data = self._data_view
 
         # Display points if there are any in this slice
         if len(self._data_view) > 0:
@@ -515,15 +515,15 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        in_slice_points, indices, scale = self._slice_points(self.indices)
+        in_slice_data, indices, scale = self._slice_data(self.indices)
 
         # Display points if there are any in this slice
-        if len(in_slice_points) > 0:
+        if len(in_slice_data) > 0:
             # Get the point sizes
             sizes = self.size_array[indices, -2:].mean(axis=1) * scale
 
             # Update the points node
-            data = np.array(in_slice_points) + 0.5
+            data = np.array(in_slice_data) + 0.5
 
         else:
             # if no points in this slice send dummy data
@@ -847,10 +847,10 @@ class Points(Layer):
             if event.is_dragging:
                 self._move(coord)
             else:
-                self._hover_point = self._select_point(coord[-2:])
+                self._hover_point = self._select_data(coord[-2:])
                 self._set_highlight()
         else:
-            self._hover_point = self._select_point(coord[-2:])
+            self._hover_point = self._select_data(coord[-2:])
         self.status = self.get_message(coord, self._hover_point)
 
     def on_mouse_press(self, event):
@@ -863,7 +863,7 @@ class Points(Layer):
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.SELECT:
-            point = self._select_point(coord[-2:])
+            point = self._select_data(coord[-2:])
             if shift and point is not None:
                 if point in self.selected_data:
                     self.selected_data -= [point]
