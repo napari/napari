@@ -17,8 +17,8 @@ class Points(Layer):
 
     Parameters
     ----------
-    coords : np.ndarray
-        Coordinates for each point.
+    coords : (N, D) array
+        Coordinates for N points in D dimensions.
     symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
                          'hbar', 'ring', 'square', 'star', 'tailed_arrow',
                          'triangle_down', 'triangle_up', 'vbar', 'x'}
@@ -86,7 +86,7 @@ class Points(Layer):
         # Freeze refreshes
         with self.freeze_refresh():
             # Save the point coordinates
-            self._coords = coords
+            self._data = coords
 
             # Save the point style params
             self.symbol = symbol
@@ -96,12 +96,12 @@ class Points(Layer):
             self.size_array = size
             self._edge_color_list = list(
                 itertools.islice(
-                    ensure_iterable(edge_color, color=True), 0, len(coords)
+                    ensure_iterable(edge_color, color=True), 0, len(self.data)
                 )
             )
             self._face_color_list = list(
                 itertools.islice(
-                    ensure_iterable(face_color, color=True), 0, len(coords)
+                    ensure_iterable(face_color, color=True), 0, len(self.data)
                 )
             )
 
@@ -140,7 +140,7 @@ class Points(Layer):
             self._drag_start = None
 
             # Nx2 array of points in the currently viewed slice
-            self._points_view = np.empty((0, 2))
+            self._data_view = np.empty((0, 2))
             # Sizes of points in the currently viewed slice
             self._sizes_view = 0
             # Full data indices of points located in the currently viewed slice
@@ -156,30 +156,30 @@ class Points(Layer):
             self._need_visual_update = False
 
     @property
-    def coords(self) -> np.ndarray:
-        """ndarray: coordinates of the point centroids
+    def data(self) -> np.ndarray:
+        """(N, D) array: coordinates of the points
         """
-        return self._coords
+        return self._data
 
-    @coords.setter
-    def coords(self, coords: np.ndarray):
-        cur_npoints = len(self._coords)
-        self._coords = coords
+    @data.setter
+    def data(self, data: np.ndarray):
+        cur_npoints = len(self._data)
+        self._data = data
 
         # Adjust the size array when the number of points has changed
-        if len(coords) < cur_npoints:
+        if len(data) < cur_npoints:
             # If there are now less points, remove the sizes and colors of the
             # extra ones
             with self.freeze_refresh():
-                self.size_array = self._size_array[: len(coords)]
-                self._edge_color_list = self._edge_color_list[: len(coords)]
-                self._face_color_list = self._face_color_list[: len(coords)]
+                self.size_array = self._size_array[: len(data)]
+                self._edge_color_list = self._edge_color_list[: len(data)]
+                self._face_color_list = self._face_color_list[: len(data)]
 
-        elif len(coords) > cur_npoints:
+        elif len(data) > cur_npoints:
             # If there are now more points, add the sizes and colors of the
             # new ones
             with self.freeze_refresh():
-                adding = len(coords) - cur_npoints
+                adding = len(data) - cur_npoints
                 if len(self._size_array) > 0:
                     new_size = copy(self._size_array[-1])
                     new_size[-2:] = self.size
@@ -199,16 +199,6 @@ class Points(Layer):
 
         self.events.data()
         self.refresh()
-
-    @property
-    def data(self) -> np.ndarray:
-        """ndarray: coordinates of the point centroids
-        """
-        return self._coords
-
-    @data.setter
-    def data(self, data: np.ndarray) -> None:
-        self.coords = data
 
     @property
     def n_dimensional(self) -> str:
@@ -260,11 +250,11 @@ class Points(Layer):
     @size_array.setter
     def size_array(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
-            self._size_array = np.broadcast_to(size, self._coords.shape).copy()
+            self._size_array = np.broadcast_to(size, self.data.shape).copy()
         except:
             try:
                 self._size_array = np.broadcast_to(
-                    size, self._coords.shape[::-1]
+                    size, self.data.shape[::-1]
                 ).T.copy()
             except:
                 raise ValueError("Size is not compatible for broadcasting")
@@ -386,7 +376,7 @@ class Points(Layer):
         if len(index) == 0:
             box = None
         else:
-            data = self._points_view[index]
+            data = self._data_view[index]
             size = self._sizes_view[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
@@ -463,24 +453,24 @@ class Points(Layer):
         self.events.mode(mode=mode)
 
     def _get_shape(self):
-        if len(self.coords) == 0:
+        if len(self.data) == 0:
             # when no points given, return (1,) * dim
-            # we use coords.shape[1] as the dimensionality of the image
-            return np.ones(self.coords.shape[1], dtype=int)
+            # we use data.shape[1] as the dimensionality of the image
+            return np.ones(self.data.shape[1], dtype=int)
         else:
-            return np.max(self.coords, axis=0) + 1
+            return np.max(self.data, axis=0)
 
     @property
     def range(self):
         """list of 3-tuple of int: ranges of data for slicing specifed by
         (min, max, step).
         """
-        if len(self.coords) == 0:
-            maxs = np.ones(self.coords.shape[1], dtype=int)
-            mins = np.zeros(self.coords.shape[1], dtype=int)
+        if len(self.data) == 0:
+            maxs = np.ones(self.data.shape[1], dtype=int)
+            mins = np.zeros(self.data.shape[1], dtype=int)
         else:
-            maxs = np.max(self.coords, axis=0) + 1
-            mins = np.min(self.coords, axis=0)
+            maxs = np.max(self.data, axis=0)
+            mins = np.min(self.data, axis=0)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -503,14 +493,13 @@ class Points(Layer):
             values of 1 corresponds to points located in the slice, and values
             less than 1 correspond to points located in neighboring slices.
         """
-        # Get a list of the coords for the points in this slice
-        coords = self.data
-        if len(coords) > 0:
+        # Get a list of the data for the points in this slice
+        if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
-                distances = abs(coords[:, :-2] - indices[:-2])
+                distances = abs(self.data[:, :-2] - indices[:-2])
                 size_array = self.size_array[:, :-2] / 2
                 matches = np.all(distances <= size_array, axis=1)
-                in_slice_points = coords[matches, -2:]
+                in_slice_points = self.data[matches, -2:]
                 size_match = size_array[matches]
                 size_match[size_match == 0] = 1
                 scale_per_dim = (size_match - distances[matches]) / size_match
@@ -519,8 +508,8 @@ class Points(Layer):
                 indices = np.where(matches)[0].astype(int)
                 return in_slice_points, indices, scale
             else:
-                matches = np.all(coords[:, :-2] == indices[:-2], axis=1)
-                in_slice_points = coords[matches, -2:]
+                matches = np.all(self.data[:, :-2] == indices[:-2], axis=1)
+                in_slice_points = self.data[matches, -2:]
                 indices = np.where(matches)[0].astype(int)
                 return in_slice_points, indices, 1
         else:
@@ -539,12 +528,12 @@ class Points(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        in_slice_points = self._points_view
+        in_slice_points = self._data_view
 
         # Display points if there are any in this slice
-        if len(self._points_view) > 0:
+        if len(self._data_view) > 0:
             # Get the point sizes
-            distances = abs(self._points_view - coord)
+            distances = abs(self._data_view - coord)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._sizes_view, axis=1) / 2,
                 axis=1,
@@ -576,7 +565,7 @@ class Points(Layer):
             # if no points in this slice send dummy data
             data = np.empty((0, 2))
             sizes = [0]
-        self._points_view = data
+        self._data_view = data
         self._sizes_view = sizes
         self._indices_view = indices
         # Make sure if changing planes any selected points not in the current
@@ -657,7 +646,7 @@ class Points(Layer):
                 index = [self._hover_point]
 
             # Color the hovered or selected points
-            data = self._points_view[index]
+            data = self._data_view[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self._sizes_view[index]
@@ -725,7 +714,7 @@ class Points(Layer):
         """
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        if len(self._points_view) > 0:
+        if len(self._data_view) > 0:
             min_vals = [self.range[-2][0], self.range[-1][0]]
             shape = np.ceil(
                 [
@@ -735,7 +724,7 @@ class Points(Layer):
             ).astype(int)
             zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
             coords = np.floor(
-                (self._points_view - min_vals + 0.5) * zoom_factor
+                (self._data_view - min_vals + 0.5) * zoom_factor
             ).astype(int)
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
@@ -798,7 +787,7 @@ class Points(Layer):
         if len(self.selected_points) > 0:
             index = self._indices_view[self.selected_points]
             self._clipboard = {
-                'coord': deepcopy(self.data[index]),
+                'data': deepcopy(self.data[index]),
                 'size': deepcopy(self.size_array[index]),
                 'edge_color': deepcopy(
                     [self._edge_color_list[i] for i in index]
@@ -814,16 +803,16 @@ class Points(Layer):
     def _paste_points(self):
         """Paste any point from clipboard and select them.
         """
-        npoints = len(self._points_view)
+        npoints = len(self._data_view)
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            coords = deepcopy(self._clipboard['coord'])
+            data = deepcopy(self._clipboard['data'])
             offset = np.subtract(
                 self.indices[:-2], self._clipboard['indices'][:-2]
             )
-            coords[:, :-2] = coords[:, :-2] + offset
-            self._coords = np.append(self.data, coords, axis=0)
+            data[:, :-2] = data[:, :-2] + offset
+            self._data = np.append(self.data, data, axis=0)
             self._size_array = np.append(
                 self.size_array, deepcopy(self._clipboard['size']), axis=0
             )
@@ -834,10 +823,10 @@ class Points(Layer):
                 self._clipboard['face_color']
             )
             self._selected_points = list(
-                range(npoints, npoints + len(self._clipboard['coord']))
+                range(npoints, npoints + len(self._clipboard['data']))
             )
             self._cur_selected = list(
-                range(totpoints, totpoints + len(self._clipboard['coord']))
+                range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()
 
@@ -856,7 +845,7 @@ class Points(Layer):
         xml_list = []
 
         for i, d, s in zip(
-            self._indices_view, self._points_view, self._sizes_view
+            self._indices_view, self._data_view, self._sizes_view
         ):
             cx = str(d[1])
             cy = str(d[0])
@@ -934,7 +923,7 @@ class Points(Layer):
         if self._is_selecting:
             self._is_selecting = False
             self.selected_points = points_in_box(
-                self._drag_box, self._points_view, self._sizes_view
+                self._drag_box, self._data_view, self._sizes_view
             )
             self._set_highlight(force=True)
 
@@ -968,7 +957,7 @@ class Points(Layer):
                     self._paste_points()
             elif event.key == 'a':
                 if self._mode == Mode.SELECT:
-                    self.selected_points = list(range(len(self._points_view)))
+                    self.selected_points = list(range(len(self._data_view)))
                     self._set_highlight()
             elif event.key == 'Backspace':
                 if self._mode == Mode.SELECT:
