@@ -282,9 +282,14 @@ class Image(Layer):
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
         if self.multichannel:
-            downsampled = ndi.zoom(
-                image, (zoom_factor, zoom_factor, 1), prefilter=False, order=0
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                downsampled = ndi.zoom(
+                    image,
+                    (zoom_factor, zoom_factor, 1),
+                    prefilter=False,
+                    order=0,
+                )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
                 colormapped[..., 3] = downsampled[..., 3] * self.opacity
@@ -301,9 +306,11 @@ class Image(Layer):
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
         else:
-            downsampled = ndi.zoom(
-                image, zoom_factor, prefilter=False, order=0
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                downsampled = ndi.zoom(
+                    image, zoom_factor, prefilter=False, order=0
+                )
             low, high = self.clim
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
