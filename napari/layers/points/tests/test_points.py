@@ -4,73 +4,68 @@ from napari.layers import Points
 
 
 def test_random_points():
-    """Test instantiating Labels layer with random 2D data."""
+    """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert np.all(layer.data == data)
-    # assert layer.ndim == len(shape)
-    # assert layer.shape == shape
-    # assert layer.range == tuple((0, m, 1) for m in shape)
-    # assert layer._data_view.shape == shape[-2:]
+    assert layer.ndim == shape[1]
+    assert layer._data_view.ndim == 2
 
 
-#
-# def test_all_zeros_labels():
-#     """Test instantiating Labels layer with all zeros data."""
-#     shape = (10, 15)
-#     data = np.zeros(shape, dtype=int)
-#     layer = Labels(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == len(shape)
-#     assert layer.shape == shape
-#     assert layer._data_view.shape == shape[-2:]
-#
-#
-# def test_3D_labels():
-#     """Test instantiating Labels layer with random 3D data."""
-#     shape = (6, 10, 15)
-#     data = np.round(20 * np.random.random(shape)).astype(int)
-#     layer = Labels(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == len(shape)
-#     assert layer.shape == shape
-#     assert layer._data_view.shape == shape[-2:]
-#
-#
-# def test_changing_labels():
-#     """Test changing Labels data."""
-#     shape_a = (10, 15)
-#     shape_b = (20, 12)
-#     data_a = np.round(20 * np.random.random(shape_a)).astype(int)
-#     data_b = np.round(20 * np.random.random(shape_b)).astype(int)
-#     layer = Labels(data_a)
-#     layer.data = data_b
-#     assert np.all(layer.data == data_b)
-#     assert layer.ndim == len(shape_b)
-#     assert layer.shape == shape_b
-#     assert layer.range == tuple((0, m, 1) for m in shape_b)
-#     assert layer._data_view.shape == shape_b[-2:]
-#
-#
-# def test_changing_labels_dims():
-#     """Test changing Labels data including dimensionality."""
-#     shape_a = (10, 15)
-#     shape_b = (20, 12, 6)
-#     data_a = np.round(20 * np.random.random(shape_a)).astype(int)
-#     data_b = np.round(20 * np.random.random(shape_b)).astype(int)
-#     layer = Labels(data_a)
-#
-#     # Prep indices for swtich to 3D
-#     layer._indices = (0,) + layer._indices
-#     layer.data = data_b
-#     assert np.all(layer.data == data_b)
-#     assert layer.ndim == len(shape_b)
-#     assert layer.shape == shape_b
-#     assert layer.range == tuple((0, m, 1) for m in shape_b)
-#     assert layer._data_view.shape == shape_b[-2:]
-#
-#
+def test_integer_points():
+    """Test instantiating Points layer with integer data."""
+    shape = (10, 2)
+    data = np.round(20 * np.random.random(shape)).astype(int)
+    layer = Points(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == shape[1]
+    assert layer._data_view.ndim == 2
+
+
+def test_negative_points():
+    """Test instantiating Points layer with negative data."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape) - 10
+    layer = Points(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == shape[1]
+    assert layer._data_view.ndim == 2
+
+
+def test_3D_points():
+    """Test instantiating Points layer with random 3D data."""
+    shape = (10, 3)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == shape[1]
+    assert layer._data_view.ndim == 2
+
+
+def test_4D_points():
+    """Test instantiating Points layer with random 4D data."""
+    shape = (10, 4)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == shape[1]
+    assert layer._data_view.ndim == 2
+
+
+def test_changing_points():
+    """Test changing Points data."""
+    shape_a = (10, 2)
+    shape_b = (20, 2)
+    data_a = 20 * np.random.random(shape_a)
+    data_b = 20 * np.random.random(shape_b)
+    layer = Points(data_a)
+    layer.data = data_b
+    assert np.all(layer.data == data_b)
+    assert layer.ndim == shape_b[1]
+    assert layer._data_view.ndim == 2
+
+
 # def test_changing_modes():
 #     """Test changing modes."""
 #     data = np.round(20 * np.random.random((10, 15))).astype(int)

@@ -81,7 +81,6 @@ class Points(Layer):
             n_dimensional=Event,
         )
         self._colors = get_color_names()
-        self._update_properties = True
 
         # Freeze refreshes
         with self.freeze_refresh():
@@ -234,12 +233,6 @@ class Points(Layer):
         self.events.symbol()
 
         self.refresh()
-
-    @contextmanager
-    def block_update_properties(self):
-        self._update_properties = False
-        yield
-        self._update_properties = True
 
     @property
     def size_array(self) -> Union[int, float, np.ndarray, list]:
@@ -403,13 +396,6 @@ class Points(Layer):
         """
         width = str(self.edge_width)
         opacity = str(self.opacity)
-
-        # Currently not using fill or stroke opacity - only global opacity
-        # as otherwise leads to unexpected behavior when reading svg into
-        # other applications
-        # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
-        # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
-
         props = {'stroke-width': width, 'opacity': opacity}
 
         return props
