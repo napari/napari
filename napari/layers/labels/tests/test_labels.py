@@ -193,9 +193,11 @@ def test_selecting_label():
     data = np.round(20 * np.random.random((10, 15))).astype(int)
     layer = Labels(data)
     assert layer.selected_label == 0
+    assert layer._selected_color == None
 
     layer.selected_label = 1
     assert layer.selected_label == 1
+    assert len(layer._selected_color) == 4
 
 
 def test_label_color():

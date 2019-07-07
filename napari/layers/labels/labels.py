@@ -17,15 +17,15 @@ from ._constants import Mode
 class Labels(Layer):
     """Labels (or segmentation) layer.
 
-    An image layer where every pixel contains an integer ID corresponding
-    to the region it belongs to. The label 0 is rendered as transparent.
+    An image-like layer where every pixel contains an integer ID
+    corresponding to the region it belongs to.
 
     Parameters
     ----------
     labels : array
-        Image data.
+        Labels data.
     metadata : dict, optional
-        Image metadata.
+        Labels metadata.
     num_colors : int, optional
         Number of unique colors to use in colormap.
     seed : float, optional
@@ -34,8 +34,60 @@ class Labels(Layer):
         Opacity of the labels, must be between 0 and 1.
     name : str, keyword-only
         Name of the layer.
-    **kwargs : dict
-        Parameters that will be translated to metadata.
+
+    Attributes
+    ----------
+    data : array
+        Integer valued label data. Can be N dimensional. Every pixel contains
+        an integer ID corresponding to the region it belongs to. The label 0 is
+        rendered as transparent.
+    metadata : dict
+        Labels metadata.
+    num_colors : int
+        Number of unique colors to use in colormap.
+    seed : float
+        Seed for colormap random generator.
+    opacity : float
+        Opacity of the labels, must be between 0 and 1.
+    contiguous : bool
+        If `True`, the fill bucket changes only connected pixels of same label.
+    n_dimensional : bool
+        If `True`, paint and fill edit labels across all dimensions.
+    brush_size : float
+        Size of the paint brush.
+    selected_label : int
+        Index of selected label. Can be greater than the current maximum label.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In PICKER mode the cursor functions like a color picker, setting the
+        clicked on label to be the curent label. If the background is picked it
+        will select the background label `0`.
+
+        In PAINT mode the cursor functions like a paint brush changing any
+        pixels it brushes over to the current label. If the background label
+        `0` is selected than any pixels will be changed to background and this
+        tool functions like an eraser. The size and shape of the cursor can be
+        adjusted in the properties widget.
+
+        In FILL mode the cursor functions like a fill bucket replacing pixels
+        of the label clicked on with the current label. It can either replace
+        all pixels of that label or just those that are contiguous with the
+        clicked on pixel. If the background label `0` is selected than any
+        pixels will be changed to background and this tool functions like an
+        eraser.
+
+    Extended Summary
+    ----------
+    _data_view : array (N, M)
+        2D labels data for the currently viewed slice.
+    _selected_color : 4-tuple or None
+        RGBA tuple of the color of the selected label, or None if the
+        background label `0` is selected.
+    _last_cursor_coord : list or None
+        Coordinates of last cursor click before painting, gets reset to None
+        after painting is done. Used for interpolating brush strokes.
     """
 
     def __init__(
@@ -138,13 +190,7 @@ class Labels(Layer):
 
     @property
     def brush_size(self):
-        """float or tuple: Size of the paint brush.
-
-        If a float, then if `n_dimensional` is False applies just to the
-        visible dimensions, if `n_dimensional` is True applies to all
-        dimensions. If a tuple, must be the same length as the number of
-        dimensions of the layer, and size applies to each dimension.
-        """
+        """float: Size of the paint brush."""
         return self._brush_size
 
     @brush_size.setter
@@ -179,12 +225,7 @@ class Labels(Layer):
 
     @property
     def selected_label(self):
-        """int: Index of selected label.
-
-        If `0` corresponds to the transparent background. If greater than the
-        current maximum label then if used to fill or paint a region this label
-        will be added to the new labels.
-        """
+        """int: Index of selected label."""
         return self._selected_label
 
     @selected_label.setter
@@ -355,24 +396,6 @@ class Labels(Layer):
             self.data[slice_indices] = labels
 
         self.refresh()
-
-    def _to_pix(self, pos, axis):
-        """Round float from cursor position to a valid pixel
-
-        Parameters
-        ----------
-        pos : float
-            Float that is to be mapped.
-        axis : int
-            Axis that pos corresponds to.
-        Parameters
-        ----------
-        pix : int
-            Rounded pixel value
-        """
-
-        pix = np.round(np.clip(pos, 0, shape)).astype(int)
-        return pix
 
     def paint(self, coord, new_label):
         """Paint over existing labels with a new label, using the selected

@@ -453,25 +453,23 @@ class ViewerModel:
     def add_labels(self, label_image, *args, **kwargs):
         """Add a labels (or segmentation) layer to the layers list.
 
-        An image layer where every pixel contains an integer ID corresponding
-        to the region it belongs to.
+        An image-like layer where every pixel contains an integer ID
+        corresponding to the region it belongs to.
 
         Parameters
         ----------
-        image : np.ndarray
-            Image data.
-        meta : dict, optional
-            Image metadata.
-        multichannel : bool, optional
-            Whether the image is multichannel. Guesses if None.
+        labels : array
+            Labels data.
+        metadata : dict, optional
+            Labels metadata.
+        num_colors : int, optional
+            Number of unique colors to use in colormap.
+        seed : float, optional
+            Seed for colormap random generator.
         opacity : float, optional
             Opacity of the labels, must be between 0 and 1.
         name : str, keyword-only
             Name of the layer.
-        num_colors : int, optional
-            Number of unique colors to use. Default used if not given.
-        **kwargs : dict
-            Parameters that will be translated to metadata.
 
         Returns
         -------
