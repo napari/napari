@@ -23,4 +23,4 @@ with napari.gui_qt():
 
     # Set the labels layer mode to picker with a string
     label_layer.mode = 'picker'
-    print(f'The color of label 5 is {label_layer.label_color(5)}')
+    print(f'The color of label 5 is {label_layer.get_color(5)}')

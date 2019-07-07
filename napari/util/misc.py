@@ -216,32 +216,37 @@ def segment_normal_vector(a, b):
     return unit_norm
 
 
-def slice_image(data, indices, multichannel=False):
-    """Determine the slice of image from the indices.
+def interpolate_coordinates(old_coord, new_coord, brush_size):
+    """Interpolates coordinates depending on brush size.
+
+    Useful for ensuring painting is continuous in labels layer.
 
     Parameters
     ----------
-    data : array
-        Image data array to be sliced.
-    indices : tuple
-        Indices to slice array at.
-    multichannel : bool, optional
-        Flag if image is multichannel, for example RGB or RGBA.
+    old_coord : np.ndarray, 1x2
+        Last position of cursor.
+    new_coord : np.ndarray, 1x2
+        Current position of cursor.
+    brush_size : float
+        Size of brush, which determines spacing of interploation.
 
     Returns
-    -------
-    data_view : array
-        Sliced image data.
+    ----------
+    coords : np.array, Nx2
+        List of coordinates to ensure painting is continous
     """
-    shape = data.shape
-    if multichannel:
-        shape = shape[:-1]
+    num_step = round(
+        max(abs(np.array(new_coord) - np.array(old_coord))) / brush_size * 4
+    )
+    coords = [
+        np.linspace(old_coord[i], new_coord[i], num=num_step + 1)
+        for i in range(len(new_coord))
+    ]
+    coords = np.stack(coords).T
+    if len(coords) > 1:
+        coords = coords[1:]
 
-    indices = list(indices)
-    indices[:-2] = np.clip(indices[:-2], 0, np.subtract(shape[:-2], 1))
-    data_view = np.asarray(data[tuple(indices)])
-
-    return data_view
+    return coords
 
 
 class StringEnum(Enum):
