@@ -1,5 +1,6 @@
 import numpy as np
 from xml.etree.ElementTree import Element
+from vispy.color import Colormap
 from napari.layers import Labels
 
 
@@ -70,6 +71,30 @@ def test_changing_labels_dims():
     assert layer._data_view.shape == shape_b[-2:]
 
 
+def test_changing_modes():
+    """Test changing modes."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.mode == 'pan_zoom'
+    assert layer.interactive == True
+
+    layer.mode = 'fill'
+    assert layer.mode == 'fill'
+    assert layer.interactive == False
+
+    layer.mode = 'paint'
+    assert layer.mode == 'paint'
+    assert layer.interactive == False
+
+    layer.mode = 'picker'
+    assert layer.mode == 'picker'
+    assert layer.interactive == False
+
+    layer.mode = 'pan_zoom'
+    assert layer.mode == 'pan_zoom'
+    assert layer.interactive == True
+
+
 def test_name():
     """Test setting layer name."""
     data = np.round(20 * np.random.random((10, 15))).astype(int)
@@ -83,145 +108,171 @@ def test_name():
     assert layer.name == 'lbls'
 
 
-#
-#
-# def test_interpolation():
-#     """Test setting image interpolation mode."""
-#     data = np.random.random((10, 15))
-#     layer = Image(data)
-#     assert layer.interpolation == 'nearest'
-#
-#     layer = Image(data, interpolation='bicubic')
-#     assert layer.interpolation == 'bicubic'
-#
-#     layer.interpolation = 'bilinear'
-#     assert layer.interpolation == 'bilinear'
-#
-#
-# def test_colormaps():
-#     """Test setting test_colormaps."""
-#     data = np.random.random((10, 15))
-#     layer = Image(data)
-#     assert layer.colormap[0] == 'gray'
-#     assert type(layer.colormap[1]) == Colormap
-#
-#     layer.colormap = 'magma'
-#     assert layer.colormap[0] == 'magma'
-#     assert type(layer.colormap[1]) == Colormap
-#
-#     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-#     layer.colormap = 'custom', cmap
-#     assert layer.colormap[0] == 'custom'
-#     assert layer.colormap[1] == cmap
-#
-#     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-#     layer.colormap = {'new': cmap}
-#     assert layer.colormap[0] == 'new'
-#     assert layer.colormap[1] == cmap
-#
-#     layer = Image(data, colormap='magma')
-#     assert layer.colormap[0] == 'magma'
-#     assert type(layer.colormap[1]) == Colormap
-#
-#     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-#     layer = Image(data, colormap=('custom', cmap))
-#     assert layer.colormap[0] == 'custom'
-#     assert layer.colormap[1] == cmap
-#
-#     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-#     layer = Image(data, colormap={'new': cmap})
-#     assert layer.colormap[0] == 'new'
-#     assert layer.colormap[1] == cmap
-#
-#
-# def test_clims():
-#     """Test setting color limits."""
-#     data = np.random.random((10, 15))
-#     layer = Image(data)
-#     assert layer.clim[0] >= 0
-#     assert layer.clim[1] <= 1
-#     assert layer.clim[0] < layer.clim[1]
-#     assert layer.clim == layer._clim_range
-#
-#     # Change clim property
-#     clim = [0, 2]
-#     layer.clim = clim
-#     assert layer.clim == clim
-#     assert layer._clim_range == clim
-#
-#     # Set clim as keyword argument
-#     layer = Image(data, clim=clim)
-#     assert layer.clim == clim
-#     assert layer._clim_range == clim
-#
-#
-# def test_clim_range():
-#     """Test setting color limits range."""
-#     data = np.random.random((10, 15))
-#     layer = Image(data)
-#     assert layer._clim_range[0] >= 0
-#     assert layer._clim_range[1] <= 1
-#     assert layer._clim_range[0] < layer._clim_range[1]
-#
-#     # If all data is the same value the clim_range and clim defaults to [0, 1]
-#     data = np.zeros((10, 15))
-#     layer = Image(data)
-#     assert layer._clim_range == [0, 1]
-#     assert layer.clim == [0.0, 1.0]
-#
-#     # Set clim_range as keyword argument
-#     data = np.random.random((10, 15))
-#     layer = Image(data, clim_range=[0, 2])
-#     assert layer._clim_range == [0, 2]
-#
-#     # Set clim and clim_range as keyword arguments
-#     data = np.random.random((10, 15))
-#     layer = Image(data, clim=[0.3, 0.6], clim_range=[0, 2])
-#     assert layer.clim == [0.3, 0.6]
-#     assert layer._clim_range == [0, 2]
-#
-#
-# def test_metadata():
-#     """Test setting image metadata."""
-#     data = np.random.random((10, 15))
-#     layer = Image(data)
-#     assert layer.metadata == {}
-#
-#     layer = Image(data, metadata={'unit': 'cm'})
-#     assert layer.metadata == {'unit': 'cm'}
-#
-#
-# def test_value():
-#     """Test getting the value of the data at the current coordinates."""
-#     data = np.random.random((10, 15))
-#     layer = Image(data)
-#     coord, value = layer.get_value()
-#     assert np.all(coord == [0, 0])
-#     assert value == data[0, 0]
-#
-#
-# def test_message():
-#     """Test converting value and coords to message."""
-#     data = np.random.random((10, 15))
-#     layer = Image(data)
-#     coord, value = layer.get_value()
-#     msg = layer.get_message(coord, value)
-#     assert type(msg) == str
-#
-#
-# def test_thumbnail():
-#     """Test the image thumbnail for square data."""
-#     data = np.random.random((30, 30))
-#     layer = Image(data)
-#     layer._update_thumbnail()
-#     assert layer.thumbnail.shape == layer._thumbnail_shape
-#
-#
-# def test_xml_list():
-#     """Test the xml generation."""
-#     data = np.random.random((15, 30))
-#     layer = Image(data)
-#     xml = layer.to_xml_list()
-#     assert type(xml) == list
-#     assert len(xml) == 1
-#     assert type(xml[0]) == Element
+def test_seed():
+    """Test setting seed."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.seed == 0.5
+
+    layer.seed = 0.9
+    assert layer.seed == 0.9
+
+    layer = Labels(data, seed=0.7)
+    assert layer.seed == 0.7
+
+
+def test_num_colors():
+    """Test setting number of colors in colormap."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.num_colors == 50
+
+    layer.num_colors = 80
+    assert layer.num_colors == 80
+
+    layer = Labels(data, num_colors=60)
+    assert layer.num_colors == 60
+
+
+def test_colormap():
+    """Test colormap."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert type(layer.colormap) == tuple
+    assert layer.colormap[0] == 'random'
+    assert type(layer.colormap[1]) == Colormap
+
+    layer.new_colormap()
+    assert type(layer.colormap) == tuple
+    assert layer.colormap[0] == 'random'
+    assert type(layer.colormap[1]) == Colormap
+
+
+def test_metadata():
+    """Test setting labels metadata."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.metadata == {}
+
+    layer = Labels(data, metadata={'unit': 'cm'})
+    assert layer.metadata == {'unit': 'cm'}
+
+
+def test_brush_size():
+    """Test changing brush size."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.brush_size == 10
+
+    layer.brush_size = 20
+    assert layer.brush_size == 20
+
+
+def test_contiguous():
+    """Test changing contiguous."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.contiguous == True
+
+    layer.contiguous = False
+    assert layer.contiguous == False
+
+
+def test_n_dimensional():
+    """Test changing n_dimensional."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.n_dimensional == True
+
+    layer.n_dimensional = False
+    assert layer.n_dimensional == False
+
+
+def test_selecting_label():
+    """Test changing n_dimensional."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    assert layer.selected_label == 0
+
+    layer.selected_label = 1
+    assert layer.selected_label == 1
+
+
+def test_label_color():
+    """Test getting label color."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    col = layer.get_color(0)
+    assert col == None
+
+    col = layer.get_color(1)
+    assert len(col) == 4
+
+
+def test_paint():
+    """Test painting labels with different brush sizes."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    data[:10, :10] = 1
+    layer = Labels(data)
+    assert np.unique(layer.data[:5, :5]) == 1
+    assert np.unique(layer.data[5:10, 5:10]) == 1
+
+    layer.brush_size = 10
+    layer.paint([0, 0], 2)
+    assert np.unique(layer.data[:5, :5]) == 2
+    assert np.unique(layer.data[5:10, 5:10]) == 1
+
+    layer.brush_size = 20
+    layer.paint([0, 0], 2)
+    assert np.unique(layer.data[:5, :5]) == 2
+    assert np.unique(layer.data[5:10, 5:10]) == 2
+
+
+def test_fill():
+    """Test filling labels with different brush sizes."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    data[:10, :10] = 2
+    data[:5, :5] = 1
+    layer = Labels(data)
+    assert np.unique(layer.data[:5, :5]) == 1
+    assert np.unique(layer.data[5:10, 5:10]) == 2
+
+    layer.fill([0, 0], 1, 3)
+    assert np.unique(layer.data[:5, :5]) == 3
+    assert np.unique(layer.data[5:10, 5:10]) == 2
+
+
+def test_value():
+    """Test getting the value of the data at the current coordinates."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    coord, value = layer.get_value()
+    assert np.all(coord == [0, 0])
+    assert value == data[0, 0]
+
+
+def test_message():
+    """Test converting value and coords to message."""
+    data = np.round(20 * np.random.random((10, 15))).astype(int)
+    layer = Labels(data)
+    coord, value = layer.get_value()
+    msg = layer.get_message(coord, value)
+    assert type(msg) == str
+
+
+def test_thumbnail():
+    """Test the image thumbnail for square data."""
+    data = np.round(20 * np.random.random((30, 30))).astype(int)
+    layer = Labels(data)
+    layer._update_thumbnail()
+    assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_xml_list():
+    """Test the xml generation."""
+    data = np.round(20 * np.random.random((30, 30))).astype(int)
+    layer = Labels(data)
+    xml = layer.to_xml_list()
+    assert type(xml) == list
+    assert len(xml) == 1
+    assert type(xml[0]) == Element

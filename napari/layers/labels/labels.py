@@ -10,7 +10,7 @@ from ..base import Layer
 from ..._vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
-from ...util.misc import slice_image
+from ...util.misc import slice_image, interpolate_coordinates
 from ._constants import Mode
 
 
@@ -26,12 +26,14 @@ class Labels(Layer):
         Image data.
     metadata : dict, optional
         Image metadata.
+    num_colors : int, optional
+        Number of unique colors to use in colormap.
+    seed : float, optional
+        Seed for colormap random generator.
     opacity : float, optional
         Opacity of the labels, must be between 0 and 1.
     name : str, keyword-only
         Name of the layer.
-    num_colors : int, optional
-        Number of unique colors to use. Default used if not given.
     **kwargs : dict
         Parameters that will be translated to metadata.
     """
@@ -41,6 +43,7 @@ class Labels(Layer):
         labels,
         metadata=None,
         num_colors=50,
+        seed=0.5,
         opacity=0.7,
         *,
         name=None,
@@ -64,12 +67,13 @@ class Labels(Layer):
             self.metadata = {}
         else:
             self.metadata = metadata
-        self._seed = 0.5
+        self._seed = seed
 
         self._colormap_name = 'random'
+        self._num_colors = num_colors
         self.colormap = (
             self._colormap_name,
-            colormaps.label_colormap(num_colors),
+            colormaps.label_colormap(self.num_colors),
         )
         self._node.clim = [0.0, 1.0]
         self._node.cmap = self.colormap[1]
@@ -114,7 +118,7 @@ class Labels(Layer):
 
     @property
     def contiguous(self):
-        """bool: fill bucket changes connected pixels of the same label."""
+        """bool: fill bucket changes only connected pixels of same label."""
         return self._contiguous
 
     @contiguous.setter
@@ -124,7 +128,7 @@ class Labels(Layer):
 
     @property
     def n_dimensional(self):
-        """bool: paint and fill edits labels in all dimensions."""
+        """bool: paint and fill edits labels across all dimensions."""
         return self._n_dimensional
 
     @n_dimensional.setter
@@ -150,6 +154,30 @@ class Labels(Layer):
         self.events.brush_size()
 
     @property
+    def seed(self):
+        """float: Seed for colormap random generator."""
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        self._seed = seed
+        self.refresh()
+
+    @property
+    def num_colors(self):
+        """int: Number of unique colors to use in colormap."""
+        return self._num_colors
+
+    @num_colors.setter
+    def num_colors(self, num_colors):
+        self._num_colors = num_colors
+        self.colormap = (
+            self._colormap_name,
+            colormaps.label_colormap(num_colors),
+        )
+        self.refresh()
+
+    @property
     def selected_label(self):
         """int: Index of selected label.
 
@@ -166,7 +194,7 @@ class Labels(Layer):
             # If background
             self._selected_color = None
         else:
-            self._selected_color = self.label_color(selected_label)[0]
+            self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
     @property
@@ -256,10 +284,14 @@ class Labels(Layer):
         self._seed = np.random.rand()
         self.refresh()
 
-    def label_color(self, label):
+    def get_color(self, label):
         """Return the color corresponding to a specific label."""
-        val = self._raw_to_displayed(np.array([label]))
-        return self.colormap[1].map(val)
+        if label == 0:
+            col = None
+        else:
+            val = self._raw_to_displayed(np.array([label]))
+            col = self.colormap[1].map(val)[0]
+        return col
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -331,7 +363,7 @@ class Labels(Layer):
         ----------
         pos : float
             Float that is to be mapped.
-        axis : 0 | 1
+        axis : int
             Axis that pos corresponds to.
         Parameters
         ----------
@@ -339,7 +371,7 @@ class Labels(Layer):
             Rounded pixel value
         """
 
-        pix = np.clip(int(round(pos)), 0, self.shape[axis])
+        pix = np.round(np.clip(pos, 0, shape)).astype(int)
         return pix
 
     def paint(self, coord, new_label):
@@ -358,11 +390,15 @@ class Labels(Layer):
             slice_coord = tuple(
                 [
                     slice(
-                        self._to_pix(ind - self.brush_size / 2, i),
-                        self._to_pix(ind + self.brush_size / 2, i),
+                        np.round(
+                            np.clip(c - self.brush_size / 2, 0, s)
+                        ).astype(int),
+                        np.round(
+                            np.clip(c + self.brush_size / 2, 0, s)
+                        ).astype(int),
                         1,
                     )
-                    for i, ind in enumerate(coord)
+                    for c, s in zip(coord, self.shape)
                 ]
             )
         else:
@@ -370,15 +406,15 @@ class Labels(Layer):
                 list(np.array(coord[:-2]).astype(int))
                 + [
                     slice(
-                        self._to_pix(
-                            ind - self.brush_size / 2, self.ndim - 2 + i
-                        ),
-                        self._to_pix(
-                            ind + self.brush_size / 2, self.ndim - 2 + i
-                        ),
+                        np.round(
+                            np.clip(c - self.brush_size / 2, 0, s)
+                        ).astype(int),
+                        np.round(
+                            np.clip(c + self.brush_size / 2, 0, s)
+                        ).astype(int),
                         1,
                     )
-                    for i, ind in enumerate(coord[-2:])
+                    for c, s in zip(coord[-2:], self.shape[-2:])
                 ]
             )
 
@@ -386,37 +422,6 @@ class Labels(Layer):
         self.data[slice_coord] = new_label
 
         self.refresh()
-
-    def _interp_coords(self, old_coord, new_coord):
-        """Interpolates coordinates between old and new, useful for ensuring
-        painting is continous. Depends on the current brush size
-
-        Parameters
-        ----------
-        old_coord : np.ndarray, 1x2
-            Last position of cursor.
-        new_coord : np.ndarray, 1x2
-            Current position of cursor.
-
-        Returns
-        ----------
-        coords : np.array, Nx2
-            List of coordinates to ensure painting is continous
-        """
-        num_step = round(
-            max(abs(np.array(new_coord) - np.array(old_coord)))
-            / self.brush_size
-            * 4
-        )
-        coords = [
-            np.linspace(old_coord[i], new_coord[i], num=num_step + 1)
-            for i in range(len(new_coord))
-        ]
-        coords = np.stack(coords).T
-        if len(coords) > 1:
-            coords = coords[1:]
-
-        return coords
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -555,8 +560,8 @@ class Labels(Layer):
             if self._last_cursor_coord is None:
                 interp_coord = [coord]
             else:
-                interp_coord = self._interp_coords(
-                    self._last_cursor_coord, coord
+                interp_coord = interpolate_coordinates(
+                    self._last_cursor_coord, coord, self.brush_size
                 )
             with self.freeze_refresh():
                 for c in interp_coord:
