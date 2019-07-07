@@ -11,6 +11,7 @@ def test_random_points():
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
     assert layer._data_view.ndim == 2
+    assert len(layer.data) == 10
 
 
 def test_integer_points():
@@ -21,6 +22,7 @@ def test_integer_points():
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
     assert layer._data_view.ndim == 2
+    assert len(layer.data) == 10
 
 
 def test_negative_points():
@@ -31,6 +33,18 @@ def test_negative_points():
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
     assert layer._data_view.ndim == 2
+    assert len(layer.data) == 10
+
+
+def test_empty_points():
+    """Test instantiating Points layer with empty array."""
+    shape = (0, 2)
+    data = np.empty(shape)
+    layer = Points(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == shape[1]
+    assert layer._data_view.ndim == 2
+    assert len(layer.data) == 0
 
 
 def test_3D_points():
@@ -41,6 +55,7 @@ def test_3D_points():
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
     assert layer._data_view.ndim == 2
+    assert len(layer.data) == 10
 
 
 def test_4D_points():
@@ -51,6 +66,7 @@ def test_4D_points():
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
     assert layer._data_view.ndim == 2
+    assert len(layer.data) == 10
 
 
 def test_changing_points():
@@ -64,6 +80,33 @@ def test_changing_points():
     assert np.all(layer.data == data_b)
     assert layer.ndim == shape_b[1]
     assert layer._data_view.ndim == 2
+    assert len(layer.data) == 20
+
+
+def test_adding_points():
+    """Test adding Points data."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert len(layer.data) == 10
+
+    coord = [20, 20]
+    layer.add(coord)
+    assert len(layer.data) == 11
+    assert np.all(layer.data[10] == coord)
+
+
+def test_adding_points_to_empty():
+    """Test adding Points data to empty."""
+    shape = (0, 2)
+    data = np.empty(shape)
+    layer = Points(data)
+    assert len(layer.data) == 0
+
+    coord = [20, 20]
+    layer.add(coord)
+    assert len(layer.data) == 1
+    assert np.all(layer.data[0] == coord)
 
 
 def test_changing_modes():
@@ -101,19 +144,20 @@ def test_name():
     assert layer.name == 'pts'
 
 
-#
-#
-# def test_seed():
-#     """Test setting seed."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.seed == 0.5
-#
-#     layer.seed = 0.9
-#     assert layer.seed == 0.9
-#
-#     layer = Labels(data, seed=0.7)
-#     assert layer.seed == 0.7
+def test_symbol():
+    """Test setting symbol."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.symbol == 'disc'
+
+    layer.symbol = 'cross'
+    assert layer.symbol == 'cross'
+
+    layer = Points(data, symbol='star')
+    assert layer.symbol == 'star'
+
+
 #
 #
 # def test_num_colors():

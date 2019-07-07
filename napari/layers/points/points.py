@@ -701,9 +701,10 @@ class Points(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _add(self, coord):
+    def add(self, coord):
         """Adds point at given mouse position
         and set of indices.
+        
         Parameters
         ----------
         coord : sequence of indices to add point at
@@ -876,7 +877,7 @@ class Points(Layer):
                 self.selected_data = []
             self._set_highlight()
         elif self._mode == Mode.ADD:
-            self._add(coord)
+            self.add(coord)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
