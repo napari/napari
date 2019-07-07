@@ -17,7 +17,7 @@ def test_random_points():
 def test_integer_points():
     """Test instantiating Points layer with integer data."""
     shape = (10, 2)
-    data = np.round(20 * np.random.random(shape)).astype(int)
+    data = np.random.randint(20, size=(10, 2))
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
@@ -144,6 +144,15 @@ def test_name():
     assert layer.name == 'pts'
 
 
+def test_selecting_points():
+    """Test selecting points."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    layer.selected_data = [0, 1]
+    assert layer.selected_data == [0, 1]
+
+
 def test_symbol():
     """Test setting symbol."""
     shape = (10, 2)
@@ -159,21 +168,169 @@ def test_symbol():
 
 
 def test_size():
-    """Test setting size."""
+    """Test setting size with scalar."""
     shape = (10, 2)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.size == 10
+    assert layer.size_array.shape == shape
+    assert np.unique(layer.size_array)[0] == 10
 
+    # Add a new point, it should get current size
+    coord = [17, 17]
+    layer.add(coord)
+    assert layer.size_array.shape == (11, 2)
+    assert np.unique(layer.size_array)[0] == 10
+
+    # Setting size affects newly added points not current points
     layer.size = 20
     assert layer.size == 20
+    assert layer.size_array.shape == (11, 2)
+    assert np.unique(layer.size_array)[0] == 10
 
+    # Add new point, should have new size
+    coord = [18, 18]
+    layer.add(coord)
+    assert layer.size_array.shape == (12, 2)
+    assert np.unique(layer.size_array[:11])[0] == 10
+    assert np.all(layer.size_array[11] == [20, 20])
+
+    # Select data and change size
+    layer.selected_data = [0, 1]
+    assert layer.size == 10
+    layer.size = 16
+    assert layer.size_array.shape == (12, 2)
+    assert np.unique(layer.size_array[2:11])[0] == 10
+    assert np.unique(layer.size_array[:2])[0] == 16
+
+    # Select data and size changes
+    layer.selected_data = [11]
+    assert layer.size == 20
+
+    # Create new layer with new size data
     layer = Points(data, size=15)
     assert layer.size == 15
+    assert layer.size_array.shape == shape
+    assert np.unique(layer.size_array)[0] == 15
 
 
-#
-#
+def test_size_with_arrays():
+    """Test setting size with arrays."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    sizes = 5 * np.random.random(shape)
+    layer.size_array = sizes
+    assert np.all(layer.size_array == sizes)
+
+    # Test broadcasting of sizes
+    sizes = [5, 5]
+    layer.size_array = sizes
+    assert np.all(layer.size_array[0] == sizes)
+
+    # Create new layer with new size array data
+    sizes = 5 * np.random.random(shape)
+    layer = Points(data, size=sizes)
+    assert layer.size == 10
+    assert layer.size_array.shape == shape
+    assert np.all(layer.size_array == sizes)
+
+    # Create new layer with new size array data
+    sizes = [5, 5]
+    layer = Points(data, size=sizes)
+    assert layer.size == 10
+    assert layer.size_array.shape == shape
+    assert np.all(layer.size_array[0] == sizes)
+
+    # Add new point, should have new size
+    coord = [18, 18]
+    layer.size = 13
+    layer.add(coord)
+    assert layer.size_array.shape == (11, 2)
+    assert np.unique(layer.size_array[:10])[0] == 5
+    assert np.all(layer.size_array[10] == [13, 13])
+
+    # Select data and change size
+    layer.selected_data = [0, 1]
+    assert layer.size == 5
+    layer.size = 16
+    assert layer.size_array.shape == (11, 2)
+    assert np.unique(layer.size_array[2:10])[0] == 5
+    assert np.unique(layer.size_array[:2])[0] == 16
+
+
+def test_size_with_3D_arrays():
+    """Test setting size with 3D arrays."""
+    shape = (10, 3)
+    data = 20 * np.random.random(shape)
+    data[:2, 0] = 0
+    layer = Points(data)
+    assert layer.size == 10
+    assert layer.size_array.shape == shape
+    assert np.unique(layer.size_array)[0] == 10
+
+    sizes = 5 * np.random.random(shape)
+    layer.size_array = sizes
+    assert np.all(layer.size_array == sizes)
+
+    # Test broadcasting of sizes
+    sizes = [1, 5, 5]
+    layer.size_array = sizes
+    assert np.all(layer.size_array[0] == sizes)
+
+    # Create new layer with new size array data
+    sizes = 5 * np.random.random(shape)
+    layer = Points(data, size=sizes)
+    assert layer.size == 10
+    assert layer.size_array.shape == shape
+    assert np.all(layer.size_array == sizes)
+
+    # Create new layer with new size array data
+    sizes = [1, 5, 5]
+    layer = Points(data, size=sizes)
+    assert layer.size == 10
+    assert layer.size_array.shape == shape
+    assert np.all(layer.size_array[0] == sizes)
+
+    # Add new point, should have new size in last dim only
+    coord = [4, 18, 18]
+    layer.size = 13
+    layer.add(coord)
+    assert layer.size_array.shape == (11, 3)
+    assert np.unique(layer.size_array[:10, 1:])[0] == 5
+    assert np.all(layer.size_array[10] == [1, 13, 13])
+
+    # Select data and change size
+    layer.selected_data = [0, 1]
+    assert layer.size == 5
+    layer.size = 16
+    assert layer.size_array.shape == (11, 3)
+    assert np.unique(layer.size_array[2:10, 1:])[0] == 5
+    assert np.all(layer.size_array[0] == [16, 16, 16])
+
+    # Create new 3D layer with new 2D points size data
+    sizes = [0, 5, 5]
+    layer = Points(data, size=sizes)
+    assert layer.size == 10
+    assert layer.size_array.shape == shape
+    assert np.all(layer.size_array[0] == sizes)
+
+    # Add new point, should have new size only in last 2 dimensions
+    coord = [4, 18, 18]
+    layer.size = 13
+    layer.add(coord)
+    assert layer.size_array.shape == (11, 3)
+    assert np.all(layer.size_array[10] == [0, 13, 13])
+
+    # Select data and change size
+    layer.selected_data = [0, 1]
+    assert layer.size == 5
+    layer.size = 16
+    assert layer.size_array.shape == (11, 3)
+    assert np.unique(layer.size_array[2:10, 1:])[0] == 5
+    assert np.all(layer.size_array[0] == [0, 16, 16])
+
+
 # def test_num_colors():
 #     """Test setting number of colors in colormap."""
 #     data = np.round(20 * np.random.random((10, 15))).astype(int)

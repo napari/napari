@@ -54,13 +54,13 @@ class Points(Layer):
     def __init__(
         self,
         coords,
+        *,
         symbol='o',
         size=10,
         edge_width=1,
         edge_color='black',
         face_color='white',
         n_dimensional=False,
-        *,
         name=None,
     ):
 
@@ -153,6 +153,15 @@ class Points(Layer):
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
+
+            # Re intitialize indices depending on image dims
+            self._indices = (0,) * (self.ndim - 2) + (
+                slice(None, None, None),
+                slice(None, None, None),
+            )
+
+            # Trigger generation of view slice and thumbnail
+            self._set_view_slice()
 
     @property
     def data(self) -> np.ndarray:
@@ -347,6 +356,7 @@ class Points(Layer):
                 self.face_color = face_color
 
         size = list(set([self.size_array[i, -2:].mean() for i in index]))
+        print(size)
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -704,7 +714,7 @@ class Points(Layer):
     def add(self, coord):
         """Adds point at given mouse position
         and set of indices.
-        
+
         Parameters
         ----------
         coord : sequence of indices to add point at
