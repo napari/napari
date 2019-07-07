@@ -66,41 +66,41 @@ def test_changing_points():
     assert layer._data_view.ndim == 2
 
 
-# def test_changing_modes():
-#     """Test changing modes."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.mode == 'pan_zoom'
-#     assert layer.interactive == True
-#
-#     layer.mode = 'fill'
-#     assert layer.mode == 'fill'
-#     assert layer.interactive == False
-#
-#     layer.mode = 'paint'
-#     assert layer.mode == 'paint'
-#     assert layer.interactive == False
-#
-#     layer.mode = 'picker'
-#     assert layer.mode == 'picker'
-#     assert layer.interactive == False
-#
-#     layer.mode = 'pan_zoom'
-#     assert layer.mode == 'pan_zoom'
-#     assert layer.interactive == True
-#
-#
-# def test_name():
-#     """Test setting layer name."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.name == 'Labels'
-#
-#     layer = Labels(data, name='random')
-#     assert layer.name == 'random'
-#
-#     layer.name = 'lbls'
-#     assert layer.name == 'lbls'
+def test_changing_modes():
+    """Test changing modes."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.mode == 'pan_zoom'
+    assert layer.interactive == True
+
+    layer.mode = 'add'
+    assert layer.mode == 'add'
+    assert layer.interactive == False
+
+    layer.mode = 'select'
+    assert layer.mode == 'select'
+    assert layer.interactive == False
+
+    layer.mode = 'pan_zoom'
+    assert layer.mode == 'pan_zoom'
+    assert layer.interactive == True
+
+
+def test_name():
+    """Test setting layer name."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.name == 'Points'
+
+    layer = Points(data, name='random')
+    assert layer.name == 'random'
+
+    layer.name = 'pts'
+    assert layer.name == 'pts'
+
+
 #
 #
 # def test_seed():

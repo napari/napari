@@ -124,9 +124,9 @@ class Points(Layer):
                 self._face_color = 'white'
 
             # Indices of selected points within the currently viewed slice
-            self._selected_points = []
-            self._selected_points_stored = []
-            self._selected_points_history = []
+            self._selected_data = []
+            self._selected_data_stored = []
+            self._selected_data_history = []
             self._cur_selected = []
             # Index of hovered point within the currently viewed slice
             self._hover_point = None
@@ -262,8 +262,8 @@ class Points(Layer):
     @size.setter
     def size(self, size: Union[None, float]) -> None:
         self._size = size
-        if self._update_properties and len(self.selected_points) > 0:
-            index = self._indices_view[self.selected_points]
+        if self._update_properties and len(self.selected_data) > 0:
+            index = self._indices_view[self.selected_data]
             for i in index:
                 self.size_array[i, :] = (self.size_array[i, :] > 0) * size
             self.refresh()
@@ -292,8 +292,8 @@ class Points(Layer):
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
         self._edge_color = edge_color
-        if self._update_properties and len(self.selected_points) > 0:
-            index = self._indices_view[self.selected_points]
+        if self._update_properties and len(self.selected_data) > 0:
+            index = self._indices_view[self.selected_data]
             for i in index:
                 self._edge_color_list[i] = edge_color
             self.refresh()
@@ -309,26 +309,26 @@ class Points(Layer):
     @face_color.setter
     def face_color(self, face_color: str) -> None:
         self._face_color = face_color
-        if self._update_properties and len(self.selected_points) > 0:
-            index = self._indices_view[self.selected_points]
+        if self._update_properties and len(self.selected_data) > 0:
+            index = self._indices_view[self.selected_data]
             for i in index:
                 self._face_color_list[i] = face_color
             self.refresh()
         self.events.face_color()
 
     @property
-    def selected_points(self):
+    def selected_data(self):
         """list: list of currently selected points
         """
-        return self._selected_points
+        return self._selected_data
 
-    @selected_points.setter
-    def selected_points(self, selected_points):
-        self._selected_points = selected_points
-        self._selected_box = self.interaction_box(selected_points)
+    @selected_data.setter
+    def selected_data(self, selected_data):
+        self._selected_data = selected_data
+        self._selected_box = self.interaction_box(selected_data)
         if len(self._indices_view) > 0:
-            index = self._indices_view[self._selected_points]
-            self._cur_selected = self._indices_view[self._selected_points]
+            index = self._indices_view[self._selected_data]
+            self._cur_selected = self._indices_view[self._selected_data]
         else:
             index = []
             self._cur_selected = []
@@ -363,8 +363,8 @@ class Points(Layer):
         Returns
         ----------
         box : np.ndarray
-            5x2 array of corners of the interaction box in clockwise order
-            starting in the upper-left corner and duplicating the first corner
+            4x2 array of corners of the interaction box in clockwise order
+            starting in the upper-left corner.
         """
         if len(index) == 0:
             box = None
@@ -374,31 +374,9 @@ class Points(Layer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             data = points_to_squares(data, size)
-            min_val = np.array(
-                [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
-            )
-            max_val = np.array(
-                [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
-            )
-
-            tl = np.array([min_val[0], min_val[1]])
-            tr = np.array([max_val[0], min_val[1]])
-            br = np.array([max_val[0], max_val[1]])
-            bl = np.array([min_val[0], max_val[1]])
-
-            box = np.array([tl, tr, br, bl, tl])
+            box = create_box(data)
 
         return box
-
-    @property
-    def svg_props(self):
-        """dict: opacity and width properties in the svg specification
-        """
-        width = str(self.edge_width)
-        opacity = str(self.opacity)
-        props = {'stroke-width': width, 'opacity': opacity}
-
-        return props
 
     @property
     def mode(self):
@@ -430,7 +408,7 @@ class Points(Layer):
             raise ValueError("Mode not recognized")
 
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
-            self.selected_points = []
+            self.selected_data = []
             self._set_highlight()
 
         self.status = str(mode)
@@ -561,10 +539,10 @@ class Points(Layer):
             if c in self._indices_view:
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
-        self._selected_points = selected
-        self._selected_box = self.interaction_box(self.selected_points)
-        if len(self.selected_points) > 0:
-            self._cur_selected = self._indices_view[self.selected_points]
+        self._selected_data = selected
+        self._selected_box = self.interaction_box(self.selected_data)
+        if len(self.selected_data) > 0:
+            self._cur_selected = self._indices_view[self.selected_data]
         else:
             self._cur_selected = []
 
@@ -608,20 +586,20 @@ class Points(Layer):
         """
         # Check if any point ids have changed since last call
         if (
-            self.selected_points == self._selected_points_stored
+            self.selected_data == self._selected_data_stored
             and self._hover_point == self._hover_point_stored
             and np.all(self._drag_box == self._drag_box_stored)
         ) and not force:
             return
-        self._selected_points_stored = copy(self.selected_points)
+        self._selected_data_stored = copy(self.selected_data)
         self._hover_point_stored = copy(self._hover_point)
         self._drag_box_stored = copy(self._drag_box)
 
         if self._mode == Mode.SELECT and (
-            self._hover_point is not None or len(self.selected_points) > 0
+            self._hover_point is not None or len(self.selected_data) > 0
         ):
-            if len(self.selected_points) > 0:
-                index = copy(self.selected_points)
+            if len(self.selected_data) > 0:
+                index = copy(self.selected_data)
                 if self._hover_point is not None:
                     if self._hover_point in index:
                         pass
@@ -659,9 +637,11 @@ class Points(Layer):
         pos = self._selected_box
         if pos is None and not self._is_selecting:
             width = 0
-            pos = np.empty((0, 2))
+            pos = np.empty((4, 2))
         elif self._is_selecting:
-            pos = create_box(self._drag_box)[list(range(4)) + [0]]
+            pos = create_box(self._drag_box)
+
+        pos = pos[list(range(4)) + [0]]
 
         self._node._subvisuals[0].set_data(
             pos=pos[:, [1, 0]], color=self._highlight_color, width=width
@@ -733,15 +713,15 @@ class Points(Layer):
     def remove_selected(self):
         """Removes selected points if any.
         """
-        index = self._indices_view[self.selected_points]
+        index = self._indices_view[self.selected_data]
         if index is not None:
             self._size_array = np.delete(self._size_array, index, axis=0)
             for i in index[::-1]:
                 del self._edge_color_list[i]
                 del self._face_color_list[i]
-            if self._hover_point in self.selected_points:
+            if self._hover_point in self.selected_data:
                 self._hover_point = None
-            self.selected_points = []
+            self.selected_data = []
             self.data = np.delete(self.data, index, axis=0)
 
     def _move(self, coord):
@@ -751,7 +731,7 @@ class Points(Layer):
         ----------
         coord : sequence of indices to move points to
         """
-        index = self._indices_view[self.selected_points]
+        index = self._indices_view[self.selected_data]
         if len(index) > 0:
             if self._drag_start is None:
                 center = self.data[index, -2:].mean(axis=0)
@@ -770,8 +750,8 @@ class Points(Layer):
     def _copy_points(self):
         """Copy selected points to clipboard.
         """
-        if len(self.selected_points) > 0:
-            index = self._indices_view[self.selected_points]
+        if len(self.selected_data) > 0:
+            index = self._indices_view[self.selected_data]
             self._clipboard = {
                 'data': deepcopy(self.data[index]),
                 'size': deepcopy(self.size_array[index]),
@@ -808,7 +788,7 @@ class Points(Layer):
             self._face_color_list = self._face_color_list + deepcopy(
                 self._clipboard['face_color']
             )
-            self._selected_points = list(
+            self._selected_data = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
             self._cur_selected = list(
@@ -829,6 +809,9 @@ class Points(Layer):
             svg specification
         """
         xml_list = []
+        width = str(self.edge_width)
+        opacity = str(self.opacity)
+        props = {'stroke-width': width, 'opacity': opacity}
 
         for i, d, s in zip(
             self._indices_view, self._data_view, self._sizes_view
@@ -844,14 +827,9 @@ class Points(Layer):
                 np.int
             )
             stroke = f'rgb{tuple(edge_color[:3])}'
+
             element = Element(
-                'circle',
-                cx=cx,
-                cy=cy,
-                r=r,
-                stroke=stroke,
-                fill=fill,
-                **self.svg_props,
+                'circle', cx=cx, cy=cy, r=r, stroke=stroke, fill=fill, **props
             )
             xml_list.append(element)
 
@@ -887,15 +865,15 @@ class Points(Layer):
         if self._mode == Mode.SELECT:
             point = self._select_point(coord[-2:])
             if shift and point is not None:
-                if point in self.selected_points:
-                    self.selected_points -= [point]
+                if point in self.selected_data:
+                    self.selected_data -= [point]
                 else:
-                    self.selected_points += [point]
+                    self.selected_data += [point]
             elif point is not None:
-                if point not in self.selected_points:
-                    self.selected_points = [point]
+                if point not in self.selected_data:
+                    self.selected_data = [point]
             else:
-                self.selected_points = []
+                self.selected_data = []
             self._set_highlight()
         elif self._mode == Mode.ADD:
             self._add(coord)
@@ -908,7 +886,7 @@ class Points(Layer):
         self._drag_start = None
         if self._is_selecting:
             self._is_selecting = False
-            self.selected_points = points_in_box(
+            self.selected_data = points_in_box(
                 self._drag_box, self._data_view, self._sizes_view
             )
             self._set_highlight(force=True)
@@ -922,7 +900,7 @@ class Points(Layer):
             if event.key == ' ':
                 if self._mode != Mode.PAN_ZOOM:
                     self._mode_history = self.mode
-                    self._selected_points_history = copy(self.selected_points)
+                    self._selected_data_history = copy(self.selected_data)
                     self.mode = Mode.PAN_ZOOM
                 else:
                     self._mode_history = Mode.PAN_ZOOM
@@ -943,7 +921,7 @@ class Points(Layer):
                     self._paste_points()
             elif event.key == 'a':
                 if self._mode == Mode.SELECT:
-                    self.selected_points = list(range(len(self._data_view)))
+                    self.selected_data = list(range(len(self._data_view)))
                     self._set_highlight()
             elif event.key == 'Backspace':
                 if self._mode == Mode.SELECT:
@@ -955,7 +933,7 @@ class Points(Layer):
         if event.key == ' ':
             if self._mode_history != Mode.PAN_ZOOM:
                 self.mode = self._mode_history
-                self.selected_points = self._selected_points_history
+                self.selected_data = self._selected_data_history
                 self._set_highlight()
 
 
