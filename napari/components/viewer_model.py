@@ -320,30 +320,30 @@ class ViewerModel:
         image : array
             Image data. Can be N dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-        metadata : dict, optional
+        metadata : dict, keyword-only
             Image metadata.
-        multichannel : bool, optional
+        multichannel : bool, keyword-only
             Whether the image is multichannel RGB or RGBA if multichannel. If
             not specified by user and the last dimension of the data has length
             3 or 4 it will be set as `True`. If `False` the image is
             interpreted as a luminance image.
-        colormap : str, vispy.Color.Colormap, tuple, dict, optional
+        colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
-        clim : list (2,), optional
+        clim : list (2,), keyword-only
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image.
-        clim_range : list (2,), optional
+        clim_range : list (2,), keyword-only
             Range for the color limits. If not passed is be calculated as the
             min and max of the image. Passing a value prevents this calculation
             which can be useful when working with very large datasets that are
             dynamically loaded.
-        interpolation : str, optional
+        interpolation : str, keyword-only
             Interpolation mode used by vispy. Must be one of our supported
             modes.
         name : str, keyword-only
@@ -460,13 +460,13 @@ class ViewerModel:
         ----------
         labels : array
             Labels data.
-        metadata : dict, optional
+        metadata : dict, keyword-only
             Labels metadata.
-        num_colors : int, optional
+        num_colors : int, keyword-only
             Number of unique colors to use in colormap.
-        seed : float, optional
+        seed : float, keyword-only
             Seed for colormap random generator.
-        opacity : float, optional
+        opacity : float, keyword-only
             Opacity of the labels, must be between 0 and 1.
         name : str, keyword-only
             Name of the layer.
