@@ -356,7 +356,6 @@ class Points(Layer):
                 self.face_color = face_color
 
         size = list(set([self.size_array[i, -2:].mean() for i in index]))
-        print(size)
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -489,13 +488,8 @@ class Points(Layer):
         else:
             return [], [], []
 
-    def _select_data(self, coord):
-        """Determines selected points selected given indices.
-
-        Parameters
-        ----------
-        coord : 2-tuple
-            Indices to check if point at for currently viewed points.
+    def get_value(self):
+        """Determine if points at current coordinates.
 
         Returns
         ----------
@@ -507,7 +501,7 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(self._data_view) > 0:
             # Get the point sizes
-            distances = abs(self._data_view - coord)
+            distances = abs(self._data_view - self.coordinates[-2:])
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._sizes_view, axis=1) / 2,
                 axis=1,
@@ -758,7 +752,7 @@ class Points(Layer):
             self._drag_box = np.array([self._drag_start, coord[-2:]])
             self._set_highlight()
 
-    def _copy_points(self):
+    def _copy_data(self):
         """Copy selected points to clipboard.
         """
         if len(self.selected_data) > 0:
@@ -777,7 +771,7 @@ class Points(Layer):
         else:
             self._clipboard = {}
 
-    def _paste_points(self):
+    def _paste_data(self):
         """Paste any point from clipboard and select them.
         """
         npoints = len(self._data_view)
@@ -852,17 +846,16 @@ class Points(Layer):
         if event.pos is None:
             return
         self.position = tuple(event.pos)
-        coord = self.coordinates
 
         if self._mode == Mode.SELECT:
             if event.is_dragging:
-                self._move(coord)
+                self._move(self.coordinates)
             else:
-                self._hover_point = self._select_data(coord[-2:])
+                self._hover_point = self.get_value()
                 self._set_highlight()
         else:
-            self._hover_point = self._select_data(coord[-2:])
-        self.status = self.get_message(coord, self._hover_point)
+            self._hover_point = self.get_value()
+        self.status = self.get_message(self.coordinates, self._hover_point)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -870,11 +863,10 @@ class Points(Layer):
         if event.pos is None:
             return
         self.position = tuple(event.pos)
-        coord = self.coordinates
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.SELECT:
-            point = self._select_data(coord[-2:])
+            point = self.get_value(self.coordinates)
             if shift and point is not None:
                 if point in self.selected_data:
                     self.selected_data -= [point]
@@ -887,7 +879,7 @@ class Points(Layer):
                 self.selected_data = []
             self._set_highlight()
         elif self._mode == Mode.ADD:
-            self.add(coord)
+            self.add(self.coordinates)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -926,10 +918,10 @@ class Points(Layer):
                 self.mode = Mode.PAN_ZOOM
             elif event.key == 'c' and 'Control' in event.modifiers:
                 if self._mode == Mode.SELECT:
-                    self._copy_points()
+                    self._copy_data()
             elif event.key == 'v' and 'Control' in event.modifiers:
                 if self._mode == Mode.SELECT:
-                    self._paste_points()
+                    self._paste_data()
             elif event.key == 'a':
                 if self._mode == Mode.SELECT:
                     self.selected_data = list(range(len(self._data_view)))

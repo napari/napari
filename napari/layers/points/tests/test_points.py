@@ -12,6 +12,7 @@ def test_random_points():
     assert layer.ndim == shape[1]
     assert layer._data_view.ndim == 2
     assert len(layer.data) == 10
+    assert len(layer.selected_data) == 0
 
 
 def test_integer_points():
@@ -165,6 +166,143 @@ def test_symbol():
 
     layer = Points(data, symbol='star')
     assert layer.symbol == 'star'
+
+
+def test_edge_width():
+    """Test setting edge width."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.edge_width == 1
+
+    layer.edge_width = 2
+    assert layer.edge_width == 2
+
+    layer = Points(data, edge_width=3)
+    assert layer.edge_width == 3
+
+
+def test_n_dimensional():
+    """Test setting n_dimensional flag for 2D and 4D data."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.n_dimensional == False
+
+    layer.n_dimensional = True
+    assert layer.n_dimensional == True
+
+    layer = Points(data, n_dimensional=True)
+    assert layer.n_dimensional == True
+
+    shape = (10, 4)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.n_dimensional == False
+
+    layer.n_dimensional = True
+    assert layer.n_dimensional == True
+
+    layer = Points(data, n_dimensional=True)
+    assert layer.n_dimensional == True
+
+
+def test_edge_color():
+    """Test setting edge color."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.edge_color == 'black'
+    assert len(layer._edge_color_list) == shape[0]
+    assert np.all([col == 'black' for col in layer._edge_color_list])
+
+    # With no data selected chaning edge color has no effect
+    layer.edge_color = 'blue'
+    assert layer.edge_color == 'blue'
+    assert np.all([col == 'black' for col in layer._edge_color_list])
+
+    # Select data and change edge color of selection
+    layer.selected_data = [0, 1]
+    assert layer.edge_color == 'black'
+    layer.edge_color = 'green'
+    assert np.all([col == 'green' for col in layer._edge_color_list[:2]])
+    assert np.all([col == 'black' for col in layer._edge_color_list[2:]])
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer.selected_data = []
+    layer.edge_color = 'blue'
+    layer.add(coord)
+    assert len(layer._edge_color_list) == shape[0] + 1
+    assert np.all([col == 'green' for col in layer._edge_color_list[:2]])
+    assert np.all([col == 'black' for col in layer._edge_color_list[2:10]])
+    assert np.all(layer._edge_color_list[10] == 'blue')
+
+    # Instantiate with custom edge color
+    layer = Points(data, edge_color='red')
+    assert layer.edge_color == 'red'
+
+    # Instantiate with custom edge color list
+    col_list = ['red', 'green'] * 5
+    layer = Points(data, edge_color=col_list)
+    assert layer.edge_color == 'black'
+    assert layer._edge_color_list == col_list
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer.edge_color = 'blue'
+    layer.add(coord)
+    assert len(layer._edge_color_list) == shape[0] + 1
+    assert layer._edge_color_list == col_list + ['blue']
+
+
+def test_face_color():
+    """Test setting face color."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer.face_color == 'white'
+    assert len(layer._face_color_list) == shape[0]
+    assert np.all([col == 'white' for col in layer._face_color_list])
+
+    # With no data selected chaning face color has no effect
+    layer.face_color = 'blue'
+    assert layer.face_color == 'blue'
+    assert np.all([col == 'white' for col in layer._face_color_list])
+
+    # Select data and change edge color of selection
+    layer.selected_data = [0, 1]
+    assert layer.face_color == 'white'
+    layer.face_color = 'green'
+    assert np.all([col == 'green' for col in layer._face_color_list[:2]])
+    assert np.all([col == 'white' for col in layer._face_color_list[2:]])
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer.selected_data = []
+    layer.face_color = 'blue'
+    layer.add(coord)
+    assert len(layer._face_color_list) == shape[0] + 1
+    assert np.all([col == 'green' for col in layer._face_color_list[:2]])
+    assert np.all([col == 'white' for col in layer._face_color_list[2:10]])
+    assert np.all(layer._face_color_list[10] == 'blue')
+
+    # Instantiate with custom face color
+    layer = Points(data, face_color='red')
+    assert layer.face_color == 'red'
+
+    # Instantiate with custom face color list
+    col_list = ['red', 'green'] * 5
+    layer = Points(data, face_color=col_list)
+    assert layer.face_color == 'white'
+    assert layer._face_color_list == col_list
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer.face_color = 'blue'
+    layer.add(coord)
+    assert len(layer._face_color_list) == shape[0] + 1
+    assert layer._face_color_list == col_list + ['blue']
 
 
 def test_size():
@@ -331,160 +469,109 @@ def test_size_with_3D_arrays():
     assert np.all(layer.size_array[0] == [0, 16, 16])
 
 
-# def test_num_colors():
-#     """Test setting number of colors in colormap."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.num_colors == 50
-#
-#     layer.num_colors = 80
-#     assert layer.num_colors == 80
-#
-#     layer = Labels(data, num_colors=60)
-#     assert layer.num_colors == 60
-#
-#
-# def test_colormap():
-#     """Test colormap."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert type(layer.colormap) == tuple
-#     assert layer.colormap[0] == 'random'
-#     assert type(layer.colormap[1]) == Colormap
-#
-#     layer.new_colormap()
-#     assert type(layer.colormap) == tuple
-#     assert layer.colormap[0] == 'random'
-#     assert type(layer.colormap[1]) == Colormap
-#
-#
-# def test_metadata():
-#     """Test setting labels metadata."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.metadata == {}
-#
-#     layer = Labels(data, metadata={'unit': 'cm'})
-#     assert layer.metadata == {'unit': 'cm'}
-#
-#
-# def test_brush_size():
-#     """Test changing brush size."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.brush_size == 10
-#
-#     layer.brush_size = 20
-#     assert layer.brush_size == 20
-#
-#
-# def test_contiguous():
-#     """Test changing contiguous."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.contiguous == True
-#
-#     layer.contiguous = False
-#     assert layer.contiguous == False
-#
-#
-# def test_n_dimensional():
-#     """Test changing n_dimensional."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.n_dimensional == True
-#
-#     layer.n_dimensional = False
-#     assert layer.n_dimensional == False
-#
-#
-# def test_selecting_label():
-#     """Test changing n_dimensional."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     assert layer.selected_label == 0
-#     assert layer._selected_color == None
-#
-#     layer.selected_label = 1
-#     assert layer.selected_label == 1
-#     assert len(layer._selected_color) == 4
-#
-#
-# def test_label_color():
-#     """Test getting label color."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     col = layer.get_color(0)
-#     assert col == None
-#
-#     col = layer.get_color(1)
-#     assert len(col) == 4
-#
-#
-# def test_paint():
-#     """Test painting labels with different brush sizes."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     data[:10, :10] = 1
-#     layer = Labels(data)
-#     assert np.unique(layer.data[:5, :5]) == 1
-#     assert np.unique(layer.data[5:10, 5:10]) == 1
-#
-#     layer.brush_size = 10
-#     layer.paint([0, 0], 2)
-#     assert np.unique(layer.data[:5, :5]) == 2
-#     assert np.unique(layer.data[5:10, 5:10]) == 1
-#
-#     layer.brush_size = 20
-#     layer.paint([0, 0], 2)
-#     assert np.unique(layer.data[:5, :5]) == 2
-#     assert np.unique(layer.data[5:10, 5:10]) == 2
-#
-#
-# def test_fill():
-#     """Test filling labels with different brush sizes."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     data[:10, :10] = 2
-#     data[:5, :5] = 1
-#     layer = Labels(data)
-#     assert np.unique(layer.data[:5, :5]) == 1
-#     assert np.unique(layer.data[5:10, 5:10]) == 2
-#
-#     layer.fill([0, 0], 1, 3)
-#     assert np.unique(layer.data[:5, :5]) == 3
-#     assert np.unique(layer.data[5:10, 5:10]) == 2
-#
-#
-# def test_value():
-#     """Test getting the value of the data at the current coordinates."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     coord, value = layer.get_value()
-#     assert np.all(coord == [0, 0])
-#     assert value == data[0, 0]
-#
-#
-# def test_message():
-#     """Test converting value and coords to message."""
-#     data = np.round(20 * np.random.random((10, 15))).astype(int)
-#     layer = Labels(data)
-#     coord, value = layer.get_value()
-#     msg = layer.get_message(coord, value)
-#     assert type(msg) == str
-#
-#
-# def test_thumbnail():
-#     """Test the image thumbnail for square data."""
-#     data = np.round(20 * np.random.random((30, 30))).astype(int)
-#     layer = Labels(data)
-#     layer._update_thumbnail()
-#     assert layer.thumbnail.shape == layer._thumbnail_shape
-#
-#
-# def test_xml_list():
-#     """Test the xml generation."""
-#     data = np.round(20 * np.random.random((30, 30))).astype(int)
-#     layer = Labels(data)
-#     xml = layer.to_xml_list()
-#     assert type(xml) == list
-#     assert len(xml) == 1
-#     assert type(xml[0]) == Element
+def test_interaction_box():
+    """Test the creation of the interaction box."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    assert layer._selected_box == None
+
+    layer.selected_data = [0]
+    assert len(layer._selected_box) == 4
+
+    layer.selected_data = [0, 1]
+    assert len(layer._selected_box) == 4
+
+    layer.selected_data = []
+    assert layer._selected_box == None
+
+
+def test_copy_and_paste():
+    """Test copying and pasting selected shapes."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    # Clipboard starts empty
+    assert layer._clipboard == {}
+
+    # Pasting empty clipboard doesn't change data
+    layer._paste_data()
+    assert len(layer.data) == 10
+
+    # Copying with nothing selected leave clipboard empty
+    layer._copy_data()
+    assert layer._clipboard == {}
+
+    # Copying and pasting with two points selected adds to clipboard and data
+    layer.selected_data = [0, 1]
+    layer._copy_data()
+    layer._paste_data()
+    assert len(layer._clipboard.keys()) > 0
+    assert len(layer.data) == shape[0] + 2
+    assert np.all(layer.data[:2] == layer.data[-2:])
+
+    # Pasting again adds two more points to data
+    layer._paste_data()
+    assert len(layer.data) == shape[0] + 4
+    assert np.all(layer.data[:2] == layer.data[-2:])
+
+    # Unselecting everything and copying and pasting will empty the clipboard
+    # and add no new data
+    layer.selected_data = []
+    layer._copy_data()
+    layer._paste_data()
+    assert layer._clipboard == {}
+    assert len(layer.data) == shape[0] + 4
+
+
+def test_value():
+    """Test getting the value of the data at the current coordinates."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    data[-1] = [0, 0]
+    layer = Points(data)
+    value = layer.get_value()
+    assert layer.coordinates == (0, 0)
+    assert value == 9
+
+    layer.data = layer.data + 5
+    value = layer.get_value()
+    assert value == None
+
+
+def test_message():
+    """Test converting value and coords to message."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    data[-1] = [0, 0]
+    layer = Points(data)
+    value = layer.get_value()
+    msg = layer.get_message(layer.coordinates, value)
+    assert type(msg) == str
+
+    layer.data = layer.data + 5
+    value = layer.get_value()
+    msg = layer.get_message(layer.coordinates, value)
+    assert type(msg) == str
+
+
+def test_thumbnail():
+    """Test the image thumbnail for square data."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    data[0] = [0, 0]
+    data[-1] = [20, 20]
+    layer = Points(data)
+    layer._update_thumbnail()
+    assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_xml_list():
+    """Test the xml generation."""
+    shape = (10, 2)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    xml = layer.to_xml_list()
+    assert type(xml) == list
+    assert len(xml) == shape[0]
+    assert np.all([type(x) == Element for x in xml])
