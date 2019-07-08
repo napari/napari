@@ -73,7 +73,7 @@ with napari.gui_qt():
 
 Check out the scripts in the `examples` folder to see some of the functionality we're developing!
 
-For example, you can add multiple images in different layers and adjust them
+For example, you can add multiple images in different layers and tweak their opacity on GUI to see blended images
 
 ```python
 from skimage import data
