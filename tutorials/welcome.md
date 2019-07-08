@@ -7,11 +7,13 @@ into further topics, let's check what Napari actually is.
 ## What is Napari
 
 Napari is fast, interactive, multi-dimensional image viewer 
-software. These tutorials are targeting people who want to use 
+software. It is being developed by bunch of enthusiasts. It is a 
+community project. These tutorials are targeting people who want to use 
 napari as a user, if you are interested in contributing then 
-please check [Contributing Guidelines](../CONTRIBUTING.md). It 
+please check [Contributing Guidelines](../CONTRIBUTING.md). Napari 
 is mainly developed in Python programming language. One can 
-use napari from any Python shell or from a Jupyter notebook, and
+use napari from any Python scripting setup or from a Jupyter notebook, 
+and what you should be importing napari:
 
 
 <table border="0">
@@ -24,9 +26,8 @@ use napari from any Python shell or from a Jupyter notebook, and
       
 ```python
 import napari
-from napari.util import app_context
         
-with app_context():
+with napari.qui_qt():
     # Code Here
 ``` 
    </td>
@@ -35,7 +36,23 @@ with app_context():
 ```python
 %gui qt5
 import napari       
+
+# Code Here
 ```
    </td>
  </tr>
 </table>
+
+Other than the initial setup and importing step basically napari API is 
+same for different usage modes.  
+
+## Napari Conventions
+
+We love numpy arrays in napari. We are using them heavily. We also love pythonic
+way of doing things.  
+
+## Continue with
+
+- [Viewer tutorial](viewer.md)
+- [Layers tutorial](layers.md)
+- [nD tutorial](arbitrary_dimensional.md)
