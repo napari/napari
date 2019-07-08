@@ -409,6 +409,14 @@ class Shapes(Layer):
         self.events.opacity()
 
     @property
+    def shape_types(self):
+        """list: List of shape types."""
+        shape_types = []
+        for d in self._data_dict.values():
+            shape_types += d.shape_types
+        return shape_types
+
+    @property
     def selected_data(self):
         """list: list of currently selected shapes."""
         return self._selected_data
