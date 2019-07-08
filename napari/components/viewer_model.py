@@ -580,7 +580,7 @@ class ViewerModel:
             dims = (512, 512)
         else:
             dims = self._calc_bbox()[1]
-            dims = [np.round(d).astype('int') for d in dims]
+            dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in dims]
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 

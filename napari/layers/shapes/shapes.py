@@ -63,13 +63,16 @@ class Shapes(Layer):
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
     edge_width : float
-        Thickness of lines and edges.
+        Thickness of lines and edges of the next shape to be added or the
+        currently selected shape.
     edge_color : str
-        Color of the shape edge.
+        Color of the edge of the next shape to be added or the currently
+        selected shape.
     face_color : str
-        Color of the shape face.
+        Color of the face of the next shape to be added or the currently
+        selected shape.
     opacity : float
-        Opacity value between 0.0 and 1.0.
+        Opacity of the next shape to be added or the currently selected shape.
     selected_data : list
         List of currently selected shapes.
     nshapes : int
@@ -1165,13 +1168,13 @@ class Shapes(Layer):
             self._data_view.update_z_index(index, new_z_index)
         self.refresh()
 
-    def _copy_shapes(self):
+    def _copy_data(self):
         """Copy selected shapes to clipboard."""
         self._clipboard = [
             deepcopy(self._data_view.shapes[i]) for i in self._selected_data
         ]
 
-    def _paste_shapes(self):
+    def _paste_data(self):
         """Paste any shapes from clipboard and then selects them."""
         cur_shapes = self._nshapes_view
         for s in self._clipboard:
@@ -1945,10 +1948,10 @@ class Shapes(Layer):
                 self.mode = Mode.VERTEX_REMOVE
             elif event.key == 'c' and 'Control' in event.modifiers:
                 if self._mode in [Mode.DIRECT, Mode.SELECT]:
-                    self._copy_shapes()
+                    self._copy_data()
             elif event.key == 'v' and 'Control' in event.modifiers:
                 if self._mode in [Mode.DIRECT, Mode.SELECT]:
-                    self._paste_shapes()
+                    self._paste_data()
             elif event.key == 'a':
                 if self._mode in [Mode.DIRECT, Mode.SELECT]:
                     self.selected_data = list(range(self._nshapes_view))
