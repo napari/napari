@@ -14,8 +14,8 @@ with napari.gui_qt():
     # create the viewer and window
     viewer = napari.Viewer()
 
-    n = 100
-    m = 200
+    n = 20
+    m = 40
 
     image = 0.2 * np.random.random((n, m)) + 0.5
     layer = viewer.add_image(image, clim_range=[0, 1], name='background')
@@ -33,6 +33,6 @@ with napari.gui_qt():
     pos[:, :, 1] = rand2.reshape((n, m))
 
     # add the vectors
-    vect = viewer.add_vectors(pos, width=0.2, length=2.5)
+    vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
 
     print(image.shape, pos.shape)
