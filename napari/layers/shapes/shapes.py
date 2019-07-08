@@ -19,36 +19,36 @@ class Shapes(Layer):
 
     Parameters
     ----------
-    data : array | list
-        List of array of data or an array. Each element of the list (or
-        row of a 3D np.array) corresponds to one shape. If a 2D array is
-        passed it corresponds to just a single shape.
-    shape_type : string | list, keyword-only
+    data : list or array
+        List of shape data, where each element is an (N, D) array of the
+        N vertices of a shape in D dimensions. Can be an 3-dimensional
+        array if each shape has the same number of vertices.
+    shape_type : string or list, keyword-only
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
         the same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_width : float | list, keyword-only
+    edge_width : float or list, keyword-only
         Thickness of lines and edges. If a list is supplied it must be the
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_color : str | tuple | list, keyword-only
+    edge_color : str or list, keyword-only
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    face_color : str | tuple | list, keyword-only
+    face_color : str or list, keyword-only
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    opacity : float | list, keyword-only
+    opacity : float or list, keyword-only
         Opacity of the shapes, must be between 0 and 1.
-    z_index : int | list, keyword-only
+    z_index : int or list, keyword-only
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
         same length as the length of `data` and each element will be
@@ -62,8 +62,9 @@ class Shapes(Layer):
 
     Attributes
     ----------
-    data : Dict of ShapeList
-        Dictionary containing all the shape data indexed by slice tuple
+    data : list
+        List of shape data, where each element is an (N, D) array of the
+        N vertices of a shape in D dimensions.
     edge_width : float
         Thickness of lines and edges.
     edge_color : str
@@ -95,6 +96,8 @@ class Shapes(Layer):
 
     Extended Summary
     ----------
+    _data_dict : Dict of ShapeList
+        Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList
         Object containing the currently viewed shape data.
     _nshapes_view : int
@@ -243,7 +246,7 @@ class Shapes(Layer):
 
             # Add the shape data
             self._input_ndim = ndim
-            self._data = {}
+            self._data_dict = {}
             self._data_view = None
 
             self.add_shapes(
@@ -301,23 +304,39 @@ class Shapes(Layer):
             self.events.face_color.connect(lambda e: self._update_thumbnail())
             self.events.edge_color.connect(lambda e: self._update_thumbnail())
 
+            # Re intitialize indices depending on shape dims
+            self._indices = (0,) * (self.ndim - 2) + (
+                slice(None, None, None),
+                slice(None, None, None),
+            )
+
+            # Trigger generation of view slice and thumbnail
+            self._set_view_slice()
+
     @property
     def data(self):
-        """dict: Shape data where keys are indices and values are ShapeList."""
-        return self._data
+        """list: Each element is an (N, D) array of the vertices of a shape."""
+        return self._to_list()
 
     @data.setter
     def data(self, data):
-        if self._data == data:
-            return
-        self._data = data
+        self._finish_drawing()
+        self._data_dict = {}
+        self.add_shapes(
+            data,
+            shape_type=self.shape_type,
+            edge_width=self.edge_width,
+            edge_color=self.edge_color,
+            face_color=self.face_color,
+            opacity=self.opacity,
+        )
         self.events.data()
         self.refresh()
 
     @property
     def nshapes(self):
         """int: Total number of shapes."""
-        nshapes = sum(len(data.shapes) for data in self.data.values())
+        nshapes = sum(len(data.shapes) for data in self._data_dict.values())
         return nshapes
 
     @property
@@ -527,7 +546,7 @@ class Shapes(Layer):
         else:
             slice_shape = tuple(np.max(self._data_view._vertices, axis=0) + 1)
 
-        slice_keys = list(self.data.keys())
+        slice_keys = list(self._data_dict.keys())
         max_val = np.array(slice_keys).max(axis=0)
         return tuple(max_val) + slice_shape
 
@@ -541,7 +560,7 @@ class Shapes(Layer):
             maxs = np.max(self._data_view._vertices, axis=0) + 1
             mins = np.min(self._data_view._vertices, axis=0)
 
-        slice_keys = list(self.data.keys())
+        slice_keys = list(self._data_dict.keys())
         min_val = np.array(slice_keys).min(axis=0)
         max_val = np.array(slice_keys).max(axis=0)
 
@@ -565,10 +584,10 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : np.array | list
-            List of np.array of data or np.array. Each element of the list
-            (or row of a 3D np.array) corresponds to one shape. If a 2D array
-            is passed it corresponds to just a single shape.
+        data : list or array
+            List of shape data, where each element is an (N, D) array of the
+            N vertices of a shape in D dimensions. Can be an 3-dimensional
+            array if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -636,23 +655,23 @@ class Shapes(Layer):
                     # If data is being drawn in gui it will already be 2D and
                     # so should just be added to the current ShapeList
                     if slice_key == ():
-                        if len(self.data) == 0:
+                        if len(self._data_dict) == 0:
                             # If input dim not initialized, set value
                             if self._input_ndim is None:
                                 self._input_ndim = 2
-                            self.data[slice_key] = ShapeList()
-                            self._data_view = self.data[slice_key]
+                            self._data_dict[slice_key] = ShapeList()
+                            self._data_view = self._data_dict[slice_key]
                         self._data_view.add(shape)
-                    elif slice_key in self.data:
-                        self.data[slice_key].add(shape)
+                    elif slice_key in self._data_dict:
+                        self._data_dict[slice_key].add(shape)
                     else:
                         # If input dim not initialized, set value
                         if self._input_ndim is None:
                             self._input_ndim = 2 + len(slice_key)
                         # Check shape has correct dimensions
                         if self._input_ndim == 2 + len(slice_key):
-                            self.data[slice_key] = ShapeList()
-                            self.data[slice_key].add(shape)
+                            self._data_dict[slice_key] = ShapeList()
+                            self._data_dict[slice_key].add(shape)
                         else:
                             raise ValueError(
                                 'all shapes must have the same dimension'
@@ -664,11 +683,11 @@ class Shapes(Layer):
 
         # If _data_view has not yet been definied,
         # set the currently viewed slice to top slice
-        if not hasattr(self, '_data_view'):
+        if self._data_view is None:
             init_index = (0,) * (self._input_ndim - 2)
-            if init_index not in self.data:
-                self.data[init_index] = ShapeList()
-            self._data_view = self.data[init_index]
+            if init_index not in self._data_dict:
+                self._data_dict[init_index] = ShapeList()
+            self._data_view = self._data_dict[init_index]
 
         self._update_thumbnail()
 
@@ -676,10 +695,10 @@ class Shapes(Layer):
         """Set the view given the slicing indices."""
         with self.freeze_refresh():
             slice_key = self.indices[:-2]
-            if slice_key not in self.data:
-                self.data[slice_key] = ShapeList()
-            if not self._data_view == self.data[slice_key]:
-                self._data_view = self.data[slice_key]
+            if slice_key not in self._data_dict:
+                self._data_dict[slice_key] = ShapeList()
+            if not self._data_view == self._data_dict[slice_key]:
+                self._data_view = self._data_dict[slice_key]
                 # If data is changed unselect all shapes
                 self._finish_drawing()
 
@@ -1391,7 +1410,7 @@ class Shapes(Layer):
         else:
             # For nD insert each keyed slice into correct place in volume
             masks = []
-            for slice_key, data in self.data.items():
+            for slice_key, data in self._data_dict.items():
                 if len(slice_key) > 0:
                     slices = data.to_masks(
                         mask_shape=mask_shape[-2:], shape_type=shape_type
@@ -1440,7 +1459,7 @@ class Shapes(Layer):
             # and increment integer label of shape
             labels = np.zeros(labels_shape)
             nshapes = 0
-            for slice_key, data in self.data.items():
+            for slice_key, data in self._data_dict.items():
                 slices = data.to_labels(
                     labels_shape=labels_shape[-2:], shape_type=shape_type
                 )
@@ -1449,7 +1468,7 @@ class Shapes(Layer):
                 nshapes += len(data.shapes)
         return labels
 
-    def to_list(self, shape_type=None):
+    def _to_list(self, shape_type=None):
         """Return the vertex data assoicated with the shapes as a list.
 
         Parameters
@@ -1471,7 +1490,7 @@ class Shapes(Layer):
         else:
             # For nD insert each slice_key into shape indices in list
             data = []
-            for slice_key, d in self.data.items():
+            for slice_key, d in self._data_dict.items():
                 shapes = d.to_list(shape_type=shape_type)
                 for s in shapes:
                     slice_keys = np.tile(slice_key, (len(s), 1))

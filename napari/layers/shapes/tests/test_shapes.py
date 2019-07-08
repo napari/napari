@@ -4,16 +4,19 @@ from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
 
-# def test_random_shapes():
-#     """Test instantiating Shapes layer with random 2D data."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Shapes(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == shape[1]
-#     assert layer._data_view.ndim == 2
-#     assert len(layer.data) == 10
-#     assert len(layer.selected_data) == 0
+def test_rectangle():
+    """Test instantiating Shapes layer with a random 2D rectangle."""
+    # Test four corner rectangle
+    shape = (4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    assert layer.ndim == shape[1]
+
+    # Test four corner rectangle
+    shape = (4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    assert layer.ndim == shape[1]
 
 
 # def test_integer_points():
