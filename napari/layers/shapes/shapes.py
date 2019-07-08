@@ -54,9 +54,6 @@ class Shapes(Layer):
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    ndim : int, keyword-only
-        Dimensions of shape data. Once set cannot be changed. Defaults to
-        2.
     name : str, keyword-only
         Name of the layer.
 
@@ -208,7 +205,6 @@ class Shapes(Layer):
         face_color='white',
         opacity=0.7,
         z_index=0,
-        ndim=None,
         name=None,
     ):
 
@@ -245,7 +241,7 @@ class Shapes(Layer):
             self._opacity = opacity
 
             # Add the shape data
-            self._input_ndim = ndim
+            self._input_ndim = None
             self._data_dict = {}
             self._data_view = None
 
@@ -679,7 +675,11 @@ class Shapes(Layer):
 
         # If input_ndim has not been set, default to 2
         if self._input_ndim is None:
-            self._input_ndim = 2
+            # If data was empty 3D array
+            if len(data) == 0 and type(data) == np.ndarray:
+                self._input_ndim = data.shape[-1]
+            else:
+                self._input_ndim = 2
 
         # If _data_view has not yet been definied,
         # set the currently viewed slice to top slice

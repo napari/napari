@@ -566,19 +566,25 @@ class ViewerModel:
 
     def _new_points(self):
         if self.dims.ndim == 0:
-            empty_points = np.empty((0, 2))
+            ndim = 2
         else:
-            empty_points = np.empty((0, self.dims.ndim))
-        self.add_points(empty_points)
+            ndim = self.dims.ndim
+        self.add_points(np.empty((0, ndim)))
 
     def _new_shapes(self):
-        layer = self.add_shapes([], ndim=self.dims.ndim)
+        if self.dims.ndim == 0:
+            ndim = 2
+        else:
+            ndim = self.dims.ndim
+        layer = self.add_shapes(np.empty((0, 0, ndim)))
 
     def _new_labels(self):
         if self.dims.ndim == 0:
-            empty_labels = np.zeros((512, 512), dtype=int)
+            dims = (512, 512)
         else:
-            empty_labels = np.zeros(self._calc_bbox()[1], dtype=int)
+            dims = self._calc_bbox()[1]
+            dims = [np.round(d).astype('int') for d in dims]
+        empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
     def _update_layers(self):
