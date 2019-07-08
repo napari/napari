@@ -284,7 +284,6 @@ class Shapes(Layer):
             self._drag_box = None
             self._drag_box_stored = None
             self._is_creating = False
-            self._update_properties = True
             self._clipboard = []
 
             self._mode = Mode.PAN_ZOOM
@@ -539,12 +538,6 @@ class Shapes(Layer):
         if not (mode in draw_modes and old_mode in draw_modes):
             self._finish_drawing()
         self.refresh()
-
-    @contextmanager
-    def block_update_properties(self):
-        self._update_properties = False
-        yield
-        self._update_properties = True
 
     def _get_shape(self):
         """Determines the shape of the vertices of the shape data."""
