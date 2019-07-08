@@ -62,6 +62,7 @@ class Layer(VisualWrapper, ABC):
         self.coordinates = (0, 0)
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
+        self._update_properties = True
         self._name = ''
         self.events.add(
             select=Event,
@@ -288,6 +289,12 @@ class Layer(VisualWrapper, ABC):
         else:
             scale_factor = 1
         return scale_factor
+
+    @contextmanager
+    def block_update_properties(self):
+        self._update_properties = False
+        yield
+        self._update_properties = True
 
     def _update(self):
         """Update the underlying visual."""

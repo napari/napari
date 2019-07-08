@@ -27,7 +27,7 @@ with napari.gui_qt():
     layer = viewer.layers[1]
 
     # change the layer name
-    layer.name = 'spots'
+    layer.name = 'points'
 
     # change the layer visibility
     layer.visible = False
