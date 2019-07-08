@@ -4,19 +4,40 @@ from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
 
-def test_rectangle():
-    """Test instantiating Shapes layer with a random 2D rectangle."""
-    # Test four corner rectangle
-    shape = (4, 2)
+def test_2D_rectangles():
+    """Test instantiating Shapes layer with a random 2D rectangles."""
+    # Test a single four corner rectangle
+    shape = (1, 4, 2)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer.ndim == shape[1]
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == data[0])
+    assert layer.ndim == shape[2]
 
-    # Test four corner rectangle
-    shape = (4, 2)
+    # Test multiple four corner rectangles
+    shape = (10, 4, 2)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer.ndim == shape[1]
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == shape[2]
+
+    # Test a single two corner rectangle, which gets converted into four
+    # corner rectangle
+    shape = (1, 2, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    assert layer.nshapes == 1
+    assert len(layer.data[0]) == 4
+    assert layer.ndim == shape[2]
+
+    # Test multiple two corner rectangles
+    shape = (10, 2, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([len(ld) == 4 for ld in layer.data])
+    assert layer.ndim == shape[2]
 
 
 # def test_integer_points():
