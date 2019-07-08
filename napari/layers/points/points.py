@@ -17,35 +17,85 @@ class Points(Layer):
 
     Parameters
     ----------
-    coords : (N, D) array
+    coords : array (N, D)
         Coordinates for N points in D dimensions.
-    symbol : Symbol or {'arrow', 'clobber', 'cross', 'diamond', 'disc',
-                         'hbar', 'ring', 'square', 'star', 'tailed_arrow',
-                         'triangle_down', 'triangle_up', 'vbar', 'x'}
-        Symbol to be used as a point. If given as a string, must be one of
-        the following: arrow, clobber, cross, diamond, disc, hbar, ring,
-        square, star, tailed_arrow, triangle_down, triangle_up, vbar, x
-    size : int, float, np.ndarray, list
-        Size of the point marker. If given as a scalar, all points are the same
-        size. If given as a list/array, size must be the same length as
-        coords and sets the point marker size for each point in coords
-        (element-wise). If n_dimensional is True then can be a list of
-        length dims or can be an array of shape Nxdims where N is the
-        number of points and dims is the number of dimensions
-    edge_width : int, float, None
+    symbol : str, keyword-only
+        Symbol to be used for the point markers. Must be one of the
+        following: arrow, clobber, cross, diamond, disc, hbar, ring,
+        square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
+    size : float, array, keyword-only
+        Size of the point marker. If given as a scalar, all points are made
+        the same size. If given as an array, size must be the same
+        broadcastable to the same shape as the data.
+    edge_width : float, keyword-only
         Width of the symbol edge in pixels.
-    edge_color : Color, ColorArray
+    edge_color : str, keyword-only
         Color of the point marker border.
-    face_color : Color, ColorArray
+    face_color : str, keyword-only
         Color of the point marker body.
+    n_dimensional : bool, keyword-only
+        If True, renders points not just in central plane but also in all
+        n-dimensions according to specified point marker size.
+    name : str, keyword-only
+        Name of the layer.
+
+    Attributes
+    ----------
+    data : array (N, D)
+        Coordinates for N points in D dimensions.
+    symbol : str
+        Symbol used for all point markers.
+    size : float
+        Size of the marker for the next point to be added or the currently
+        selected point.
+    edge_width : float
+        Width of the marker edges in pixels for all points
+    edge_color : str
+        Size of the marker edge for the next point to be added or the currently
+        selected point.
+    face_color : str
+        Size of the marker edge for the next point to be added or the currently
+        selected point.
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
+    selected_data : list
+        Integer indices of any selected points.
+    size_array : array (N, D)
+        Array of sizes for each point in each dimension. Must have the same
+        shape as the layer `data`.
+    mode : str
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
 
-    Notes
-    -----
-    See vispy's marker visual docs for more details:
-    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
+        In ADD mode clicks of the cursor add points at the clicked location.
+
+        In SELECT mode the cursor can select points by clicking on them or
+        by dragging a box around them. Once selected points can be moved,
+        have their properties edited, or be deleted.
+
+    Extended Summary
+    ----------
+    _data_view : array (M, 2)
+        2D coordinates of points in the currently viewed slice.
+    _sizes_view : array (M, )
+        Size of the point markers in the currently viewed slice.
+    _indices_view : array (M, )
+        Integer indices of the points in the currently viewed slice.
+    _selected_view :
+        Integer indices of selected points in the currently viewed slice within
+        the `_data_view` array.
+    _edge_color_list : list of str (N,)
+        List of edge color strings, one for each point.
+    _face_color_list : list of str (N,)
+        List of face color strings, one for each point.
+    _selected_box : array (4, 2) or None
+        Four corners of any box either around currently selected points or
+        being created during a drag action. Starting in the top left and
+        going clockwise.
+    _drag_start : list or None
+        Coordinates of first cursor click during a drag action. Gets reset to
+        None after dragging is done.
     """
 
     _highlight_color = (0, 0.6, 1)
@@ -166,8 +216,7 @@ class Points(Layer):
 
     @property
     def data(self) -> np.ndarray:
-        """(N, D) array: coordinates of the points
-        """
+        """(N, D) array: coordinates for N points in D dimensions."""
         return self._data
 
     @data.setter
@@ -211,9 +260,7 @@ class Points(Layer):
 
     @property
     def n_dimensional(self) -> str:
-        """ bool: if True, renders points not just in central plane but also
-        in all n dimensions according to specified point marker size
-        """
+        """bool: renders points as n-dimensionsal."""
         return self._n_dimensional
 
     @n_dimensional.setter
@@ -225,8 +272,7 @@ class Points(Layer):
 
     @property
     def symbol(self) -> str:
-        """ str: point symbol
-        """
+        """str: symbol used for all point markers."""
         return str(self._symbol)
 
     @symbol.setter
@@ -246,8 +292,7 @@ class Points(Layer):
 
     @property
     def size_array(self) -> Union[int, float, np.ndarray, list]:
-        """ndarray: size of the point marker symbol in px
-        """
+        """(N, D) array: sizes of all N points in D dimensions."""
         return self._size_array
 
     @size_array.setter
@@ -265,8 +310,7 @@ class Points(Layer):
 
     @property
     def size(self) -> Union[int, float]:
-        """int, float: size of the point in px
-        """
+        """float: size of marker for the next added point."""
         return self._size
 
     @size.setter
@@ -280,8 +324,7 @@ class Points(Layer):
 
     @property
     def edge_width(self) -> Union[None, int, float]:
-        """None, int, float, None: width of the symbol edge in px
-        """
+        """float: width used for all point markers."""
 
         return self._edge_width
 
@@ -293,8 +336,7 @@ class Points(Layer):
 
     @property
     def edge_color(self) -> str:
-        """Color, ColorArray: the point marker edge color
-        """
+        """str: edge color of marker for the next added point."""
 
         return self._edge_color
 
@@ -309,8 +351,7 @@ class Points(Layer):
 
     @property
     def face_color(self) -> str:
-        """Color, ColorArray: color of the body of the point marker body
-        """
+        """str: face color of marker for the next added point."""
 
         return self._face_color
 
@@ -325,8 +366,7 @@ class Points(Layer):
 
     @property
     def selected_data(self):
-        """list: list of currently selected points
-        """
+        """list: list of currently selected points."""
         return self._selected_data
 
     @selected_data.setter
@@ -388,7 +428,16 @@ class Points(Layer):
 
     @property
     def mode(self):
-        """None, str: Interactive mode
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In ADD mode clicks of the cursor add points at the clicked location.
+
+        In SELECT mode the cursor can select points by clicking on them or
+        by dragging a box around them. Once selected points can be moved,
+        have their properties edited, or be deleted.
         """
         return str(self._mode)
 
@@ -434,9 +483,7 @@ class Points(Layer):
 
     @property
     def range(self):
-        """list of 3-tuple of int: ranges of data for slicing specifed by
-        (min, max, step).
-        """
+        """list of 3-tuple: ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)
             mins = np.zeros(self.data.shape[1], dtype=int)
@@ -653,8 +700,7 @@ class Points(Layer):
         )
 
     def get_message(self, coord, value):
-        """Returns coordinate and value string for given mouse coordinates
-        and value.
+        """Return coordinate and value string.
 
         Parameters
         ----------
@@ -678,8 +724,7 @@ class Points(Layer):
         return msg
 
     def _update_thumbnail(self):
-        """Update thumbnail with current points and colors.
-        """
+        """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         if len(self._data_view) > 0:
@@ -704,8 +749,7 @@ class Points(Layer):
         self.thumbnail = colormapped
 
     def add(self, coord):
-        """Adds point at given mouse position
-        and set of indices.
+        """Adds point at coordinate.
 
         Parameters
         ----------
@@ -714,8 +758,7 @@ class Points(Layer):
         self.data = np.append(self.data, [coord], axis=0)
 
     def remove_selected(self):
-        """Removes selected points if any.
-        """
+        """Removes selected points if any."""
         index = copy(self.selected_data)
         index.sort()
         if len(index) > 0:
@@ -748,8 +791,7 @@ class Points(Layer):
             self.refresh()
 
     def _copy_data(self):
-        """Copy selected points to clipboard.
-        """
+        """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
             self._clipboard = {
                 'data': deepcopy(self.data[self.selected_data]),
@@ -766,8 +808,7 @@ class Points(Layer):
             self._clipboard = {}
 
     def _paste_data(self):
-        """Paste any point from clipboard and select them.
-        """
+        """Paste any point from clipboard and select them."""
         npoints = len(self._data_view)
         totpoints = len(self.data)
 

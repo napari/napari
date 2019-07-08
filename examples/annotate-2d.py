@@ -16,4 +16,4 @@ with napari.gui_qt():
     points.mode = 'add'
 
 print("you clicked on:")
-print(points.coords)
+print(points.data)
