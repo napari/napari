@@ -485,42 +485,42 @@ class ViewerModel:
 
         Parameters
         ----------
-        data : np.array | list
-            List of np.array of data or np.array. Each element of the list (or
+        data : array | list
+            List of array of data or an array. Each element of the list (or
             row of a 3D np.array) corresponds to one shape. If a 2D array is
             passed it corresponds to just a single shape.
-        shape_type : string | list
+        shape_type : string | list, keyword-only
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        edge_width : float | list, keyword-only
+            Thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        edge_color : str | tuple | list, keyword-only
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        face_color : str | tuple | list
+        face_color : str | tuple | list, keyword-only
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        opacity : float | list
+        opacity : float | list, keyword-only
             Opacity of the shapes, must be between 0 and 1.
-        z_index : int | list
+        z_index : int | list, keyword-only
             Specifier of z order priority. Shapes with higher z order are
             displayed ontop of others. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        ndim : int, optional
+        ndim : int, keyword-only
             Dimensions of shape data. Once set cannot be changed. Defaults to
             2.
         name : str, keyword-only
