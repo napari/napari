@@ -25,7 +25,7 @@ def gui_qt():
     if os.environ.get('NAPARI_TEST', '0') != '0':
         # quit app after 0.5 seconds
         timer = QTimer()
-        timer.setInterval(500)
+        timer.setInterval(50)
         timer.timeout.connect(app.quit)
         timer.start()
     app.exec_()
