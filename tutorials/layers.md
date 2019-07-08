@@ -30,6 +30,11 @@ with napari.qui_qt():
 
 ### Label Layer
 
+Another big challenge napari is trying to solve is interactive labeling 
+data. Labels layer enable one to have arbitrary labels on any layer. One 
+can easily superimpose an image and corresponding labels with napari. An 
+example is given below:
+
 ```python
 from skimage import data
 from skimage.filters import threshold_otsu
@@ -60,7 +65,12 @@ with napari.gui_qt():
     label_layer = viewer.add_labels(label_image, name='segmentation')
 ```
 
-### Marker Layer
+![image](../resources/screenshot-add-labels.png)
+
+### Point Layer
+
+Point layer is very useful to mark certain points on a layer.
+A brief usage is shown in below:
 
 ```python
 import numpy as np
@@ -82,6 +92,9 @@ with napari.gui_qt():
     points = viewer.add_points(points, size=size)
 ```
 
+![image](../resources/screenshot-add-points.png)
+
+One can also get coordinates of points with `points.coords`.
 
 ### Vector Layer
 
