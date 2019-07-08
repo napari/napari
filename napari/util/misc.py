@@ -56,58 +56,58 @@ def is_iterable(arg, color=False):
         return True
 
 
-def is_multichannel(meta):
-    """Determines if an image is RGB after checking its metadata.
-    """
-    try:
-        return meta['itype'] in ('rgb', 'rgba', 'multi', 'multichannel')
-    except KeyError:
-        return False
-
-
-def guess_multichannel(shape):
+def is_multichannel(shape):
     """If last dim is 3 or 4 assume image is multichannel.
     """
+    ndim = len(shape)
     last_dim = shape[-1]
 
-    if last_dim in (3, 4):
+    if ndim > 2 and last_dim < 5:
         return True
     else:
         return False
 
 
-def guess_metadata(image, meta, multichannel, kwargs):
-    """Guesses an image's metadata.
+def increment_unnamed_colormap(name, names):
+    """Increment name for unnamed colormap.
 
     Parameters
     ----------
-    image : np.ndarray
-        Image data.
-    meta : dict or None
-        Image metadata.
-    multichannel : bool or None
-        Whether the image is multichannel. Guesses if None.
-    kwargs : dict
-        Parameters that will be translated to metadata.
+    name : str
+        Name of colormap to be incremented.
+    names : str
+        Names of existing colormaps.
 
     Returns
     -------
-    meta : dict
-        Guessed image metadata.
+    name : str
+        Name of colormap after incrementing.
     """
-    if isinstance(meta, dict):
-        meta = dict(meta, **kwargs)
+    if name == '[unnamed colormap]':
+        past_names = [n for n in names if n.startswith('[unnamed colormap')]
+        name = f'[unnamed colormap {len(past_names)}]'
+    return name
 
-    if meta is None:
-        meta = kwargs
 
-    if multichannel is None:
-        multichannel = guess_multichannel(image.shape)
+def calc_data_range(data):
+    """Calculate range of data values. If all values are equal return [0, 1].
 
-    if multichannel:
-        meta['itype'] = 'multi'
+    Parameters
+    -------
+    data : array
+        Data to calculate range of values over.
 
-    return meta
+    Returns
+    -------
+    values : list of float
+        Range of values.
+    """
+    min = data.min()
+    max = data.max()
+    if min == max:
+        min = 0
+        max = 1
+    return [float(min), float(max)]
 
 
 def compute_max_shape(shapes, max_dims=None):
@@ -216,6 +216,39 @@ def segment_normal_vector(a, b):
     return unit_norm
 
 
+def interpolate_coordinates(old_coord, new_coord, brush_size):
+    """Interpolates coordinates depending on brush size.
+
+    Useful for ensuring painting is continuous in labels layer.
+
+    Parameters
+    ----------
+    old_coord : np.ndarray, 1x2
+        Last position of cursor.
+    new_coord : np.ndarray, 1x2
+        Current position of cursor.
+    brush_size : float
+        Size of brush, which determines spacing of interploation.
+
+    Returns
+    ----------
+    coords : np.array, Nx2
+        List of coordinates to ensure painting is continous
+    """
+    num_step = round(
+        max(abs(np.array(new_coord) - np.array(old_coord))) / brush_size * 4
+    )
+    coords = [
+        np.linspace(old_coord[i], new_coord[i], num=num_step + 1)
+        for i in range(len(new_coord))
+    ]
+    coords = np.stack(coords).T
+    if len(coords) > 1:
+        coords = coords[1:]
+
+    return coords
+
+
 class StringEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value
@@ -229,7 +262,7 @@ class StringEnum(Enum):
         return self(value.lower())
 
     def __str__(self):
-        """String representation: The string method returns the
-        valid vispy symbol string for the Markers visual.
+        """String representation: The string method returns the lowercase
+        string of the Enum name
         """
         return self.value

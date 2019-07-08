@@ -2,19 +2,14 @@ from ..misc import is_multichannel
 
 
 def test_is_multichannel():
-    meta = {}
+    shape = (10, 15)
+    assert not is_multichannel(shape)
 
-    meta['itype'] = 'rgb'
-    assert is_multichannel(meta)
+    shape = (10, 15, 6)
+    assert not is_multichannel(shape)
 
-    meta['itype'] = 'rgba'
-    assert is_multichannel(meta)
+    shape = (10, 15, 3)
+    assert is_multichannel(shape)
 
-    meta['itype'] = 'multi'
-    assert is_multichannel(meta)
-
-    meta['itype'] = 'multichannel'
-    assert is_multichannel(meta)
-
-    meta['itype'] = 'notintupleforsure'
-    assert not is_multichannel(meta)
+    shape = (10, 15, 4)
+    assert is_multichannel(shape)

@@ -6,10 +6,10 @@ to the super constructor.
 """
 
 
-from ._base_layer import Layer
-from ._image_layer import Image
-from ._markers_layer import Markers
-from ._vectors_layer import Vectors
-from ._shapes_layer import Shapes
-from ._labels_layer import Labels
-from ._pyramid_layer import Pyramid
+from .base import Layer
+from .image import Image
+from .points import Points
+from .vectors import Vectors
+from .shapes import Shapes
+from .labels import Labels
+from .pyramid import Pyramid

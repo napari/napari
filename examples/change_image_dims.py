@@ -4,11 +4,10 @@ Change image shape and dims directly on the layer
 
 import numpy as np
 from skimage import data
-from napari import Viewer
-from napari.util import app_context
+from napari import Viewer, gui_qt
 
 
-with app_context():
+with gui_qt():
     viewer = Viewer()
 
     # add data
@@ -19,10 +18,10 @@ with app_context():
     layer = viewer.add_image(blobs[:64])
 
     # switch number of displayed dimensions
-    layer.image = blobs[0]
+    layer.data = blobs[0]
 
     # switch number of displayed dimensions
-    layer.image = blobs[:64]
+    layer.data = blobs[:64]
 
     # switch the shape of the displayed data
-    layer.image = blobs[:3]
+    layer.data = blobs[:3]

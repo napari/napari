@@ -6,28 +6,30 @@ Subpackages
 
 .. toctree::
 
-    napari.layers._base_layer
-    napari.layers._image_layer
-    napari.layers._labels_layer
-    napari.layers._markers_layer
-    napari.layers._shapes_layer
+   napari.layers._base_layer
+   napari.layers._image_layer
+   napari.layers._labels_layer
+   napari.layers._points_layer
+   napari.layers._pyramid_layer
+   napari.layers._shapes_layer
+   napari.layers._vectors_layer
 
 Submodules
 ----------
 
-napari.layers.\_register module
--------------------------------
+napari.layers.util module
+-------------------------
 
-.. automodule:: napari.layers._register
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: napari.layers.util
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 Module contents
 ---------------
 
 .. automodule:: napari.layers
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

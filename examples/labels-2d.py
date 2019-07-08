@@ -7,10 +7,9 @@ from skimage import data
 from skimage.color import rgb2gray
 from skimage.segmentation import slic
 import napari
-from napari.util import app_context
 
 
-with app_context():
+with napari.gui_qt():
     astro = data.astronaut()
 
     # initialise viewer with astro image
@@ -24,4 +23,4 @@ with app_context():
 
     # Set the labels layer mode to picker with a string
     label_layer.mode = 'picker'
-    print(f'The color of label 5 is {label_layer.label_color(5)}')
+    print(f'The color of label 5 is {label_layer.get_color(5)}')

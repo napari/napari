@@ -6,10 +6,9 @@ properties
 from skimage import data
 from skimage.color import rgb2gray
 import napari
-from napari.util import app_context
 
 
-with app_context():
+with napari.gui_qt():
     # create the viewer with an image
     viewer = napari.view(
         astronaut=rgb2gray(data.astronaut()), title='napari example'
@@ -28,9 +27,6 @@ with app_context():
     # change the layer selection
     layer.selected = False
     layer.selected = True
-
-    # set the layer property widget to be expanded
-    layer._qt_properties.setExpanded(True)
 
     # change the layer opacity
     layer.opacity = 0.9

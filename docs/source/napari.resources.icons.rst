@@ -5,6 +5,6 @@ Module contents
 ---------------
 
 .. automodule:: napari.resources.icons
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,5 +1,6 @@
-from .components._viewer.view import QtViewer
-from .components import Window, ViewerModel
+from ._qt.qt_viewer import QtViewer
+from ._qt.qt_main_window import Window
+from .components import ViewerModel
 
 
 class Viewer(ViewerModel):
