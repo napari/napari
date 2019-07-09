@@ -23,7 +23,7 @@ with napari.gui_qt():
     viewer = napari.view(blobs.astype(float))
 
     # sample vector coord-like data
-    n = 500
+    n = 200
     pos = np.zeros((n, 2, 2), dtype=np.float32)
     phi_space = np.linspace(0, 4 * np.pi, n)
     radius_space = np.linspace(0, 20, n)
@@ -37,15 +37,15 @@ with napari.gui_qt():
     pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
     # add the broadcast vectors
-    layer = viewer.add_vectors(pos, width=0.4, name='broadcast vectors')
+    layer = viewer.add_vectors(pos, edge_width=0.4, name='broadcast vectors')
 
-    planes = np.round(np.linspace(0, 128, 500)).astype(int)
+    planes = np.round(np.linspace(0, 128, n)).astype(int)
     planes = np.concatenate(
-        (planes.reshape((500, 1, 1)), np.zeros((500, 1, 1))), axis=1
+        (planes.reshape((n, 1, 1)), np.zeros((n, 1, 1))), axis=1
     )
     vectors = np.concatenate((planes, pos), axis=2)
 
     # add the sliced vectors
     layer = viewer.add_vectors(
-        vectors, width=0.4, name='sliced vectors', color='blue'
+        vectors, edge_width=0.4, name='sliced vectors', edge_color='blue'
     )
