@@ -54,5 +54,9 @@ way of doing things.
 ## Continue with
 
 - [Viewer tutorial](viewer.md)
-- [Layers tutorial](layers.md)
 - [nD tutorial](arbitrary_dimensional.md)
+- [Image layer tutorial](images.md)
+- [Label layer tutorial](labels.md)
+- [Point layer tutorial](points.md)
+- [Shape layer tutorial](shapes.md)
+- [Pyramid layer tutorial](pyramid.md)
