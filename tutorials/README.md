@@ -60,3 +60,4 @@ way of doing things.
 - [Point layer tutorial](points.md)
 - [Shape layer tutorial](shapes.md)
 - [Pyramid layer tutorial](pyramid.md)
+- [Vector layer tutorial](vectors.md)
