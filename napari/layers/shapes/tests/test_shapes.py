@@ -4,7 +4,7 @@ from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
 
-def test_2D_rectangles():
+def test_rectangles():
     """Test instantiating Shapes layer with a random 2D rectangles."""
     # Test a single four corner rectangle
     shape = (1, 4, 2)
@@ -44,7 +44,7 @@ def test_2D_rectangles():
     assert np.all([s == 'rectangle' for s in layer.shape_types])
 
 
-def test_2D_ellipses():
+def test_ellipses():
     """Test instantiating Shapes layer with a random 2D ellipses."""
     # Test a single four corner ellipses
     shape = (1, 4, 2)
@@ -82,6 +82,46 @@ def test_2D_ellipses():
     assert np.all([len(ld) == 4 for ld in layer.data])
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_types])
+
+
+# def test_ellipses():
+#     """Test instantiating Shapes layer with a random 2D ellipses."""
+#     # Test a single four corner ellipses
+#     shape = (1, 4, 2)
+#     data = 20 * np.random.random(shape)
+#     layer = Shapes(data, shape_type='ellipse')
+#     assert layer.nshapes == shape[0]
+#     assert np.all(layer.data[0] == data[0])
+#     assert layer.ndim == shape[2]
+#     assert np.all([s == 'ellipse' for s in layer.shape_types])
+#
+#     # Test multiple four corner ellipses
+#     shape = (10, 4, 2)
+#     data = 20 * np.random.random(shape)
+#     layer = Shapes(data, shape_type='ellipse')
+#     assert layer.nshapes == shape[0]
+#     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+#     assert layer.ndim == shape[2]
+#     assert np.all([s == 'ellipse' for s in layer.shape_types])
+#
+#     # Test a single ellipse center radii, which gets converted into four
+#     # corner ellipse
+#     shape = (1, 2, 2)
+#     data = 20 * np.random.random(shape)
+#     layer = Shapes(data, shape_type='ellipse')
+#     assert layer.nshapes == 1
+#     assert len(layer.data[0]) == 4
+#     assert layer.ndim == shape[2]
+#     assert np.all([s == 'ellipse' for s in layer.shape_types])
+#
+#     # Test multiple center radii ellipses
+#     shape = (10, 2, 2)
+#     data = 20 * np.random.random(shape)
+#     layer = Shapes(data, shape_type='ellipse')
+#     assert layer.nshapes == shape[0]
+#     assert np.all([len(ld) == 4 for ld in layer.data])
+#     assert layer.ndim == shape[2]
+#     assert np.all([s == 'ellipse' for s in layer.shape_types])
 
 
 # def test_integer_points():
