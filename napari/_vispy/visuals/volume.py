@@ -38,8 +38,6 @@ import numpy as np
 # todo: implement more render methods (port from visvis)
 # todo: allow anisotropic data
 # todo: what to do about lighting? ambi/diffuse/spec/shinynes on each visual?
-from vispy import scene
-
 
 # Vertex shader
 from vispy.color import get_colormap

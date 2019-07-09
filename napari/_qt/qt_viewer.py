@@ -5,14 +5,17 @@ from pathlib import Path
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
-from vispy.scene import SceneCanvas, PanZoomCamera
+from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
+from vispy.visuals.transforms import STTransform
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
-from ..util.theme import template
+from ..visuals import XYZAxis
+from ..util.io import read, load_numpy_array
 from ..util.misc import is_multichannel
-from ..util.io import read
+from ..util.theme import template
+
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
@@ -30,6 +33,13 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
+        self.dims = QtDims(self.viewer.dims)
+        # Set 2D camera (the camera will scale to the contents in the scene)
+        self.view.camera = PanZoomCamera(aspect=1)
+        # flip y-axis to have correct alignment
+        self.view.camera.flip = (0, 1, 0)
+        self.view.camera.set_range()
+        self.view.camera.viewbox_key_event = viewbox_key_event
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -43,13 +53,6 @@ class QtViewer(QSplitter):
 
         self.view = self.canvas.central_widget.add_view()
 
-        # Set 2D camera (the camera will scale to the contents in the scene)
-        self.view.camera = PanZoomCamera(aspect=1)
-        # flip y-axis to have correct aligment
-        self.view.camera.flip = (0, 1, 0)
-        self.view.camera.set_range()
-        self.view.camera.viewbox_key_event = viewbox_key_event
-
         # TO DO: Remove
         self.viewer._view = self.view
 
@@ -57,7 +60,6 @@ class QtViewer(QSplitter):
         center_layout = QVBoxLayout()
         center_layout.setContentsMargins(15, 20, 15, 10)
         center_layout.addWidget(self.canvas.native)
-        self.dims = QtDims(self.viewer.dims)
         center_layout.addWidget(self.dims)
         center.setLayout(center_layout)
 
@@ -125,36 +127,6 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         return self.canvas.render(region, size, bgcolor)
-
-    def _open_images(self):
-        """Adds image files from the menubar."""
-        filenames, _ = QFileDialog.getOpenFileNames(
-            parent=self,
-            caption='Select image(s)...',
-            directory=self._last_visited_dir,  # home dir by default
-        )
-        self._add_files(filenames)
-
-    def _add_files(self, filenames):
-        """Adds an image layer to the viewer.
-
-        Whether the image is multichannel is determined by
-        :func:`napari.util.misc.is_multichannel`.
-
-        If multiple images are selected, they are stacked along the 0th
-        axis.
-
-        Parameters
-        -------
-        filenames : list
-            List of filenames to be opened
-        """
-        if len(filenames) > 0:
-            image = read(filenames)
-            self.viewer.add_image(
-                image, multichannel=is_multichannel(image.shape)
-            )
-            self._last_visited_dir = os.path.dirname(filenames[0])
 
     def _on_interactive(self, event):
         self.view.interactive = self.viewer.interactive
@@ -244,6 +216,15 @@ class QtViewer(QSplitter):
         else:
             event.ignore()
 
+    def _open_files(self):
+        """Adds files from the menubar."""
+        filenames, _ = QFileDialog.getOpenFileNames(
+            parent=self,
+            caption='Select image(s).../volume(npy or npz files)',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        self._add_files(filenames)
+
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop."""
         filenames = []
@@ -256,6 +237,47 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(path)
         self._add_files(filenames)
+
+    def _add_files(self, filenames):
+        """Adds an image layer to the viewer.
+
+        Whether the image is multichannel is determined by
+        :func:`napari.util.misc.is_multichannel`.
+
+        If multiple images are selected, they are stacked along the 0th
+        axis.
+
+        Parameters
+        -------
+        filenames : list
+            List of filenames to be opened
+        """
+        if len(filenames) > 0:
+            image = read(filenames)
+            self.viewer.add_image(
+                image, multichannel=is_multichannel(image.shape)
+            )
+            self._last_visited_dir = os.path.dirname(filenames[0])
+
+        else:
+            assert len(filenames) == 1
+            if filenames[0].endswith(".npy") or filenames[0].endswith(".npz"):
+                volume = load_numpy_array(filenames[0])
+
+            # Set 3D camera
+            self.view.camera = TurntableCamera(fov=60)
+            self.view.camera.set_range()
+            self.view.camera.viewbox_key_event = viewbox_key_event
+
+            # Create an XYZaxis visual
+            self.axis = XYZAxis(parent=self.iew)
+            s = STTransform(translate=(50, 50), scale=(50, 50, 50, 1))
+            affine = s.as_matrix()
+            self.axis.transform = affine
+            self.viewer.add_volume(
+                volume, multichannel=is_multichannel(volume.shape)
+            )
+            self._last_visited_dir = os.path.dirname(filenames[0])
 
 
 def viewbox_key_event(event):
