@@ -334,7 +334,7 @@ class Shapes(Layer):
         self._data_dict = {}
         self.add_shapes(
             data,
-            shape_type=self.shape_type,
+            shape_type='rectangle',
             edge_width=self.edge_width,
             edge_color=self.edge_color,
             face_color=self.face_color,

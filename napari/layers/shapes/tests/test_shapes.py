@@ -53,6 +53,39 @@ def test_rectangles_roundtrip():
     assert np.all([nd == d for nd, d in zip(new_layer.data, layer.data)])
 
 
+def test_integer_rectangle():
+    """Test instantiating rectangles with integer data."""
+    shape = (10, 2, 2)
+    data = np.random.randint(20, size=shape)
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([len(ld) == 4 for ld in layer.data])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_types])
+
+
+def test_negative_rectangle():
+    """Test instantiating rectangles with negative data."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape) - 10
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_types])
+
+
+def test_empty_rectangle():
+    """Test instantiating rectangles with empty data."""
+    shape = (0, 0, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_types])
+
+
 def test_ellipses():
     """Test instantiating Shapes layer with a random 2D ellipses."""
     # Test a single four corner ellipses
@@ -166,73 +199,20 @@ def test_paths_roundtrip():
     )
 
 
-# def test_integer_points():
-#     """Test instantiating Points layer with integer data."""
-#     shape = (10, 2)
-#     data = np.random.randint(20, size=(10, 2))
-#     layer = Points(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == shape[1]
-#     assert layer._data_view.ndim == 2
-#     assert len(layer.data) == 10
-#
-#
-# def test_negative_points():
-#     """Test instantiating Points layer with negative data."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape) - 10
-#     layer = Points(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == shape[1]
-#     assert layer._data_view.ndim == 2
-#     assert len(layer.data) == 10
-#
-#
-# def test_empty_points():
-#     """Test instantiating Points layer with empty array."""
-#     shape = (0, 2)
-#     data = np.empty(shape)
-#     layer = Points(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == shape[1]
-#     assert layer._data_view.ndim == 2
-#     assert len(layer.data) == 0
-#
-#
-# def test_3D_points():
-#     """Test instantiating Points layer with random 3D data."""
-#     shape = (10, 3)
-#     data = 20 * np.random.random(shape)
-#     layer = Points(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == shape[1]
-#     assert layer._data_view.ndim == 2
-#     assert len(layer.data) == 10
-#
-#
-# def test_4D_points():
-#     """Test instantiating Points layer with random 4D data."""
-#     shape = (10, 4)
-#     data = 20 * np.random.random(shape)
-#     layer = Points(data)
-#     assert np.all(layer.data == data)
-#     assert layer.ndim == shape[1]
-#     assert layer._data_view.ndim == 2
-#     assert len(layer.data) == 10
-#
-#
-# def test_changing_points():
-#     """Test changing Points data."""
-#     shape_a = (10, 2)
-#     shape_b = (20, 2)
-#     data_a = 20 * np.random.random(shape_a)
-#     data_b = 20 * np.random.random(shape_b)
-#     layer = Points(data_a)
-#     layer.data = data_b
-#     assert np.all(layer.data == data_b)
-#     assert layer.ndim == shape_b[1]
-#     assert layer._data_view.ndim == 2
-#     assert len(layer.data) == 20
+def test_changing_shapes():
+    """Test changing Shapes data."""
+    shape_a = (10, 4, 2)
+    shape_b = (20, 4, 2)
+    data_a = 20 * np.random.random(shape_a)
+    data_b = 20 * np.random.random(shape_b)
+    layer = Shapes(data_a)
+    layer.data = data_b
+    assert layer.nshapes == shape_b[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data_b)])
+    assert layer.ndim == shape_b[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_types])
+
+
 #
 #
 # def test_selecting_points():
