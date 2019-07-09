@@ -44,6 +44,15 @@ def test_rectangles():
     assert np.all([s == 'rectangle' for s in layer.shape_types])
 
 
+def test_rectangles_roundtrip():
+    """Test a full roundtrip with rectangles data."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    new_layer = Shapes(layer.data)
+    assert np.all([nd == d for nd, d in zip(new_layer.data, layer.data)])
+
+
 def test_ellipses():
     """Test instantiating Shapes layer with a random 2D ellipses."""
     # Test a single four corner ellipses
@@ -84,44 +93,77 @@ def test_ellipses():
     assert np.all([s == 'ellipse' for s in layer.shape_types])
 
 
-# def test_ellipses():
-#     """Test instantiating Shapes layer with a random 2D ellipses."""
-#     # Test a single four corner ellipses
-#     shape = (1, 4, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Shapes(data, shape_type='ellipse')
-#     assert layer.nshapes == shape[0]
-#     assert np.all(layer.data[0] == data[0])
-#     assert layer.ndim == shape[2]
-#     assert np.all([s == 'ellipse' for s in layer.shape_types])
-#
-#     # Test multiple four corner ellipses
-#     shape = (10, 4, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Shapes(data, shape_type='ellipse')
-#     assert layer.nshapes == shape[0]
-#     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
-#     assert layer.ndim == shape[2]
-#     assert np.all([s == 'ellipse' for s in layer.shape_types])
-#
-#     # Test a single ellipse center radii, which gets converted into four
-#     # corner ellipse
-#     shape = (1, 2, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Shapes(data, shape_type='ellipse')
-#     assert layer.nshapes == 1
-#     assert len(layer.data[0]) == 4
-#     assert layer.ndim == shape[2]
-#     assert np.all([s == 'ellipse' for s in layer.shape_types])
-#
-#     # Test multiple center radii ellipses
-#     shape = (10, 2, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Shapes(data, shape_type='ellipse')
-#     assert layer.nshapes == shape[0]
-#     assert np.all([len(ld) == 4 for ld in layer.data])
-#     assert layer.ndim == shape[2]
-#     assert np.all([s == 'ellipse' for s in layer.shape_types])
+def test_ellipses_roundtrip():
+    """Test a full roundtrip with ellipss data."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, shape_type='ellipse')
+    new_layer = Shapes(layer.data, shape_type='ellipse')
+    assert np.all([nd == d for nd, d in zip(new_layer.data, layer.data)])
+
+
+def test_lines():
+    """Test instantiating Shapes layer with a random 2D lines."""
+    # Test a single two end point line
+    shape = (1, 2, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, shape_type='line')
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == data[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_types])
+
+    # Test multiple lines
+    shape = (10, 2, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, shape_type='line')
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_types])
+
+
+def test_lines_roundtrip():
+    """Test a full roundtrip with line data."""
+    shape = (10, 2, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, shape_type='line')
+    new_layer = Shapes(layer.data, shape_type='line')
+    assert np.all([nd == d for nd, d in zip(new_layer.data, layer.data)])
+
+
+def test_paths():
+    """Test instantiating Shapes layer with a random 2D paths."""
+    # Test a single path with 6 points
+    shape = (1, 6, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, shape_type='path')
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == data[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'path' for s in layer.shape_types])
+
+    # Test multiple paths with different numbers of points
+    data = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+    ]
+    layer = Shapes(data, shape_type='path')
+    assert layer.nshapes == len(data)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == 2
+    assert np.all([s == 'path' for s in layer.shape_types])
+
+
+def test_paths_roundtrip():
+    """Test a full roundtrip with path data."""
+    data = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+    ]
+    layer = Shapes(data, shape_type='path')
+    new_layer = Shapes(layer.data, shape_type='path')
+    assert np.all(
+        [np.all(nd == d) for nd, d in zip(new_layer.data, layer.data)]
+    )
 
 
 # def test_integer_points():
