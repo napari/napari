@@ -59,9 +59,21 @@ class Shapes(Layer):
 
     Attributes
     ----------
-    data : list
+    data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
+    shape_types : (N, ) list of str
+        Name of shape type for each shape.
+    edge_colors : (N, ) list of str
+        Name of edge color for each shape.
+    face_colors : (N, ) list of str
+        Name of face color for each shape.
+    edge_widths : (N, ) list of float
+        Edge width for each shape.
+    opacities : (N, ) list of float
+        Opacity for each shape.
+    z_indices : (N, ) list of int
+        z-index for each shape.
     edge_width : float
         Thickness of lines and edges of the next shape to be added or the
         currently selected shape.
@@ -409,11 +421,51 @@ class Shapes(Layer):
 
     @property
     def shape_types(self):
-        """list: List of shape types."""
+        """list of str: name of shape type for each shape."""
         shape_types = []
         for d in self._data_dict.values():
             shape_types += d.shape_types
         return shape_types
+
+    @property
+    def edge_colors(self):
+        """list of str: name of edge color for each shape."""
+        edge_colors = []
+        for d in self._data_dict.values():
+            edge_colors += d.edge_colors
+        return edge_colors
+
+    @property
+    def face_colors(self):
+        """list of str: name of face color for each shape."""
+        face_colors = []
+        for d in self._data_dict.values():
+            face_colors += d.face_colors
+        return face_colors
+
+    @property
+    def edge_widths(self):
+        """list of float: edge width for each shape."""
+        edge_widths = []
+        for d in self._data_dict.values():
+            edge_widths += d.edge_widths
+        return edge_widths
+
+    @property
+    def opacities(self):
+        """list of float: opacity for each shape."""
+        opacities = []
+        for d in self._data_dict.values():
+            opacities += d.opacities
+        return opacities
+
+    @property
+    def z_indices(self):
+        """list of int: z_index for each shape."""
+        z_indices = []
+        for d in self._data_dict.values():
+            z_indices += d.z_indices
+        return z_indices
 
     @property
     def selected_data(self):
