@@ -542,13 +542,13 @@ class ViewerModel(KeymapMixin):
             D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
-        edge_width : float, keyword-only
+        edge_width : float
             Width for all vectors in pixels.
-        length : float, keyword-only
+        length : float
              Multiplicative factor on projections for length of all vectors.
-        edge_color : str, keyword-only
+        edge_color : str
             Edge color of all the vectors.
-        name : str, keyword-only
+        name : str
             Name of the layer.
 
         Returns
