@@ -669,13 +669,13 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
-        if edge_width is not None:
+        if edge_width is None:
             edge_width = self.edge_width
-        if edge_color is not None:
+        if edge_color is None:
             edge_color = self.edge_color
-        if face_color is not None:
+        if face_color is None:
             face_color = self.face_color
-        if opacity is not None:
+        if opacity is None:
             opacity = self.opacity
         if self._data_view is not None:
             z_index = z_index or max(self._data_view._z_index, default=-1) + 1
