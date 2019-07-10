@@ -11,11 +11,10 @@ from vispy.visuals.transforms import STTransform
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
-from ..visuals import XYZAxis
 from ..util.io import read, load_numpy_array
 from ..util.misc import is_multichannel
 from ..util.theme import template
-
+from napari._vispy.scene.visuals import XYZAxis
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
@@ -34,12 +33,6 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        # Set 2D camera (the camera will scale to the contents in the scene)
-        self.view.camera = PanZoomCamera(aspect=1)
-        # flip y-axis to have correct alignment
-        self.view.camera.flip = (0, 1, 0)
-        self.view.camera.set_range()
-        self.view.camera.viewbox_key_event = viewbox_key_event
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -55,6 +48,12 @@ class QtViewer(QSplitter):
 
         # TO DO: Remove
         self.viewer._view = self.view
+        # Set 2D camera (the camera will scale to the contents in the scene)
+        self.view.camera = PanZoomCamera(aspect=1)
+        # flip y-axis to have correct alignment
+        self.view.camera.flip = (0, 1, 0)
+        self.view.camera.set_range()
+        self.view.camera.viewbox_key_event = viewbox_key_event
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -252,17 +251,13 @@ class QtViewer(QSplitter):
         filenames : list
             List of filenames to be opened
         """
-        if len(filenames) > 0:
-            image = read(filenames)
-            self.viewer.add_image(
-                image, multichannel=is_multichannel(image.shape)
-            )
-            self._last_visited_dir = os.path.dirname(filenames[0])
 
-        else:
-            assert len(filenames) == 1
-            if filenames[0].endswith(".npy") or filenames[0].endswith(".npz"):
-                volume = load_numpy_array(filenames[0])
+        if (
+            len(filenames) == 1
+            and filenames[0].endswith(".npy")
+            or filenames[0].endswith(".npz")
+        ):
+            volume = load_numpy_array(filenames[0])
 
             # Set 3D camera
             self.view.camera = TurntableCamera(fov=60)
@@ -270,12 +265,19 @@ class QtViewer(QSplitter):
             self.view.camera.viewbox_key_event = viewbox_key_event
 
             # Create an XYZaxis visual
-            self.axis = XYZAxis(parent=self.iew)
+            self.axis = XYZAxis(parent=self.view)
             s = STTransform(translate=(50, 50), scale=(50, 50, 50, 1))
             affine = s.as_matrix()
             self.axis.transform = affine
             self.viewer.add_volume(
                 volume, multichannel=is_multichannel(volume.shape)
+            )
+            self._last_visited_dir = os.path.dirname(filenames[0])
+
+        if len(filenames) > 0:
+            image = read(filenames)
+            self.viewer.add_image(
+                image, multichannel=is_multichannel(image.shape)
             )
             self._last_visited_dir = os.path.dirname(filenames[0])
 

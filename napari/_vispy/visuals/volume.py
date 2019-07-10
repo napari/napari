@@ -390,7 +390,6 @@ class VolumeVisual(Visual):
         Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
         but has lower performance on desktop platforms.
     """
-
     def __init__(self, vol, clim=None, method='mip', threshold=None,
                  relative_step_size=0.8, cmap='grays',
                  emulate_texture=False):
@@ -422,7 +421,7 @@ class VolumeVisual(Visual):
                             wrapping='clamp_to_edge')
 
         # Create program
-        super(VolumeVisual, self).__init__(self, vcode=VERT_SHADER, fcode="")
+        super(VolumeVisual, self).__init__(vcode=VERT_SHADER, fcode="")
         self.shared_program['u_volumetex'] = self._tex
         self.shared_program['a_position'] = self._vertices
         self.shared_program['a_texcoord'] = self._texcoord
