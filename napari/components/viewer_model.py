@@ -305,7 +305,8 @@ class ViewerModel:
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
 
-        layer.parent = self._view
+        if self._view is not None:
+            layer.parent = self._view
         self.layers.append(layer)
         layer.indices = self.dims.indices
 
