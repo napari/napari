@@ -19,24 +19,24 @@ class Points(Layer):
     ----------
     coords : array (N, D)
         Coordinates for N points in D dimensions.
-    symbol : str, keyword-only
+    symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-    size : float, array, keyword-only
+    size : float, array
         Size of the point marker. If given as a scalar, all points are made
         the same size. If given as an array, size must be the same
         broadcastable to the same shape as the data.
-    edge_width : float, keyword-only
+    edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str, keyword-only
+    edge_color : str
         Color of the point marker border.
-    face_color : str, keyword-only
+    face_color : str
         Color of the point marker body.
-    n_dimensional : bool, keyword-only
+    n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes

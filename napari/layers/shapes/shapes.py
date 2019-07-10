@@ -23,38 +23,38 @@ class Shapes(Layer):
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
-    shape_type : string or list, keyword-only
+    shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
         the same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_width : float or list, keyword-only
+    edge_width : float or list
         Thickness of lines and edges. If a list is supplied it must be the
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_color : str or list, keyword-only
+    edge_color : str or list
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    face_color : str or list, keyword-only
+    face_color : str or list
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    opacity : float or list, keyword-only
+    opacity : float or list
         Opacity of the shapes, must be between 0 and 1.
-    z_index : int or list, keyword-only
+    z_index : int or list
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes
