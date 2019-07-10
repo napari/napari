@@ -646,6 +646,34 @@ def test_z_index():
     assert layer.z_indices == [z_index_list[1]] + z_index_list[3:] + [4]
 
 
+def test_move_to_front():
+    """Test moving shapes to front."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    z_index_list = [2, 3] * 5
+    layer = Shapes(data, z_index=z_index_list)
+    assert layer.z_indices == z_index_list
+
+    # Move selected shapes to front
+    layer.selected_data = [0, 2]
+    layer.move_to_front()
+    assert layer.z_indices == [4] + [z_index_list[1]] + [4] + z_index_list[3:]
+
+
+def test_move_to_back():
+    """Test moving shapes to back."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    z_index_list = [2, 3] * 5
+    layer = Shapes(data, z_index=z_index_list)
+    assert layer.z_indices == z_index_list
+
+    # Move selected shapes to front
+    layer.selected_data = [0, 2]
+    layer.move_to_back()
+    assert layer.z_indices == [1] + [z_index_list[1]] + [1] + z_index_list[3:]
+
+
 # def test_interaction_box():
 #     """Test the creation of the interaction box."""
 #     shape = (10, 2)
