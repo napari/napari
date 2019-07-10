@@ -36,6 +36,7 @@ class VisualWrapper:
     """
 
     def __init__(self, central_node):
+        super().__init__()
         self._node = central_node
         self._blending = Blending.TRANSLUCENT
         self._parent = None

@@ -31,7 +31,7 @@ with napari.gui_qt():
 
     masks = layer.to_masks(mask_shape=(128, 128, 128))
     labels = layer.to_labels(labels_shape=(128, 128, 128))
-    shape_array = np.array(layer.to_list())
+    shape_array = np.array(layer.data)
 
     print(
         f'sliced: nshapes {layer.nshapes}, mask shape {masks.shape}, '
@@ -45,7 +45,7 @@ with napari.gui_qt():
 
     masks = layer.to_masks(mask_shape=(128, 128, 128))
     labels = layer.to_labels(labels_shape=(128, 128, 128))
-    shape_array = np.array(layer.to_list())
+    shape_array = np.array(layer.data)
 
     print(
         f'broadcast: nshapes {layer.nshapes}, mask shape {masks.shape}, '

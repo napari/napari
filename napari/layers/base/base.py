@@ -6,10 +6,11 @@ import numpy as np
 from skimage import img_as_ubyte
 
 from ...util.event import Event
+from ...util.keybindings import KeymapMixin
 from ._visual_wrapper import VisualWrapper
 
 
-class Layer(VisualWrapper, ABC):
+class Layer(VisualWrapper, KeymapMixin, ABC):
     """Base layer class.
 
     Parameters
@@ -26,6 +27,7 @@ class Layer(VisualWrapper, ABC):
         * `_get_shape()`: called by `shape` property
         * `_refresh()`: called by `refresh` method
         * `data` property (setter & getter)
+        * `class_keymap` class variable (dictionary)
 
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice
