@@ -136,11 +136,26 @@ with napari.gui_qt():
     blobs = np.stack([data.binary_blobs(length=128, blob_size_fraction=0.05,
                                         n_dim=3, volume_fraction=f)
                      for f in np.linspace(0.05, 0.5, 10)], axis=0)
-    # add data to the viewer
+    # add image data to the viewer
     viewer = napari.view(blobs.astype(float))
+
+    # add points to the viewer
+    points = np.array(
+        [
+            [0, 0, 100, 100],
+            [0, 0, 50, 120],
+            [1, 0, 100, 40],
+            [2, 10, 110, 100],
+            [9, 8, 80, 100],
+        ]
+    )
+    viewer.add_points(
+        points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
+    )
+
 ```
 
-![image](resources/screenshot-nD-image.png)
+![image](resources/screenshot-nD-slicing.gif)
 
 You can draw lines and polygons on an image, including selection and adjustment of shapes and vertices, and control over fill and stroke color. Run `examples/add_shapes.py` to generate and interact with the following example.
 
