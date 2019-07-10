@@ -3,7 +3,6 @@ from .vendored import colorconv, cm
 import numpy as np
 import vispy.color
 
-
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
 )
@@ -246,3 +245,23 @@ ALL_COLORMAPS.update(simple_colormaps)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
+
+
+# create colormaps that work well for translucent and additive volume rendering
+class TransFire(vispy.color.BaseColormap):
+    glsl_map = """
+    vec4 translucent_fire(float t) {
+        return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
+    }
+    """
+
+
+class TransGrays(vispy.color.BaseColormap):
+    glsl_map = """
+    vec4 translucent_grays(float t) {
+        return vec4(t, t, t, t*0.05);
+    }
+    """
+
+
+COLORMAPS_3D_DATA = {"fire": TransFire(), "grays": TransGrays()}

@@ -11,7 +11,7 @@ from ...util.misc import (
     increment_unnamed_colormap,
 )
 from ...util.event import Event
-from ...util.colormaps import AVAILABLE_COLORMAPS
+from ...util.colormaps import COLORMAPS_3D_DATA
 
 
 class Volume(Layer):
@@ -81,7 +81,7 @@ class Volume(Layer):
         `True`.
     """
 
-    _colormaps = AVAILABLE_COLORMAPS
+    _colormaps = COLORMAPS_3D_DATA
 
     def __init__(
         self,
@@ -89,7 +89,7 @@ class Volume(Layer):
         *,
         metadata=None,
         multichannel=None,
-        colormap='gray',
+        colormap='fire',
         clim=None,
         clim_range=None,
         interpolation='nearest',
@@ -97,7 +97,12 @@ class Volume(Layer):
         **kwargs,
     ):
 
-        visual = VolumeNode(volume, method='translucent')
+        visual = VolumeNode(
+            volume,
+            method='translucent',
+            threshold=0.225,
+            cmap=self._colormaps[colormap],
+        )
         super().__init__(visual, name)
 
         self.events.add(clim=Event, colormap=Event)
@@ -132,114 +137,9 @@ class Volume(Layer):
 
             self._position = (0, 0, 0)
             self.coordinates = (0, 0, 0)
-            self._thumbnail_shape = (32, 32, 32, 4)
-            self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
 
             # Trigger generation of view slice and thumbnail
             self._set_view_slice()
-
-    def _update_thumbnail(self):
-        """Update thumbnail with current volume data and colormap."""
-        volume = self._data_thumbnail
-        zoom_factor = np.divide(
-            self._thumbnail_shape[:3], volume.shape[:3]
-        ).min()
-        if self.multichannel:
-            # warning filter can be removed with scipy 1.4
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(
-                    volume,
-                    (zoom_factor, zoom_factor, zoom_factor, 1),
-                    prefilter=False,
-                    order=0,
-                )
-            if volume.shape[3] == 4:  # volume is RGBA
-                colormapped = np.copy(downsampled)
-                colormapped[..., 3] = downsampled[..., 3] * self.opacity
-                if downsampled.dtype == np.uint8:
-                    colormapped = colormapped.astype(np.uint8)
-            else:  # volume is RGB
-                if downsampled.dtype == np.uint8:
-                    alpha = np.full(
-                        downsampled.shape[:3] + (1,),
-                        int(255 * self.opacity),
-                        dtype=np.uint8,
-                    )
-                else:
-                    alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
-                colormapped = np.concatenate([downsampled, alpha], axis=2)
-        else:
-            # warning filter can be removed with scipy 1.4
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(
-                    volume, zoom_factor, prefilter=False, order=0
-                )
-            low, high = self.clim
-            downsampled = np.clip(downsampled, low, high)
-            color_range = high - low
-            if color_range != 0:
-                downsampled = (downsampled - low) / color_range
-            colormapped = self.colormap[1].map(downsampled)
-            colormapped = colormapped.reshape(downsampled.shape + (4,))
-            colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
-
-    def get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
-
-        Returns
-        ----------
-        coord : 3-tuple of int
-            Position of cursor in volume space.
-        value : int, float, or sequence of int or float
-            Value of the data at the coord.
-        """
-        coord = np.round(self.coordinates).astype(int)
-        if self.multichannel:
-            shape = self._data_view.shape[:-1]
-        else:
-            shape = self._data_view.shape
-        print(self.coordinates)
-        coord[-3:] = np.clip(coord[-3:], 0, np.asarray(shape) - 1)
-
-        value = self._data_view[tuple(coord[-3:])]
-
-        return coord, value
-
-    def get_message(self, coord, value):
-        """Generate a status message based on the coordinates and information
-        about what shapes are hovered over
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
-
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-
-        msg = f'{coord}, {self.name}' + ', value '
-        if isinstance(value, np.ndarray):
-            if isinstance(value[0], np.integer):
-                msg = msg + str(value)
-            else:
-                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
-                msg = msg + v_str
-        else:
-            if isinstance(value, np.integer):
-                msg = msg + str(value)
-            else:
-                msg = msg + f'{value:0.3}'
-
-        return msg
 
     @property
     def data(self):
@@ -301,7 +201,6 @@ class Volume(Layer):
             name = self._colormap_name
         self._colormap_name = name
         self._node.cmap = self._colormaps[name]
-        self._update_thumbnail()
         self.events.colormap()
 
     @property
@@ -309,47 +208,28 @@ class Volume(Layer):
         """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
 
-    # wrap visual properties:
-    @property
-    def clim(self):
-        """list of float: Limits to use for the colormap."""
-        return list(self._node.clim)
-
-    @clim.setter
-    def clim(self, clim):
-        self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
-        self.status = self._clim_msg
-        self._node.clim = clim
-        if clim[0] < self._clim_range[0]:
-            self._clim_range[0] = copy(clim[0])
-        if clim[1] > self._clim_range[1]:
-            self._clim_range[1] = copy(clim[1])
-        self._update_thumbnail()
-        self.events.clim()
-
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        indices = list(self.indices)
-        indices[:-3] = np.clip(
-            indices[:-3], 0, np.subtract(self.shape[:-2], 1)
+        indices = (
+            slice(None, None, None),
+            slice(None, None, None),
+            slice(None, None, None),
         )
+        print(indices)
         self._data_view = np.asarray(self.data[tuple(indices)])
+        print(
+            self._data_view.shape,
+            self._data_view.dtype,
+            self._data_view.min(),
+            self._data_view.max(),
+        )
 
         self._node.set_data(self._data_view)
 
         self._need_visual_update = True
         self._update()
 
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)
-
         self._data_thumbnail = self._data_view
-        self._update_thumbnail()
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self.position = tuple(event.pos)
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)
+    def _update_thumbnail(self):
+        pass

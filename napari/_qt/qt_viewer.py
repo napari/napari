@@ -75,6 +75,7 @@ class QtViewer(QSplitter):
         right_layout.addWidget(self.buttons)
         right.setLayout(right_layout)
         right.setMinimumSize(QSize(308, 250))
+        self.axis = None
 
         self.addWidget(right)
 
@@ -165,6 +166,17 @@ class QtViewer(QSplitter):
         """Called whenever mouse moves over canvas.
         """
         layer = self.viewer.active_layer
+        if self.axis is not None:
+            self.axis.transform.reset()
+
+            self.axis.transform.rotate(self.view.camera.roll, (0, 0, 1))
+            self.axis.transform.rotate(self.view.camera.elevation, (1, 0, 0))
+            self.axis.transform.rotate(self.view.camera.azimuth, (0, 1, 0))
+
+            self.axis.transform.scale((50, 50, 0.001))
+            self.axis.transform.translate((50.0, 50.0))
+            self.axis.update()
+
         if layer is not None:
             layer.on_mouse_move(event)
 
@@ -252,10 +264,8 @@ class QtViewer(QSplitter):
             List of filenames to be opened
         """
 
-        if (
-            len(filenames) == 1
-            and filenames[0].endswith(".npy")
-            or filenames[0].endswith(".npz")
+        if len(filenames) == 1 and (
+            filenames[0].endswith(".npy") or filenames[0].endswith(".npz")
         ):
             volume = load_numpy_array(filenames[0])
 
@@ -274,7 +284,7 @@ class QtViewer(QSplitter):
             )
             self._last_visited_dir = os.path.dirname(filenames[0])
 
-        if len(filenames) > 0:
+        elif len(filenames) > 0:
             image = read(filenames)
             self.viewer.add_image(
                 image, multichannel=is_multichannel(image.shape)

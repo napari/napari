@@ -119,6 +119,7 @@ class Layer(VisualWrapper, ABC):
         if indices == self.indices:
             return
         self._indices = indices[-self.ndim :]
+        print(self._indices)
         self._update_coordinates()
         self._set_view_slice()
 

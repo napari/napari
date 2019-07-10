@@ -3,4 +3,5 @@ from .colormaps import (
     simple_colormaps,
     AVAILABLE_COLORMAPS,
     ALL_COLORMAPS,
+    COLORMAPS_3D_DATA,
 )

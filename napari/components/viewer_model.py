@@ -307,7 +307,9 @@ class ViewerModel:
 
         layer.parent = self._view
         self.layers.append(layer)
+        print(self.dims.indices)
         layer.indices = self.dims.indices
+        print(layer.indices)
 
         if len(self.layers) == 1:
             self.reset_view()
@@ -450,6 +452,8 @@ class ViewerModel:
             The newly-created volume layer.
         """
         layer = layers.Volume(volume, *args, **kwargs)
+        print(layer.indices)
+        self.dims = Dims(3)
         self.add_layer(layer)
         return layer
 
