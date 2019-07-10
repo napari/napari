@@ -19,24 +19,24 @@ class Points(Layer):
     ----------
     coords : array (N, D)
         Coordinates for N points in D dimensions.
-    symbol : str, keyword-only
+    symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-    size : float, array, keyword-only
+    size : float, array
         Size of the point marker. If given as a scalar, all points are made
         the same size. If given as an array, size must be the same
         broadcastable to the same shape as the data.
-    edge_width : float, keyword-only
+    edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str, keyword-only
+    edge_color : str
         Color of the point marker border.
-    face_color : str, keyword-only
+    face_color : str
         Color of the point marker body.
-    n_dimensional : bool, keyword-only
+    n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes
@@ -56,12 +56,16 @@ class Points(Layer):
     face_color : str
         Size of the marker edge for the next point to be added or the currently
         selected point.
+    edge_colors : list of str (N,)
+        List of edge color strings, one for each point.
+    face_colors : list of str (N,)
+        List of face color strings, one for each point.
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
     selected_data : list
         Integer indices of any selected points.
-    size_array : array (N, D)
+    sizes : array (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
     mode : str
@@ -85,10 +89,6 @@ class Points(Layer):
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_data_view` array.
-    _edge_color_list : list of str (N,)
-        List of edge color strings, one for each point.
-    _face_color_list : list of str (N,)
-        List of face color strings, one for each point.
     _selected_box : array (4, 2) or None
         Four corners of any box either around currently selected points or
         being created during a drag action. Starting in the top left and
@@ -144,13 +144,13 @@ class Points(Layer):
             self.n_dimensional = n_dimensional
             self.edge_width = edge_width
 
-            self.size_array = size
-            self._edge_color_list = list(
+            self.sizes = size
+            self.edge_colors = list(
                 itertools.islice(
                     ensure_iterable(edge_color, color=True), 0, len(self.data)
                 )
             )
-            self._face_color_list = list(
+            self.face_colors = list(
                 itertools.islice(
                     ensure_iterable(face_color, color=True), 0, len(self.data)
                 )
@@ -231,31 +231,25 @@ class Points(Layer):
             # If there are now less points, remove the sizes and colors of the
             # extra ones
             with self.freeze_refresh():
-                self.size_array = self._size_array[: len(data)]
-                self._edge_color_list = self._edge_color_list[: len(data)]
-                self._face_color_list = self._face_color_list[: len(data)]
+                self.sizes = self._sizes[: len(data)]
+                self.edge_colors = self.edge_colors[: len(data)]
+                self.face_colors = self.face_colors[: len(data)]
 
         elif len(data) > cur_npoints:
             # If there are now more points, add the sizes and colors of the
             # new ones
             with self.freeze_refresh():
                 adding = len(data) - cur_npoints
-                if len(self._size_array) > 0:
-                    new_size = copy(self._size_array[-1])
+                if len(self._sizes) > 0:
+                    new_size = copy(self._sizes[-1])
                     new_size[-2:] = self.size
                 else:
                     # Add the default size, with a value for each dimension
-                    new_size = np.repeat(self.size, self._size_array.shape[1])
+                    new_size = np.repeat(self.size, self._sizes.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
-                self.size_array = np.concatenate(
-                    (self._size_array, size), axis=0
-                )
-                self._edge_color_list += [
-                    self.edge_color for i in range(adding)
-                ]
-                self._face_color_list += [
-                    self.face_color for i in range(adding)
-                ]
+                self.sizes = np.concatenate((self._sizes, size), axis=0)
+                self.edge_colors += [self.edge_color for i in range(adding)]
+                self.face_colors += [self.face_color for i in range(adding)]
 
         self.events.data()
         self.refresh()
@@ -293,17 +287,17 @@ class Points(Layer):
         self.refresh()
 
     @property
-    def size_array(self) -> Union[int, float, np.ndarray, list]:
+    def sizes(self) -> Union[int, float, np.ndarray, list]:
         """(N, D) array: sizes of all N points in D dimensions."""
-        return self._size_array
+        return self._sizes
 
-    @size_array.setter
-    def size_array(self, size: Union[int, float, np.ndarray, list]) -> None:
+    @sizes.setter
+    def sizes(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
-            self._size_array = np.broadcast_to(size, self.data.shape).copy()
+            self._sizes = np.broadcast_to(size, self.data.shape).copy()
         except:
             try:
-                self._size_array = np.broadcast_to(
+                self._sizes = np.broadcast_to(
                     size, self.data.shape[::-1]
                 ).T.copy()
             except:
@@ -320,7 +314,7 @@ class Points(Layer):
         self._size = size
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
-                self.size_array[i, :] = (self.size_array[i, :] > 0) * size
+                self.sizes[i, :] = (self.sizes[i, :] > 0) * size
             self.refresh()
         self.events.size()
 
@@ -347,7 +341,7 @@ class Points(Layer):
         self._edge_color = edge_color
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
-                self._edge_color_list[i] = edge_color
+                self.edge_colors[i] = edge_color
             self.refresh()
         self.events.edge_color()
 
@@ -362,7 +356,7 @@ class Points(Layer):
         self._face_color = face_color
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
-                self._face_color_list[i] = face_color
+                self.face_colors[i] = face_color
             self.refresh()
         self.events.face_color()
 
@@ -384,19 +378,19 @@ class Points(Layer):
 
         # Update properties based on selected points
         index = self._selected_data
-        edge_colors = list(set([self._edge_color_list[i] for i in index]))
+        edge_colors = list(set([self.edge_colors[i] for i in index]))
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
                 self.edge_color = edge_color
 
-        face_colors = list(set([self._face_color_list[i] for i in index]))
+        face_colors = list(set([self.face_colors[i] for i in index]))
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
                 self.face_color = face_color
 
-        size = list(set([self.size_array[i, -2:].mean() for i in index]))
+        size = list(set([self.sizes[i, -2:].mean() for i in index]))
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -518,10 +512,10 @@ class Points(Layer):
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(self.data[:, :-2] - indices[:-2])
-                size_array = self.size_array[:, :-2] / 2
-                matches = np.all(distances <= size_array, axis=1)
+                sizes = self.sizes[:, :-2] / 2
+                matches = np.all(distances <= sizes, axis=1)
                 in_slice_data = self.data[matches, -2:]
-                size_match = size_array[matches]
+                size_match = sizes[matches]
                 size_match[size_match == 0] = 1
                 scale_per_dim = (size_match - distances[matches]) / size_match
                 scale_per_dim[size_match == 0] = 1
@@ -572,7 +566,7 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(in_slice_data) > 0:
             # Get the point sizes
-            sizes = self.size_array[indices, -2:].mean(axis=1) * scale
+            sizes = self.sizes[indices, -2:].mean(axis=1) * scale
 
             # Update the points node
             data = np.array(in_slice_data) + 0.5
@@ -598,10 +592,10 @@ class Points(Layer):
 
         if len(data) > 0:
             edge_color = [
-                self._edge_color_list[i] for i in self._indices_view[::-1]
+                self.edge_colors[i] for i in self._indices_view[::-1]
             ]
             face_color = [
-                self._face_color_list[i] for i in self._indices_view[::-1]
+                self.face_colors[i] for i in self._indices_view[::-1]
             ]
         else:
             edge_color = 'white'
@@ -669,7 +663,7 @@ class Points(Layer):
                 data = np.expand_dims(data, axis=0)
             size = self._sizes_view[index]
             face_color = [
-                self._face_color_list[i] for i in self._indices_view[index]
+                self.face_colors[i] for i in self._indices_view[index]
             ]
         else:
             data = np.empty((0, 2))
@@ -745,7 +739,7 @@ class Points(Layer):
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
             for i, c in enumerate(coords):
-                col = self._face_color_list[self._indices_view[i]]
+                col = self.face_colors[self._indices_view[i]]
                 colormapped[c[0], c[1], :] = Color(col).rgba
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
@@ -764,10 +758,10 @@ class Points(Layer):
         index = copy(self.selected_data)
         index.sort()
         if len(index) > 0:
-            self._size_array = np.delete(self._size_array, index, axis=0)
+            self._sizes = np.delete(self._sizes, index, axis=0)
             for i in index[::-1]:
-                del self._edge_color_list[i]
-                del self._face_color_list[i]
+                del self.edge_colors[i]
+                del self.face_colors[i]
             if self._hover_point in self.selected_data:
                 self._hover_point = None
             self.selected_data = []
@@ -797,12 +791,12 @@ class Points(Layer):
         if len(self.selected_data) > 0:
             self._clipboard = {
                 'data': deepcopy(self.data[self.selected_data]),
-                'size': deepcopy(self.size_array[self.selected_data]),
+                'size': deepcopy(self.sizes[self.selected_data]),
                 'edge_color': deepcopy(
-                    [self._edge_color_list[i] for i in self.selected_data]
+                    [self.edge_colors[i] for i in self.selected_data]
                 ),
                 'face_color': deepcopy(
-                    [self._face_color_list[i] for i in self.selected_data]
+                    [self.face_colors[i] for i in self.selected_data]
                 ),
                 'indices': self.indices,
             }
@@ -821,13 +815,13 @@ class Points(Layer):
             )
             data[:, :-2] = data[:, :-2] + offset
             self._data = np.append(self.data, data, axis=0)
-            self._size_array = np.append(
-                self.size_array, deepcopy(self._clipboard['size']), axis=0
+            self._sizes = np.append(
+                self.sizes, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge_color_list = self._edge_color_list + deepcopy(
+            self.edge_colors = self.edge_colors + deepcopy(
                 self._clipboard['edge_color']
             )
-            self._face_color_list = self._face_color_list + deepcopy(
+            self.face_colors = self.face_colors + deepcopy(
                 self._clipboard['face_color']
             )
             self._selected_view = list(
@@ -861,13 +855,9 @@ class Points(Layer):
             cx = str(d[1])
             cy = str(d[0])
             r = str(s / 2)
-            face_color = (255 * Color(self._face_color_list[i]).rgba).astype(
-                np.int
-            )
+            face_color = (255 * Color(self.face_colors[i]).rgba).astype(np.int)
             fill = f'rgb{tuple(face_color[:3])}'
-            edge_color = (255 * Color(self._edge_color_list[i]).rgba).astype(
-                np.int
-            )
+            edge_color = (255 * Color(self.edge_colors[i]).rgba).astype(np.int)
             stroke = f'rgb{tuple(edge_color[:3])}'
 
             element = Element(

@@ -14,10 +14,20 @@ class ShapeList:
 
     Attributes
     ----------
-    shapes : list
-        Length N list of N shape objects
-    shape_types : list
-        Length N list of names of N shape objects
+    shapes : (N, ) list
+        Shape objects.
+    shape_types : (N, ) list of str
+        Name of shape type for each shape.
+    edge_colors : (N, ) list of str
+        Name of edge color for each shape.
+    face_colors : (N, ) list of str
+        Name of face color for each shape.
+    edge_widths : (N, ) list of float
+        Edge width for each shape.
+    opacities : (N, ) list of float
+        Opacity for each shape.
+    z_indices : (N, ) list of int
+        z-index for each shape.
 
     Extended Summary
     ----------
@@ -61,10 +71,33 @@ class ShapeList:
 
     @property
     def shape_types(self):
-        """list: List of shape types where each element of the list is a
-        str corresponding to the name of one shape
-        """
+        """list of str: shape types for each shape."""
         return [s.name for s in self.shapes]
+
+    @property
+    def edge_colors(self):
+        """list of str: name of edge color for each shape."""
+        return [s._edge_color_name for s in self.shapes]
+
+    @property
+    def face_colors(self):
+        """list of str: name of face color for each shape."""
+        return [s._face_color_name for s in self.shapes]
+
+    @property
+    def edge_widths(self):
+        """list of float: edge width for each shape."""
+        return [s.edge_width for s in self.shapes]
+
+    @property
+    def opacities(self):
+        """list of float: opacity for each shape."""
+        return [s.opacity for s in self.shapes]
+
+    @property
+    def z_indices(self):
+        """list of int: z-index for each shape."""
+        return [s.z_index for s in self.shapes]
 
     def add(self, shape, shape_index=None):
         """Adds a single Shape object
@@ -773,8 +806,10 @@ class ShapeList:
                 )
                 if type(self.shapes[ind]) in [Path, Line]:
                     col = self.shapes[ind].edge_color.rgba
+                    col[3] = col[3] * self.shapes[ind].opacity
                 else:
                     col = self.shapes[ind].face_color.rgba
+                    col[3] = col[3] * self.shapes[ind].opacity
                 colors[mask, :] = col
         elif shape_type not in self._types.keys():
             raise ValueError(

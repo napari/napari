@@ -38,7 +38,7 @@ class Pyramid(Image):
     interpolation : str, optional
         Interpolation mode used by vispy. Must be one of our supported
         modes.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes
