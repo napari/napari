@@ -581,6 +581,8 @@ class ViewerModel(KeymapMixin):
         else:
             dims = self._calc_bbox()[1]
             dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in dims]
+            if len(dims) < 1:
+                dims = (512, 512)
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
