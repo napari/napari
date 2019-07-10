@@ -11,6 +11,7 @@ np.random.seed(0)
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -23,6 +24,7 @@ def test_random_points():
 def test_integer_points():
     """Test instantiating Points layer with integer data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 2))
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -34,6 +36,7 @@ def test_integer_points():
 def test_negative_points():
     """Test instantiating Points layer with negative data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape) - 10
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -56,6 +59,7 @@ def test_empty_points():
 def test_3D_points():
     """Test instantiating Points layer with random 3D data."""
     shape = (10, 3)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -67,6 +71,7 @@ def test_3D_points():
 def test_4D_points():
     """Test instantiating Points layer with random 4D data."""
     shape = (10, 4)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -79,6 +84,7 @@ def test_changing_points():
     """Test changing Points data."""
     shape_a = (10, 2)
     shape_b = (20, 2)
+    np.random.seed(0)
     data_a = 20 * np.random.random(shape_a)
     data_b = 20 * np.random.random(shape_b)
     layer = Points(data_a)
@@ -92,6 +98,7 @@ def test_changing_points():
 def test_selecting_points():
     """Test selecting points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     layer.selected_data = [0, 1]
@@ -101,6 +108,7 @@ def test_selecting_points():
 def test_adding_points():
     """Test adding Points data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert len(layer.data) == 10
@@ -127,6 +135,7 @@ def test_adding_points_to_empty():
 def test_removing_selected_points():
     """Test selecting points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
@@ -151,6 +160,7 @@ def test_removing_selected_points():
 def test_move():
     """Test moving points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     unmoved = copy(data)
     layer = Points(data)
@@ -171,6 +181,7 @@ def test_move():
 def test_changing_modes():
     """Test changing modes."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
@@ -192,6 +203,7 @@ def test_changing_modes():
 def test_name():
     """Test setting layer name."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.name == 'Points'
@@ -206,6 +218,7 @@ def test_name():
 def test_symbol():
     """Test setting symbol."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.symbol == 'disc'
@@ -220,6 +233,7 @@ def test_symbol():
 def test_edge_width():
     """Test setting edge width."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.edge_width == 1
@@ -234,6 +248,7 @@ def test_edge_width():
 def test_n_dimensional():
     """Test setting n_dimensional flag for 2D and 4D data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.n_dimensional == False
@@ -259,6 +274,7 @@ def test_n_dimensional():
 def test_edge_color():
     """Test setting edge color."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.edge_color == 'black'
@@ -315,6 +331,7 @@ def test_edge_color():
 def test_face_color():
     """Test setting face color."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.face_color == 'white'
@@ -371,6 +388,7 @@ def test_face_color():
 def test_size():
     """Test setting size with scalar."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.size == 10
@@ -418,6 +436,7 @@ def test_size():
 def test_size_with_arrays():
     """Test setting size with arrays."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     sizes = 5 * np.random.random(shape)
@@ -471,6 +490,7 @@ def test_size_with_arrays():
 def test_size_with_3D_arrays():
     """Test setting size with 3D arrays."""
     shape = (10, 3)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[:2, 0] = 0
     layer = Points(data)
@@ -543,6 +563,7 @@ def test_size_with_3D_arrays():
 def test_interaction_box():
     """Test the creation of the interaction box."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer._selected_box == None
@@ -560,6 +581,7 @@ def test_interaction_box():
 def test_copy_and_paste():
     """Test copying and pasting selected points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     # Clipboard starts empty
@@ -598,6 +620,7 @@ def test_copy_and_paste():
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
@@ -613,6 +636,7 @@ def test_value():
 def test_message():
     """Test converting value and coords to message."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
@@ -629,6 +653,7 @@ def test_message():
 def test_thumbnail():
     """Test the image thumbnail for square data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[0] = [0, 0]
     data[-1] = [20, 20]
@@ -640,6 +665,7 @@ def test_thumbnail():
 def test_xml_list():
     """Test the xml generation."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     xml = layer.to_xml_list()

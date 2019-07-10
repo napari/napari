@@ -2,10 +2,6 @@ import numpy as np
 from napari.components import ViewerModel
 
 
-# Set random seed for testing
-np.random.seed(0)
-
-
 def test_viewer_model():
     """Test instantiating viewer model."""
     viewer = ViewerModel()
@@ -20,6 +16,7 @@ def test_viewer_model():
 def test_add_image():
     """Test adding image."""
     viewer = ViewerModel()
+    np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 1
@@ -30,6 +27,7 @@ def test_add_pyramid():
     """Test adding image pyramid."""
     viewer = ViewerModel()
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     viewer.add_pyramid(data)
     assert len(viewer.layers) == 1
@@ -39,6 +37,7 @@ def test_add_pyramid():
 def test_add_labels():
     """Test adding labels image."""
     viewer = ViewerModel()
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     viewer.add_labels(data)
     assert len(viewer.layers) == 1
@@ -48,6 +47,7 @@ def test_add_labels():
 def test_add_points():
     """Test adding points."""
     viewer = ViewerModel()
+    np.random.seed(0)
     data = 20 * np.random.random((10, 2))
     viewer.add_points(data)
     assert len(viewer.layers) == 1
@@ -57,6 +57,7 @@ def test_add_points():
 def test_add_vectors():
     """Test adding vectors."""
     viewer = ViewerModel()
+    np.random.seed(0)
     data = 20 * np.random.random((10, 2, 2))
     viewer.add_vectors(data)
     assert len(viewer.layers) == 1
@@ -66,6 +67,7 @@ def test_add_vectors():
 def test_add_shapes():
     """Test adding vectors."""
     viewer = ViewerModel()
+    np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     viewer.add_shapes(data)
     assert len(viewer.layers) == 1
@@ -82,6 +84,7 @@ def test_new_labels():
 
     # Add labels with image already present
     viewer = ViewerModel()
+    np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
     viewer._new_labels()
@@ -99,6 +102,7 @@ def test_new_points():
 
     # Add points with image already present
     viewer = ViewerModel()
+    np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
     viewer._new_points()
@@ -116,6 +120,7 @@ def test_new_shapes():
 
     # Add points with image already present
     viewer = ViewerModel()
+    np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
     viewer._new_shapes()

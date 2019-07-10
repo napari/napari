@@ -10,6 +10,7 @@ np.random.seed(0)
 def test_random_vectors():
     """Test instantiating Vectors layer with random coordinate-like 2D data."""
     shape = (10, 2, 2)
+    np.random.seed(0)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
@@ -22,6 +23,7 @@ def test_random_vectors():
 def test_random_vectors_image():
     """Test instantiating Vectors layer with random image-like 2D data."""
     shape = (20, 10, 2)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Vectors(data)
     assert layer.data.shape == (20 * 10, 2, 2)
@@ -43,6 +45,7 @@ def test_empty_vectors():
 def test_random_3D_vectors():
     """Test instantiating Vectors layer with random coordinate-like 3D data."""
     shape = (10, 2, 3)
+    np.random.seed(0)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
@@ -55,6 +58,7 @@ def test_random_3D_vectors():
 def test_random_3D_vectors_image():
     """Test instantiating Vectors layer with random image-like 3D data."""
     shape = (12, 20, 10, 3)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Vectors(data)
     assert layer.data.shape == (12 * 20 * 10, 2, 3)
@@ -76,6 +80,7 @@ def test_empty_3D_vectors():
 def test_changing_data():
     """Test changing Vectors data."""
     shape_a = (10, 2, 2)
+    np.random.seed(0)
     data_a = np.random.random(shape_a)
     data_a[:, 0, :] = 20 * data_a[:, 0, :]
     shape_b = (16, 2, 2)
@@ -91,6 +96,7 @@ def test_changing_data():
 
 def test_name():
     """Test setting layer name."""
+    np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
@@ -105,6 +111,7 @@ def test_name():
 
 def test_edge_width():
     """Test setting edge width."""
+    np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
@@ -119,6 +126,7 @@ def test_edge_width():
 
 def test_edge_color():
     """Test setting edge color."""
+    np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
@@ -133,6 +141,7 @@ def test_edge_color():
 
 def test_length():
     """Test setting length."""
+    np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
@@ -147,6 +156,7 @@ def test_length():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
+    np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 18 * data[:, 0, :] + 1
     data[0, :, :] = [0, 0]
@@ -159,6 +169,7 @@ def test_thumbnail():
 
 def test_xml_list():
     """Test the xml generation."""
+    np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)

@@ -4,13 +4,10 @@ from vispy.color import Colormap
 from napari.layers import Labels
 
 
-# Set random seed for testing
-np.random.seed(0)
-
-
 def test_random_labels():
     """Test instantiating Labels layer with random 2D data."""
     shape = (10, 15)
+    np.random.seed(0)
     data = np.random.randint(20, size=shape)
     layer = Labels(data)
     assert np.all(layer.data == data)
@@ -34,6 +31,7 @@ def test_all_zeros_labels():
 def test_3D_labels():
     """Test instantiating Labels layer with random 3D data."""
     shape = (6, 10, 15)
+    np.random.seed(0)
     data = np.random.randint(20, size=shape)
     layer = Labels(data)
     assert np.all(layer.data == data)
@@ -46,6 +44,7 @@ def test_changing_labels():
     """Test changing Labels data."""
     shape_a = (10, 15)
     shape_b = (20, 12)
+    np.random.seed(0)
     data_a = np.random.randint(20, size=shape_a)
     data_b = np.random.randint(20, size=shape_b)
     layer = Labels(data_a)
@@ -61,6 +60,7 @@ def test_changing_labels_dims():
     """Test changing Labels data including dimensionality."""
     shape_a = (10, 15)
     shape_b = (20, 12, 6)
+    np.random.seed(0)
     data_a = np.random.randint(20, size=shape_a)
     data_b = np.random.randint(20, size=shape_b)
     layer = Labels(data_a)
@@ -77,6 +77,7 @@ def test_changing_labels_dims():
 
 def test_changing_modes():
     """Test changing modes."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.mode == 'pan_zoom'
@@ -101,6 +102,7 @@ def test_changing_modes():
 
 def test_name():
     """Test setting layer name."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.name == 'Labels'
@@ -114,6 +116,7 @@ def test_name():
 
 def test_seed():
     """Test setting seed."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.seed == 0.5
@@ -127,6 +130,7 @@ def test_seed():
 
 def test_num_colors():
     """Test setting number of colors in colormap."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.num_colors == 50
@@ -140,6 +144,7 @@ def test_num_colors():
 
 def test_colormap():
     """Test colormap."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert type(layer.colormap) == tuple
@@ -154,6 +159,7 @@ def test_colormap():
 
 def test_metadata():
     """Test setting labels metadata."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.metadata == {}
@@ -164,6 +170,7 @@ def test_metadata():
 
 def test_brush_size():
     """Test changing brush size."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.brush_size == 10
@@ -174,6 +181,7 @@ def test_brush_size():
 
 def test_contiguous():
     """Test changing contiguous."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.contiguous == True
@@ -184,6 +192,7 @@ def test_contiguous():
 
 def test_n_dimensional():
     """Test changing n_dimensional."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.n_dimensional == True
@@ -194,6 +203,7 @@ def test_n_dimensional():
 
 def test_selecting_label():
     """Test changing n_dimensional."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.selected_label == 0
@@ -206,6 +216,7 @@ def test_selecting_label():
 
 def test_label_color():
     """Test getting label color."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     col = layer.get_color(0)
@@ -217,6 +228,7 @@ def test_label_color():
 
 def test_paint():
     """Test painting labels with different brush sizes."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 1
     layer = Labels(data)
@@ -236,6 +248,7 @@ def test_paint():
 
 def test_fill():
     """Test filling labels with different brush sizes."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 2
     data[:5, :5] = 1
@@ -250,6 +263,7 @@ def test_fill():
 
 def test_value():
     """Test getting the value of the data at the current coordinates."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     coord, value = layer.get_value()
@@ -259,6 +273,7 @@ def test_value():
 
 def test_message():
     """Test converting value and coords to message."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     coord, value = layer.get_value()
@@ -268,6 +283,7 @@ def test_message():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(30, 30))
     layer = Labels(data)
     layer._update_thumbnail()
@@ -276,6 +292,7 @@ def test_thumbnail():
 
 def test_xml_list():
     """Test the xml generation."""
+    np.random.seed(0)
     data = np.random.randint(20, size=(30, 30))
     layer = Labels(data)
     xml = layer.to_xml_list()

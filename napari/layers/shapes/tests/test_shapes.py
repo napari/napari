@@ -11,6 +11,7 @@ def test_rectangles():
     """Test instantiating Shapes layer with a random 2D rectangles."""
     # Test a single four corner rectangle
     shape = (1, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -50,6 +51,7 @@ def test_rectangles():
 def test_rectangles_roundtrip():
     """Test a full roundtrip with rectangles data."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     new_layer = Shapes(layer.data)
@@ -59,6 +61,7 @@ def test_rectangles_roundtrip():
 def test_integer_rectangle():
     """Test instantiating rectangles with integer data."""
     shape = (10, 2, 2)
+    np.random.seed(0)
     data = np.random.randint(20, size=shape)
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -70,6 +73,7 @@ def test_integer_rectangle():
 def test_negative_rectangle():
     """Test instantiating rectangles with negative data."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape) - 10
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -81,6 +85,7 @@ def test_negative_rectangle():
 def test_empty_rectangle():
     """Test instantiating rectangles with empty data."""
     shape = (0, 0, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -92,6 +97,7 @@ def test_empty_rectangle():
 def test_3D_rectangles():
     """Test instantiating Shapes layer with 3D planar rectangles."""
     # Test a single four corner rectangle
+    np.random.seed(0)
     planes = np.tile(np.arange(10).reshape((10, 1, 1)), (1, 4, 1))
     corners = np.random.uniform(0, 10, size=(10, 4, 2))
     data = np.concatenate((planes, corners), axis=2)
@@ -106,6 +112,7 @@ def test_ellipses():
     """Test instantiating Shapes layer with a random 2D ellipses."""
     # Test a single four corner ellipses
     shape = (1, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
     assert layer.nshapes == shape[0]
@@ -115,6 +122,7 @@ def test_ellipses():
 
     # Test multiple four corner ellipses
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
     assert layer.nshapes == shape[0]
@@ -125,6 +133,7 @@ def test_ellipses():
     # Test a single ellipse center radii, which gets converted into four
     # corner ellipse
     shape = (1, 2, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
     assert layer.nshapes == 1
@@ -134,6 +143,7 @@ def test_ellipses():
 
     # Test multiple center radii ellipses
     shape = (10, 2, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
     assert layer.nshapes == shape[0]
@@ -145,6 +155,7 @@ def test_ellipses():
 def test_ellipses_roundtrip():
     """Test a full roundtrip with ellipss data."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
     new_layer = Shapes(layer.data, shape_type='ellipse')
@@ -155,6 +166,7 @@ def test_lines():
     """Test instantiating Shapes layer with a random 2D lines."""
     # Test a single two end point line
     shape = (1, 2, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='line')
     assert layer.nshapes == shape[0]
@@ -164,6 +176,7 @@ def test_lines():
 
     # Test multiple lines
     shape = (10, 2, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='line')
     assert layer.nshapes == shape[0]
@@ -175,6 +188,7 @@ def test_lines():
 def test_lines_roundtrip():
     """Test a full roundtrip with line data."""
     shape = (10, 2, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='line')
     new_layer = Shapes(layer.data, shape_type='line')
@@ -185,6 +199,7 @@ def test_paths():
     """Test instantiating Shapes layer with a random 2D paths."""
     # Test a single path with 6 points
     shape = (1, 6, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='path')
     assert layer.nshapes == shape[0]
@@ -205,6 +220,7 @@ def test_paths():
 
 def test_paths_roundtrip():
     """Test a full roundtrip with path data."""
+    np.random.seed(0)
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
     ]
@@ -219,6 +235,7 @@ def test_polygons():
     """Test instantiating Shapes layer with a random 2D polygons."""
     # Test a single polygon with 6 points
     shape = (1, 6, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='polygon')
     assert layer.nshapes == shape[0]
@@ -239,6 +256,7 @@ def test_polygons():
 
 def test_polygon_roundtrip():
     """Test a full roundtrip with polygon data."""
+    np.random.seed(0)
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
     ]
@@ -252,6 +270,7 @@ def test_polygon_roundtrip():
 def test_mixed_shapes():
     """Test instantiating Shapes layer with a mix of random 2D shapes."""
     # Test multiple polygons with different numbers of points
+    np.random.seed(0)
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
     ] + list(np.random.random((5, 4, 2)))
@@ -276,6 +295,7 @@ def test_changing_shapes():
     """Test changing Shapes data."""
     shape_a = (10, 4, 2)
     shape_b = (20, 4, 2)
+    np.random.seed(0)
     data_a = 20 * np.random.random(shape_a)
     data_b = 20 * np.random.random(shape_b)
     layer = Shapes(data_a)
@@ -289,6 +309,7 @@ def test_changing_shapes():
 def test_adding_shapes():
     """Test adding shapes."""
     # Start with polygons with different numbers of points
+    np.random.seed(0)
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
     ]
@@ -310,6 +331,7 @@ def test_adding_shapes():
 def test_adding_shapes_to_empty():
     """Test adding shapes to empty."""
     data = np.empty((0, 0, 2))
+    np.random.seed(0)
     layer = Shapes(np.empty((0, 0, 2)))
     assert len(layer.data) == 0
 
@@ -328,6 +350,7 @@ def test_adding_shapes_to_empty():
 def test_selecting_shapes():
     """Test selecting shapes."""
     data = 20 * np.random.random((10, 4, 2))
+    np.random.seed(0)
     layer = Shapes(data)
     layer.selected_data = [0, 1]
     assert layer.selected_data == [0, 1]
@@ -341,6 +364,7 @@ def test_selecting_shapes():
 
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
+    np.random.seed(0)
     data = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
     ] + list(np.random.random((5, 4, 2)))
@@ -368,6 +392,7 @@ def test_removing_selected_shapes():
 
 def test_changing_modes():
     """Test changing modes."""
+    np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
     assert layer.mode == 'pan_zoom'
@@ -416,6 +441,7 @@ def test_changing_modes():
 
 def test_name():
     """Test setting layer name."""
+    np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
     assert layer.name == 'Shapes'
@@ -430,6 +456,7 @@ def test_name():
 def test_edge_color():
     """Test setting edge color."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.edge_color == 'black'
@@ -484,6 +511,7 @@ def test_edge_color():
 def test_face_color():
     """Test setting face color."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.face_color == 'white'
@@ -538,6 +566,7 @@ def test_face_color():
 def test_edge_width():
     """Test setting edge width."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.edge_width == 1
@@ -589,6 +618,7 @@ def test_edge_width():
 def test_opacities():
     """Test setting opacities."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     # Check default opacity value of 0.7
@@ -641,6 +671,7 @@ def test_opacities():
 def test_z_index():
     """Test setting z-index during instantiation."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.z_indices == [0] * shape[0]
@@ -671,6 +702,7 @@ def test_z_index():
 def test_move_to_front():
     """Test moving shapes to front."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     z_index_list = [2, 3] * 5
     layer = Shapes(data, z_index=z_index_list)
@@ -685,6 +717,7 @@ def test_move_to_front():
 def test_move_to_back():
     """Test moving shapes to back."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     z_index_list = [2, 3] * 5
     layer = Shapes(data, z_index=z_index_list)
@@ -699,6 +732,7 @@ def test_move_to_back():
 def test_interaction_box():
     """Test the creation of the interaction box."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer._selected_box == None
@@ -716,6 +750,7 @@ def test_interaction_box():
 def test_copy_and_paste():
     """Test copying and pasting selected shapes."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     # Clipboard starts empty
@@ -758,6 +793,7 @@ def test_copy_and_paste():
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
     layer = Shapes(data)
@@ -777,6 +813,7 @@ def test_value():
 def test_message():
     """Test converting values and coords to message."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     msg = layer.get_message(layer.coordinates, 3, 2)
@@ -792,6 +829,7 @@ def test_message():
 def test_thumbnail():
     """Test the image thumbnail for square data."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 20], [20, 0], [20, 20]]
     layer = Shapes(data)
@@ -802,6 +840,7 @@ def test_thumbnail():
 def test_to_masks():
     """Test the mask generation."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     masks = layer.to_masks()
@@ -815,6 +854,7 @@ def test_to_masks():
 def test_to_labels():
     """Test the labels generation."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     labels = layer.to_labels()
@@ -829,6 +869,7 @@ def test_to_labels():
 def test_xml_list():
     """Test the xml generation."""
     shape = (10, 4, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     xml = layer.to_xml_list()
