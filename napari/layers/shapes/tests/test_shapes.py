@@ -3,6 +3,9 @@ from copy import copy
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
+# Set random seed for testing
+np.random.seed(0)
+
 
 def test_rectangles():
     """Test instantiating Shapes layer with a random 2D rectangles."""
