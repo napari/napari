@@ -210,6 +210,8 @@ class Shapes(Layer):
         'polygon': Polygon,
     }
 
+    class_keymap = {}
+
     def __init__(
         self,
         data,

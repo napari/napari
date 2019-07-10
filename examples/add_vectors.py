@@ -20,13 +20,13 @@ with napari.gui_qt():
     layer.colormap = 'gray'
 
     # sample vector coord-like data
-    n = 1000
+    n = 200
     pos = np.zeros((n, 2, 2), dtype=np.float32)
     phi_space = np.linspace(0, 4 * np.pi, n)
     radius_space = np.linspace(0, 100, n)
 
     # assign x-y position
-    pos[:, 0, 0] = radius_space * np.cos(phi_space) + 350
+    pos[:, 0, 0] = radius_space * np.cos(phi_space) + 300
     pos[:, 0, 1] = radius_space * np.sin(phi_space) + 256
 
     # assign x-y projection
@@ -34,4 +34,4 @@ with napari.gui_qt():
     pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
     # add the vectors
-    layer = viewer.add_vectors(pos, width=0.4)
+    layer = viewer.add_vectors(pos, edge_width=3)

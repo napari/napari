@@ -101,6 +101,8 @@ class Points(Layer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
+    class_keymap = {}
+
     def __init__(
         self,
         coords,

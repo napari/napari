@@ -90,6 +90,8 @@ class Labels(Layer):
         after painting is done. Used for interpolating brush strokes.
     """
 
+    class_keymap = {}
+
     def __init__(
         self,
         labels,

@@ -118,7 +118,7 @@ with napari.gui_qt():
     pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
     # add the vectors
-    layer = viewer.add_vectors(pos, width=2)
+    layer = viewer.add_vectors(pos, edge_width=2)
 
     svg = viewer.to_svg()
     # svg = viewer.to_svg(file='viewer.svg')

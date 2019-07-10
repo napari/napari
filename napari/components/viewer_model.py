@@ -6,10 +6,11 @@ from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
 from ..util.event import EmitterGroup, Event
+from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
 
 
-class ViewerModel:
+class ViewerModel(KeymapMixin):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -31,6 +32,7 @@ class ViewerModel:
         Preset color palettes.
     """
 
+    class_keymap = {}
     themes = palettes
 
     def __init__(self, title='napari'):
@@ -540,14 +542,14 @@ class ViewerModel:
             D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
-        width : int
-            width of the line in pixels
-        length : float
-            multiplier on length of the line
-        color : str
-            one of "get_color_names" from vispy.color
-        mode : str
-            control panel mode
+        edge_width : float, keyword-only
+            Width for all vectors in pixels.
+        length : float, keyword-only
+             Multiplicative factor on projections for length of all vectors.
+        edge_color : str, keyword-only
+            Edge color of all the vectors.
+        name : str, keyword-only
+            Name of the layer.
 
         Returns
         -------
