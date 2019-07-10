@@ -86,6 +86,19 @@ def test_empty_rectangle():
     assert np.all([s == 'rectangle' for s in layer.shape_types])
 
 
+def test_3D_rectangles():
+    """Test instantiating Shapes layer with 3D planar rectangles."""
+    # Test a single four corner rectangle
+    planes = np.tile(np.arange(10).reshape((10, 1, 1)), (1, 4, 1))
+    corners = np.random.uniform(0, 10, size=(10, 4, 2))
+    data = np.concatenate((planes, corners), axis=2)
+    layer = Shapes(data)
+    assert layer.nshapes == len(data)[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_types])
+
+
 def test_ellipses():
     """Test instantiating Shapes layer with a random 2D ellipses."""
     # Test a single four corner ellipses
