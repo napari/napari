@@ -316,6 +316,12 @@ def test_selecting_shapes():
     layer.selected_data = [0, 1]
     assert layer.selected_data == [0, 1]
 
+    layer.selected_data = [9]
+    assert layer.selected_data == [9]
+
+    layer.selected_data = []
+    assert layer.selected_data == []
+
 
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
@@ -674,109 +680,142 @@ def test_move_to_back():
     assert layer.z_indices == [1] + [z_index_list[1]] + [1] + z_index_list[3:]
 
 
-# def test_interaction_box():
-#     """Test the creation of the interaction box."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Points(data)
-#     assert layer._selected_box == None
-#
-#     layer.selected_data = [0]
-#     assert len(layer._selected_box) == 4
-#
-#     layer.selected_data = [0, 1]
-#     assert len(layer._selected_box) == 4
-#
-#     layer.selected_data = []
-#     assert layer._selected_box == None
-#
-#
-# def test_copy_and_paste():
-#     """Test copying and pasting selected shapes."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Points(data)
-#     # Clipboard starts empty
-#     assert layer._clipboard == {}
-#
-#     # Pasting empty clipboard doesn't change data
-#     layer._paste_data()
-#     assert len(layer.data) == 10
-#
-#     # Copying with nothing selected leave clipboard empty
-#     layer._copy_data()
-#     assert layer._clipboard == {}
-#
-#     # Copying and pasting with two points selected adds to clipboard and data
-#     layer.selected_data = [0, 1]
-#     layer._copy_data()
-#     layer._paste_data()
-#     assert len(layer._clipboard.keys()) > 0
-#     assert len(layer.data) == shape[0] + 2
-#     assert np.all(layer.data[:2] == layer.data[-2:])
-#
-#     # Pasting again adds two more points to data
-#     layer._paste_data()
-#     assert len(layer.data) == shape[0] + 4
-#     assert np.all(layer.data[:2] == layer.data[-2:])
-#
-#     # Unselecting everything and copying and pasting will empty the clipboard
-#     # and add no new data
-#     layer.selected_data = []
-#     layer._copy_data()
-#     layer._paste_data()
-#     assert layer._clipboard == {}
-#     assert len(layer.data) == shape[0] + 4
-#
-#
-# def test_value():
-#     """Test getting the value of the data at the current coordinates."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape)
-#     data[-1] = [0, 0]
-#     layer = Points(data)
-#     value = layer.get_value()
-#     assert layer.coordinates == (0, 0)
-#     assert value == 9
-#
-#     layer.data = layer.data + 5
-#     value = layer.get_value()
-#     assert value == None
-#
-#
-# def test_message():
-#     """Test converting value and coords to message."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape)
-#     data[-1] = [0, 0]
-#     layer = Points(data)
-#     value = layer.get_value()
-#     msg = layer.get_message(layer.coordinates, value)
-#     assert type(msg) == str
-#
-#     layer.data = layer.data + 5
-#     value = layer.get_value()
-#     msg = layer.get_message(layer.coordinates, value)
-#     assert type(msg) == str
-#
-#
-# def test_thumbnail():
-#     """Test the image thumbnail for square data."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape)
-#     data[0] = [0, 0]
-#     data[-1] = [20, 20]
-#     layer = Points(data)
-#     layer._update_thumbnail()
-#     assert layer.thumbnail.shape == layer._thumbnail_shape
-#
-#
-# def test_xml_list():
-#     """Test the xml generation."""
-#     shape = (10, 2)
-#     data = 20 * np.random.random(shape)
-#     layer = Points(data)
-#     xml = layer.to_xml_list()
-#     assert type(xml) == list
-#     assert len(xml) == shape[0]
-#     assert np.all([type(x) == Element for x in xml])
+def test_interaction_box():
+    """Test the creation of the interaction box."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    assert layer._selected_box == None
+
+    layer.selected_data = [0]
+    assert len(layer._selected_box) == 10
+
+    layer.selected_data = [0, 1]
+    assert len(layer._selected_box) == 10
+
+    layer.selected_data = []
+    assert layer._selected_box == None
+
+
+def test_copy_and_paste():
+    """Test copying and pasting selected shapes."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    # Clipboard starts empty
+    assert layer._clipboard == []
+
+    # Pasting empty clipboard doesn't change data
+    layer._paste_data()
+    assert len(layer.data) == 10
+
+    # Copying with nothing selected leave clipboard empty
+    layer._copy_data()
+    assert layer._clipboard == []
+
+    # Copying and pasting with two shapes selected adds to clipboard and data
+    layer.selected_data = [0, 1]
+    layer._copy_data()
+    layer._paste_data()
+    assert len(layer._clipboard) == 2
+    assert len(layer.data) == shape[0] + 2
+    assert np.all(
+        [np.all(a == b) for a, b in zip(layer.data[:2], layer.data[-2:])]
+    )
+
+    # Pasting again adds two more points to data
+    layer._paste_data()
+    assert len(layer.data) == shape[0] + 4
+    assert np.all(
+        [np.all(a == b) for a, b in zip(layer.data[:2], layer.data[-2:])]
+    )
+
+    # Unselecting everything and copying and pasting will empty the clipboard
+    # and add no new data
+    layer.selected_data = []
+    layer._copy_data()
+    layer._paste_data()
+    assert layer._clipboard == []
+    assert len(layer.data) == shape[0] + 4
+
+
+def test_value():
+    """Test getting the value of the data at the current coordinates."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
+    layer = Shapes(data)
+    value = layer.get_value((0, 0))
+    assert value == (9, None)
+
+    layer.mode = 'select'
+    layer.selected_data = [9]
+    value = layer.get_value((0, 0))
+    assert value == (9, 7)
+
+    layer = Shapes(data + 5)
+    value = layer.get_value((0, 0))
+    assert value == (None, None)
+
+
+def test_message():
+    """Test converting values and coords to message."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    msg = layer.get_message(layer.coordinates, 3, 2)
+    assert type(msg) == str
+
+    msg = layer.get_message(layer.coordinates, 4, None)
+    assert type(msg) == str
+
+    msg = layer.get_message(layer.coordinates, None, None)
+    assert type(msg) == str
+
+
+def test_thumbnail():
+    """Test the image thumbnail for square data."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    data[-1, :] = [[0, 0], [0, 20], [20, 0], [20, 20]]
+    layer = Shapes(data)
+    layer._update_thumbnail()
+    assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_to_masks():
+    """Test the mask generation."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    masks = layer.to_masks()
+    assert masks.ndim == 3
+    assert len(masks) == shape[0]
+
+    masks = layer.to_masks(mask_shape=[20, 20])
+    assert masks.shape == (shape[0], 20, 20)
+
+
+def test_to_labels():
+    """Test the labels generation."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    labels = layer.to_labels()
+    assert labels.ndim == 2
+    assert len(np.unique(labels)) <= 11
+
+    labels = layer.to_labels(labels_shape=[20, 20])
+    assert labels.shape == (20, 20)
+    assert len(np.unique(labels)) <= 11
+
+
+def test_xml_list():
+    """Test the xml generation."""
+    shape = (10, 4, 2)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+    xml = layer.to_xml_list()
+    assert type(xml) == list
+    assert len(xml) == shape[0]
+    assert np.all([type(x) == Element for x in xml])

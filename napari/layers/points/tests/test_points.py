@@ -554,7 +554,7 @@ def test_interaction_box():
 
 
 def test_copy_and_paste():
-    """Test copying and pasting selected shapes."""
+    """Test copying and pasting selected points."""
     shape = (10, 2)
     data = 20 * np.random.random(shape)
     layer = Points(data)
