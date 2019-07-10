@@ -14,12 +14,14 @@ with napari.gui_qt():
 
     viewer.add_image(blobs, name='blobs')
 
+    @viewer.bind_key('a')
     def accept_image(viewer):
         msg = 'this is a good image'
         viewer.status = msg
         print(msg)
         next(viewer)
 
+    @viewer.bind_key('r')
     def reject_image(viewer):
         msg = 'this is a bad image'
         viewer.status = msg
@@ -32,8 +34,15 @@ with napari.gui_qt():
         ).astype(float)
         viewer.layers[0].data = blobs
 
-    custom_key_bindings = {'a': accept_image, 'r': reject_image}
-    viewer.key_bindings = custom_key_bindings
+    @napari.Viewer.bind_key('w')
+    def hello(viewer):
+        # on press
+        viewer.status = 'hello world!'
+
+        yield
+
+        # on release
+        viewer.status = 'goodbye world :('
 
     # change viewer title
     viewer.title = 'quality control images'

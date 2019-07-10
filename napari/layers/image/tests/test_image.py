@@ -7,6 +7,7 @@ from napari.layers import Image
 def test_random_image():
     """Test instantiating Image layer with random 2D data."""
     shape = (10, 15)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
@@ -32,6 +33,7 @@ def test_all_zeros_image():
 def test_integer_image():
     """Test instantiating Image layer with integer data."""
     shape = (10, 15)
+    np.random.seed(0)
     data = np.round(10 * np.random.random(shape)).astype(int)
     layer = Image(data)
     assert np.all(layer.data == data)
@@ -44,6 +46,7 @@ def test_integer_image():
 def test_3D_image():
     """Test instantiating Image layer with random 3D data."""
     shape = (10, 15, 6)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
@@ -56,6 +59,7 @@ def test_3D_image():
 def test_4D_image():
     """Test instantiating Image layer with random 4D data."""
     shape = (10, 15, 6, 8)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
@@ -68,6 +72,7 @@ def test_4D_image():
 def test_rgb_image():
     """Test instantiating Image layer with RGB data."""
     shape = (10, 15, 3)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
@@ -80,6 +85,7 @@ def test_rgb_image():
 def test_rgba_image():
     """Test instantiating Image layer with RGBA data."""
     shape = (10, 15, 4)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
@@ -92,6 +98,7 @@ def test_rgba_image():
 def test_non_rgb_image():
     """Test forcing Image layer to be 3D and not multichannel."""
     shape = (10, 15, 3)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data, multichannel=False)
     assert np.all(layer.data == data)
@@ -106,6 +113,7 @@ def test_non_multichannel_image():
     # If multichannel is set to be True in constructor but the last dim has a
     # size > 4 then data cannot actually be multichannel
     shape = (10, 15, 6)
+    np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data, multichannel=True)
     assert np.all(layer.data == data)
@@ -119,6 +127,7 @@ def test_changing_image():
     """Test changing Image data."""
     shape_a = (10, 15)
     shape_b = (20, 12)
+    np.random.seed(0)
     data_a = np.random.random(shape_a)
     data_b = np.random.random(shape_b)
     layer = Image(data_a)
@@ -135,6 +144,7 @@ def test_changing_image_dims():
     """Test changing Image data including dimensionality."""
     shape_a = (10, 15)
     shape_b = (20, 12, 6)
+    np.random.seed(0)
     data_a = np.random.random(shape_a)
     data_b = np.random.random(shape_b)
     layer = Image(data_a)
@@ -152,6 +162,7 @@ def test_changing_image_dims():
 
 def test_name():
     """Test setting layer name."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.name == 'Image'
@@ -165,6 +176,7 @@ def test_name():
 
 def test_interpolation():
     """Test setting image interpolation mode."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.interpolation == 'nearest'
@@ -178,6 +190,7 @@ def test_interpolation():
 
 def test_colormaps():
     """Test setting test_colormaps."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.colormap[0] == 'gray'
@@ -214,6 +227,7 @@ def test_colormaps():
 
 def test_clims():
     """Test setting color limits."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.clim[0] >= 0
@@ -235,6 +249,7 @@ def test_clims():
 
 def test_clim_range():
     """Test setting color limits range."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer._clim_range[0] >= 0
@@ -261,6 +276,7 @@ def test_clim_range():
 
 def test_metadata():
     """Test setting image metadata."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.metadata == {}
@@ -271,6 +287,7 @@ def test_metadata():
 
 def test_value():
     """Test getting the value of the data at the current coordinates."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     coord, value = layer.get_value()
@@ -280,6 +297,7 @@ def test_value():
 
 def test_message():
     """Test converting value and coords to message."""
+    np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
     coord, value = layer.get_value()
@@ -289,6 +307,7 @@ def test_message():
 
 def test_thumbnail():
     """Test the image thumbnail for square data."""
+    np.random.seed(0)
     data = np.random.random((30, 30))
     layer = Image(data)
     layer._update_thumbnail()
@@ -297,6 +316,7 @@ def test_thumbnail():
 
 def test_xml_list():
     """Test the xml generation."""
+    np.random.seed(0)
     data = np.random.random((15, 30))
     layer = Image(data)
     xml = layer.to_xml_list()

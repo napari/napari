@@ -72,14 +72,14 @@ with napari.gui_qt():
     )
 
     # change some properties of the layer
-    layer.selected_shapes = list(range(layer.nshapes))
+    layer.selected_data = list(range(layer.nshapes))
     layer.edge_width = 5
     layer.opacity = 0.75
-    layer.selected_shapes = []
+    layer.selected_data = []
 
     # add an ellipse to the layer
     ellipse = np.array([[59, 222], [110, 289], [170, 243], [119, 176]])
-    layer.add_shapes(
+    layer.add(
         ellipse,
         shape_type='ellipse',
         edge_width=5,

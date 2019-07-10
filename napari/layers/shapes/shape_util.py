@@ -782,11 +782,13 @@ def path_to_mask(mask_shape, vertices):
         Boolean array with `True` for points along the path
     """
     mask = np.zeros(mask_shape, dtype=bool)
-    vertices = np.clip(vertices, 0, np.subtract(mask_shape, 1))
+    vertices = np.round(
+        np.clip(vertices, 0, np.subtract(mask_shape, 1))
+    ).astype(int)
     for i in range(len(vertices) - 1):
         start = vertices[i]
         stop = vertices[i + 1]
-        step = np.ceil(np.max(abs(stop - start)))
+        step = np.ceil(np.max(abs(stop - start))).astype(int)
         x_vals = np.linspace(start[0], stop[0], step)
         y_vals = np.linspace(start[1], stop[1], step)
         for x, y in zip(x_vals, y_vals):

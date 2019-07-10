@@ -24,15 +24,15 @@ class Labels(Layer):
     ----------
     labels : array
         Labels data.
-    metadata : dict, keyword-only
+    metadata : dict
         Labels metadata.
-    num_colors : int, keyword-only
+    num_colors : int
         Number of unique colors to use in colormap.
-    seed : float, keyword-only
+    seed : float
         Seed for colormap random generator.
-    opacity : float, keyword-only
+    opacity : float
         Opacity of the labels, must be between 0 and 1.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes
@@ -89,6 +89,8 @@ class Labels(Layer):
         Coordinates of last cursor click before painting, gets reset to None
         after painting is done. Used for interpolating brush strokes.
     """
+
+    class_keymap = {}
 
     def __init__(
         self,

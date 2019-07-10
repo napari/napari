@@ -21,13 +21,13 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
-    edge_width : float, keyword-only
+    edge_width : float
         Width for all vectors in pixels.
-    length : float, keyword-only
+    length : float
          Multiplicative factor on projections for length of all vectors.
-    edge_color : str, keyword-only
+    edge_color : str
         Edge color of all the vectors.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes
@@ -61,6 +61,8 @@ class Vectors(Layer):
     # The max number of vectors that will ever be used to render the thumbnail
     # If more vectors are present then they are randomly subsampled
     _max_vectors_thumbnail = 1024
+
+    class_keymap = {}
 
     def __init__(
         self, vectors, *, edge_width=1, edge_color='red', length=1, name=None
