@@ -93,9 +93,9 @@ def test_3D_rectangles():
     corners = np.random.uniform(0, 10, size=(10, 4, 2))
     data = np.concatenate((planes, corners), axis=2)
     layer = Shapes(data)
-    assert layer.nshapes == len(data)[0]
+    assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
-    assert layer.ndim == shape[2]
+    assert layer.ndim == 3
     assert np.all([s == 'rectangle' for s in layer.shape_types])
 
 
