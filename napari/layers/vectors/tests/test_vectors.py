@@ -3,6 +3,10 @@ from xml.etree.ElementTree import Element
 from napari.layers import Vectors
 
 
+# Set random seed for testing
+np.random.seed(0)
+
+
 def test_random_vectors():
     """Test instantiating Vectors layer with random coordinate-like 2D data."""
     shape = (10, 2, 2)

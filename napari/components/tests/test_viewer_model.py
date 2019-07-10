@@ -2,6 +2,10 @@ import numpy as np
 from napari.components import ViewerModel
 
 
+# Set random seed for testing
+np.random.seed(0)
+
+
 def test_viewer_model():
     """Test instantiating viewer model."""
     viewer = ViewerModel()

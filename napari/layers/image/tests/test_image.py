@@ -4,6 +4,10 @@ from vispy.color import Colormap
 from napari.layers import Image
 
 
+# Set random seed for testing
+np.random.seed(0)
+
+
 def test_random_image():
     """Test instantiating Image layer with random 2D data."""
     shape = (10, 15)

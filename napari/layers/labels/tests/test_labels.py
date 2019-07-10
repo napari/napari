@@ -4,6 +4,10 @@ from vispy.color import Colormap
 from napari.layers import Labels
 
 
+# Set random seed for testing
+np.random.seed(0)
+
+
 def test_random_labels():
     """Test instantiating Labels layer with random 2D data."""
     shape = (10, 15)

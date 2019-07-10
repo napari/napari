@@ -4,6 +4,10 @@ from vispy.color import Colormap
 from napari.layers import Pyramid
 
 
+# Set random seed for testing
+np.random.seed(0)
+
+
 def test_random_pyramid():
     """Test instantiating Pyramid layer with random 2D data."""
     shapes = [(40, 20), (20, 10), (10, 5)]
