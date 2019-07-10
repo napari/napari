@@ -6,10 +6,11 @@ from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
 from ..util.event import EmitterGroup, Event
+from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
 
 
-class ViewerModel:
+class ViewerModel(KeymapMixin):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -31,6 +32,7 @@ class ViewerModel:
         Preset color palettes.
     """
 
+    class_keymap = {}
     themes = palettes
 
     def __init__(self, title='napari'):
