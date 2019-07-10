@@ -78,7 +78,7 @@ with napari.gui_qt():
 
     # add an ellipse to the layer
     ellipse = np.array([[59, 222], [110, 289], [170, 243], [119, 176]])
-    layer.add_shapes(
+    layer.add(
         ellipse,
         shape_type='ellipse',
         edge_width=5,

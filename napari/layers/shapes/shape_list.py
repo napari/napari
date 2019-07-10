@@ -806,8 +806,10 @@ class ShapeList:
                 )
                 if type(self.shapes[ind]) in [Path, Line]:
                     col = self.shapes[ind].edge_color.rgba
+                    col[3] = col[3] * self.shapes[ind].opacity
                 else:
                     col = self.shapes[ind].face_color.rgba
+                    col[3] = col[3] * self.shapes[ind].opacity
                 colors[mask, :] = col
         elif shape_type not in self._types.keys():
             raise ValueError(

@@ -253,14 +253,18 @@ class Shapes(Layer):
                 self._face_color = face_color
             else:
                 self._face_color = 'white'
-            self._opacity = opacity
+
+            if np.isscalar(opacity):
+                self._opacity = opacity
+            else:
+                self._opacity = 0.7
 
             # Add the shape data
             self._input_ndim = None
             self._data_dict = {}
             self._data_view = None
 
-            self.add_shapes(
+            self.add(
                 data,
                 shape_type=shape_type,
                 edge_width=edge_width,
@@ -332,14 +336,7 @@ class Shapes(Layer):
     def data(self, data):
         self._finish_drawing()
         self._data_dict = {}
-        self.add_shapes(
-            data,
-            shape_type='rectangle',
-            edge_width=self.edge_width,
-            edge_color=self.edge_color,
-            face_color=self.face_color,
-            opacity=self.opacity,
-        )
+        self.add(data, shape_type='rectangle')
         self.events.data()
         self.refresh()
 
@@ -621,16 +618,16 @@ class Shapes(Layer):
 
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
 
-    def add_shapes(
+    def add(
         self,
         data,
         *,
         shape_type='rectangle',
-        edge_width=1,
-        edge_color='black',
-        face_color='white',
-        opacity=0.7,
-        z_index=0,
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        opacity=None,
+        z_index=None,
     ):
         """Add shapes to the current layer.
 
@@ -672,6 +669,15 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        edge_width = edge_width or self.edge_width
+        edge_color = edge_color or self.edge_color
+        face_color = face_color or self.face_color
+        opacity = opacity or self.opacity
+        if self._data_view is not None:
+            z_index = z_index or max(self._data_view._z_index, default=-1) + 1
+        else:
+            z_index = z_index or 0
+
         if len(data) > 0:
             if np.array(data[0]).ndim == 1:
                 # If a single array for a shape has been passed turn into list
@@ -1051,7 +1057,6 @@ class Shapes(Layer):
             offset=offset,
         )
 
-        colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
     def remove_selected(self):
@@ -1598,7 +1603,6 @@ class Shapes(Layer):
         ):
             # Start drawing a rectangle / ellipse / line
             size = self._vertex_size * self.scale_factor / 4
-            new_z_index = max(self._data_view._z_index, default=-1) + 1
             if self._mode == Mode.ADD_RECTANGLE:
                 data = np.array([coord, coord + size])
                 shape_type = 'rectangle'
@@ -1608,15 +1612,7 @@ class Shapes(Layer):
             elif self._mode == Mode.ADD_LINE:
                 data = np.array([coord, coord + size])
                 shape_type = 'line'
-            self.add_shapes(
-                data,
-                shape_type=shape_type,
-                edge_width=self.edge_width,
-                edge_color=self.edge_color,
-                face_color=self.face_color,
-                opacity=self.opacity,
-                z_index=new_z_index,
-            )
+            self.add(data, shape_type=shape_type)
             self.selected_data = [self._nshapes_view - 1]
             ind = 4
             self._moving_shape = self.selected_data[0]
@@ -1630,16 +1626,7 @@ class Shapes(Layer):
             if self._is_creating is False:
                 # Start drawing a path
                 data = np.array([coord, coord])
-                new_z_index = max(self._data_view._z_index, default=-1) + 1
-                self.add_shapes(
-                    data,
-                    shape_type='path',
-                    edge_width=self.edge_width,
-                    edge_color=self.edge_color,
-                    face_color=self.face_color,
-                    opacity=self.opacity,
-                    z_index=new_z_index,
-                )
+                self.add(data, shape_type='path')
                 self.selected_data = [self._nshapes_view - 1]
                 ind = 1
                 self._moving_shape = self.selected_data[0]
