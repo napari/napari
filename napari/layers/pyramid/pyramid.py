@@ -87,7 +87,9 @@ class Pyramid(Image):
 
         with self.freeze_refresh():
             self._data_level = 0
-            super().__init__(np.array([pyramid[-1]]), *args, **kwargs)
+            super().__init__(
+                np.array([np.asarray(pyramid[-1])]), *args, **kwargs
+            )
             self._data = pyramid
             self._data_level = len(pyramid) - 1
             self._top_left = np.array([0, 0])
