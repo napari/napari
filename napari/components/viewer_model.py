@@ -449,7 +449,6 @@ class ViewerModel:
         layer : :class:`napari.layers.Volume`
             The newly-created volume layer.
         """
-        self.events.add(kwargs["camera"])
         layer = layers.Volume(volume, *args, **kwargs)
         self.dims = Dims(3)
         self.add_layer(layer)

@@ -390,7 +390,7 @@ class VolumeVisual(Visual):
         Use 2D textures to emulate a 3D texture. OpenGL ES 2.0 compatible,
         but has lower performance on desktop platforms.
     """
-    def __init__(self, vol, clim=None, method='mip', threshold=None,
+    def __init__(self, vol, clim=None, method='translucent', threshold=None,
                  relative_step_size=0.8, cmap='grays',
                  emulate_texture=False):
 

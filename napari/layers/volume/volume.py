@@ -92,7 +92,7 @@ class Volume(Layer):
         *,
         metadata=None,
         multichannel=None,
-        colormap='fire',
+        colormap='grays',
         clim=None,
         clim_range=None,
         interpolation='nearest',
@@ -100,12 +100,7 @@ class Volume(Layer):
         **kwargs,
     ):
 
-        visual = VolumeNode(
-            volume,
-            method='translucent',
-            threshold=0.225,
-            cmap=self._colormaps[colormap],
-        )
+        visual = VolumeNode(volume)
         super().__init__(visual, name)
 
         self.translate = (0, 0, 0)
@@ -231,24 +226,3 @@ class Volume(Layer):
 
     def _update_thumbnail(self):
         pass
-
-    # @property
-    # def camera(self):
-    #     """Camera: Camera mode.
-    #         Selects a preset camera mode in vispy that determines how
-    #         volume is displayed
-    #         Camera.TURNTABLE
-    #         Camera.FLY
-    #         Camera.ARCBALL
-    #     """
-    #     return str(self.camera)
-
-    # @camera.setter
-    # def camera(self, camera):
-    #     if isinstance(camera, str):
-    #         camera = Camera(camera)
-
-    #     self._camera = camera
-    #     self._node.camera
-    #     self._node.update()
-    #     self.events.camera()
