@@ -90,7 +90,7 @@ class Volume(Layer):
         *,
         metadata=None,
         multichannel=None,
-        colormap='grays',
+        colormap='fire',
         clim=None,
         clim_range=None,
         interpolation='nearest',
