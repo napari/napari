@@ -4,9 +4,14 @@ from xml.etree.ElementTree import Element
 from napari.layers import Points
 
 
+# Set random seed for testing
+np.random.seed(0)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -19,6 +24,7 @@ def test_random_points():
 def test_integer_points():
     """Test instantiating Points layer with integer data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = np.random.randint(20, size=(10, 2))
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -30,6 +36,7 @@ def test_integer_points():
 def test_negative_points():
     """Test instantiating Points layer with negative data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape) - 10
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -52,6 +59,7 @@ def test_empty_points():
 def test_3D_points():
     """Test instantiating Points layer with random 3D data."""
     shape = (10, 3)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -63,6 +71,7 @@ def test_3D_points():
 def test_4D_points():
     """Test instantiating Points layer with random 4D data."""
     shape = (10, 4)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert np.all(layer.data == data)
@@ -75,6 +84,7 @@ def test_changing_points():
     """Test changing Points data."""
     shape_a = (10, 2)
     shape_b = (20, 2)
+    np.random.seed(0)
     data_a = 20 * np.random.random(shape_a)
     data_b = 20 * np.random.random(shape_b)
     layer = Points(data_a)
@@ -88,6 +98,7 @@ def test_changing_points():
 def test_selecting_points():
     """Test selecting points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     layer.selected_data = [0, 1]
@@ -97,6 +108,7 @@ def test_selecting_points():
 def test_adding_points():
     """Test adding Points data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert len(layer.data) == 10
@@ -123,6 +135,7 @@ def test_adding_points_to_empty():
 def test_removing_selected_points():
     """Test selecting points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
 
@@ -147,6 +160,7 @@ def test_removing_selected_points():
 def test_move():
     """Test moving points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     unmoved = copy(data)
     layer = Points(data)
@@ -167,6 +181,7 @@ def test_move():
 def test_changing_modes():
     """Test changing modes."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
@@ -188,6 +203,7 @@ def test_changing_modes():
 def test_name():
     """Test setting layer name."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.name == 'Points'
@@ -202,6 +218,7 @@ def test_name():
 def test_symbol():
     """Test setting symbol."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.symbol == 'disc'
@@ -216,6 +233,7 @@ def test_symbol():
 def test_edge_width():
     """Test setting edge width."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.edge_width == 1
@@ -230,6 +248,7 @@ def test_edge_width():
 def test_n_dimensional():
     """Test setting n_dimensional flag for 2D and 4D data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.n_dimensional == False
@@ -255,33 +274,34 @@ def test_n_dimensional():
 def test_edge_color():
     """Test setting edge color."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.edge_color == 'black'
-    assert len(layer._edge_color_list) == shape[0]
-    assert np.all([col == 'black' for col in layer._edge_color_list])
+    assert len(layer.edge_colors) == shape[0]
+    assert np.all([col == 'black' for col in layer.edge_colors])
 
     # With no data selected chaning edge color has no effect
     layer.edge_color = 'blue'
     assert layer.edge_color == 'blue'
-    assert np.all([col == 'black' for col in layer._edge_color_list])
+    assert np.all([col == 'black' for col in layer.edge_colors])
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.edge_color == 'black'
     layer.edge_color = 'green'
-    assert np.all([col == 'green' for col in layer._edge_color_list[:2]])
-    assert np.all([col == 'black' for col in layer._edge_color_list[2:]])
+    assert np.all([col == 'green' for col in layer.edge_colors[:2]])
+    assert np.all([col == 'black' for col in layer.edge_colors[2:]])
 
     # Add new point and test its color
     coord = [18, 18]
     layer.selected_data = []
     layer.edge_color = 'blue'
     layer.add(coord)
-    assert len(layer._edge_color_list) == shape[0] + 1
-    assert np.all([col == 'green' for col in layer._edge_color_list[:2]])
-    assert np.all([col == 'black' for col in layer._edge_color_list[2:10]])
-    assert np.all(layer._edge_color_list[10] == 'blue')
+    assert len(layer.edge_colors) == shape[0] + 1
+    assert np.all([col == 'green' for col in layer.edge_colors[:2]])
+    assert np.all([col == 'black' for col in layer.edge_colors[2:10]])
+    assert np.all(layer.edge_colors[10] == 'blue')
 
     # Instantiate with custom edge color
     layer = Points(data, edge_color='red')
@@ -291,53 +311,54 @@ def test_edge_color():
     col_list = ['red', 'green'] * 5
     layer = Points(data, edge_color=col_list)
     assert layer.edge_color == 'black'
-    assert layer._edge_color_list == col_list
+    assert layer.edge_colors == col_list
 
     # Add new point and test its color
     coord = [18, 18]
     layer.edge_color = 'blue'
     layer.add(coord)
-    assert len(layer._edge_color_list) == shape[0] + 1
-    assert layer._edge_color_list == col_list + ['blue']
+    assert len(layer.edge_colors) == shape[0] + 1
+    assert layer.edge_colors == col_list + ['blue']
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer._edge_color_list) == shape[0] - 1
-    assert layer._edge_color_list == [col_list[1]] + col_list[3:] + ['blue']
+    assert len(layer.edge_colors) == shape[0] - 1
+    assert layer.edge_colors == [col_list[1]] + col_list[3:] + ['blue']
 
 
 def test_face_color():
     """Test setting face color."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.face_color == 'white'
-    assert len(layer._face_color_list) == shape[0]
-    assert np.all([col == 'white' for col in layer._face_color_list])
+    assert len(layer.face_colors) == shape[0]
+    assert np.all([col == 'white' for col in layer.face_colors])
 
     # With no data selected chaning face color has no effect
     layer.face_color = 'blue'
     assert layer.face_color == 'blue'
-    assert np.all([col == 'white' for col in layer._face_color_list])
+    assert np.all([col == 'white' for col in layer.face_colors])
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.face_color == 'white'
     layer.face_color = 'green'
-    assert np.all([col == 'green' for col in layer._face_color_list[:2]])
-    assert np.all([col == 'white' for col in layer._face_color_list[2:]])
+    assert np.all([col == 'green' for col in layer.face_colors[:2]])
+    assert np.all([col == 'white' for col in layer.face_colors[2:]])
 
     # Add new point and test its color
     coord = [18, 18]
     layer.selected_data = []
     layer.face_color = 'blue'
     layer.add(coord)
-    assert len(layer._face_color_list) == shape[0] + 1
-    assert np.all([col == 'green' for col in layer._face_color_list[:2]])
-    assert np.all([col == 'white' for col in layer._face_color_list[2:10]])
-    assert np.all(layer._face_color_list[10] == 'blue')
+    assert len(layer.face_colors) == shape[0] + 1
+    assert np.all([col == 'green' for col in layer.face_colors[:2]])
+    assert np.all([col == 'white' for col in layer.face_colors[2:10]])
+    assert np.all(layer.face_colors[10] == 'blue')
 
     # Instantiate with custom face color
     layer = Points(data, face_color='red')
@@ -347,58 +368,59 @@ def test_face_color():
     col_list = ['red', 'green'] * 5
     layer = Points(data, face_color=col_list)
     assert layer.face_color == 'white'
-    assert layer._face_color_list == col_list
+    assert layer.face_colors == col_list
 
     # Add new point and test its color
     coord = [18, 18]
     layer.face_color = 'blue'
     layer.add(coord)
-    assert len(layer._face_color_list) == shape[0] + 1
-    assert layer._face_color_list == col_list + ['blue']
+    assert len(layer.face_colors) == shape[0] + 1
+    assert layer.face_colors == col_list + ['blue']
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer._face_color_list) == shape[0] - 1
-    assert layer._face_color_list == [col_list[1]] + col_list[3:] + ['blue']
+    assert len(layer.face_colors) == shape[0] - 1
+    assert layer.face_colors == [col_list[1]] + col_list[3:] + ['blue']
 
 
 def test_size():
     """Test setting size with scalar."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.size == 10
-    assert layer.size_array.shape == shape
-    assert np.unique(layer.size_array)[0] == 10
+    assert layer.sizes.shape == shape
+    assert np.unique(layer.sizes)[0] == 10
 
     # Add a new point, it should get current size
     coord = [17, 17]
     layer.add(coord)
-    assert layer.size_array.shape == (11, 2)
-    assert np.unique(layer.size_array)[0] == 10
+    assert layer.sizes.shape == (11, 2)
+    assert np.unique(layer.sizes)[0] == 10
 
     # Setting size affects newly added points not current points
     layer.size = 20
     assert layer.size == 20
-    assert layer.size_array.shape == (11, 2)
-    assert np.unique(layer.size_array)[0] == 10
+    assert layer.sizes.shape == (11, 2)
+    assert np.unique(layer.sizes)[0] == 10
 
     # Add new point, should have new size
     coord = [18, 18]
     layer.add(coord)
-    assert layer.size_array.shape == (12, 2)
-    assert np.unique(layer.size_array[:11])[0] == 10
-    assert np.all(layer.size_array[11] == [20, 20])
+    assert layer.sizes.shape == (12, 2)
+    assert np.unique(layer.sizes[:11])[0] == 10
+    assert np.all(layer.sizes[11] == [20, 20])
 
     # Select data and change size
     layer.selected_data = [0, 1]
     assert layer.size == 10
     layer.size = 16
-    assert layer.size_array.shape == (12, 2)
-    assert np.unique(layer.size_array[2:11])[0] == 10
-    assert np.unique(layer.size_array[:2])[0] == 16
+    assert layer.sizes.shape == (12, 2)
+    assert np.unique(layer.sizes[2:11])[0] == 10
+    assert np.unique(layer.sizes[:2])[0] == 16
 
     # Select data and size changes
     layer.selected_data = [11]
@@ -407,138 +429,141 @@ def test_size():
     # Create new layer with new size data
     layer = Points(data, size=15)
     assert layer.size == 15
-    assert layer.size_array.shape == shape
-    assert np.unique(layer.size_array)[0] == 15
+    assert layer.sizes.shape == shape
+    assert np.unique(layer.sizes)[0] == 15
 
 
 def test_size_with_arrays():
     """Test setting size with arrays."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     sizes = 5 * np.random.random(shape)
-    layer.size_array = sizes
-    assert np.all(layer.size_array == sizes)
+    layer.sizes = sizes
+    assert np.all(layer.sizes == sizes)
 
     # Test broadcasting of sizes
     sizes = [5, 5]
-    layer.size_array = sizes
-    assert np.all(layer.size_array[0] == sizes)
+    layer.sizes = sizes
+    assert np.all(layer.sizes[0] == sizes)
 
     # Create new layer with new size array data
     sizes = 5 * np.random.random(shape)
     layer = Points(data, size=sizes)
     assert layer.size == 10
-    assert layer.size_array.shape == shape
-    assert np.all(layer.size_array == sizes)
+    assert layer.sizes.shape == shape
+    assert np.all(layer.sizes == sizes)
 
     # Create new layer with new size array data
     sizes = [5, 5]
     layer = Points(data, size=sizes)
     assert layer.size == 10
-    assert layer.size_array.shape == shape
-    assert np.all(layer.size_array[0] == sizes)
+    assert layer.sizes.shape == shape
+    assert np.all(layer.sizes[0] == sizes)
 
     # Add new point, should have new size
     coord = [18, 18]
     layer.size = 13
     layer.add(coord)
-    assert layer.size_array.shape == (11, 2)
-    assert np.unique(layer.size_array[:10])[0] == 5
-    assert np.all(layer.size_array[10] == [13, 13])
+    assert layer.sizes.shape == (11, 2)
+    assert np.unique(layer.sizes[:10])[0] == 5
+    assert np.all(layer.sizes[10] == [13, 13])
 
     # Select data and change size
     layer.selected_data = [0, 1]
     assert layer.size == 5
     layer.size = 16
-    assert layer.size_array.shape == (11, 2)
-    assert np.unique(layer.size_array[2:10])[0] == 5
-    assert np.unique(layer.size_array[:2])[0] == 16
+    assert layer.sizes.shape == (11, 2)
+    assert np.unique(layer.sizes[2:10])[0] == 5
+    assert np.unique(layer.sizes[:2])[0] == 16
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == 9
-    assert len(layer.size_array) == 9
-    assert np.all(layer.size_array[0] == [16, 16])
-    assert np.all(layer.size_array[1] == [5, 5])
+    assert len(layer.sizes) == 9
+    assert np.all(layer.sizes[0] == [16, 16])
+    assert np.all(layer.sizes[1] == [5, 5])
 
 
 def test_size_with_3D_arrays():
     """Test setting size with 3D arrays."""
     shape = (10, 3)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[:2, 0] = 0
     layer = Points(data)
     assert layer.size == 10
-    assert layer.size_array.shape == shape
-    assert np.unique(layer.size_array)[0] == 10
+    assert layer.sizes.shape == shape
+    assert np.unique(layer.sizes)[0] == 10
 
     sizes = 5 * np.random.random(shape)
-    layer.size_array = sizes
-    assert np.all(layer.size_array == sizes)
+    layer.sizes = sizes
+    assert np.all(layer.sizes == sizes)
 
     # Test broadcasting of sizes
     sizes = [1, 5, 5]
-    layer.size_array = sizes
-    assert np.all(layer.size_array[0] == sizes)
+    layer.sizes = sizes
+    assert np.all(layer.sizes[0] == sizes)
 
     # Create new layer with new size array data
     sizes = 5 * np.random.random(shape)
     layer = Points(data, size=sizes)
     assert layer.size == 10
-    assert layer.size_array.shape == shape
-    assert np.all(layer.size_array == sizes)
+    assert layer.sizes.shape == shape
+    assert np.all(layer.sizes == sizes)
 
     # Create new layer with new size array data
     sizes = [1, 5, 5]
     layer = Points(data, size=sizes)
     assert layer.size == 10
-    assert layer.size_array.shape == shape
-    assert np.all(layer.size_array[0] == sizes)
+    assert layer.sizes.shape == shape
+    assert np.all(layer.sizes[0] == sizes)
 
     # Add new point, should have new size in last dim only
     coord = [4, 18, 18]
     layer.size = 13
     layer.add(coord)
-    assert layer.size_array.shape == (11, 3)
-    assert np.unique(layer.size_array[:10, 1:])[0] == 5
-    assert np.all(layer.size_array[10] == [1, 13, 13])
+    assert layer.sizes.shape == (11, 3)
+    assert np.unique(layer.sizes[:10, 1:])[0] == 5
+    assert np.all(layer.sizes[10] == [1, 13, 13])
 
     # Select data and change size
     layer.selected_data = [0, 1]
     assert layer.size == 5
     layer.size = 16
-    assert layer.size_array.shape == (11, 3)
-    assert np.unique(layer.size_array[2:10, 1:])[0] == 5
-    assert np.all(layer.size_array[0] == [16, 16, 16])
+    assert layer.sizes.shape == (11, 3)
+    assert np.unique(layer.sizes[2:10, 1:])[0] == 5
+    assert np.all(layer.sizes[0] == [16, 16, 16])
 
     # Create new 3D layer with new 2D points size data
     sizes = [0, 5, 5]
     layer = Points(data, size=sizes)
     assert layer.size == 10
-    assert layer.size_array.shape == shape
-    assert np.all(layer.size_array[0] == sizes)
+    assert layer.sizes.shape == shape
+    assert np.all(layer.sizes[0] == sizes)
 
     # Add new point, should have new size only in last 2 dimensions
     coord = [4, 18, 18]
     layer.size = 13
     layer.add(coord)
-    assert layer.size_array.shape == (11, 3)
-    assert np.all(layer.size_array[10] == [0, 13, 13])
+    assert layer.sizes.shape == (11, 3)
+    assert np.all(layer.sizes[10] == [0, 13, 13])
 
     # Select data and change size
     layer.selected_data = [0, 1]
     assert layer.size == 5
     layer.size = 16
-    assert layer.size_array.shape == (11, 3)
-    assert np.unique(layer.size_array[2:10, 1:])[0] == 5
-    assert np.all(layer.size_array[0] == [0, 16, 16])
+    assert layer.sizes.shape == (11, 3)
+    assert np.unique(layer.sizes[2:10, 1:])[0] == 5
+    assert np.all(layer.sizes[0] == [0, 16, 16])
 
 
 def test_interaction_box():
     """Test the creation of the interaction box."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer._selected_box == None
@@ -554,8 +579,9 @@ def test_interaction_box():
 
 
 def test_copy_and_paste():
-    """Test copying and pasting selected shapes."""
+    """Test copying and pasting selected points."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     # Clipboard starts empty
@@ -594,6 +620,7 @@ def test_copy_and_paste():
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
@@ -609,6 +636,7 @@ def test_value():
 def test_message():
     """Test converting value and coords to message."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
@@ -625,6 +653,7 @@ def test_message():
 def test_thumbnail():
     """Test the image thumbnail for square data."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     data[0] = [0, 0]
     data[-1] = [20, 20]
@@ -636,6 +665,7 @@ def test_thumbnail():
 def test_xml_list():
     """Test the xml generation."""
     shape = (10, 2)
+    np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
     xml = layer.to_xml_list()

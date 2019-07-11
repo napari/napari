@@ -25,33 +25,33 @@ class Image(Layer):
     image : array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-    metadata : dict, keyword-only
+    metadata : dict
         Image metadata.
-    multichannel : bool, keyword-only
+    multichannel : bool
         Whether the image is multichannel RGB or RGBA if multichannel. If
         not specified by user and the last dimension of the data has length
         3 or 4 it will be set as `True`. If `False` the image is
         interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
+    colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
-    clim : list (2,), keyword-only
+    clim : list (2,)
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
-    clim_range : list (2,), keyword-only
+    clim_range : list (2,)
         Range for the color limits. If not passed is be calculated as the
         min and max of the image. Passing a value prevents this calculation
         which can be useful when working with very large datasets that are
         dynamically loaded.
-    interpolation : str, keyword-only
+    interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes
@@ -90,6 +90,9 @@ class Image(Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+
+    class_keymap = {}
+
     default_interpolation = str(Interpolation.NEAREST)
 
     def __init__(

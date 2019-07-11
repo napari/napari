@@ -5,8 +5,7 @@ import argparse
 import numpy as np
 from skimage import io
 
-from .util import gui_qt
-from . import Viewer
+from . import Viewer, gui_qt
 
 
 def main():

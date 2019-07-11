@@ -38,7 +38,7 @@ class Pyramid(Image):
     interpolation : str, optional
         Interpolation mode used by vispy. Must be one of our supported
         modes.
-    name : str, keyword-only
+    name : str
         Name of the layer.
 
     Attributes
@@ -81,11 +81,15 @@ class Pyramid(Image):
 
     _max_tile_shape = np.array([1600, 1600])
 
+    class_keymap = {}
+
     def __init__(self, pyramid, *args, **kwargs):
 
         with self.freeze_refresh():
             self._data_level = 0
-            super().__init__(np.array([pyramid[-1]]), *args, **kwargs)
+            super().__init__(
+                np.array([np.asarray(pyramid[-1])]), *args, **kwargs
+            )
             self._data = pyramid
             self._data_level = len(pyramid) - 1
             self._top_left = np.array([0, 0])

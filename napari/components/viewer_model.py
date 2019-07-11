@@ -6,10 +6,11 @@ from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
 from ..util.event import EmitterGroup, Event
+from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
 
 
-class ViewerModel:
+class ViewerModel(KeymapMixin):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -31,6 +32,7 @@ class ViewerModel:
         Preset color palettes.
     """
 
+    class_keymap = {}
     themes = palettes
 
     def __init__(self, title='napari'):
@@ -305,7 +307,8 @@ class ViewerModel:
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
 
-        layer.parent = self._view
+        if self._view is not None:
+            layer.parent = self._view
         self.layers.append(layer)
         layer.indices = self.dims.indices
 
@@ -320,33 +323,33 @@ class ViewerModel:
         image : array
             Image data. Can be N dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-        metadata : dict, keyword-only
+        metadata : dict
             Image metadata.
-        multichannel : bool, keyword-only
+        multichannel : bool
             Whether the image is multichannel RGB or RGBA if multichannel. If
             not specified by user and the last dimension of the data has length
             3 or 4 it will be set as `True`. If `False` the image is
             interpreted as a luminance image.
-        colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
+        colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
-        clim : list (2,), keyword-only
+        clim : list (2,)
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image.
-        clim_range : list (2,), keyword-only
+        clim_range : list (2,)
             Range for the color limits. If not passed is be calculated as the
             min and max of the image. Passing a value prevents this calculation
             which can be useful when working with very large datasets that are
             dynamically loaded.
-        interpolation : str, keyword-only
+        interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
-        name : str, keyword-only
+        name : str
             Name of the layer.
 
         Returns
@@ -394,7 +397,7 @@ class ViewerModel:
         interpolation : str, optional
             Interpolation mode used by vispy. Must be one of our supported
             modes.
-        name : str, keyword-only
+        name : str
             Name of the layer.
 
         Returns
@@ -461,24 +464,24 @@ class ViewerModel:
         ----------
         coords : array (N, D)
             Coordinates for N points in D dimensions.
-        symbol : str, keyword-only
+        symbol : str
             Symbol to be used for the point markers. Must be one of the
             following: arrow, clobber, cross, diamond, disc, hbar, ring,
             square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-        size : float, array, keyword-only
+        size : float, array
             Size of the point marker. If given as a scalar, all points are made
             the same size. If given as an array, size must be the same
             broadcastable to the same shape as the data.
-        edge_width : float, keyword-only
+        edge_width : float
             Width of the symbol edge in pixels.
-        edge_color : str, keyword-only
+        edge_color : str
             Color of the point marker border.
-        face_color : str, keyword-only
+        face_color : str
             Color of the point marker body.
-        n_dimensional : bool, keyword-only
+        n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.
-        name : str, keyword-only
+        name : str
             Name of the layer.
 
         Returns
@@ -505,15 +508,15 @@ class ViewerModel:
         ----------
         labels : array
             Labels data.
-        metadata : dict, keyword-only
+        metadata : dict
             Labels metadata.
-        num_colors : int, keyword-only
+        num_colors : int
             Number of unique colors to use in colormap.
-        seed : float, keyword-only
+        seed : float
             Seed for colormap random generator.
-        opacity : float, keyword-only
+        opacity : float
             Opacity of the labels, must be between 0 and 1.
-        name : str, keyword-only
+        name : str
             Name of the layer.
 
         Returns
@@ -530,45 +533,42 @@ class ViewerModel:
 
         Parameters
         ----------
-        data : np.array | list
-            List of np.array of data or np.array. Each element of the list (or
-            row of a 3D np.array) corresponds to one shape. If a 2D array is
-            passed it corresponds to just a single shape.
-        shape_type : string | list
+        data : list or array
+            List of shape data, where each element is an (N, D) array of the
+            N vertices of a shape in D dimensions. Can be an 3-dimensional
+            array if each shape has the same number of vertices.
+        shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_width : float | list
-            thickness of lines and edges. If a list is supplied it must be the
+        edge_width : float or list
+            Thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
+        edge_color : str or list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        face_color : str | tuple | list
+        face_color : str or list
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        opacity : float | list
+        opacity : float or list
             Opacity of the shapes, must be between 0 and 1.
-        z_index : int | list
+        z_index : int or list
             Specifier of z order priority. Shapes with higher z order are
             displayed ontop of others. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        ndim : int, optional
-            Dimensions of shape data. Once set cannot be changed. Defaults to
-            2.
-        name : str, keyword-only
+        name : str
             Name of the layer.
 
         Returns
@@ -591,13 +591,13 @@ class ViewerModel:
             D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
-        edge_width : float, keyword-only
+        edge_width : float
             Width for all vectors in pixels.
-        length : float, keyword-only
+        length : float
              Multiplicative factor on projections for length of all vectors.
-        edge_color : str, keyword-only
+        edge_color : str
             Edge color of all the vectors.
-        name : str, keyword-only
+        name : str
             Name of the layer.
 
         Returns
@@ -611,19 +611,27 @@ class ViewerModel:
 
     def _new_points(self):
         if self.dims.ndim == 0:
-            empty_points = np.empty((0, 2))
+            ndim = 2
         else:
-            empty_points = np.empty((0, self.dims.ndim))
-        self.add_points(empty_points)
+            ndim = self.dims.ndim
+        self.add_points(np.empty((0, ndim)))
 
     def _new_shapes(self):
-        layer = self.add_shapes([], ndim=self.dims.ndim)
+        if self.dims.ndim == 0:
+            ndim = 2
+        else:
+            ndim = self.dims.ndim
+        layer = self.add_shapes(np.empty((0, 0, ndim)))
 
     def _new_labels(self):
         if self.dims.ndim == 0:
-            empty_labels = np.zeros((512, 512), dtype=int)
+            dims = (512, 512)
         else:
-            empty_labels = np.zeros(self._calc_bbox()[1], dtype=int)
+            dims = self._calc_bbox()[1]
+            dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in dims]
+            if len(dims) < 1:
+                dims = (512, 512)
+        empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
     def _update_layers(self):

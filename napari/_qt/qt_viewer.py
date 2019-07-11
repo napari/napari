@@ -1,5 +1,6 @@
 import os.path
 from glob import glob
+import inspect
 from pathlib import Path
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
@@ -13,6 +14,7 @@ from ..resources import resources_dir
 from ..util.io import read, load_numpy_array
 from ..util.misc import is_multichannel
 from ..util.theme import template
+from ..util.keybindings import components_to_key_combo
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
@@ -91,6 +93,8 @@ class QtViewer(QSplitter):
         }
 
         self._update_palette(viewer.palette)
+
+        self._key_release_generators = {}
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
@@ -200,20 +204,44 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
-        if (
-            event.text in self.viewer.key_bindings
-            and not event.native.isAutoRepeat()
-        ):
-            self.viewer.key_bindings[event.text](self.viewer)
+        if event.native.isAutoRepeat() or event.key is None:
             return
 
+        comb = components_to_key_combo(event.key.name, event.modifiers)
+
         layer = self.viewer.active_layer
+
+        # TODO: remove me once keybinding system converted
         if layer is not None:
             layer.on_key_press(event)
+
+        if layer is not None and comb in layer.keymap:
+            parent = layer
+        elif comb in self.viewer.keymap:
+            parent = self.viewer
+        else:
+            return
+
+        func = parent.keymap[comb]
+        gen = func(parent)
+
+        if inspect.isgeneratorfunction(func):
+            try:
+                next(gen)
+            except StopIteration:  # only one statement
+                pass
+            else:
+                self._key_release_generators[event.key] = gen
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
         """
+        try:
+            next(self._key_release_generators[event.key])
+        except (KeyError, StopIteration):
+            pass
+
+        # TODO: remove me once keybinding system converted
         layer = self.viewer.active_layer
         if layer is not None:
             layer.on_key_release(event)

@@ -4,9 +4,14 @@ from vispy.color import Colormap
 from napari.layers import Pyramid
 
 
+# Set random seed for testing
+np.random.seed(0)
+
+
 def test_random_pyramid():
     """Test instantiating Pyramid layer with random 2D data."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.data == data
@@ -19,6 +24,7 @@ def test_random_pyramid():
 def test_3D_pyramid():
     """Test instantiating Pyramid layer with 3D data."""
     shapes = [(8, 40, 20), (4, 20, 10), (2, 10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.data == data
@@ -31,6 +37,7 @@ def test_3D_pyramid():
 def test_non_uniform_3D_pyramid():
     """Test instantiating Pyramid layer non-uniform 3D data."""
     shapes = [(8, 40, 20), (8, 20, 10), (8, 10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.data == data
@@ -43,6 +50,7 @@ def test_non_uniform_3D_pyramid():
 def test_rgb_pyramid():
     """Test instantiating Pyramid layer with RGB data."""
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.data == data
@@ -55,6 +63,7 @@ def test_rgb_pyramid():
 def test_3D_rgb_pyramid():
     """Test instantiating Pyramid layer with 3D RGB data."""
     shapes = [(8, 40, 20, 3), (4, 20, 10, 3), (2, 10, 5, 3)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.data == data
@@ -67,6 +76,7 @@ def test_3D_rgb_pyramid():
 def test_non_rgb_image():
     """Test forcing Pyramid layer to be 3D and not multichannel."""
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data, multichannel=False)
     assert layer.data == data
@@ -78,6 +88,7 @@ def test_non_rgb_image():
 def test_name():
     """Test setting layer name."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.name == 'Pyramid'
@@ -92,6 +103,7 @@ def test_name():
 def test_interpolation():
     """Test setting image interpolation mode."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.interpolation == 'nearest'
@@ -106,6 +118,7 @@ def test_interpolation():
 def test_colormaps():
     """Test setting test_colormaps."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.colormap[0] == 'gray'
@@ -143,6 +156,7 @@ def test_colormaps():
 def test_clims():
     """Test setting color limits."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.clim[0] >= 0
@@ -165,6 +179,7 @@ def test_clims():
 def test_clim_range():
     """Test setting color limits range."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer._clim_range[0] >= 0
@@ -195,6 +210,7 @@ def test_clim_range():
 def test_metadata():
     """Test setting image metadata."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     assert layer.metadata == {}
@@ -206,6 +222,7 @@ def test_metadata():
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     coord, value = layer.get_value()
@@ -216,6 +233,7 @@ def test_value():
 def test_message():
     """Test converting value and coords to message."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     coord, value = layer.get_value()
@@ -226,6 +244,7 @@ def test_message():
 def test_thumbnail():
     """Test the image thumbnail for square data."""
     shapes = [(40, 40), (20, 20), (10, 10)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     layer._update_thumbnail()
@@ -235,6 +254,7 @@ def test_thumbnail():
 def test_xml_list():
     """Test the xml generation."""
     shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
     xml = layer.to_xml_list()

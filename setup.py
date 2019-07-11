@@ -12,7 +12,7 @@ LICENSE = 'BSD 3-Clause'
 DOWNLOAD_URL = 'https://github.com/napari/napari'
 
 CLASSIFIERS = [
-    'Development Status :: 2 - Pre-Alpha',
+    'Development Status :: 3 - Alpha',
     'Environment :: X11 Applications :: Qt',
     'Intended Audience :: Education',
     'Intended Audience :: Science/Research',
