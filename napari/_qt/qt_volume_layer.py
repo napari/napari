@@ -1,5 +1,3 @@
-from qtpy.QtWidgets import QHBoxLayout
-from . import QVRangeSlider
 from .qt_base_layer import QtLayerControls, QtLayerProperties
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
@@ -8,39 +6,6 @@ from qtpy.QtWidgets import QLabel, QComboBox
 class QtVolumeControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
-
-        self.layer.events.threshold.connect(self.threshold_slider_update)
-
-        # Create threshold slider
-        self.thresholdSlider = QVRangeSlider(
-            slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
-        )
-        self.thresholdSlider.setEmitWhileMoving(True)
-        self.thresholdSlider.collapsable = False
-        self.thresholdSlider.setEnabled(True)
-
-        layout = QHBoxLayout()
-        layout.addWidget(self.thresholdSlider)
-        layout.setContentsMargins(12, 15, 10, 10)
-        self.setLayout(layout)
-        self.setMouseTracking(True)
-
-        self.thresholdSlider.rangeChanged.connect(
-            self.threshold_slider_changed
-        )
-
-    def threshold_slider_changed(self, slidermin, slidermax):
-        valmin, valmax = self.layer._threshold_range
-        cmin = valmin + slidermin * (valmax - valmin)
-        cmax = valmin + slidermax * (valmax - valmin)
-        self.layer.threshold = (cmin + cmax) / 4.444
-
-    def threshold_slider_update(self, event):
-        slidermin = 0
-        slidermax = 1
-        self.thresholdSlider.blockSignals(True)
-        self.thresholdSlider.setValues((slidermin, slidermax))
-        self.thresholdSlider.blockSignals(False)
 
 
 class QtVolumeProperties(QtLayerProperties):

@@ -6,7 +6,7 @@ from pathlib import Path
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
-from vispy.scene import SceneCanvas, PanZoomCamera
+from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
@@ -18,6 +18,8 @@ from ..util.keybindings import components_to_key_combo
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
+from napari._vispy.scene.visuals import XYZAxis
+from vispy.visuals.transforms import STTransform
 
 
 class QtViewer(QSplitter):
@@ -47,14 +49,15 @@ class QtViewer(QSplitter):
 
         self.view = self.canvas.central_widget.add_view()
 
-        # TO DO: Remove
-        self.viewer._view = self.view
         # Set 2D camera (the camera will scale to the contents in the scene)
         self.view.camera = PanZoomCamera(aspect=1, name="PanZoomCamera")
         # flip y-axis to have correct alignment
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
         self.view.camera.viewbox_key_event = viewbox_key_event
+
+        # TO DO: Remove
+        self.viewer._view = self.view
 
         viewer.camera = self.view.camera
 
@@ -300,11 +303,26 @@ class QtViewer(QSplitter):
         ):
             volume = load_numpy_array(filenames[0])
 
+            # Create an XYZaxis visual
+            self.axis = XYZAxis(parent=self.view)
+            self.axis.transform = STTransform(
+                translate=(50, 50), scale=(50, 50, 50, 1)
+            ).as_matrix()
+
+            # Set a 3D camera
+            self.view.camera = TurntableCamera(name="TurntableCamera")
+            # flip y-axis to have correct alignment
+            self.view.camera.flip = (0, 1, 0)
+            self.view.camera.set_range()
+            self.view.camera.viewbox_key_event = viewbox_key_event
+
+            # TO DO: Remove
+            self.viewer._view = self.view
+
             self.viewer.add_volume(
-                volume,
-                multichannel=is_multichannel(volume.shape),
-                camera="TurntableCamera",
+                volume, multichannel=is_multichannel(volume.shape)
             )
+
             self._last_visited_dir = os.path.dirname(filenames[0])
 
         elif len(filenames) > 0:

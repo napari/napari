@@ -13,8 +13,6 @@ from ...util.misc import (
 from ...util.event import Event
 from ...util.colormaps import COLORMAPS_3D_DATA
 
-# from ._constants import Camera
-
 
 class Volume(Layer):
     """Volume layer.
@@ -83,8 +81,8 @@ class Volume(Layer):
         `True`.
     """
 
+    class_keymap = {}
     _colormaps = COLORMAPS_3D_DATA
-    # default_camera = str(Camera.TURNTABLE)
 
     def __init__(
         self,
@@ -106,7 +104,7 @@ class Volume(Layer):
         self.translate = (0, 0, 0)
         self.scale = (0.009, 0.009, 0.009, 1)
 
-        self.events.add(clim=Event, colormap=Event, camera=Event)
+        self.events.add(clim=Event, colormap=Event)
 
         with self.freeze_refresh():
             # Set data
@@ -135,8 +133,6 @@ class Volume(Layer):
                 slice(None, None, None),
                 slice(None, None, None),
             )
-
-            # self.camera = default_camera
 
             # Trigger generation of view slice and thumbnail
             self._set_view_slice()
