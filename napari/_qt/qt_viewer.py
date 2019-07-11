@@ -170,7 +170,8 @@ class QtViewer(QSplitter):
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
-        when axis is not set one can rotate around the vertical axes.
+        when axis is not None and the camera is turntable, on moving the mouse
+        one can rotate around the vertical axes.
         """
         layer = self.viewer.active_layer
         if (
@@ -284,13 +285,19 @@ class QtViewer(QSplitter):
         self._add_files(filenames)
 
     def _add_files(self, filenames):
-        """Adds an image layer to the viewer.
+        """Adds an image/volume layer to the viewer.
 
         Whether the image is multichannel is determined by
         :func:`napari.util.misc.is_multichannel`.
 
         If multiple images are selected, they are stacked along the 0th
         axis.
+
+        If there is only 1 filename opened and it is a 3D numpy array saved
+        in either npy or npz format, a Volume layer is added and the camera is
+        changed to a 3D camera called TurntableCamera.
+
+        TODO Add event to switch between 3 kinds of cameras that vispy offers
 
         Parameters
         -------

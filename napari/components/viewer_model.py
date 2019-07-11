@@ -432,18 +432,7 @@ class ViewerModel(KeymapMixin):
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
-        clim : list (2,), optional
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image.
-        clim_range : list (2,), optional
-            Range for the color limits. If not passed is be calculated as the
-            min and max of the images. Passing a value prevents this calculation
-            which can be useful when working with very large datasets that are
-            dynamically loaded.
-        interpolation : str, optional
-            Interpolation mode used by vispy. Must be one of our supported
-            modes.
+
         name : str, keyword-only
             Name of the layer.
 
