@@ -264,4 +264,6 @@ class TransGrays(vispy.color.BaseColormap):
     """
 
 
-COLORMAPS_3D_DATA = {"fire": TransFire(), "grays": TransGrays()}
+best_3d_colormaps = {"fire": TransFire(), "grays": TransGrays()}
+best_3d_colormaps.update(ALL_COLORMAPS)
+COLORMAPS_3D_DATA = {k: v for k, v in sorted(best_3d_colormaps.items())}
