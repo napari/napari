@@ -13,6 +13,8 @@ from ...util.misc import (
 from ...util.event import Event
 from ...util.colormaps import COLORMAPS_3D_DATA
 
+# from ._constants import Camera
+
 
 class Volume(Layer):
     """Volume layer.
@@ -82,6 +84,7 @@ class Volume(Layer):
     """
 
     _colormaps = COLORMAPS_3D_DATA
+    # default_camera = str(Camera.TURNTABLE)
 
     def __init__(
         self,
@@ -105,7 +108,10 @@ class Volume(Layer):
         )
         super().__init__(visual, name)
 
-        self.events.add(clim=Event, colormap=Event)
+        self.translate = (0, 0, 0)
+        self.scale = (0.009, 0.009, 0.009, 1)
+
+        self.events.add(clim=Event, colormap=Event, camera=Event)
 
         with self.freeze_refresh():
             # Set data
@@ -135,8 +141,7 @@ class Volume(Layer):
                 slice(None, None, None),
             )
 
-            self._position = (0, 0, 0)
-            self.coordinates = (0, 0, 0)
+            # self.camera = default_camera
 
             # Trigger generation of view slice and thumbnail
             self._set_view_slice()
@@ -215,14 +220,7 @@ class Volume(Layer):
             slice(None, None, None),
             slice(None, None, None),
         )
-        print(indices)
         self._data_view = np.asarray(self.data[tuple(indices)])
-        print(
-            self._data_view.shape,
-            self._data_view.dtype,
-            self._data_view.min(),
-            self._data_view.max(),
-        )
 
         self._node.set_data(self._data_view)
 
@@ -233,3 +231,24 @@ class Volume(Layer):
 
     def _update_thumbnail(self):
         pass
+
+    # @property
+    # def camera(self):
+    #     """Camera: Camera mode.
+    #         Selects a preset camera mode in vispy that determines how
+    #         volume is displayed
+    #         Camera.TURNTABLE
+    #         Camera.FLY
+    #         Camera.ARCBALL
+    #     """
+    #     return str(self.camera)
+
+    # @camera.setter
+    # def camera(self, camera):
+    #     if isinstance(camera, str):
+    #         camera = Camera(camera)
+
+    #     self._camera = camera
+    #     self._node.camera
+    #     self._node.update()
+    #     self.events.camera()

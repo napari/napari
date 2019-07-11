@@ -5,8 +5,7 @@ from pathlib import Path
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
-from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
-from vispy.visuals.transforms import STTransform
+from vispy.scene import SceneCanvas, PanZoomCamera
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
@@ -14,7 +13,6 @@ from ..resources import resources_dir
 from ..util.io import read, load_numpy_array
 from ..util.misc import is_multichannel
 from ..util.theme import template
-from napari._vispy.scene.visuals import XYZAxis
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
@@ -32,6 +30,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
+        self.axis = None
         self.dims = QtDims(self.viewer.dims)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
@@ -49,11 +48,13 @@ class QtViewer(QSplitter):
         # TO DO: Remove
         self.viewer._view = self.view
         # Set 2D camera (the camera will scale to the contents in the scene)
-        self.view.camera = PanZoomCamera(aspect=1)
+        self.view.camera = PanZoomCamera(aspect=1, name="PanZoomCamera")
         # flip y-axis to have correct alignment
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
         self.view.camera.viewbox_key_event = viewbox_key_event
+
+        viewer.camera = self.view.camera
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -75,8 +76,6 @@ class QtViewer(QSplitter):
         right_layout.addWidget(self.buttons)
         right.setLayout(right_layout)
         right.setMinimumSize(QSize(308, 250))
-        self.axis = None
-
         self.addWidget(right)
 
         self._last_visited_dir = str(Path.home())
@@ -164,9 +163,13 @@ class QtViewer(QSplitter):
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
+        when axis is not set one can rotate around the vertical axes.
         """
         layer = self.viewer.active_layer
-        if self.axis is not None:
+        if (
+            self.axis is not None
+            and self.view.camera.name == "TurntableCamera"
+        ):
             self.axis.transform.reset()
 
             self.axis.transform.rotate(self.view.camera.roll, (0, 0, 1))
@@ -269,18 +272,10 @@ class QtViewer(QSplitter):
         ):
             volume = load_numpy_array(filenames[0])
 
-            # Set 3D camera
-            self.view.camera = TurntableCamera(fov=60)
-            self.view.camera.set_range()
-            self.view.camera.viewbox_key_event = viewbox_key_event
-
-            # Create an XYZaxis visual
-            self.axis = XYZAxis(parent=self.view)
-            s = STTransform(translate=(50, 50), scale=(50, 50, 50, 1))
-            affine = s.as_matrix()
-            self.axis.transform = affine
             self.viewer.add_volume(
-                volume, multichannel=is_multichannel(volume.shape)
+                volume,
+                multichannel=is_multichannel(volume.shape),
+                camera="TurntableCamera",
             )
             self._last_visited_dir = os.path.dirname(filenames[0])
 

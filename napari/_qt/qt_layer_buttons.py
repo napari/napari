@@ -46,6 +46,7 @@ class QtDeleteButton(QPushButton):
         event.accept()
         layer_name = event.mimeData().text()
         layer = self.viewer.layers[layer_name]
+
         if not layer.selected:
             self.viewer.layers.remove(layer)
         else:

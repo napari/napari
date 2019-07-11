@@ -21,6 +21,14 @@ from qtpy.QtGui import QKeySequence
 
 from ..util.theme import template
 
+from enum import Enum
+from vispy.scene import (
+    TurntableCamera,
+    PanZoomCamera,
+    FlyCamera,
+    ArcballCamera,
+)
+
 
 class Window:
     """Application window that contains the menu bar and viewer.
@@ -69,6 +77,10 @@ class Window:
         self.qt_viewer.viewer.events.palette.connect(
             lambda event: self._update_palette(event.palette)
         )
+        # self._update_camera(qt_viewer.viewer.camera.name)
+        # self.qt_viewer.viewer.events.camera.connect(
+        #     lambda event: self._update_camera(event.camera.name)
+        # )
 
         if show:
             self.show()
@@ -119,6 +131,14 @@ class Window:
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
 
+    # def _add_camera_menu(self):
+    #     camera_change = QAction('Toggle camera to change projection angle', self._qt_window)
+    #     camera_change.setShortcut('Ctrl+C')
+    #     camera_change.setStatusTip('Change camera')
+    #     camera_change.triggered.connect(self._toggle_menubar_visible)
+    #     self.view_menu = self.main_menu.addMenu('&View')
+    #     self.view_menu.addAction(camera_change)
+
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
@@ -160,6 +180,9 @@ class Window:
             template('QWidget { background: {{ background }}; }', **palette)
         )
 
+    # def _update_camera(self, camera):
+    #     self.qt_viewer.view.camera = Camera(camera)
+
     def _status_changed(self, event):
         """Update status bar.
         """
@@ -174,3 +197,17 @@ class Window:
         """Update help message on status bar.
         """
         self._help.setText(event.text)
+
+
+# class Camera(Enum):
+#     """Camra: Vispy Camera mode.
+
+#     The spatial filters used for camera are from vispy
+
+#     https://github.com/vispy/vispy/blob/master/vispy/scene/cameras/__init__.py
+#     """
+
+#     TurntableCamera = TurntableCamera()
+#     ArcballCamera = ArcballCamera()
+#     FlyCamera = FlyCamera()
+#     PanZoomCamera = PanZoomCamera()

@@ -64,6 +64,7 @@ class Layer(VisualWrapper, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
+        self.axis = None
         self.events.add(
             select=Event,
             deselect=Event,
@@ -119,7 +120,6 @@ class Layer(VisualWrapper, ABC):
         if indices == self.indices:
             return
         self._indices = indices[-self.ndim :]
-        print(self._indices)
         self._update_coordinates()
         self._set_view_slice()
 
