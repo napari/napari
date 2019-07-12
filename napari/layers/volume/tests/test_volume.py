@@ -5,7 +5,7 @@ from napari.layers import Volume
 
 
 def test_random_volume():
-    """Test instantiating Volume layer with random 2D data."""
+    """Test instantiating Volume layer with random 3D data."""
     shape = (10, 15, 20)
     np.random.seed(0)
     data = np.random.random(shape)
@@ -14,7 +14,6 @@ def test_random_volume():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.range == tuple((0, m, 1) for m in shape)
-    assert layer.multichannel is False
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -26,7 +25,6 @@ def test_all_zeros_volume():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel is False
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -39,7 +37,6 @@ def test_integer_volume():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel is False
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -52,46 +49,6 @@ def test_3D_volume():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel is False
-    assert layer._data_view.shape == shape[-3:]
-
-
-def test_rgb_volume():
-    """Test instantiating Volume layer with RGB data."""
-    shape = (10, 15, 20, 3)
-    np.random.seed(0)
-    data = np.random.random(shape)
-    layer = Volume(data)
-    assert np.all(layer.data == data)
-    assert layer.ndim == len(shape) - 1
-    assert layer.shape == shape[:-1]
-    assert layer.multichannel is True
-    assert layer._data_view.shape == shape[-4:]
-
-
-def test_rgba_volume():
-    """Test instantiating Volume layer with RGBA data."""
-    shape = (10, 15, 20, 4)
-    np.random.seed(0)
-    data = np.random.random(shape)
-    layer = Volume(data)
-    assert np.all(layer.data == data)
-    assert layer.ndim == len(shape) - 1
-    assert layer.shape == shape[:-1]
-    assert layer.multichannel is True
-    assert layer._data_view.shape == shape[-4:]
-
-
-def test_non_rgb_volume():
-    """Test forcing Volume layer to be 3D and not multichannel."""
-    shape = (10, 15, 20)
-    np.random.seed(0)
-    data = np.random.random(shape)
-    layer = Volume(data, multichannel=False)
-    assert np.all(layer.data == data)
-    assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.multichannel is False
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -108,7 +65,6 @@ def test_changing_volume():
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
     assert layer.range == tuple((0, m, 1) for m in shape_b)
-    assert layer.multichannel is False
     assert layer._data_view.shape == shape_b[-3:]
 
 
@@ -131,12 +87,12 @@ def test_colormaps():
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
     layer = Volume(data)
-    assert layer.colormap[0] == 'grays'
-    assert type(layer.colormap[1]) == TransGrays
-
-    layer.colormap = 'fire'
     assert layer.colormap[0] == 'fire'
     assert type(layer.colormap[1]) == TransFire
+
+    layer.colormap = 'grays'
+    assert layer.colormap[0] == 'grays'
+    assert type(layer.colormap[1]) == TransGrays
 
     layer.colormap = 'gray'
     assert layer.colormap[0] == 'gray'
@@ -152,3 +108,52 @@ def test_metadata():
 
     layer = Volume(data, metadata={'unit': 'cm'})
     assert layer.metadata == {'unit': 'cm'}
+
+
+def test_clims():
+    """Test setting color limits."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Volume(data)
+    assert layer.clim[0] >= 0
+    assert layer.clim[1] <= 1
+    assert layer.clim[0] < layer.clim[1]
+    assert layer.clim == layer._clim_range
+
+    # Change clim property
+    clim = [0, 2]
+    layer.clim = clim
+    assert layer.clim == clim
+    assert layer._clim_range == clim
+
+    # Set clim as keyword argument
+    layer = Volume(data, clim=clim)
+    assert layer.clim == clim
+    assert layer._clim_range == clim
+
+
+def test_clim_range():
+    """Test setting color limits range."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Volume(data)
+    assert layer._clim_range[0] >= 0
+    assert layer._clim_range[1] <= 1
+    assert layer._clim_range[0] < layer._clim_range[1]
+
+    # If all data is the same value the clim_range and clim defaults to [0, 1]
+    data = np.zeros((10, 15, 20))
+    layer = Volume(data)
+    assert layer._clim_range == [0, 1]
+    assert layer.clim == [0.0, 1.0]
+
+    # Set clim_range as keyword argument
+    data = np.random.random((10, 15, 20))
+    layer = Volume(data, clim_range=[0, 2])
+    assert layer._clim_range == [0, 2]
+
+    # Set clim and clim_range as keyword arguments
+    data = np.random.random((10, 15, 20))
+    layer = Volume(data, clim=[0.3, 0.6], clim_range=[0, 2])
+    assert layer.clim == [0.3, 0.6]
+    assert layer._clim_range == [0, 2]

@@ -355,7 +355,7 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
-frag_dict = {
+FRAG_DICT = {
     'mip': MIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
@@ -427,11 +427,12 @@ class VolumeVisual(Visual):
         self.shared_program['a_texcoord'] = self._texcoord
         self._draw_mode = 'triangle_strip'
         self._index_buffer = IndexBuffer()
+        self._method = method
 
         # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
-        self.set_gl_state('translucent', cull_face=False)
+        self.set_gl_state(method, cull_face=False)
 
         # Set data
         self.set_data(vol, clim)
@@ -501,6 +502,11 @@ class VolumeVisual(Visual):
     def cmap(self):
         return self._cmap
 
+    @clim.setter
+    def clim(self, clim):
+        self._clim = clim
+        self.update()
+
     @cmap.setter
     def cmap(self, cmap):
         self._cmap = get_colormap(cmap)
@@ -528,7 +534,7 @@ class VolumeVisual(Visual):
     @method.setter
     def method(self, method):
         # Check and save
-        known_methods = list(frag_dict.keys())
+        known_methods = list(FRAG_DICT.keys())
         if method not in known_methods:
             raise ValueError('Volume render method should be in %r, not %r' %
                              (known_methods, method))
@@ -537,7 +543,7 @@ class VolumeVisual(Visual):
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = None
 
-        self.shared_program.frag = frag_dict[method]
+        self.shared_program.frag = FRAG_DICT[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
         self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)

@@ -247,7 +247,12 @@ ALL_COLORMAPS.update(simple_colormaps)
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 
 
-# create colormaps that work well for translucent and additive volume rendering
+# Fire and Grays are two colormaps that work well for
+# translucent and additive volume rendering - add
+# them to best_3d_colormaps, append them to
+# all the existing colormaps
+
+
 class TransFire(vispy.color.BaseColormap):
     glsl_map = """
     vec4 translucent_fire(float t) {

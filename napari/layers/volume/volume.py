@@ -5,13 +5,10 @@ from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
 from ..._vispy.scene.visuals import Volume as VolumeNode
-from ...util.misc import (
-    is_multichannel,
-    calc_data_range,
-    increment_unnamed_colormap,
-)
+from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
 from ...util.colormaps import COLORMAPS_3D_DATA
+from ._constants import Rendering
 
 
 class Volume(Layer):
@@ -24,11 +21,6 @@ class Volume(Layer):
         3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
     metadata : dict, keyword-only
         Volume metadata.
-    multichannel : bool, keyword-only
-        Whether the volume is multichannel RGB or RGBA if multichannel. If
-        not specified by user and the last dimension of the data has length
-        3 or 4 it will be set as `True`. If `False` the volume is
-        interpreted as a luminance volume.
     colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
         Colormap to use for luminance volumes. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -51,76 +43,73 @@ class Volume(Layer):
     Attributes
     ----------
     data : array
-        Volume data. Can be 3 dimensional. If the last dimenstion (channel) is 3
-        or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
+        Volume data. Should be 3 dimensional
     metadata : dict
         Volume metadata.
-    multichannel : bool
-        Whether the volume is multichannel RGB or RGBA if multichannel. If not
-        specified by user and the last dimension of the data has length 3 or 4
-        it will be set as `True`. If `False` the volume is interpreted as a
-        luminance volume.
     colormap : 2-tuple of str, vispy.color.Colormap
         The first is the name of the current colormap, and the second value is
-        the colormap. Colormaps are used for luminance volumes, if the volume is
-        multichannel the colormap is ignored.
+        the colormap. Colormaps are used for luminance volumes.
     colormaps : tuple of str
         Names of the available colormaps.
     clim : list (2,) of float
         Color limits to be used for determining the colormap bounds for
-        luminance volumes. If the volume is multichannel the clim is ignored.
+        luminance volumes.
     clim_range : list (2,) of float
-        Range for the color limits for luminace volumes. If the volume is
-        multichannel the clim_range is ignored.
+        Range for the color limits for luminace volumes.
 
     Extended Summary
     ----------
-    _data_view : array (N, M, K), (N, M, K, 3), or (N, M, K, 4)
-        Volume data for the currently viewed slice. Must be 3D volume data, but
-        can be multidimensional for RGB or RGBA volumes if multidimensional is
-        `True`.
+    _data_view : array (N, M, K)
+        Volume data for the currently viewed slice.
     """
 
     class_keymap = {}
     _colormaps = COLORMAPS_3D_DATA
+    _default_rendering = Rendering.TRANSLUCENT.value
 
     def __init__(
         self,
         volume,
         *,
         metadata=None,
-        multichannel=None,
         colormap='fire',
         clim=None,
         clim_range=None,
-        interpolation='nearest',
         name=None,
         **kwargs,
     ):
 
-        visual = VolumeNode(volume)
+        visual = VolumeNode(volume, method=self._default_rendering)
         super().__init__(visual, name)
+
+        self._rendering = self._default_rendering
 
         self.translate = (0, 0, 0)
         self.scale = (0.009, 0.009, 0.009, 1)
 
-        self.events.add(clim=Event, colormap=Event)
+        self.events.add(clim=Event, colormap=Event, rendering=Event)
 
         with self.freeze_refresh():
             # Set data
             self._data = volume
             self.metadata = metadata or {}
-            self.multichannel = multichannel
 
             # Intitialize volume views and thumbnails with zeros
-            if self.multichannel:
-                self._data_view = np.zeros((1, 1, 1) + (self.shape[-1],))
-            else:
-                self._data_view = np.zeros((1, 1, 1))
+            self._data_view = np.zeros((1, 1, 1))
             self._data_thumbnail = self._data_view
 
-            # Set colormap
+            # Set clims and colormaps
             self._colormap_name = ''
+            self._clim_msg = ''
+            if clim_range is None:
+                self._clim_range = calc_data_range(self.data)
+            else:
+                self._clim_range = clim_range
+
+            if clim is None:
+                self.clim = self._clim_range
+            else:
+                self.clim = clim
             self.colormap = colormap
 
             # Set update flags
@@ -128,8 +117,7 @@ class Volume(Layer):
             self._need_visual_update = False
 
             # Re intitialize indices
-            self._indices = (
-                slice(None, None, None),
+            self._indices = (0,) * (self.ndim - 2) + (
                 slice(None, None, None),
                 slice(None, None, None),
             )
@@ -145,30 +133,11 @@ class Volume(Layer):
     @data.setter
     def data(self, data):
         self._data = data
-        if self.multichannel:
-            self._multichannel = is_multichannel(data.shape)
         self.events.data()
         self.refresh()
 
     def _get_shape(self):
-        if self.multichannel:
-            return self.data.shape[:-1]
         return self.data.shape
-
-    @property
-    def multichannel(self):
-        """bool: Whether the image is multichannel."""
-        return self._multichannel
-
-    @multichannel.setter
-    def multichannel(self, multichannel):
-        if multichannel is False:
-            self._multichannel = multichannel
-        else:
-            # If multichannel is True or None then guess if multichannel
-            # allowed or not, and if allowed set it to be True
-            self._multichannel = is_multichannel(self.data.shape)
-        self.refresh()
 
     @property
     def colormap(self):
@@ -222,3 +191,48 @@ class Volume(Layer):
 
     def _update_thumbnail(self):
         pass
+
+    @property
+    def clim(self):
+        """list of float: Limits to use for the colormap."""
+        return list(self._node.clim)
+
+    @clim.setter
+    def clim(self, clim):
+        self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
+        self.status = self._clim_msg
+
+        self._node.clim = clim
+        if clim[0] < self._clim_range[0]:
+            self._clim_range[0] = copy(clim[0])
+        if clim[1] > self._clim_range[1]:
+            self._clim_range[1] = copy(clim[1])
+        self._update_thumbnail()
+        self.events.clim()
+
+    @property
+    def rendering(self):
+        """Rendering: Rendering mode.
+            Selects a preset rendering mode in vispy that determines how
+            volume is displayed
+            * translucent: voxel colors are blended along the view ray until
+              the result is opaque.
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * additive: voxel colors are added along the view ray until
+              the result is saturated.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.
+        """
+        return str(self._rendering)
+
+    @rendering.setter
+    def rendering(self, rendering):
+        if isinstance(rendering, str):
+            rendering = Rendering(rendering)
+
+        self._node.method = rendering.value
+        self._rendering = rendering
+        self._node.update()
+        self.events.rendering()
