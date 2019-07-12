@@ -5,7 +5,7 @@ import itertools
 from copy import copy, deepcopy
 from contextlib import contextmanager
 from ..base import Layer
-from ..._vispy.scene.visuals import Line, Markers, Compound
+from vispy.scene.visuals import Line, Markers, Compound
 from ...util.event import Event
 from ...util.misc import ensure_iterable
 from vispy.color import get_color_names, Color

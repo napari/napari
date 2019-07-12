@@ -7,7 +7,7 @@ from base64 import b64encode
 from imageio import imwrite
 
 from ..base import Layer
-from ..._vispy.scene.visuals import Image as ImageNode
+from vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
