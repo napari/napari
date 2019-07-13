@@ -1,6 +1,5 @@
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
-import numpy as np
 
 from . import QHRangeSlider
 from ..components.dims import Dims
@@ -96,7 +95,6 @@ class QtDims(QWidget):
         axis : int
             Axis index.
         """
-        # print('range', range, slider_index, self._slider_axis)
 
         if axis not in self._slider_axis:
             return
@@ -158,7 +156,7 @@ class QtDims(QWidget):
             slider = self._create_range_slider_widget(dim_axis)
             self.layout().addWidget(slider)
             self.sliders.insert(0, slider)
-            self._slider_axis = list(np.add(self._slider_axis, 1))
+            self._slider_axis = [a + 1 for a in self._slider_axis]
             self._slider_axis.insert(0, 0)
             self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
 
