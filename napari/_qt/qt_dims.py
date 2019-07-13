@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
+import numpy as np
 
 from . import QHRangeSlider
 from ..components.dims import Dims
@@ -39,6 +40,7 @@ class QtDims(QWidget):
 
         # list of sliders
         self.sliders = []
+        self._slider_axis = []
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -85,33 +87,42 @@ class QtDims(QWidget):
         """
         return len(self.sliders)
 
-    def _update_slider(self, slider_index: int):
+    def _update_slider(self, axis: int):
         """
-        Updates everything for a given slider
+        Updates everything for a given slider.
 
         Parameters
         ----------
-        slider_index : slider index (corresponds to axis index)
+        axis : int
+            Axis index.
         """
-        if slider_index >= self.nsliders:
+        # print('range', range, slider_index, self._slider_axis)
+
+        if axis not in self._slider_axis:
             return
+        slider_index = self._slider_axis.index(axis)
 
         slider = self.sliders[slider_index]
 
-        mode = self.dims.mode[slider_index]
+        mode = self.dims.mode[axis]
         if mode == DimsMode.POINT:
             slider.collapse()
-            slider.setValue(self.dims.point[slider_index])
+            slider.setValue(self.dims.point[axis])
         elif mode == DimsMode.INTERVAL:
             slider.expand()
-            slider.setValues(self.dims.interval[slider_index])
+            slider.setValues(self.dims.interval[axis])
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
         # shape of the layer as the endpoint is included
-        range = self.dims.range[slider_index]
+        range = self.dims.range[axis]
         range = (range[0], range[1] - range[2], range[2])
         if range not in (None, (None, None, None)):
-            slider.setRange(range)
+            if range[1] == 0:
+                self._remove_slider(slider_index)
+            else:
+                slider.setRange(range)
+        else:
+            self._remove_slider(slider_index)
 
     def _update_nsliders(self):
         """
@@ -147,6 +158,8 @@ class QtDims(QWidget):
             slider = self._create_range_slider_widget(dim_axis)
             self.layout().addWidget(slider)
             self.sliders.insert(0, slider)
+            self._slider_axis = list(np.add(self._slider_axis, 1))
+            self._slider_axis.insert(0, 0)
             self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
@@ -160,10 +173,23 @@ class QtDims(QWidget):
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list
         for slider_num in range(number_of_sliders, self.nsliders):
-            slider = self.sliders[0]
-            self.sliders = self.sliders[1:]
-            self.layout().removeWidget(slider)
-            slider.deleteLater()
+            self._remove_slider(0)
+
+    def _remove_slider(self, index):
+        """
+        Remove slider at index
+
+        Parameters
+        ----------
+        axis : int
+            Index of slider to remove
+        """
+        # remove particular slider
+        slider = self.sliders.pop(index)
+        self._slider_axis.pop(index)
+        # self._slider_axis.insert(0, 0)
+        self.layout().removeWidget(slider)
+        slider.deleteLater()
         self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
 
     def _create_range_slider_widget(self, axis):
