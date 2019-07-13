@@ -1,4 +1,5 @@
 dask[array]
 pytest
 pytest-faulthandler
+xarray
 zarr
