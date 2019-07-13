@@ -1,11 +1,12 @@
-from .qt_base_layer import QtLayerControls, QtLayerProperties
+from .qt_base_layer import QtLayerProperties
+from .qt_image_layer import QtImageControls
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 
 from ..layers.volume._constants import Rendering
 
 
-class QtVolumeControls(QtLayerControls):
+class QtVolumeControls(QtImageControls):
     def __init__(self, layer):
         super().__init__(layer)
 

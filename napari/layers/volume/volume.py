@@ -7,7 +7,7 @@ from ..base import Layer
 from ..._vispy.scene.visuals import Volume as VolumeNode
 from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
-from ...util.colormaps import COLORMAPS_3D_DATA
+from ...util.colormaps import AVAILABLE_COLORMAPS
 from ._constants import Rendering
 
 
@@ -64,15 +64,15 @@ class Volume(Layer):
     """
 
     class_keymap = {}
-    _colormaps = COLORMAPS_3D_DATA
-    _default_rendering = Rendering.TRANSLUCENT.value
+    _colormaps = AVAILABLE_COLORMAPS
+    _default_rendering = Rendering.MIP.value
 
     def __init__(
         self,
         volume,
         *,
         metadata=None,
-        colormap='fire',
+        colormap='gray',
         clim=None,
         clim_range=None,
         name=None,

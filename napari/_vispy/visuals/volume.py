@@ -391,7 +391,7 @@ class VolumeVisual(Visual):
         but has lower performance on desktop platforms.
     """
     def __init__(self, vol, clim=None, method='translucent', threshold=None,
-                 relative_step_size=0.8, cmap='grays',
+                 relative_step_size=0.8, cmap='fire',
                  emulate_texture=False):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -432,7 +432,7 @@ class VolumeVisual(Visual):
         # Only show back faces of cuboid. This is required because if we are
         # inside the volume, then the front faces are outside of the clipping
         # box and will not be drawn.
-        self.set_gl_state(method, cull_face=False)
+        self.set_gl_state("translucent", cull_face=False)
 
         # Set data
         self.set_data(vol, clim)
