@@ -56,9 +56,35 @@ def test_3D_image():
     assert layer._data_view.shape == shape[-2:]
 
 
+def test_3D_image_shape_1():
+    """Test instantiating Image layer with random 3D data with shape 1 axis."""
+    shape = (1, 10, 15)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
+
+
 def test_4D_image():
     """Test instantiating Image layer with random 4D data."""
     shape = (10, 15, 6, 8)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
+
+
+def test_5D_image_shape_1():
+    """Test instantiating Image layer with random 5D data with shape 1 axis."""
+    shape = (4, 1, 2, 10, 15)
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
