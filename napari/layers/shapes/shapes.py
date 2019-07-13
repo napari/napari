@@ -5,8 +5,8 @@ from contextlib import contextmanager
 from ...util.event import Event
 from ...util.misc import ensure_iterable
 from ..base import Layer
-from ..._vispy.scene.visuals import Mesh, Markers, Compound
-from ..._vispy.scene.visuals import Line as VispyLine
+from vispy.scene.visuals import Mesh, Markers, Compound
+from vispy.scene.visuals import Line as VispyLine
 from vispy.color import get_color_names
 from ._constants import Mode, Box, BACKSPACE
 from .shape_list import ShapeList

@@ -3,7 +3,7 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from copy import copy
 from ..base import Layer
-from ..._vispy.scene.visuals import Mesh
+from vispy.scene.visuals import Mesh
 from ...util.event import Event
 from .vectors_util import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
