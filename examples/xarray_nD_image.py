@@ -2,6 +2,7 @@
 Displays an xarray
 """
 
+import numpy as np
 import xarray as xr
 from napari import Viewer, gui_qt
 
