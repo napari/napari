@@ -115,7 +115,7 @@ class Labels(Layer):
 
     def new_colormap(self):
         self.seed = np.random.rand()
-
+        self.selected_label = self._selected_label
         self.refresh()
 
     def label_color(self, label):
