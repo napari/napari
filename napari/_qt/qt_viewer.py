@@ -6,7 +6,9 @@ from pathlib import Path
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
+from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera
+from vispy.app import use_app
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
@@ -18,6 +20,10 @@ from ..util.io import read
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
+
+
+# set vispy application to the appropriate qt backend
+use_app(API_NAME)
 
 
 class QtViewer(QSplitter):
