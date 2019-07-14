@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 from pathlib import Path
 from qtpy import API_NAME
 
+
 if API_NAME == 'PySide2':
     # Set plugin path appropriately if using PySide2. This is a bug fix
     # for when both PyQt5 and Pyside2 are installed
@@ -22,9 +23,12 @@ if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
     Warning: napari was tested with QT library `>=5.12.3`.
     The version installed is {}. Please report any issues with this
     specific QT version at https://github.com/Napari/napari/issues.
-    """.format(QtCore.__version__)
-    warning = WarningMessage(message=warn_message, category=Warning,
-                             filename=None, lineno=None)
+    """.format(
+        QtCore.__version__
+    )
+    warning = WarningMessage(
+        message=warn_message, category=Warning, filename=None, lineno=None
+    )
     print(warning.message)
 
 
