@@ -16,21 +16,15 @@ if API_NAME == 'PySide2':
 from qtpy import QtCore
 
 # When QT is not the specific version, we raise a warning:
-from warnings import WarningMessage
+from warnings import warn
 
 if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
-    warn_message = """
-    Warning: napari was tested with QT library `>=5.12.3`.
-    The version installed is {}. Please report any issues with this
+    warn_message = f"""
+    napari was tested with QT library `>=5.12.3`.
+    The version installed is {QtCore.__version__}. Please report any issues with this
     specific QT version at https://github.com/Napari/napari/issues.
-    """.format(
-        QtCore.__version__
-    )
-    warning = WarningMessage(
-        message=warn_message, category=Warning, filename=None, lineno=None
-    )
-    print(warning.message)
-
+    """
+    warn(message=warn_message)
 
 from .viewer import Viewer
 from .view_function import view
