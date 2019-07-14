@@ -1,63 +1,34 @@
-# Napari Tutorials
+# napari tutorials
 
-Welcome to Napari Tutorials. We provided couple tutorials to 
-explain the usage modes and methods of Napari. Before we dive 
-into further topics, let's check what Napari actually is.
+welcome to the **napari** tutorials. We've provided a couple tutorials to
+explore the main usage modes and methods of **napari**, but before we dive
+in, let's talk a bit about what **napari** actually is.
 
-## What is Napari
+## what is napari?
 
-Napari is fast, interactive, multi-dimensional image viewer 
-software. It is being developed by bunch of enthusiasts. It is a 
-community project. These tutorials are targeting people who want to use 
-napari as a user, if you are interested in contributing then 
-please check [Contributing Guidelines](../CONTRIBUTING.md). Napari 
-is mainly developed in Python programming language. One can 
-use napari from any Python scripting setup or from a Jupyter notebook, 
-and what you should be importing napari:
+**napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of `Qt` (for the GUI), `vispy` (for performant GPU-based rendering), and the scientific Python stack (e.g. `numpy`, `scipy`). It includes critical viewer features out-of-the-box, such as support for large multi-dimensional data, and layering and annotation. By integrating closely with the Python ecosystem, napari can be easily coupled to leading machine learning and image analysis tools (e.g. `scikit-image`, `scikit-learn`, `TensorFlow`, `PyTorch`), enabling more user-friendly automated analysis.
 
+We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still occasionally be breaking changes from patch to patch. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
 
-<table border="0">
- <tr>
-    <td><b style="font-size:30px">Scripting Usage</b></td>
-    <td><b style="font-size:30px">Notebook Usage</b></td>
- </tr>
- <tr>
-   <td>
-      
-```python
-import napari
-        
-with napari.qui_qt():
-    # Code Here
-``` 
-   </td>
-   <td>
-   
-```python
-%gui qt5
-import napari       
+To get a sense of our current plans checkout and contribute to the discussion on some of our [long-term feature issues](https://github.com/napari/napari/issues?q=is%3Aissue+is%3Aopen+label%3A%22long-term+feature%22) on gitub.
 
-# Code Here
-```
-   </td>
- </tr>
-</table>
+## getting started
 
-Other than the initial setup and importing step basically napari API is 
-same for different usage modes.  
+These tutorials target people who want to use
+**napari** as a user, but if you are interested in contributing then
+please check [Contributing Guidelines](../CONTRIBUTING.md).
 
-## Napari Conventions
+If you've already got **napari** installed then to begin checkout our [Getting Started](getting_started.md) tutorial. For help installing **napari** checkout our [Installing napari](installation.md) tutorial. Otherwise checkout some of other tutorials listed below!
 
-We love numpy arrays in napari. We are using them heavily. We also love pythonic
-way of doing things.  
+## all tutorials
 
-## Continue with
-
-- [Viewer tutorial](viewer.md)
-- [nD tutorial](arbitrary_dimensional.md)
-- [Image layer tutorial](images.md)
-- [Label layer tutorial](labels.md)
-- [Point layer tutorial](points.md)
-- [Shape layer tutorial](shapes.md)
-- [Pyramid layer tutorial](pyramid.md)
-- [Vector layer tutorial](vectors.md)
+- [installing napari](installation.md)
+- [getting started tutorial](getting_started.md)
+- [viewer tutorial](viewer.md)
+- [multidimensional tutorial](multidimensional_dimensional.md)
+- [image layer tutorial](image.md)
+- [labels layer tutorial](labels.md)
+- [points layer tutorial](points.md)
+- [shapes layer tutorial](shapes.md)
+- [pyramid layer tutorial](pyramid.md)
+- [vectors layer tutorial](vectors.md)

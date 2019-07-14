@@ -22,7 +22,7 @@ We're developing **napari** in the open! But the project is in an **alpha** stag
 $ pip install napari
 ```
 
-(We're working on adding Windows support.)
+We're working on improving Windows support.
 
 To install from the master branch on Github use
 
@@ -38,11 +38,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-Note that many of our examples use `data` from `skimage` but `skimage` is otherwise not a dependnecy, so in order to be able to run all the examples you should call
-
-```sh
-$ pip install scikit-image
-```
+For more information see our [installation tutorial](./tutorials/installation.md)
 
 ## simple example
 
