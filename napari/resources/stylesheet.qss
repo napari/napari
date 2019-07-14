@@ -348,6 +348,10 @@ QtNewLabelsButton {
    image: url(":/icons/{{ folder }}/new_labels.svg");
 }
 
+QtConsoleButton {
+  image: url(":/icons/{{ folder }}/properties_expand.svg");
+}
+
 /* ------------------------------------------------------ */
 
 QtModeButton {
