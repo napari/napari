@@ -230,11 +230,7 @@ class Labels(Layer):
     @selected_label.setter
     def selected_label(self, selected_label):
         self._selected_label = selected_label
-        if selected_label == 0:
-            # If background
-            self._selected_color = None
-        else:
-            self._selected_color = self.get_color(selected_label)
+        self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
     @property
@@ -322,6 +318,7 @@ class Labels(Layer):
 
     def new_colormap(self):
         self._seed = np.random.rand()
+        self._selected_color = self.get_color(self.selected_label)
         self.refresh()
 
     def get_color(self, label):
