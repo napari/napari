@@ -1,8 +1,10 @@
+**Under construction**
+
 ### Label Layer
 
-Another big challenge napari is trying to solve is interactive labeling 
-data. Labels layer enable one to have arbitrary labels on any layer. One 
-can easily superimpose an image and corresponding labels with napari. An 
+Another big challenge napari is trying to solve is interactive labeling
+data. Labels layer enable one to have arbitrary labels on any layer. One
+can easily superimpose an image and corresponding labels with napari. An
 example is given below:
 
 ```python

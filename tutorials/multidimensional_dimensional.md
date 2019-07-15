@@ -1,6 +1,8 @@
+**Under construction**
+
 # Napari nD Tutorial
 
-Welcome to Napari nD Tutorial. In this tutorial we will be 
+Welcome to Napari nD Tutorial. In this tutorial we will be
 covering listed topics about the viewer:
 
 - Ways to start viewer with nD data
@@ -10,10 +12,10 @@ covering listed topics about the viewer:
 
 ### Ways to start viewer with nD data
 
-It has always been a great challenge to visualize and browse high dimensional 
-data. Napari handles nD data with slicing mainly. As we discussed in layers 
-tutorial, one can read any nD data into **numpy.ndarray** type and pass it to 
-`napari.view()` method to start napari with added nD layer. By default, napari 
+It has always been a great challenge to visualize and browse high dimensional
+data. Napari handles nD data with slicing mainly. As we discussed in layers
+tutorial, one can read any nD data into **numpy.ndarray** type and pass it to
+`napari.view()` method to start napari with added nD layer. By default, napari
 will apply slicing to higher dimensional data.
 
 ```python

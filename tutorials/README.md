@@ -24,7 +24,7 @@ If you've already got **napari** installed then to begin checkout our [Getting S
 
 - [installing napari](installation.md)
 - [getting started tutorial](getting_started.md)
-- [viewer tutorial](viewer.md)
+- [napari viewer tutorial](viewer.md)
 - [multidimensional tutorial](multidimensional_dimensional.md)
 - [image layer tutorial](image.md)
 - [labels layer tutorial](labels.md)
