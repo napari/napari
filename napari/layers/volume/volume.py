@@ -3,8 +3,8 @@ import numpy as np
 from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
+from vispy.scene.visuals import Volume as VolumeNode
 from ..base import Layer
-from ..._vispy.scene.visuals import Volume as VolumeNode
 from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
 from ...util.colormaps import AVAILABLE_COLORMAPS
@@ -201,12 +201,17 @@ class Volume(Layer):
     def clim(self, clim):
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
-
-        self._node.clim = clim
+        self._node._clim = clim
         if clim[0] < self._clim_range[0]:
             self._clim_range[0] = copy(clim[0])
         if clim[1] > self._clim_range[1]:
             self._clim_range[1] = copy(clim[1])
+
+        # Set data to adjust according to clim
+        self._need_visual_update = True
+        self._need_display_update = True
+        self._update()
+
         self._update_thumbnail()
         self.events.clim()
 

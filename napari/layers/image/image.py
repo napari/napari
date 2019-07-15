@@ -7,7 +7,7 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ..._vispy.scene.visuals import Image as ImageNode
+from vispy.scene.visuals import Image as ImageNode
 from ...util.misc import (
     is_multichannel,
     calc_data_range,

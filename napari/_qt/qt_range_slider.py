@@ -243,10 +243,14 @@ class QRangeSlider(QWidget):
 
     def updateDisplayValues(self):
         size = self.rangeSliderSize()
-        range = int(size * (self.scale_min - self.start) / self.scale)
-        self.display_min = range + self.bar_width / 2
-        range = int(size * (self.scale_max - self.start) / self.scale)
-        self.display_max = range + self.bar_width / 2
+        if self.scale == 0:
+            range_min = 0
+            range_max = 0
+        else:
+            range_min = int(size * (self.scale_min - self.start) / self.scale)
+            range_max = int(size * (self.scale_max - self.start) / self.scale)
+        self.display_min = range_min + self.bar_width / 2
+        self.display_max = range_max + self.bar_width / 2
 
     def updateScaleValues(self):
         size = self.rangeSliderSize()

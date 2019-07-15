@@ -24,30 +24,3 @@ def read(filenames):
         image = np.stack(images)
 
     return image
-
-
-def load_numpy_array(path):
-    """ Read npy or npz file and return an array volume
-
-
-    Parameters
-    -------
-    path
-        Path to npy file
-
-    Returns
-    -------
-    volume : array
-        3D Array of images
-    """
-    if path.endswith(".npy"):
-        loaded_array = np.load(path)
-    elif path.endswith(".npz"):
-        with np.load(path) as array:
-            loaded_array = array["data"]
-    else:
-        print("Not a valid path")
-        raise AssertionError
-    if loaded_array.dtype == np.bool:
-        loaded_array = loaded_array.astype(np.uint8) * 255
-    return loaded_array

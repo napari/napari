@@ -48,10 +48,15 @@ def view(
     the returned :class:`napari.Viewer` object.
     """
     viewer = Viewer(title=title)
-    for image in images:
+    if len(*images) > 1:
         viewer.add_image(
             image, meta=meta, multichannel=multichannel, clim_range=clim_range
         )
+    else:
+        viewer.add_volume(
+            image, meta=meta, multichannel=False, clim_range=clim_range
+        )
+    viewer.set_camera()
     for name, image in named_images.items():
         viewer.add_image(
             image,
