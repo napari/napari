@@ -1,7 +1,13 @@
 from IPython.core.interactiveshell import InteractiveShell
 
 
-def call_ipython_code(code='print("hello world")'):
+CODE = '''from skimage import filters
+output = filters.gaussian(viewer.layers[0].data, sigma=10)
+viewer.add_image(output)
+'''
+
+
+def call_ipython_code(code=CODE):
     # get current running instance or create new instance
     shell = InteractiveShell.instance()
     # note: shell.extract_input_lines will return existing input lines.
