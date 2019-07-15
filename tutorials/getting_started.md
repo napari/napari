@@ -93,9 +93,11 @@ One of the advantages of launching napari from an ipython console or the jupyter
 
 ![image](resources/bidirectional_communication.gif)
 
+Note that we currently don't support launching **napari** from a remote jupyter notebook as `Qt` is unable to create a window in that usage mode. We are interested in adding support for accessing remote data / compute with **napari** in the future.
+
 ## next steps
 
-To learn more about how to use the **napari** viewer and the different types of **napari** layers checkout more of our tutorials listed below.
+To learn more about how to use the **napari** viewer and the different types of **napari** layers checkout the [napari viewer tutorial](viewer.md) and more of our tutorials listed below.
 
 ## all tutorials
 
