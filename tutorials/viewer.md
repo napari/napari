@@ -41,7 +41,12 @@ Both the `view` and the `add_image` methods accept any numpy-array like object a
 
 ## layout of the viewer
 
-The viewer is organized into ....
+The viewer is organized into a couple key areas
+
+- the main canvas
+- the layer's list
+- the layer's control panel
+- the dimension sliders
 
 
 ## reordering layers on the viewer
