@@ -372,7 +372,7 @@ class Image(Layer):
                 v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
                 msg = msg + v_str
         else:
-            if isinstance(value, np.integer):
+            if isinstance(value, (np.integer, np.bool_)):
                 msg = msg + str(value)
             else:
                 msg = msg + f'{value:0.3}'
