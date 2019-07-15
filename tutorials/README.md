@@ -1,6 +1,6 @@
 # napari tutorials
 
-welcome to the **napari** tutorials. We've provided a couple tutorials to
+Welcome to the **napari** tutorials! We've provided a couple tutorials to
 explore the main usage modes and methods of **napari**, but before we dive
 in, let's talk a bit about what **napari** actually is.
 
