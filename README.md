@@ -14,6 +14,8 @@
 
 We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still occasionally be **breaking changes** from patch to patch. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
 
+We're working on [detailed tutorials](./tutorials/README.md), but you can also quickly get start by looking below.
+
 ## installation
 
 **napari** can be installed on most Mac OS X and Linux systems with Python 3.6 or 3.7 by calling
@@ -48,7 +50,7 @@ From inside an IPython shell or Jupyter notebook you can open up an interactive 
 %gui qt5
 from skimage import data
 import napari
-viewer = napari.view(data.astronaut(), multichannel=True)
+viewer = napari.view(data.astronaut())
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -161,9 +163,7 @@ You can also paint pixel-wise labels, useful for creating masks for segmentation
 
 ![image](resources/screenshot-add-labels.png)
 
-You can change the theme after creating the viewer by setting the `viewer.theme` property. The viewer currently supports `light` and `dark` themes, with `dark` as the default. Run `examples/set_theme.py` to see an example of changing themes.
-
-![image](resources/screenshot-set-theme.png)
+For more details checkout our [tutorials](./tutorials/README.md)
 
 ## plans
 
@@ -177,4 +177,4 @@ See [this issue](https://github.com/napari/napari/issues/301) for some of the fe
 
 ## contributing
 
-Contributions are encouraged! Please read [our guide](https://github.com/napari/napari/blob/master/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read [our guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.

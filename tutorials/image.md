@@ -1,18 +1,22 @@
+# image layer tutorial
+
+Welcome to the tutorial on **napari** the `Image` layer!
+
+This tutorial assumes you have already installed **napari**, know how to launch the viewer, and are familiar with its layout. For help with installation see our [installation](installation.md) tutorial. For help getting started with the viewer see our [getting started](getting_started.md) tutorial. For help understanding the organisation of the viewer, including things like the layers list, the layer properties widgets, the layer control panels, and the dimension sliders see our [napari viewer](viewer.md) tutorial.
+
+This tutorial will teach you about the **napari** `Image` layer, including the types of images that can be displayed, and how
+to set properties like the contrast, opacity, colormaps and blending mode. At the end of the tutorial you should understand how to add and manipulate a variety of different types of images both from the gui and from the console.
+
 **Under construction**
 
-### Image Layer
+## all tutorials
 
-Image layer is the most commonly used type of layer. By now, napari
-does not provide any I/O utilities for any specific image format. Hence,
-it is users responsibility to read data in a **numpy.ndarray** and pass
-to napari. After reading such array, just passing it to `napari.view()`
-method will be enough to start napari. In the example below, `data.camera()`
-returns such numpy array and starts napari with that image layer.
-
-```python
-import napari
-from skimage import data
-
-with napari.qui_qt():
-    viewer = napari.view(data.camera())
-```
+- [installing napari](installation.md)
+- [getting started tutorial](getting_started.md)
+- [napari viewer tutorial](viewer.md)
+- [image layer tutorial](image.md)
+- [labels layer tutorial](labels.md)
+- [points layer tutorial](points.md)
+- [shapes layer tutorial](shapes.md)
+- [pyramid layer tutorial](pyramid.md)
+- [vectors layer tutorial](vectors.md)

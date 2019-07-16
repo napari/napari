@@ -1,38 +1,21 @@
+# vectors layer tutorial
+
+Welcome to the tutorial on **napari** the `Vectors` layer!
+
+This tutorial assumes you have already installed **napari**, know how to launch the viewer, and are familiar with its layout. For help with installation see our [installation](installation.md) tutorial. For help getting started with the viewer see our [getting started](getting_started.md) tutorial. For help understanding the organisation of the viewer, including things like the layers list, the layer properties widgets, the layer control panels, and the dimension sliders see our [napari viewer](viewer.md) tutorial.
+
+This tutorial will teach you about the **napari** `Vectors` layer, including ...
+
 **Under construction**
 
-### Vector Layer
+## all tutorials
 
-Vector layer enables one to draw arbitrary vectors on an image layer.
-With help of vector layer napari able to provide vectoral marking. A
-brief example given below:
-
-```python
-import napari
-from skimage import data
-import numpy as np
-
-
-with napari.gui_qt():
-    # create the viewer and window
-    viewer = napari.Viewer()
-
-    layer = viewer.add_image(data.camera(), name='photographer')
-    layer.colormap = 'gray'
-
-    # sample vector coord-like data
-    n = 1000
-    pos = np.zeros((n, 2, 2), dtype=np.float32)
-    phi_space = np.linspace(0, 4 * np.pi, n)
-    radius_space = np.linspace(0, 100, n)
-
-    # assign x-y position
-    pos[:, 0, 0] = radius_space * np.cos(phi_space) + 350
-    pos[:, 0, 1] = radius_space * np.sin(phi_space) + 256
-
-    # assign x-y projection
-    pos[:, 1, 0] = 2 * radius_space * np.cos(phi_space)
-    pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
-
-    # add the vectors
-    layer = viewer.add_vectors(pos, width=0.4)
-```
+- [installing napari](installation.md)
+- [getting started tutorial](getting_started.md)
+- [napari viewer tutorial](viewer.md)
+- [image layer tutorial](image.md)
+- [labels layer tutorial](labels.md)
+- [points layer tutorial](points.md)
+- [shapes layer tutorial](shapes.md)
+- [pyramid layer tutorial](pyramid.md)
+- [vectors layer tutorial](vectors.md)

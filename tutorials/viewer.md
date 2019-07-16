@@ -1,6 +1,10 @@
 # napari viewer tutorial
 
-Welcome to the tutorial on the **napari** viewer. This tutorial assumes you have already installed **napari** and know how to launch the viewer. For help with installation see our [installation](installation.md) tutorial. For help getting started with the viewer see [getting started](getting_started.md) tutorial. This tutorial will teach you about the **napari** viewer, including how to use it on your screen and how the data within it is organised. At the end of the tutorial you should understand the both the layout of the viewer on the screen and the data inside of it.
+Welcome to the tutorial on the **napari** viewer!
+
+This tutorial assumes you have already installed **napari** and know how to launch the viewer. For help with installation see our [installation](installation.md) tutorial. For help getting started with the viewer see our [getting started](getting_started.md) tutorial.
+
+This tutorial will teach you about the **napari** viewer, including how to use it on your screen and how the data within it is organised. At the end of the tutorial you should understand the both the layout of the viewer on the screen and the data inside of it.
 
 
 ## launching the viewer
@@ -233,7 +237,7 @@ keybindings to the `Viewer` or individual `Layer` objects such that when the cor
 clicked your custom function gets executed. Depending on which object you bind your key too your function
 will either get access to the state of the entire `viewer` or `layer` object.
 
-For example to bind function that loops through all layers in the viewer and prints their names when you
+For example to bind function that loops through all layers in the viewer and prints their names to your console when you
 press the `p` key you can do the following:
 
 ```python
@@ -241,6 +245,7 @@ press the `p` key you can do the following:
 import napari
 
 viewer = napari.Viewer()
+viewer.add_image(data.astronaut(), name=astronaut)
 
 @viewer.bind_key('p')
 def print_names(viewer):
@@ -249,13 +254,16 @@ def print_names(viewer):
 
 By default your key will bind to the key press event, but it is also possible to bind to the key release
 event by including a `yield` inside your function. All code before the `yield` will get executed on key
-press and all code after the `yield` will get executed on key release.
+press and all code after the `yield` will get executed on key release. The following example will print `hello`
+when you start to press the `m` key and print `goodbye` when you release it.
 
 ```python
 %gui qt5
 import napari
+from skimage import data
 
 viewer = napari.Viewer()
+viewer.add_image(data.astronaut(), name=astronaut)
 
 @viewer.bind_key('m')
 def print_message(viewer):
@@ -263,6 +271,12 @@ def print_message(viewer):
   yield
   print('goodbye')
 ```
+
+Keys can be bound both to the object class or a particular instance depending on if you want the keybinding
+to apply to all instances of the class or only one particular instance.
+
+The ability to add custom keybindings dramatically increases what is possible within **napari** and we hope
+you take full advantage of them.
 
 ## next steps
 

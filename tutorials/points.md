@@ -1,30 +1,21 @@
+# points layer tutorial
+
+Welcome to the tutorial on **napari** the `Points` layer!
+
+This tutorial assumes you have already installed **napari**, know how to launch the viewer, and are familiar with its layout. For help with installation see our [installation](installation.md) tutorial. For help getting started with the viewer see our [getting started](getting_started.md) tutorial. For help understanding the organisation of the viewer, including things like the layers list, the layer properties widgets, the layer control panels, and the dimension sliders see our [napari viewer](viewer.md) tutorial.
+
+This tutorial will teach you about the **napari** `Points` layer, including ...
+
 **Under construction**
 
-### Point Layer
+## all tutorials
 
-Point layer is very useful to mark certain points on a layer.
-A brief usage is shown in below:
-
-```python
-import numpy as np
-from skimage import data
-import napari
-
-with napari.gui_qt():
-    # set up viewer
-    viewer = napari.Viewer()
-    viewer.add_image(data.camera()))
-
-    # create three xy coordinates
-    points = np.array([[100, 100], [200, 200], [333, 111]])
-
-    # specify three sizes
-    size = np.array([10, 30, 20])
-
-    # add them to the viewer
-    points = viewer.add_points(points, size=size)
-```
-
-![image](../resources/screenshot-add-points.png)
-
-One can also get coordinates of points with `points.coords`.
+- [installing napari](installation.md)
+- [getting started tutorial](getting_started.md)
+- [napari viewer tutorial](viewer.md)
+- [image layer tutorial](image.md)
+- [labels layer tutorial](labels.md)
+- [points layer tutorial](points.md)
+- [shapes layer tutorial](shapes.md)
+- [pyramid layer tutorial](pyramid.md)
+- [vectors layer tutorial](vectors.md)

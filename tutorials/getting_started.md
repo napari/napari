@@ -1,6 +1,10 @@
 # getting started with napari
 
-Welcome to the getting started with **napari** tutorial. This tutorial assumes you have already installed **napari**. For help with installation see our [installation tutorial](installation.md). This tutorial will teach you all the different ways to launch **napari**. At the end of the tutorial you should be able to launch **napari** and see the viewer your favourite way.
+Welcome to the getting started with **napari** tutorial!
+
+This tutorial assumes you have already installed **napari**. For help with installation see our [installation tutorial](installation.md).
+
+This tutorial will teach you all the different ways to launch **napari**. At the end of the tutorial you should be able to launch **napari** and see the viewer your favourite way.
 
 
 ## launching napari
