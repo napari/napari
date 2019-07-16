@@ -2,6 +2,7 @@ from enum import auto
 import sys
 
 from ...util.misc import StringEnum
+from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
 
 
 class Mode(StringEnum):
@@ -52,3 +53,12 @@ class Box:
 
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
+
+
+shape_classes = {
+    'rectangle': Rectangle,
+    'ellipse': Ellipse,
+    'line': Line,
+    'path': Path,
+    'polygon': Polygon,
+}
