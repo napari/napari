@@ -10,7 +10,6 @@ from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
 from qtpy import API_NAME
 from vispy.app import use_app
 
-from napari.components import Dims
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
@@ -55,7 +54,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
-        self.set_camera()
+        self._update_camera()
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -102,10 +101,11 @@ class QtViewer(QSplitter):
             lambda event: self._update_palette(event.palette)
         )
         self.viewer.layers.events.reordered.connect(self._update_canvas)
+        self.viewer.dims.events.display.connect(self._update_camera)
 
         self.setAcceptDrops(True)
 
-    def set_camera(self):
+    def _update_camera(self):
         if sum(self.viewer.dims.display) == 3:
             # Set a 3D camera
             self.view.camera = TurntableCamera(name="TurntableCamera")
@@ -166,30 +166,22 @@ class QtViewer(QSplitter):
         self._add_files(filenames)
 
     def _add_files(self, filenames):
-        """Adds an image/volume layer to the viewer.
-
+        """Adds an image layer to the viewer.
         Whether the image is multichannel is determined by
         :func:`napari.util.misc.is_multichannel`.
-
+        If multiple images are selected, they are stacked along the 0th
+        axis.
         Parameters
         -------
         filenames : list
             List of filenames to be opened
         """
-        image = read(filenames)
-        if len(filenames) == 1:
+        if len(filenames) > 0:
+            image = read(filenames)
             self.viewer.add_image(
                 image, multichannel=is_multichannel(image.shape)
             )
-        elif len(filenames) > 1:
-            self.viewer.dims = Dims(3)
-            for i in range(3):
-                self.viewer.dims.set_display(-i, True)
-            self.viewer.add_volume(
-                image, multichannel=is_multichannel(image.shape)
-            )
-        self._last_visited_dir = os.path.dirname(filenames[0])
-        self.set_camera()
+            self._last_visited_dir = os.path.dirname(filenames[0])
 
     def _on_interactive(self, event):
         self.view.interactive = self.viewer.interactive

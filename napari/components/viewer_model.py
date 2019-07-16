@@ -74,6 +74,7 @@ class ViewerModel(KeymapMixin):
         # attached by QtViewer when it is constructed by the model
         self._view = None
 
+        self.dims.events.display.connect(lambda e: self._update_layers())
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
@@ -442,6 +443,9 @@ class ViewerModel(KeymapMixin):
             The newly-created volume layer.
         """
         layer = layers.Volume(volume, *args, **kwargs)
+        self.dims = Dims(3)
+        for i in range(3):
+            self.dims.set_display(i, True)
         self.add_layer(layer)
         return layer
 

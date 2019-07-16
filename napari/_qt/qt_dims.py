@@ -29,6 +29,7 @@ class QtDims(QWidget):
     # Qt Signals for sending events to Qt thread
     update_axis = Signal(int)
     update_ndim = Signal()
+    update_display = Signal()
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -40,6 +41,8 @@ class QtDims(QWidget):
         # list of sliders
         self.sliders = []
         self._slider_axis = []
+
+        self.display_status = "default display initialized"
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -74,6 +77,16 @@ class QtDims(QWidget):
         # What to do with the ndim change events in terms of UI calls to the
         # widget
         self.update_ndim.connect(self._update_nsliders)
+
+        # display change listener
+        def update_display_listener(event):
+            self.update_display.emit()
+
+        self.dims.events.display.connect(update_display_listener)
+
+        # What to do with the ndim change events in terms of UI calls to the
+        # widget
+        self.update_display.connect(self._update_display)
 
     @property
     def nsliders(self):
@@ -251,3 +264,9 @@ class QtDims(QWidget):
         slider.collapsedChanged.connect(collapse_change_listener)
 
         return slider
+
+    def _update_display(self):
+        """
+        Updates the number of sliders based on the number of dimensions
+        """
+        self.display_status = "default display changed"
