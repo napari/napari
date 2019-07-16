@@ -6,17 +6,17 @@ from pathlib import Path
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
-from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
 from qtpy import API_NAME
+from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
 from vispy.app import use_app
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
-from ..util.io import read
-from ..util.misc import is_multichannel
 from ..util.theme import template
+from ..util.misc import is_multichannel
 from ..util.keybindings import components_to_key_combo
+from ..util.io import read
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
@@ -160,7 +160,7 @@ class QtViewer(QSplitter):
         """Adds files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select image(s).../volume(npy or npz files)',
+            caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
         self._add_files(filenames)
