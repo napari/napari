@@ -43,6 +43,18 @@ def test_integer_image():
     assert layer._data_view.shape == shape[-2:]
 
 
+def test_bool_image():
+    """Test instantiating Image layer with bool data."""
+    shape = (10, 15)
+    data = np.zeros(shape, dtype=bool)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
+
+
 def test_3D_image():
     """Test instantiating Image layer with random 3D data."""
     shape = (10, 15, 6)
