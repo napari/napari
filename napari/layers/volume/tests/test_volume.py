@@ -1,6 +1,7 @@
 import numpy as np
 from vispy.color import Colormap
 from napari.layers import Volume
+from napari.util.colormaps.colormaps import TransFire, TransGrays
 
 
 def test_random_volume():
@@ -86,36 +87,12 @@ def test_colormaps():
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
     layer = Volume(data)
-    assert layer.colormap[0] == 'gray'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap[0] == 'fire'
+    assert type(layer.colormap[1]) == TransFire
 
-    layer.colormap = 'magma'
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer.colormap = 'custom', cmap
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer.colormap = {'new': cmap}
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
-
-    layer = Volume(data, colormap='magma')
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer = Volume(data, colormap=('custom', cmap))
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
-
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer = Volume(data, colormap={'new': cmap})
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    layer.colormap = 'gray_enhanced'
+    assert layer.colormap[0] == 'gray_enhanced'
+    assert type(layer.colormap[1]) == TransGrays
 
 
 def test_metadata():

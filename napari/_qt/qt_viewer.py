@@ -10,6 +10,7 @@ from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
 from qtpy import API_NAME
 from vispy.app import use_app
 
+from napari.components import Dims
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
@@ -106,7 +107,8 @@ class QtViewer(QSplitter):
         self.setAcceptDrops(True)
 
     def set_camera(self):
-
+        print(self.viewer.dims.display)
+        print(sum(self.viewer.dims.display))
         if sum(self.viewer.dims.display) > 2:
             print(self.viewer.dims.display)
             print(sum(self.viewer.dims.display))
@@ -125,7 +127,7 @@ class QtViewer(QSplitter):
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
         self.view.camera.viewbox_key_event = viewbox_key_event
-
+        print(self.view.camera)
         # TO DO: Remove
         self.viewer._view = self.view
 
@@ -180,7 +182,9 @@ class QtViewer(QSplitter):
                 image, multichannel=is_multichannel(image.shape)
             )
         elif len(filenames) > 1:
-            print(len(filenames))
+            self.viewer.dims = Dims(3)
+            for i in range(3):
+                self.viewer.dims.set_display(-i, True)
             self.viewer.add_volume(
                 image, multichannel=is_multichannel(image.shape)
             )

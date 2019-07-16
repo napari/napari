@@ -7,7 +7,7 @@ from vispy.scene.visuals import Volume as VolumeNode
 from ..base import Layer
 from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
-from ...util.colormaps import AVAILABLE_COLORMAPS
+from ...util.colormaps import COLORMAPS_3D_DATA
 from ._constants import Rendering
 
 
@@ -64,7 +64,7 @@ class Volume(Layer):
     """
 
     class_keymap = {}
-    _colormaps = AVAILABLE_COLORMAPS
+    _colormaps = COLORMAPS_3D_DATA
     _default_rendering = Rendering.MIP.value
 
     def __init__(
@@ -72,20 +72,20 @@ class Volume(Layer):
         volume,
         *,
         metadata=None,
-        colormap='gray',
+        colormap='fire',
         clim=None,
         clim_range=None,
         name=None,
         **kwargs,
     ):
 
-        visual = VolumeNode(volume, threshold=-0.225, emulate_texture=False)
+        visual = VolumeNode(volume, threshold=0.225, emulate_texture=False)
         super().__init__(visual, name)
 
         self._rendering = self._default_rendering
 
         self.translate = (0, 0, 0)
-        self.scale = (0.009, 0.009, 0.009, 1)
+        self.scale = (1, 1, 1, 1)
 
         self.events.add(clim=Event, colormap=Event, rendering=Event)
 
@@ -117,7 +117,8 @@ class Volume(Layer):
             self._need_visual_update = False
 
             # Re intitialize indices
-            self._indices = (0,) * (self.ndim - 2) + (
+            self._indices = (
+                slice(None, None, None),
                 slice(None, None, None),
                 slice(None, None, None),
             )
