@@ -84,8 +84,6 @@ class QtDims(QWidget):
 
         self.dims.events.display.connect(update_display_listener)
 
-        # What to do with the ndim change events in terms of UI calls to the
-        # widget
         self.update_display.connect(self._update_display)
 
     @property

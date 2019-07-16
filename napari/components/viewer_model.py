@@ -53,7 +53,7 @@ class ViewerModel(KeymapMixin):
 
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
-        self.dims = Dims(2)
+        self.dims = Dims(3)
         self.dims._set_2d_viewing()
 
         self.layers = LayerList()
@@ -443,9 +443,7 @@ class ViewerModel(KeymapMixin):
             The newly-created volume layer.
         """
         layer = layers.Volume(volume, *args, **kwargs)
-        self.dims = Dims(3)
-        for i in range(3):
-            self.dims.set_display(i, True)
+        self.dims.set_display(0, True)
         self.add_layer(layer)
         return layer
 

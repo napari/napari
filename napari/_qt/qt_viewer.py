@@ -54,7 +54,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
-        self._update_camera()
+        self._update_camera("")
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -105,7 +105,7 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
-    def _update_camera(self):
+    def _update_camera(self, event):
         if sum(self.viewer.dims.display) == 3:
             # Set a 3D camera
             self.view.camera = TurntableCamera(name="TurntableCamera")
@@ -156,7 +156,7 @@ class QtViewer(QSplitter):
         """
         return self.canvas.render(region, size, bgcolor)
 
-    def _open_files(self):
+    def _open_images(self):
         """Adds files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,

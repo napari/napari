@@ -4,6 +4,7 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from vispy.scene.visuals import Volume as VolumeNode
+from vispy.visuals.transforms import STTransform
 from ..base import Layer
 from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
@@ -66,6 +67,8 @@ class Volume(Layer):
     class_keymap = {}
     _colormaps = COLORMAPS_3D_DATA
     _default_rendering = Rendering.MIP.value
+    _translate = (0, 0, 0)
+    _scale = (0.09, 0.09, 0.09, 1)
 
     def __init__(
         self,
@@ -80,12 +83,13 @@ class Volume(Layer):
     ):
 
         visual = VolumeNode(volume, threshold=0.225, emulate_texture=False)
+        visual.transform = STTransform(
+            translate=self._translate, scale=self._scale
+        )
+
         super().__init__(visual, name)
 
         self._rendering = self._default_rendering
-
-        self.translate = (0, 0, 0)
-        self.scale = (1, 1, 1, 1)
 
         self.events.add(clim=Event, colormap=Event, rendering=Event)
 
