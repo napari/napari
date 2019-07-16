@@ -79,7 +79,7 @@ class Volume(Layer):
         **kwargs,
     ):
 
-        visual = VolumeNode(volume, method=self._default_rendering)
+        visual = VolumeNode(volume, threshold=-0.225, emulate_texture=False)
         super().__init__(visual, name)
 
         self._rendering = self._default_rendering

@@ -13,7 +13,7 @@ from vispy.app import use_app
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
-from ..util.io import read, load_numpy_array
+from ..util.io import read
 from ..util.misc import is_multichannel
 from ..util.theme import template
 from ..util.keybindings import components_to_key_combo
@@ -107,7 +107,9 @@ class QtViewer(QSplitter):
 
     def set_camera(self):
 
-        if sum(self.viewer.dims.display) != 0:
+        if sum(self.viewer.dims.display) > 2:
+            print(self.viewer.dims.display)
+            print(sum(self.viewer.dims.display))
             # Set a 3D camera
             self.view.camera = TurntableCamera(name="TurntableCamera")
             # Create an XYZaxis visual
@@ -151,6 +153,39 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         return self.canvas.render(region, size, bgcolor)
+
+    def _open_files(self):
+        """Adds files from the menubar."""
+        filenames, _ = QFileDialog.getOpenFileNames(
+            parent=self,
+            caption='Select image(s).../volume(npy or npz files)',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        self._add_files(filenames)
+
+    def _add_files(self, filenames):
+        """Adds an image/volume layer to the viewer.
+
+        Whether the image is multichannel is determined by
+        :func:`napari.util.misc.is_multichannel`.
+
+        Parameters
+        -------
+        filenames : list
+            List of filenames to be opened
+        """
+        image = read(filenames)
+        if len(filenames) == 1:
+            self.viewer.add_image(
+                image, multichannel=is_multichannel(image.shape)
+            )
+        elif len(filenames) > 1:
+            print(len(filenames))
+            self.viewer.add_volume(
+                image, multichannel=is_multichannel(image.shape)
+            )
+        self._last_visited_dir = os.path.dirname(filenames[0])
+        self.set_camera()
 
     def _on_interactive(self, event):
         self.view.interactive = self.viewer.interactive
@@ -280,15 +315,6 @@ class QtViewer(QSplitter):
         else:
             event.ignore()
 
-    def _open_files(self):
-        """Adds files from the menubar."""
-        filenames, _ = QFileDialog.getOpenFileNames(
-            parent=self,
-            caption='Select image(s).../volume(npy or npz files)',
-            directory=self._last_visited_dir,  # home dir by default
-        )
-        self._add_files(filenames)
-
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop."""
         filenames = []
@@ -301,29 +327,6 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(path)
         self._add_files(filenames)
-
-    def _add_files(self, filenames):
-        """Adds an image/volume layer to the viewer.
-
-        Whether the image is multichannel is determined by
-        :func:`napari.util.misc.is_multichannel`.
-
-        Parameters
-        -------
-        filenames : list
-            List of filenames to be opened
-        """
-        image = read(filenames)
-        if len(filenames) == 1:
-            self.viewer.add_image(
-                image, multichannel=is_multichannel(image.shape)
-            )
-        elif len(filenames) > 1:
-            self.viewer.add_volume(
-                image, multichannel=is_multichannel(image.shape)
-            )
-        self._last_visited_dir = os.path.dirname(filenames[0])
-        self.set_camera()
 
 
 def viewbox_key_event(event):
