@@ -28,6 +28,11 @@ class VisualWrapper:
     blending
     translate
     z_index
+
+    Notes
+    -----
+    It is recommended to use the backported ``vispy`` nodes
+    at ``_vispy.scene.visuals`` for various bug fixes.
     """
 
     def __init__(self, central_node):

@@ -56,7 +56,6 @@ class QtViewer(QSplitter):
 
         self.view = self.canvas.central_widget.add_view()
         self.set_camera()
-        viewer.camera = self.view.camera
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -107,11 +106,7 @@ class QtViewer(QSplitter):
         self.setAcceptDrops(True)
 
     def set_camera(self):
-        print(self.viewer.dims.display)
-        print(sum(self.viewer.dims.display))
-        if sum(self.viewer.dims.display) > 2:
-            print(self.viewer.dims.display)
-            print(sum(self.viewer.dims.display))
+        if sum(self.viewer.dims.display) == 3:
             # Set a 3D camera
             self.view.camera = TurntableCamera(name="TurntableCamera")
             # Create an XYZaxis visual
@@ -119,15 +114,20 @@ class QtViewer(QSplitter):
             self.axis.transform = STTransform(
                 translate=(50, 50), scale=(50, 50, 50, 1)
             ).as_matrix()
-        else:
+        elif sum(self.viewer.dims.display) == 2:
             # Set 2D camera (the camera will scale to the contents in the scene)
             self.view.camera = PanZoomCamera(aspect=1, name="PanZoomCamera")
+        else:
+            raise ValueError(
+                "Invalid display flags set in dimensions {}".format(
+                    self.viewer.dims.display
+                )
+            )
 
         # flip y-axis to have correct alignment
         self.view.camera.flip = (0, 1, 0)
         self.view.camera.set_range()
         self.view.camera.viewbox_key_event = viewbox_key_event
-        print(self.view.camera)
         # TO DO: Remove
         self.viewer._view = self.view
 

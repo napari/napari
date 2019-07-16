@@ -367,7 +367,7 @@ class ViewerModel(KeymapMixin):
         Parameters
         ----------
         pyramid : list
-            Pyramid data. List of array like image data. Each image can be N
+            Pyramid data. List of array like image date. Each image can be N
             dimensional. If the last dimensions of the images have length 3
             or 4 they can be interpreted as RGB or RGBA if multichannel is
             `True`.

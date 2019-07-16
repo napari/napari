@@ -1,5 +1,4 @@
 import numpy as np
-from vispy.color import Colormap
 from napari.layers import Volume
 from napari.util.colormaps.colormaps import TransFire, TransGrays
 

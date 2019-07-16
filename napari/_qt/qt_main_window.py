@@ -104,12 +104,12 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
-        open_files = QAction('Open', self._qt_window)
-        open_files.setShortcut('Ctrl+O')
-        open_files.setStatusTip('Open image(s)/volume file')
-        open_files.triggered.connect(self.qt_viewer._open_files)
+        open_images = QAction('Open', self._qt_window)
+        open_images.setShortcut('Ctrl+O')
+        open_images.setStatusTip('Open image file(s)')
+        open_images.triggered.connect(self.qt_viewer._open_images)
         self.file_menu = self.main_menu.addMenu('&File')
-        self.file_menu.addAction(open_files)
+        self.file_menu.addAction(open_images)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
