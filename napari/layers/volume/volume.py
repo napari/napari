@@ -121,7 +121,7 @@ class Volume(Layer):
             self._need_visual_update = False
 
             # Re intitialize indices
-            self._indices = (
+            self._indices = (0,) * (self.ndim - 3) + (
                 slice(None, None, None),
                 slice(None, None, None),
                 slice(None, None, None),
@@ -180,12 +180,7 @@ class Volume(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        indices = (
-            slice(None, None, None),
-            slice(None, None, None),
-            slice(None, None, None),
-        )
-        self._data_view = np.asarray(self.data[tuple(indices)])
+        self._data_view = np.asarray(self.data[tuple(self._indices)])
 
         self._node.set_data(self._data_view)
 

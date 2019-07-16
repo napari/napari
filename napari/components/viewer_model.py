@@ -443,7 +443,7 @@ class ViewerModel(KeymapMixin):
             The newly-created volume layer.
         """
         layer = layers.Volume(volume, *args, **kwargs)
-        self.dims.set_display(0, True)
+        self.dims.set_display(-3, True)
         self.add_layer(layer)
         return layer
 

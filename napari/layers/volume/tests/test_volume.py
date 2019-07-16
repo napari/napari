@@ -51,6 +51,19 @@ def test_3D_volume():
     assert layer._data_view.shape == shape[-3:]
 
 
+def test_4D_volume():
+    """Test instantiating multiple Volume layers with random 4D data."""
+    shape = (10, 15, 6, 8)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    for i in range(shape[0]):
+        layer = Volume(data[i])
+        assert np.all(layer.data == data[i])
+        assert layer.ndim == len(shape) - 1
+        assert layer.shape == shape[1:]
+        assert layer._data_view.shape == shape[-3:]
+
+
 def test_changing_volume():
     """Test changing Volume data."""
     shape_a = (10, 15, 30)
