@@ -104,7 +104,6 @@ To learn more about how to use the **napari** viewer and the different types of 
 - [installing napari](installation.md)
 - [getting started tutorial](getting_started.md)
 - [napari viewer tutorial](viewer.md)
-- [multidimensional tutorial](multidimensional_dimensional.md)
 - [image layer tutorial](image.md)
 - [labels layer tutorial](labels.md)
 - [points layer tutorial](points.md)
