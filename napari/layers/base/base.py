@@ -66,7 +66,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
-        self.axis = None
         self.events.add(
             select=Event,
             deselect=Event,

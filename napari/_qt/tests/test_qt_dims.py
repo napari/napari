@@ -47,13 +47,14 @@ def test_changing_display():
         ndim = 4
         view = QtDims(Dims(ndim))
 
+        assert view.nsliders == 2
         # Check that adding dimensions adds sliders
-        view.dims.ndim = 2
-        assert view.display_status == "default display initialized"
+        view.dims.ndim = 3
+        assert view.nsliders == 1
 
         # Check that removing dimensions removes sliders
-        view.dims.set_display(1, True)
-        assert view.display_status == "default display changed"
+        view.dims.set_display(0, True)
+        assert view.nsliders == 0
 
 
 def test_slider_values():

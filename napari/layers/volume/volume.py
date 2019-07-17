@@ -67,8 +67,6 @@ class Volume(Layer):
     class_keymap = {}
     _colormaps = COLORMAPS_3D_DATA
     _default_rendering = Rendering.MIP.value
-    _translate = (0, 0, 0)
-    _scale = (0.09, 0.09, 0.09, 1)
 
     def __init__(
         self,
@@ -83,12 +81,6 @@ class Volume(Layer):
     ):
 
         visual = VolumeNode(volume, threshold=0.225, emulate_texture=False)
-        print(self._translate)
-        print(self._scale)
-        visual.transform = STTransform(
-            translate=self._translate, scale=self._scale
-        )
-        print(visual.transform)
         super().__init__(visual, name)
 
         self._rendering = self._default_rendering
@@ -182,7 +174,11 @@ class Volume(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        self._data_view = np.asarray(self.data[tuple(self._indices)])
+        indices = list(self.indices)
+        indices[:-3] = np.clip(
+            indices[:-3], 0, np.subtract(self.shape[:-3], 1)
+        )
+        self._data_view = np.asarray(self.data[tuple(indices)])
 
         self._node.set_data(self._data_view)
 

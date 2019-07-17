@@ -41,9 +41,6 @@ class QtDims(QWidget):
         # list of sliders
         self.sliders = []
         self._slider_axis = []
-
-        self.display_status = "default display initialized"
-
         # Initialises the layout:
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -267,4 +264,8 @@ class QtDims(QWidget):
         """
         Updates the number of sliders based on the number of dimensions
         """
-        self.display_status = "default display changed"
+        print(self._slider_axis)
+        if -3 in self._slider_axis:
+            print("removing slider axis")
+            slider_index = self._slider_axis.index(-3)
+            _remove_slider(slider_index)

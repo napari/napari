@@ -40,7 +40,6 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
-        self.axis = None
         self.dims = QtDims(self.viewer.dims)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
@@ -223,16 +222,16 @@ class QtViewer(QSplitter):
         one can rotate around the vertical axes.
         """
         layer = self.viewer.active_layer
-        if (
-            self.axis is not None
-            and self.view.camera.name == "TurntableCamera"
-        ):
+        if self.view.camera.name == "TurntableCamera":
             self.axis.transform.reset()
 
             self.axis.transform.rotate(self.view.camera.roll, (0, 0, 1))
             self.axis.transform.rotate(self.view.camera.elevation, (1, 0, 0))
             self.axis.transform.rotate(self.view.camera.azimuth, (0, 1, 0))
 
+            # Scale and translate the x, y, z position after rotating
+            # 50 - Is a constant to make the x, y, z axis position
+            # far away from the origin on top left corner
             self.axis.transform.scale((50, 50, 0.001))
             self.axis.transform.translate((50.0, 50.0))
             self.axis.update()
