@@ -7,7 +7,7 @@ from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
-from vispy.scene import SceneCanvas, PanZoomCamera, TurntableCamera
+from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.app import use_app
 
 from .qt_dims import QtDims
@@ -107,7 +107,7 @@ class QtViewer(QSplitter):
     def _update_camera(self, event):
         if sum(self.viewer.dims.display) == 3:
             # Set a 3D camera
-            self.view.camera = TurntableCamera(name="TurntableCamera")
+            self.view.camera = ArcballCamera(name="ArcballCamera")
             # Create an XYZaxis visual
             self.axis = XYZAxis(parent=self.view)
             self.axis.transform = STTransform(
@@ -218,24 +218,8 @@ class QtViewer(QSplitter):
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
-        when axis is not None and the camera is turntable, on moving the mouse
-        one can rotate around the vertical axes.
         """
         layer = self.viewer.active_layer
-        if self.view.camera.name == "TurntableCamera":
-            self.axis.transform.reset()
-
-            self.axis.transform.rotate(self.view.camera.roll, (0, 0, 1))
-            self.axis.transform.rotate(self.view.camera.elevation, (1, 0, 0))
-            self.axis.transform.rotate(self.view.camera.azimuth, (0, 1, 0))
-
-            # Scale and translate the x, y, z position after rotating
-            # 50 - Is a constant to make the x, y, z axis position
-            # far away from the origin on top left corner
-            self.axis.transform.scale((50, 50, 0.001))
-            self.axis.transform.translate((50.0, 50.0))
-            self.axis.update()
-
         if layer is not None:
             layer.on_mouse_move(event)
 
