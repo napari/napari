@@ -127,7 +127,7 @@ class Labels(Layer):
             colormaps.label_colormap(self.num_colors),
         )
         self._node.clim = [0.0, 1.0]
-        self._node.cmap = self.colormap[1]
+        self._node._cmap = self.colormap[1]
 
         self._node.opacity = opacity
         self._n_dimensional = True
