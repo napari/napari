@@ -14,7 +14,7 @@
 
 We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
 
-We're working on [detailed tutorials](https://github.com/napari/napari-tutorials/tree/master/README.md), but you can also quickly get started by looking below.
+We're working on [in-depth tutorials](https://github.com/napari/napari-tutorials/tree/master/README.md), but you can also quickly get started by looking below.
 
 ## installation
 
@@ -163,7 +163,7 @@ You can also paint pixel-wise labels, useful for creating masks for segmentation
 
 ![image](resources/screenshot-add-labels.png)
 
-For more details checkout our [tutorials](https://github.com/napari/napari-tutorials/tree/master/tutorials/README.md)
+For details checkout our [in-depth tutorials](https://github.com/napari/napari-tutorials/tree/master/README.md)
 
 ## plans
 
@@ -177,4 +177,4 @@ See [this issue](https://github.com/napari/napari/issues/301) for some of the fe
 
 ## contributing
 
-Contributions are encouraged! Please read [our guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
