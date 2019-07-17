@@ -157,7 +157,7 @@ class QtViewer(QSplitter):
         return self.canvas.render(region, size, bgcolor)
 
     def _open_images(self):
-        """Adds files from the menubar."""
+        """Adds image files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select image(s)...',
