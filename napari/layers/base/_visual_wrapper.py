@@ -7,38 +7,66 @@ from ._constants import Blending
 
 class VisualWrapper:
     """Wrapper around ``vispy.scene.VisualNode`` objects.
-    Meant to be subclassed.
 
-    "Hidden" properties:
-        * ``_master_transform``
-        * ``_order``
-        * ``_parent``
+    Meant to be subclassed.
 
     Parameters
     ----------
     central_node : vispy.scene.VisualNode
         Central node/control point with which to interact with the visual.
         Stored as ``_node``.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
 
     Attributes
     ----------
-    opacity
-    visible
-    scale
-    blending
-    translate
-    z_index
+    opacity : flaot
+        Opacity of the layer visual, between 0.0 and 1.0.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+    blending : Blending
+        Determines how RGB and alpha values get mixed.
+            Blending.OPAQUE
+                Allows for only the top layer to be visible and corresponds to
+                depth_test=True, cull_face=False, blend=False.
+            Blending.TRANSLUCENT
+                Allows for multiple layers to be blended with different opacity
+                and corresponds to depth_test=True, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            Blending.ADDITIVE
+                Allows for multiple layers to be blended together with
+                different colors and opacity. Useful for creating overlays. It
+                corresponds to depth_test=False, cull_face=False, blend=True,
+                blend_func=('src_alpha', 'one').
+    scale : sequence of float
+        Scale factors for the layer visual in the scenecanvas.
+    translate : sequence of float
+        Translation values for the layer visual in the scenecanvas.
+    z_index : int
+        Depth of the layer visual relative to other visuals in the scenecanvas.
 
-    Notes
-    -----
-    It is recommended to use the backported ``vispy`` nodes
-    at ``_vispy.scene.visuals`` for various bug fixes.
+    Extended Summary
+    ----------
+        _master_transform : vispy.visuals.transforms.STTransform
+            Transform positioning the layer visual inside the scenecanvas.
+        _order : int
+            Order in which the visual is drawn in the scenegraph. Lower values
+            are closer to the viewer.
+        _parent : vispy.View
+            View containing parent node and camera.
     """
 
-    def __init__(self, central_node):
+    def __init__(
+        self, central_node, opacity=1, blending='translucent', visible=True
+    ):
         super().__init__()
         self._node = central_node
-        self._blending = Blending.TRANSLUCENT
         self._parent = None
         self.events = EmitterGroup(
             source=self,
@@ -47,6 +75,9 @@ class VisualWrapper:
             opacity=Event,
             visible=Event,
         )
+        self.opacity = opacity
+        self.blending = blending
+        self.visible = visible
 
     @property
     def _master_transform(self):
@@ -63,6 +94,7 @@ class VisualWrapper:
     @property
     def _order(self):
         """int: Order in which the visual is drawn in the scenegraph.
+
         Lower values are closer to the viewer.
         """
         return self._node.order
@@ -104,9 +136,8 @@ class VisualWrapper:
 
     @property
     def blending(self):
-        """Blending: Blending mode.
-            Selects a preset blending mode in vispy that determines how
-            RGB and alpha values get mixed.
+        """Blending mode: Determines how RGB and alpha values get mixed.
+
             Blending.OPAQUE
                 Allows for only the top layer to be visible and corresponds to
                 depth_test=True, cull_face=False, blend=False.
@@ -134,8 +165,7 @@ class VisualWrapper:
 
     @property
     def visible(self):
-        """bool: Whether the visual is currently being displayed.
-        """
+        """bool: Whether the visual is currently being displayed."""
         return self._node.visible
 
     @visible.setter
@@ -145,8 +175,7 @@ class VisualWrapper:
 
     @property
     def scale(self):
-        """sequence of float: Scale factors.
-        """
+        """sequence of float: Scale factors."""
         return self._master_transform.scale
 
     @scale.setter
@@ -155,8 +184,7 @@ class VisualWrapper:
 
     @property
     def translate(self):
-        """sequence of float: Translation values.
-        """
+        """sequence of float: Translation values."""
         return self._master_transform.translate
 
     @translate.setter
@@ -165,6 +193,7 @@ class VisualWrapper:
 
     @property
     def z_index(self):
+        """int: Depth of the visual in the scenecanvas."""
         return -self._master_transform.translate[2]
 
     @z_index.setter
