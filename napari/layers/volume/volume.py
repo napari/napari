@@ -83,10 +83,12 @@ class Volume(Layer):
     ):
 
         visual = VolumeNode(volume, threshold=0.225, emulate_texture=False)
+        print(self._translate)
+        print(self._scale)
         visual.transform = STTransform(
             translate=self._translate, scale=self._scale
         )
-
+        print(visual.transform)
         super().__init__(visual, name)
 
         self._rendering = self._default_rendering
