@@ -415,17 +415,10 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        pyramid : list
-            3D array volume data. If the last dimensions of the images have length 3
-            or 4 they can be interpreted as RGB or RGBA if multichannel is
-            `True`.
+        volume : array
+            Volumetric data, must be at least 3-dimensional.
         metadata : dict, optional
             Image metadata.
-        multichannel : bool, optional
-            Whether the image is multichannel RGB or RGBA if multichannel. If
-            not specified by user and the last dimension of the data has length
-            3 or 4 it will be set as `True`. If `False` the image is
-            interpreted as a luminance image.
         colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -433,7 +426,6 @@ class ViewerModel(KeymapMixin):
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
-
         name : str, keyword-only
             Name of the layer.
 

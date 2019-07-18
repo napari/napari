@@ -80,7 +80,9 @@ class Volume(Layer):
         **kwargs,
     ):
 
-        visual = VolumeNode(volume, threshold=0.225, emulate_texture=False)
+        visual = VolumeNode(
+            np.empty((1, 1, 1)), threshold=0.225, emulate_texture=False
+        )
         super().__init__(visual, name)
 
         self._rendering = self._default_rendering
@@ -204,12 +206,6 @@ class Volume(Layer):
             self._clim_range[0] = copy(clim[0])
         if clim[1] > self._clim_range[1]:
             self._clim_range[1] = copy(clim[1])
-
-        # Set data to adjust according to clim
-        self._need_visual_update = True
-        self._need_display_update = True
-        self._update()
-
         self._update_thumbnail()
         self.events.clim()
 
