@@ -1,7 +1,8 @@
 import os
 from .vendored import colorconv, cm
 import numpy as np
-import vispy.color
+from vispy.color import get_colormap, get_colormaps
+from ..._vispy.color import Colormap
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -18,7 +19,7 @@ primary_colors = np.array(
 
 
 simple_colormaps = {
-    name: vispy.color.Colormap([[0.0, 0.0, 0.0], color])
+    name: Colormap([[0.0, 0.0, 0.0], color])
     for name, color in zip(primary_color_names, primary_colors)
 }
 
@@ -199,7 +200,7 @@ def label_colormap(num_colors=256, seed=0.5):
         axis=1,
     )
     colors[0, :] = 0  # ensure alpha is 0 for label 0
-    cmap = vispy.color.Colormap(
+    cmap = Colormap(
         colors=colors, controls=control_points, interpolation='zero'
     )
     return cmap
@@ -223,9 +224,9 @@ def vispy_or_mpl_colormap(name):
     KeyError
         If no colormap with that name is found within vispy or matplotlib.
     """
-    vispy_cmaps = vispy.color.get_colormaps()
+    vispy_cmaps = get_colormaps()
     if name in vispy_cmaps:
-        cmap = vispy.color.get_colormap(name)
+        cmap = get_colormap(name)
     else:
         try:
             mpl_cmap = getattr(cm, name)
@@ -235,7 +236,7 @@ def vispy_or_mpl_colormap(name):
                 'or matplotlib.'
             )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
-        cmap = vispy.color.Colormap(mpl_colors)
+        cmap = Colormap(mpl_colors)
     return cmap
 
 

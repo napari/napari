@@ -1,6 +1,6 @@
 import numpy as np
 from xml.etree.ElementTree import Element
-from vispy.color import Colormap
+from napari._vispy.color import Colormap
 from napari.layers import Image
 
 
@@ -35,6 +35,18 @@ def test_integer_image():
     shape = (10, 15)
     np.random.seed(0)
     data = np.round(10 * np.random.random(shape)).astype(int)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
+
+
+def test_bool_image():
+    """Test instantiating Image layer with bool data."""
+    shape = (10, 15)
+    data = np.zeros(shape, dtype=bool)
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)

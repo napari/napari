@@ -135,7 +135,7 @@ class Image(Layer):
             else:
                 self._clim_range = clim_range
             if clim is None:
-                self.clim = self._clim_range
+                self.clim = copy(self._clim_range)
             else:
                 self.clim = clim
             self.colormap = colormap
@@ -213,8 +213,8 @@ class Image(Layer):
             warnings.warn(f'invalid value for colormap: {colormap}')
             name = self._colormap_name
         self._colormap_name = name
-        self._node.cmap = self._colormaps[name]
-        self._update_thumbnail()
+        self._node._cmap = self._colormaps[name]
+        self.refresh()
         self.events.colormap()
 
     @property
@@ -372,7 +372,7 @@ class Image(Layer):
                 v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
                 msg = msg + v_str
         else:
-            if isinstance(value, np.integer):
+            if isinstance(value, (np.integer, np.bool_)):
                 msg = msg + str(value)
             else:
                 msg = msg + f'{value:0.3}'

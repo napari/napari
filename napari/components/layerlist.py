@@ -2,6 +2,7 @@ from ..layers import Layer
 
 from ..util.naming import inc_name_count
 from ..util.list import ListModel
+from vispy.visuals.transforms import ChainTransform
 
 
 def _add(event):
@@ -19,6 +20,7 @@ def _remove(event):
     layers = event.source
     layer = event.item
     layer._order = 0
+    layer._node.transforms = ChainTransform()
     layer._node.parent = None
 
 
