@@ -1,7 +1,7 @@
 import os
 from .vendored import colorconv, cm
 import numpy as np
-from vispy.color import get_colormap, get_colormaps
+from vispy.color import get_colormap, get_colormaps, BaseColormap
 from ..._vispy.color import Colormap
 
 _matplotlib_list_file = os.path.join(
@@ -254,7 +254,7 @@ AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 # all the existing colormaps
 
 
-class TransFire(vispy.color.BaseColormap):
+class TransFire(BaseColormap):
     glsl_map = """
     vec4 translucent_fire(float t) {
         return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
@@ -262,7 +262,7 @@ class TransFire(vispy.color.BaseColormap):
     """
 
 
-class TransGrays(vispy.color.BaseColormap):
+class TransGrays(BaseColormap):
     glsl_map = """
     vec4 translucent_grays(float t) {
         return vec4(t, t, t, t*0.05);
