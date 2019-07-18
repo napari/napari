@@ -55,10 +55,20 @@ class Box:
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
 
 
+class ShapeType(StringEnum):
+    """ShapeType: Valid shape type."""
+
+    RECTANGLE = auto()
+    ELLIPSE = auto()
+    LINE = auto()
+    PATH = auto()
+    POLYGON = auto()
+
+
 shape_classes = {
-    'rectangle': Rectangle,
-    'ellipse': Ellipse,
-    'line': Line,
-    'path': Path,
-    'polygon': Polygon,
+    ShapeType.RECTANGLE: Rectangle,
+    ShapeType.ELLIPSE: Ellipse,
+    ShapeType.LINE: Line,
+    ShapeType.PATH: Path,
+    ShapeType.POLYGON: Polygon,
 }
