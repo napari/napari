@@ -1,5 +1,6 @@
 import os.path
 from glob import glob
+import numpy as np
 import inspect
 from pathlib import Path
 
@@ -20,8 +21,6 @@ from ..util.io import read
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
-from vispy.scene.visuals import XYZAxis
-from vispy.visuals.transforms import STTransform
 
 
 # set vispy application to the appropriate qt backend
@@ -53,7 +52,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
-        self._update_camera("")
+        self._update_camera()
 
         center = QWidget()
         center_layout = QVBoxLayout()
@@ -100,22 +99,32 @@ class QtViewer(QSplitter):
             lambda event: self._update_palette(event.palette)
         )
         self.viewer.layers.events.reordered.connect(self._update_canvas)
-        self.viewer.dims.events.display.connect(self._update_camera)
+        self.viewer.dims.events.display.connect(
+            lambda event: self._update_camera()
+        )
 
         self.setAcceptDrops(True)
 
-    def _update_camera(self, event):
-        if sum(self.viewer.dims.display) == 3:
+    def _update_camera(self):
+        if np.sum(self.viewer.dims.display) == 3:
             # Set a 3D camera
             self.view.camera = ArcballCamera(name="ArcballCamera")
-            # Create an XYZaxis visual
-            self.axis = XYZAxis(parent=self.view)
-            self.axis.transform = STTransform(
-                translate=(50, 50), scale=(50, 50, 50, 1)
-            ).as_matrix()
-        elif sum(self.viewer.dims.display) == 2:
-            # Set 2D camera (the camera will scale to the contents in the scene)
+            # flip y-axis to have correct alignment
+            self.view.camera.flip = (0, 1, 0)
+            min_shape, max_shape = self.viewer._calc_bbox()
+            centroid = np.add(max_shape, min_shape) / 2
+            size = np.subtract(max_shape, min_shape)
+            # Scale the camera to the contents in the scene
+            if len(centroid) > 0:
+                self.view.camera.center = centroid[-3:]
+                self.view.camera.scale_factor = 1.5 * np.mean(size[-3:])
+        elif np.sum(self.viewer.dims.display) == 2:
+            # Set 2D camera
             self.view.camera = PanZoomCamera(aspect=1, name="PanZoomCamera")
+            # flip y-axis to have correct alignment
+            self.view.camera.flip = (0, 1, 0)
+            # Scale the camera to the contents in the scene
+            self.view.camera.set_range()
         else:
             raise ValueError(
                 "Invalid display flags set in dimensions {}".format(
@@ -123,9 +132,6 @@ class QtViewer(QSplitter):
                 )
             )
 
-        # flip y-axis to have correct alignment
-        self.view.camera.flip = (0, 1, 0)
-        self.view.camera.set_range()
         self.view.camera.viewbox_key_event = viewbox_key_event
         # TO DO: Remove
         self.viewer._view = self.view
@@ -153,6 +159,7 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+
         return self.canvas.render(region, size, bgcolor)
 
     def _open_images(self):
@@ -172,7 +179,7 @@ class QtViewer(QSplitter):
 
         If multiple images are selected, they are stacked along the 0th
         axis.
-        
+
         Parameters
         -------
         filenames : list

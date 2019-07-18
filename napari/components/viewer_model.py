@@ -448,6 +448,7 @@ class ViewerModel(KeymapMixin):
             self.dims.ndim = 3
         self.dims.set_display(-3, True)
         self.add_layer(layer)
+        self.dims.events.display()
         return layer
 
     def add_points(self, points, *args, **kwargs):
