@@ -411,21 +411,30 @@ class ViewerModel(KeymapMixin):
         return layer
 
     def add_volume(self, volume, *args, **kwargs):
-        """Adds an volume layer to the layers list.
+        """Adds a volume layer to the layers list.
 
         Parameters
         ----------
         volume : array
             Volumetric data, must be at least 3-dimensional.
         metadata : dict, optional
-            Image metadata.
-        colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
-            Colormap to use for luminance images. If a string must be the name
+            Volume metadata.
+        colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
+            Colormap to use for luminance volumes. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
+        clim : list (2,), keyword-only
+            Color limits to be used for determining the colormap bounds for
+            luminance volumes. If not passed is calculated as the min and max
+            of the volume.
+        clim_range : list (2,), keyword-only
+            Range for the color limits. If not passed is be calculated as the
+            min and max of the volume. Passing a value prevents this
+            calculation which can be useful when working with very larg
+            datasets that are dynamically loaded.
         name : str, keyword-only
             Name of the layer.
 

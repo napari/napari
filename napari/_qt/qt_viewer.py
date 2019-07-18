@@ -166,10 +166,13 @@ class QtViewer(QSplitter):
 
     def _add_files(self, filenames):
         """Adds an image layer to the viewer.
+
         Whether the image is multichannel is determined by
         :func:`napari.util.misc.is_multichannel`.
+
         If multiple images are selected, they are stacked along the 0th
         axis.
+        
         Parameters
         -------
         filenames : list

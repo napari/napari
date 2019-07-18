@@ -4,7 +4,6 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from vispy.scene.visuals import Volume as VolumeNode
-from vispy.visuals.transforms import STTransform
 from ..base import Layer
 from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
@@ -18,9 +17,8 @@ class Volume(Layer):
     Parameters
     ----------
     volume : array
-        Volume data. Is 3 dimensional. If the last dimension (channel) is
-        3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-    metadata : dict, keyword-only
+        Volumetric data, must be at least 3-dimensional.
+    metadata : dict, optional
         Volume metadata.
     colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
         Colormap to use for luminance volumes. If a string must be the name
@@ -31,20 +29,20 @@ class Volume(Layer):
         Colormap.
     clim : list (2,), keyword-only
         Color limits to be used for determining the colormap bounds for
-        luminance volumes. If not passed is calculated as the min and max of
-        the volume.
+        luminance volumes. If not passed is calculated as the min and max
+        of the volume.
     clim_range : list (2,), keyword-only
         Range for the color limits. If not passed is be calculated as the
-        min and max of the volume. Passing a value prevents this calculation
-        which can be useful when working with very large datasets that are
-        dynamically loaded.
+        min and max of the volume. Passing a value prevents this
+        calculation which can be useful when working with very larg
+        datasets that are dynamically loaded.
     name : str, keyword-only
         Name of the layer.
 
     Attributes
     ----------
     data : array
-        Volume data. Should be 3 dimensional
+        Volumetric data, must be at least 3-dimensional.
     metadata : dict
         Volume metadata.
     colormap : 2-tuple of str, vispy.color.Colormap
@@ -61,7 +59,7 @@ class Volume(Layer):
     Extended Summary
     ----------
     _data_view : array (N, M, K)
-        Volume data for the currently viewed slice.
+        Volume data for the currently viewed slice, must be 3-dimensional
     """
 
     class_keymap = {}

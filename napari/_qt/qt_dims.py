@@ -40,6 +40,7 @@ class QtDims(QWidget):
         # list of sliders
         self.sliders = []
         self._slider_axis = []
+
         # Initialises the layout:
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
