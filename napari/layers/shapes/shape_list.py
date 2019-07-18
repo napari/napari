@@ -625,12 +625,7 @@ class ShapeList:
         if shape_type is None:
             data = [s.data for s in self.shapes]
         elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                """shape_type not recognized, must be one of
-                         "{'line', 'rectangle', 'ellipse', 'path',
-                         'polygon'}"
-                         """
-            )
+            raise ValueError("shape_type not recognized")
         else:
             cls = shape_classes[shape_type]
             data = [s.data for s in self.shapes if isinstance(s, cls)]
