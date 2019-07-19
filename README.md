@@ -14,7 +14,7 @@
 
 We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
 
-We're working on [in-depth tutorials](https://github.com/napari/napari-tutorials/tree/master/README.md), but you can also quickly get started by looking below.
+We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/), but you can also quickly get started by looking below.
 
 ## installation
 
@@ -40,7 +40,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-For more information see our [installation tutorial](https://github.com/napari/napari-tutorials/tree/master/tutorials/installation.md)
+For more information see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
 
 ## simple example
 
@@ -163,7 +163,7 @@ You can also paint pixel-wise labels, useful for creating masks for segmentation
 
 ![image](resources/screenshot-add-labels.png)
 
-For details checkout our [in-depth tutorials](https://github.com/napari/napari-tutorials/tree/master/README.md)
+For details checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/)
 
 ## plans
 
