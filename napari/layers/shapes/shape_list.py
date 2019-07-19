@@ -621,6 +621,9 @@ class ShapeList:
             List of shape data where each element of the list is an
             `np.ndarray` corresponding to one shape
         """
+        if type(shape_type) == str:
+            shape_type = ShapeType(shape_type)
+
         if shape_type is None:
             data = [s.data for s in self.shapes]
         elif shape_type not in shape_classes.keys():
@@ -662,6 +665,9 @@ class ShapeList:
         """
         if mask_shape is None:
             mask_shape = self._vertices.max(axis=0).astype('int')
+
+        if type(shape_type) == str:
+            shape_type = ShapeType(shape_type)
 
         if shape_type is None:
             data = [
@@ -718,6 +724,9 @@ class ShapeList:
             labels_shape = self._vertices.max(axis=0).astype(np.int)
 
         labels = np.zeros(labels_shape, dtype=int)
+
+        if type(shape_type) == str:
+            shape_type = ShapeType(shape_type)
 
         if shape_type is None:
             for ind in self._z_order[::-1]:
@@ -780,6 +789,9 @@ class ShapeList:
         colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
         colors[..., 3] = 1
 
+        if type(shape_type) == str:
+            shape_type = ShapeType(shape_type)
+
         if shape_type is None:
             for ind in self._z_order[::-1]:
                 mask = self.shapes[ind].to_mask(
@@ -828,6 +840,8 @@ class ShapeList:
             List of xml elements defining each shape according to the
             svg specification
         """
+        if type(shape_type) == str:
+            shape_type = ShapeType(shape_type)
 
         if shape_type is None:
             xml = [self.shapes[ind].to_xml() for ind in self._z_order[::-1]]
