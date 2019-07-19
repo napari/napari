@@ -169,16 +169,34 @@ def _glsl_step(controls=None, colors=None, texture_map_data=None):
     assert (controls[0], controls[-1]) == (0., 1.)
     ncolors = len(controls) - 1
     assert ncolors >= 2
-    s = ""
-    for i in range(ncolors-1):
-        if i == 0:
-            ifs = 'if (t < %.6f)' % (controls[i+1])
-        elif i == (ncolors-2):
-            ifs = 'else'
-        else:
-            ifs = 'else if (t < %.6f)' % (controls[i+1])
-        s += """%s {\n    return $color_%d;\n} """ % (ifs, i)
-    return """vec4 colormap(float t) {\n%s\n}""" % s
+    assert (texture_map_data is not None)
+
+    LUT = texture_map_data
+    texture_len = texture_map_data.shape[0]
+    LUT_tex_idx = np.linspace(0.0, 1.0, texture_len)
+
+    # Replicate indices to colormap texture.
+    # The resulting matrix has size of (texture_len,len(controls)).
+    # It is used to perform piecewise constant interpolation
+    # for each RGBA color component.
+    t2 = np.repeat(LUT_tex_idx[:, np.newaxis], len(controls), 1)
+
+    # Perform element-wise comparison to find
+    # control points for all LUT colors.
+    bn = np.sum(controls.transpose() <= t2, axis=1)
+
+    j = np.clip(bn-1, 0, ncolors-1)
+
+    # Copying color data from ColorArray to array-like
+    # makes data assignment to LUT faster.
+    colors_rgba = ColorArray(colors[:])._rgba
+    LUT[:, 0, :] = colors_rgba[j]
+
+    s2 = "uniform sampler2D texture2D_LUT;"
+    s = "{\n return texture2D(texture2D_LUT, \
+           vec2(0.0, clamp(t, 0.0, 1.0)));\n} "
+
+    return "%s\nvec4 colormap(float t) {\n%s\n}" % (s2, s)
 
 
 # Mini GLSL template system for colors.
