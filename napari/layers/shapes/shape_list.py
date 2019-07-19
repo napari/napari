@@ -2,7 +2,7 @@ import numpy as np
 from .shape_models import Shape, Line, Path
 from .shape_util import inside_triangles, triangles_intersect_box
 from .mesh import Mesh
-from ._constants import shape_classes
+from ._constants import shape_classes, ShapeType
 
 
 class ShapeList:
@@ -313,13 +313,12 @@ class ShapeList:
         if new_type is not None:
             cur_shape = self.shapes[index]
             if type(new_type) == str:
-                if new_type in shape_classes.keys():
-                    shape_cls = shape_classes[new_type]
+                shape_type = ShapeType(new_type)
+                if shape_type in shape_classes.keys():
+                    shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
-                        """shape_type not recognized. Must be one of
-                                 "{'line', 'rectangle', 'ellipse', 'path',
-                                 'polygon'}"."""
+                        f'{shape_type} must be one of {set(shape_classes)}'
                     )
             else:
                 shape_cls = new_type
@@ -625,7 +624,9 @@ class ShapeList:
         if shape_type is None:
             data = [s.data for s in self.shapes]
         elif shape_type not in shape_classes.keys():
-            raise ValueError("shape_type not recognized")
+            raise ValueError(
+                f'{shape_type} must be one of {set(shape_classes)}'
+            )
         else:
             cls = shape_classes[shape_type]
             data = [s.data for s in self.shapes if isinstance(s, cls)]
@@ -669,10 +670,7 @@ class ShapeList:
             ]
         elif shape_type not in shape_classes.keys():
             raise ValueError(
-                """shape_type not recognized, must be one of
-                         "{'line', 'rectangle', 'ellipse', 'path',
-                         'polygon'}"
-                         """
+                f'{shape_type} must be one of {set(shape_classes)}'
             )
         else:
             cls = shape_classes[shape_type]
@@ -729,10 +727,7 @@ class ShapeList:
                 labels[mask] = ind + 1
         elif shape_type not in shape_classes.keys():
             raise ValueError(
-                """shape_type not recognized, must be one of
-                         "{'line', 'rectangle', 'ellipse', 'path',
-                         'polygon'}"
-                         """
+                f'{shape_type} must be one of {set(shape_classes)}'
             )
         else:
             cls = shape_classes[shape_type]
@@ -799,10 +794,7 @@ class ShapeList:
                 colors[mask, :] = col
         elif shape_type not in shape_classes.keys():
             raise ValueError(
-                """shape_type not recognized, must be one of
-                         "{'line', 'rectangle', 'ellipse', 'path',
-                         'polygon'}"
-                         """
+                f'{shape_type} must be one of {set(shape_classes)}'
             )
         else:
             cls = shape_classes[shape_type]
@@ -841,9 +833,7 @@ class ShapeList:
             xml = [self.shapes[ind].to_xml() for ind in self._z_order[::-1]]
         elif shape_type not in shape_classes.keys():
             raise ValueError(
-                'shape_type not recognized, must be one of '
-                "{'line', 'rectangle', 'ellipse', 'path', "
-                "'polygon'}"
+                f'{shape_type} must be one of {set(shape_classes)}'
             )
         else:
             cls = shape_classes[shape_type]
