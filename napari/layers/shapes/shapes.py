@@ -8,7 +8,7 @@ from ..base import Layer
 from vispy.scene.visuals import Mesh, Markers, Compound
 from vispy.scene.visuals import Line as VispyLine
 from vispy.color import get_color_names
-from ._constants import Mode, Box, BACKSPACE
+from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
 from .shape_list import ShapeList
 from .shape_util import create_box, point_to_lines, slice_by_plane
 from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
@@ -202,13 +202,6 @@ class Shapes(Layer):
     _rotation_handle_length = 20
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
-    _types = {
-        'rectangle': Rectangle,
-        'ellipse': Ellipse,
-        'line': Line,
-        'path': Path,
-        'polygon': Polygon,
-    }
 
     class_keymap = {}
 
@@ -701,7 +694,7 @@ class Shapes(Layer):
             )
 
             for d, st, ew, ec, fc, o, z in shape_inputs:
-                shape_cls = self._types[st]
+                shape_cls = shape_classes[ShapeType(st)]
 
                 # Slice data by 2D plane.
                 slice_key, data_2D = slice_by_plane(d)
