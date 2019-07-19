@@ -116,7 +116,8 @@ class QtViewer(QSplitter):
             size = np.subtract(max_shape, min_shape)
             # Scale the camera to the contents in the scene
             if len(centroid) > 0:
-                self.view.camera.center = centroid[-3:]
+                centroid = centroid[-3:]
+                self.view.camera.center = centroid[::-1]
                 self.view.camera.scale_factor = 1.5 * np.mean(size[-3:])
         elif np.sum(self.viewer.dims.display) == 2:
             # Set 2D camera

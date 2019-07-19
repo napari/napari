@@ -78,9 +78,7 @@ class Volume(Layer):
         **kwargs,
     ):
 
-        visual = VolumeNode(
-            np.empty((1, 1, 1)), threshold=0.225, emulate_texture=False
-        )
+        visual = VolumeNode(np.empty((1, 1, 1)))
         super().__init__(visual, name)
 
         self._rendering = self._default_rendering
@@ -164,7 +162,8 @@ class Volume(Layer):
             warnings.warn(f'invalid value for colormap: {colormap}')
             name = self._colormap_name
         self._colormap_name = name
-        self._node.cmap = self._colormaps[name]
+        self._node._cmap = self._colormaps[name]
+        self._update_thumbnail()
         self.events.colormap()
 
     @property
@@ -172,39 +171,21 @@ class Volume(Layer):
         """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
 
-    def _set_view_slice(self):
-        """Set the view given the indices to slice with."""
-        indices = list(self.indices)
-        indices[:-3] = np.clip(
-            indices[:-3], 0, np.subtract(self.shape[:-3], 1)
-        )
-        self._data_view = np.asarray(self.data[tuple(indices)])
-
-        self._node.set_data(self._data_view)
-
-        self._need_visual_update = True
-        self._update()
-
-        self._data_thumbnail = self._data_view
-
-    def _update_thumbnail(self):
-        pass
-
     @property
     def clim(self):
         """list of float: Limits to use for the colormap."""
-        return list(self._node.clim)
+        return list(self._clim)
 
     @clim.setter
     def clim(self, clim):
+        self._clim = clim
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
-        self._node._clim = clim
         if clim[0] < self._clim_range[0]:
             self._clim_range[0] = copy(clim[0])
         if clim[1] > self._clim_range[1]:
             self._clim_range[1] = copy(clim[1])
-        self._update_thumbnail()
+        self.refresh()
         self.events.clim()
 
     @property
@@ -233,3 +214,43 @@ class Volume(Layer):
         self._rendering = rendering
         self._node.update()
         self.events.rendering()
+
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with."""
+        indices = list(self.indices)
+        indices[:-3] = np.clip(
+            indices[:-3], 0, np.subtract(self.shape[:-3], 1)
+        )
+        self._data_view = np.asarray(self.data[tuple(indices)])
+
+        self._node.set_data(self._data_view, clim=self.clim)
+
+        self._need_visual_update = True
+        self._update()
+
+        self._data_thumbnail = self._data_view
+        self._update_thumbnail()
+
+    def _update_thumbnail(self):
+        """Update thumbnail with current image data and colormap."""
+        # take max projection of volume along first axis
+        image = np.max(self._data_thumbnail, axis=0)
+        # print(image.shape)
+        zoom_factor = np.divide(
+            self._thumbnail_shape[:2], image.shape[:2]
+        ).min()
+        # warning filter can be removed with scipy 1.4
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            downsampled = ndi.zoom(
+                image, zoom_factor, prefilter=False, order=0
+            )
+        low, high = self.clim
+        downsampled = np.clip(downsampled, low, high)
+        color_range = high - low
+        if color_range != 0:
+            downsampled = (downsampled - low) / color_range
+        # colormapped = self.colormap[1].map(downsampled)
+        # colormapped = colormapped.reshape(downsampled.shape + (4,))
+        # colormapped[..., 3] *= self.opacity
+        # self.thumbnail = colormapped
