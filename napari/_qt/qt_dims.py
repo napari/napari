@@ -122,11 +122,17 @@ class QtDims(QWidget):
         else:
             self._remove_slider(slider_index)
 
+        if self.dims.display[axis]:
+            self._remove_slider(slider_index)
+
     def _update_nsliders(self):
         """
         Updates the number of sliders based on the number of dimensions
         """
         self._set_nsliders(self.dims.ndim - 2)
+        self._slider_axis = list(range(self.dims.ndim - 2))
+        for i in list(range(self.dims.ndim - 2)):
+            self._update_slider(i)
 
     def _set_nsliders(self, new_number_of_sliders):
         """
@@ -185,7 +191,6 @@ class QtDims(QWidget):
         # remove particular slider
         slider = self.sliders.pop(index)
         self._slider_axis.pop(index)
-        # self._slider_axis.insert(0, 0)
         self.layout().removeWidget(slider)
         slider.deleteLater()
         self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
