@@ -1,6 +1,7 @@
 import numpy as np
 from napari.layers import Volume
-from napari.util.colormaps.colormaps import TransFire, TransGrays
+from vispy.color import Colormap
+from napari.util.colormaps.colormaps import TransFire
 
 
 def test_random_volume():
@@ -99,11 +100,15 @@ def test_colormaps():
     data = np.random.random((10, 15, 20))
     layer = Volume(data)
     assert layer.colormap[0] == 'gray'
-    assert type(layer.colormap[1]) == TransFire
+    assert type(layer.colormap[1]) == Colormap
 
     layer.colormap = 'fire'
     assert layer.colormap[0] == 'fire'
-    assert type(layer.colormap[1]) == TransGrays
+    assert type(layer.colormap[1]) == TransFire
+
+    layer.colormap = 'red'
+    assert layer.colormap[0] == 'red'
+    assert type(layer.colormap[1]) == Colormap
 
 
 def test_metadata():
