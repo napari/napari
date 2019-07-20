@@ -4,10 +4,6 @@ from vispy.color import Colormap
 from napari.layers import Pyramid
 
 
-# Set random seed for testing
-np.random.seed(0)
-
-
 def test_random_pyramid():
     """Test instantiating Pyramid layer with random 2D data."""
     shapes = [(40, 20), (20, 10), (10, 5)]
@@ -98,6 +94,60 @@ def test_name():
 
     layer.name = 'img'
     assert layer.name == 'img'
+
+
+def test_visiblity():
+    """Test setting layer visiblity."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Pyramid(data)
+    assert layer.visible == True
+
+    layer.visible = False
+    assert layer.visible == False
+
+    layer = Pyramid(data, visible=False)
+    assert layer.visible == False
+
+    layer.visible = True
+    assert layer.visible == True
+
+
+def test_opacity():
+    """Test setting layer opacity."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Pyramid(data)
+    assert layer.opacity == 1.0
+
+    layer.opacity = 0.5
+    assert layer.opacity == 0.5
+
+    layer = Pyramid(data, opacity=0.6)
+    assert layer.opacity == 0.6
+
+    layer.opacity = 0.3
+    assert layer.opacity == 0.3
+
+
+def test_blending():
+    """Test setting layer blending."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Pyramid(data)
+    assert layer.blending == 'translucent'
+
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
+
+    layer = Pyramid(data, blending='additive')
+    assert layer.blending == 'additive'
+
+    layer.blending = 'opaque'
+    assert layer.blending == 'opaque'
 
 
 def test_interpolation():

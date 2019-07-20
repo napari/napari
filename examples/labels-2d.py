@@ -14,7 +14,6 @@ with napari.gui_qt():
 
     # initialise viewer with astro image
     viewer = napari.view(astronaut=rgb2gray(astro), multichannel=False)
-    viewer.layers[0].colormap = 'gray'
 
     # add the labels
     # we add 1 because SLIC returns labels from 0, which we consider background

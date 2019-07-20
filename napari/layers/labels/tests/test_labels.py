@@ -114,6 +114,57 @@ def test_name():
     assert layer.name == 'lbls'
 
 
+def test_visiblity():
+    """Test setting layer visiblity."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    assert layer.visible == True
+
+    layer.visible = False
+    assert layer.visible == False
+
+    layer = Labels(data, visible=False)
+    assert layer.visible == False
+
+    layer.visible = True
+    assert layer.visible == True
+
+
+def test_opacity():
+    """Test setting layer opacity."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    assert layer.opacity == 0.7
+
+    layer.opacity = 0.5
+    assert layer.opacity == 0.5
+
+    layer = Labels(data, opacity=0.6)
+    assert layer.opacity == 0.6
+
+    layer.opacity = 0.3
+    assert layer.opacity == 0.3
+
+
+def test_blending():
+    """Test setting layer blending."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    assert layer.blending == 'translucent'
+
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
+
+    layer = Labels(data, blending='additive')
+    assert layer.blending == 'additive'
+
+    layer.blending = 'opaque'
+    assert layer.blending == 'opaque'
+
+
 def test_seed():
     """Test setting seed."""
     np.random.seed(0)

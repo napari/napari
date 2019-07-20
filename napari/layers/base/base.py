@@ -20,6 +20,85 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     name : str, optional
         Name of the layer. If not provided, is automatically generated
         from `cls._basename()`
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+
+
+    Attributes
+    ----------
+    name : str
+        Unique name of the layer.
+    opacity : flaot
+        Opacity of the layer visual, between 0.0 and 1.0.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+    blending : Blending
+        Determines how RGB and alpha values get mixed.
+            Blending.OPAQUE
+                Allows for only the top layer to be visible and corresponds to
+                depth_test=True, cull_face=False, blend=False.
+            Blending.TRANSLUCENT
+                Allows for multiple layers to be blended with different opacity
+                and corresponds to depth_test=True, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            Blending.ADDITIVE
+                Allows for multiple layers to be blended together with
+                different colors and opacity. Useful for creating overlays. It
+                corresponds to depth_test=False, cull_face=False, blend=True,
+                blend_func=('src_alpha', 'one').
+    scale : sequence of float
+        Scale factors for the layer visual in the scenecanvas.
+    translate : sequence of float
+        Translation values for the layer visual in the scenecanvas.
+    z_index : int
+        Depth of the layer visual relative to other visuals in the scenecanvas.
+    coordinates : tuple of float
+        Coordinates of the cursor in the image space of each layer. The length
+        of the tuple is equal to the number of dimensions of the layer.
+    indices : tuple of int or Slice
+        Used for slicing arrays on each dimension.
+    position : 2-tuple of int
+        Cursor position in canvas ordered (x, y).
+    shape : tuple of int
+        Size of the data in the layer.
+    range : list of 3-tuple of int
+        Ranges of data for slicing specifed by (min, max, step), one for each
+        axis.
+    ndim : int
+        Dimensionality of the layer.
+    selected : bool
+        Flag if layer is selected in the viewer or not.
+    thumbnail : (N, M, 4) array
+        Array of thumbnail data for the layer.
+    status : str
+        Displayed in status bar bottom left.
+    help : str
+        Displayed in status bar bottom right.
+    interactive : bool
+        Determine if canvas pan/zoom interactivity is enabled.
+    cursor : str
+        String identifying which cursor displayed over canvas.
+    cursor_size : int | None
+        Size of cursor if custom. None yields default size
+    scale_factor : float
+        Conversion factor from canvas coordinates to image coordinates, which
+        depends on the current zoom level.
+
+    Extended Summary
+    ----------
+    _master_transform : vispy.visuals.transforms.STTransform
+        Transform positioning the layer visual inside the scenecanvas.
+    _order : int
+        Order in which the visual is drawn in the scenegraph. Lower values
+        are closer to the viewer.
+    _parent : vispy.View
+        View
 
     Notes
     -----
@@ -33,16 +112,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         * `_set_view_slice(indices)`: called to set currently viewed slice
         * `_basename()`: base/default name of the layer
 
-    Attributes
-    ----------
-    name
-    ndim
-    shape
-    selected
-    indices
-    coordinates : tuple of float
-        Coordinates of the cursor in the image space of each layer. The length
-        of the tuple is equal to the number of dimensions of the layer.
 
     Methods
     -------
@@ -50,8 +119,18 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         Refresh the current view.
     """
 
-    def __init__(self, central_node, name=None):
-        super().__init__(central_node)
+    def __init__(
+        self,
+        central_node,
+        *,
+        name=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+    ):
+        super().__init__(
+            central_node, opacity=opacity, blending=blending, visible=visible
+        )
         self._selected = True
         self._freeze = False
         self._status = 'Ready'
@@ -83,8 +162,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self.events.opacity.connect(lambda e: self._update_thumbnail())
 
     def __str__(self):
-        """Return self.name
-        """
+        """Return self.name."""
         return self.name
 
     def __repr__(self):
@@ -97,8 +175,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def name(self):
-        """str: Layer's unique name.
-        """
+        """str: Unique name of the layer."""
         return self._name
 
     @name.setter
@@ -112,8 +189,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def indices(self):
-        """Tuple of int of Slice: Used for slicing arrays on each dimension.
-        """
+        """Tuple of int or Slice: Used for slicing arrays on each dimension."""
         return self._indices
 
     @indices.setter
@@ -165,8 +241,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def thumbnail(self):
-        """np.ndarray: Integer array of thumbnail for the layer
-        """
+        """array: Integer array of thumbnail for the layer"""
         return self._thumbnail
 
     @thumbnail.setter
@@ -180,14 +255,12 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def ndim(self):
-        """int: Number of dimensions in the data.
-        """
+        """int: Number of dimensions in the data."""
         return len(self.shape)
 
     @property
     def shape(self):
-        """tuple of int: Shape of the data.
-        """
+        """tuple of int: Shape of the data."""
         return self._get_shape()
 
     @property
@@ -199,8 +272,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def selected(self):
-        """boolean: Whether this layer is selected or not.
-        """
+        """bool: Whether this layer is selected or not."""
         return self._selected
 
     @selected.setter
@@ -216,8 +288,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def status(self):
-        """string: Status string
-        """
+        """str: displayed in status bar bottom left."""
         return self._status
 
     @status.setter
@@ -229,9 +300,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def help(self):
-        """string: String that can be displayed to the
-        user in the status bar with helpful usage tips.
-        """
+        """str: displayed in status bar bottom right."""
         return self._help
 
     @help.setter
@@ -243,8 +312,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
-        """
+        """bool: Determine if canvas pan/zoom interactivity is enabled."""
         return self._interactive
 
     @interactive.setter
@@ -256,8 +324,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def cursor(self):
-        """string: String identifying cursor displayed over canvas.
-        """
+        """str: String identifying cursor displayed over canvas."""
         return self._cursor
 
     @cursor.setter
@@ -269,8 +336,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def cursor_size(self):
-        """int | None: Size of cursor if custom. None is yields default size
-        """
+        """int | None: Size of cursor if custom. None yields default size."""
         return self._cursor_size
 
     @cursor_size.setter
@@ -291,12 +357,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         else:
             scale_factor = 1
         return scale_factor
-
-    @contextmanager
-    def block_update_properties(self):
-        self._update_properties = False
-        yield
-        self._update_properties = True
 
     def _update(self):
         """Update the underlying visual."""

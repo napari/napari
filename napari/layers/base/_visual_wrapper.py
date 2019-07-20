@@ -1,5 +1,5 @@
-# TODO: create & use our own transform class
 from vispy.visuals.transforms import STTransform
+from contextlib import contextmanager
 from ...util.event import EmitterGroup, Event
 
 from ._constants import Blending
@@ -53,17 +53,17 @@ class VisualWrapper:
 
     Extended Summary
     ----------
-        _master_transform : vispy.visuals.transforms.STTransform
-            Transform positioning the layer visual inside the scenecanvas.
-        _order : int
-            Order in which the visual is drawn in the scenegraph. Lower values
-            are closer to the viewer.
-        _parent : vispy.View
-            View containing parent node and camera.
+    _master_transform : vispy.visuals.transforms.STTransform
+        Transform positioning the layer visual inside the scenecanvas.
+    _order : int
+        Order in which the visual is drawn in the scenegraph. Lower values
+        are closer to the viewer.
+    _parent : vispy.View
+        View containing parent node and camera.
     """
 
     def __init__(
-        self, central_node, opacity=1, blending='translucent', visible=True
+        self, central_node, *, opacity=1, blending='translucent', visible=True
     ):
         super().__init__()
         self._node = central_node
@@ -75,9 +75,16 @@ class VisualWrapper:
             opacity=Event,
             visible=Event,
         )
+        self._update_properties = False
         self.opacity = opacity
         self.blending = blending
         self.visible = visible
+
+    @contextmanager
+    def block_update_properties(self):
+        self._update_properties = False
+        yield
+        self._update_properties = True
 
     @property
     def _master_transform(self):

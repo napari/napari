@@ -38,6 +38,14 @@ class Pyramid(Image):
     interpolation : str, optional
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
     name : str
         Name of the layer.
 

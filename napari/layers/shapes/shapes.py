@@ -47,7 +47,13 @@ class Shapes(Layer):
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
     opacity : float or list
-        Opacity of the shapes, must be between 0 and 1.
+        Opacity of the shapes, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
     z_index : int or list
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
@@ -213,8 +219,10 @@ class Shapes(Layer):
         edge_width=1,
         edge_color='black',
         face_color='white',
-        opacity=0.7,
         z_index=0,
+        opacity=0.7,
+        blending='translucent',
+        visible=True,
         name=None,
     ):
 
@@ -226,7 +234,9 @@ class Shapes(Layer):
         # Mesh: The actual meshes of the shape faces and edges
         visual = Compound([Markers(), VispyLine(), Mesh(), Mesh()])
 
-        super().__init__(visual, name)
+        # Don't pass on opacity value to base layer as it could be a list
+        # and will get set bellow
+        super().__init__(visual, name=name, blending=blending, visible=visible)
 
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():

@@ -17,7 +17,6 @@ with napari.gui_qt():
     viewer = napari.Viewer()
 
     layer = viewer.add_image(data.camera(), name='photographer')
-    layer.colormap = 'gray'
 
     # sample vector coord-like data
     n = 200
