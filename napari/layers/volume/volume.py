@@ -216,7 +216,6 @@ class Volume(Layer):
 
         self._node.method = rendering.value
         self._rendering = rendering
-        self._node.update()
         self.refresh()
         self.events.rendering()
 
