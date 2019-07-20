@@ -7,7 +7,7 @@ from vispy.scene.visuals import Volume as VolumeNode
 from ..base import Layer
 from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
-from ...util.colormaps import COLORMAPS_3D_DATA
+from ...util.colormaps import AVAILABLE_COLORMAPS
 from ._constants import Rendering
 
 
@@ -63,7 +63,7 @@ class Volume(Layer):
     """
 
     class_keymap = {}
-    _colormaps = COLORMAPS_3D_DATA
+    _colormaps = AVAILABLE_COLORMAPS
     _default_rendering = Rendering.MIP.value
 
     def __init__(
@@ -71,7 +71,7 @@ class Volume(Layer):
         volume,
         *,
         metadata=None,
-        colormap='fire',
+        colormap='gray',
         clim=None,
         clim_range=None,
         name=None,
@@ -162,8 +162,11 @@ class Volume(Layer):
             warnings.warn(f'invalid value for colormap: {colormap}')
             name = self._colormap_name
         self._colormap_name = name
-        self._node.cmap = self._colormaps[name]
-        self._node._cmap = self._colormaps[name]
+        cmap = self._colormaps[name]
+        self._node.view_program['texture2D_LUT'] = (
+            cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
+        )
+        self._node.cmap = cmap
         self._update_thumbnail()
         self.events.colormap()
 
