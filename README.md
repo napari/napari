@@ -12,17 +12,19 @@
 
 **napari** is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of `Qt` (for the GUI), `vispy` (for performant GPU-based rendering), and the scientific Python stack (`numpy`, `scipy`).
 
-We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still occasionally be **breaking changes** from patch to patch. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
+We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
+
+We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/), but you can also quickly get started by looking below.
 
 ## installation
 
-**napari** can be installed on most Mac OS X and Linux systems with Python 3.6 or 3.7 by calling
+**napari** can be installed on most macOS and Linux systems with Python 3.6 or 3.7 by calling
 
 ```sh
 $ pip install napari
 ```
 
-(We're working on adding Windows support.)
+We're working on improving Windows support. For mac0S we also require at least version 10.12.
 
 To install from the master branch on Github use
 
@@ -38,11 +40,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-Note that many of our examples use `data` from `skimage` but `skimage` is otherwise not a dependnecy, so in order to be able to run all the examples you should call
-
-```sh
-$ pip install scikit-image
-```
+For more information see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
 
 ## simple example
 
@@ -64,7 +62,7 @@ from skimage import data
 import napari
 
 with napari.gui_qt():
-    viewer = napari.view(data.astronaut())
+    viewer = napari.view(data.astronaut(), multichannel=True)
 ```
 
 ## features
@@ -165,9 +163,7 @@ You can also paint pixel-wise labels, useful for creating masks for segmentation
 
 ![image](resources/screenshot-add-labels.png)
 
-You can change the theme after creating the viewer by setting the `viewer.theme` property. The viewer currently supports `light` and `dark` themes, with `dark` as the default. Run `examples/set_theme.py` to see an example of changing themes.
-
-![image](resources/screenshot-set-theme.png)
+For details checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/)
 
 ## plans
 
@@ -181,4 +177,4 @@ See [this issue](https://github.com/napari/napari/issues/301) for some of the fe
 
 ## contributing
 
-Contributions are encouraged! Please read [our guide](https://github.com/napari/napari/blob/master/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.

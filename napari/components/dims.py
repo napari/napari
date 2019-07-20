@@ -79,8 +79,8 @@ class Dims:
     def range(self, value):
         if value == self.range:
             return
-        self.ndim = len(value)
         self._range = value
+        self.ndim = len(value)
         for axis in range(self.ndim):
             self.events.axis(axis=axis)
 
