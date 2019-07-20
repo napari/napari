@@ -965,7 +965,7 @@ class Points(Layer):
             elif event.key == 'a':
                 if self._mode == Mode.SELECT:
                     self.selected_data = self._indices_view[
-                        list(range(len(self._data_view)))
+                        : len(self._data_view)
                     ]
                     self._set_highlight()
             elif event.key == 'Backspace':

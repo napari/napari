@@ -74,6 +74,7 @@ class ViewerModel(KeymapMixin):
         # attached by QtViewer when it is constructed by the model
         self._view = None
 
+        self.dims.events.display.connect(lambda e: self._update_layers())
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
@@ -407,6 +408,47 @@ class ViewerModel(KeymapMixin):
         """
         layer = layers.Pyramid(pyramid, *args, **kwargs)
         self.add_layer(layer)
+        return layer
+
+    def add_volume(self, volume, *args, **kwargs):
+        """Adds a volume layer to the layers list.
+
+        Parameters
+        ----------
+        volume : array
+            Volumetric data, must be at least 3-dimensional.
+        metadata : dict, optional
+            Volume metadata.
+        colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
+            Colormap to use for luminance volumes. If a string must be the name
+            of a supported colormap from vispy or matplotlib. If a tuple the
+            first value must be a string to assign as a name to a colormap and
+            the second item must be a Colormap. If a dict the key must be a
+            string to assign as a name to a colormap and the value must be a
+            Colormap.
+        clim : list (2,), keyword-only
+            Color limits to be used for determining the colormap bounds for
+            luminance volumes. If not passed is calculated as the min and max
+            of the volume.
+        clim_range : list (2,), keyword-only
+            Range for the color limits. If not passed is be calculated as the
+            min and max of the volume. Passing a value prevents this
+            calculation which can be useful when working with very larg
+            datasets that are dynamically loaded.
+        name : str, keyword-only
+            Name of the layer.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Volume`
+            The newly-created volume layer.
+        """
+        layer = layers.Volume(volume, *args, **kwargs)
+        if self.dims.ndim == 2:
+            self.dims.ndim = 3
+        self.dims.set_display(-3, True)
+        self.add_layer(layer)
+        self.dims.events.display()
         return layer
 
     def add_points(self, points, *args, **kwargs):

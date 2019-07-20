@@ -10,7 +10,7 @@ class QtImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.clim.connect(self.clim_slider_update)
+        self.layer.events.clim.connect(lambda e: self.clim_slider_update())
 
         # Create clim slider
         self.climSlider = QVRangeSlider(
@@ -27,6 +27,7 @@ class QtImageControls(QtLayerControls):
         self.setMouseTracking(True)
 
         self.climSlider.rangeChanged.connect(self.clim_slider_changed)
+        self.clim_slider_update()
 
     def clim_slider_changed(self, slidermin, slidermax):
         valmin, valmax = self.layer._clim_range
@@ -34,7 +35,7 @@ class QtImageControls(QtLayerControls):
         cmax = valmin + slidermax * (valmax - valmin)
         self.layer.clim = cmin, cmax
 
-    def clim_slider_update(self, event):
+    def clim_slider_update(self):
         valmin, valmax = self.layer._clim_range
         cmin, cmax = self.layer.clim
         slidermin = (cmin - valmin) / (valmax - valmin)

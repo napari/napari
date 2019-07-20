@@ -13,3 +13,4 @@ from .vectors import Vectors
 from .shapes import Shapes
 from .labels import Labels
 from .pyramid import Pyramid
+from .volume import Volume

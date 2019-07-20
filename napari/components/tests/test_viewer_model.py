@@ -23,6 +23,16 @@ def test_add_image():
     assert np.all(viewer.layers[0].data == data)
 
 
+def test_add_volume():
+    """Test adding volume."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    viewer.add_volume(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+
+
 def test_add_pyramid():
     """Test adding image pyramid."""
     viewer = ViewerModel()

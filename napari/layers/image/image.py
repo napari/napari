@@ -135,7 +135,7 @@ class Image(Layer):
             else:
                 self._clim_range = clim_range
             if clim is None:
-                self.clim = self._clim_range
+                self.clim = copy(self._clim_range)
             else:
                 self.clim = clim
             self.colormap = colormap
