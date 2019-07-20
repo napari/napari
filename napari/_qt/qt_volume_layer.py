@@ -18,13 +18,7 @@ class QtVolumeProperties(QtLayerProperties):
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
 
-        # TODO Remove the default blending widget on QtLayerProperties
-        # as it corresponds to blending of layers in RGB and RGBA image
-        self.grid_layout.removeWidget(self.blendComboBox)
-        self.blendComboBox.deleteLater()
-        self.blendComboBox.setParent(None)
-
-        row = self.grid_layout.rowCount() - 1
+        row = self.grid_layout.rowCount()
         renderComboBox = QComboBox()
         for render in Rendering:
             renderComboBox.addItem(str(render))
