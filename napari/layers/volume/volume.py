@@ -163,6 +163,7 @@ class Volume(Layer):
             name = self._colormap_name
         self._colormap_name = name
         self._node.cmap = self._colormaps[name]
+        self._node._cmap = self._colormaps[name]
         self._update_thumbnail()
         self.events.colormap()
 
@@ -213,6 +214,7 @@ class Volume(Layer):
         self._node.method = rendering.value
         self._rendering = rendering
         self._node.update()
+        self.refresh()
         self.events.rendering()
 
     def _set_view_slice(self):
@@ -250,7 +252,7 @@ class Volume(Layer):
         color_range = high - low
         if color_range != 0:
             downsampled = (downsampled - low) / color_range
-        # colormapped = self.colormap[1].map(downsampled)
-        # colormapped = colormapped.reshape(downsampled.shape + (4,))
-        # colormapped[..., 3] *= self.opacity
-        # self.thumbnail = colormapped
+        colormapped = self.colormap[1].map(downsampled)
+        colormapped = colormapped.reshape(downsampled.shape + (4,))
+        colormapped[..., 3] *= self.opacity
+        self.thumbnail = colormapped

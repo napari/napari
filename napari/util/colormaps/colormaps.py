@@ -261,6 +261,16 @@ class TransFire(BaseColormap):
     }
     """
 
+    def map(self, t):
+        if isinstance(t, np.ndarray):
+            return np.hstack(
+                [np.power(t, 0.5), t, t * t, t * 1.05 - 0.05]
+            ).astype(np.float32)
+        else:
+            return np.array(
+                [np.power(t, 0.5), t, t, 0, t * 1.05 - 0.05], dtype=np.float32
+            )
+
 
 class TransGrays(BaseColormap):
     glsl_map = """
@@ -268,6 +278,12 @@ class TransGrays(BaseColormap):
         return vec4(t, t, t, t*0.05);
     }
     """
+
+    def map(self, t):
+        if isinstance(t, np.ndarray):
+            return np.hstack([t, t, t, t * 0.05]).astype(np.float32)
+        else:
+            return np.array([t, t, t, t * 0.05], dtype=np.float32)
 
 
 COLORMAPS_3D_DATA = {"fire": TransFire(), "gray_enhanced": TransGrays()}
