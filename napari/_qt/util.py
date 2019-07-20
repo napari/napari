@@ -4,6 +4,7 @@ from .qt_points_layer import QtPointsProperties, QtPointsControls
 from .qt_vectors_layer import QtVectorsProperties
 from .qt_shapes_layer import QtShapesProperties, QtShapesControls
 from .qt_labels_layer import QtLabelsProperties, QtLabelsControls
+from .qt_volume_layer import QtVolumeProperties, QtVolumeControls
 from .qt_image_layer import (
     QtImageProperties as QtPyramidProperties,
     QtImageControls as QtPyramidControls,

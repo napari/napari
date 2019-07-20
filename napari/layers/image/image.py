@@ -213,8 +213,8 @@ class Image(Layer):
             warnings.warn(f'invalid value for colormap: {colormap}')
             name = self._colormap_name
         self._colormap_name = name
-        self._node._cmap = self._colormaps[name]
-        self.refresh()
+        self._node.cmap = self._colormaps[name]
+        self._update_thumbnail()
         self.events.colormap()
 
     @property

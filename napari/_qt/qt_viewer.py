@@ -1,5 +1,6 @@
 import os.path
 from glob import glob
+import numpy as np
 import inspect
 from pathlib import Path
 
@@ -7,7 +8,7 @@ from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
-from vispy.scene import SceneCanvas, PanZoomCamera
+from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.app import use_app
 
 from .qt_dims import QtDims
@@ -38,6 +39,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
+        self.dims = QtDims(self.viewer.dims)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(100, 100))
@@ -50,22 +52,12 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
-
-        # Set 2D camera (the camera will scale to the contents in the scene)
-        self.view.camera = PanZoomCamera(aspect=1)
-        # flip y-axis to have correct aligment
-        self.view.camera.flip = (0, 1, 0)
-        self.view.camera.set_range()
-        self.view.camera.viewbox_key_event = viewbox_key_event
-
-        # TO DO: Remove
-        self.viewer._view = self.view
+        self._update_camera()
 
         center = QWidget()
         center_layout = QVBoxLayout()
         center_layout.setContentsMargins(15, 20, 15, 10)
         center_layout.addWidget(self.canvas.native)
-        self.dims = QtDims(self.viewer.dims)
         center_layout.addWidget(self.dims)
         center.setLayout(center_layout)
 
@@ -82,7 +74,6 @@ class QtViewer(QSplitter):
         right_layout.addWidget(self.buttons)
         right.setLayout(right_layout)
         right.setMinimumSize(QSize(308, 250))
-
         self.addWidget(right)
 
         self._last_visited_dir = str(Path.home())
@@ -108,8 +99,43 @@ class QtViewer(QSplitter):
             lambda event: self._update_palette(event.palette)
         )
         self.viewer.layers.events.reordered.connect(self._update_canvas)
+        self.viewer.dims.events.display.connect(
+            lambda event: self._update_camera()
+        )
 
         self.setAcceptDrops(True)
+
+    def _update_camera(self):
+        if np.sum(self.viewer.dims.display) == 3:
+            # Set a 3D camera
+            self.view.camera = ArcballCamera(name="ArcballCamera")
+            # flip y-axis to have correct alignment
+            self.view.camera.flip = (0, 1, 0)
+            min_shape, max_shape = self.viewer._calc_bbox()
+            centroid = np.add(max_shape, min_shape) / 2
+            size = np.subtract(max_shape, min_shape)
+            # Scale the camera to the contents in the scene
+            if len(centroid) > 0:
+                centroid = centroid[-3:]
+                self.view.camera.center = centroid[::-1]
+                self.view.camera.scale_factor = 1.5 * np.mean(size[-3:])
+        elif np.sum(self.viewer.dims.display) == 2:
+            # Set 2D camera
+            self.view.camera = PanZoomCamera(aspect=1, name="PanZoomCamera")
+            # flip y-axis to have correct alignment
+            self.view.camera.flip = (0, 1, 0)
+            # Scale the camera to the contents in the scene
+            self.view.camera.set_range()
+        else:
+            raise ValueError(
+                "Invalid display flags set in dimensions {}".format(
+                    self.viewer.dims.display
+                )
+            )
+
+        self.view.camera.viewbox_key_event = viewbox_key_event
+        # TO DO: Remove
+        self.viewer._view = self.view
 
     def screenshot(self, region=None, size=None, bgcolor=None):
         """Render the scene to an offscreen buffer and return the image array.
@@ -134,6 +160,7 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+
         return self.canvas.render(region, size, bgcolor)
 
     def _open_images(self):

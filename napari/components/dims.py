@@ -43,7 +43,7 @@ class Dims:
 
         # Events:
         self.events = EmitterGroup(
-            source=self, auto_connect=True, axis=None, ndim=None
+            source=self, auto_connect=True, axis=None, ndim=None, display=None
         )
 
         self._range = []
@@ -245,6 +245,7 @@ class Dims:
         if self.display[axis] != display:
             self._display[axis] = display
             self.events.axis(axis=axis)
+            self.events.display()
 
     def _set_2d_viewing(self):
         """Sets the 2d viewing

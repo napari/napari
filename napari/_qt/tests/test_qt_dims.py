@@ -39,6 +39,20 @@ def test_changing_ndim():
         assert view.nsliders == 0
 
 
+def test_changing_display():
+    """
+    Test changing the displayed property of an axis
+    """
+    with gui_qt():
+        ndim = 4
+        view = QtDims(Dims(ndim))
+        assert view.nsliders == 2
+
+        # Check changing displayed removes a slider
+        view.dims.set_display(1, True)
+        assert view.nsliders == 1
+
+
 def test_slider_values():
     """
     Test the values of a slider stays matched to the values of the dims point.
