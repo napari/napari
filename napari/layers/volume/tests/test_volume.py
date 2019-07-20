@@ -98,11 +98,11 @@ def test_colormaps():
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
     layer = Volume(data)
-    assert layer.colormap[0] == 'fire'
+    assert layer.colormap[0] == 'gray'
     assert type(layer.colormap[1]) == TransFire
 
-    layer.colormap = 'gray_enhanced'
-    assert layer.colormap[0] == 'gray_enhanced'
+    layer.colormap = 'fire'
+    assert layer.colormap[0] == 'fire'
     assert type(layer.colormap[1]) == TransGrays
 
 
