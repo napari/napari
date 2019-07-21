@@ -75,15 +75,6 @@ class Dims:
         """
         return copy(self._range)
 
-    @range.setter
-    def range(self, value):
-        if value == self.range:
-            return
-        self._range = value
-        self.ndim = len(value)
-        for axis in range(self.ndim):
-            self.events.axis(axis=axis)
-
     @property
     def point(self):
         """list of int: value of each dimension if in POINT mode.

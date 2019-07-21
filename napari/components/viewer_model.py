@@ -720,7 +720,11 @@ class ViewerModel(KeymapMixin):
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
-        self.dims.range = self._calc_layers_ranges()
+        layer_range = self._calc_layers_ranges()
+        self.dims.ndim = len(layer_range)
+        for i, r in enumerate(layer_range):
+            self.dims.set_range(i, r)
+        self.dims.events.ndim()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.
