@@ -91,7 +91,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         depends on the current zoom level.
 
     Extended Summary
-    ----------
+    ----------------
     _master_transform : vispy.visuals.transforms.STTransform
         Transform positioning the layer visual inside the scenecanvas.
     _order : int
@@ -111,7 +111,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice
         * `_basename()`: base/default name of the layer
-
 
     Methods
     -------

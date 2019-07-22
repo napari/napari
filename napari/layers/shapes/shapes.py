@@ -46,6 +46,12 @@ class Shapes(Layer):
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
+    z_index : int or list
+        Specifier of z order priority. Shapes with higher z order are
+        displayed ontop of others. If a list is supplied it must be the
+        same length as the length of `data` and each element will be
+        applied to each shape otherwise the same value will be used for all
+        shapes.
     opacity : float or list
         Opacity of the shapes, between 0.0 and 1.0.
     blending : str
@@ -54,12 +60,6 @@ class Shapes(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    z_index : int or list
-        Specifier of z order priority. Shapes with higher z order are
-        displayed ontop of others. If a list is supplied it must be the
-        same length as the length of `data` and each element will be
-        applied to each shape otherwise the same value will be used for all
-        shapes.
     name : str
         Name of the layer.
 
