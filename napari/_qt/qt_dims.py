@@ -83,7 +83,7 @@ class QtDims(QWidget):
         def update_display_listener(event):
             self.update_display.emit(event.axis)
 
-        self.dims.events.display.connect(update_range_listener)
+        self.dims.events.display.connect(update_display_listener)
         self.update_display.connect(self._update_display)
 
     @property
@@ -161,7 +161,6 @@ class QtDims(QWidget):
         axis : int
             Axis index.
         """
-
         if axis >= len(self.sliders):
             return
 

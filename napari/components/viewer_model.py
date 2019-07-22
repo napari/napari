@@ -446,9 +446,9 @@ class ViewerModel(KeymapMixin):
         layer = layers.Volume(volume, *args, **kwargs)
         if self.dims.ndim == 2:
             self.dims.ndim = 3
-        self.dims.set_display(-3, True)
+        self.dims.set_display(self.dims.ndim - 3, True)
         self.add_layer(layer)
-        self.dims.events.display()
+        self.dims.events.display(axis=self.dims.ndim - 3)
         return layer
 
     def add_points(self, points, *args, **kwargs):
@@ -672,7 +672,6 @@ class ViewerModel(KeymapMixin):
         self.dims.ndim = len(layer_range)
         for i, r in enumerate(layer_range):
             self.dims.set_range(i, r)
-        # self.dims.events.ndim()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.
