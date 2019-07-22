@@ -31,7 +31,13 @@ class Labels(Layer):
     seed : float
         Seed for colormap random generator.
     opacity : float
-        Opacity of the labels, must be between 0 and 1.
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
     name : str
         Name of the layer.
 
@@ -100,12 +106,20 @@ class Labels(Layer):
         num_colors=50,
         seed=0.5,
         opacity=0.7,
+        blending='translucent',
+        visible=True,
         name=None,
         **kwargs,
     ):
 
         visual = ImageNode(None, method='auto')
-        super().__init__(visual, name)
+        super().__init__(
+            visual,
+            name=name,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
         self.events.add(
             colormap=Event,
             mode=Event,
@@ -129,7 +143,6 @@ class Labels(Layer):
         self._node.clim = [0.0, 1.0]
         self._node._cmap = self.colormap[1]
 
-        self._node.opacity = opacity
         self._n_dimensional = True
         self._contiguous = True
         self._brush_size = 10

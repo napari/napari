@@ -3,9 +3,6 @@ from copy import copy
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
-# Set random seed for testing
-np.random.seed(0)
-
 
 def test_rectangles():
     """Test instantiating Shapes layer with a random 2D rectangles."""
@@ -451,6 +448,57 @@ def test_name():
 
     layer.name = 'shps'
     assert layer.name == 'shps'
+
+
+def test_visiblity():
+    """Test setting layer visiblity."""
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 4, 2))
+    layer = Shapes(data)
+    assert layer.visible == True
+
+    layer.visible = False
+    assert layer.visible == False
+
+    layer = Shapes(data, visible=False)
+    assert layer.visible == False
+
+    layer.visible = True
+    assert layer.visible == True
+
+
+def test_opacity():
+    """Test setting layer opacity."""
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 4, 2))
+    layer = Shapes(data)
+    assert layer.opacity == 0.7
+
+    layer.opacity = 0.5
+    assert layer.opacity == 0.5
+
+    layer = Shapes(data, opacity=0.6)
+    assert layer.opacity == 0.6
+
+    layer.opacity = 0.3
+    assert layer.opacity == 0.3
+
+
+def test_blending():
+    """Test setting layer blending."""
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 4, 2))
+    layer = Shapes(data)
+    assert layer.blending == 'translucent'
+
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
+
+    layer = Shapes(data, blending='additive')
+    assert layer.blending == 'additive'
+
+    layer.blending = 'opaque'
+    assert layer.blending == 'opaque'
 
 
 def test_edge_color():

@@ -94,6 +94,57 @@ def test_name():
     assert layer.name == 'img'
 
 
+def test_visiblity():
+    """Test setting layer visiblity."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 40))
+    layer = Volume(data)
+    assert layer.visible == True
+
+    layer.visible = False
+    assert layer.visible == False
+
+    layer = Volume(data, visible=False)
+    assert layer.visible == False
+
+    layer.visible = True
+    assert layer.visible == True
+
+
+def test_opacity():
+    """Test setting layer opacity."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 40))
+    layer = Volume(data)
+    assert layer.opacity == 1.0
+
+    layer.opacity = 0.5
+    assert layer.opacity == 0.5
+
+    layer = Volume(data, opacity=0.6)
+    assert layer.opacity == 0.6
+
+    layer.opacity = 0.3
+    assert layer.opacity == 0.3
+
+
+def test_blending():
+    """Test setting layer blending."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 40))
+    layer = Volume(data)
+    assert layer.blending == 'translucent'
+
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
+
+    layer = Volume(data, blending='additive')
+    assert layer.blending == 'additive'
+
+    layer.blending = 'opaque'
+    assert layer.blending == 'opaque'
+
+
 def test_colormaps():
     """Test setting test_colormaps."""
     np.random.seed(0)

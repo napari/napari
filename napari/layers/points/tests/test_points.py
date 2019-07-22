@@ -4,10 +4,6 @@ from xml.etree.ElementTree import Element
 from napari.layers import Points
 
 
-# Set random seed for testing
-np.random.seed(0)
-
-
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
@@ -202,9 +198,8 @@ def test_changing_modes():
 
 def test_name():
     """Test setting layer name."""
-    shape = (10, 2)
     np.random.seed(0)
-    data = 20 * np.random.random(shape)
+    data = 20 * np.random.random((10, 2))
     layer = Points(data)
     assert layer.name == 'Points'
 
@@ -213,6 +208,57 @@ def test_name():
 
     layer.name = 'pts'
     assert layer.name == 'pts'
+
+
+def test_visiblity():
+    """Test setting layer visiblity."""
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 2))
+    layer = Points(data)
+    assert layer.visible == True
+
+    layer.visible = False
+    assert layer.visible == False
+
+    layer = Points(data, visible=False)
+    assert layer.visible == False
+
+    layer.visible = True
+    assert layer.visible == True
+
+
+def test_opacity():
+    """Test setting layer opacity."""
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 2))
+    layer = Points(data)
+    assert layer.opacity == 1.0
+
+    layer.opacity = 0.5
+    assert layer.opacity == 0.5
+
+    layer = Points(data, opacity=0.6)
+    assert layer.opacity == 0.6
+
+    layer.opacity = 0.3
+    assert layer.opacity == 0.3
+
+
+def test_blending():
+    """Test setting layer blending."""
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 2))
+    layer = Points(data)
+    assert layer.blending == 'translucent'
+
+    layer.blending = 'additive'
+    assert layer.blending == 'additive'
+
+    layer = Points(data, blending='additive')
+    assert layer.blending == 'additive'
+
+    layer.blending = 'opaque'
+    assert layer.blending == 'opaque'
 
 
 def test_symbol():

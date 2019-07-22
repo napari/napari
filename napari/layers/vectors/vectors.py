@@ -27,6 +27,14 @@ class Vectors(Layer):
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Edge color of all the vectors.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
     name : str
         Name of the layer.
 
@@ -65,10 +73,25 @@ class Vectors(Layer):
     class_keymap = {}
 
     def __init__(
-        self, vectors, *, edge_width=1, edge_color='red', length=1, name=None
+        self,
+        vectors,
+        *,
+        edge_width=1,
+        edge_color='red',
+        length=1,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+        name=None,
     ):
 
-        super().__init__(Mesh(), name)
+        super().__init__(
+            Mesh(),
+            name=name,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
 
         # events for non-napari calculations
         self.events.add(length=Event, edge_width=Event)

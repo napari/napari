@@ -350,6 +350,14 @@ class ViewerModel(KeymapMixin):
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
         name : str
             Name of the layer.
 
@@ -398,6 +406,14 @@ class ViewerModel(KeymapMixin):
         interpolation : str, optional
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
         name : str
             Name of the layer.
 
@@ -435,6 +451,14 @@ class ViewerModel(KeymapMixin):
             min and max of the volume. Passing a value prevents this
             calculation which can be useful when working with very larg
             datasets that are dynamically loaded.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
         name : str, keyword-only
             Name of the layer.
 
@@ -475,6 +499,14 @@ class ViewerModel(KeymapMixin):
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
         name : str
             Name of the layer.
 
@@ -509,7 +541,13 @@ class ViewerModel(KeymapMixin):
         seed : float
             Seed for colormap random generator.
         opacity : float
-            Opacity of the labels, must be between 0 and 1.
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
         name : str
             Name of the layer.
 
@@ -554,14 +592,20 @@ class ViewerModel(KeymapMixin):
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        opacity : float or list
-            Opacity of the shapes, must be between 0 and 1.
         z_index : int or list
             Specifier of z order priority. Shapes with higher z order are
             displayed ontop of others. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
+        opacity : float or list
+            Opacity of the shapes, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
         name : str
             Name of the layer.
 
@@ -591,6 +635,14 @@ class ViewerModel(KeymapMixin):
              Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Edge color of all the vectors.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
         name : str
             Name of the layer.
 

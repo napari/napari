@@ -19,7 +19,6 @@ with napari.gui_qt():
 
     image = 0.2 * np.random.random((m, n, p)) + 0.5
     layer = viewer.add_image(image, clim_range=[0, 1], name='background')
-    layer.colormap = 'gray'
 
     # sample vector image-like data
     # n x m grid of slanted lines

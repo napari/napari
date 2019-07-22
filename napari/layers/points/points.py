@@ -36,6 +36,14 @@ class Points(Layer):
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
     name : str
         Name of the layer.
 
@@ -113,6 +121,9 @@ class Points(Layer):
         edge_color='black',
         face_color='white',
         n_dimensional=False,
+        opacity=1,
+        blending='translucent',
+        visible=True,
         name=None,
     ):
 
@@ -122,7 +133,13 @@ class Points(Layer):
         # Markers: The actual markers of each point.
         visual = Compound([Line(), Markers(), Markers()])
 
-        super().__init__(visual, name)
+        super().__init__(
+            visual,
+            name=name,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
 
         self.events.add(
             mode=Event,

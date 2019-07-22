@@ -26,7 +26,6 @@ with napari.gui_qt():
 
     # initialise viewer with coins image
     viewer = napari.view(coins=image, multichannel=False)
-    viewer.layers[0].colormap = 'gray'
 
     # add the labels
     label_layer = viewer.add_labels(label_image, name='segmentation')

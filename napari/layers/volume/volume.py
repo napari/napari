@@ -36,6 +36,14 @@ class Volume(Layer):
         min and max of the volume. Passing a value prevents this
         calculation which can be useful when working with very larg
         datasets that are dynamically loaded.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
     name : str, keyword-only
         Name of the layer.
 
@@ -74,12 +82,21 @@ class Volume(Layer):
         colormap='gray',
         clim=None,
         clim_range=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
         name=None,
         **kwargs,
     ):
 
         visual = VolumeNode(np.empty((1, 1, 1)))
-        super().__init__(visual, name)
+        super().__init__(
+            visual,
+            name=name,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
 
         self._rendering = self._default_rendering
 
