@@ -137,22 +137,8 @@ class QtViewer(QSplitter):
         # TO DO: Remove
         self.viewer._view = self.view
 
-    def screenshot(self, region=None, size=None, bgcolor=None):
-        """Render the scene to an offscreen buffer and return the image array.
-
-        Parameters
-        ----------
-        region : tuple | None
-            Specifies the region of the canvas to render. Format is
-            (x, y, w, h). By default, the entire canvas is rendered.
-        size : tuple | None
-            Specifies the size of the image array to return. If no size is
-            given, then the size of the *region* is used, multiplied by the
-            pixel scaling factor of the canvas (see `pixel_scale`). This
-            argument allows the scene to be rendered at resolutions different
-            from the native canvas resolution.
-        bgcolor : instance of Color | None
-            The background color to use.
+    def screenshot(self):
+        """Take currently displayed screen and convert to an image array.
 
         Returns
         -------
@@ -160,8 +146,23 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+        img = self.canvas.native.grabFramebuffer()
+        b = img.constBits()
+        h, w, c = img.height(), img.width(), 4
 
-        return self.canvas.render(region, size, bgcolor)
+        # As vispy doesn't use qtpy we need to reconcile the differences
+        # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
+        # a QImage to a numpy array.
+        if API_NAME == 'PySide2':
+            arr = np.array(b).reshape(h, w, c)
+        else:
+            b.setsize(h * w * c)
+            arr = np.frombuffer(b, np.uint8).reshape(h, w, c)
+
+        # Format of QImage is ARGB32_Premultiplied, but color channels are
+        # reversed.
+        arr = arr[:, :, [2, 1, 0, 3]]
+        return arr
 
     def _open_images(self):
         """Adds image files from the menubar."""
