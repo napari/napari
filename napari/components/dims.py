@@ -43,7 +43,12 @@ class Dims:
 
         # Events:
         self.events = EmitterGroup(
-            source=self, auto_connect=True, axis=None, ndim=None, display=None
+            source=self,
+            auto_connect=True,
+            axis=None,
+            ndim=None,
+            display=None,
+            range=None,
         )
 
         self._range = []
@@ -179,7 +184,7 @@ class Dims:
         """
         if self.range[axis] != range:
             self._range[axis] = range
-            self.events.axis(axis=axis)
+            self.events.range(axis=axis)
 
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets the point at which to slice this dimension
@@ -235,8 +240,7 @@ class Dims:
         """
         if self.display[axis] != display:
             self._display[axis] = display
-            self.events.axis(axis=axis)
-            self.events.display()
+            self.events.display(axis=axis)
 
     def _set_2d_viewing(self):
         """Sets the 2d viewing

@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
+import numpy as np
 
 from . import QHRangeSlider
 from ..components.dims import Dims
@@ -27,8 +28,10 @@ class QtDims(QWidget):
     SLIDERHEIGHT = 26
 
     # Qt Signals for sending events to Qt thread
-    update_axis = Signal(int)
     update_ndim = Signal()
+    update_axis = Signal(int)
+    update_range = Signal(int)
+    update_display = Signal(int)
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -39,7 +42,7 @@ class QtDims(QWidget):
 
         # list of sliders
         self.sliders = []
-        self._slider_axis = []
+        self._displayed = []
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -55,25 +58,33 @@ class QtDims(QWidget):
         # in the Qt event loop thread. This is all about changing thread
         # context for thread-safety purposes
 
-        # axis change listener
-        def update_axis_listener(event):
-            self.update_axis.emit(event.axis)
-
-        self.dims.events.axis.connect(update_axis_listener)
-
-        # What to do with the axis change events in terms of UI calls to the
-        # widget
-        self.update_axis.connect(self._update_slider)
-
         # ndim change listener
         def update_ndim_listener(event):
             self.update_ndim.emit()
 
         self.dims.events.ndim.connect(update_ndim_listener)
-
-        # What to do with the ndim change events in terms of UI calls to the
-        # widget
         self.update_ndim.connect(self._update_nsliders)
+
+        # axis change listener
+        def update_axis_listener(event):
+            self.update_axis.emit(event.axis)
+
+        self.dims.events.axis.connect(update_axis_listener)
+        self.update_axis.connect(self._update_slider)
+
+        # range change listener
+        def update_range_listener(event):
+            self.update_range.emit(event.axis)
+
+        self.dims.events.range.connect(update_range_listener)
+        self.update_range.connect(self._update_range)
+
+        # range change listener
+        def update_display_listener(event):
+            self.update_display.emit(event.axis)
+
+        self.dims.events.display.connect(update_range_listener)
+        self.update_display.connect(self._update_display)
 
     @property
     def nsliders(self):
@@ -88,7 +99,7 @@ class QtDims(QWidget):
 
     def _update_slider(self, axis: int):
         """
-        Updates everything for a given slider.
+        Updates position for a given slider.
 
         Parameters
         ----------
@@ -96,11 +107,10 @@ class QtDims(QWidget):
             Axis index.
         """
 
-        if axis not in self._slider_axis:
+        if axis >= len(self.sliders):
             return
-        slider_index = self._slider_axis.index(axis)
 
-        slider = self.sliders[slider_index]
+        slider = self.sliders[axis]
 
         mode = self.dims.mode[axis]
         if mode == DimsMode.POINT:
@@ -109,43 +119,74 @@ class QtDims(QWidget):
         elif mode == DimsMode.INTERVAL:
             slider.expand()
             slider.setValues(self.dims.interval[axis])
-        # Set the maximum values of the range slider to be one step less than
-        # the range of the layer as otherwise the slider can move beyond the
-        # shape of the layer as the endpoint is included
+
+    def _update_range(self, axis: int):
+        """
+        Updates range for a given slider.
+
+        Parameters
+        ----------
+        axis : int
+            Axis index.
+        """
+        if axis >= len(self.sliders):
+            return
+
+        slider = self.sliders[axis]
+
         range = self.dims.range[axis]
         range = (range[0], range[1] - range[2], range[2])
         if range not in (None, (None, None, None)):
             if range[1] == 0:
-                self._remove_slider(slider_index)
+                self._displayed[axis] = False
+                slider.hide()
             else:
+                if not self._displayed[axis]:
+                    self._displayed[axis] = True
+                    slider.show()
                 slider.setRange(range)
         else:
-            self._remove_slider(slider_index)
+            self._displayed[axis] = False
+            slider.hide()
+
+        nsliders = np.sum(self._displayed)
+        self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+
+    def _update_display(self, axis: int):
+        """
+        Updates display for a given slider.
+
+        Parameters
+        ----------
+        axis : int
+            Axis index.
+        """
+
+        if axis >= len(self.sliders):
+            return
+
+        slider = self.sliders[axis]
 
         if self.dims.display[axis]:
-            self._remove_slider(slider_index)
+            self._displayed[axis] = False
+            slider.hide()
+        else:
+            self._displayed[axis] = True
+            slider.show()
+
+        nsliders = np.sum(self._displayed)
+        self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _update_nsliders(self):
         """
         Updates the number of sliders based on the number of dimensions
         """
-        self._set_nsliders(self.dims.ndim - 2)
-        self._slider_axis = list(range(self.dims.ndim - 2))
+        self._trim_sliders(0)
+        self._create_sliders(self.dims.ndim - 2)
         for i in list(range(self.dims.ndim - 2)):
+            self._update_display(i)
+            self._update_range(i)
             self._update_slider(i)
-
-    def _set_nsliders(self, new_number_of_sliders):
-        """
-        Sets the number of sliders displayed
-
-        Parameters
-        ----------
-        new_number_of_sliders :
-        """
-        if self.nsliders < new_number_of_sliders:
-            self._create_sliders(new_number_of_sliders)
-        elif self.nsliders > new_number_of_sliders:
-            self._trim_sliders(new_number_of_sliders)
 
     def _create_sliders(self, number_of_sliders):
         """
@@ -162,9 +203,9 @@ class QtDims(QWidget):
             slider = self._create_range_slider_widget(dim_axis)
             self.layout().addWidget(slider)
             self.sliders.insert(0, slider)
-            self._slider_axis = [a + 1 for a in self._slider_axis]
-            self._slider_axis.insert(0, 0)
-            self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
+            self._displayed.insert(0, True)
+            nsliders = np.sum(self._displayed)
+            self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
         """
@@ -190,10 +231,11 @@ class QtDims(QWidget):
         """
         # remove particular slider
         slider = self.sliders.pop(index)
-        self._slider_axis.pop(index)
+        self._displayed.pop(index)
         self.layout().removeWidget(slider)
         slider.deleteLater()
-        self.setMinimumHeight(self.nsliders * self.SLIDERHEIGHT)
+        nsliders = np.sum(self._displayed)
+        self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _create_range_slider_widget(self, axis):
         """
