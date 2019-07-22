@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from napari.components import Dims
 from napari._qt.qt_dims import QtDims
 from napari import gui_qt
@@ -47,10 +48,11 @@ def test_changing_display():
         ndim = 4
         view = QtDims(Dims(ndim))
         assert view.nsliders == 2
+        assert np.sum(view._displayed) == 2
 
         # Check changing displayed removes a slider
         view.dims.set_display(1, True)
-        assert view.nsliders == 1
+        assert np.sum(view._displayed) == 1
 
 
 def test_slider_values():

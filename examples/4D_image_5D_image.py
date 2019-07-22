@@ -9,4 +9,6 @@ import napari
 
 with napari.gui_qt():
 
-    viewer = napari.view(np.random.random((4, 4, 1, 30, 40)))
+    viewer = napari.view(np.random.random((2, 6, 30, 40)))
+
+    viewer.add_image(np.random.random((4, 4, 5, 30, 40)))
