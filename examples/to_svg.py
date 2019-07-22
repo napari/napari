@@ -6,6 +6,7 @@ your shapes.
 
 import numpy as np
 from skimage import data
+from skimage.io import imsave
 import napari
 from vispy.color import Colormap
 
@@ -122,3 +123,8 @@ with napari.gui_qt():
 
     svg = viewer.to_svg()
     # svg = viewer.to_svg(file='viewer.svg')
+
+    # take screenshot
+    screenshot = viewer.screenshot()
+    viewer.add_image(screenshot, multichannel=True, name='screenshot')
+    # imsave('screenshot.png', screenshot)
