@@ -446,7 +446,7 @@ class ViewerModel(KeymapMixin):
         layer = layers.Volume(volume, *args, **kwargs)
         if self.dims.ndim == 2:
             self.dims.ndim = 3
-        self.dims.set_display(self.dims.ndim - 3, True)
+        self.dims.set_display(-3, True)
         self.add_layer(layer)
         self.dims.events.display(axis=self.dims.ndim - 3)
         return layer
