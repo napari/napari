@@ -1,3 +1,8 @@
+"""
+Ensure that layers and their convenience methods on the viewer
+have the same signatures and docstrings.
+"""
+
 from napari.layers import Image, Pyramid, Points, Labels, Shapes, Vectors
 from napari import Viewer
 
