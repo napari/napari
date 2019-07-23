@@ -316,7 +316,22 @@ class ViewerModel(KeymapMixin):
         if len(self.layers) == 1:
             self.reset_view()
 
-    def add_image(self, image, *args, **kwargs):
+    def add_image(
+        self,
+        image,
+        *,
+        metadata=None,
+        multichannel=None,
+        colormap='gray',
+        clim=None,
+        clim_range=None,
+        interpolation='nearest',
+        opacity=1,
+        blending='translucent',
+        visible=True,
+        name=None,
+        **kwargs,
+    ):
         """Add an image layer to the layers list.
 
         Parameters
@@ -366,7 +381,20 @@ class ViewerModel(KeymapMixin):
         layer : :class:`napari.layers.Image`
             The newly-created image layer.
         """
-        layer = layers.Image(image, *args, **kwargs)
+        layer = layers.Image(
+            image,
+            metadata=metadata,
+            multichannel=multichannel,
+            colormap=colormap,
+            clim=clim,
+            clim_range=clim_range,
+            interpolation=interpolation,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            name=name,
+            **kwargs,
+        )
         self.add_layer(layer)
         return layer
 
@@ -426,7 +454,20 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
-    def add_volume(self, volume, *args, **kwargs):
+    def add_volume(
+        self,
+        volume,
+        *,
+        metadata=None,
+        colormap='gray',
+        clim=None,
+        clim_range=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+        name=None,
+        **kwargs,
+    ):
         """Adds a volume layer to the layers list.
 
         Parameters
@@ -470,7 +511,18 @@ class ViewerModel(KeymapMixin):
         layer : :class:`napari.layers.Volume`
             The newly-created volume layer.
         """
-        layer = layers.Volume(volume, *args, **kwargs)
+        layer = layers.Volume(
+            volume,
+            metadata=metadata,
+            colormap=colormap,
+            clim=clim,
+            clim_range=clim_range,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            name=name,
+            **kwargs,
+        )
         if self.dims.ndim == 2:
             self.dims.ndim = 3
         self.dims.set_display(-3, True)
@@ -478,7 +530,21 @@ class ViewerModel(KeymapMixin):
         self.dims.events.display(axis=self.dims.ndim - 3)
         return layer
 
-    def add_points(self, points, *args, **kwargs):
+    def add_points(
+        self,
+        coords,
+        *,
+        symbol='o',
+        size=10,
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        n_dimensional=False,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+        name=None,
+    ):
         """Add a points layer to the layers list.
 
         Parameters
@@ -523,11 +589,35 @@ class ViewerModel(KeymapMixin):
         See vispy's marker visual docs for more details:
         http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
-        layer = layers.Points(points, *args, **kwargs)
+        layer = layers.Points(
+            points,
+            symbol=symbol,
+            size=size,
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            n_dimensional=n_dimensional,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            name=name,
+        )
         self.add_layer(layer)
         return layer
 
-    def add_labels(self, label_image, *args, **kwargs):
+    def add_labels(
+        self,
+        labels,
+        *,
+        metadata=None,
+        num_colors=50,
+        seed=0.5,
+        opacity=0.7,
+        blending='translucent',
+        visible=True,
+        name=None,
+        **kwargs,
+    ):
         """Add a labels (or segmentation) layer to the layers list.
 
         An image-like layer where every pixel contains an integer ID
@@ -559,11 +649,34 @@ class ViewerModel(KeymapMixin):
         layer : :class:`napari.layers.Labels`
             The newly-created labels layer.
         """
-        layer = layers.Labels(label_image, *args, **kwargs)
+        layer = layers.Labels(
+            labels,
+            metadata=metadata,
+            num_color=num_colors,
+            seed=seed,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            name=name,
+            **kwargs,
+        )
         self.add_layer(layer)
         return layer
 
-    def add_shapes(self, shapes, **kwargs):
+    def add_shapes(
+        self,
+        data,
+        *,
+        shape_type='rectangle',
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        z_index=0,
+        opacity=0.7,
+        blending='translucent',
+        visible=True,
+        name=None,
+    ):
         """Add a shapes layer to the layers list.
 
         Parameters
@@ -617,11 +730,33 @@ class ViewerModel(KeymapMixin):
         layer : :class:`napari.layers.Shapes`
             The newly-created shapes layer.
         """
-        layer = layers.Shapes(shapes, **kwargs)
+        layer = layers.Shapes(
+            data,
+            shape_type=shape_type,
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            name=name,
+        )
         self.add_layer(layer)
         return layer
 
-    def add_vectors(self, vectors, *args, **kwargs):
+    def add_vectors(
+        self,
+        vectors,
+        *,
+        edge_width=1,
+        edge_color='red',
+        length=1,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+        name=None,
+    ):
         """Add a vectors layer to the layers list.
 
         Parameters
@@ -654,7 +789,16 @@ class ViewerModel(KeymapMixin):
         layer : :class:`napari.layers.Vectors`
             The newly-created vectors layer.
         """
-        layer = layers.Vectors(vectors, *args, **kwargs)
+        layer = layers.Vectors(
+            vectors,
+            edge_width=edge_width,
+            edge_color=edge_color,
+            length=1,
+            opacity=1,
+            blending=blending,
+            visible=visible,
+            name=name,
+        )
         self.add_layer(layer)
         return layer
 
