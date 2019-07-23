@@ -75,6 +75,7 @@ class ViewerModel(KeymapMixin):
         self._view = None
 
         self.dims.events.display.connect(lambda e: self._update_layers())
+        self.dims.events.display.connect(lambda e: self.reset_view())
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
@@ -213,15 +214,24 @@ class ViewerModel(KeymapMixin):
         """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
+
+        # Scale the camera to the contents in the scene
         min_shape, max_shape = self._calc_bbox()
-        # TODO: Change dims selection when dims model changes
-        min_shape = np.array(min_shape[-2:])
-        max_shape = np.array(max_shape[-2:])
-        shape = max_shape - min_shape
-        min_shape = min_shape - 0.05 * shape
-        shape = 1.1 * shape
-        rect = (min_shape[1], min_shape[0], shape[1], shape[0])
-        self.events.reset_view(viewbox=rect)
+        centroid = np.add(min_shape, max_shape) / 2
+        centroid = [centroid[i] for i in np.where(self.dims.display)[0]]
+        size = np.subtract(max_shape, min_shape)
+        size = [size[i] for i in np.where(self.dims.display)[0]]
+        corner = [min_shape[i] for i in np.where(self.dims.display)[0]]
+
+        if np.sum(self.dims.display) == 2:
+            corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
+            size = np.multiply(1.1, size)[::-1]
+            rect = tuple(corner) + tuple(size)
+            self.events.reset_view(viewbox=rect)
+        else:
+            center = centroid[::-1]
+            scale_factor = 1.5 * np.mean(size)
+            self.events.reset_view(center=center, scale_factor=scale_factor)
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be
@@ -753,6 +763,9 @@ class ViewerModel(KeymapMixin):
         for min, max, step in self._calc_layers_ranges():
             min_shape.append(min)
             max_shape.append(max)
+        if len(min_shape) == 0:
+            min_shape = [0] * np.sum(self.dims.display)
+            max_shape = [1] * np.sum(self.dims.display)
 
         return min_shape, max_shape
 
