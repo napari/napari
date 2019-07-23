@@ -1,19 +1,14 @@
 import re
 import inspect
 
+from .misc import camel_to_snake
+
 
 template = """def {name}(self, {signature}):
     layer = {cls_name}({call_args})
     self.add_layer(layer)
     return layer
 """
-
-pattern = re.compile(r'(.)([A-Z][a-z]+)')
-
-
-def camel_to_snake(name):
-    # https://gist.github.com/jaytaylor/3660565
-    return pattern.sub(r'\1_\2', name).lower()
 
 
 class CallDefault(inspect.Parameter):

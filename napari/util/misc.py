@@ -266,3 +266,11 @@ class StringEnum(Enum):
         string of the Enum name
         """
         return self.value
+
+
+camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
+
+
+def camel_to_snake(name):
+    # https://gist.github.com/jaytaylor/3660565
+    return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
