@@ -252,6 +252,28 @@ class Dims:
             self._display[axis] = display
             self.events.display(axis=axis)
 
+    def swap_display(self, axis_a: int, axis_b: int):
+        """Swaps the display properties of two axes.
+
+        Parameters
+        ----------
+        axis_a : int
+            Dimension index
+        axis_b : int
+            Dimension index.
+        """
+        if axis_a < 0:
+            axis_a += self.ndim
+        if axis_b < 0:
+            axis_b += self.ndim
+
+        if self.display[axis_a] != self.display[axis_b]:
+            state = self.display[axis_a]
+            self._display[axis_a] = self.display[axis_b]
+            self._display[axis_b] = state
+            self.events.display(axis=axis_a)
+            self.events.display(axis=axis_b)
+
     def _set_2d_viewing(self):
         """Sets the 2d viewing
         """

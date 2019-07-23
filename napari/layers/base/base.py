@@ -63,6 +63,8 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         of the tuple is equal to the number of dimensions of the layer.
     indices : tuple of int or Slice
         Used for slicing arrays on each dimension.
+    displayed : tuple of bool
+        If dimension is diplayed or not.
     position : 2-tuple of int
         Cursor position in canvas ordered (x, y).
     shape : tuple of int
@@ -200,6 +202,11 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self._set_view_slice()
 
     @property
+    def displayed(self):
+        """Tuple of bool: If dimension is diplayed or not."""
+        return tuple(type(i) == slice for i in self.indices)
+
+    @property
     def position(self):
         """2-tuple of int: Cursor position in canvas ordered (x, y)."""
         return self._position
@@ -217,10 +224,12 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         """
         if self._node.canvas is not None:
             transform = self._node.canvas.scene.node_transform(self._node)
-            position = transform.map(list(self.position))[:2]
+            displayed = np.where(self.displayed)[0]
+            position = transform.map(list(self.position))[: len(displayed)]
+            position = position[::-1]
             coords = list(self.indices)
-            coords[-2] = position[1]
-            coords[-1] = position[0]
+            for d, p in zip(displayed, position):
+                coords[d] = p
             self.coordinates = tuple(coords)
 
     @property

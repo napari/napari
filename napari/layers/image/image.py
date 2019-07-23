@@ -167,6 +167,7 @@ class Image(Layer):
                 slice(None, None, None),
                 slice(None, None, None),
             )
+            self.coordinates = (0,) * self.ndim
 
             # Trigger generation of view slice and thumbnail
             self._set_view_slice()
@@ -278,9 +279,9 @@ class Image(Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         indices = list(self.indices)
-        indices[:-2] = np.clip(
-            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
-        )
+        for i, d in enumerate(self.displayed):
+            if not d:
+                indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
         self._data_view = np.asarray(self.data[tuple(indices)])
 
         self._node.set_data(self._data_view)
@@ -358,9 +359,15 @@ class Image(Layer):
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-        coord[-2:] = np.clip(coord[-2:], 0, np.asarray(shape) - 1)
+        j = 0
+        slice_coord = []
+        for i, d in enumerate(self.displayed):
+            if d:
+                coord[i] = np.clip(coord[i], 0, shape[j] - 1)
+                slice_coord.append(coord[i])
+                j += 1
 
-        value = self._data_view[tuple(coord[-2:])]
+        value = self._data_view[tuple(slice_coord)]
 
         return coord, value
 

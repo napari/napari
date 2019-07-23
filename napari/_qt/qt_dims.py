@@ -141,7 +141,7 @@ class QtDims(QWidget):
                 self._displayed[axis] = False
                 slider.hide()
             else:
-                if not self._displayed[axis]:
+                if not self._displayed[axis] and not self.dims.display[axis]:
                     self._displayed[axis] = True
                     slider.show()
                 slider.setRange(range)
@@ -181,8 +181,8 @@ class QtDims(QWidget):
         Updates the number of sliders based on the number of dimensions
         """
         self._trim_sliders(0)
-        self._create_sliders(self.dims.ndim - 2)
-        for i in list(range(self.dims.ndim - 2)):
+        self._create_sliders(self.dims.ndim)
+        for i in list(range(self.dims.ndim)):
             self._update_display(i)
             self._update_range(i)
             self._update_slider(i)
