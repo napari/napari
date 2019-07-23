@@ -45,3 +45,14 @@ def test_docstring(layer):
 
     fail_msg = f"Docstrings don't match for class {layer.__name__}"
     assert layer_param == method_param, fail_msg
+
+
+@pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
+def test_signature(layer):
+    method = getattr(Viewer, f'add_{camel_to_snake(layer.__name__)}')
+
+    class_signature = inspect.signature(layer.__init__)
+    method_signature = inspect.signature(method)
+
+    fail_msg = f"Signatures don't match for class {layer.__name__}"
+    assert class_signature == method_signature, fail_msg
