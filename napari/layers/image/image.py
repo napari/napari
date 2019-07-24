@@ -341,6 +341,9 @@ class Image(Layer):
             colormapped = self.colormap[1].map(downsampled)
             colormapped = colormapped.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
+        if 0 in colormapped.shape:
+            colormapped = np.zeros(self._thumbnail_shape)
+            colormapped[..., 3] = self.opacity
         self.thumbnail = colormapped
 
     def get_value(self):
