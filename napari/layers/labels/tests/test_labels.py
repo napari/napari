@@ -65,8 +65,9 @@ def test_changing_labels_dims():
     data_b = np.random.randint(20, size=shape_b)
     layer = Labels(data_a)
 
-    # Prep indices for swtich to 3D
+    # Prep indices for switch to 3D
     layer._indices = (0,) + layer._indices
+    layer.coordinates = (0,) * 3
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)

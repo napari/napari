@@ -423,8 +423,9 @@ class Image(Layer):
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
-        width = str(self.shape[-1])
-        height = str(self.shape[-2])
+        disp = np.where(self.displayed)[0]
+        width = str(self.shape[disp[1]])
+        height = str(self.shape[disp[0]])
         opacity = str(self.opacity)
         xml = Element(
             'image', width=width, height=height, opacity=opacity, **props
