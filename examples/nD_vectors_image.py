@@ -24,15 +24,13 @@ with napari.gui_qt():
     # n x m grid of slanted lines
     # random data on the open interval (-1, 1)
     pos = np.zeros(shape=(m, n, p, 3), dtype=np.float32)
-    rand1 = 2 * (np.random.random_sample(n * m * p) - 0.5)
-    rand2 = 2 * (np.random.random_sample(n * m * p) - 0.5)
-
-    # assign projections for each vector
-    pos[:, :, :, 0] = 0
-    pos[:, :, :, 1] = rand1.reshape((m, n, p))
-    pos[:, :, :, 2] = rand2.reshape((m, n, p))
+    for i in range(3):
+        pos[:, :, :, i] = (
+            2 * (np.random.random_sample(n * m * p) - 0.5)
+        ).reshape((m, n, p))
 
     print(image.shape, pos.shape)
 
     # add the vectors
     vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
+    viewer.dims.swap_display(0, 1)

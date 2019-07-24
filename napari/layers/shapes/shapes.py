@@ -328,6 +328,7 @@ class Shapes(Layer):
                 slice(None, None, None),
                 slice(None, None, None),
             )
+            self.coordinates = (0,) * self.ndim
 
             # Trigger generation of view slice and thumbnail
             self._set_view_slice()
