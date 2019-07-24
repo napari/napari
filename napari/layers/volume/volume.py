@@ -135,6 +135,7 @@ class Volume(Layer):
                 slice(None, None, None),
                 slice(None, None, None),
             )
+            self.coordinates = (0,) * self.ndim
 
             # Trigger generation of view slice and thumbnail
             self._set_view_slice()
@@ -239,9 +240,9 @@ class Volume(Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         indices = list(self.indices)
-        indices[:-3] = np.clip(
-            indices[:-3], 0, np.subtract(self.shape[:-3], 1)
-        )
+        for i, d in enumerate(self.displayed):
+            if not d:
+                indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
         self._data_view = np.asarray(self.data[tuple(indices)])
 
         self._node.set_data(self._data_view, clim=self.clim)
