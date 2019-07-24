@@ -18,4 +18,19 @@ with napari.gui_qt():
         axis=0,
     )
     viewer = napari.view(blobs.astype(float))
+
+    # add the points
+    points = np.array(
+        [
+            [0, 0, 0, 100],
+            [0, 0, 50, 120],
+            [1, 0, 100, 40],
+            [2, 10, 110, 100],
+            [9, 8, 80, 100],
+        ]
+    )
+    viewer.add_points(
+        points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
+    )
+
     viewer.dims.swap_display(1, 2)
