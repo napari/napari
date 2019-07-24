@@ -752,16 +752,16 @@ class Points(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         if len(self._data_view) > 0:
-            min_vals = [self.range[-2][0], self.range[-1][0]]
+            disp = np.where(self.displayed)[0]
+            min_vals = [self.range[i][0] for i in disp]
             shape = np.ceil(
-                [
-                    self.range[-2][1] - self.range[-2][0] + 1,
-                    self.range[-1][1] - self.range[-1][0] + 1,
-                ]
+                [self.range[i][1] - self.range[i][0] + 1 for i in disp]
             ).astype(int)
-            zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+            zoom_factor = np.divide(
+                self._thumbnail_shape[:2], shape[-2:]
+            ).min()
             coords = np.floor(
-                (self._data_view - min_vals + 0.5) * zoom_factor
+                (self._data_view[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
             ).astype(int)
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
@@ -886,8 +886,9 @@ class Points(Layer):
         for i, d, s in zip(
             self._indices_view, self._data_view, self._sizes_view
         ):
-            cx = str(d[1])
-            cy = str(d[0])
+            d = d[::-1]
+            cx = str(d[0])
+            cy = str(d[1])
             r = str(s / 2)
             face_color = (255 * Color(self.face_colors[i]).rgba).astype(np.int)
             fill = f'rgb{tuple(face_color[:3])}'

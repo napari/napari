@@ -144,12 +144,16 @@ def test_swappable_dims():
     np.random.seed(0)
     image_data = np.random.random((7, 12, 10, 15))
     viewer.add_image(image_data)
+    assert np.all(viewer.layers[0]._data_view == image_data[0, 0, :, :])
     points_data = np.random.randint(6, size=(10, 4))
     viewer.add_points(points_data)
+    vectors_data = np.random.randint(6, size=(10, 2, 4))
+    viewer.add_vectors(vectors_data)
 
     # Swap dims
     viewer.dims.swap_display(1, 2)
     assert viewer.dims.display == [False, True, False, True]
+    assert np.all(viewer.layers[0]._data_view == image_data[0, :, 0, :])
 
 
 # def test_add_volume():
