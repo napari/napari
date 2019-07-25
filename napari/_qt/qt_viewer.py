@@ -28,7 +28,7 @@ from ..util.io import read
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
-from .qt_controls import make_console
+from .qt_console import make_console
 
 
 # set vispy application to the appropriate qt backend

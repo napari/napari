@@ -10,6 +10,7 @@ class QtLayersButtons(QFrame):
         self.newPointsButton = QtNewPointsButton(self.viewer)
         self.newShapesButton = QtNewShapesButton(self.viewer)
         self.newLabelsButton = QtNewLabelsButton(self.viewer)
+        self.consoleButton = QtConsoleButton(self.viewer)
 
         layout = QHBoxLayout()
         layout.addStretch(0)
@@ -18,6 +19,7 @@ class QtLayersButtons(QFrame):
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
         layout.addWidget(self.deleteButton)
+        layout.addWidget(self.consoleButton)
         self.setLayout(layout)
 
 
@@ -83,3 +85,14 @@ class QtNewLabelsButton(QPushButton):
         self.setFixedHeight(28)
         self.setToolTip('New labels layer')
         self.clicked.connect(lambda: self.viewer._new_labels())
+
+
+class QtConsoleButton(QPushButton):
+    def __init__(self, viewer):
+        super().__init__()
+
+        self.viewer = viewer
+        self.setFixedWidth(28)
+        self.setFixedHeight(28)
+        self.setToolTip('Open IPython terminal')
+        self.setProperty('expanded', False)
