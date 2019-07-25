@@ -2,7 +2,7 @@ from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 
 
-def make_console():
+def make_console(user_ns):
     global ipython_widget  # Prevent from being garbage collected
 
     # Create an in-process kernel
@@ -10,6 +10,7 @@ def make_console():
     kernel_manager.start_kernel(show_banner=False)
     kernel = kernel_manager.kernel
     kernel.gui = 'qt'
+    kernel.shell.user_ns.update(user_ns)
 
     kernel_client = kernel_manager.client()
     kernel_client.start_channels()

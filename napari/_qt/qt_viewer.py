@@ -96,7 +96,7 @@ class QtViewer(QSplitter):
         top_layout.addWidget(right)
         top.setLayout(top_layout)
 
-        self.console = make_console()
+        self.console = make_console({'viewer': self.viewer})
         self.console.hide()
         self.console.setMinimumSize(QSize(100, 100))
         self.setOrientation(Qt.Vertical)
