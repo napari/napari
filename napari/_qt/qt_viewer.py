@@ -259,10 +259,6 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
 
-        # TODO: remove me once keybinding system converted
-        if layer is not None:
-            layer.on_key_press(event)
-
         if layer is not None and comb in layer.keymap:
             parent = layer
         elif comb in self.viewer.keymap:
@@ -288,11 +284,6 @@ class QtViewer(QSplitter):
             next(self._key_release_generators[event.key])
         except (KeyError, StopIteration):
             pass
-
-        # TODO: remove me once keybinding system converted
-        layer = self.viewer.active_layer
-        if layer is not None:
-            layer.on_key_release(event)
 
     def on_draw(self, event):
         """Called whenever drawn in canvas. Called for all layers, not just top
