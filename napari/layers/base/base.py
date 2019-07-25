@@ -222,15 +222,29 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         """Insert the cursor position (x, y) into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
+        displayed = np.where(self.displayed)[0]
         if self._node.canvas is not None:
             transform = self._node.canvas.scene.node_transform(self._node)
-            displayed = np.where(self.displayed)[0]
             position = transform.map(list(self.position))[: len(displayed)]
             position = position[::-1]
-            coords = list(self.indices)
-            for d, p in zip(displayed, position):
-                coords[d] = p
-            self.coordinates = tuple(coords)
+        else:
+            position = [0] * len(displayed)
+
+        coords = list(self.indices)
+        for d, p in zip(displayed, position):
+            coords[d] = p
+        self.coordinates = tuple(coords)
+
+    def _reset_indices(self):
+        """Reset indicies, which is useful after data has been changed."""
+        if len(self.indices) < self.ndim:
+            self._indices = (0,) * (
+                self.ndim - len(self.indices)
+            ) + self._indices
+            self._update_coordinates()
+        elif len(self.indices) > self.ndim:
+            self._indices = self._indices[-self.ndim :]
+            self._update_coordinates()
 
     @property
     @abstractmethod

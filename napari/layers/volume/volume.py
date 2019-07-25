@@ -129,7 +129,7 @@ class Volume(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            # Re intitialize indices
+            # Re intitialize indices for volume viewing
             self._indices = (0,) * (self.ndim - 3) + (
                 slice(None, None, None),
                 slice(None, None, None),
@@ -149,6 +149,7 @@ class Volume(Layer):
     def data(self, data):
         self._data = data
         self.events.data()
+        self._reset_indices()
         self.refresh()
 
     def _get_shape(self):

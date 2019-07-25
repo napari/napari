@@ -323,14 +323,8 @@ class Shapes(Layer):
             self.events.face_color.connect(lambda e: self._update_thumbnail())
             self.events.edge_color.connect(lambda e: self._update_thumbnail())
 
-            # Re intitialize indices depending on shape dims
-            self._indices = (0,) * (self.ndim - 2) + (
-                slice(None, None, None),
-                slice(None, None, None),
-            )
-            self.coordinates = (0,) * self.ndim
-
             # Trigger generation of view slice and thumbnail
+            self._reset_indices()
             self._set_view_slice()
 
     @property
@@ -343,6 +337,7 @@ class Shapes(Layer):
         self._finish_drawing()
         self._data_dict = {}
         self.add(data, shape_type='rectangle')
+        self._reset_indices()
         self.events.data()
         self.refresh()
 

@@ -162,14 +162,8 @@ class Image(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            # Re intitialize indices depending on image dims
-            self._indices = (0,) * (self.ndim - 2) + (
-                slice(None, None, None),
-                slice(None, None, None),
-            )
-            self.coordinates = (0,) * self.ndim
-
             # Trigger generation of view slice and thumbnail
+            self._reset_indices()
             self._set_view_slice()
 
     @property
@@ -182,6 +176,7 @@ class Image(Layer):
         self._data = data
         if self.multichannel:
             self._multichannel = is_multichannel(data.shape)
+        self._reset_indices()
         self.events.data()
         self.refresh()
 

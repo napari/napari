@@ -105,14 +105,8 @@ class Pyramid(Image):
             disp = np.where(self.displayed)[0]
             self.scale = self.level_downsamples[self.data_level, disp[::-1]]
 
-            # Re intitialize indices depending on image dims
-            self._indices = (0,) * (self.ndim - 2) + (
-                slice(None, None, None),
-                slice(None, None, None),
-            )
-            self.coordinates = (0,) * self.ndim
-
             # Trigger generation of view slice and thumbnail
+            self._reset_indices()
             self._set_view_slice()
 
     @property
@@ -123,7 +117,8 @@ class Pyramid(Image):
     @data.setter
     def data(self, data):
         self._data = data
-
+        self._reset_indices()
+        self.events.data()
         self.refresh()
 
     @property
