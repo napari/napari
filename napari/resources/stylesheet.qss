@@ -17,7 +17,7 @@ QWidget {
 }
 
 QtViewer {
-   padding-top: 50px;
+   padding-top: 0px;
 }
 
 QLabel {
@@ -348,8 +348,12 @@ QtNewLabelsButton {
    image: url(":/icons/{{ folder }}/new_labels.svg");
 }
 
-QtConsoleButton {
+QtConsoleButton[expanded=true] {
   image: url(":/icons/{{ folder }}/properties_expand.svg");
+}
+
+QtConsoleButton[expanded=false] {
+  image: url(":/icons/{{ folder }}/properties_contract.svg");
 }
 
 /* ------------------------------------------------------ */

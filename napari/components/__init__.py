@@ -16,3 +16,4 @@ ViewerModel
 from .viewer_model import ViewerModel
 from .layerlist import LayerList
 from .dims import Dims
+from .console import make_console

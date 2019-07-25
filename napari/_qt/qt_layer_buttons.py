@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QHBoxLayout, QPushButton, QFrame
 
-from ..components.console import call_ipython_code
+# from ..components.console import call_ipython_code
 
 
 class QtLayersButtons(QFrame):
@@ -97,4 +97,4 @@ class QtConsoleButton(QPushButton):
         self.setFixedWidth(28)
         self.setFixedHeight(28)
         self.setToolTip('Open IPython terminal')
-        self.clicked.connect(lambda: call_ipython_code())
+        self.setProperty('expanded', False)
