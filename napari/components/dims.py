@@ -28,11 +28,17 @@ class Dims:
         slider when in INTERVAL mode, one for each dimension
     mode : list of DimsMode
         List of DimsMode, one for each dimension
-    display : list of bool
-        List of bool indicating if dimension displayed or not, one for each
-        dimension
+    display : list of None, int
+        List of None, int indicating if dimension displayed or not, where a
+        value of None corresponds to a non displayed dimension and an int
+        indicates the order of the displayed dimension.
+    displayed : tuple of int
+        Which dimensions are displayed. Order indicates the order in which
+        the displayed dimensions are shown.
     ndim : int
-        Number of dimensions
+        Number of dimensions.
+    ndisplay : int
+        Number of displayed dimensions.
     indices : tuple of slice object
         Tuple of slice objects for slicing arrays on each dimension, one for
         each dimension
@@ -101,8 +107,7 @@ class Dims:
 
     @property
     def display(self):
-        """list: List of bool indicating if dimension displayed or not, one for
-        each dimension
+        """list: List of None, int indicating if dimension displayed or not.
         """
         return copy(self._display)
 
@@ -131,7 +136,7 @@ class Dims:
                 # if in interval mode
                 self._interval.insert(0, (0, 1))
                 self._mode.insert(0, DimsMode.POINT)
-                self._display.insert(0, False)
+                self._display.insert(0, None)
 
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
@@ -157,12 +162,12 @@ class Dims:
         z = zip(self.mode, self.display, self.point, self.interval)
         for (mode, display, point, interval) in z:
             if mode == DimsMode.POINT:
-                if display:
+                if display is not None:
                     slice_list.append(slice(None, None, None))
                 else:
                     slice_list.append(int(round(point)))
             elif mode == DimsMode.INTERVAL:
-                if display:
+                if display is not None:
                     slice_list.append(slice(None, None, None))
 
                 else:
@@ -171,6 +176,18 @@ class Dims:
                     )
 
         return tuple(slice_list)
+
+    @property
+    def ndisplay(self):
+        """Int: Number of displayed dimensions."""
+        return np.sum([not d == None for d in self.display])
+
+    @property
+    def displayed(self):
+        """tuple: Displayed dimensions."""
+        inds = [i for i, d in enumerate(self.display) if d is not None]
+        order = [d for i, d in enumerate(self.display) if d is not None]
+        return tuple(inds[o] for o in order)
 
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
@@ -232,15 +249,15 @@ class Dims:
             self._mode[axis] = mode
             self.events.axis(axis=axis)
 
-    def set_display(self, axis: int, display: bool):
+    def set_display(self, axis: int, display: int):
         """Sets the display boolean flag for a given axis
 
         Parameters
         ----------
         axis : int
             Dimension index
-        display : bool
-            Bool which is `True` for display and `False` for slice or project.
+        display : int, None
+            None for non-displayed dimensions, int for the order of display.
         """
         axis = axis % self.ndim
         if self.display[axis] != display:
@@ -271,7 +288,7 @@ class Dims:
         """Sets the 2d viewing
         """
         for i in range(len(self.display) - 2):
-            self.set_display(i, False)
+            self.set_display(i, None)
         if len(self.display) >= 2:
-            self.set_display(-1, True)
-            self.set_display(-2, True)
+            self.set_display(-1, 1)
+            self.set_display(-2, 0)

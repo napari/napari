@@ -223,7 +223,7 @@ class ViewerModel(KeymapMixin):
         size = [size[i] for i in np.where(self.dims.display)[0]]
         corner = [min_shape[i] for i in np.where(self.dims.display)[0]]
 
-        if np.sum(self.dims.display) == 2:
+        if self.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the viewbox
             corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
             size = np.multiply(1.1, size)[::-1]
@@ -482,7 +482,7 @@ class ViewerModel(KeymapMixin):
         layer = layers.Volume(volume, *args, **kwargs)
         if self.dims.ndim == 2:
             self.dims.ndim = 3
-        self.dims.set_display(-3, True)
+        self.dims.display[-3:] = list(range(3))
         self.add_layer(layer)
         self.dims.events.display(axis=self.dims.ndim - 3)
         return layer
@@ -766,8 +766,8 @@ class ViewerModel(KeymapMixin):
             min_shape.append(min)
             max_shape.append(max)
         if len(min_shape) == 0:
-            min_shape = [0] * np.sum(self.dims.display)
-            max_shape = [1] * np.sum(self.dims.display)
+            min_shape = [0] * self.dims.ndisplay
+            max_shape = [1] * self.dims.ndisplay
 
         return min_shape, max_shape
 
