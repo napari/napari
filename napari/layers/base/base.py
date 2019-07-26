@@ -204,7 +204,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     @property
     def displayed(self):
         """Tuple of bool: If dimension is diplayed or not."""
-        return tuple(type(i) == slice for i in self.indices)
+        return tuple(isinstance(i, slice) for i in self.indices)
 
     @property
     def position(self):

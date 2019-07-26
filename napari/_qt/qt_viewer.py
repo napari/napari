@@ -108,18 +108,19 @@ class QtViewer(QSplitter):
     def _update_camera(self):
         if np.sum(self.viewer.dims.display) == 3:
             # Set a 3D camera
-            if type(self.view.camera) != ArcballCamera:
+            if not isinstance(self.view.camera, ArcballCamera):
                 self.view.camera = ArcballCamera(name="ArcballCamera")
                 # flip y-axis to have correct alignment
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                # TO DO: Remove
+                # TO DO: Remove once we have removed vispy node from individual
+                # layers as then model / view separate
                 self.viewer._view = self.view
                 self.viewer.reset_view()
         elif np.sum(self.viewer.dims.display) == 2:
             # Set 2D camera
-            if type(self.view.camera) != PanZoomCamera:
+            if not isinstance(self.view.camera, PanZoomCamera):
                 self.view.camera = PanZoomCamera(
                     aspect=1, name="PanZoomCamera"
                 )
@@ -127,7 +128,8 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                # TO DO: Remove
+                # TO DO: Remove once we have removed vispy node from individual
+                # layers as then model / view separate
                 self.viewer._view = self.view
                 self.viewer.reset_view()
         else:
@@ -214,15 +216,13 @@ class QtViewer(QSplitter):
         self.canvas.native.setCursor(q_cursor)
 
     def _on_reset_view(self, event):
-        if type(self.view.camera) == PanZoomCamera:
+        if isinstance(self.view.camera, PanZoomCamera):
             self.view.camera.rect = event.viewbox
-        elif type(self.view.camera) == ArcballCamera:
+        elif isinstance(self.view.camera, ArcballCamera):
             self.view.camera.center = event.center
             self.view.camera.scale_factor = event.scale_factor
         else:
-            raise ValueError(
-                "Invalid camera type {}".format(type(self.view.camera))
-            )
+            raise ValueError(f"Invalid camera type {type(self.view.camera)}")
 
     def _update_canvas(self, event):
         """Clears draw order and refreshes canvas. Usefeul for when layers are

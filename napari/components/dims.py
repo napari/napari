@@ -182,8 +182,7 @@ class Dims:
         range : tuple
             Range specified as (min, max, step)
         """
-        if axis < 0:
-            axis += self.ndim
+        axis = axis % self.ndim
         if self.range[axis] != range:
             self._range[axis] = range
             self.events.range(axis=axis)
@@ -198,8 +197,7 @@ class Dims:
         value : int or float
             Value of the point
         """
-        if axis < 0:
-            axis += self.ndim
+        axis = axis % self.ndim
         if self.point[axis] != value:
             self._point[axis] = value
             self.events.axis(axis=axis)
@@ -214,8 +212,7 @@ class Dims:
         interval : tuple
             INTERVAL specified with (min, max)
         """
-        if axis < 0:
-            axis += self.ndim
+        axis = axis % self.ndim
         if self.interval[axis] != interval:
             self._interval[axis] = interval
             self.events.axis(axis=axis)
@@ -230,8 +227,7 @@ class Dims:
         mode : POINT or INTERVAL
             Whether dimension is in the POINT or INTERVAL mode
         """
-        if axis < 0:
-            axis += self.ndim
+        axis = axis % self.ndim
         if self.mode[axis] != mode:
             self._mode[axis] = mode
             self.events.axis(axis=axis)
@@ -246,8 +242,7 @@ class Dims:
         display : bool
             Bool which is `True` for display and `False` for slice or project.
         """
-        if axis < 0:
-            axis += self.ndim
+        axis = axis % self.ndim
         if self.display[axis] != display:
             self._display[axis] = display
             self.events.display(axis=axis)
@@ -262,15 +257,13 @@ class Dims:
         axis_b : int
             Dimension index.
         """
-        if axis_a < 0:
-            axis_a += self.ndim
-        if axis_b < 0:
-            axis_b += self.ndim
-
+        axis_a = axis_a % self.ndim
+        axis_b = axis_b % self.ndim
         if self.display[axis_a] != self.display[axis_b]:
-            state = self.display[axis_a]
-            self._display[axis_a] = self.display[axis_b]
-            self._display[axis_b] = state
+            self._display[axis_a], self._display[axis_b] = (
+                self.display[axis_b],
+                self.display[axis_a],
+            )
             self.events.display(axis=axis_a)
             self.events.display(axis=axis_b)
 

@@ -139,7 +139,7 @@ class Vectors(Layer):
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = copy(self.displayed)
+        self._displayed_stored = self.displayed.copy()
 
         self._reset_indices()
         self.events.data()
@@ -267,7 +267,7 @@ class Vectors(Layer):
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
         disp = np.where(self.displayed)[0]
-        offset = np.array([self.range[d][0] for d in disp]) + 0.5
+        offset = np.fromiter(self.range[d][0] for d in disp) + 0.5
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped

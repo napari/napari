@@ -224,11 +224,13 @@ class ViewerModel(KeymapMixin):
         corner = [min_shape[i] for i in np.where(self.dims.display)[0]]
 
         if np.sum(self.dims.display) == 2:
+            # For a PanZoomCamera emit a 4-tuple of the viewbox
             corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
             size = np.multiply(1.1, size)[::-1]
             rect = tuple(corner) + tuple(size)
             self.events.reset_view(viewbox=rect)
         else:
+            # For an ArcballCamera emit the center and scale_factor
             center = centroid[::-1]
             scale_factor = 1.5 * np.mean(size)
             self.events.reset_view(center=center, scale_factor=scale_factor)

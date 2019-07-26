@@ -25,9 +25,9 @@ with napari.gui_qt():
     # random data on the open interval (-1, 1)
     pos = np.zeros(shape=(m, n, p, 3), dtype=np.float32)
     for i in range(3):
-        pos[:, :, :, i] = (
-            2 * (np.random.random_sample(n * m * p) - 0.5)
-        ).reshape((m, n, p))
+        pos[..., i] = (2 * (np.random.random_sample(n * m * p) - 0.5)).reshape(
+            (m, n, p)
+        )
 
     print(image.shape, pos.shape)
 
