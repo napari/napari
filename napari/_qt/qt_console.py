@@ -1,4 +1,3 @@
-from qtpy.QtWidgets import QWidget
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.manager import QtKernelManager
@@ -16,8 +15,8 @@ def make_console(user_ns):
     # get current running instance or create new instance
     shell = get_ipython()
 
-    if shell is None:  # pure-python interpreter
-        # Create an in-process kernel
+    if shell is None:
+        # If there is no currently running instance create an in-process kernel
         kernel_manager = QtInProcessKernelManager()
         kernel_manager.start_kernel(show_banner=False)
         kernel_manager.kernel.gui = 'qt'
@@ -49,10 +48,14 @@ def make_console(user_ns):
         """
         )
 
-    elif type(shell) == TerminalInteractiveShell:  # ipython terminal
-        ipython_widget = QWidget
+    elif isinstance(shell, TerminalInteractiveShell):
+        # if launching from an ipython terminal then adding a console is not
+        # supported. Instead users should use the ipython terminal for
+        # the same functionality.
+        ipython_widget = None
 
-    elif type(shell) == ZMQInteractiveShell:  # ipython kernel
+    elif isinstance(shell, ZMQInteractiveShell):
+        # if launching from jupyter notebook, connect to the existing kernel
         kernel_client = QtKernelClient(connection_file=get_connection_file())
         kernel_client.load_connection_file()
         kernel_client.start_channels()

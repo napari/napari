@@ -90,16 +90,19 @@ class QtViewer(QSplitter):
         top_layout.addWidget(right)
         top.setLayout(top_layout)
 
-        self.console = make_console({'viewer': self.viewer})
-        self.console.hide()
-        self.console.setMinimumSize(QSize(100, 100))
         self.setOrientation(Qt.Vertical)
         self.addWidget(top)
-        self.addWidget(self.console)
 
-        self.buttons.consoleButton.clicked.connect(
-            lambda: self._toggle_console()
-        )
+        self.console = make_console({'viewer': self.viewer})
+        if self.console is not None:
+            self.console.hide()
+            self.console.setMinimumSize(QSize(100, 100))
+            self.addWidget(self.console)
+            self.buttons.consoleButton.clicked.connect(
+                lambda: self._toggle_console()
+            )
+        else:
+            self.buttons.consoleButton.setEnabled(False)
 
         self._last_visited_dir = str(Path.home())
 
