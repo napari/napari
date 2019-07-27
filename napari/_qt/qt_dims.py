@@ -143,7 +143,7 @@ class QtDims(QWidget):
             else:
                 if (
                     not self._displayed[axis]
-                    and self.dims.ndim - self.dims.order[axis]
+                    and self.dims.ndim - self.dims.order.index(axis)
                     > self.dims.ndisplay
                 ):
                     self._displayed[axis] = True
@@ -159,7 +159,10 @@ class QtDims(QWidget):
     def _update_display(self):
         """Updates display for all sliders."""
         for axis, slider in enumerate(self.sliders):
-            if self.dims.ndim - self.dims.order[axis] <= self.dims.ndisplay:
+            if (
+                self.dims.ndim - self.dims.order.index(axis)
+                <= self.dims.ndisplay
+            ):
                 self._displayed[axis] = False
                 slider.hide()
             else:

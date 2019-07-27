@@ -156,25 +156,11 @@ class Dims:
     @property
     def indices(self):
         """Tuple of slice objects for slicing arrays on each dimension."""
-        slice_list = []
-        z = zip(self.mode, self.order, self.point, self.interval)
-        for (mode, order, point, interval) in z:
-            # If axis is at end of order then it will be displayed
-            display = self.ndim - order <= self.ndisplay
-            if mode == DimsMode.POINT:
-                if display:
-                    slice_list.append(slice(None, None, None))
-                else:
-                    slice_list.append(int(round(point)))
-            elif mode == DimsMode.INTERVAL:
-                if display:
-                    slice_list.append(slice(None, None, None))
-
-                else:
-                    slice_list.append(
-                        slice(int(round(interval[0])), int(round(interval[1])))
-                    )
-
+        slice_list = [0] * self.ndim
+        for axis in self.order[: -self.ndisplay]:
+            slice_list[axis] = int(round(self.point[axis]))
+        for axis in self.order[-self.ndisplay :]:
+            slice_list[axis] = slice(None)
         return tuple(slice_list)
 
     @property
@@ -259,8 +245,10 @@ class Dims:
         """
         axis_a = axis_a % self.ndim
         axis_b = axis_b % self.ndim
-        self._order[axis_a], self._order[axis_b] = (
-            self.order[axis_b],
-            self.order[axis_a],
+        index_a = self.order.index(axis_a)
+        index_b = self.order.index(axis_b)
+        self._order[index_a], self._order[index_b] = (
+            self.order[index_b],
+            self.order[index_a],
         )
         self.events.display()

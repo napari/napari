@@ -271,7 +271,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
             self._update_coordinates()
         elif len(self.indices) > self.ndim:
             self._indices = self._indices[-self.ndim :]
-            order = np.array(self.dims_order[-ndim:])
+            order = np.array(self.dims_order[-self.ndim :])
             order[np.argsort(order)] = list(range(len(order)))
             self._dims_order = tuple(range(self.ndim))
             self._update_coordinates()
