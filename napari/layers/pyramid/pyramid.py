@@ -268,7 +268,6 @@ class Pyramid(Image):
         pos_in_slice = pos_coord + self.translate[[1, 0]] / self.scale[:2]
 
         # Make sure pos in slice doesn't go off edge
-        # TODO: Change dims selection when dims model changes
         shape = [self.level_shapes[self.data_level][d] for d in self.displayed]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
         for j, d in enumerate(self.displayed):
@@ -319,7 +318,6 @@ class Pyramid(Image):
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
 
-        # TODO: Change dims selection when dims model changes
         shape = [self.level_shapes[0][d] for d in self.displayed]
 
         # Clip according to the max image shape
