@@ -2,88 +2,80 @@ from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.manager import QtKernelManager
 from qtconsole.client import QtKernelClient
+from qtconsole.styles import sheet_from_template
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
 from ipykernel.connect import get_connection_file
+from pygments.styles import get_all_styles
+
+print(list(get_all_styles()))
 
 
-def make_console(user_ns):
-    # Prevent from being garbage collected
-    global ipython_widget
+class QtConsole(RichJupyterWidget):
+    def __init__(self, viewer):
+        super().__init__()
 
-    # get current running instance or create new instance
-    shell = get_ipython()
+        self.viewer = viewer
+        # get current running instance or create new instance
+        shell = get_ipython()
 
-    if shell is None:
-        # If there is no currently running instance create an in-process kernel
-        kernel_manager = QtInProcessKernelManager()
-        kernel_manager.start_kernel(show_banner=False)
-        kernel_manager.kernel.gui = 'qt'
-        kernel_manager.kernel.shell.user_ns.update(user_ns)
+        if shell is None:
+            # If there is no currently running instance create an in-process
+            # kernel
+            kernel_manager = QtInProcessKernelManager()
+            kernel_manager.start_kernel(show_banner=False)
+            kernel_manager.kernel.gui = 'qt'
+            kernel_manager.kernel.shell.user_ns.update({'viewer': self.viewer})
 
-        kernel_client = kernel_manager.client()
-        kernel_client.start_channels()
+            kernel_client = kernel_manager.client()
+            kernel_client.start_channels()
 
-        ipython_widget = RichJupyterWidget()
-        ipython_widget.kernel_manager = kernel_manager
-        ipython_widget.kernel_client = kernel_client
+            self.kernel_manager = kernel_manager
+            self.kernel_client = kernel_client
 
-        ipython_widget.setStyleSheet(
-            """QPlainTextEdit, QTextEdit {
-            background-color: black;
-            background-clip: padding;
-            color: white;
-            selection-background-color: #ccc;
-        }
-        .inverted {
-            background-color: white;
-            color: black;
-        }
-        .error { color: red; }
-        .in-prompt-number { font-weight: bold; }
-        .out-prompt-number { font-weight: bold; }
-        .in-prompt { color: green; }
-        .out-prompt { color: darkred; }
-        """
-        )
+        elif isinstance(shell, TerminalInteractiveShell):
+            # if launching from an ipython terminal then adding a console is
+            # not supported. Instead users should use the ipython terminal for
+            # the same functionality.
+            self.kernel_client = None
 
-    elif isinstance(shell, TerminalInteractiveShell):
-        # if launching from an ipython terminal then adding a console is not
-        # supported. Instead users should use the ipython terminal for
-        # the same functionality.
-        ipython_widget = None
+        elif isinstance(shell, ZMQInteractiveShell):
+            # if launching from jupyter notebook, connect to the existing
+            # kernel
+            kernel_client = QtKernelClient(
+                connection_file=get_connection_file()
+            )
+            kernel_client.load_connection_file()
+            kernel_client.start_channels()
 
-    elif isinstance(shell, ZMQInteractiveShell):
-        # if launching from jupyter notebook, connect to the existing kernel
-        kernel_client = QtKernelClient(connection_file=get_connection_file())
-        kernel_client.load_connection_file()
-        kernel_client.start_channels()
+            self.kernel_client = kernel_client
+            self.shell = shell
+            self.shell.user_ns.update({'viewer': self.viewer})
+        else:
+            raise ValueError(
+                'ipython shell not recognized; ' f'got {type(shell)}'
+            )
 
-        ipython_widget = RichJupyterWidget()
-        ipython_widget.kernel_client = kernel_client
-        ipython_widget.shell = shell
-        ipython_widget.shell.user_ns.update(user_ns)
+        # style_sheet = sheet_from_template('monokai')
 
-        ipython_widget.setStyleSheet(
-            """QPlainTextEdit, QTextEdit {
-            background-color: black;
-            background-clip: padding;
-            color: white;
-            selection-background-color: #ccc;
-        }
-        .inverted {
-            background-color: white;
-            color: black;
-        }
-        .error { color: red; }
-        .in-prompt-number { font-weight: bold; }
-        .out-prompt-number { font-weight: bold; }
-        .in-prompt { color: green; }
-        .out-prompt { color: darkred; }
-        """
-        )
-    else:
-        raise ValueError('ipython shell not recognized; ' f'got {type(shell)}')
+        style_sheet = """QPlainTextEdit, QTextEdit {
+                    background-color: black;
+                    background-clip: padding;
+                    color: white;
+                    selection-background-color: white;
+                }
+                .inverted {
+                    background-color: white;
+                    color: black;
+                }
+                .error { color: red; }
+                .in-prompt-number { font-weight: bold; }
+                .out-prompt-number { font-weight: bold; }
+                .in-prompt { color: lime; }
+                .out-prompt { color: red; }
+                """
 
-    return ipython_widget
+        print(style_sheet)
+        # self.setStyleSheet(style_sheet)
+        self.style_sheet = style_sheet

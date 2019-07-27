@@ -28,7 +28,7 @@ from ..util.io import read
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
-from .qt_console import make_console
+from .qt_console import QtConsole
 
 
 # set vispy application to the appropriate qt backend
@@ -93,8 +93,10 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Vertical)
         self.addWidget(top)
 
-        self.console = make_console({'viewer': self.viewer})
-        if self.console is not None:
+        self.console = QtConsole(self.viewer)
+        if self.console.kernel_client is not None:
+            self.console.style().unpolish(self.console)
+            self.console.style().polish(self.console)
             self.console.hide()
             self.console.setMinimumSize(QSize(100, 100))
             self.addWidget(self.console)
