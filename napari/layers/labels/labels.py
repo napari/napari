@@ -342,10 +342,11 @@ class Labels(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         indices = list(self.indices)
-        for i, d in enumerate(self.displayed):
-            if not d:
-                indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
-        self._data_view = np.asarray(self.data[tuple(indices)])
+        for i in self.not_displayed:
+            indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
+        self._data_view = np.asarray(self.data[tuple(indices)]).transpose(
+            self.displayed_order
+        )
 
         image = self._raw_to_displayed(self._data_view)
         self._node.set_data(image)
@@ -382,8 +383,7 @@ class Labels(Layer):
         else:
             # work with just the sliced image
             labels = self._data_view
-            disp = np.where(self.displayed)[0]
-            slice_coord = tuple(int_coord[d] for d in disp)
+            slice_coord = tuple(int_coord[d] for d in self.displayed)
 
         matches = labels == old_label
         if self.contiguous:
@@ -401,9 +401,8 @@ class Labels(Layer):
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
             indices = list(self.indices)
-            for i, d in enumerate(self.displayed):
-                if not d:
-                    indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
+            for i in self.not_displayed:
+                indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
             self.data[tuple(indices)] = labels
 
         self.refresh()
@@ -436,29 +435,23 @@ class Labels(Layer):
                 ]
             )
         else:
-            slice_coord = []
-            for i, d in enumerate(self.displayed):
-                if d:
-                    val = slice(
-                        np.round(
-                            np.clip(
-                                coord[i] - self.brush_size / 2,
-                                0,
-                                self.shape[i],
-                            )
-                        ).astype(int),
-                        np.round(
-                            np.clip(
-                                coord[i] + self.brush_size / 2,
-                                0,
-                                self.shape[i],
-                            )
-                        ).astype(int),
-                        1,
-                    )
-                else:
-                    val = np.round(coord[i]).astype(int)
-                slice_coord.append(val)
+            slice_coord = (0,) * self.ndim
+            for i in self.displayed:
+                slice_coord[i] = slice(
+                    np.round(
+                        np.clip(
+                            coord[i] - self.brush_size / 2, 0, self.shape[i]
+                        )
+                    ).astype(int),
+                    np.round(
+                        np.clip(
+                            coord[i] + self.brush_size / 2, 0, self.shape[i]
+                        )
+                    ).astype(int),
+                    1,
+                )
+            for i in self.not_displayed:
+                slice_coord[i] = np.round(coord[i]).astype(int)
             slice_coord = tuple(slice_coord)
 
         # update the labels image
@@ -480,11 +473,10 @@ class Labels(Layer):
         coord = np.round(self.coordinates).astype(int)
         j = 0
         slice_coord = []
-        for i, d in enumerate(self.displayed):
-            if d:
-                coord[i] = np.clip(coord[i], 0, self._data_view.shape[j] - 1)
-                slice_coord.append(coord[i])
-                j += 1
+        for i in self.displayed:
+            coord[i] = np.clip(coord[i], 0, self._data_view.shape[j] - 1)
+            slice_coord.append(coord[i])
+            j += 1
         value = self._data_view[tuple(slice_coord)]
 
         return coord, value
@@ -548,9 +540,8 @@ class Labels(Layer):
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
-        disp = np.where(self.displayed)[0]
-        width = str(self.shape[disp[1]])
-        height = str(self.shape[disp[0]])
+        width = str(self.shape[self.displayed[1]])
+        height = str(self.shape[self.displayed[0]])
         opacity = str(self.opacity)
         xml = Element(
             'image', width=width, height=height, opacity=opacity, **props

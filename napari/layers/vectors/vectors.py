@@ -133,13 +133,14 @@ class Vectors(Layer):
 
         self._data = vectors_to_coordinates(vectors)
 
-        disp = np.where(self.displayed)[0]
         vertices, triangles = generate_vector_meshes(
-            self._data[:, :, disp], self.edge_width, self.length
+            self._data[:, :, list(self.displayed)],
+            self.edge_width,
+            self.length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = self.displayed.copy()
+        self._displayed_stored = copy(self.displayed)
 
         self._reset_indices()
         self.events.data()
@@ -172,9 +173,10 @@ class Vectors(Layer):
         """float: Width for all vectors in pixels."""
         self._edge_width = edge_width
 
-        disp = np.where(self.displayed)[0]
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, disp], self._edge_width, self.length
+            self.data[:, :, list(self.displayed)],
+            self._edge_width,
+            self.length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
@@ -192,9 +194,10 @@ class Vectors(Layer):
         """float: Multiplicative factor for length of all vectors."""
         self._length = length
 
-        disp = np.where(self.displayed)[0]
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, disp], self.edge_width, self._length
+            self.data[:, :, list(self.displayed)],
+            self.edge_width,
+            self._length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
@@ -216,18 +219,19 @@ class Vectors(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        if not np.all(self.displayed == self._displayed_stored):
-            disp = np.where(self.displayed)[0]
+        if not self.displayed == self._displayed_stored:
             vertices, triangles = generate_vector_meshes(
-                self.data[:, :, disp], self.edge_width, self.length
+                self.data[:, :, list(self.displayed)],
+                self.edge_width,
+                self.length,
             )
             self._mesh_vertices = vertices
             self._mesh_triangles = triangles
             self._displayed_stored = copy(self.displayed)
 
         vertices = self._mesh_vertices
-        not_disp = np.where([not x for x in self.displayed])[0]
-        disp = np.where(self.displayed)[0]
+        not_disp = list(self.not_displayed)
+        disp = list(self.displayed)
         indices = np.array(self.indices)
 
         if len(self.data) == 0:
@@ -266,13 +270,12 @@ class Vectors(Layer):
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
-        disp = np.where(self.displayed)[0]
-        offset = np.fromiter(self.range[d][0] for d in disp) + 0.5
+        offset = np.array([self.range[d][0] for d in self.displayed]) + 0.5
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [self.range[d][1] - self.range[d][0] + 1 for d in disp]
+            [self.range[d][1] - self.range[d][0] + 1 for d in self.displayed]
         ).astype(int)
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 

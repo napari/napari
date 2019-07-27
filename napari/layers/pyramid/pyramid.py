@@ -102,8 +102,9 @@ class Pyramid(Image):
             self._data_level = len(pyramid) - 1
             self._top_left = np.array([0, 0])
 
-            disp = np.where(self.displayed)[0]
-            self.scale = self.level_downsamples[self.data_level, disp[::-1]]
+            self.scale = self.level_downsamples[
+                self.data_level, self.displayed[::-1]
+            ]
 
             # Trigger generation of view slice and thumbnail
             self._reset_indices()
@@ -131,8 +132,9 @@ class Pyramid(Image):
         if self._data_level == level:
             return
         self._data_level = level
-        disp = np.where(self.displayed)[0]
-        self.scale = self.level_downsamples[self.data_level, disp[::-1]]
+        self.scale = self.level_downsamples[
+            self.data_level, self.displayed[::-1]
+        ]
         self._top_left = self.find_top_left()
         self.refresh()
 
@@ -167,32 +169,29 @@ class Pyramid(Image):
         indices = list(self.indices)
         top_image = self.data[-1]
         indices = list(self.indices)
-        for i, d in enumerate(self.displayed):
-            if not d:
-                ind = np.round(
-                    indices[i] / self.level_downsamples[-1, i]
-                ).astype(int)
-                indices[i] = np.clip(ind, 0, self.level_shapes[-1][i] - 1)
+        for i in self.not_displayed:
+            ind = np.round(indices[i] / self.level_downsamples[-1, i]).astype(
+                int
+            )
+            indices[i] = np.clip(ind, 0, self.level_shapes[-1][i] - 1)
         self._data_thumbnail = np.asarray(top_image[tuple(indices)])
 
         indices = list(self.indices)
-        for i, d in enumerate(self.displayed):
-            if not d:
-                ind = np.round(
-                    indices[i] / self.level_downsamples[self.data_level, i]
-                ).astype(int)
-                indices[i] = np.clip(
-                    ind, 0, self.level_shapes[self.data_level][i] - 1
-                )
+        for i in self.not_displayed:
+            ind = np.round(
+                indices[i] / self.level_downsamples[self.data_level, i]
+            ).astype(int)
+            indices[i] = np.clip(
+                ind, 0, self.level_shapes[self.data_level][i] - 1
+            )
 
-        disp = np.where(self.displayed)[0]
         if np.any(
             [
                 self.level_shapes[self.data_level][d] > self._max_tile_shape
-                for d in disp
+                for d in self.displayed
             ]
         ):
-            for i, d in enumerate(disp):
+            for i, d in enumerate(self.displayed):
                 indices[d] = slice(
                     self._top_left[i],
                     self._top_left[i] + self._max_tile_shape[i],
@@ -203,9 +202,14 @@ class Pyramid(Image):
             self.translate = [0, 0]
         self._update_coordinates()
 
+        if self.multichannel:
+            order = self.displayed_order + (len(self.displayed_order),)
+        else:
+            order = self.displayed_order
+
         self._data_view = np.asarray(
             self.data[self.data_level][tuple(indices)]
-        )
+        ).transpose(order)
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
@@ -253,23 +257,21 @@ class Pyramid(Image):
 
         j = 0
         slice_coord = []
-        for i, d in enumerate(self.displayed):
-            if d:
-                coord[i] = np.clip(coord[i], 0, shape[j] - 1)
-                slice_coord.append(coord[i])
-                j += 1
+        for i in self.displayed:
+            coord[i] = np.clip(coord[i], 0, shape[j] - 1)
+            slice_coord.append(coord[i])
+            j += 1
 
         value = self._data_view[tuple(slice_coord)]
 
-        disp = np.where(self.displayed)[0]
-        pos_coord = np.array([self.coordinates[d] for d in disp])
+        pos_coord = np.array([self.coordinates[d] for d in self.displayed])
         pos_in_slice = pos_coord + self.translate[[1, 0]] / self.scale[:2]
 
         # Make sure pos in slice doesn't go off edge
         # TODO: Change dims selection when dims model changes
-        shape = [self.level_shapes[self.data_level][d] for d in disp]
+        shape = [self.level_shapes[self.data_level][d] for d in self.displayed]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
-        for j, d in enumerate(disp):
+        for j, d in enumerate(self.displayed):
             coord[d] = np.round(pos_in_slice[j] * self.scale[j]).astype(int)
 
         return coord, value
@@ -298,8 +300,7 @@ class Pyramid(Image):
         diff = size - max_size + 1
 
         # Find closed downsample level to diff
-        disp = np.where(self.displayed)[0]
-        ds = self.level_downsamples[:, disp].max(axis=1)
+        ds = self.level_downsamples[:, self.displayed].max(axis=1)
         level = np.argmin(abs(np.log2(ds) - diff))
 
         return level
@@ -319,8 +320,7 @@ class Pyramid(Image):
         pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
 
         # TODO: Change dims selection when dims model changes
-        disp = np.where(self.displayed)[0]
-        shape = [self.level_shapes[0][d] for d in disp]
+        shape = [self.level_shapes[0][d] for d in self.displayed]
 
         # Clip according to the max image shape
         pos = [

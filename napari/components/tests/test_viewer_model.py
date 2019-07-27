@@ -159,7 +159,7 @@ def test_swappable_dims():
     )
 
     # Swap dims
-    viewer.dims.swap_display(1, 2)
+    viewer.dims.swap(1, 2)
     assert viewer.dims.display == [False, True, False, True]
     assert np.all(viewer.layers['Image']._data_view == image_data[0, :, 0, :])
     assert np.all(

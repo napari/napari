@@ -63,8 +63,10 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         of the tuple is equal to the number of dimensions of the layer.
     indices : tuple of int or Slice
         Used for slicing arrays on each dimension.
-    displayed : tuple of bool
-        If dimension is diplayed or not.
+    displayed : tuple of int
+        List of displayed dimensions.
+    not_displayed : tuple of int
+        Which dimensions are not displayed.
     position : 2-tuple of int
         Cursor position in canvas ordered (x, y).
     shape : tuple of int
@@ -142,6 +144,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self._indices = (slice(None, None, None), slice(None, None, None))
         self._position = (0, 0)
         self.coordinates = (0, 0)
+        self.displayed_order = (0, 1)
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
@@ -195,8 +198,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @indices.setter
     def indices(self, indices):
-        if indices == self.indices:
-            return
         self._indices = indices[-self.ndim :]
         self._update_coordinates()
         self._set_view_slice()
@@ -204,7 +205,19 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     @property
     def displayed(self):
         """Tuple of bool: If dimension is diplayed or not."""
-        return tuple(isinstance(i, slice) for i in self.indices)
+        inds = [
+            i for i, ind in enumerate(self.indices) if isinstance(ind, slice)
+        ]
+        return tuple(inds[o] for o in self.displayed_order)
+
+    @property
+    def not_displayed(self):
+        """tuple: Not displayed dimensions."""
+        return tuple(
+            i
+            for i, ind in enumerate(self.indices)
+            if not isinstance(ind, slice)
+        )
 
     @property
     def position(self):
@@ -222,16 +235,17 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         """Insert the cursor position (x, y) into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
-        displayed = np.where(self.displayed)[0]
         if self._node.canvas is not None:
             transform = self._node.canvas.scene.node_transform(self._node)
-            position = transform.map(list(self.position))[: len(displayed)]
+            position = transform.map(list(self.position))[
+                : len(self.displayed)
+            ]
             position = position[::-1]
         else:
-            position = [0] * len(displayed)
+            position = [0] * len(self.displayed)
 
         coords = list(self.indices)
-        for d, p in zip(displayed, position):
+        for d, p in zip(self.displayed, position):
             coords[d] = p
         self.coordinates = tuple(coords)
 

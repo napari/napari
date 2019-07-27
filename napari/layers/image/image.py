@@ -274,10 +274,16 @@ class Image(Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         indices = list(self.indices)
-        for i, d in enumerate(self.displayed):
-            if not d:
-                indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
-        self._data_view = np.asarray(self.data[tuple(indices)])
+        for i in self.not_displayed:
+            indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
+        if self.multichannel:
+            order = self.displayed_order + (len(self.displayed_order),)
+        else:
+            order = self.displayed_order
+
+        self._data_view = np.asarray(self.data[tuple(indices)]).transpose(
+            order
+        )
 
         self._node.set_data(self._data_view)
 
@@ -359,11 +365,10 @@ class Image(Layer):
             shape = self._data_view.shape
         j = 0
         slice_coord = []
-        for i, d in enumerate(self.displayed):
-            if d:
-                coord[i] = np.clip(coord[i], 0, shape[j] - 1)
-                slice_coord.append(coord[i])
-                j += 1
+        for i in self.displayed:
+            coord[i] = np.clip(coord[i], 0, shape[j] - 1)
+            slice_coord.append(coord[i])
+            j += 1
 
         value = self._data_view[tuple(slice_coord)]
 
@@ -421,9 +426,8 @@ class Image(Layer):
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
-        disp = np.where(self.displayed)[0]
-        width = str(self.shape[disp[1]])
-        height = str(self.shape[disp[0]])
+        width = str(self.shape[self.displayed[1]])
+        height = str(self.shape[self.displayed[0]])
         opacity = str(self.opacity)
         xml = Element(
             'image', width=width, height=height, opacity=opacity, **props

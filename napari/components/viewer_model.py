@@ -218,10 +218,10 @@ class ViewerModel(KeymapMixin):
         # Scale the camera to the contents in the scene
         min_shape, max_shape = self._calc_bbox()
         centroid = np.add(min_shape, max_shape) / 2
-        centroid = [centroid[i] for i in np.where(self.dims.display)[0]]
+        centroid = [centroid[i] for i in self.dims.displayed]
         size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in np.where(self.dims.display)[0]]
-        corner = [min_shape[i] for i in np.where(self.dims.display)[0]]
+        size = [size[i] for i in self.dims.displayed]
+        corner = [min_shape[i] for i in self.dims.displayed]
 
         if self.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the viewbox
@@ -323,6 +323,7 @@ class ViewerModel(KeymapMixin):
         if self._view is not None:
             layer.parent = self._view
         self.layers.append(layer)
+        layer.displayed_order = self.dims.displayed_order
         layer.indices = self.dims.indices
 
         if len(self.layers) == 1:
@@ -482,9 +483,11 @@ class ViewerModel(KeymapMixin):
         layer = layers.Volume(volume, *args, **kwargs)
         if self.dims.ndim == 2:
             self.dims.ndim = 3
-        self.dims.display[-3:] = list(range(3))
+        if self.dims.ndisplay == 2:
+            new_display = [None] * (self.dims.ndim - 3) + list(range(3))
+            for i, d in enumerate(new_display):
+                self.dims.set_display(i, d)
         self.add_layer(layer)
-        self.dims.events.display(axis=self.dims.ndim - 3)
         return layer
 
     def add_points(self, points, *args, **kwargs):
@@ -696,6 +699,7 @@ class ViewerModel(KeymapMixin):
         """Updates the contained layers.
         """
         for layer in self.layers:
+            layer.displayed_order = self.dims.displayed_order
             layer.indices = self.dims.indices
 
     def _update_active_layer(self, event):

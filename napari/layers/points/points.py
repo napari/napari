@@ -254,7 +254,7 @@ class Points(Layer):
                 adding = len(data) - cur_npoints
                 if len(self._sizes) > 0:
                     new_size = copy(self._sizes[-1])
-                    for i in np.where(self.displayed)[0]:
+                    for i in self.displayed:
                         new_size[i] = self.size
                 else:
                     # Add the default size, with a value for each dimension
@@ -403,8 +403,7 @@ class Points(Layer):
             with self.block_update_properties():
                 self.face_color = face_color
 
-        displayed = np.where(self.displayed)[0]
-        size = list(set([self.sizes[i, displayed].mean() for i in index]))
+        size = list(set([self.sizes[i, self.displayed].mean() for i in index]))
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -523,8 +522,8 @@ class Points(Layer):
             less than 1 correspond to points located in neighboring slices.
         """
         # Get a list of the data for the points in this slice
-        not_disp = np.where([not x for x in self.displayed])[0]
-        disp = np.where(self.displayed)[0]
+        not_disp = list(self.not_displayed)
+        disp = list(self.displayed)
         indices = np.array(indices)
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
@@ -561,9 +560,8 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(self._data_view) > 0:
             # Get the point sizes
-            disp = np.where(self.displayed)[0]
             distances = abs(
-                self._data_view - [self.coordinates[d] for d in disp]
+                self._data_view - [self.coordinates[d] for d in self.displayed]
             )
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._sizes_view, axis=1) / 2,
@@ -587,8 +585,10 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(in_slice_data) > 0:
             # Get the point sizes
-            disp = np.where(self.displayed)[0]
-            sizes = self.sizes[np.ix_(indices, disp)].mean(axis=1) * scale
+            sizes = (
+                self.sizes[np.ix_(indices, self.displayed)].mean(axis=1)
+                * scale
+            )
 
             # Update the points node
             data = np.array(in_slice_data) + 0.5
@@ -746,10 +746,12 @@ class Points(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         if len(self._data_view) > 0:
-            disp = np.where(self.displayed)[0]
-            min_vals = [self.range[i][0] for i in disp]
+            min_vals = [self.range[i][0] for i in self.displayed]
             shape = np.ceil(
-                [self.range[i][1] - self.range[i][0] + 1 for i in disp]
+                [
+                    self.range[i][1] - self.range[i][0] + 1
+                    for i in self.displayed
+                ]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -800,7 +802,7 @@ class Points(Layer):
             Coordinates to move points to
         """
         if len(index) > 0:
-            disp = np.where(self.displayed)[0]
+            disp = list(self.displayed)
             if self._drag_start is None:
                 center = self.data[np.ix_(index, disp)].mean(axis=0)
                 self._drag_start = np.array(coord)[disp] - center
@@ -834,8 +836,7 @@ class Points(Layer):
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            disp = np.where(self.displayed)[0]
-            not_disp = np.where([not x for x in self.displayed])[0]
+            not_disp = self.not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
                 self.indices[i] - self._clipboard['indices'][i]
@@ -909,11 +910,15 @@ class Points(Layer):
                     self._move(self.selected_data, self.coordinates)
                 else:
                     self._is_selecting = True
-                    disp = np.where(self.displayed)[0]
                     if self._drag_start is None:
-                        self._drag_start = [self.coordinates[d] for d in disp]
+                        self._drag_start = [
+                            self.coordinates[d] for d in self.displayed
+                        ]
                     self._drag_box = np.array(
-                        [self._drag_start, [self.coordinates[d] for d in disp]]
+                        [
+                            self._drag_start,
+                            [self.coordinates[d] for d in self.displayed],
+                        ]
                     )
                     self._set_highlight()
             else:

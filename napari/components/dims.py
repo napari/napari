@@ -35,6 +35,8 @@ class Dims:
     displayed : tuple of int
         Which dimensions are displayed. Order indicates the order in which
         the displayed dimensions are shown.
+    displayed_order : tuple of int
+        Order of the displayed dimensions.
     ndim : int
         Number of dimensions.
     ndisplay : int
@@ -180,14 +182,18 @@ class Dims:
     @property
     def ndisplay(self):
         """Int: Number of displayed dimensions."""
-        return np.sum([not d == None for d in self.display])
+        return len(self.displayed)
+
+    @property
+    def displayed_order(self):
+        """tuple: Order of displayed dimensions."""
+        return tuple(d for d in self.display if d is not None)
 
     @property
     def displayed(self):
         """tuple: Displayed dimensions."""
         inds = [i for i, d in enumerate(self.display) if d is not None]
-        order = [d for i, d in enumerate(self.display) if d is not None]
-        return tuple(inds[o] for o in order)
+        return tuple(inds[o] for o in self.displayed_order)
 
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
@@ -264,7 +270,7 @@ class Dims:
             self._display[axis] = display
             self.events.display(axis=axis)
 
-    def swap_display(self, axis_a: int, axis_b: int):
+    def swap(self, axis_a: int, axis_b: int):
         """Swaps the display properties of two axes.
 
         Parameters
@@ -283,6 +289,7 @@ class Dims:
             )
             self.events.display(axis=axis_a)
             self.events.display(axis=axis_b)
+        # print(self.display)
 
     def _set_2d_viewing(self):
         """Sets the 2d viewing

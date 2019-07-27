@@ -130,6 +130,7 @@ class Volume(Layer):
             self._need_visual_update = False
 
             # Re intitialize indices for volume viewing
+            self.displayed_order = (0, 1, 2)
             self._indices = (0,) * (self.ndim - 3) + (
                 slice(None, None, None),
                 slice(None, None, None),
@@ -241,10 +242,11 @@ class Volume(Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         indices = list(self.indices)
-        for i, d in enumerate(self.displayed):
-            if not d:
-                indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
-        self._data_view = np.asarray(self.data[tuple(indices)])
+        for i in self.not_displayed:
+            indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
+        self._data_view = np.asarray(self.data[tuple(indices)]).transpose(
+            self.displayed_order
+        )
 
         self._node.set_data(self._data_view, clim=self.clim)
 
@@ -258,7 +260,6 @@ class Volume(Layer):
         """Update thumbnail with current image data and colormap."""
         # take max projection of volume along first axis
         image = np.max(self._data_thumbnail, axis=0)
-        # print(image.shape)
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()

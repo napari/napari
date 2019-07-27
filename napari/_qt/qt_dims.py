@@ -141,7 +141,10 @@ class QtDims(QWidget):
                 self._displayed[axis] = False
                 slider.hide()
             else:
-                if not self._displayed[axis] and not self.dims.display[axis]:
+                if (
+                    not self._displayed[axis]
+                    and self.dims.display[axis] is None
+                ):
                     self._displayed[axis] = True
                     slider.show()
                 slider.setRange(range)
@@ -166,7 +169,7 @@ class QtDims(QWidget):
 
         slider = self.sliders[axis]
 
-        if self.dims.display[axis]:
+        if self.dims.display[axis] is not None:
             self._displayed[axis] = False
             slider.hide()
         else:
