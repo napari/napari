@@ -1,5 +1,6 @@
 from copy import copy
 from typing import Union, Sequence
+import numpy as np
 
 from .dims_constants import DimsMode
 from ..util.event import EmitterGroup
@@ -28,15 +29,10 @@ class Dims:
         slider when in INTERVAL mode, one for each dimension
     mode : list of DimsMode
         List of DimsMode, one for each dimension
-    display : list of None, int
-        List of None, int indicating if dimension displayed or not, where a
-        value of None corresponds to a non displayed dimension and an int
-        indicates the order of the displayed dimension.
-    displayed : tuple of int
-        Which dimensions are displayed. Order indicates the order in which
-        the displayed dimensions are shown.
-    displayed_order : tuple of int
-        Order of the displayed dimensions.
+    order : tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to Y x X or Z x Y x X if ndisplay is
+        two or three respectively.
     ndim : int
         Number of dimensions.
     ndisplay : int
@@ -63,21 +59,16 @@ class Dims:
         self._point = []
         self._interval = []
         self._mode = []
-        self._display = []
+        self._order = []
 
+        self._ndisplay = 2
         self.ndim = init_ndim
 
     def __str__(self):
         return "~~".join(
             map(
                 str,
-                [
-                    self.range,
-                    self.point,
-                    self.interval,
-                    self.mode,
-                    self.display,
-                ],
+                [self.range, self.point, self.interval, self.mode, self.order],
             )
         )
 
@@ -103,15 +94,18 @@ class Dims:
 
     @property
     def mode(self):
-        """list of DimsMode: List of DimsMode, one for each dimension
-        """
+        """list of DimsMode: List of DimsMode, one for each dimension."""
         return copy(self._mode)
 
     @property
-    def display(self):
-        """list: List of None, int indicating if dimension displayed or not.
-        """
-        return copy(self._display)
+    def order(self):
+        """list: List of int indicating display order of dimensions."""
+        return self._order
+
+    @order.setter
+    def order(self, order):
+        self._order = order
+        self.events.display()
 
     @property
     def ndim(self):
@@ -138,7 +132,7 @@ class Dims:
                 # if in interval mode
                 self._interval.insert(0, (0, 1))
                 self._mode.insert(0, DimsMode.POINT)
-                self._display.insert(0, None)
+                self._order = [0] + list(np.add(self.order, 1))
 
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
@@ -152,7 +146,9 @@ class Dims:
             self._point = self._point[-ndim:]
             self._interval = self._interval[-ndim:]
             self._mode = self._mode[-ndim:]
-            self._display = self._display[-ndim:]
+            order = np.array(self._order[-ndim:])
+            order[np.argsort(order)] = list(range(len(order)))
+            self._order = list(order)
 
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
@@ -161,15 +157,17 @@ class Dims:
     def indices(self):
         """Tuple of slice objects for slicing arrays on each dimension."""
         slice_list = []
-        z = zip(self.mode, self.display, self.point, self.interval)
-        for (mode, display, point, interval) in z:
+        z = zip(self.mode, self.order, self.point, self.interval)
+        for (mode, order, point, interval) in z:
+            # If axis is at end of order then it will be displayed
+            display = self.ndim - order <= self.ndisplay
             if mode == DimsMode.POINT:
-                if display is not None:
+                if display:
                     slice_list.append(slice(None, None, None))
                 else:
                     slice_list.append(int(round(point)))
             elif mode == DimsMode.INTERVAL:
-                if display is not None:
+                if display:
                     slice_list.append(slice(None, None, None))
 
                 else:
@@ -182,18 +180,12 @@ class Dims:
     @property
     def ndisplay(self):
         """Int: Number of displayed dimensions."""
-        return len(self.displayed)
+        return self._ndisplay
 
-    @property
-    def displayed_order(self):
-        """tuple: Order of displayed dimensions."""
-        return tuple(d for d in self.display if d is not None)
-
-    @property
-    def displayed(self):
-        """tuple: Displayed dimensions."""
-        inds = [i for i, d in enumerate(self.display) if d is not None]
-        return tuple(inds[o] for o in self.displayed_order)
+    @ndisplay.setter
+    def ndisplay(self, ndisplay):
+        self._ndisplay = ndisplay
+        self.events.display()
 
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
@@ -255,21 +247,6 @@ class Dims:
             self._mode[axis] = mode
             self.events.axis(axis=axis)
 
-    def set_display(self, axis: int, display: int):
-        """Sets the display boolean flag for a given axis
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-        display : int, None
-            None for non-displayed dimensions, int for the order of display.
-        """
-        axis = axis % self.ndim
-        if self.display[axis] != display:
-            self._display[axis] = display
-            self.events.display(axis=axis)
-
     def swap(self, axis_a: int, axis_b: int):
         """Swaps the display properties of two axes.
 
@@ -282,20 +259,8 @@ class Dims:
         """
         axis_a = axis_a % self.ndim
         axis_b = axis_b % self.ndim
-        if self.display[axis_a] != self.display[axis_b]:
-            self._display[axis_a], self._display[axis_b] = (
-                self.display[axis_b],
-                self.display[axis_a],
-            )
-            self.events.display(axis=axis_a)
-            self.events.display(axis=axis_b)
-        # print(self.display)
-
-    def _set_2d_viewing(self):
-        """Sets the 2d viewing
-        """
-        for i in range(len(self.display) - 2):
-            self.set_display(i, None)
-        if len(self.display) >= 2:
-            self.set_display(-1, 1)
-            self.set_display(-2, 0)
+        self._order[axis_a], self._order[axis_b] = (
+            self.order[axis_b],
+            self.order[axis_a],
+        )
+        self.events.display()

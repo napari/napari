@@ -54,7 +54,6 @@ class ViewerModel(KeymapMixin):
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
         self.dims = Dims(2)
-        self.dims._set_2d_viewing()
 
         self.layers = LayerList()
 
@@ -214,14 +213,15 @@ class ViewerModel(KeymapMixin):
         """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
+        displayed = self.dims.order[-self.dims.ndisplay :]
 
         # Scale the camera to the contents in the scene
         min_shape, max_shape = self._calc_bbox()
         centroid = np.add(min_shape, max_shape) / 2
-        centroid = [centroid[i] for i in self.dims.displayed]
+        centroid = [centroid[i] for i in displayed]
         size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in self.dims.displayed]
-        corner = [min_shape[i] for i in self.dims.displayed]
+        size = [size[i] for i in displayed]
+        corner = [min_shape[i] for i in displayed]
 
         if self.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the viewbox
@@ -323,7 +323,8 @@ class ViewerModel(KeymapMixin):
         if self._view is not None:
             layer.parent = self._view
         self.layers.append(layer)
-        layer.displayed_order = self.dims.displayed_order
+        layer.ndisplay = self.dims.ndisplay
+        layer.dims_order = self.dims.order
         layer.indices = self.dims.indices
 
         if len(self.layers) == 1:
@@ -484,9 +485,7 @@ class ViewerModel(KeymapMixin):
         if self.dims.ndim == 2:
             self.dims.ndim = 3
         if self.dims.ndisplay == 2:
-            new_display = [None] * (self.dims.ndim - 3) + list(range(3))
-            for i, d in enumerate(new_display):
-                self.dims.set_display(i, d)
+            self.dims.ndisplay = 3
         self.add_layer(layer)
         return layer
 
@@ -699,7 +698,8 @@ class ViewerModel(KeymapMixin):
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer.displayed_order = self.dims.displayed_order
+            layer.ndisplay = self.dims.ndisplay
+            layer.dims_order = self.dims.order
             layer.indices = self.dims.indices
 
     def _update_active_layer(self, event):

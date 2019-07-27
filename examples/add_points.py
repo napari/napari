@@ -62,3 +62,7 @@ with napari.gui_qt():
 
     # change the layer mode
     layer.mode = 'add'
+
+    # swap dimension order
+    viewer.dims.swap(0, 1)
+    viewer.dims.order = (0, 1)

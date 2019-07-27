@@ -14,7 +14,6 @@ def test_creating_view():
     with gui_qt():
         ndim = 4
         dims = Dims(ndim)
-        dims._set_2d_viewing()
         view = QtDims(dims)
 
         # Check that the dims model has been appended to the dims view
@@ -33,7 +32,6 @@ def test_changing_ndim():
     with gui_qt():
         ndim = 4
         dims = Dims(ndim)
-        dims._set_2d_viewing()
         view = QtDims(dims)
 
         # Check that adding dimensions adds sliders
@@ -54,13 +52,12 @@ def test_changing_display():
     with gui_qt():
         ndim = 4
         dims = Dims(ndim)
-        dims._set_2d_viewing()
         view = QtDims(dims)
         assert view.nsliders == 4
         assert np.sum(view._displayed) == 2
 
         # Check changing displayed removes a slider
-        view.dims.set_display(1, True)
+        view.dims.ndisplay = 3
         assert np.sum(view._displayed) == 1
 
 

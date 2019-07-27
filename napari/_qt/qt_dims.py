@@ -31,7 +31,7 @@ class QtDims(QWidget):
     update_ndim = Signal()
     update_axis = Signal(int)
     update_range = Signal(int)
-    update_display = Signal(int)
+    update_display = Signal()
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -81,7 +81,7 @@ class QtDims(QWidget):
 
         # range change listener
         def update_display_listener(event):
-            self.update_display.emit(event.axis)
+            self.update_display.emit()
 
         self.dims.events.display.connect(update_display_listener)
         self.update_display.connect(self._update_display)
@@ -143,7 +143,8 @@ class QtDims(QWidget):
             else:
                 if (
                     not self._displayed[axis]
-                    and self.dims.display[axis] is None
+                    and self.dims.ndim - self.dims.order[axis]
+                    > self.dims.ndisplay
                 ):
                     self._displayed[axis] = True
                     slider.show()
@@ -155,27 +156,15 @@ class QtDims(QWidget):
         nsliders = np.sum(self._displayed)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
-    def _update_display(self, axis: int):
-        """
-        Updates display for a given slider.
-
-        Parameters
-        ----------
-        axis : int
-            Axis index.
-        """
-        if axis >= len(self.sliders):
-            return
-
-        slider = self.sliders[axis]
-
-        if self.dims.display[axis] is not None:
-            self._displayed[axis] = False
-            slider.hide()
-        else:
-            self._displayed[axis] = True
-            slider.show()
-
+    def _update_display(self):
+        """Updates display for all sliders."""
+        for axis, slider in enumerate(self.sliders):
+            if self.dims.ndim - self.dims.order[axis] <= self.dims.ndisplay:
+                self._displayed[axis] = False
+                slider.hide()
+            else:
+                self._displayed[axis] = True
+                slider.show()
         nsliders = np.sum(self._displayed)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
@@ -185,8 +174,8 @@ class QtDims(QWidget):
         """
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
+        self._update_display()
         for i in list(range(self.dims.ndim)):
-            self._update_display(i)
             self._update_range(i)
             self._update_slider(i)
 

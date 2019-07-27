@@ -27,14 +27,14 @@ def test_display():
     Test display setting.
     """
     dims = Dims(4)
-    assert dims.display == [None] * 4
+    assert dims.order == [0, 1, 2, 3]
+    assert dims.ndisplay == 2
 
-    dims.set_display(0, 0)
-    dims.set_display(1, 1)
-    assert dims.display == [0, 1, None, None]
+    dims.swap(0, 1)
+    assert dims.order == [1, 0, 2, 3]
 
-    dims._set_2d_viewing()
-    assert dims.display == [None, None, 0, 1]
+    dims.order = [2, 3, 1, 0]
+    assert dims.order == [2, 3, 1, 0]
 
 
 def test_point():
@@ -89,11 +89,7 @@ def test_indices():
     Test indices values.
     """
     dims = Dims(4)
-    # On instantiation no dims are displayed and the indices default to 0
-    assert dims.indices == (0,) * 4
-
-    dims._set_2d_viewing()
-    # On 2D viewing the last two dims are now set to sliced mode
+    # On instantiation the last two dims are set to sliced mode
     assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
 
     dims.set_point(0, 2)

@@ -143,8 +143,9 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self._interactive = True
         self._indices = (slice(None, None, None), slice(None, None, None))
         self._position = (0, 0)
+        self.ndisplay = 2
+        self._dims_order = (0, 1)
         self.coordinates = (0, 0)
-        self.displayed_order = (0, 1)
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
@@ -204,20 +205,31 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
 
     @property
     def displayed(self):
-        """Tuple of bool: If dimension is diplayed or not."""
-        inds = [
-            i for i, ind in enumerate(self.indices) if isinstance(ind, slice)
-        ]
-        return tuple(inds[o] for o in self.displayed_order)
+        """Tuple: Displayed dimensions."""
+        return tuple(self.dims_order[-self.ndisplay :])
 
     @property
     def not_displayed(self):
-        """tuple: Not displayed dimensions."""
-        return tuple(
-            i
-            for i, ind in enumerate(self.indices)
-            if not isinstance(ind, slice)
-        )
+        """Tuple: Not displayed dimensions."""
+        return tuple(self.dims_order[: -self.ndisplay])
+
+    @property
+    def displayed_order(self):
+        """Tuple: Order of only displayed dimensions."""
+        order = np.array(self.displayed)
+        order[np.argsort(order)] = list(range(len(order)))
+        return tuple(order)
+
+    @property
+    def dims_order(self):
+        """Tuple: Order displayed dimensions."""
+        return self._dims_order
+
+    @dims_order.setter
+    def dims_order(self, dims_order):
+        order = np.array(dims_order[-self.ndim :])
+        order[np.argsort(order)] = list(range(len(order)))
+        self._dims_order = tuple(order)
 
     @property
     def position(self):
@@ -255,9 +267,13 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
             self._indices = (0,) * (
                 self.ndim - len(self.indices)
             ) + self._indices
+            self._dims_order = tuple(range(self.ndim))
             self._update_coordinates()
         elif len(self.indices) > self.ndim:
             self._indices = self._indices[-self.ndim :]
+            order = np.array(self.dims_order[-ndim:])
+            order[np.argsort(order)] = list(range(len(order)))
+            self._dims_order = tuple(range(self.ndim))
             self._update_coordinates()
 
     @property

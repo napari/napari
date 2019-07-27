@@ -130,7 +130,8 @@ class Volume(Layer):
             self._need_visual_update = False
 
             # Re intitialize indices for volume viewing
-            self.displayed_order = (0, 1, 2)
+            self.ndisplay = 3
+            self._dims_order = (0, 1, 2)
             self._indices = (0,) * (self.ndim - 3) + (
                 slice(None, None, None),
                 slice(None, None, None),
