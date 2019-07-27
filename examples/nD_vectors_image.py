@@ -33,4 +33,4 @@ with napari.gui_qt():
 
     # add the vectors
     vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
-    viewer.dims.swap_display(0, 1)
+    viewer.dims.swap(0, 1)

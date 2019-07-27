@@ -18,4 +18,4 @@ with napari.gui_qt():
         axis=0,
     )
     viewer = napari.view(blobs.astype(float))
-    viewer.dims.swap_display(1, 2)
+    viewer.dims.swap(1, 2)

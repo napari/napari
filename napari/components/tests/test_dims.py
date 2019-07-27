@@ -27,14 +27,14 @@ def test_display():
     Test display setting.
     """
     dims = Dims(4)
-    assert dims.display == [False] * 4
+    assert dims.display == [None] * 4
 
-    dims.set_display(0, True)
-    dims.set_display(1, True)
-    assert dims.display == [True, True, False, False]
+    dims.set_display(0, 0)
+    dims.set_display(1, 1)
+    assert dims.display == [0, 1, None, None]
 
     dims._set_2d_viewing()
-    assert dims.display == [False, False, True, True]
+    assert dims.display == [None, None, 0, 1]
 
 
 def test_point():
