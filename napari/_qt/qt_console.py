@@ -18,6 +18,8 @@ class QtConsole(RichJupyterWidget):
         super().__init__()
 
         self.viewer = viewer
+
+        # self.connect.closeEvent(self.shutdown_kernel)
         # get current running instance or create new instance
         shell = get_ipython()
 

@@ -1,9 +1,10 @@
 imageio>=2.5.0
+ipykernel>=5.1.1
 numpy>=1.10.0
 qtpy>=1.7.0
 scipy>=1.2.0
 scikit-image>=0.15.0
 vispy>=0.6.0
-IPython>=7.6
+IPython>=7.7.0
 PyOpenGL>=3.1.0
 PySide2>=5.12.3
