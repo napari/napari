@@ -262,7 +262,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self.coordinates = tuple(coords)
 
     def _reset_indices(self):
-        """Reset indicies, which is useful after data has been changed."""
+        """Reset indices, which is useful after data has been changed."""
         if len(self.indices) < self.ndim:
             self._indices = (0,) * (
                 self.ndim - len(self.indices)

@@ -471,12 +471,10 @@ class Labels(Layer):
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
-        j = 0
         slice_coord = []
-        for i in self.displayed:
-            coord[i] = np.clip(coord[i], 0, self._data_view.shape[j] - 1)
-            slice_coord.append(coord[i])
-            j += 1
+        for i, d in enumerate(self.displayed):
+            coord[d] = np.clip(coord[d], 0, self._data_view.shape[i] - 1)
+            slice_coord.append(coord[d])
         value = self._data_view[tuple(slice_coord)]
 
         return coord, value

@@ -34,4 +34,3 @@ with napari.gui_qt():
     viewer.add_points(
         points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
     )
-    viewer.dims.swap(1, 2)

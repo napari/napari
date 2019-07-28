@@ -342,9 +342,6 @@ class Image(Layer):
             colormapped = self.colormap[1].map(downsampled)
             colormapped = colormapped.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
-        if 0 in colormapped.shape:
-            colormapped = np.zeros(self._thumbnail_shape)
-            colormapped[..., 3] = self.opacity
         self.thumbnail = colormapped
 
     def get_value(self):
@@ -363,12 +360,11 @@ class Image(Layer):
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-        j = 0
+
         slice_coord = []
-        for i in self.displayed:
-            coord[i] = np.clip(coord[i], 0, shape[j] - 1)
-            slice_coord.append(coord[i])
-            j += 1
+        for i, d in enumerate(self.displayed):
+            coord[d] = np.clip(coord[d], 0, shape[i] - 1)
+            slice_coord.append(coord[d])
 
         value = self._data_view[tuple(slice_coord)]
 

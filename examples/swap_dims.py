@@ -1,5 +1,5 @@
 """
-Display one 4-D image layer using the add_image API
+Display a 4-D image and points layer and swap the displayed dimensions
 """
 
 import numpy as np
@@ -33,4 +33,4 @@ with napari.gui_qt():
         points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
     )
 
-    viewer.dims.swap(1, 2)
+    viewer.dims.order = (0, 2, 1, 3)

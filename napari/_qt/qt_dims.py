@@ -178,7 +178,7 @@ class QtDims(QWidget):
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
-        for i in list(range(self.dims.ndim)):
+        for i in range(self.dims.ndim):
             self._update_range(i)
             self._update_slider(i)
 

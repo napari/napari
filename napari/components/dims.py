@@ -31,8 +31,8 @@ class Dims:
         List of DimsMode, one for each dimension
     order : tuple of int
         Order in which dimensions are displayed where the last two or last
-        three dimensions correspond to Y x X or Z x Y x X if ndisplay is
-        two or three respectively.
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is two or three respectively.
     ndim : int
         Number of dimensions.
     ndisplay : int
@@ -104,6 +104,10 @@ class Dims:
 
     @order.setter
     def order(self, order):
+        if not len(order) == self.ndim:
+            raise ValueError(
+                f"Invalid ordering {order} for {self.ndim} dimensions"
+            )
         self._order = order
         self.events.display()
 
@@ -170,6 +174,10 @@ class Dims:
 
     @ndisplay.setter
     def ndisplay(self, ndisplay):
+        if ndisplay not in (2, 3):
+            raise ValueError(
+                f"Invalid number of dimensions to be displayed {ndisplay}"
+            )
         self._ndisplay = ndisplay
         self.events.display()
 
@@ -232,23 +240,3 @@ class Dims:
         if self.mode[axis] != mode:
             self._mode[axis] = mode
             self.events.axis(axis=axis)
-
-    def swap(self, axis_a: int, axis_b: int):
-        """Swaps the display properties of two axes.
-
-        Parameters
-        ----------
-        axis_a : int
-            Dimension index
-        axis_b : int
-            Dimension index.
-        """
-        axis_a = axis_a % self.ndim
-        axis_b = axis_b % self.ndim
-        index_a = self.order.index(axis_a)
-        index_b = self.order.index(axis_b)
-        self._order[index_a], self._order[index_b] = (
-            self.order[index_b],
-            self.order[index_a],
-        )
-        self.events.display()

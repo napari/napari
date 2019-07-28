@@ -30,9 +30,6 @@ def test_display():
     assert dims.order == [0, 1, 2, 3]
     assert dims.ndisplay == 2
 
-    dims.swap(0, 1)
-    assert dims.order == [1, 0, 2, 3]
-
     dims.order = [2, 3, 1, 0]
     assert dims.order == [2, 3, 1, 0]
 

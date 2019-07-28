@@ -255,12 +255,10 @@ class Pyramid(Image):
         else:
             shape = self._data_view.shape
 
-        j = 0
         slice_coord = []
-        for i in self.displayed:
-            coord[i] = np.clip(coord[i], 0, shape[j] - 1)
-            slice_coord.append(coord[i])
-            j += 1
+        for i, d in enumerate(self.displayed):
+            coord[d] = np.clip(coord[d], 0, shape[i] - 1)
+            slice_coord.append(coord[d])
 
         value = self._data_view[tuple(slice_coord)]
 

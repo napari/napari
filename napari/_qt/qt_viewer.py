@@ -118,7 +118,7 @@ class QtViewer(QSplitter):
                 # layers as then model / view separate
                 self.viewer._view = self.view
                 self.viewer.reset_view()
-        elif self.viewer.dims.ndisplay == 2:
+        else:
             # Set 2D camera
             if not isinstance(self.view.camera, PanZoomCamera):
                 self.view.camera = PanZoomCamera(
@@ -132,10 +132,6 @@ class QtViewer(QSplitter):
                 # layers as then model / view separate
                 self.viewer._view = self.view
                 self.viewer.reset_view()
-        else:
-            raise ValueError(
-                f"Invalid display flags set in dimensions {self.viewer.dims.ndisplay}"
-            )
 
     def screenshot(self):
         """Take currently displayed screen and convert to an image array.

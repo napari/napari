@@ -42,7 +42,3 @@ with napari.gui_qt():
     # change the layer interpolation mode
     layer.interpolation = 'bicubic'
     layer.interpolation = 'nearest'
-
-    # swap dimension order
-    viewer.dims.swap(0, 1)
-    viewer.dims.order = (0, 1)

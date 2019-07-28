@@ -13,4 +13,3 @@ with napari.gui_qt():
     viewer = napari.view(blobs=blobs.astype(float))
     labeled = ndi.label(blobs)[0]
     label_layer = viewer.add_labels(labeled, name='blob ID')
-    viewer.dims.swap(1, 2)
