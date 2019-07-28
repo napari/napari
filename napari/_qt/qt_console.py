@@ -76,7 +76,6 @@ class QtConsole(RichJupyterWidget):
             )
 
         self.enable_calltips = False
-        # Try to get console from jupyter to run without a shift click
-        # self.execute_on_complete_input = True
 
-        print(self.shell, dir(self.shell))
+        # TODO: Try to get console from jupyter to run without a shift click
+        # self.execute_on_complete_input = True

@@ -18,3 +18,7 @@ class Viewer(ViewerModel):
         self.window = Window(qt_viewer)
         self.screenshot = self.window.qt_viewer.screenshot
         self.camera = self.window.qt_viewer.view.camera
+        if self.window.qt_viewer.console.shell is not None:
+            self.update_console = self.window.qt_viewer.console.shell.push
+        else:
+            self.update_console = lambda: None
