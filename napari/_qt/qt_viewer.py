@@ -93,7 +93,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Vertical)
         self.addWidget(top)
 
-        self.console = QtConsole(self.viewer)
+        self.console = QtConsole({'viewer': self.viewer})
         if self.console.kernel_client is not None:
             self.console.style().unpolish(self.console)
             self.console.style().polish(self.console)
