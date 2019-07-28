@@ -41,7 +41,6 @@ class QtConsole(RichJupyterWidget):
             kernel_manager = QtInProcessKernelManager()
             kernel_manager.start_kernel(show_banner=False)
             kernel_manager.kernel.gui = 'qt'
-            kernel_manager.kernel.shell.push(user_variables)
 
             kernel_client = kernel_manager.client()
             kernel_client.start_channels()
