@@ -255,6 +255,7 @@ class QtViewer(QSplitter):
 
     def _update_palette(self, palette):
         # template and apply the primary stylesheet
+        self.console.update_palette(palette)
         themed_stylesheet = template(self.raw_stylesheet, **palette)
         self.setStyleSheet(themed_stylesheet)
 

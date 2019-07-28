@@ -8,6 +8,7 @@ from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
 from ipykernel.connect import get_connection_file
 from pygments.styles import get_all_styles
+from ..util.theme import template
 
 print(list(get_all_styles()))
 
@@ -57,25 +58,24 @@ class QtConsole(RichJupyterWidget):
                 'ipython shell not recognized; ' f'got {type(shell)}'
             )
 
-        # style_sheet = sheet_from_template('monokai')
-
-        style_sheet = """QPlainTextEdit, QTextEdit {
-                    background-color: black;
+    def update_palette(self, palette):
+        raw_stylesheet = """QPlainTextEdit, QTextEdit {
+                    background-color: {{ foreground }};
                     background-clip: padding;
-                    color: white;
-                    selection-background-color: white;
+                    color: {{ text }};
+                    selection-background-color: {{ highlight }};
+                    margin: 10px;
                 }
                 .inverted {
-                    background-color: white;
-                    color: black;
+                    background-color: {{ background }};
+                    color: {{ foreground }};
                 }
-                .error { color: red; }
+                .error { color: #b72121; }
                 .in-prompt-number { font-weight: bold; }
                 .out-prompt-number { font-weight: bold; }
-                .in-prompt { color: lime; }
-                .out-prompt { color: red; }
+                .in-prompt { color: #6ab825; }
+                .out-prompt { color: #b72121; }
                 """
-
-        print(style_sheet)
-        # self.setStyleSheet(style_sheet)
-        self.style_sheet = style_sheet
+        themed_stylesheet = template(raw_stylesheet, **palette)
+        self.syntax_style = palette['syntax_style']
+        self.style_sheet = themed_stylesheet

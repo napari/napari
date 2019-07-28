@@ -8,6 +8,7 @@ palettes = {
         'highlight': 'rgb(106, 115, 128)',
         'text': 'rgb(240, 241, 242)',
         'icon': 'rgb(209, 210, 212)',
+        'syntax_style': 'native',
     },
     'light': {
         'folder': 'light',
@@ -18,6 +19,7 @@ palettes = {
         'highlight': 'rgb(163, 158, 156)',
         'text': 'rgb(59, 58, 57)',
         'icon': 'rgb(107, 105, 103)',
+        'syntax_style': 'default',
     },
 }
 
