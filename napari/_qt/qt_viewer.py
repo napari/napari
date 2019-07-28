@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QFileDialog,
     QSplitter,
 )
+from qtpy.QtWidgets import QStackedWidget
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -48,9 +49,24 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
+        self.controls = QtControls(self.viewer)
+        self.layers = QtLayerList(self.viewer.layers)
+        self.buttons = QtLayersButtons(self.viewer)
+        self.console = QtConsole({'viewer': self.viewer})
+
+        if self.console.shell is not None:
+            self.console.style().unpolish(self.console)
+            self.console.style().polish(self.console)
+            self.console.hide()
+            self.console.setMinimumSize(QSize(100, 100))
+            self.buttons.consoleButton.clicked.connect(
+                lambda: self._toggle_console()
+            )
+        else:
+            self.buttons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
-        self.canvas.native.setMinimumSize(QSize(100, 100))
+        self.canvas.native.setMinimumSize(QSize(200, 200))
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
@@ -62,49 +78,33 @@ class QtViewer(QSplitter):
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
 
-        top = QWidget()
-        top_layout = QHBoxLayout()
-
         center = QWidget()
         center_layout = QVBoxLayout()
         center_layout.setContentsMargins(15, 20, 15, 10)
         center_layout.addWidget(self.canvas.native)
-        self.dims = QtDims(self.viewer.dims)
         center_layout.addWidget(self.dims)
         center.setLayout(center_layout)
 
-        # Add controls, center, and layerlist
-        self.control_panel = QtControls(viewer)
-        top_layout.addWidget(self.control_panel)
-        top_layout.addWidget(center)
-
         right = QWidget()
         right_layout = QVBoxLayout()
-        self.layers = QtLayerList(self.viewer.layers)
         right_layout.addWidget(self.layers)
-        self.buttons = QtLayersButtons(viewer)
         right_layout.addWidget(self.buttons)
         right.setLayout(right_layout)
-        right.setMinimumSize(QSize(308, 250))
 
+        left = self.controls
+
+        top = QWidget()
+        top_layout = QHBoxLayout()
+        top_layout.addWidget(left)
+        top_layout.addWidget(center)
         top_layout.addWidget(right)
         top.setLayout(top_layout)
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(top)
 
-        self.console = QtConsole({'viewer': self.viewer})
-        if self.console.kernel_client is not None:
-            self.console.style().unpolish(self.console)
-            self.console.style().polish(self.console)
-            self.console.hide()
-            self.console.setMinimumSize(QSize(100, 100))
+        if self.console.shell is not None:
             self.addWidget(self.console)
-            self.buttons.consoleButton.clicked.connect(
-                lambda: self._toggle_console()
-            )
-        else:
-            self.buttons.consoleButton.setEnabled(False)
 
         self._last_visited_dir = str(Path.home())
 

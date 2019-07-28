@@ -27,6 +27,7 @@ class QtLayerList(QScrollArea):
         self.centers = []
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
+        self.setFixedWidth(275)
 
         self.layers.events.added.connect(self._add)
         self.layers.events.removed.connect(self._remove)

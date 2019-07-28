@@ -30,8 +30,6 @@ class QtConsole(RichJupyterWidget):
     def __init__(self, user_variables=None):
         super().__init__()
 
-        user_variables = user_variables or {}
-
         # get current running instance or create new instance
         shell = get_ipython()
 
@@ -50,6 +48,7 @@ class QtConsole(RichJupyterWidget):
 
             self.kernel_client = kernel_client
             self.shell = kernel_manager.kernel.shell
+            self.push = self.shell.push
 
         elif isinstance(shell, TerminalInteractiveShell):
             # if launching from an ipython terminal then adding a console is
@@ -57,6 +56,7 @@ class QtConsole(RichJupyterWidget):
             # the same functionality.
             self.kernel_client = None
             self.shell = None
+            self.push = lambda var: None
 
         elif isinstance(shell, ZMQInteractiveShell):
             # if launching from jupyter notebook, connect to the existing
@@ -69,11 +69,15 @@ class QtConsole(RichJupyterWidget):
 
             self.kernel_client = kernel_client
             self.shell = shell
-            self.shell.push(user_variables)
+            self.push = self.shell.push
         else:
             raise ValueError(
                 'ipython shell not recognized; ' f'got {type(shell)}'
             )
+
+        # Add any user variables
+        user_variables = user_variables or {}
+        self.push(user_variables)
 
         self.enable_calltips = False
 
