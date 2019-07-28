@@ -20,6 +20,23 @@ QtViewer {
    padding-top: 0px;
 }
 
+QtConsole > QPlainTextEdit, QTextEdit {
+                background-color: {{ foreground }};
+                background-clip: padding;
+                color: {{ text }};
+                selection-background-color: {{ highlight }};
+                margin: 10px;
+            }
+            .inverted {
+                background-color: {{ background }};
+                color: {{ foreground }};
+            }
+            .error { color: #b72121; }
+            .in-prompt-number { font-weight: bold; }
+            .out-prompt-number { font-weight: bold; }
+            .in-prompt { color: #6ab825; }
+            .out-prompt { color: #b72121; }
+
 QLabel {
    background-color: {{ foreground }};
    qproperty-alignment: right;

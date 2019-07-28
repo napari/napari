@@ -1,3 +1,6 @@
+# syntax_style for the console must be one of the supported styles from
+# pygments - see here for examples https://help.farbox.com/pygments.html
+
 palettes = {
     'dark': {
         'folder': 'dark',

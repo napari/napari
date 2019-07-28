@@ -2,6 +2,7 @@ imageio>=2.5.0
 ipykernel>=5.1.1
 numpy>=1.10.0
 qtpy>=1.7.0
+qtconsole>=4.5.1
 scipy>=1.2.0
 scikit-image>=0.15.0
 vispy>=0.6.0
