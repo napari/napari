@@ -26,6 +26,7 @@ class QtConsole(RichJupyterWidget):
         if shell is None:
             # If there is no currently running instance create an in-process
             # kernel
+
             kernel_manager = QtInProcessKernelManager()
             kernel_manager.start_kernel(show_banner=False)
             kernel_manager.kernel.gui = 'qt'
@@ -59,6 +60,10 @@ class QtConsole(RichJupyterWidget):
             raise ValueError(
                 'ipython shell not recognized; ' f'got {type(shell)}'
             )
+
+        self.enable_calltips = False
+        # Try to get console from jupyter to run without a shift click
+        # self.execute_on_complete_input = True
 
     def update_palette(self, palette):
         raw_stylesheet = """QPlainTextEdit, QTextEdit {
