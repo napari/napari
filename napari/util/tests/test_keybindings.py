@@ -1,4 +1,7 @@
+import inspect
+
 import pytest
+
 from .. import keybindings
 from ..keybindings import (
     bind_key,
@@ -112,12 +115,9 @@ def test_InheritedKeymap():
 
 def test_KeymapMixin():
     class Foo(KeymapMixin):
-        class_keymap = {}
+        ...
 
-        def __init__(self, discard):
-            super().__init__()
-
-    foo = Foo(None)
+    foo = Foo()
 
     foo.bind_key('A', lambda: 42)
     assert foo.keymap['A']() == 42
@@ -138,12 +138,19 @@ def test_KeymapMixin():
     with pytest.raises(KeyError):
         foo.keymap['B']
 
+    class Bar(Foo):
+        ...
+
+    assert Bar.class_keymap is not Foo.class_keymap
+
+    class Baz(Foo):
+        class_keymap = dict(A=42)
+
+    assert Baz.class_keymap == dict(A=42)
+
 
 def test_bind_key_doc():
-    doc = bind_key.__doc__
-    doc = doc.split('Notes\n    -----\n')[-1]
-    import textwrap
+    doc = inspect.getdoc(bind_key)
+    doc = doc.split('Notes\n-----\n')[-1]
 
-    doc = textwrap.dedent(doc)
-
-    assert doc == keybindings.__doc__
+    assert doc == inspect.getdoc(keybindings)
