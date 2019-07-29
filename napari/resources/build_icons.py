@@ -18,6 +18,7 @@ insert = """<style type="text/css">
 
 icons = [
     'add',
+    'console',
     'delete',
     'delete_shape',
     'direct',

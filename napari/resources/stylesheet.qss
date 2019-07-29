@@ -400,14 +400,7 @@ QtConsoleButton {
   max-width : 28px;
   min-height : 28px;
   max-height : 28px;
-}
-
-QtConsoleButton[expanded=true] {
-  image: url(":/icons/{{ folder }}/properties_expand.svg");
-}
-
- QtConsoleButton[expanded=false] {
-  image: url(":/icons/{{ folder }}/properties_contract.svg");
+  image: url(":/icons/{{ folder }}/console.svg");
 }
 
 /* ------------------------------------------------------ */
