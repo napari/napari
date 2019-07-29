@@ -12,6 +12,7 @@ palettes = {
         'text': 'rgb(240, 241, 242)',
         'icon': 'rgb(209, 210, 212)',
         'syntax_style': 'native',
+        'console': 'rgb(0, 0, 0)',
     },
     'light': {
         'folder': 'light',
@@ -23,6 +24,7 @@ palettes = {
         'text': 'rgb(59, 58, 57)',
         'icon': 'rgb(107, 105, 103)',
         'syntax_style': 'default',
+        'console': 'rgb(255, 255, 255)',
     },
 }
 

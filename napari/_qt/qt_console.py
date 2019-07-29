@@ -33,11 +33,10 @@ class QtConsole(RichJupyterWidget):
 
         # get current running instance or create new instance
         shell = get_ipython()
-        # print('lkksk', shell)
+
         if shell is None:
             # If there is no currently running instance create an in-process
             # kernel.
-
             kernel_manager = QtInProcessKernelManager()
             kernel_manager.start_kernel(show_banner=False)
             kernel_manager.kernel.gui = 'qt'
