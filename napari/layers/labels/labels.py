@@ -161,7 +161,7 @@ class Labels(Layer):
         self._need_visual_update = False
 
         # Trigger generation of view slice and thumbnail
-        self._reset_indices()
+        self._update_dims()
         self._set_view_slice()
 
     @property
@@ -172,9 +172,12 @@ class Labels(Layer):
     @data.setter
     def data(self, data):
         self._data = data
-        self._reset_indices()
+        self._update_dims()
         self.events.data()
         self.refresh()
+
+    def _get_range(self):
+        return tuple((0, m, 1) for m in self.data.shape)
 
     @property
     def contiguous(self):
@@ -301,9 +304,6 @@ class Labels(Layer):
         self.events.mode(mode=mode)
         self.refresh()
 
-    def _get_shape(self):
-        return self.data.shape
-
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
 
@@ -341,11 +341,8 @@ class Labels(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        indices = list(self.indices)
-        for i in self.not_displayed:
-            indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
-        self._data_view = np.asarray(self.data[tuple(indices)]).transpose(
-            self.displayed_order
+        self._data_view = np.asarray(self.data[self.dims.indices]).transpose(
+            self.dims.displayed_order
         )
 
         image = self._raw_to_displayed(self._data_view)
@@ -383,7 +380,7 @@ class Labels(Layer):
         else:
             # work with just the sliced image
             labels = self._data_view
-            slice_coord = tuple(int_coord[d] for d in self.displayed)
+            slice_coord = tuple(int_coord[d] for d in self.dims.displayed)
 
         matches = labels == old_label
         if self.contiguous:
@@ -400,10 +397,7 @@ class Labels(Layer):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            indices = list(self.indices)
-            for i in self.not_displayed:
-                indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
-            self.data[tuple(indices)] = labels
+            self.data[tuple(self.indices)] = labels
 
         self.refresh()
 
@@ -435,8 +429,8 @@ class Labels(Layer):
                 ]
             )
         else:
-            slice_coord = (0,) * self.ndim
-            for i in self.displayed:
+            slice_coord = [0] * self.ndim
+            for i in self.dims.displayed:
                 slice_coord[i] = slice(
                     np.round(
                         np.clip(
@@ -450,7 +444,7 @@ class Labels(Layer):
                     ).astype(int),
                     1,
                 )
-            for i in self.not_displayed:
+            for i in self.dims.not_displayed:
                 slice_coord[i] = np.round(coord[i]).astype(int)
             slice_coord = tuple(slice_coord)
 
@@ -471,10 +465,11 @@ class Labels(Layer):
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
-        slice_coord = []
-        for i, d in enumerate(self.displayed):
-            coord[d] = np.clip(coord[d], 0, self._data_view.shape[i] - 1)
-            slice_coord.append(coord[d])
+        slice_coord = np.clip(
+            coord[self.dims.displayed],
+            0,
+            np.subtract(self._data_view.shape, 1),
+        )
         value = self._data_view[tuple(slice_coord)]
 
         return coord, value
@@ -538,8 +533,8 @@ class Labels(Layer):
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
-        width = str(self.shape[self.displayed[1]])
-        height = str(self.shape[self.displayed[0]])
+        width = str(self.shape[self.dims.displayed[1]])
+        height = str(self.shape[self.dims.displayed[0]])
         opacity = str(self.opacity)
         xml = Element(
             'image', width=width, height=height, opacity=opacity, **props
