@@ -40,6 +40,10 @@ class Dims:
     indices : tuple of slice object
         Tuple of slice objects for slicing arrays on each dimension, one for
         each dimension
+    displayed : tuple
+        List of displayed dimensions.
+    not_displayed : tuple
+        List of dimensions not displayed.
     """
 
     def __init__(self, init_ndim=0):
@@ -160,11 +164,12 @@ class Dims:
     @property
     def indices(self):
         """Tuple of slice objects for slicing arrays on each dimension."""
-        slice_list = [0] * self.ndim
-        for axis in self.order[: -self.ndisplay]:
-            slice_list[axis] = int(round(self.point[axis]))
-        for axis in self.order[-self.ndisplay :]:
-            slice_list[axis] = slice(None)
+        slice_list = []
+        for axis in range(self.ndim):
+            if axis in self.displayed:
+                slice_list.append(slice(None))
+            else:
+                slice_list.append(int(round(self.point[axis])))
         return tuple(slice_list)
 
     @property
@@ -180,6 +185,16 @@ class Dims:
             )
         self._ndisplay = ndisplay
         self.events.display()
+
+    @property
+    def displayed(self):
+        """tuple: list of displayed dimensions."""
+        return tuple(self.order[-self.ndisplay :])
+
+    @property
+    def not_displayed(self):
+        """tuple: list of dimensions not displayed."""
+        return tuple(self.order[: -self.ndisplay])
 
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)

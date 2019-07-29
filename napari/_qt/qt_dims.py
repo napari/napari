@@ -42,7 +42,7 @@ class QtDims(QWidget):
 
         # list of sliders
         self.sliders = []
-        self._displayed = []
+        self._displayed_sliders = []
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -138,37 +138,35 @@ class QtDims(QWidget):
         range = (range[0], range[1] - range[2], range[2])
         if range not in (None, (None, None, None)):
             if range[1] == 0:
-                self._displayed[axis] = False
+                self._displayed_sliders[axis] = False
                 slider.hide()
             else:
                 if (
-                    not self._displayed[axis]
-                    and self.dims.ndim - self.dims.order.index(axis)
-                    > self.dims.ndisplay
+                    not self._displayed_sliders[axis]
+                    and not axis in self.dims.displayed
                 ):
-                    self._displayed[axis] = True
+                    self._displayed_sliders[axis] = True
                     slider.show()
                 slider.setRange(range)
         else:
-            self._displayed[axis] = False
+            self._displayed_sliders[axis] = False
             slider.hide()
 
-        nsliders = np.sum(self._displayed)
+        nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _update_display(self):
         """Updates display for all sliders."""
         for axis, slider in enumerate(self.sliders):
-            if (
-                self.dims.ndim - self.dims.order.index(axis)
-                <= self.dims.ndisplay
-            ):
-                self._displayed[axis] = False
+            if axis in self.dims.displayed:
+                # Displayed dimensions correspond to non displayed sliders
+                self._displayed_sliders[axis] = False
                 slider.hide()
             else:
-                self._displayed[axis] = True
+                # Non displayed dimensions correspond to displayed sliders
+                self._displayed_sliders[axis] = True
                 slider.show()
-        nsliders = np.sum(self._displayed)
+        nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _update_nsliders(self):
@@ -197,8 +195,8 @@ class QtDims(QWidget):
             slider = self._create_range_slider_widget(dim_axis)
             self.layout().addWidget(slider)
             self.sliders.insert(0, slider)
-            self._displayed.insert(0, True)
-            nsliders = np.sum(self._displayed)
+            self._displayed_sliders.insert(0, True)
+            nsliders = np.sum(self._displayed_sliders)
             self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
@@ -225,10 +223,10 @@ class QtDims(QWidget):
         """
         # remove particular slider
         slider = self.sliders.pop(index)
-        self._displayed.pop(index)
+        self._displayed_sliders.pop(index)
         self.layout().removeWidget(slider)
         slider.deleteLater()
-        nsliders = np.sum(self._displayed)
+        nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _create_range_slider_widget(self, axis):

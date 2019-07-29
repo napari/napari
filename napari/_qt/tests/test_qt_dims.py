@@ -22,7 +22,7 @@ def test_creating_view():
         # Check the number of displayed sliders is two less than the number of
         # dimensions
         assert view.nsliders == ndim
-        assert np.sum(view._displayed) == ndim - 2
+        assert np.sum(view._displayed_sliders) == ndim - 2
 
 
 def test_changing_ndim():
@@ -37,12 +37,12 @@ def test_changing_ndim():
         # Check that adding dimensions adds sliders
         view.dims.ndim = 5
         assert view.nsliders == 5
-        assert np.sum(view._displayed) == 3
+        assert np.sum(view._displayed_sliders) == 3
 
         # Check that removing dimensions removes sliders
         view.dims.ndim = 2
         assert view.nsliders == 2
-        assert np.sum(view._displayed) == 0
+        assert np.sum(view._displayed_sliders) == 0
 
 
 def test_changing_display():
@@ -54,11 +54,11 @@ def test_changing_display():
         dims = Dims(ndim)
         view = QtDims(dims)
         assert view.nsliders == 4
-        assert np.sum(view._displayed) == 2
+        assert np.sum(view._displayed_sliders) == 2
 
         # Check changing displayed removes a slider
         view.dims.ndisplay = 3
-        assert np.sum(view._displayed) == 1
+        assert np.sum(view._displayed_sliders) == 1
 
 
 def test_slider_values():
