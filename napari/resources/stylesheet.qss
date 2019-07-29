@@ -20,6 +20,10 @@ QtViewer {
    padding-top: 0px;
 }
 
+QtConsole {
+  min-height: 100px;
+}
+
 QtConsole > QPlainTextEdit, QTextEdit {
                 background-color: {{ foreground }};
                 background-clip: padding;
@@ -36,6 +40,16 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .out-prompt-number { font-weight: bold; }
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
+
+QtLayerList {
+    min-width: 275px;
+    max-width: 275px;
+}
+
+QtControls {
+    min-width: 40px;
+    max-width: 40px;
+}
 
 QLabel {
    background-color: {{ foreground }};
@@ -351,18 +365,41 @@ QPushButton:pressed {
 
 QtDeleteButton {
    image: url(":/icons/{{ folder }}/delete.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
 }
 
 QtNewPointsButton {
    image: url(":/icons/{{ folder }}/new_points.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
 }
 
 QtNewShapesButton {
    image: url(":/icons/{{ folder }}/new_shapes.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
 }
 
 QtNewLabelsButton {
    image: url(":/icons/{{ folder }}/new_labels.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+}
+
+QtConsoleButton {
+  min-width : 28px;
+  max-width : 28px;
+  min-height : 28px;
+  max-height : 28px;
 }
 
 QtConsoleButton[expanded=true] {

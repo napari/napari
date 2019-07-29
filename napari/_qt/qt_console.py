@@ -4,6 +4,7 @@ from qtconsole.manager import QtKernelManager
 from qtconsole.client import QtKernelClient
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
+from IPython.lib.kernel import find_connection_file
 from ipykernel.inprocess.ipkernel import InProcessInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
 from ipykernel.connect import get_connection_file
@@ -32,11 +33,10 @@ class QtConsole(RichJupyterWidget):
 
         # get current running instance or create new instance
         shell = get_ipython()
-
-        if shell is None or type(shell) == InProcessInteractiveShell:
+        # print('lkksk', shell)
+        if shell is None:
             # If there is no currently running instance create an in-process
-            # kernel or if there is an old running InProcessInteractiveShell
-            # then just create a new one - necessary for our tests to pass
+            # kernel.
 
             kernel_manager = QtInProcessKernelManager()
             kernel_manager.start_kernel(show_banner=False)
@@ -48,7 +48,20 @@ class QtConsole(RichJupyterWidget):
             self.kernel_client = kernel_client
             self.shell = kernel_manager.kernel.shell
             self.push = self.shell.push
+        elif type(shell) == InProcessInteractiveShell:
+            # If there is an existing running InProcessInteractiveShell
+            # it is likely because multiple viewers have been launched from
+            # the same process. In that case create a new kernel.
+            kernel_manager = QtInProcessKernelManager()
+            kernel_manager.start_kernel(show_banner=False)
+            kernel_manager.kernel.gui = 'qt'
 
+            kernel_client = kernel_manager.client()
+            kernel_client.start_channels()
+
+            self.kernel_client = kernel_client
+            self.shell = kernel_manager.kernel.shell
+            self.push = self.shell.push
         elif isinstance(shell, TerminalInteractiveShell):
             # if launching from an ipython terminal then adding a console is
             # not supported. Instead users should use the ipython terminal for

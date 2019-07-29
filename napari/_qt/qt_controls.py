@@ -14,7 +14,6 @@ class QtControls(QStackedWidget):
         self.widgets = {}
         self.addWidget(self.empty_widget)
         self._display(None)
-        self.setFixedWidth(40)
 
         self.viewer.layers.events.added.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)

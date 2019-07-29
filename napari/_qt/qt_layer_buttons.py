@@ -28,8 +28,6 @@ class QtDeleteButton(QPushButton):
         super().__init__()
 
         self.viewer = viewer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
         self.setToolTip('Delete layers')
         self.setAcceptDrops(True)
         self.clicked.connect(lambda: self.viewer.layers.remove_selected())
@@ -59,8 +57,6 @@ class QtNewPointsButton(QPushButton):
         super().__init__()
 
         self.viewer = viewer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
         self.setToolTip('New points layer')
         self.clicked.connect(lambda: self.viewer._new_points())
 
@@ -70,8 +66,6 @@ class QtNewShapesButton(QPushButton):
         super().__init__()
 
         self.viewer = viewer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
         self.setToolTip('New shapes layer')
         self.clicked.connect(lambda: self.viewer._new_shapes())
 
@@ -81,8 +75,6 @@ class QtNewLabelsButton(QPushButton):
         super().__init__()
 
         self.viewer = viewer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
         self.setToolTip('New labels layer')
         self.clicked.connect(lambda: self.viewer._new_labels())
 
@@ -92,7 +84,5 @@ class QtConsoleButton(QPushButton):
         super().__init__()
 
         self.viewer = viewer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
         self.setToolTip('Open IPython terminal')
         self.setProperty('expanded', False)

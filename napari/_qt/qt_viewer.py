@@ -58,7 +58,6 @@ class QtViewer(QSplitter):
             self.console.style().unpolish(self.console)
             self.console.style().polish(self.console)
             self.console.hide()
-            self.console.setMinimumSize(QSize(100, 100))
             self.buttons.consoleButton.clicked.connect(
                 lambda: self._toggle_console()
             )
