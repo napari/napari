@@ -698,9 +698,12 @@ class ViewerModel(KeymapMixin):
         """Updates the contained layers.
         """
         for layer in self.layers:
-            layer.ndisplay = self.dims.ndisplay
-            layer.dims_order = self.dims.order
-            layer.indices = self.dims.indices
+            offset = self.dims.ndim - layer.dims.ndim
+            order = np.array(self.dims.order)
+            layer.dims.order = list(order[order >= offset] - offset)
+            for axis in range(layer.dims.ndim):
+                point = self.dims.point[axis + offset]
+                layer.dims.set_point(axis, point)
 
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and
@@ -749,7 +752,7 @@ class ViewerModel(KeymapMixin):
         ranges = [(inf, -inf, inf)] * ndims
 
         for layer in self.layers:
-            layer_range = layer.range[::-1]
+            layer_range = layer.dims.range[::-1]
             ranges = [
                 (min(a, b), max(c, d), min(e, f))
                 for (a, c, e), (b, d, f) in zip_longest(

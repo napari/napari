@@ -44,6 +44,8 @@ class Dims:
         List of displayed dimensions.
     not_displayed : tuple
         List of dimensions not displayed.
+    displayed_order : tuple
+        Order of only displayed dimensions.
     """
 
     def __init__(self, init_ndim=0):
@@ -169,7 +171,9 @@ class Dims:
             if axis in self.displayed:
                 slice_list.append(slice(None))
             else:
-                slice_list.append(int(round(self.point[axis])))
+                p = int(round(self.point[axis]))
+                p = np.clip(p, self.range[axis][0], self.range[axis][1] - 1)
+                slice_list.append(p)
         return tuple(slice_list)
 
     @property
@@ -189,12 +193,19 @@ class Dims:
     @property
     def displayed(self):
         """tuple: list of displayed dimensions."""
-        return tuple(self.order[-self.ndisplay :])
+        return self.order[-self.ndisplay :]
 
     @property
     def not_displayed(self):
         """tuple: list of dimensions not displayed."""
-        return tuple(self.order[: -self.ndisplay])
+        return self.order[: -self.ndisplay]
+
+    @property
+    def displayed_order(self):
+        """tuple: Order of only displayed dimensions."""
+        order = np.array(self.displayed)
+        order[np.argsort(order)] = list(range(len(order)))
+        return tuple(order)
 
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
