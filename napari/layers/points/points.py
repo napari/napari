@@ -225,7 +225,7 @@ class Points(Layer):
             self._need_visual_update = False
 
             # Trigger generation of view slice and thumbnail
-            self._reset_indices()
+            self._update_dims()
             self._set_view_slice()
 
     @property
@@ -254,7 +254,7 @@ class Points(Layer):
                 adding = len(data) - cur_npoints
                 if len(self._sizes) > 0:
                     new_size = copy(self._sizes[-1])
-                    for i in self.displayed:
+                    for i in self.dims.displayed:
                         new_size[i] = self.size
                 else:
                     # Add the default size, with a value for each dimension
@@ -263,9 +263,20 @@ class Points(Layer):
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
                 self.edge_colors += [self.edge_color for i in range(adding)]
                 self.face_colors += [self.face_color for i in range(adding)]
-        self._reset_indices()
+        self._update_dims()
         self.events.data()
         self.refresh()
+
+    def _get_range(self):
+        """Determine ranges for slicing given by (min, max, step)."""
+        if len(self.data) == 0:
+            maxs = np.ones(self.data.shape[1], dtype=int)
+            mins = np.zeros(self.data.shape[1], dtype=int)
+        else:
+            maxs = np.max(self.data, axis=0)
+            mins = np.min(self.data, axis=0)
+
+        return [(min, max, 1) for min, max in zip(mins, maxs)]
 
     @property
     def n_dimensional(self) -> str:
@@ -403,7 +414,9 @@ class Points(Layer):
             with self.block_update_properties():
                 self.face_color = face_color
 
-        size = list(set([self.sizes[i, self.displayed].mean() for i in index]))
+        size = list(
+            set([self.sizes[i, self.dims.displayed].mean() for i in index])
+        )
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -482,26 +495,6 @@ class Points(Layer):
 
         self.events.mode(mode=mode)
 
-    def _get_shape(self):
-        if len(self.data) == 0:
-            # when no points given, return (1,) * dim
-            # we use data.shape[1] as the dimensionality of the image
-            return np.ones(self.data.shape[1], dtype=int)
-        else:
-            return np.max(self.data, axis=0)
-
-    @property
-    def range(self):
-        """list of 3-tuple: ranges for slicing given by (min, max, step)."""
-        if len(self.data) == 0:
-            maxs = np.ones(self.data.shape[1], dtype=int)
-            mins = np.zeros(self.data.shape[1], dtype=int)
-        else:
-            maxs = np.max(self.data, axis=0)
-            mins = np.min(self.data, axis=0)
-
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
-
     def _slice_data(self, indices):
         """Determines the slice of points given the indices.
 
@@ -522,8 +515,8 @@ class Points(Layer):
             less than 1 correspond to points located in neighboring slices.
         """
         # Get a list of the data for the points in this slice
-        not_disp = list(self.not_displayed)
-        disp = list(self.displayed)
+        not_disp = list(self.dims.not_displayed)
+        disp = list(self.dims.displayed)
         indices = np.array(indices)
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
@@ -561,7 +554,8 @@ class Points(Layer):
         if len(self._data_view) > 0:
             # Get the point sizes
             distances = abs(
-                self._data_view - [self.coordinates[d] for d in self.displayed]
+                self._data_view
+                - [self.coordinates[d] for d in self.dims.displayed]
             )
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._sizes_view, axis=1) / 2,
@@ -580,13 +574,13 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        in_slice_data, indices, scale = self._slice_data(self.indices)
+        in_slice_data, indices, scale = self._slice_data(self.dims.indices)
 
         # Display points if there are any in this slice
         if len(in_slice_data) > 0:
             # Get the point sizes
             sizes = (
-                self.sizes[np.ix_(indices, self.displayed)].mean(axis=1)
+                self.sizes[np.ix_(indices, self.dims.displayed)].mean(axis=1)
                 * scale
             )
 
@@ -746,11 +740,11 @@ class Points(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         if len(self._data_view) > 0:
-            min_vals = [self.range[i][0] for i in self.displayed]
+            min_vals = [self.dims.range[i][0] for i in self.dims.displayed]
             shape = np.ceil(
                 [
-                    self.range[i][1] - self.range[i][0] + 1
-                    for i in self.displayed
+                    self.dims.range[i][1] - self.dims.range[i][0] + 1
+                    for i in self.dims.displayed
                 ]
             ).astype(int)
             zoom_factor = np.divide(
@@ -802,7 +796,7 @@ class Points(Layer):
             Coordinates to move points to
         """
         if len(index) > 0:
-            disp = list(self.displayed)
+            disp = list(self.dims.displayed)
             if self._drag_start is None:
                 center = self.data[np.ix_(index, disp)].mean(axis=0)
                 self._drag_start = np.array(coord)[disp] - center
@@ -825,7 +819,7 @@ class Points(Layer):
                 'face_color': deepcopy(
                     [self.face_colors[i] for i in self.selected_data]
                 ),
-                'indices': self.indices,
+                'indices': self.dims.indices,
             }
         else:
             self._clipboard = {}
@@ -836,10 +830,10 @@ class Points(Layer):
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            not_disp = self.not_displayed
+            not_disp = self.dims.not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
-                self.indices[i] - self._clipboard['indices'][i]
+                self.dims.indices[i] - self._clipboard['indices'][i]
                 for i in not_disp
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
@@ -912,12 +906,12 @@ class Points(Layer):
                     self._is_selecting = True
                     if self._drag_start is None:
                         self._drag_start = [
-                            self.coordinates[d] for d in self.displayed
+                            self.coordinates[d] for d in self.dims.displayed
                         ]
                     self._drag_box = np.array(
                         [
                             self._drag_start,
-                            [self.coordinates[d] for d in self.displayed],
+                            [self.coordinates[d] for d in self.dims.displayed],
                         ]
                     )
                     self._set_highlight()
