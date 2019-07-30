@@ -213,15 +213,13 @@ class ViewerModel(KeymapMixin):
         """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
-        displayed = self.dims.order[-self.dims.ndisplay :]
-
         # Scale the camera to the contents in the scene
         min_shape, max_shape = self._calc_bbox()
         centroid = np.add(min_shape, max_shape) / 2
-        centroid = [centroid[i] for i in displayed]
+        centroid = [centroid[i] for i in self.dims.displayed]
         size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in displayed]
-        corner = [min_shape[i] for i in displayed]
+        size = [size[i] for i in self.dims.displayed]
+        corner = [min_shape[i] for i in self.dims.displayed]
 
         if self.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the viewbox
@@ -323,9 +321,7 @@ class ViewerModel(KeymapMixin):
         if self._view is not None:
             layer.parent = self._view
         self.layers.append(layer)
-        layer.ndisplay = self.dims.ndisplay
-        layer.dims_order = self.dims.order
-        layer.indices = self.dims.indices
+        self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
             self.reset_view()
@@ -694,10 +690,17 @@ class ViewerModel(KeymapMixin):
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
-    def _update_layers(self):
+    def _update_layers(self, layers=None):
         """Updates the contained layers.
+
+        Parameters
+        ----------
+        layers : list of napari.layers.Layer, optional
+            List of layers to update. If none provided updates all.
         """
-        for layer in self.layers:
+        layers = layers or self.layers
+
+        for layer in layers:
             offset = self.dims.ndim - layer.dims.ndim
             order = np.array(self.dims.order)
             layer.dims.order = list(order[order >= offset] - offset)
