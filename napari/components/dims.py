@@ -41,9 +41,9 @@ class Dims:
         Tuple of slice objects for slicing arrays on each dimension, one for
         each dimension
     displayed : tuple
-        List of displayed dimensions.
+        List of dimensions that are displayed.
     not_displayed : tuple
-        List of dimensions not displayed.
+        List of dimensions that are not displayed.
     displayed_order : tuple
         Order of only displayed dimensions.
     """
@@ -105,7 +105,7 @@ class Dims:
 
     @property
     def order(self):
-        """list: List of int indicating display order of dimensions."""
+        """list of int: Display order of dimensions."""
         return self._order
 
     @order.setter
@@ -165,7 +165,7 @@ class Dims:
 
     @property
     def indices(self):
-        """Tuple of slice objects for slicing arrays on each dimension."""
+        """tuple of slice objects for slicing arrays on each dimension."""
         slice_list = []
         for axis in range(self.ndim):
             if axis in self.displayed:
@@ -178,7 +178,7 @@ class Dims:
 
     @property
     def ndisplay(self):
-        """Int: Number of displayed dimensions."""
+        """int: Number of displayed dimensions."""
         return self._ndisplay
 
     @ndisplay.setter
@@ -192,12 +192,12 @@ class Dims:
 
     @property
     def displayed(self):
-        """tuple: list of displayed dimensions."""
+        """tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
     @property
     def not_displayed(self):
-        """tuple: list of dimensions not displayed."""
+        """tuple: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property

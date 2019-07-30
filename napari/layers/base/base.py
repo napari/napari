@@ -62,12 +62,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     coordinates : tuple of float
         Coordinates of the cursor in the image space of each layer. The length
         of the tuple is equal to the number of dimensions of the layer.
-    indices : tuple of int or Slice
-        Used for slicing arrays on each dimension.
-    displayed : tuple of int
-        List of displayed dimensions.
-    not_displayed : tuple of int
-        Which dimensions are not displayed.
     position : 2-tuple of int
         Cursor position in canvas ordered (x, y).
     shape : tuple of int
@@ -267,7 +261,9 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     @property
     def shape(self):
         """tuple of int: Shape of the data."""
-        return tuple(r[1] - r[0] for r in self.dims.range)
+        return tuple(
+            np.round(r[1] - r[0]).astype(int) for r in self.dims.range
+        )
 
     @property
     def selected(self):

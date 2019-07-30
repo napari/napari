@@ -129,17 +129,9 @@ class Volume(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            # Re intitialize indices for volume viewing
-            self.ndisplay = 3
-            self._dims_order = (0, 1, 2)
-            self._indices = (0,) * (self.ndim - 3) + (
-                slice(None, None, None),
-                slice(None, None, None),
-                slice(None, None, None),
-            )
-            self.coordinates = (0,) * self.ndim
-
             # Trigger generation of view slice and thumbnail
+            self.dims.ndisplay = 3
+            self._update_dims()
             self._set_view_slice()
 
     @property
@@ -151,11 +143,11 @@ class Volume(Layer):
     def data(self, data):
         self._data = data
         self.events.data()
-        self._reset_indices()
+        self._update_dims()
         self.refresh()
 
-    def _get_shape(self):
-        return self.data.shape
+    def _get_range(self):
+        return tuple((0, m, 1) for m in self.data.shape)
 
     @property
     def colormap(self):
@@ -242,11 +234,8 @@ class Volume(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        indices = list(self.indices)
-        for i in self.not_displayed:
-            indices[i] = np.clip(indices[i], 0, self.shape[i] - 1)
-        self._data_view = np.asarray(self.data[tuple(indices)]).transpose(
-            self.displayed_order
+        self._data_view = np.asarray(self.data[self.dims.indices]).transpose(
+            self.dims.displayed_order
         )
 
         self._node.set_data(self._data_view, clim=self.clim)
