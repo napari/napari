@@ -13,7 +13,7 @@ def test_random_volume():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.range == tuple((0, m, 1) for m in shape)
+    assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -76,7 +76,7 @@ def test_changing_volume():
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
-    assert layer.range == tuple((0, m, 1) for m in shape_b)
+    assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer._data_view.shape == shape_b[-3:]
 
 

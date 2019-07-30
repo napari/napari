@@ -13,7 +13,7 @@ def test_random_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.range == tuple((0, m, 1) for m in shape)
+    assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer.multichannel == False
     assert layer._data_view.shape == shape[-2:]
 
@@ -173,7 +173,7 @@ def test_changing_image():
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
-    assert layer.range == tuple((0, m, 1) for m in shape_b)
+    assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer.multichannel == False
     assert layer._data_view.shape == shape_b[-2:]
 
@@ -188,13 +188,11 @@ def test_changing_image_dims():
     layer = Image(data_a)
 
     # Prep indices for switch to 3D
-    layer._indices = (0,) + layer._indices
-    layer.coordinates = (0,) * 3
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
-    assert layer.range == tuple((0, m, 1) for m in shape_b)
+    assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer.multichannel == False
     assert layer._data_view.shape == shape_b[-2:]
 

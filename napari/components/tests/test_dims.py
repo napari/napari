@@ -88,10 +88,18 @@ def test_indices():
     dims = Dims(4)
     # On instantiation the last two dims are set to sliced mode
     assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
+    print(dims.point, dims.ndim, dims.indices)
 
+    # Set the values of the first two dims in point mode outside of range
     dims.set_point(0, 2)
     dims.set_point(1, 3)
-    # Set the values of the first two dims in point mode
+    assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
+
+    # Increase range and then set points again
+    dims.set_range(0, (0, 4, 2))
+    dims.set_range(1, (0, 4, 2))
+    dims.set_point(0, 2)
+    dims.set_point(1, 3)
     assert dims.indices == (2, 3) + (slice(None, None, None),) * 2
 
 

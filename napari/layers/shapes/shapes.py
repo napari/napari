@@ -324,7 +324,7 @@ class Shapes(Layer):
             self.events.edge_color.connect(lambda e: self._update_thumbnail())
 
             # Trigger generation of view slice and thumbnail
-            self._reset_indices()
+            self._update_dims()
             self._set_view_slice()
 
     @property
@@ -337,9 +337,27 @@ class Shapes(Layer):
         self._finish_drawing()
         self._data_dict = {}
         self.add(data, shape_type='rectangle')
-        self._reset_indices()
+        self._update_dims()
         self.events.data()
         self.refresh()
+
+    def _get_range(self):
+        """Determine ranges for slicing given by (min, max, step)."""
+        if len(self._data_view._vertices) == 0:
+            maxs = [1, 1]
+            mins = [0, 0]
+        else:
+            maxs = np.max(self._data_view._vertices, axis=0) + 1
+            mins = np.min(self._data_view._vertices, axis=0)
+
+        slice_keys = list(self._data_dict.keys())
+        min_val = np.array(slice_keys).min(axis=0)
+        max_val = np.array(slice_keys).max(axis=0)
+
+        mins = tuple(min_val) + tuple(mins)
+        maxs = tuple(max_val) + tuple(maxs)
+
+        return tuple((min, max, 1) for min, max in zip(mins, maxs))
 
     @property
     def nshapes(self):
@@ -589,36 +607,6 @@ class Shapes(Layer):
             self._finish_drawing()
         self.refresh()
 
-    def _get_shape(self):
-        """Determines the shape of the vertices of the shape data."""
-        if len(self._data_view._vertices) == 0:
-            slice_shape = tuple([1, 1])
-        else:
-            slice_shape = tuple(np.max(self._data_view._vertices, axis=0) + 1)
-
-        slice_keys = list(self._data_dict.keys())
-        max_val = np.array(slice_keys).max(axis=0)
-        return tuple(max_val) + slice_shape
-
-    @property
-    def range(self):
-        """list of 3-tuple: ranges for slicing given by (min, max, step)."""
-        if len(self._data_view._vertices) == 0:
-            maxs = [1, 1]
-            mins = [0, 0]
-        else:
-            maxs = np.max(self._data_view._vertices, axis=0) + 1
-            mins = np.min(self._data_view._vertices, axis=0)
-
-        slice_keys = list(self._data_dict.keys())
-        min_val = np.array(slice_keys).min(axis=0)
-        max_val = np.array(slice_keys).max(axis=0)
-
-        mins = tuple(min_val) + tuple(mins)
-        maxs = tuple(max_val) + tuple(maxs)
-
-        return tuple((min, max, 1) for min, max in zip(mins, maxs))
-
     def add(
         self,
         data,
@@ -761,7 +749,7 @@ class Shapes(Layer):
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         with self.freeze_refresh():
-            slice_key = self.indices[:-2]
+            slice_key = self.dims.indices[:-2]
             if slice_key not in self._data_dict:
                 self._data_dict[slice_key] = ShapeList()
             if not self._data_view == self._data_dict[slice_key]:
@@ -1044,14 +1032,16 @@ class Shapes(Layer):
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the shapes
         # corresponds to the top left corner of the thumbnail
-        offset = np.array([self.range[-2][0], self.range[-1][0]]) - 0.5
+        offset = (
+            np.array([self.dims.range[-2][0], self.dims.range[-1][0]]) - 0.5
+        )
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire shape can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
             [
-                self.range[-2][1] - self.range[-2][0] + 1,
-                self.range[-1][1] - self.range[-1][0] + 1,
+                self.dims.range[-2][1] - self.dims.range[-2][0] + 1,
+                self.dims.range[-1][1] - self.dims.range[-1][0] + 1,
             ]
         ).astype(int)
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
