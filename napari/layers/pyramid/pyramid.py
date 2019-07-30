@@ -87,7 +87,7 @@ class Pyramid(Image):
         Level of the currently viewed slice from the pyramid
     """
 
-    _max_tile_shape = np.array([1600, 1600])
+    _max_tile_shape = 1600
 
     class_keymap = {}
 
@@ -103,11 +103,11 @@ class Pyramid(Image):
             self._top_left = np.array([0, 0])
 
             self.scale = self.level_downsamples[
-                self.data_level, self.displayed[::-1]
+                self.data_level, self.dims.displayed[::-1]
             ]
 
             # Trigger generation of view slice and thumbnail
-            self._reset_indices()
+            self._update_dims()
             self._set_view_slice()
 
     @property
@@ -118,9 +118,19 @@ class Pyramid(Image):
     @data.setter
     def data(self, data):
         self._data = data
-        self._reset_indices()
+        self._update_dims()
         self.events.data()
         self.refresh()
+
+    def _get_range(self):
+        """Shape of the base of pyramid.
+
+        Returns
+        ----------
+        shape : list
+            Shape of base of pyramid
+        """
+        return tuple((0, m, 1) for m in self.level_shapes[0])
 
     @property
     def data_level(self):
@@ -133,19 +143,19 @@ class Pyramid(Image):
             return
         self._data_level = level
         self.scale = self.level_downsamples[
-            self.data_level, self.displayed[::-1]
+            self.data_level, self.dims.displayed[::-1]
         ]
         self._top_left = self.find_top_left()
         self.refresh()
 
     @property
     def level_shapes(self):
-        """list: Shapes of each level of the pyramid."""
+        """array: Shapes of each level of the pyramid."""
         if self.multichannel:
             shapes = [im.shape[:-1] for im in self.data]
         else:
             shapes = [im.shape for im in self.data]
-        return shapes
+        return np.array(shapes)
 
     @property
     def level_downsamples(self):
@@ -166,35 +176,37 @@ class Pyramid(Image):
 
     def _slice_data(self):
         """Determine the slice of image from the indices."""
-        indices = list(self.indices)
-        top_image = self.data[-1]
-        indices = list(self.indices)
-        for i in self.not_displayed:
-            ind = np.round(indices[i] / self.level_downsamples[-1, i]).astype(
-                int
-            )
-            indices[i] = np.clip(ind, 0, self.level_shapes[-1][i] - 1)
-        self._data_thumbnail = np.asarray(top_image[tuple(indices)])
+        nd = self.dims.not_displayed
 
-        indices = list(self.indices)
-        for i in self.not_displayed:
-            ind = np.round(
-                indices[i] / self.level_downsamples[self.data_level, i]
-            ).astype(int)
-            indices[i] = np.clip(
-                ind, 0, self.level_shapes[self.data_level][i] - 1
-            )
+        if self.multichannel:
+            order = self.dims.displayed_order + (self.dims.ndisplay,)
+        else:
+            order = self.dims.displayed_order
 
-        if np.any(
-            [
-                self.level_shapes[self.data_level][d] > self._max_tile_shape
-                for d in self.displayed
-            ]
-        ):
-            for i, d in enumerate(self.displayed):
+        # Slice thumbnail
+        indices = np.array(self.dims.indices)
+        downsampled = indices[nd] / self.level_downsamples[-1, nd]
+        downsampled = np.rint(downsampled.astype(float)).astype(int)
+        downsampled = np.clip(downsampled, 0, self.level_shapes[-1, nd] - 1)
+        indices[nd] = downsampled
+        self._data_thumbnail = np.asarray(
+            self.data[-1][tuple(indices)]
+        ).transpose(order)
+
+        # Slice currently viewed level
+        indices = np.array(self.dims.indices)
+        level = self.data_level
+        downsampled = indices[nd] / self.level_downsamples[level, nd]
+        downsampled = np.rint(downsampled.astype(float)).astype(int)
+        downsampled = np.clip(downsampled, 0, self.level_shapes[level, nd] - 1)
+        indices[nd] = downsampled
+
+        disp_shape = self.level_shapes[level, self.dims.displayed]
+        if np.any(disp_shape > self._max_tile_shape):
+            for i, d in enumerate(self.dims.displayed):
                 indices[d] = slice(
                     self._top_left[i],
-                    self._top_left[i] + self._max_tile_shape[i],
+                    self._top_left[i] + self._max_tile_shape,
                     1,
                 )
             self.translate = self._top_left[::-1] * self.scale[:2]
@@ -202,13 +214,8 @@ class Pyramid(Image):
             self.translate = [0, 0]
         self._update_coordinates()
 
-        if self.multichannel:
-            order = self.displayed_order + (len(self.displayed_order),)
-        else:
-            order = self.displayed_order
-
         self._data_view = np.asarray(
-            self.data[self.data_level][tuple(indices)]
+            self.data[level][tuple(indices)]
         ).transpose(order)
 
     def _set_view_slice(self):
@@ -222,18 +229,6 @@ class Pyramid(Image):
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
         self._update_thumbnail()
-
-    def _get_shape(self):
-        """Shape of the base of pyramid.
-
-        Returns
-        ----------
-        shape : list
-            Shape of base of pyramid
-        """
-        if self.multichannel:
-            return self.data[0].shape[:-1]
-        return self.data[0].shape
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -254,21 +249,23 @@ class Pyramid(Image):
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-
-        slice_coord = []
-        for i, d in enumerate(self.displayed):
-            coord[d] = np.clip(coord[d], 0, shape[i] - 1)
-            slice_coord.append(coord[d])
+        slice_coord = np.clip(
+            coord[self.dims.displayed], 0, np.subtract(shape, 1)
+        )
 
         value = self._data_view[tuple(slice_coord)]
 
-        pos_coord = np.array([self.coordinates[d] for d in self.displayed])
+        pos_coord = np.array(
+            [self.coordinates[d] for d in self.dims.displayed]
+        )
         pos_in_slice = pos_coord + self.translate[[1, 0]] / self.scale[:2]
 
         # Make sure pos in slice doesn't go off edge
-        shape = [self.level_shapes[self.data_level][d] for d in self.displayed]
+        shape = [
+            self.level_shapes[self.data_level][d] for d in self.dims.displayed
+        ]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
-        for j, d in enumerate(self.displayed):
+        for j, d in enumerate(self.dims.displayed):
             coord[d] = np.round(pos_in_slice[j] * self.scale[j]).astype(int)
 
         return coord, value
@@ -291,13 +288,13 @@ class Pyramid(Image):
         size = np.log2(np.max(size))
 
         # Max allowed tile in log units
-        max_size = np.log2(self._max_tile_shape.max())
+        max_size = np.log2(self._max_tile_shape)
 
         # Allow for 2x coverage of field of view with max tile
         diff = size - max_size + 1
 
         # Find closed downsample level to diff
-        ds = self.level_downsamples[:, self.displayed].max(axis=1)
+        ds = self.level_downsamples[:, self.dims.displayed].max(axis=1)
         level = np.argmin(abs(np.log2(ds) - diff))
 
         return level
@@ -316,7 +313,7 @@ class Pyramid(Image):
         transform = self._node.canvas.scene.node_transform(self._node)
         pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
 
-        shape = [self.level_shapes[0][d] for d in self.displayed]
+        shape = [self.level_shapes[0][d] for d in self.dims.displayed]
 
         # Clip according to the max image shape
         pos = [
