@@ -717,7 +717,7 @@ class Points(Layer):
         ----------
         coord : sequence of int
             Position of mouse cursor in data.
-        value : int
+        value : int or None
             Index of the point at the coord if any.
 
         Returns
@@ -727,11 +727,11 @@ class Points(Layer):
             a status update.
         """
         int_coord = np.round(coord).astype(int)
-        msg = f'{int_coord}, {self.name}'
+        msg = f'{self.name} {int_coord}'
         if value is None:
             pass
         else:
-            msg = msg + ', index ' + str(value)
+            msg += f', index {value}'
         return msg
 
     def _update_thumbnail(self):
