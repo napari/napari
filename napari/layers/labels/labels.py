@@ -8,6 +8,7 @@ from imageio import imwrite
 
 from ..base import Layer
 from vispy.scene.visuals import Image as ImageNode
+from ...util.status_messages import status_format
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
@@ -459,34 +460,33 @@ class Labels(Layer):
         self.refresh()
 
     def get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+        """Return coordinates and label value for a given mouse position.
 
         Returns
         ----------
         coord : sequence of float
             Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
+        value : int or None
+            Value of the data at the coord, or none if coord is outside range.
         """
-        coord = list(self.coordinates)
-        coord[-2:] = np.clip(
-            coord[-2:], 0, np.asarray(self._data_view.shape) - 1
-        )
+        coord = np.round(self.coordinates).astype(int)
+        shape = self._data_view.shape
 
-        value = self._data_view[tuple(np.round(coord[-2:]).astype(int))]
+        if all(0 <= c < s for c, s in zip(coord[-2:], shape)):
+            value = self._data_view[tuple(coord[-2:])]
+        else:
+            value = None
 
         return coord, value
 
-    def get_message(self, coord, value):
-        """Generates a string based on the coordinates and information about
-        what shapes are hovered over
+    def get_message(self, coord, value=None):
+        """Generate status message based on coordinates and data.
 
         Parameters
         ----------
         coord : sequence of int
             Position of mouse cursor in image coordinates.
-        value : int
+        value : int or None
             Value of the label image at the coord.
 
         Returns
@@ -495,7 +495,7 @@ class Labels(Layer):
             String containing a message that can be used as a status update.
         """
         int_coord = np.round(coord).astype(int)
-        msg = f'{int_coord}, {self.name}, label {value}'
+        msg = f'{self.name} {int_coord} label {value}'
 
         return msg
 
