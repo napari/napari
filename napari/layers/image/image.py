@@ -6,8 +6,10 @@ import numpy as np
 from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
+
 from ..base import Layer
 from vispy.scene.visuals import Image as ImageNode
+from ...util import status_messages
 from ...util.misc import (
     is_multichannel,
     calc_data_range,
@@ -364,15 +366,14 @@ class Image(Layer):
 
         return coord, value
 
-    def get_message(self, coord, value):
-        """Generate a status message based on the coordinates and information
-        about what shapes are hovered over
+    def get_message(self, coord, value=None):
+        """Generate status message based on coordinates and image.
 
         Parameters
         ----------
         coord : sequence of int
             Position of mouse cursor in image coordinates.
-        value : int or float or sequence of int or float
+        value : int or float or sequence of int or float, optional
             Value of the data at the coord.
 
         Returns
@@ -381,18 +382,10 @@ class Image(Layer):
             String containing a message that can be used as a status update.
         """
 
-        msg = f'{coord}, {self.name}' + ', value '
-        if isinstance(value, np.ndarray):
-            if isinstance(value[0], np.integer):
-                msg = msg + str(value)
-            else:
-                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
-                msg = msg + v_str
-        else:
-            if isinstance(value, (np.integer, np.bool_)):
-                msg = msg + str(value)
-            else:
-                msg = msg + f'{value:0.3}'
+        msg = f'{self.name} {coord}'
+        if value is not None:
+            msg += ': '
+            msg += status_messages.format(value)
 
         return msg
 
