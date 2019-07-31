@@ -1,4 +1,6 @@
 import numpy as np
+
+from napari.util.status_messages import status_format
 from ..image import Image
 
 
@@ -343,18 +345,8 @@ class Pyramid(Image):
         msg : string
             String containing a message that can be used as a status update.
         """
-        if isinstance(value, np.ndarray):
-            if isinstance(value[0], np.integer) or isinstance(value[0], int):
-                v_str = str(value)
-            else:
-                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
-        else:
-            if isinstance(value, np.integer) or isinstance(value, int):
-                v_str = str(value)
-            else:
-                v_str = f'{value:0.3}'
-
-        msg = f'{coord}, {self.data_level}, {self.name}, value {v_str}'
+        v_str = ' ' + status_format(value) if value is not None else ''
+        msg = f'{self.name} {coord} (level {self.data_level}){v_str}'
         return msg
 
     def on_draw(self, event):
