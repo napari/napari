@@ -299,8 +299,7 @@ class ViewerModel(KeymapMixin):
         layer : Layer
             Layer to add.
         """
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.visible.connect(self._update_active_layer)
         layer.events.status.connect(self._update_status)
         layer.events.help.connect(self._update_help)
         layer.events.interactive.connect(self._update_interactive)
@@ -696,14 +695,11 @@ class ViewerModel(KeymapMixin):
         event : Event
             No Event parameters are used
         """
-        # iteration goes backwards to find top most selected layer if any
-        # if multiple layers are selected sets the active layer to None
+        # iteration goes backwards to find top most visible layer if any
         active_layer = None
-        for layer in self.layers:
-            if active_layer is None and layer.selected:
+        for layer in self.layers[::-1]:
+            if layer.visible:
                 active_layer = layer
-            elif active_layer is not None and layer.selected:
-                active_layer = None
                 break
 
         if active_layer is None:
