@@ -356,9 +356,11 @@ class Image(Layer):
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-        coord[-2:] = np.clip(coord[-2:], 0, np.asarray(shape) - 1)
 
-        value = self._data_view[tuple(coord[-2:])]
+        if all(0 <= c < s for c, s in zip(coord[-2:], shape)):
+            value = self._data_view[tuple(coord[-2:])]
+        else:
+            value = None
 
         return coord, value
 
