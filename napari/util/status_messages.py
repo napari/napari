@@ -6,7 +6,7 @@ def format_float(value):
     return f'{value:0.3}'
 
 
-def format(value):
+def status_format(value):
     """Return a "nice" string representation of a value.
 
     Parameters
@@ -20,7 +20,7 @@ def format(value):
         The string resulting from formatting.
     """
     if isinstance(value, Iterable):
-        return '[' + str.join([format(v) for v in value]) + ']'
+        return '[' + str.join(', ', [status_format(v) for v in value]) + ']'
     if value is None:
         return ''
     if isinstance(value, float) or np.issubdtype(type(value), np.floating):

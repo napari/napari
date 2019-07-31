@@ -9,7 +9,7 @@ import vispy.color
 
 from ..base import Layer
 from vispy.scene.visuals import Image as ImageNode
-from ...util import status_messages
+from ...util.status_messages import status_format
 from ...util.misc import (
     is_multichannel,
     calc_data_range,
@@ -385,7 +385,7 @@ class Image(Layer):
         msg = f'{self.name} {coord}'
         if value is not None:
             msg += ': '
-            msg += status_messages.format(value)
+            msg += status_format(value)
 
         return msg
 
