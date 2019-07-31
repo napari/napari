@@ -1208,11 +1208,11 @@ class Shapes(Layer):
             String containing a message that can be used as a status update.
         """
         int_coord = np.round(coord).astype(int)
-        msg = f'{int_coord}, {self.name}'
+        msg = f'{self.name} {int_coord}'
         if shape is not None:
-            msg = msg + ', shape ' + str(shape)
+            msg += ', shape ' + str(shape)
             if vertex is not None:
-                msg = msg + ', vertex ' + str(vertex)
+                msg += ', vertex ' + str(vertex)
         return msg
 
     def move_to_front(self):
