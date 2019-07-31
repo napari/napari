@@ -686,16 +686,13 @@ class ViewerModel(KeymapMixin):
             layer.indices = self.dims.indices
 
     def _update_active_layer(self, event):
-        """Set the active layer by iterating over the layers list and
-        finding the first selected layer. If multiple layers are selected the
-        iteration stops and the active layer is set to be None
+        """Set the active layer to be the topmost visible layer.
 
         Parameters
         ----------
         event : Event
             No Event parameters are used
         """
-        # iteration goes backwards to find top most visible layer if any
         active_layer = None
         for layer in self.layers[::-1]:
             if layer.visible:
