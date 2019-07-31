@@ -234,8 +234,7 @@ class Pyramid(Image):
         return self.data[0].shape
 
     def get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+        """Return coordinates in base level and value in current level.
 
         Returns
         ----------
