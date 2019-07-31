@@ -253,8 +253,10 @@ class Pyramid(Image):
             shape = self._data_view.shape
 
         # TODO: Change dims selection when dims model changes
-        coord[-2:] = np.clip(coord[-2:], 0, np.subtract(shape, 1))
-        value = self._data_view[tuple(coord[-2:])]
+        if all(0 <= c < s for c, s in zip(coord[-2:], shape)):
+            value = self._data_view[tuple(coord[-2:])]
+        else:
+            value = None
 
         pos_in_slice = (
             self.coordinates[-2:] + self.translate[[1, 0]] / self.scale[:2]
