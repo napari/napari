@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari.util.status_messages import status_format
+from ...util.status_messages import status_format
 from ..image import Image
 
 

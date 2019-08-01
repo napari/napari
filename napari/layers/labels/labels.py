@@ -8,7 +8,6 @@ from imageio import imwrite
 
 from ..base import Layer
 from vispy.scene.visuals import Image as ImageNode
-from ...util.status_messages import status_format
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
@@ -495,7 +494,11 @@ class Labels(Layer):
             String containing a message that can be used as a status update.
         """
         int_coord = np.round(coord).astype(int)
-        msg = f'{self.name} {int_coord} label {value}'
+        if value is not None:
+            value_str = ' label {value}'
+        else:
+            value_str = ''
+        msg = f'{self.name} {int_coord}{value_str}'
 
         return msg
 
