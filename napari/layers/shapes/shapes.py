@@ -209,8 +209,6 @@ class Shapes(Layer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
-    class_keymap = {}
-
     def __init__(
         self,
         data,
@@ -1292,7 +1290,7 @@ class Shapes(Layer):
                     offset_perp = np.array([offset[1], -offset[0]])
 
                     fixed = self._fixed_vertex
-                    new = copy(coord)
+                    new = list(coord)
 
                     if self._fixed_aspect and self._fixed_index % 2 == 0:
                         if (new - fixed)[0] == 0:

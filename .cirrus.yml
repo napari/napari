@@ -30,7 +30,7 @@ task:
         DISPLAY: ":99"
       system_script:
         - apt-get update
-        - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5
+        - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
         - bash install.sh -b -p $HOME/conda
@@ -38,7 +38,9 @@ task:
         - conda install -y python=$PY_VER
         - rm install.sh
       # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
-      xvfb_start_background_script: Xvfb :99 -ac -screen 0 1024x768x24
+      xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
+      # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
+      herbstluftwm_start_background_script: herbstluftwm
 
     - name: windows
       windows_container:

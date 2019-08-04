@@ -353,16 +353,18 @@ class KeymapMixin:
     def __new__(cls, *args, **kwargs):
         if cls is KeymapMixin:
             raise TypeError('cannot instantiate mix-in class')
-        else:
-            if not hasattr(cls, 'class_keymap'):
-                raise TypeError(
-                    "KeymapMixin must define 'class_keymap' class attribute"
-                )
 
         return object.__new__(cls)
 
     def __init__(self):
         self.keymap = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        if 'class_keymap' not in cls.__dict__:
+            # if in __dict__, was defined in class and not inherited
+            cls.class_keymap = {}
 
     @property
     def keymap(self):
