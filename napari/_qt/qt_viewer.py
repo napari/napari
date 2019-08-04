@@ -5,7 +5,15 @@ import inspect
 from pathlib import Path
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QSplitter, QFileDialog
+from qtpy.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFrame,
+    QFileDialog,
+    QSplitter,
+)
+from qtpy.QtWidgets import QStackedWidget
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -21,6 +29,7 @@ from ..util.io import read
 
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
+from .qt_console import QtConsole
 
 
 # set vispy application to the appropriate qt backend
@@ -40,9 +49,23 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
+        self.controls = QtControls(self.viewer)
+        self.layers = QtLayerList(self.viewer.layers)
+        self.buttons = QtLayersButtons(self.viewer)
+        self.console = QtConsole({'viewer': self.viewer})
+
+        if self.console.shell is not None:
+            self.console.style().unpolish(self.console)
+            self.console.style().polish(self.console)
+            self.console.hide()
+            self.buttons.consoleButton.clicked.connect(
+                lambda: self._toggle_console()
+            )
+        else:
+            self.buttons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
-        self.canvas.native.setMinimumSize(QSize(100, 100))
+        self.canvas.native.setMinimumSize(QSize(200, 200))
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
@@ -61,20 +84,26 @@ class QtViewer(QSplitter):
         center_layout.addWidget(self.dims)
         center.setLayout(center_layout)
 
-        # Add controls, center, and layerlist
-        self.control_panel = QtControls(viewer)
-        self.addWidget(self.control_panel)
-        self.addWidget(center)
-
         right = QWidget()
         right_layout = QVBoxLayout()
-        self.layers = QtLayerList(self.viewer.layers)
         right_layout.addWidget(self.layers)
-        self.buttons = QtLayersButtons(viewer)
         right_layout.addWidget(self.buttons)
         right.setLayout(right_layout)
-        right.setMinimumSize(QSize(308, 250))
-        self.addWidget(right)
+
+        left = self.controls
+
+        top = QWidget()
+        top_layout = QHBoxLayout()
+        top_layout.addWidget(left)
+        top_layout.addWidget(center)
+        top_layout.addWidget(right)
+        top.setLayout(top_layout)
+
+        self.setOrientation(Qt.Vertical)
+        self.addWidget(top)
+
+        if self.console.shell is not None:
+            self.addWidget(self.console)
 
         self._last_visited_dir = str(Path.home())
 
@@ -226,7 +255,18 @@ class QtViewer(QSplitter):
     def _update_palette(self, palette):
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
+        self.console.style_sheet = themed_stylesheet
+        self.console.syntax_style = palette['syntax_style']
         self.setStyleSheet(themed_stylesheet)
+
+    def _toggle_console(self):
+        """Toggle console visible and not visible."""
+        self.console.setVisible(not self.console.isVisible())
+        self.buttons.consoleButton.setProperty(
+            'expanded', self.console.isVisible()
+        )
+        self.buttons.consoleButton.style().unpolish(self.buttons.consoleButton)
+        self.buttons.consoleButton.style().polish(self.buttons.consoleButton)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

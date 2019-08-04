@@ -1,3 +1,6 @@
+# syntax_style for the console must be one of the supported styles from
+# pygments - see here for examples https://help.farbox.com/pygments.html
+
 palettes = {
     'dark': {
         'folder': 'dark',
@@ -8,6 +11,8 @@ palettes = {
         'highlight': 'rgb(106, 115, 128)',
         'text': 'rgb(240, 241, 242)',
         'icon': 'rgb(209, 210, 212)',
+        'syntax_style': 'native',
+        'console': 'rgb(0, 0, 0)',
     },
     'light': {
         'folder': 'light',
@@ -18,6 +23,8 @@ palettes = {
         'highlight': 'rgb(163, 158, 156)',
         'text': 'rgb(59, 58, 57)',
         'icon': 'rgb(107, 105, 103)',
+        'syntax_style': 'default',
+        'console': 'rgb(255, 255, 255)',
     },
 }
 

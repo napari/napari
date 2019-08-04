@@ -19,6 +19,9 @@ def test_viewer(qtbot):
     assert view.dims.nsliders == 0
     assert np.sum(view.dims._displayed) == 0
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_add_image(qtbot):
     """Test adding image."""
@@ -38,6 +41,9 @@ def test_add_image(qtbot):
     assert view.dims.nsliders == 0
     assert np.sum(view.dims._displayed) == 0
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_add_volume(qtbot):
     """Test adding volume."""
@@ -56,6 +62,9 @@ def test_add_volume(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 0
+
+    # Close the viewer
+    viewer.window.close()
 
 
 def test_add_pyramid(qtbot):
@@ -77,6 +86,9 @@ def test_add_pyramid(qtbot):
     assert view.dims.nsliders == 0
     assert np.sum(view.dims._displayed) == 0
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_add_labels(qtbot):
     """Test adding labels image."""
@@ -95,6 +107,9 @@ def test_add_labels(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == 0
     assert np.sum(view.dims._displayed) == 0
+
+    # Close the viewer
+    viewer.window.close()
 
 
 def test_add_points(qtbot):
@@ -115,6 +130,9 @@ def test_add_points(qtbot):
     assert view.dims.nsliders == 0
     assert np.sum(view.dims._displayed) == 0
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_add_vectors(qtbot):
     """Test adding vectors."""
@@ -134,6 +152,9 @@ def test_add_vectors(qtbot):
     assert view.dims.nsliders == 0
     assert np.sum(view.dims._displayed) == 0
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_add_shapes(qtbot):
     """Test adding vectors."""
@@ -152,6 +173,9 @@ def test_add_shapes(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == 0
     assert np.sum(view.dims._displayed) == 0
+
+    # Close the viewer
+    viewer.window.close()
 
 
 def test_screenshot(qtbot):
@@ -184,3 +208,6 @@ def test_screenshot(qtbot):
     # Take screenshot
     screenshot = viewer.screenshot()
     assert screenshot.ndim == 3
+
+    # Close the viewer
+    viewer.window.close()

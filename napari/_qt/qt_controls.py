@@ -10,7 +10,6 @@ class QtControls(QStackedWidget):
         self.viewer = viewer
 
         self.setMouseTracking(True)
-        self.setMinimumSize(QSize(40, 40))
         self.empty_widget = QWidget()
         self.widgets = {}
         self.addWidget(self.empty_widget)

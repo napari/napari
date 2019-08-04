@@ -21,6 +21,9 @@ def test_nD_image(qtbot):
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 1
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_nD_volume(qtbot):
     """Test adding nD volume."""
@@ -39,6 +42,9 @@ def test_nD_volume(qtbot):
     assert viewer.dims.ndim == 4
     assert view.dims.nsliders == 2
     assert np.sum(view.dims._displayed) == 1
+
+    # Close the viewer
+    viewer.window.close()
 
 
 def test_nD_pyramid(qtbot):
@@ -60,6 +66,9 @@ def test_nD_pyramid(qtbot):
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 1
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_nD_labels(qtbot):
     """Test adding nD labels image."""
@@ -78,6 +87,9 @@ def test_nD_labels(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 1
+
+    # Close the viewer
+    viewer.window.close()
 
 
 def test_nD_points(qtbot):
@@ -98,6 +110,9 @@ def test_nD_points(qtbot):
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 1
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_nD_vectors(qtbot):
     """Test adding nD vectors."""
@@ -116,6 +131,9 @@ def test_nD_vectors(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 1
+
+    # Close the viewer
+    viewer.window.close()
 
 
 def test_nD_shapes(qtbot):
@@ -139,3 +157,6 @@ def test_nD_shapes(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 1
+
+    # Close the viewer
+    viewer.window.close()
