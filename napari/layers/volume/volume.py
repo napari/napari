@@ -70,7 +70,6 @@ class Volume(Layer):
         Volume data for the currently viewed slice, must be 3-dimensional
     """
 
-    class_keymap = {}
     _colormaps = AVAILABLE_COLORMAPS
     _default_rendering = Rendering.MIP.value
 

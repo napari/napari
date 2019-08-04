@@ -99,8 +99,6 @@ class Image(Layer):
 
     _colormaps = AVAILABLE_COLORMAPS
 
-    class_keymap = {}
-
     default_interpolation = str(Interpolation.NEAREST)
 
     def __init__(

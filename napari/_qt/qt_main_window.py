@@ -47,6 +47,8 @@ class Window:
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = self._qt_window.statusBar()
+        self._qt_window.closeEvent = self.closeEvent
+        self.close = self._qt_window.close
 
         self._add_menubar()
 
@@ -174,3 +176,8 @@ class Window:
         """Update help message on status bar.
         """
         self._help.setText(event.text)
+
+    def closeEvent(self, event):
+        # Forward close event to the console to trigger proper shutdown
+        self.qt_viewer.console.shutdown()
+        event.accept()

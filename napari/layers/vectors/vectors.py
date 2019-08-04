@@ -70,8 +70,6 @@ class Vectors(Layer):
     # If more vectors are present then they are randomly subsampled
     _max_vectors_thumbnail = 1024
 
-    class_keymap = {}
-
     def __init__(
         self,
         vectors,
