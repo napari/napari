@@ -239,6 +239,8 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
 
+            self._displayed_stored = []
+
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
             # value for itself
@@ -264,18 +266,20 @@ class Shapes(Layer):
 
             # Add the shape data
             self._input_ndim = None
+
             self._data_dict = {}
             self._data_view = None
+            self._data = []
 
-            self.add(
-                data,
-                shape_type=shape_type,
-                edge_width=edge_width,
-                edge_color=edge_color,
-                face_color=face_color,
-                opacity=opacity,
-                z_index=z_index,
-            )
+            # self.add(
+            #     data,
+            #     shape_type=shape_type,
+            #     edge_width=edge_width,
+            #     edge_color=edge_color,
+            #     face_color=face_color,
+            #     opacity=opacity,
+            #     z_index=z_index,
+            # )
 
             # update flags
             self._need_display_update = False
@@ -333,17 +337,19 @@ class Shapes(Layer):
     @data.setter
     def data(self, data):
         self._finish_drawing()
-        self._data_dict = {}
-        self.add(data, shape_type='rectangle')
+        self._data = data
+        self._data_dict = self._generate_shape_dict()
+        self._displayed_stored = copy(self.dims.displayed)
+
         self._update_dims()
         self.events.data()
         self.refresh()
 
     def _get_range(self):
         """Determine ranges for slicing given by (min, max, step)."""
-        if len(self._data_view._vertices) == 0:
-            maxs = [1, 1]
-            mins = [0, 0]
+        if len(self._data) == 0:
+            maxs = [1] * self.ndim
+            mins = [0] * self.ndim
         else:
             maxs = np.max(self._data_view._vertices, axis=0) + 1
             mins = np.min(self._data_view._vertices, axis=0)
@@ -356,6 +362,54 @@ class Shapes(Layer):
         maxs = tuple(max_val) + tuple(maxs)
 
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
+
+    # @property
+    # def shape_types(self):
+    #     """list of str: name of shape type for each shape."""
+    #     shape_types = []
+    #     for d in self._data_dict.values():
+    #         shape_types += d.shape_types
+    #     return shape_types
+    #
+    # @property
+    # def edge_colors(self):
+    #     """list of str: name of edge color for each shape."""
+    #     edge_colors = []
+    #     for d in self._data_dict.values():
+    #         edge_colors += d.edge_colors
+    #     return edge_colors
+    #
+    # @property
+    # def face_colors(self):
+    #     """list of str: name of face color for each shape."""
+    #     face_colors = []
+    #     for d in self._data_dict.values():
+    #         face_colors += d.face_colors
+    #     return face_colors
+    #
+    # @property
+    # def edge_widths(self):
+    #     """list of float: edge width for each shape."""
+    #     edge_widths = []
+    #     for d in self._data_dict.values():
+    #         edge_widths += d.edge_widths
+    #     return edge_widths
+    #
+    # @property
+    # def opacities(self):
+    #     """list of float: opacity for each shape."""
+    #     opacities = []
+    #     for d in self._data_dict.values():
+    #         opacities += d.opacities
+    #     return opacities
+    #
+    # @property
+    # def z_indices(self):
+    #     """list of int: z_index for each shape."""
+    #     z_indices = []
+    #     for d in self._data_dict.values():
+    #         z_indices += d.z_indices
+    #     return z_indices
 
     @property
     def nshapes(self):
@@ -432,54 +486,6 @@ class Shapes(Layer):
                 self._data_view.update_opacity(i, opacity)
             self.refresh()
         self.events.opacity()
-
-    @property
-    def shape_types(self):
-        """list of str: name of shape type for each shape."""
-        shape_types = []
-        for d in self._data_dict.values():
-            shape_types += d.shape_types
-        return shape_types
-
-    @property
-    def edge_colors(self):
-        """list of str: name of edge color for each shape."""
-        edge_colors = []
-        for d in self._data_dict.values():
-            edge_colors += d.edge_colors
-        return edge_colors
-
-    @property
-    def face_colors(self):
-        """list of str: name of face color for each shape."""
-        face_colors = []
-        for d in self._data_dict.values():
-            face_colors += d.face_colors
-        return face_colors
-
-    @property
-    def edge_widths(self):
-        """list of float: edge width for each shape."""
-        edge_widths = []
-        for d in self._data_dict.values():
-            edge_widths += d.edge_widths
-        return edge_widths
-
-    @property
-    def opacities(self):
-        """list of float: opacity for each shape."""
-        opacities = []
-        for d in self._data_dict.values():
-            opacities += d.opacities
-        return opacities
-
-    @property
-    def z_indices(self):
-        """list of int: z_index for each shape."""
-        z_indices = []
-        for d in self._data_dict.values():
-            z_indices += d.z_indices
-        return z_indices
 
     @property
     def selected_data(self):
@@ -742,6 +748,7 @@ class Shapes(Layer):
                 self._data_dict[init_index] = ShapeList()
             self._data_view = self._data_dict[init_index]
 
+        self._displayed_stored = copy(self.dims.displayed)
         self._update_thumbnail()
 
     def _set_view_slice(self):
