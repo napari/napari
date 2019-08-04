@@ -7,6 +7,7 @@ def test_viewer_model():
     viewer = ViewerModel()
     assert viewer.title == 'napari'
     assert len(viewer.layers) == 0
+    assert viewer.dims.ndim == 2
 
     # Create viewer model with custom title
     viewer = ViewerModel(title='testing')
@@ -21,6 +22,7 @@ def test_add_image():
     viewer.add_image(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
 
 
 def test_add_volume():
@@ -31,6 +33,7 @@ def test_add_volume():
     viewer.add_volume(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
 
 
 def test_add_pyramid():
@@ -42,6 +45,7 @@ def test_add_pyramid():
     viewer.add_pyramid(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
 
 
 def test_add_labels():
@@ -52,6 +56,7 @@ def test_add_labels():
     viewer.add_labels(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
 
 
 def test_add_points():
@@ -62,6 +67,7 @@ def test_add_points():
     viewer.add_points(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
 
 
 def test_add_vectors():
@@ -72,6 +78,7 @@ def test_add_vectors():
     viewer.add_vectors(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
 
 
 def test_add_shapes():
@@ -82,15 +89,17 @@ def test_add_shapes():
     viewer.add_shapes(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
 
 
 def test_new_labels():
-    """Test adding new labels image."""
+    """Test adding new labels layer."""
     # Add labels to empty viewer
     viewer = ViewerModel()
     viewer._new_labels()
     assert len(viewer.layers) == 1
     assert np.max(viewer.layers[0].data) == 0
+    assert viewer.dims.ndim == 2
 
     # Add labels with image already present
     viewer = ViewerModel()
@@ -100,15 +109,17 @@ def test_new_labels():
     viewer._new_labels()
     assert len(viewer.layers) == 2
     assert np.max(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
 
 
 def test_new_points():
-    """Test adding new points image."""
+    """Test adding new points layer."""
     # Add labels to empty viewer
     viewer = ViewerModel()
     viewer._new_points()
     assert len(viewer.layers) == 1
     assert len(viewer.layers[0].data) == 0
+    assert viewer.dims.ndim == 2
 
     # Add points with image already present
     viewer = ViewerModel()
@@ -118,15 +129,17 @@ def test_new_points():
     viewer._new_points()
     assert len(viewer.layers) == 2
     assert len(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
 
 
 def test_new_shapes():
-    """Test adding new shapes image."""
+    """Test adding new shapes layer."""
     # Add labels to empty viewer
     viewer = ViewerModel()
     viewer._new_shapes()
     assert len(viewer.layers) == 1
     assert len(viewer.layers[0].data) == 0
+    assert viewer.dims.ndim == 2
 
     # Add points with image already present
     viewer = ViewerModel()
@@ -136,3 +149,34 @@ def test_new_shapes():
     viewer._new_shapes()
     assert len(viewer.layers) == 2
     assert len(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
+
+
+def test_svg():
+    "Test generating svg"
+    viewer = ViewerModel()
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+
+    # Add labels
+    data = np.random.randint(20, size=(10, 15))
+    viewer.add_labels(data)
+
+    # Add points
+    data = 20 * np.random.random((10, 2))
+    viewer.add_points(data)
+
+    # Add vectors
+    data = 20 * np.random.random((10, 2, 2))
+    viewer.add_vectors(data)
+
+    # Add shapes
+    data = 20 * np.random.random((10, 4, 2))
+    viewer.add_shapes(data)
+
+    # Generate svg
+    svg = viewer.to_svg()
+    assert type(svg) == str
