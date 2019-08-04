@@ -1,13 +1,12 @@
 import numpy as np
 
-from napari.components import ViewerModel
-from napari._qt.qt_viewer import QtViewer
+from napari import Viewer
 
 
 def test_nD_image(qtbot):
     """Test adding nD image."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     np.random.seed(0)
@@ -25,8 +24,8 @@ def test_nD_image(qtbot):
 
 def test_nD_volume(qtbot):
     """Test adding nD volume."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     np.random.seed(0)
@@ -44,8 +43,8 @@ def test_nD_volume(qtbot):
 
 def test_nD_pyramid(qtbot):
     """Test adding nD image pyramid."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     shapes = [(8, 40, 20), (4, 20, 10), (4, 10, 5)]
@@ -64,8 +63,8 @@ def test_nD_pyramid(qtbot):
 
 def test_nD_labels(qtbot):
     """Test adding nD labels image."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     np.random.seed(0)
@@ -83,8 +82,8 @@ def test_nD_labels(qtbot):
 
 def test_nD_points(qtbot):
     """Test adding nD points."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     np.random.seed(0)
@@ -102,8 +101,8 @@ def test_nD_points(qtbot):
 
 def test_nD_vectors(qtbot):
     """Test adding nD vectors."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     np.random.seed(0)
@@ -121,8 +120,8 @@ def test_nD_vectors(qtbot):
 
 def test_nD_shapes(qtbot):
     """Test adding vectors."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     np.random.seed(0)

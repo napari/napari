@@ -1,7 +1,6 @@
 import numpy as np
 
-from napari.components import ViewerModel
-from napari._qt.qt_viewer import QtViewer
+from napari import Viewer
 
 
 def test_4D_5D_images(qtbot):
@@ -9,10 +8,10 @@ def test_4D_5D_images(qtbot):
 
     Intially only 2 sliders should be present, then a third slider should be
     created.
-    ."""
+    """
     np.random.seed(0)
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     # add 4D image data
@@ -39,8 +38,8 @@ def test_change_image_dims(qtbot):
     the numbers of sliders and their ranges changes appropriately.
     """
     np.random.seed(0)
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     # add 3D image data
@@ -84,8 +83,8 @@ def test_range_one_image(qtbot):
     one dimension.
     """
     np.random.seed(0)
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     # add 5D image data with range one dimensions
@@ -115,8 +114,8 @@ def test_range_one_images_and_points(qtbot):
     dimensions. On adding the points the sliders should be displayed.
     """
     np.random.seed(0)
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
     # add 5D image data with range one dimensions
