@@ -178,4 +178,6 @@ class Window:
         self._help.setText(event.text)
 
     def closeEvent(self, event):
+        # Forward close event to the console to trigger proper shutdown
         self.qt_viewer.console.shutdown()
+        event.accept()
