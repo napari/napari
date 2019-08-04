@@ -44,6 +44,9 @@ class Volume(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    spacing : list, optional
+        List of anisotropy factors to scale the volume by. Must be one for
+        each dimension.
     name : str, keyword-only
         Name of the layer.
 
@@ -63,6 +66,9 @@ class Volume(Layer):
         luminance volumes.
     clim_range : list (2,) of float
         Range for the color limits for luminace volumes.
+    spacing : list
+        List of anisotropy factors to scale the volume by. Must be one for
+        each dimension.
 
     Extended Summary
     ----------
@@ -84,6 +90,7 @@ class Volume(Layer):
         opacity=1,
         blending='translucent',
         visible=True,
+        spacing=None,
         name=None,
         **kwargs,
     ):
@@ -105,6 +112,8 @@ class Volume(Layer):
             # Set data
             self._data = volume
             self.metadata = metadata or {}
+
+            self.spacing = spacing or [1] * self.ndim
 
             # Intitialize volume views and thumbnails with zeros
             self._data_view = np.zeros((1, 1, 1))
@@ -150,7 +159,17 @@ class Volume(Layer):
         self.refresh()
 
     def _get_shape(self):
-        return self.data.shape
+        return np.multiply(self.data.shape, self.spacing)
+
+    @property
+    def spacing(self):
+        """list: Anisotropy factors to scale the volume by."""
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, spacing):
+        self._spacing = spacing
+        self.scale = [self._spacing[s] for s in [-1, -2, -3]]
 
     @property
     def colormap(self):

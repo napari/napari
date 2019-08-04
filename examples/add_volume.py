@@ -12,4 +12,4 @@ with napari.gui_qt():
     )
     viewer = napari.Viewer()
     # add the volume
-    viewer.add_volume(blobs)
+    viewer.add_volume(blobs, spacing=[3, 1, 1])
