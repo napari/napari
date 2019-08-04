@@ -47,6 +47,7 @@ class Window:
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = self._qt_window.statusBar()
+        self.close = self._qt_window.close
 
         self._add_menubar()
 

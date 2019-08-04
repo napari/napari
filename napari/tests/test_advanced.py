@@ -32,6 +32,9 @@ def test_4D_5D_images(qtbot):
     assert view.dims.nsliders == 3
     assert np.sum(view.dims._displayed) == 3
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_change_image_dims(qtbot):
     """Test changing the dims and shape of an image layer in place and checking
@@ -75,6 +78,9 @@ def test_change_image_dims(qtbot):
     assert view.dims.nsliders == 1
     assert np.sum(view.dims._displayed) == 1
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_range_one_image(qtbot):
     """Test adding an image with a range one dimensions.
@@ -105,6 +111,9 @@ def test_range_one_image(qtbot):
     assert viewer.dims.ndim == 5
     assert view.dims.nsliders == 3
     assert np.sum(view.dims._displayed) == 3
+
+    # Close the viewer
+    viewer.window.close()
 
 
 def test_range_one_images_and_points(qtbot):
@@ -137,6 +146,9 @@ def test_range_one_images_and_points(qtbot):
     assert view.dims.nsliders == 3
     assert np.sum(view.dims._displayed) == 3
 
+    # Close the viewer
+    viewer.window.close()
+
 
 def test_update_console(qtbot):
     """Test updating the console with local variables."""
@@ -156,3 +168,6 @@ def test_update_console(qtbot):
     assert view.console.shell.user_ns['a'] == a
     assert 'b' in view.console.shell.user_ns
     assert view.console.shell.user_ns['b'] == b
+
+    # Close the viewer
+    viewer.window.close()
