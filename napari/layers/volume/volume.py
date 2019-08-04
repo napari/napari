@@ -113,7 +113,7 @@ class Volume(Layer):
             self._data = volume
             self.metadata = metadata or {}
 
-            self.spacing = spacing or [1] * self.ndim
+            self.spacing = spacing or [1] * len(volume.shape)
 
             # Intitialize volume views and thumbnails with zeros
             self._data_view = np.zeros((1, 1, 1))
@@ -159,7 +159,7 @@ class Volume(Layer):
         self.refresh()
 
     def _get_shape(self):
-        return np.multiply(self.data.shape, self.spacing)
+        return tuple(np.multiply(self.data.shape, self.spacing))
 
     @property
     def spacing(self):
