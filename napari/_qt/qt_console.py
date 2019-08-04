@@ -44,6 +44,7 @@ class QtConsole(RichJupyterWidget):
             kernel_client = kernel_manager.client()
             kernel_client.start_channels()
 
+            self.kernel_manager = kernel_manager
             self.kernel_client = kernel_client
             self.shell = kernel_manager.kernel.shell
             self.push = self.shell.push
@@ -58,6 +59,7 @@ class QtConsole(RichJupyterWidget):
             kernel_client = kernel_manager.client()
             kernel_client.start_channels()
 
+            self.kernel_manager = kernel_manager
             self.kernel_client = kernel_client
             self.shell = kernel_manager.kernel.shell
             self.push = self.shell.push
@@ -66,6 +68,7 @@ class QtConsole(RichJupyterWidget):
             # not supported. Instead users should use the ipython terminal for
             # the same functionality.
             self.kernel_client = None
+            self.kernel_manager = None
             self.shell = None
             self.push = lambda var: None
 
@@ -78,6 +81,7 @@ class QtConsole(RichJupyterWidget):
             kernel_client.load_connection_file()
             kernel_client.start_channels()
 
+            self.kernel_manager = None
             self.kernel_client = kernel_client
             self.shell = shell
             self.push = self.shell.push
@@ -94,3 +98,9 @@ class QtConsole(RichJupyterWidget):
 
         # TODO: Try to get console from jupyter to run without a shift click
         # self.execute_on_complete_input = True
+
+    def shutdown(self):
+        if self.kernel_client is not None:
+            self.kernel_client.stop_channels()
+        if self.kernel_manager is not None:
+            self.kernel_manager.shutdown_kernel()
