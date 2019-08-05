@@ -465,6 +465,7 @@ class ViewerModel(KeymapMixin):
         opacity=1,
         blending='translucent',
         visible=True,
+        spacing=None,
         name=None,
         **kwargs,
     ):
@@ -500,7 +501,7 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        spacing : list
+        spacing : list, optional
             List of anisotropy factors to scale the volume by. Must be one for
             each dimension.
         name : str, keyword-only
@@ -520,6 +521,7 @@ class ViewerModel(KeymapMixin):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            spacing=spacing,
             name=name,
             **kwargs,
         )
@@ -590,7 +592,7 @@ class ViewerModel(KeymapMixin):
         http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
         layer = layers.Points(
-            points,
+            coords,
             symbol=symbol,
             size=size,
             edge_width=edge_width,
@@ -652,7 +654,7 @@ class ViewerModel(KeymapMixin):
         layer = layers.Labels(
             labels,
             metadata=metadata,
-            num_color=num_colors,
+            num_colors=num_colors,
             seed=seed,
             opacity=opacity,
             blending=blending,
@@ -793,8 +795,8 @@ class ViewerModel(KeymapMixin):
             vectors,
             edge_width=edge_width,
             edge_color=edge_color,
-            length=1,
-            opacity=1,
+            length=length,
+            opacity=opacity,
             blending=blending,
             visible=visible,
             name=name,
