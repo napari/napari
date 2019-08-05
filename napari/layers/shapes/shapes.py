@@ -10,7 +10,7 @@ from vispy.scene.visuals import Line as VispyLine
 from vispy.color import get_color_names
 from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
 from .shape_list import ShapeList
-from .shape_util import create_box, point_to_lines, slice_by_plane
+from .shape_util import create_box, point_to_lines
 from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
 
 
@@ -264,27 +264,27 @@ class Shapes(Layer):
             else:
                 self._opacity = 0.7
 
-            # Add the shape data
-            self._input_ndim = None
+            self._data_view = ShapeList()
+            self._data_not_displayed = []
+            self._data_slice_keys = np.empty(
+                (0, len(self.dims.not_displayed)), dtype=int
+            )
 
-            self._data_dict = {}
-            self._data_view = None
-            self._data = []
-
-            # self.add(
-            #     data,
-            #     shape_type=shape_type,
-            #     edge_width=edge_width,
-            #     edge_color=edge_color,
-            #     face_color=face_color,
-            #     opacity=opacity,
-            #     z_index=z_index,
-            # )
+            self.add(
+                data,
+                shape_type=shape_type,
+                edge_width=edge_width,
+                edge_color=edge_color,
+                face_color=face_color,
+                opacity=opacity,
+                z_index=z_index,
+            )
 
             # update flags
             self._need_display_update = False
             self._need_visual_update = False
 
+            self._displayed_data = []
             self._selected_data = []
             self._selected_data_stored = []
             self._selected_data_history = []
@@ -332,14 +332,23 @@ class Shapes(Layer):
     @property
     def data(self):
         """list: Each element is an (N, D) array of the vertices of a shape."""
-        return self._to_list()
+
+        shapes = self._data_view.to_list()
+        data = [
+            np.concatenate((n, d), axis=1).transpose(self.dims.order)
+            for n, d in zip(self._data_not_displayed, shapes)
+        ]
+
+        return data
 
     @data.setter
-    def data(self, data):
+    def data(self, data, shape_type='rectangle'):
         self._finish_drawing()
-        self._data = data
-        self._data_dict = self._generate_shape_dict()
-        self._displayed_stored = copy(self.dims.displayed)
+        self._data_view = ShapeList()
+        self._data_not_displayed = np.empty((0, len(self.dims.not_displayed)))
+        self._data_slice_keys = np.empty((0, len(self.dims.not_displayed)))
+
+        self.add(data, shape_type=shape_type)
 
         self._update_dims()
         self.events.data()
@@ -347,80 +356,24 @@ class Shapes(Layer):
 
     def _get_range(self):
         """Determine ranges for slicing given by (min, max, step)."""
-        if len(self._data) == 0:
+        if self.nshapes == 0:
             maxs = [1] * self.ndim
             mins = [0] * self.ndim
         else:
-            maxs = np.max(self._data_view._vertices, axis=0) + 1
-            mins = np.min(self._data_view._vertices, axis=0)
-
-        slice_keys = list(self._data_dict.keys())
-        min_val = np.array(slice_keys).min(axis=0)
-        max_val = np.array(slice_keys).max(axis=0)
-
-        mins = tuple(min_val) + tuple(mins)
-        maxs = tuple(max_val) + tuple(maxs)
+            maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
+            mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
 
         return tuple((min, max, 1) for min, max in zip(mins, maxs))
-
-    # @property
-    # def shape_types(self):
-    #     """list of str: name of shape type for each shape."""
-    #     shape_types = []
-    #     for d in self._data_dict.values():
-    #         shape_types += d.shape_types
-    #     return shape_types
-    #
-    # @property
-    # def edge_colors(self):
-    #     """list of str: name of edge color for each shape."""
-    #     edge_colors = []
-    #     for d in self._data_dict.values():
-    #         edge_colors += d.edge_colors
-    #     return edge_colors
-    #
-    # @property
-    # def face_colors(self):
-    #     """list of str: name of face color for each shape."""
-    #     face_colors = []
-    #     for d in self._data_dict.values():
-    #         face_colors += d.face_colors
-    #     return face_colors
-    #
-    # @property
-    # def edge_widths(self):
-    #     """list of float: edge width for each shape."""
-    #     edge_widths = []
-    #     for d in self._data_dict.values():
-    #         edge_widths += d.edge_widths
-    #     return edge_widths
-    #
-    # @property
-    # def opacities(self):
-    #     """list of float: opacity for each shape."""
-    #     opacities = []
-    #     for d in self._data_dict.values():
-    #         opacities += d.opacities
-    #     return opacities
-    #
-    # @property
-    # def z_indices(self):
-    #     """list of int: z_index for each shape."""
-    #     z_indices = []
-    #     for d in self._data_dict.values():
-    #         z_indices += d.z_indices
-    #     return z_indices
 
     @property
     def nshapes(self):
         """int: Total number of shapes."""
-        nshapes = sum(len(data.shapes) for data in self._data_dict.values())
-        return nshapes
+        return len(self._data_view.shapes)
 
     @property
     def _nshapes_view(self):
         """int: Number of shapes in the current view."""
-        return len(self._data_view.shapes)
+        return np.sum(self._displayed_data)
 
     @property
     def edge_width(self):
@@ -692,75 +645,46 @@ class Shapes(Layer):
             )
 
             for d, st, ew, ec, fc, o, z in shape_inputs:
-                shape_cls = shape_classes[ShapeType(st)]
-
                 # Slice data by 2D plane.
-                slice_key, data_2D = slice_by_plane(d)
+                data_displayed = d[:, list(self.dims.displayed)]
+                data_not_displayed = d[:, list(self.dims.not_displayed)]
+                if np.all(data_not_displayed == data_not_displayed[0]):
+                    slice_key = data_not_displayed[0].astype('int')
+                else:
+                    slice_key = [np.inf] * len(data_not_displayed)
+
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
-                if slice_key is not False:
-                    shape = shape_cls(
-                        data_2D,
-                        edge_width=ew,
-                        edge_color=ec,
-                        face_color=fc,
-                        opacity=o,
-                        z_index=z,
-                    )
-                    # If data is being drawn in gui it will already be 2D and
-                    # so should just be added to the current ShapeList
-                    if slice_key == ():
-                        if len(self._data_dict) == 0:
-                            # If input dim not initialized, set value
-                            if self._input_ndim is None:
-                                self._input_ndim = 2
-                            self._data_dict[slice_key] = ShapeList()
-                            self._data_view = self._data_dict[slice_key]
-                        self._data_view.add(shape)
-                    elif slice_key in self._data_dict:
-                        self._data_dict[slice_key].add(shape)
-                    else:
-                        # If input dim not initialized, set value
-                        if self._input_ndim is None:
-                            self._input_ndim = 2 + len(slice_key)
-                        # Check shape has correct dimensions
-                        if self._input_ndim == 2 + len(slice_key):
-                            self._data_dict[slice_key] = ShapeList()
-                            self._data_dict[slice_key].add(shape)
-                        else:
-                            raise ValueError(
-                                'all shapes must have the same dimension'
-                            )
+                shape_cls = shape_classes[ShapeType(st)]
+                shape = shape_cls(
+                    data_displayed,
+                    edge_width=ew,
+                    edge_color=ec,
+                    face_color=fc,
+                    opacity=o,
+                    z_index=z,
+                )
 
-        # If input_ndim has not been set, default to 2
-        if self._input_ndim is None:
-            # If data was empty 3D array
-            if len(data) == 0 and type(data) == np.ndarray:
-                self._input_ndim = data.shape[-1]
-            else:
-                self._input_ndim = 2
-
-        # If _data_view has not yet been definied,
-        # set the currently viewed slice to top slice
-        if self._data_view is None:
-            init_index = (0,) * (self._input_ndim - 2)
-            if init_index not in self._data_dict:
-                self._data_dict[init_index] = ShapeList()
-            self._data_view = self._data_dict[init_index]
+                # Add shape
+                self._data_view.add(shape)
+                self._data_not_displayed.append(data_not_displayed)
+                self._data_slice_keys = np.append(
+                    self._data_slice_keys, [slice_key], axis=0
+                )
 
         self._displayed_stored = copy(self.dims.displayed)
         self._update_thumbnail()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        with self.freeze_refresh():
-            slice_key = self.dims.indices[:-2]
-            if slice_key not in self._data_dict:
-                self._data_dict[slice_key] = ShapeList()
-            if not self._data_view == self._data_dict[slice_key]:
-                self._data_view = self._data_dict[slice_key]
-                # If data is changed unselect all shapes
-                self._finish_drawing()
+        # with self.freeze_refresh():
+        #     slice_key = self.dims.indices[:-2]
+        #     if slice_key not in self._data_dict:
+        #         self._data_dict[slice_key] = ShapeList()
+        #     if not self._data_view == self._data_dict[slice_key]:
+        #         self._data_view = self._data_dict[slice_key]
+        #         # If data is changed unselect all shapes
+        #         self._finish_drawing()
 
         z_order = self._data_view._mesh.triangles_z_order
         faces = self._data_view._mesh.triangles[z_order]
