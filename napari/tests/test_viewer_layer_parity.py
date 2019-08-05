@@ -7,6 +7,7 @@ import inspect
 import re
 
 import pytest
+from numpydoc.docscrape import FunctionDoc, ClassDoc
 
 from napari import layers as module, Viewer
 from napari.util.misc import camel_to_snake
@@ -27,26 +28,57 @@ for name in dir(module):
 
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
 def test_docstring(layer):
-    method = getattr(Viewer, f'add_{camel_to_snake(layer.__name__)}')
-    layer_doc = inspect.getdoc(layer)
+    name = layer.__name__
 
-    i = [
-        idx
-        for idx, section in enumerate(layer_doc.split('\n\n'))
-        if section.startswith('Parameters')
-    ][0]
+    method_name = f'add_{camel_to_snake(name)}'
+    method = getattr(Viewer, method_name)
 
-    # 'inspect.getdoc' automatically removes common indentation
-    method_doc = inspect.getdoc(method)
+    method_doc = FunctionDoc(method)
+    layer_doc = ClassDoc(layer)
 
-    # We only check the parameters section, which is the first
-    # section after separating by empty line. We also strip empty
-    # line and white space that occurs at the end of a class docstring
-    layer_param = layer_doc.split('\n\n')[i].rstrip('\n ')
-    method_param = method_doc.split('\n\n')[i].rstrip('\n ')
+    # check summary section
+    method_summary = ' '.join(method_doc['Summary'])  # join multi-line summary
 
-    fail_msg = f"Docstrings don't match for class {layer.__name__}"
-    assert layer_param == method_param, fail_msg
+    summary_format = 'Add an? .+? layer to the layers list.'
+
+    assert re.match(
+        summary_format, method_summary
+    ), f"improper 'Summary' section of '{method_name}'"
+
+    # check parameters section
+    method_params = method_doc['Parameters']
+    layer_params = layer_doc['Parameters']
+
+    try:
+        assert len(method_params) == len(layer_params)
+        for method_param, layer_param in zip(method_params, layer_params):
+            m_name, m_type, m_description = method_param
+            l_name, l_type, l_description = layer_param
+
+            # descriptions are treated as lists where each line is an element
+            m_description = ' '.join(m_description)
+            l_description = ' '.join(l_description)
+
+            assert m_name == l_name, 'different parameter names or order'
+            assert m_type == l_type, f"type mismatch of parameter '{m_name}'"
+            assert (
+                m_description == l_description
+            ), f"description mismatch of parameter '{m_name}'"
+    except AssertionError as e:
+        raise AssertionError(f"docstrings don't match for class {name}") from e
+
+    # check returns section
+    method_returns, = method_doc[
+        'Returns'
+    ]  # only one thing should be returned
+    description = ' '.join(method_returns[-1])  # join multi-line description
+    method_returns = *method_returns[:-1], description
+
+    assert method_returns == (
+        'layer',
+        f':class:`napari.layers.{name}`',
+        f'The newly-created {name.lower()} layer.',
+    ), f"improper 'Returns' section of '{method_name}'"
 
 
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
