@@ -169,7 +169,8 @@ class Volume(Layer):
     @spacing.setter
     def spacing(self, spacing):
         self._spacing = spacing
-        self.scale = [self._spacing[s] for s in [-1, -2, -3]]
+        displayed = [-3, -2, -1]
+        self.scale = [self._spacing[s] for s in displayed[::-1]]
 
     @property
     def colormap(self):
