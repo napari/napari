@@ -4,11 +4,13 @@ have the same signatures and docstrings.
 """
 
 import inspect
+import re
 
 import pytest
 
 from napari import layers as module, Viewer
 from napari.util.misc import camel_to_snake
+from napari.util._register import CallSignature
 
 
 layers = []
@@ -56,3 +58,20 @@ def test_signature(layer):
 
     fail_msg = f"Signatures don't match for class {layer.__name__}"
     assert class_signature == method_signature, fail_msg
+
+    code = inspect.getsource(method)
+
+    args = re.search(
+        rf'layer = layers\.{layer.__name__}\((.+?)\)', code, flags=re.S
+    )
+    args = ' '.join(args.group(1).split())
+    if args.endswith(','):
+        args = args[:-1]
+
+    autogen = CallSignature.from_callable(layer.__init__)
+    autogen = autogen.replace(
+        parameters=[p for k, p in autogen.parameters.items() if k != 'self']
+    )
+    autogen = str(autogen)[1:-1]
+
+    assert args == autogen
