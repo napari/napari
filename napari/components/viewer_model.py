@@ -292,7 +292,7 @@ class ViewerModel(KeymapMixin):
         return svg
 
     def add_layer(self, layer):
-        """Adds a layer to the viewer.
+        """Add a layer to the viewer.
 
         Parameters
         ----------
@@ -399,7 +399,7 @@ class ViewerModel(KeymapMixin):
         return layer
 
     def add_pyramid(self, pyramid, *args, **kwargs):
-        """Adds an image pyramid layer to the layers list.
+        """Add an image pyramid layer to the layers list.
 
         Parameters
         ----------
@@ -469,7 +469,7 @@ class ViewerModel(KeymapMixin):
         name=None,
         **kwargs,
     ):
-        """Adds a volume layer to the layers list.
+        """Add a volume layer to the layers list.
 
         Parameters
         ----------
