@@ -1,7 +1,13 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from vispy.color import Color
-from ..shape_util import triangulate_edge, triangulate_face, is_collinear
+from ..shape_util import (
+    triangulate_edge,
+    triangulate_face,
+    is_collinear,
+    poly_to_mask,
+    path_to_mask,
+)
 
 
 class Shape(ABC):
@@ -9,8 +15,8 @@ class Shape(ABC):
 
     Parameters
     ----------
-    data : np.ndarray
-        Nx2 array of vertices specifying the shape.
+    data : (N, D) array
+        Vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -26,11 +32,15 @@ class Shape(ABC):
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+    dims_order : (D,) list
+        Order that the dimensions are to be rendered in.
+    ndiplay : int
+        Number of dimensions to be displayed, must be 2.
 
     Attributes
     ----------
-    data : np.ndarray
-        Nx2 array of vertices specifying the shape.
+    data : (N, D) array
+        Vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
     edge_color : ColorArray
@@ -44,6 +54,10 @@ class Shape(ABC):
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+    dims_order : (D,) list
+        Order that the dimensions are to be rendered in.
+    ndiplay : int
+        Number of dimensions to be displayed, must be 2.
 
     Extended Summary
     ----------
@@ -75,6 +89,10 @@ class Shape(ABC):
         the edge
     _edge_triangles : np.ndarray
         Tx3 array of vertex indices that form the triangles for the shape edge
+    _filled : bool
+        Flag if array is filled or not.
+    _use_face_vertices : bool
+        Flag to use face vertices for mask generation.
     """
 
     def __init__(
@@ -98,6 +116,8 @@ class Shape(ABC):
         self._face_color_name = 'white'
 
         self._closed = False
+        self._filled = True
+        self._use_face_vertices = False
         self.edge_width = edge_width
         self.edge_color = edge_color
         self.face_color = face_color
@@ -341,10 +361,45 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(-center)
 
-    @abstractmethod
     def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
-        # user writes own docstring
-        raise NotImplementedError()
+        """Convert the shape vertices to a boolean mask.
+
+        Set points to `True` if they are lying inside the shape if the shape is
+        filled, or if they are lying along the boundary of the shape if the
+        shape is not filled. Negative points or points outside the mask_shape
+        after the zoom and offset are clipped.
+
+        Parameters
+        ----------
+        mask_shape : np.ndarray | tuple | None
+            1x2 array of shape of mask to be generated. If non specified, takes
+            the max of the vertices.
+        zoom_factor : float
+            Premultiplier applied to coordinates before generating mask. Used
+            for generating as downsampled mask.
+        offset : 2-tuple
+            Offset subtracted from coordinates before multiplying by the
+            zoom_factor. Used for putting negative coordinates into the mask.
+
+        Returns
+        ----------
+        mask : np.ndarray
+            Boolean array with `True` for points inside the shape
+        """
+        if mask_shape is None:
+            mask_shape = self.data.max(axis=0).astype('int')
+
+        if self._use_face_vertices:
+            data = self._face_vertices
+        else:
+            data = self.data
+
+        if self._filled:
+            mask = poly_to_mask(mask_shape, (data - offset) * zoom_factor)
+        else:
+            mask = path_to_mask(mask_shape, (data - offset) * zoom_factor)
+
+        return mask
 
     @abstractmethod
     def to_xml(self):

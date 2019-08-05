@@ -239,7 +239,7 @@ class Shapes(Layer):
         # Freeze refreshes to prevent drawing before the layer is constructed
         with self.freeze_refresh():
 
-            self._displayed_stored = []
+            self._display_order_stored = []
 
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
@@ -266,8 +266,14 @@ class Shapes(Layer):
 
             self._data_view = ShapeList()
             self._data_not_displayed = []
+
+            if np.array(data[0]).ndim == 1:
+                self.dims.ndim = np.array(data).shape[1]
+            else:
+                self.dims.ndim = np.array(data[0]).shape[1]
+
             self._data_slice_keys = np.empty(
-                (0, len(self.dims.not_displayed)), dtype=int
+                (0, 2, len(self.dims.not_displayed)), dtype=int
             )
 
             self.add(
@@ -335,7 +341,7 @@ class Shapes(Layer):
 
         shapes = self._data_view.to_list()
         data = [
-            np.concatenate((n, d), axis=1).transpose(self.dims.order)
+            np.concatenate((n, d), axis=1)[:, self._display_order_stored]
             for n, d in zip(self._data_not_displayed, shapes)
         ]
 
@@ -346,7 +352,7 @@ class Shapes(Layer):
         self._finish_drawing()
         self._data_view = ShapeList()
         self._data_not_displayed = np.empty((0, len(self.dims.not_displayed)))
-        self._data_slice_keys = np.empty((0, len(self.dims.not_displayed)))
+        self._data_slice_keys = np.empty((0, 2, len(self.dims.not_displayed)))
 
         self.add(data, shape_type=shape_type)
 
@@ -439,6 +445,36 @@ class Shapes(Layer):
                 self._data_view.update_opacity(i, opacity)
             self.refresh()
         self.events.opacity()
+
+    @property
+    def shape_types(self):
+        """list of str: name of shape type for each shape."""
+        return self._data_view.shape_types
+
+    @property
+    def edge_colors(self):
+        """list of str: name of edge color for each shape."""
+        return self._data_view.edge_colors
+
+    @property
+    def face_colors(self):
+        """list of str: name of face color for each shape."""
+        return self._data_view.face_colors
+
+    @property
+    def edge_widths(self):
+        """list of float: edge width for each shape."""
+        return self._data_view.edge_widths
+
+    @property
+    def opacities(self):
+        """list of float: opacity for each shape."""
+        return self._data_view.opacities
+
+    @property
+    def z_indices(self):
+        """list of int: z_index for each shape."""
+        return self._data_view.z_indices
 
     @property
     def selected_data(self):
@@ -648,10 +684,10 @@ class Shapes(Layer):
                 # Slice data by 2D plane.
                 data_displayed = d[:, list(self.dims.displayed)]
                 data_not_displayed = d[:, list(self.dims.not_displayed)]
-                if np.all(data_not_displayed == data_not_displayed[0]):
-                    slice_key = data_not_displayed[0].astype('int')
-                else:
-                    slice_key = [np.inf] * len(data_not_displayed)
+                slice_key = [
+                    np.round(np.min(data_not_displayed, axis=0)).astype('int'),
+                    np.round(np.max(data_not_displayed, axis=0)).astype('int'),
+                ]
 
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
@@ -665,6 +701,17 @@ class Shapes(Layer):
                     z_index=z,
                 )
 
+                if len(shape.data) > len(data_not_displayed):
+                    avg_slice_key = np.array([np.mean(slice_key, axis=0)])
+                    rep_key = np.repeat(
+                        avg_slice_key,
+                        len(shape.data) - len(data_not_displayed),
+                        axis=0,
+                    )
+                    data_not_displayed = np.append(
+                        data_not_displayed, rep_key, axis=0
+                    )
+
                 # Add shape
                 self._data_view.add(shape)
                 self._data_not_displayed.append(data_not_displayed)
@@ -672,23 +719,29 @@ class Shapes(Layer):
                     self._data_slice_keys, [slice_key], axis=0
                 )
 
-        self._displayed_stored = copy(self.dims.displayed)
+        self._display_order_stored = copy(self.dims.order)
         self._update_thumbnail()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        # with self.freeze_refresh():
-        #     slice_key = self.dims.indices[:-2]
-        #     if slice_key not in self._data_dict:
-        #         self._data_dict[slice_key] = ShapeList()
-        #     if not self._data_view == self._data_dict[slice_key]:
-        #         self._data_view = self._data_dict[slice_key]
-        #         # If data is changed unselect all shapes
-        #         self._finish_drawing()
+
+        if not self.dims.order == self._display_order_stored:
+            pass
+
+        slice_key = np.array(self.dims.indices)[list(self.dims.not_displayed)]
+        slice_key = np.array([slice_key, slice_key])
+
+        # Slice key must exactly match mins and maxs of shape
+        matches = np.all(self._data_slice_keys == slice_key, axis=(1, 2))
+        self._displayed_data = matches
 
         z_order = self._data_view._mesh.triangles_z_order
-        faces = self._data_view._mesh.triangles[z_order]
-        colors = self._data_view._mesh.triangles_colors[z_order]
+        disp_tri = np.isin(
+            self._data_view._mesh.triangles_index[z_order, 0],
+            np.where(self._displayed_data)[0],
+        )
+        faces = self._data_view._mesh.triangles[z_order][disp_tri]
+        colors = self._data_view._mesh.triangles_colors[z_order][disp_tri]
         vertices = self._data_view._mesh.vertices[:, ::-1]
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
@@ -962,15 +1015,16 @@ class Shapes(Layer):
         # the offset is needed to ensure that the top left corner of the shapes
         # corresponds to the top left corner of the thumbnail
         offset = (
-            np.array([self.dims.range[-2][0], self.dims.range[-1][0]]) - 0.5
+            np.array([self.dims.range[d][0] for d in self.dims.displayed])
+            + 0.5
         )
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire shape can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
             [
-                self.dims.range[-2][1] - self.dims.range[-2][0] + 1,
-                self.dims.range[-1][1] - self.dims.range[-1][0] + 1,
+                self.dims.range[d][1] - self.dims.range[d][0] + 1
+                for d in self.dims.displayed
             ]
         ).astype(int)
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
@@ -989,10 +1043,11 @@ class Shapes(Layer):
         for index in to_remove:
             self._data_view.remove(index)
         self.selected_data = []
-        shape, vertex = self.get_value(self.coordinates[-2:])
+        coord = [self.coordinates[i] for i in self.dims.displayed]
+        shape, vertex = self.get_value(coord)
         self._hover_shape = shape
         self._hover_vertex = vertex
-        self.status = self.get_message(self.coordinates[-2:], shape, vertex)
+        self.status = self.get_message(coord, shape, vertex)
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -1057,7 +1112,7 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        coord : sequence of float
+        coord : 2-tuple of float
             Image coordinates to check if any shapes are at.
 
         Returns
@@ -1074,7 +1129,7 @@ class Shapes(Layer):
             if self._mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
-                distances = abs(box - coord[:2])
+                distances = abs(box - coord)
 
                 # Get the vertex sizes
                 sizes = self._vertex_size * self.scale_factor / 2
@@ -1089,7 +1144,7 @@ class Shapes(Layer):
                 # Check if inside vertex of shape
                 inds = np.isin(self._data_view._index, self.selected_data)
                 vertices = self._data_view._vertices[inds]
-                distances = abs(vertices - coord[:2])
+                distances = abs(vertices - coord)
 
                 # Get the vertex sizes
                 sizes = self._vertex_size * self.scale_factor / 2
@@ -1387,25 +1442,25 @@ class Shapes(Layer):
 
         mask_shape = np.ceil(mask_shape).astype('int')
 
-        if self.ndim == 2:
-            # For 2D shapes just convert current view to masks and
-            # broadcast across sliced dimensions
-            slices = self._data_view.to_masks(
-                mask_shape=mask_shape[-2:], shape_type=shape_type
-            )
-            masks = [np.broadcast_to(m, mask_shape) for m in slices]
-        else:
-            # For nD insert each keyed slice into correct place in volume
-            masks = []
-            for slice_key, data in self._data_dict.items():
-                if len(slice_key) > 0:
-                    slices = data.to_masks(
-                        mask_shape=mask_shape[-2:], shape_type=shape_type
-                    )
-                    for m in slices:
-                        vol = np.zeros(mask_shape)
-                        vol[slice_key] = m
-                        masks.append(vol)
+        # if self.ndim == 2:
+        # For 2D shapes just convert current view to masks and
+        # broadcast across sliced dimensions
+        slices = self._data_view.to_masks(
+            mask_shape=mask_shape[-2:], shape_type=shape_type
+        )
+        masks = [np.broadcast_to(m, mask_shape) for m in slices]
+        # else:
+        #     # For nD insert each keyed slice into correct place in volume
+        #     masks = []
+        #     for slice_key, data in self._data_dict.items():
+        #         if len(slice_key) > 0:
+        #             slices = data.to_masks(
+        #                 mask_shape=mask_shape[-2:], shape_type=shape_type
+        #             )
+        #             for m in slices:
+        #                 vol = np.zeros(mask_shape)
+        #                 vol[slice_key] = m
+        #                 masks.append(vol)
         if len(masks) == 0:
             masks = np.array(masks)
         else:
@@ -1436,56 +1491,26 @@ class Shapes(Layer):
 
         labels_shape = np.ceil(labels_shape).astype('int')
 
-        if self.ndim == 2:
-            # For 2D shapes convert current view to labels
-            # and broadcast across sliced dimensions
-            labels = self._data_view.to_labels(
-                labels_shape=labels_shape[-2:], shape_type=shape_type
-            )
-            labels = np.broadcast_to(labels, labels_shape)
-        else:
-            # For nD insert each keyed slice into correct place in volume
-            # and increment integer label of shape
-            labels = np.zeros(labels_shape)
-            nshapes = 0
-            for slice_key, data in self._data_dict.items():
-                slices = data.to_labels(
-                    labels_shape=labels_shape[-2:], shape_type=shape_type
-                )
-                slices[slices > 0] += nshapes
-                labels[slice_key] = slices
-                nshapes += len(data.shapes)
+        # if self.ndim == 2:
+        # For 2D shapes convert current view to labels
+        # and broadcast across sliced dimensions
+        labels = self._data_view.to_labels(
+            labels_shape=labels_shape[-2:], shape_type=shape_type
+        )
+        labels = np.broadcast_to(labels, labels_shape)
+        # else:
+        #     # For nD insert each keyed slice into correct place in volume
+        #     # and increment integer label of shape
+        #     labels = np.zeros(labels_shape)
+        #     nshapes = 0
+        #     for slice_key, data in self._data_dict.items():
+        #         slices = data.to_labels(
+        #             labels_shape=labels_shape[-2:], shape_type=shape_type
+        #         )
+        #         slices[slices > 0] += nshapes
+        #         labels[slice_key] = slices
+        #         nshapes += len(data.shapes)
         return labels
-
-    def _to_list(self, shape_type=None):
-        """Return the vertex data assoicated with the shapes as a list.
-
-        Parameters
-        ----------
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
-
-        Returns
-        ----------
-        data : list
-            List of shape data where each element of the list is an
-            `np.ndarray` corresponding to one shape
-        """
-
-        if self.ndim == 2:
-            # For 2D shapes convert current view to a list
-            data = self._data_view.to_list(shape_type=shape_type)
-        else:
-            # For nD insert each slice_key into shape indices in list
-            data = []
-            for slice_key, d in self._data_dict.items():
-                shapes = d.to_list(shape_type=shape_type)
-                for s in shapes:
-                    slice_keys = np.tile(slice_key, (len(s), 1))
-                    full_shape = np.concatenate((slice_keys, s), axis=1)
-                    data.append(full_shape)
-        return data
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -1498,7 +1523,7 @@ class Shapes(Layer):
         if event.pos is None:
             return
         self.position = tuple(event.pos)
-        coord = self.coordinates[-2:]
+        coord = [self.coordinates[i] for i in self.dims.displayed]
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.PAN_ZOOM:
@@ -1717,7 +1742,7 @@ class Shapes(Layer):
         if event.pos is None:
             return
         self.position = tuple(event.pos)
-        coord = self.coordinates[-2:]
+        coord = [self.coordinates[i] for i in self.dims.displayed]
 
         if self._mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode just look at coord all
@@ -1791,7 +1816,7 @@ class Shapes(Layer):
         if event.pos is None:
             return
         self.position = tuple(event.pos)
-        coord = self.coordinates[-2:]
+        coord = [self.coordinates[i] for i in self.dims.displayed]
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.PAN_ZOOM:

@@ -6,7 +6,6 @@ from ..shape_util import (
     triangulate_ellipse,
     center_radii_to_corners,
     rectangle_to_box,
-    poly_to_mask,
 )
 
 
@@ -56,6 +55,7 @@ class Ellipse(Shape):
         )
 
         self._closed = True
+        self._use_face_vertices = True
         self.data = np.array(data)
         self.name = 'ellipse'
 
@@ -103,38 +103,6 @@ class Ellipse(Shape):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
-
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
-        """Convert the shape vertices to a boolean mask. 
-
-        Set points lying inside the shape as `True`. Negative points or points
-        outside the mask_shape after the zoom and offset are clipped.
-
-        Parameters
-        ----------
-        mask_shape : np.ndarray | tuple | None
-            1x2 array of shape of mask to be generated. If non specified, takes
-            the max of the vertices.
-        zoom_factor : float
-            Premultiplier applied to coordinates before generating mask. Used
-            for generating as downsampled mask.
-        offset : 2-tuple
-            Offset subtracted from coordinates before multiplying by the
-            zoom_factor. Used for putting negative coordinates into the mask.
-
-        Returns
-        ----------
-        mask : np.ndarray
-            Boolean array with `True` for points inside the shape
-        """
-        if mask_shape is None:
-            mask_shape = self.data.max(axis=0).astype('int')
-
-        mask = poly_to_mask(
-            mask_shape, (self._face_vertices - offset) * zoom_factor
-        )
-
-        return mask
 
     def to_xml(self):
         """Generates an xml element that defintes the shape according to the
