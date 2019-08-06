@@ -1,7 +1,7 @@
 import re
 import inspect
 
-from .misc import camel_to_snake
+from .misc import camel_to_snake, callsignature
 
 
 template = """def {name}(self, {signature}):
@@ -11,85 +11,13 @@ template = """def {name}(self, {signature}):
 """
 
 
-class CallDefault(inspect.Parameter):
-    def __str__(self):
-        """wrap defaults"""
-        kind = self.kind
-        formatted = self._name
-
-        # Fill in defaults
-        if self._default is not inspect._empty:
-            formatted = '{}={}'.format(formatted, formatted)
-
-        if kind == inspect._VAR_POSITIONAL:
-            formatted = '*' + formatted
-        elif kind == inspect._VAR_KEYWORD:
-            formatted = '**' + formatted
-
-        return formatted
-
-
-class CallSignature(inspect.Signature):
-    _parameter_cls = CallDefault
-
-    def __str__(self):
-        """do not render separators
-
-        commented code is what was taken out from
-        the copy/pasted inspect module code :)
-        """
-        result = []
-        # render_pos_only_separator = False
-        # render_kw_only_separator = True
-        for param in self.parameters.values():
-            formatted = str(param)
-
-            # kind = param.kind
-
-            # if kind == inspect._POSITIONAL_ONLY:
-            #     render_pos_only_separator = True
-            # elif render_pos_only_separator:
-            #     # It's not a positional-only parameter, and the flag
-            #     # is set to 'True' (there were pos-only params before.)
-            #     result.append('/')
-            #     render_pos_only_separator = False
-
-            # if kind == inspect._VAR_POSITIONAL:
-            #     # OK, we have an '*args'-like parameter, so we won't need
-            #     # a '*' to separate keyword-only arguments
-            #     render_kw_only_separator = False
-            # elif kind == inspect._KEYWORD_ONLY and render_kw_only_separator:
-            #     # We have a keyword-only parameter to render and we haven't
-            #     # rendered an '*args'-like parameter before, so add a '*'
-            #     # separator to the parameters list ("foo(arg1, *, arg2)" case)
-            #     result.append('*')
-            #     # This condition should be only triggered once, so
-            #     # reset the flag
-            #     render_kw_only_separator = False
-
-            result.append(formatted)
-
-        # if render_pos_only_separator:
-        #     # There were only positional-only parameters, hence the
-        #     # flag was not reset to 'False'
-        #     result.append('/')
-
-        rendered = '({})'.format(', '.join(result))
-
-        if self.return_annotation is not inspect._empty:
-            anno = inspect.formatannotation(self.return_annotation)
-            rendered += ' -> {}'.format(anno)
-
-        return rendered
-
-
 def create_func(cls, name=None, doc=None):
     module = inspect.getmodule(cls)
 
     module_name = module.__name__
     cls_name = cls.__name__
     sig = inspect.signature(cls)
-    call_args = CallSignature.from_callable(cls)
+    call_args = callsignature(cls)
 
     if name is None:
         name = camel_to_snake(cls_name)

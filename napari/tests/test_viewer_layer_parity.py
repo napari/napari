@@ -10,8 +10,7 @@ import pytest
 from numpydoc.docscrape import FunctionDoc, ClassDoc
 
 from napari import layers as module, Viewer
-from napari.util.misc import camel_to_snake
-from napari.util._register import CallSignature
+from napari.util.misc import camel_to_snake, callsignature
 
 
 layers = []
@@ -83,27 +82,34 @@ def test_docstring(layer):
 
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
 def test_signature(layer):
-    method = getattr(Viewer, f'add_{camel_to_snake(layer.__name__)}')
+    name = layer.__name__
+    method = getattr(Viewer, f'add_{camel_to_snake(name)}')
 
     class_signature = inspect.signature(layer.__init__)
     method_signature = inspect.signature(method)
 
-    fail_msg = f"Signatures don't match for class {layer.__name__}"
+    fail_msg = f"signatures don't match for class {name}"
     assert class_signature == method_signature, fail_msg
 
     code = inspect.getsource(method)
 
-    args = re.search(
-        rf'layer = layers\.{layer.__name__}\((.+?)\)', code, flags=re.S
-    )
+    args = re.search(rf'layer = layers\.{name}\((.+?)\)', code, flags=re.S)
+    # get the arguments & normalize whitepsace
     args = ' '.join(args.group(1).split())
-    if args.endswith(','):
+
+    if args.endswith(','):  # remove tailing comma if present
         args = args[:-1]
 
-    autogen = CallSignature.from_callable(layer.__init__)
+    autogen = callsignature(layer)
     autogen = autogen.replace(
+        # remove 'self' parameter
         parameters=[p for k, p in autogen.parameters.items() if k != 'self']
     )
-    autogen = str(autogen)[1:-1]
+    autogen = str(autogen)[1:-1]  # remove parentheses
 
-    assert args == autogen
+    try:
+        assert args == autogen
+    except AssertionError as e:
+        raise SyntaxError(
+            f'arguments improperly passed from convenience method to layer {name}'
+        ) from e

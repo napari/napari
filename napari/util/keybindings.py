@@ -350,12 +350,6 @@ class KeymapMixin:
     in every subclass.
     """
 
-    def __new__(cls, *args, **kwargs):
-        if cls is KeymapMixin:
-            raise TypeError('cannot instantiate mix-in class')
-
-        return object.__new__(cls)
-
     def __init__(self):
         self.keymap = {}
 
