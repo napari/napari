@@ -35,12 +35,16 @@ class Shape(ABC):
     dims_order : (D,) list
         Order that the dimensions are to be rendered in.
     ndiplay : int
-        Number of dimensions to be displayed, must be 2.
+        Number of dimensions to be displayed, must be 2 as only 2D rendering
+        currently supported.
 
     Attributes
     ----------
     data : (N, D) array
         Vertices specifying the shape.
+    data_displayed : (N, 2) array
+        Vertices of the shape that are currently displayed. Only 2D rendering
+        currently supported.
     edge_width : float
         thickness of lines and edges.
     edge_color : ColorArray
@@ -55,9 +59,16 @@ class Shape(ABC):
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
     dims_order : (D,) list
-        Order that the dimensions are to be rendered in.
-    ndiplay : int
+        Order that the dimensions are rendered in.
+    ndisplay : int
         Number of dimensions to be displayed, must be 2.
+    displayed : tuple
+        List of dimensions that are displayed.
+    not_displayed : tuple
+        List of dimensions that are not displayed.
+    slice_key : (2, M) array
+        Min and max values of the M non-displayed dimensions, useful for
+        slicing multidimensional shapes.
 
     Extended Summary
     ----------
@@ -104,7 +115,13 @@ class Shape(ABC):
         face_color='white',
         opacity=1,
         z_index=0,
+        dims_order=None,
+        ndisplay=2,
     ):
+
+        self._dims_order = list(range(2))
+        self.ndisplay = ndisplay
+        self.slice_key = None
 
         self._face_vertices = np.empty((0, 2))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
@@ -135,6 +152,37 @@ class Shape(ABC):
     @abstractmethod
     def data(self, data):
         raise NotImplementedError()
+
+    @abstractmethod
+    def _update_displayed_data(self):
+        raise NotImplementedError()
+
+    @property
+    def dims_order(self):
+        """(D,) list: Order that the dimensions are rendered in."""
+        return self._dims_order
+
+    @dims_order.setter
+    def dims_order(self, dims_order):
+        if np.all(self.dims_order == dims_order):
+            return
+        self._dims_order = dims_order
+        self._update_displayed_data()
+
+    @property
+    def dims_displayed(self):
+        """tuple: Dimensions that are displayed."""
+        return self.dims_order[-self.ndisplay :]
+
+    @property
+    def dims_not_displayed(self):
+        """tuple: Dimensions that are not displayed."""
+        return self.dims_order[: -self.ndisplay]
+
+    @property
+    def data_displayed(self):
+        """(N, 2) array: Vertices of the shape that are currently displayed."""
+        return self.data[:, self.dims_displayed]
 
     @property
     def edge_width(self):
@@ -265,10 +313,12 @@ class Shape(ABC):
             2x2 array specifying linear transform.
         """
         self._box = self._box @ transform.T
-        self._data = self._data @ transform.T
+        self._data[:, self.dims_displayed] = (
+            self._data[:, self.dims_displayed] @ transform.T
+        )
         self._face_vertices = self._face_vertices @ transform.T
 
-        points = self._data
+        points = self._data[:, self.dims_displayed]
 
         centers, offsets, triangles = triangulate_edge(
             points, closed=self._closed
@@ -290,7 +340,9 @@ class Shape(ABC):
         self._face_vertices = self._face_vertices + shift
         self._edge_vertices = self._edge_vertices + shift
         self._box = self._box + shift
-        self._data = self._data + shift
+        self._data[:, self.dims_displayed] = (
+            self._data[:, self.dims_displayed] + shift
+        )
 
     def scale(self, scale, center=None):
         """Performs a scaling on the shape
@@ -371,9 +423,9 @@ class Shape(ABC):
 
         Parameters
         ----------
-        mask_shape : np.ndarray | tuple | None
-            1x2 array of shape of mask to be generated. If non specified, takes
-            the max of the vertices.
+        mask_shape : (2,) array
+            Shape of mask to be generated. If non specified, takes the max of
+            the displayed vertices.
         zoom_factor : float
             Premultiplier applied to coordinates before generating mask. Used
             for generating as downsampled mask.
@@ -387,12 +439,14 @@ class Shape(ABC):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = self.data.max(axis=0).astype('int')
+            mask_shape = np.round(
+                self.data[:, self.dims_displayed].max(axis=0)
+            ).astype('int')
 
         if self._use_face_vertices:
             data = self._face_vertices
         else:
-            data = self.data
+            data = self.data[:, self.dims_displayed]
 
         if self._filled:
             mask = poly_to_mask(mask_shape, (data - offset) * zoom_factor)

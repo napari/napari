@@ -10,7 +10,7 @@ class Polygon(Shape):
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of vertices specifying the shape.
+        NxD array of vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -52,21 +52,36 @@ class Polygon(Shape):
 
     @property
     def data(self):
-        """np.ndarray: Nx2 array of vertices.
+        """np.ndarray: NxD array of vertices.
         """
         return self._data
 
     @data.setter
     def data(self, data):
+        if len(self.dims_order) != data.shape[1]:
+            self._dims_order = list(range(data.shape[1]))
+
         if len(data) < 2:
             raise ValueError(
                 """Data shape does not match a polygon.
                              Polygon expects at least two vertices"""
             )
-        else:
-            self._set_meshes(data)
-            self._box = create_box(data)
+
         self._data = data
+        self._update_displayed_data()
+
+    def _update_displayed_data(self):
+        """Update the data that is to be displayed."""
+        self._set_meshes(self.data_displayed)
+        self._box = create_box(self.data_displayed)
+
+        data_not_displayed = self.data[:, self.dims_not_displayed]
+        self.slice_key = np.round(
+            [
+                np.min(data_not_displayed, axis=0),
+                np.max(data_not_displayed, axis=0),
+            ]
+        ).astype('int')
 
     def to_xml(self):
         """Generates an xml element that defintes the shape according to the
@@ -77,7 +92,8 @@ class Polygon(Shape):
         element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
-        points = ' '.join([f'{d[1]},{d[0]}' for d in self.data])
+        data = self.data[:, self.dims_displayed]
+        points = ' '.join([f'{d[1]},{d[0]}' for d in data])
 
         element = Element('polygon', points=points, **self.svg_props)
 

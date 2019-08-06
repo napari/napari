@@ -33,7 +33,7 @@ class ShapeList:
     Extended Summary
     ----------
     _vertices : np.ndarray
-        Mx2 array of all vertices from all shapes
+        Mx2 array of all displayed vertices from all shapes
     _index : np.ndarray
         Length M array with the index (0, ..., N-1) of each shape that each
         vertex corresponds to
@@ -114,7 +114,9 @@ class ShapeList:
             self.shapes[shape_index] = shape
             self._z_index[shape_index] = shape.z_index
 
-        self._vertices = np.append(self._vertices, shape.data, axis=0)
+        self._vertices = np.append(
+            self._vertices, shape.data_displayed, axis=0
+        )
         index = np.repeat(shape_index, len(shape.data))
         self._index = np.append(self._index, index, axis=0)
 
@@ -277,7 +279,7 @@ class ShapeList:
             self._mesh.vertices[indices] = shape._face_vertices
             self._mesh.vertices_centers[indices] = shape._face_vertices
             indices = self._index == index
-            self._vertices[indices] = shape.data
+            self._vertices[indices] = shape.data_displayed
 
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list
@@ -297,7 +299,7 @@ class ShapeList:
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
 
     def edit(self, index, data, new_type=None):
-        """Updates the z order of a single shape located at index. If
+        """Updates the data of a single shape located at index. If
         `new_type` is not None then converts the shape type to the new type
 
         Parameters
@@ -305,7 +307,7 @@ class ShapeList:
         index : int
             Location in list of the shape to be changed.
         data : np.ndarray
-            Nx2 array of vertices.
+            NxD array of vertices.
         new_type: None | str | Shape
             If string , must be one of "{'line', 'rectangle', 'ellipse',
             'path', 'polygon'}".

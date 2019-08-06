@@ -14,9 +14,9 @@ class Ellipse(Shape):
 
     Parameters
     ----------
-    data : (4, 2) array or (2, 2) array.
-        Either a (2, 2) array specifying the center and radii of an axis
-        aligned ellipse, or a (4, 2) array specifying the four corners of a
+    data : (4, D) array or (2, D) array.
+        Either a (2, D) array specifying the center and radii of an axis
+        aligned ellipse, or a (4, D) array specifying the four corners of a
         boudning box that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
@@ -61,27 +61,51 @@ class Ellipse(Shape):
 
     @property
     def data(self):
-        """(4, 2) array: ellipse vertices.
+        """(4, D) array: ellipse vertices.
         """
         return self._data
 
     @data.setter
     def data(self, data):
+        if len(self.dims_order) != data.shape[1]:
+            self._dims_order = list(range(data.shape[1]))
+
         if len(data) == 2:
-            data = center_radii_to_corners(data[0], data[1])
+            data_displayed = data[:, self.dims_displayed]
+            data_not_displayed = data[:, self.dims_not_displayed]
+            data_displayed = center_radii_to_corners(
+                data_displayed[0], data_displayed[1]
+            )
+            data_not_displayed = np.mean(data_not_displayed, axis=0)
+            data = np.zeros((4, data.shape[1]))
+            data[:, self.dims_displayed] = data_displayed
+            data[:, self.dims_not_displayed] = data_not_displayed
+
         if len(data) != 4:
             raise ValueError(
                 """Data shape does not match an ellipse.
                              Ellipse expects four corner vertices"""
             )
-        else:
-            # Build boundary vertices with num_segments
-            vertices, triangles = triangulate_ellipse(data)
-            self._set_meshes(vertices[1:-1], face=False)
-            self._face_vertices = vertices
-            self._face_triangles = triangles
-            self._box = rectangle_to_box(data)
+
         self._data = data
+        self._update_displayed_data()
+
+    def _update_displayed_data(self):
+        """Update the data that is to be displayed."""
+        # Build boundary vertices with num_segments
+        vertices, triangles = triangulate_ellipse(self.data_displayed)
+        self._set_meshes(vertices[1:-1], face=False)
+        self._face_vertices = vertices
+        self._face_triangles = triangles
+        self._box = rectangle_to_box(self.data_displayed)
+
+        data_not_displayed = self.data[:, self.dims_not_displayed]
+        self.slice_key = np.round(
+            [
+                np.min(data_not_displayed, axis=0),
+                np.max(data_not_displayed, axis=0),
+            ]
+        ).astype('int')
 
     def transform(self, transform):
         """Performs a linear transform on the shape
@@ -92,7 +116,12 @@ class Ellipse(Shape):
             2x2 array specifying linear transform.
         """
         self._box = self._box @ transform.T
-        self._data = self._data @ transform.T
+        self._data[:, self.dims_displayed] = (
+            self._data[:, self.dims_displayed] @ transform.T
+        )
+        self._data[:, self.dims_displayed] = (
+            self._data[:, self.dims_displayed] @ transform.T
+        )
         self._face_vertices = self._face_vertices @ transform.T
 
         points = self._face_vertices[1:-1]
@@ -114,7 +143,7 @@ class Ellipse(Shape):
             xml element specifying the shape according to svg.
         """
         props = self.svg_props
-        data = self.data[:, ::-1]
+        data = self.data[:, self.dims_displayed[::-1]]
 
         offset = data[1] - data[0]
         angle = -np.arctan2(offset[0], -offset[1])

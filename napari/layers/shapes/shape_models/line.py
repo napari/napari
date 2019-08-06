@@ -9,7 +9,7 @@ class Line(Shape):
 
     Parameters
     ----------
-    data : (2, 2) array
+    data : (2, D) array
         Line vertices.
     edge_width : float
         thickness of lines and edges.
@@ -52,22 +52,37 @@ class Line(Shape):
 
     @property
     def data(self):
-        """(2, 2) array: line vertices.
+        """(2, D) array: line vertices.
         """
         return self._data
 
     @data.setter
     def data(self, data):
+        if len(self.dims_order) != data.shape[1]:
+            self._dims_order = list(range(data.shape[1]))
+
         if len(data) != 2:
             raise ValueError(
                 """Data shape does not match a line. Line
                              expects two end vertices"""
             )
-        else:
-            # For line connect two points
-            self._set_meshes(data, face=False, closed=False)
-            self._box = create_box(data)
+
         self._data = data
+        self._update_displayed_data()
+
+    def _update_displayed_data(self):
+        """Update the data that is to be displayed."""
+        # For path connect every all data
+        self._set_meshes(self.data_displayed, face=False, closed=False)
+        self._box = create_box(self.data_displayed)
+
+        data_not_displayed = self.data[:, self.dims_not_displayed]
+        self.slice_key = np.round(
+            [
+                np.min(data_not_displayed, axis=0),
+                np.max(data_not_displayed, axis=0),
+            ]
+        ).astype('int')
 
     def to_xml(self):
         """Generates an xml element that defintes the shape according to the
@@ -78,10 +93,11 @@ class Line(Shape):
         element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
-        x1 = str(self.data[0, 0])
-        y1 = str(self.data[0, 1])
-        x2 = str(self.data[1, 0])
-        y2 = str(self.data[1, 1])
+        data = self.data[:, self.dims_displayed]
+        x1 = str(data[0, 0])
+        y1 = str(data[0, 1])
+        x2 = str(data[1, 0])
+        y2 = str(data[1, 1])
 
         element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props)
 

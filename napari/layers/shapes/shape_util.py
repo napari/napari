@@ -428,8 +428,8 @@ def find_corners(data):
     corners : np.ndarray
         4x2 array of corners of the boudning box
     """
-    min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
-    max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
+    min_val = data.min(axis=0)
+    max_val = data.max(axis=0)
     tl = np.array([min_val[0], min_val[1]])
     tr = np.array([max_val[0], min_val[1]])
     br = np.array([max_val[0], max_val[1]])
