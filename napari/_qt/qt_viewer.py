@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
     QFileDialog,
     QSplitter,
 )
-from qtpy.QtWidgets import QStackedWidget
+from qtpy.QtWidgets import QStackedWidget, QSizePolicy
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -89,6 +89,7 @@ class QtViewer(QSplitter):
         right_layout.addWidget(self.layers)
         right_layout.addWidget(self.buttons)
         right.setLayout(right_layout)
+        right.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
         left = self.controls
 
