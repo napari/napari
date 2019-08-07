@@ -33,6 +33,8 @@ class Ellipse(Shape):
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+    dims_order : (D,) list
+        Order that the dimensions are to be rendered in.
     """
 
     def __init__(
@@ -44,6 +46,7 @@ class Ellipse(Shape):
         face_color='white',
         opacity=1,
         z_index=0,
+        dims_order,
     ):
 
         super().__init__(
@@ -52,11 +55,12 @@ class Ellipse(Shape):
             face_color=face_color,
             opacity=opacity,
             z_index=z_index,
+            dims_order=dims_order,
         )
 
         self._closed = True
         self._use_face_vertices = True
-        self.data = np.array(data)
+        self.data = data
         self.name = 'ellipse'
 
     @property
@@ -67,6 +71,8 @@ class Ellipse(Shape):
 
     @data.setter
     def data(self, data):
+        data = np.array(data).astype(float)
+
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
 
@@ -116,9 +122,6 @@ class Ellipse(Shape):
             2x2 array specifying linear transform.
         """
         self._box = self._box @ transform.T
-        self._data[:, self.dims_displayed] = (
-            self._data[:, self.dims_displayed] @ transform.T
-        )
         self._data[:, self.dims_displayed] = (
             self._data[:, self.dims_displayed] @ transform.T
         )

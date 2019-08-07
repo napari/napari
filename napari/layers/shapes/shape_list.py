@@ -17,6 +17,12 @@ class ShapeList:
     ----------
     shapes : (N, ) list
         Shape objects.
+    data : (N, ) list of (M, D) array
+        Data arrays for each shape.
+    slice_keys : (N, 2, P) array
+        Array of slice keys for each shape. Each slice key has the min and max
+        values of the P non-displayed dimensions, useful for slicing
+        multidimensional shapes.
     shape_types : (N, ) list of str
         Name of shape type for each shape.
     edge_colors : (N, ) list of str
@@ -50,6 +56,7 @@ class ShapeList:
     def __init__(self, data=[]):
 
         self.shapes = []
+        self.displayed = []
         self._vertices = np.empty((0, 2))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
@@ -59,6 +66,16 @@ class ShapeList:
 
         for d in data:
             self.add(d)
+
+    @property
+    def data(self):
+        """list of (M, D) array: data arrays for each shape."""
+        return [s.data for s in self.shapes]
+
+    @property
+    def slice_keys(self):
+        """(N, 2, P) array: slice key for each shape."""
+        return np.array([s.slice_key for s in self.shapes])
 
     @property
     def shape_types(self):
@@ -119,6 +136,7 @@ class ShapeList:
         )
         index = np.repeat(shape_index, len(shape.data))
         self._index = np.append(self._index, index, axis=0)
+        self.displayed.append(True)
 
         # Add edges to mesh
         m = len(self._mesh.vertices)
@@ -193,6 +211,7 @@ class ShapeList:
         """Removes all shapes
         """
         self.shapes = []
+        self.displayed = []
         self._vertices = np.empty((0, 2))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
@@ -237,6 +256,7 @@ class ShapeList:
 
         if renumber:
             del self.shapes[index]
+            del self.displayed[index]
             indices = self._index > index
             self._index[indices] = self._index[indices] - 1
             self._z_index = np.delete(self._z_index, index)
@@ -406,6 +426,19 @@ class ShapeList:
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         color = self.shapes[index].face_color.rgba
         self._mesh.triangles_colors[indices, 3] = color[3] * opacity
+
+    def update_dims_order(self, dims_order):
+        """Updates dimensions order for all shapes.
+
+        Parameters
+        ----------
+        dims_order : (D,) list
+            Order that the dimensions are rendered in.
+        """
+        for index in range(len(self.shapes)):
+            if not self.shapes[index].dims_order == dims_order:
+                self.shapes[index].dims_order = dims_order
+                self._update_mesh_vertices(index, edge=True, face=True)
 
     def update_z_index(self, index, z_index):
         """Updates the z order of a single shape located at index.
@@ -604,38 +637,6 @@ class ShapeList:
             return ordered_shapes[0]
         else:
             return None
-
-    def to_list(self, shape_type=None):
-        """Returns the vertex data assoicated with the shapes as a list
-        where each element of the list corresponds to one shape. Passing a
-        `shape_type` argument leads to only that particular `shape_type`
-        being returned.
-
-        Parameters
-        ----------
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
-
-        Returns
-        ----------
-        data : list
-            List of shape data where each element of the list is an
-            `np.ndarray` corresponding to one shape
-        """
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            data = [s.data for s in self.shapes]
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            data = [s.data for s in self.shapes if isinstance(s, cls)]
-        return data
 
     def to_masks(
         self, mask_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None

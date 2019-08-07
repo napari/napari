@@ -34,9 +34,6 @@ class Shape(ABC):
         ontop of others.
     dims_order : (D,) list
         Order that the dimensions are to be rendered in.
-    ndiplay : int
-        Number of dimensions to be displayed, must be 2 as only 2D rendering
-        currently supported.
 
     Attributes
     ----------
@@ -61,7 +58,8 @@ class Shape(ABC):
     dims_order : (D,) list
         Order that the dimensions are rendered in.
     ndisplay : int
-        Number of dimensions to be displayed, must be 2.
+        Number of dimensions to be displayed, must be 2 as only 2D rendering
+        currently supported.
     displayed : tuple
         List of dimensions that are displayed.
     not_displayed : tuple
@@ -116,11 +114,10 @@ class Shape(ABC):
         opacity=1,
         z_index=0,
         dims_order=None,
-        ndisplay=2,
     ):
 
         self._dims_order = list(range(2))
-        self.ndisplay = ndisplay
+        self.ndisplay = 2
         self.slice_key = None
 
         self._face_vertices = np.empty((0, 2))
@@ -164,7 +161,7 @@ class Shape(ABC):
 
     @dims_order.setter
     def dims_order(self, dims_order):
-        if np.all(self.dims_order == dims_order):
+        if self.dims_order == dims_order:
             return
         self._dims_order = dims_order
         self._update_displayed_data()
@@ -318,7 +315,7 @@ class Shape(ABC):
         )
         self._face_vertices = self._face_vertices @ transform.T
 
-        points = self._data[:, self.dims_displayed]
+        points = self.data_displayed
 
         centers, offsets, triangles = triangulate_edge(
             points, closed=self._closed
@@ -340,9 +337,7 @@ class Shape(ABC):
         self._face_vertices = self._face_vertices + shift
         self._edge_vertices = self._edge_vertices + shift
         self._box = self._box + shift
-        self._data[:, self.dims_displayed] = (
-            self._data[:, self.dims_displayed] + shift
-        )
+        self._data[:, self.dims_displayed] = self.data_displayed + shift
 
     def scale(self, scale, center=None):
         """Performs a scaling on the shape
@@ -439,14 +434,14 @@ class Shape(ABC):
             Boolean array with `True` for points inside the shape
         """
         if mask_shape is None:
-            mask_shape = np.round(
-                self.data[:, self.dims_displayed].max(axis=0)
-            ).astype('int')
+            mask_shape = np.round(self.data_displayed.max(axis=0)).astype(
+                'int'
+            )
 
         if self._use_face_vertices:
             data = self._face_vertices
         else:
-            data = self.data[:, self.dims_displayed]
+            data = self.data_displayed
 
         if self._filled:
             mask = poly_to_mask(mask_shape, (data - offset) * zoom_factor)
