@@ -1,5 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
+
+import pytest
 from vispy.color import Colormap
 from napari.layers import Image
 
@@ -412,3 +414,17 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == 1
     assert type(xml[0]) == Element
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_out_of_range_image(dtype):
+    data = -1.7 - 0.001 * np.random.random((10, 15)).astype(dtype)
+    layer = Image(data)
+    layer._update_thumbnail()
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_out_of_range_no_contrast(dtype):
+    data = np.full((10, 15), -3.2, dtype=dtype)
+    layer = Image(data)
+    layer._update_thumbnail()
