@@ -94,6 +94,21 @@ def test_name():
     assert layer.name == 'img'
 
 
+def test_spacing():
+    """Test instantiating anisotropic 3D volume."""
+    shape = (10, 15, 20)
+    spacing = [3, 1, 1]
+    full_shape = tuple(np.multiply(shape, spacing))
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Volume(data, spacing=spacing)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == full_shape
+    assert layer.range == tuple((0, m, 1) for m in full_shape)
+    assert layer._data_view.shape == shape[-3:]
+
+
 def test_visiblity():
     """Test setting layer visiblity."""
     np.random.seed(0)
