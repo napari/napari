@@ -46,7 +46,7 @@ class Ellipse(Shape):
         face_color='white',
         opacity=1,
         z_index=0,
-        dims_order,
+        dims_order=None,
     ):
 
         super().__init__(

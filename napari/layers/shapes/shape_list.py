@@ -351,6 +351,7 @@ class ShapeList:
                 face_color=cur_shape.face_color,
                 opacity=cur_shape.opacity,
                 z_index=cur_shape.z_index,
+                dims_order=cur_shape.dims_order,
             )
         else:
             shape = self.shapes[index]
