@@ -56,7 +56,10 @@ class ShapeList:
     def __init__(self, data=[]):
 
         self.shapes = []
-        self.displayed = []
+        self._displayed = []
+        self._slice_key = []
+        self.displayed_vertices = []
+        self.displayed_index = []
         self._vertices = np.empty((0, 2))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
@@ -107,6 +110,45 @@ class ShapeList:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 
+    @property
+    def slice_key(self):
+        """list: slice key for slicing n-dimensional shapes."""
+        return self._slice_key
+
+    @slice_key.setter
+    def slice_key(self, slice_key):
+        slice_key = list(slice_key)
+        if not np.all(self._slice_key == slice_key):
+            self._slice_key = slice_key
+            self._update_displayed()
+
+    def _update_displayed(self):
+        """Update the displayed data based on the slice key."""
+        slice_key = np.array([self.slice_key, self.slice_key])
+
+        # Slice key must exactly match mins and maxs of shape
+        self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
+
+        disp_indices = np.where(self._displayed)[0]
+
+        z_order = self._mesh.triangles_z_order
+        disp_tri = np.isin(
+            self._mesh.triangles_index[z_order, 0], disp_indices
+        )
+        self._mesh.displayed_triangles = self._mesh.triangles[z_order][
+            disp_tri
+        ]
+        self._mesh.displayed_triangles_index = self._mesh.triangles_index[
+            z_order
+        ][disp_tri]
+        self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
+            z_order
+        ][disp_tri]
+
+        disp_vert = np.isin(self._index, disp_indices)
+        self.displayed_vertices = self._vertices[disp_vert]
+        self.displayed_index = self._index[disp_vert]
+
     def add(self, shape, shape_index=None):
         """Adds a single Shape object
 
@@ -136,7 +178,6 @@ class ShapeList:
         )
         index = np.repeat(shape_index, len(shape.data))
         self._index = np.append(self._index, index, axis=0)
-        self.displayed.append(True)
 
         # Add edges to mesh
         m = len(self._mesh.vertices)
@@ -211,12 +252,12 @@ class ShapeList:
         """Removes all shapes
         """
         self.shapes = []
-        self.displayed = []
         self._vertices = np.empty((0, 2))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
         self._z_order = np.empty((0), dtype=int)
         self._mesh.clear()
+        self._update_displayed()
 
     def remove(self, index, renumber=True):
         """Removes a single shape located at index.
@@ -256,7 +297,6 @@ class ShapeList:
 
         if renumber:
             del self.shapes[index]
-            del self.displayed[index]
             indices = self._index > index
             self._index[indices] = self._index[indices] - 1
             self._z_index = np.delete(self._z_index, index)
@@ -300,6 +340,7 @@ class ShapeList:
             self._mesh.vertices_centers[indices] = shape._face_vertices
             indices = self._index == index
             self._vertices[indices] = shape.data_displayed
+            self._update_displayed()
 
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list
@@ -317,6 +358,7 @@ class ShapeList:
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
             ]
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
+        self._update_displayed()
 
     def edit(self, index, data, new_type=None):
         """Updates the data of a single shape located at index. If
@@ -591,7 +633,8 @@ class ShapeList:
         return centers, offsets, triangles
 
     def shapes_in_box(self, corners):
-        """Determines which shapes, if any, are inside an axis aligned box
+        """Determines which shapes, if any, are inside an axis aligned box.
+        Looks only at displayed shapes
 
         Parameters
         ----------
@@ -605,16 +648,16 @@ class ShapeList:
             List of shapes that are inside the box.
         """
 
-        triangles = self._mesh.vertices[self._mesh.triangles]
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         intersects = triangles_intersect_box(triangles, corners)
-        shapes = self._mesh.triangles_index[intersects, 0]
+        shapes = self._mesh.displayed_triangles_index[intersects, 0]
         shapes = np.unique(shapes).tolist()
 
         return shapes
 
     def inside(self, coord):
         """Determines if any shape at given coord by looking inside triangle
-        meshes.
+        meshes. Looks only at displayed shapes
 
         Parameters
         ----------
@@ -627,9 +670,9 @@ class ShapeList:
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
         """
-        triangles = self._mesh.vertices[self._mesh.triangles]
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         indices = inside_triangles(triangles - coord)
-        shapes = self._mesh.triangles_index[indices, 0]
+        shapes = self._mesh.displayed_triangles_index[indices, 0]
 
         if len(shapes) > 0:
             z_list = self._z_order.tolist()

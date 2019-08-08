@@ -694,20 +694,11 @@ class Shapes(Layer):
             self._clipboard = {}
 
         slice_key = np.array(self.dims.indices)[list(self.dims.not_displayed)]
-        slice_key = np.array([slice_key, slice_key])
-
-        # Slice key must exactly match mins and maxs of shape
-        matches = np.all(self._data_view.slice_keys == slice_key, axis=(1, 2))
-        self._data_view.displayed = list(matches)
-
-        z_order = self._data_view._mesh.triangles_z_order
-        disp_tri = np.isin(
-            self._data_view._mesh.triangles_index[z_order, 0],
-            np.where(self._data_view.displayed)[0],
-        )
-        faces = self._data_view._mesh.triangles[z_order][disp_tri]
-        colors = self._data_view._mesh.triangles_colors[z_order][disp_tri]
+        self._data_view.slice_key = slice_key
+        faces = self._data_view._mesh.displayed_triangles
+        colors = self._data_view._mesh.displayed_triangles_colors
         vertices = self._data_view._mesh.vertices[:, ::-1]
+
         if len(faces) == 0:
             self._node._subvisuals[3].set_data(vertices=None, faces=None)
         else:
@@ -745,8 +736,8 @@ class Shapes(Layer):
             elif len(index) == 1:
                 box = copy(self._data_view.shapes[index[0]]._box)
             else:
-                indices = np.isin(self._data_view._index, index)
-                box = create_box(self._data_view._vertices[indices])
+                indices = np.isin(self._data_view.displayed_index, index)
+                box = create_box(self._data_view.displayed_vertices[indices])
         else:
             box = copy(self._data_view.shapes[index]._box)
 
@@ -848,8 +839,10 @@ class Shapes(Layer):
                 ]
             ):
                 # If in one of these mode show the vertices of the shape itself
-                inds = np.isin(self._data_view._index, self.selected_data)
-                vertices = self._data_view._vertices[inds][:, ::-1]
+                inds = np.isin(
+                    self._data_view.displayed_index, self.selected_data
+                )
+                vertices = self._data_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
                 if self._mode == Mode.ADD_PATH:
                     vertices = vertices[:-1]
@@ -957,8 +950,8 @@ class Shapes(Layer):
         self._hover_shape = None
         self._hover_vertex = None
         if self._is_creating is True and self._mode == Mode.ADD_PATH:
-            vertices = self._data_view._vertices[
-                self._data_view._index == index
+            vertices = self._data_view.displayed_vertices[
+                self._data_view.displayed_index == index
             ]
             if len(vertices) <= 2:
                 self._data_view.remove(index)
@@ -971,8 +964,8 @@ class Shapes(Layer):
                 data_all[:, self.dims.displayed] = vertices
                 self._data_view.edit(index, data_all[:-1])
         if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
-            vertices = self._data_view._vertices[
-                self._data_view._index == index
+            vertices = self._data_view.displayed_vertices[
+                self._data_view.displayed_index == index
             ]
             if len(vertices) <= 2:
                 self._data_view.remove(index)
@@ -1113,8 +1106,10 @@ class Shapes(Layer):
                 [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             ):
                 # Check if inside vertex of shape
-                inds = np.isin(self._data_view._index, self.selected_data)
-                vertices = self._data_view._vertices[inds]
+                inds = np.isin(
+                    self._data_view.displayed_index, self.selected_data
+                )
+                vertices = self._data_view.displayed_vertices[inds]
                 distances = abs(vertices - coord)
 
                 # Get the vertex sizes
@@ -1124,9 +1119,9 @@ class Shapes(Layer):
                 matches = np.all(distances <= sizes, axis=1).nonzero()[0]
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
-                    shape = self._data_view._index[index]
+                    shape = self._data_view.displayed_index[index]
                     _, idx = np.unique(
-                        self._data_view._index, return_index=True
+                        self._data_view.displayed_index, return_index=True
                     )
                     return shape, index - idx[shape]
 
@@ -1369,8 +1364,8 @@ class Shapes(Layer):
                             new_type = Polygon
                         else:
                             new_type = None
-                        indices = self._data_view._index == index
-                        vertices = self._data_view._vertices[indices]
+                        indices = self._data_view.displayed_index == index
+                        vertices = self._data_view.displayed_vertices[indices]
                         vertices[vertex] = coord
                         data_all = np.zeros(
                             (len(vertices), self.ndim), dtype=float
@@ -1608,8 +1603,8 @@ class Shapes(Layer):
                     new_type = Polygon
                 else:
                     new_type = None
-                vertices = self._data_view._vertices[
-                    self._data_view._index == index
+                vertices = self._data_view.displayed_vertices[
+                    self._data_view.displayed_index == index
                 ]
                 vertices = np.concatenate((vertices, [coord]), axis=0)
                 # Change the selected vertex
@@ -1639,8 +1634,8 @@ class Shapes(Layer):
                     # Adding vertex to ellipse not implemented
                     pass
                 else:
-                    vertices = self._data_view._vertices[
-                        self._data_view._index == index
+                    vertices = self._data_view.displayed_vertices[
+                        self._data_view.displayed_index == index
                     ]
                     # Find which edge new vertex should inserted along
                     closed = shape_type != Path
@@ -1682,8 +1677,8 @@ class Shapes(Layer):
             else:
                 new_type = None
             closed = shape_type != Path
-            vertices = self._data_view._vertices[
-                self._data_view._index == index
+            vertices = self._data_view.displayed_vertices[
+                self._data_view.displayed_index == index
             ]
             if closed is not True:
                 if int(ind) == 1 and loc < 0:
@@ -1715,8 +1710,8 @@ class Shapes(Layer):
                 if shape_type == Ellipse:
                     # Removing vertex from ellipse not implemented
                     return
-                vertices = self._data_view._vertices[
-                    self._data_view._index == index
+                vertices = self._data_view.displayed_vertices[
+                    self._data_view.displayed_index == index
                 ]
                 if len(vertices) <= 2:
                     # If only 2 vertices present, remove whole shape

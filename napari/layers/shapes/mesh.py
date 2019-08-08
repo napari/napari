@@ -59,3 +59,7 @@ class Mesh:
         self.triangles_index = np.empty((0, 2), dtype=int)
         self.triangles_colors = np.empty((0, 4))
         self.triangles_z_order = np.empty((0), dtype=int)
+
+        self.displayed_triangles = np.empty((0, 3), dtype=np.uint32)
+        self.displayed_triangles_index = np.empty((0, 2), dtype=int)
+        self.displayed_triangles_colors = np.empty((0, 4))
