@@ -117,7 +117,7 @@ class Shape(ABC):
         dims_order=None,
     ):
 
-        self._dims_order = list(range(2))
+        self._dims_order = dims_order or list(range(2))
         self.ndisplay = 2
         self.slice_key = None
 

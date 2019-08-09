@@ -961,13 +961,8 @@ class Shapes(Layer):
             if len(vertices) <= 2:
                 self._data_view.remove(index)
             else:
-                data_all = np.zeros((len(vertices), self.ndim), dtype=float)
-                indices = np.array(self.dims.indices)
-                data_all[:, self.dims.not_displayed] = indices[
-                    self.dims.not_displayed
-                ]
-                data_all[:, self.dims.displayed] = vertices
-                self._data_view.edit(index, data_all[:-1])
+                data_full = self.expand_shape(vertices)
+                self._data_view.edit(index, data_full[:-1])
         if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
             vertices = self._data_view.displayed_vertices[
                 self._data_view.displayed_index == index
@@ -1076,6 +1071,33 @@ class Shapes(Layer):
             box[Box.HANDLE] = box[Box.TOP_CENTER] + r * handle_vec / cur_len
         self._selected_box = box + center
 
+    def expand_shape(self, data):
+        """Expand shape from 2D to the full data dims.
+
+        Parameters
+        --------
+        data : array
+            2D data array of shape to be expanded.
+
+        Returns
+        --------
+        data_full : array
+            Full D dimensional data array of the shape.
+        """
+        if self.ndim == 2:
+            data_full = data[:, self.dims.displayed_order]
+        else:
+            data_full = np.zeros((len(data), self.ndim), dtype=float)
+            indices = np.array(self.dims.indices)
+            data_full[:, self.dims.not_displayed] = indices[
+                self.dims.not_displayed
+            ]
+            data_full[:, self.dims.displayed] = data[
+                :, self.dims.displayed_order
+            ]
+
+        return data_full
+
     def get_value(self, coord):
         """Determine if any shape at given coord using triangle meshes.
 
@@ -1125,10 +1147,11 @@ class Shapes(Layer):
                 if len(matches) > 0:
                     index = inds.nonzero()[0][matches[-1]]
                     shape = self._data_view.displayed_index[index]
-                    _, idx = np.unique(
+                    vals, idx = np.unique(
                         self._data_view.displayed_index, return_index=True
                     )
-                    return shape, index - idx[shape]
+                    shape_in_list = list(vals).index(shape)
+                    return shape, index - idx[shape_in_list]
 
         # Check if mouse inside shape
         shape = self._data_view.inside(coord)
@@ -1372,16 +1395,9 @@ class Shapes(Layer):
                         indices = self._data_view.displayed_index == index
                         vertices = self._data_view.displayed_vertices[indices]
                         vertices[vertex] = coord
-                        data_all = np.zeros(
-                            (len(vertices), self.ndim), dtype=float
-                        )
-                        indices = np.array(self.dims.indices)
-                        data_all[:, self.dims.not_displayed] = indices[
-                            self.dims.not_displayed
-                        ]
-                        data_all[:, self.dims.displayed] = vertices
+                        data_full = self.expand_shape(vertices)
                         self._data_view.edit(
-                            index, data_all, new_type=new_type
+                            index, data_full, new_type=new_type
                         )
                         shapes = self.selected_data
                         self._selected_box = self.interaction_box(shapes)
@@ -1514,13 +1530,8 @@ class Shapes(Layer):
             elif self._mode == Mode.ADD_LINE:
                 data = np.array([coord, coord + size])
                 shape_type = 'line'
-            data_all = np.zeros((len(data), self.ndim), dtype=float)
-            indices = np.array(self.dims.indices)
-            data_all[:, self.dims.not_displayed] = indices[
-                self.dims.not_displayed
-            ]
-            data_all[:, self.dims.displayed] = data
-            self.add(data_all, shape_type=shape_type)
+            data_full = self.expand_shape(data)
+            self.add(data_full, shape_type=shape_type)
             self.selected_data = [self.nshapes - 1]
             ind = 4
             self._moving_shape = self.selected_data[0]
@@ -1534,13 +1545,8 @@ class Shapes(Layer):
             if self._is_creating is False:
                 # Start drawing a path
                 data = np.array([coord, coord])
-                data_all = np.zeros((len(data), self.ndim), dtype=float)
-                indices = np.array(self.dims.indices)
-                data_all[:, self.dims.not_displayed] = indices[
-                    self.dims.not_displayed
-                ]
-                data_all[:, self.dims.displayed] = data
-                self.add(data, shape_type='path')
+                data_full = self.expand_shape(data)
+                self.add(data_full, shape_type='path')
                 self.selected_data = [self.nshapes - 1]
                 ind = 1
                 self._moving_shape = self.selected_data[0]
@@ -1563,13 +1569,8 @@ class Shapes(Layer):
                 # Change the selected vertex
                 self._moving_vertex = self._moving_vertex + 1
                 self._hover_vertex = self._hover_vertex + 1
-                data_all = np.zeros((len(vertices), self.ndim), dtype=float)
-                indices = np.array(self.dims.indices)
-                data_all[:, self.dims.not_displayed] = indices[
-                    self.dims.not_displayed
-                ]
-                data_all[:, self.dims.displayed] = vertices
-                self._data_view.edit(index, data_all, new_type=new_type)
+                data_full = self.expand_shape(vertices)
+                self._data_view.edit(index, data_full, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_data)
             self.status = self.get_message(
                 coord, self._hover_shape, self._hover_vertex
@@ -1641,13 +1642,8 @@ class Shapes(Layer):
 
             vertices = np.insert(vertices, ind, [coord], axis=0)
             with self.freeze_refresh():
-                data_all = np.zeros((len(vertices), self.ndim), dtype=float)
-                indices = np.array(self.dims.indices)
-                data_all[:, self.dims.not_displayed] = indices[
-                    self.dims.not_displayed
-                ]
-                data_all[:, self.dims.displayed] = vertices
-                self._data_view.edit(index, data_all, new_type=new_type)
+                data_full = self.expand_shape(vertices)
+                self._data_view.edit(index, data_full, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_data)
             shape, vertex = self.get_value(coord)
             self._hover_shape = shape
@@ -1691,16 +1687,9 @@ class Shapes(Layer):
                     # Remove clicked on vertex
                     vertices = np.delete(vertices, vertex, axis=0)
                     with self.freeze_refresh():
-                        data_all = np.zeros(
-                            (len(vertices), self.ndim), dtype=float
-                        )
-                        indices = np.array(self.dims.indices)
-                        data_all[:, self.dims.not_displayed] = indices[
-                            self.dims.not_displayed
-                        ]
-                        data_all[:, self.dims.displayed] = vertices
+                        data_full = self.expand_shape(vertices)
                         self._data_view.edit(
-                            index, data_all, new_type=new_type
+                            index, data_full, new_type=new_type
                         )
                         shapes = self.selected_data
                         self._selected_box = self.interaction_box(shapes)
