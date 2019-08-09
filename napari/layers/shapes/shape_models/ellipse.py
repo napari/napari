@@ -76,16 +76,8 @@ class Ellipse(Shape):
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
 
-        if len(data) == 2:
-            data_displayed = data[:, self.dims_displayed]
-            data_not_displayed = data[:, self.dims_not_displayed]
-            data_displayed = center_radii_to_corners(
-                data_displayed[0], data_displayed[1]
-            )
-            data_not_displayed = np.mean(data_not_displayed, axis=0)
-            data = np.zeros((4, data.shape[1]))
-            data[:, self.dims_displayed] = data_displayed
-            data[:, self.dims_not_displayed] = data_not_displayed
+        if len(data) == 2 and data.shape[1] == 2:
+            data = center_radii_to_corners(data[0], data[1])
 
         if len(data) != 4:
             raise ValueError(

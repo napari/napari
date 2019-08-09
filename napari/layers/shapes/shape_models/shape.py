@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from copy import copy
 from vispy.color import Color
 from ..shape_util import (
     triangulate_edge,
@@ -418,7 +419,7 @@ class Shape(ABC):
 
         Parameters
         ----------
-        mask_shape : (2,) array
+        mask_shape : (D,) array
             Shape of mask to be generated. If non specified, takes the max of
             the displayed vertices.
         zoom_factor : float
@@ -438,15 +439,50 @@ class Shape(ABC):
                 'int'
             )
 
+        if len(mask_shape) == 2:
+            embedded = False
+            shape_plane = mask_shape
+        elif len(mask_shape) == self.data.shape[1]:
+            embedded = True
+            shape_plane = [mask_shape[d] for d in self.dims_displayed]
+        else:
+            raise ValueError(
+                f"""mask shape length must either be 2 or the same
+            as the dimensionality of the shape, expected {self.data.shape[1]}
+            got {len(mask_shape)}."""
+            )
+
         if self._use_face_vertices:
             data = self._face_vertices
         else:
             data = self.data_displayed
 
         if self._filled:
-            mask = poly_to_mask(mask_shape, (data - offset) * zoom_factor)
+            mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
-            mask = path_to_mask(mask_shape, (data - offset) * zoom_factor)
+            mask_p = path_to_mask(shape_plane, (data - offset) * zoom_factor)
+
+        # If the mask is to be embedded in a larger array, compute array
+        # and embed as a slice.
+        if embedded:
+            mask = np.zeros(mask_shape, dtype=bool)
+            slice_key = [0] * len(mask_shape)
+            j = 0
+            for i in range(len(mask_shape)):
+                if i in self.dims_displayed:
+                    slice_key[i] = slice(None)
+                else:
+                    slice_key[i] = slice(
+                        self.slice_key[0, j], self.slice_key[1, j] + 1
+                    )
+                j += 1
+            displayed_order = np.array(copy(self.dims_displayed))
+            displayed_order[np.argsort(displayed_order)] = list(
+                range(len(displayed_order))
+            )
+            mask[tuple(slice_key)] == mask_p.transpose(displayed_order)
+        else:
+            mask = mask_p
 
         return mask
 

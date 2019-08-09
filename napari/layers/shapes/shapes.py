@@ -265,7 +265,11 @@ class Shapes(Layer):
             self._data_view = ShapeList()
             self._data_not_displayed = []
 
-            if np.array(data[0]).ndim == 1:
+            if np.array(data).ndim == 3:
+                self.dims.ndim = np.array(data).shape[2]
+            elif len(data) == 0:
+                self.dims.ndim = 2
+            elif np.array(data[0]).ndim == 1:
                 self.dims.ndim = np.array(data).shape[1]
             else:
                 self.dims.ndim = np.array(data[0]).shape[1]
@@ -708,6 +712,7 @@ class Shapes(Layer):
         self._need_visual_update = True
         self._set_highlight(force=True)
         self._update()
+        self._update_thumbnail()
 
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
@@ -1397,16 +1402,10 @@ class Shapes(Layer):
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
 
-    def to_xml_list(self, shape_type=None):
+    def to_xml_list(self):
         """Convert the shapes to a list of svg xml elements.
 
         Z ordering of the shapes will be taken into account.
-
-        Parameters
-        ----------
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
-            optional
-            String of which shape types should to be included in the xml.
 
         Returns
         ----------
@@ -1414,9 +1413,9 @@ class Shapes(Layer):
             List of xml elements defining each shape according to the
             svg specification
         """
-        return self._data_view.to_xml_list(shape_type=shape_type)
+        return self._data_view.to_xml_list()
 
-    def to_masks(self, mask_shape=None, shape_type=None):
+    def to_masks(self, mask_shape=None):
         """Return an array of binary masks, one for each shape.
 
         Parameters
@@ -1424,9 +1423,6 @@ class Shapes(Layer):
         mask_shape : np.ndarray | tuple | None
             tuple defining shape of mask to be generated. If non specified,
             takes the max of all the vertiecs
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -1437,33 +1433,11 @@ class Shapes(Layer):
             mask_shape = self.shape
 
         mask_shape = np.ceil(mask_shape).astype('int')
+        masks = self._data_view.to_masks(mask_shape=mask_shape)
 
-        # if self.ndim == 2:
-        # For 2D shapes just convert current view to masks and
-        # broadcast across sliced dimensions
-        slices = self._data_view.to_masks(
-            mask_shape=mask_shape[-2:], shape_type=shape_type
-        )
-        masks = [np.broadcast_to(m, mask_shape) for m in slices]
-        # else:
-        #     # For nD insert each keyed slice into correct place in volume
-        #     masks = []
-        #     for slice_key, data in self._data_dict.items():
-        #         if len(slice_key) > 0:
-        #             slices = data.to_masks(
-        #                 mask_shape=mask_shape[-2:], shape_type=shape_type
-        #             )
-        #             for m in slices:
-        #                 vol = np.zeros(mask_shape)
-        #                 vol[slice_key] = m
-        #                 masks.append(vol)
-        if len(masks) == 0:
-            masks = np.array(masks)
-        else:
-            masks = np.stack(masks, axis=0)
         return masks
 
-    def to_labels(self, labels_shape=None, shape_type=None):
+    def to_labels(self, labels_shape=None):
         """Return an integer labels image.
 
         Parameters
@@ -1471,9 +1445,6 @@ class Shapes(Layer):
         labels_shape : np.ndarray | tuple | None
             Tuple defining shape of labels image to be generated. If non
             specified, takes the max of all the vertiecs
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -1486,26 +1457,8 @@ class Shapes(Layer):
             labels_shape = self.shape
 
         labels_shape = np.ceil(labels_shape).astype('int')
+        labels = self._data_view.to_labels(labels_shape=labels_shape)
 
-        # if self.ndim == 2:
-        # For 2D shapes convert current view to labels
-        # and broadcast across sliced dimensions
-        labels = self._data_view.to_labels(
-            labels_shape=labels_shape[-2:], shape_type=shape_type
-        )
-        labels = np.broadcast_to(labels, labels_shape)
-        # else:
-        #     # For nD insert each keyed slice into correct place in volume
-        #     # and increment integer label of shape
-        #     labels = np.zeros(labels_shape)
-        #     nshapes = 0
-        #     for slice_key, data in self._data_dict.items():
-        #         slices = data.to_labels(
-        #             labels_shape=labels_shape[-2:], shape_type=shape_type
-        #         )
-        #         slices[slices > 0] += nshapes
-        #         labels[slice_key] = slices
-        #         nshapes += len(data.shapes)
         return labels
 
     def on_mouse_press(self, event):

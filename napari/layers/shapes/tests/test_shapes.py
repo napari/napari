@@ -58,7 +58,7 @@ def test_rectangles_roundtrip():
 def test_integer_rectangle():
     """Test instantiating rectangles with integer data."""
     shape = (10, 2, 2)
-    np.random.seed(0)
+    np.random.seed(1)
     data = np.random.randint(20, size=shape)
     layer = Shapes(data)
     assert layer.nshapes == shape[0]
@@ -802,7 +802,7 @@ def test_copy_and_paste():
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     # Clipboard starts empty
-    assert layer._clipboard == []
+    assert layer._clipboard == {}
 
     # Pasting empty clipboard doesn't change data
     layer._paste_data()
@@ -810,7 +810,7 @@ def test_copy_and_paste():
 
     # Copying with nothing selected leave clipboard empty
     layer._copy_data()
-    assert layer._clipboard == []
+    assert layer._clipboard == {}
 
     # Copying and pasting with two shapes selected adds to clipboard and data
     layer.selected_data = [0, 1]
@@ -834,7 +834,7 @@ def test_copy_and_paste():
     layer.selected_data = []
     layer._copy_data()
     layer._paste_data()
-    assert layer._clipboard == []
+    assert layer._clipboard == {}
     assert len(layer.data) == shape[0] + 4
 
 

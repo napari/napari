@@ -105,7 +105,7 @@ def test_spacing():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == full_shape
-    assert layer.range == tuple((0, m, 1) for m in full_shape)
+    assert layer.dims.range == list((0, m, 1) for m in full_shape)
     assert layer._data_view.shape == shape[-3:]
 
 

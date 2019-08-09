@@ -682,12 +682,9 @@ class ShapeList:
         else:
             return None
 
-    def to_masks(
-        self, mask_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None
-    ):
+    def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of
-        shape `mask_shape`. Passing a `shape_type` argument leads to only mask
-        from that particular `shape_type` being returned.
+        shape `mask_shape`.
 
         Parameters
         ----------
@@ -700,9 +697,6 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -711,40 +705,22 @@ class ShapeList:
             N shapes
         """
         if mask_shape is None:
-            mask_shape = self._vertices.max(axis=0).astype('int')
+            mask_shape = self.displayed_vertices.max(axis=0).astype('int')
 
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            data = [
+        masks = np.array(
+            [
                 s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
                 for s in self.shapes
             ]
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            data = [
-                s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
-                for s in self.shapes
-                if isinstance(s, cls)
-            ]
-        masks = np.array(data)
+        )
 
         return masks
 
-    def to_labels(
-        self, labels_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None
-    ):
+    def to_labels(self, labels_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
-        corresponding to it, and 0 for background. Passing a `shape_type`
-        argument leads to only labels from that particular `shape_type` being
-        returned. These labels will be renumbered appropriately. For
-        overlapping shapes z-ordering will be respected.
+        corresponding to it, and 0 for background. For overlapping shapes
+        z-ordering will be respected.
 
         Parameters
         ----------
@@ -757,9 +733,6 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -768,46 +741,24 @@ class ShapeList:
             integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self._vertices.max(axis=0).astype(np.int)
+            labels_shape = self.displayed_vertices.max(axis=0).astype(np.int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            for ind in self._z_order[::-1]:
-                mask = self.shapes[ind].to_mask(
-                    labels_shape, zoom_factor=zoom_factor, offset=offset
-                )
-                labels[mask] = ind + 1
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
+        for ind in self._z_order[::-1]:
+            mask = self.shapes[ind].to_mask(
+                labels_shape, zoom_factor=zoom_factor, offset=offset
             )
-        else:
-            cls = shape_classes[shape_type]
-            index = [int(s == shape_type) for s in self.shape_types]
-            index = np.cumsum(index)
-            for ind in self._z_order[::-1]:
-                shape = self.shapes[ind]
-                if isinstance(shape, cls):
-                    mask = shape.to_mask(
-                        labels_shape, zoom_factor=zoom_factor, offset=offset
-                    )
-                    labels[mask] = index[ind]
+            labels[mask] = ind + 1
 
         return labels
 
-    def to_colors(
-        self, colors_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None
-    ):
+    def to_colors(self, colors_shape=None, zoom_factor=1, offset=[0, 0]):
         """Rasterize shapes to an RGBA image array.
 
         Each shape is embedded in an array of shape `colors_shape` with the
-        RGBA value of the shape, and 0 for background. Passing a `shape_type`
-        argument leads to only colors from that particular `shape_type` being
-        returned. For overlapping shapes z-ordering will be respected.
+        RGBA value of the shape, and 0 for background. For overlapping shapes
+        z-ordering will be respected.
 
         Parameters
         ----------
@@ -820,9 +771,6 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -831,16 +779,13 @@ class ShapeList:
             value of the shape for points inside the corresponding shape.
         """
         if colors_shape is None:
-            colors_shape = self._vertices.max(axis=0).astype(np.int)
+            colors_shape = self.displayed_vertices.max(axis=0).astype(np.int)
 
         colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
         colors[..., 3] = 1
 
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            for ind in self._z_order[::-1]:
+        for ind in self._z_order[::-1]:
+            if self._displayed[ind]:
                 mask = self.shapes[ind].to_mask(
                     colors_shape, zoom_factor=zoom_factor, offset=offset
                 )
@@ -851,35 +796,12 @@ class ShapeList:
                     col = self.shapes[ind].face_color.rgba
                     col[3] = col[3] * self.shapes[ind].opacity
                 colors[mask, :] = col
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            for ind in self._z_order[::-1]:
-                shape = self.shapes[ind]
-                if isinstance(shape, cls):
-                    mask = shape.to_mask(
-                        colors_shape, zoom_factor=zoom_factor, offset=offset
-                    )
-                    if type(self.shapes[ind]) in [Path, Line]:
-                        col = self.shapes[ind].edge_color.rgba
-                    else:
-                        col = self.shapes[ind].face_color.rgba
-                    colors[mask, :] = col
 
         return colors
 
-    def to_xml_list(self, shape_type=None):
+    def to_xml_list(self):
         """Convert the shapes to a list of xml elements according to the svg
         specification. Z ordering of the shapes will be taken into account.
-
-        Parameters
-        ----------
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
-            optional
-            String of which shape types should to be included in the xml.
 
         Returns
         ----------
@@ -887,21 +809,11 @@ class ShapeList:
             List of xml elements defining each shape according to the
             svg specification
         """
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
 
-        if shape_type is None:
-            xml = [self.shapes[ind].to_xml() for ind in self._z_order[::-1]]
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            xml = [
-                self.shapes[ind].to_xml()
-                for ind in self._z_order[::-1]
-                if isinstance(self.shapes[ind], cls)
-            ]
+        xml = [
+            self.shapes[ind].to_xml()
+            for ind in self._z_order[::-1]
+            if self._displayed[ind]
+        ]
 
         return xml

@@ -36,13 +36,6 @@ def test_nD_rectangle():
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 1)
 
-    # If given two corners, representation will be exapanded to four
-    data = 20 * np.random.random((2, 3))
-    shape = Rectangle(data)
-    assert len(shape.data) == 4
-    assert shape.data_displayed.shape == (4, 2)
-    assert shape.slice_key.shape == (2, 1)
-
 
 def test_polygon():
     """Test creating Shape with a random polygon."""
@@ -135,12 +128,5 @@ def test_nD_ellipse():
     data = 20 * np.random.random((4, 3))
     shape = Ellipse(data)
     assert np.all(shape.data == data)
-    assert shape.data_displayed.shape == (4, 2)
-    assert shape.slice_key.shape == (2, 1)
-
-    # If center radii, representation will be exapanded to four corners
-    data = 20 * np.random.random((2, 3))
-    shape = Ellipse(data)
-    assert len(shape.data) == 4
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 1)

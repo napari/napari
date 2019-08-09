@@ -70,21 +70,8 @@ class Rectangle(Shape):
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
 
-        if len(data) == 2:
-            data_displayed = data[:, self.dims_displayed]
-            data_not_displayed = data[:, self.dims_not_displayed]
-            data_displayed_corners = find_corners(data_displayed)
-            data_not_displayed_mean = np.mean(
-                data_not_displayed, axis=0, keepdims=True
-            )
-            data = np.zeros((4, data.shape[1]))
-            data[:, self.dims_displayed] = data_displayed_corners
-            data[:, self.dims_not_displayed] = data_not_displayed_mean
-            for i in range(2):
-                ind = np.all(
-                    data_displayed_corners == data_displayed[i], axis=1
-                )
-                data[ind, self.dims_not_displayed] = data_not_displayed[i]
+        if len(data) == 2 and data.shape[1] == 2:
+            data = find_corners(data)
 
         if len(data) != 4:
             raise ValueError(
