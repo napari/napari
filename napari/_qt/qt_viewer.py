@@ -259,6 +259,7 @@ class QtViewer(QSplitter):
         self.console.style_sheet = themed_stylesheet
         self.console.syntax_style = palette['syntax_style']
         self.setStyleSheet(themed_stylesheet)
+        self.canvas.bgcolor = palette['canvas']
 
     def _toggle_console(self):
         """Toggle console visible and not visible."""
@@ -293,7 +294,10 @@ class QtViewer(QSplitter):
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
-        if event.native.isAutoRepeat() or event.key is None:
+        if (
+            event.native.isAutoRepeat()
+            and event.key.name not in ['Up', 'Down', 'Left', 'Right']
+        ) or event.key is None:
             return
 
         comb = components_to_key_combo(event.key.name, event.modifiers)
@@ -331,6 +335,14 @@ class QtViewer(QSplitter):
         """
         for layer in self.viewer.layers:
             layer.on_draw(event)
+
+    def keyPressEvent(self, event):
+        self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
+        event.accept()
+
+    def keyReleaseEvent(self, event):
+        self.canvas._backend._keyEvent(self.canvas.events.key_release, event)
+        event.accept()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
