@@ -692,12 +692,15 @@ class Shapes(Layer):
         """Set the view given the slicing indices."""
 
         if not self.dims.order == self._display_order_stored:
+            self.selected_data = []
             self._data_view.update_dims_order(self.dims.order)
             self._display_order_stored = copy(self.dims.order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
         slice_key = np.array(self.dims.indices)[list(self.dims.not_displayed)]
+        if not np.all(slice_key == self._data_view.slice_key):
+            self.selected_data = []
         self._data_view.slice_key = slice_key
         faces = self._data_view._mesh.displayed_triangles
         colors = self._data_view._mesh.displayed_triangles_colors
