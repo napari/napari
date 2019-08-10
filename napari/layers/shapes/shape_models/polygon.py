@@ -69,8 +69,9 @@ class Polygon(Shape):
 
         if len(data) < 2:
             raise ValueError(
-                """Data shape does not match a polygon.
-                             Polygon expects at least two vertices"""
+                f"""Data shape does not match a polygon. A
+                             Polygon expects at least two vertices,
+                             {len(data)} provided."""
             )
 
         self._data = data

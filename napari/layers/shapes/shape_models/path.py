@@ -69,8 +69,9 @@ class Path(Shape):
 
         if len(data) < 2:
             raise ValueError(
-                """Data shape does not match a path. Path
-                             expects at least two vertices"""
+                f"""Data shape does not match a path. A
+                             Path expects at least two vertices,
+                             {len(data)} provided."""
             )
 
         self._data = data

@@ -480,8 +480,10 @@ class ShapeList:
         """
         for index in range(len(self.shapes)):
             if not self.shapes[index].dims_order == dims_order:
-                self.shapes[index].dims_order = dims_order
-                self._update_mesh_vertices(index, edge=True, face=True)
+                shape = self.shapes[index]
+                shape.dims_order = dims_order
+                self.remove(index, renumber=False)
+                self.add(shape, shape_index=index)
 
     def update_z_index(self, index, z_index):
         """Updates the z order of a single shape located at index.

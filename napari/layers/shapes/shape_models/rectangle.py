@@ -74,9 +74,11 @@ class Rectangle(Shape):
             data = find_corners(data)
 
         if len(data) != 4:
+            print(data)
             raise ValueError(
-                """Data shape does not match a rectangle.
-                             Rectangle expects four corner vertices"""
+                f"""Data shape does not match a rectangle.
+                             Rectangle expects four corner vertices,
+                             {len(data)} provided."""
             )
 
         self._data = data

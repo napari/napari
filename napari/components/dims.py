@@ -171,8 +171,12 @@ class Dims:
             if axis in self.displayed:
                 slice_list.append(slice(None))
             else:
-                p = int(round(self.point[axis]))
-                p = np.clip(p, self.range[axis][0], self.range[axis][1] - 1)
+                p = np.clip(
+                    self.point[axis],
+                    np.round(self.range[axis][0]),
+                    np.round(self.range[axis][1]) - 1,
+                )
+                p = np.round(p).astype(int)
                 slice_list.append(p)
         return tuple(slice_list)
 

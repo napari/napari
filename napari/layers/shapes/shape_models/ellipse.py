@@ -81,8 +81,9 @@ class Ellipse(Shape):
 
         if len(data) != 4:
             raise ValueError(
-                """Data shape does not match an ellipse.
-                             Ellipse expects four corner vertices"""
+                f"""Data shape does not match a ellipse.
+                             Ellipse expects four corner vertices,
+                             {len(data)} provided."""
             )
 
         self._data = data

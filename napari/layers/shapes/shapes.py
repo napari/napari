@@ -1092,9 +1092,7 @@ class Shapes(Layer):
             data_full[:, self.dims.not_displayed] = indices[
                 self.dims.not_displayed
             ]
-            data_full[:, self.dims.displayed] = data[
-                :, self.dims.displayed_order
-            ]
+            data_full[:, self.dims.displayed] = data
 
         return data_full
 
@@ -1521,14 +1519,29 @@ class Shapes(Layer):
         ):
             # Start drawing a rectangle / ellipse / line
             size = self._vertex_size * self.scale_factor / 4
+            corner = np.array(coord)
             if self._mode == Mode.ADD_RECTANGLE:
-                data = np.array([coord, coord + size])
+                data = np.array(
+                    [
+                        corner,
+                        corner + [size, 0],
+                        corner + size,
+                        corner + [0, size],
+                    ]
+                )
                 shape_type = 'rectangle'
             elif self._mode == Mode.ADD_ELLIPSE:
-                data = np.array([coord + size / 2, [size, size]])
+                data = np.array(
+                    [
+                        corner,
+                        corner + [size, 0],
+                        corner + size,
+                        corner + [0, size],
+                    ]
+                )
                 shape_type = 'ellipse'
             elif self._mode == Mode.ADD_LINE:
-                data = np.array([coord, coord + size])
+                data = np.array([corner, corner + size])
                 shape_type = 'line'
             data_full = self.expand_shape(data)
             self.add(data_full, shape_type=shape_type)

@@ -69,8 +69,9 @@ class Line(Shape):
 
         if len(data) != 2:
             raise ValueError(
-                """Data shape does not match a line. Line
-                             expects two end vertices"""
+                f"""Data shape does not match a line. A
+                             line expects two end vertices,
+                             {len(data)} provided."""
             )
 
         self._data = data
