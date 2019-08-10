@@ -21,6 +21,14 @@ def test_nD_image(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
 
+    # Flip dims order displayed
+    viewer.dims.order = [0, 2, 1]
+    assert viewer.dims.order == [0, 2, 1]
+
+    # Flip dims order including non-displayed
+    viewer.dims.order = [1, 0, 2]
+    assert viewer.dims.order == [1, 0, 2]
+
     # Close the viewer
     viewer.window.close()
 
@@ -42,6 +50,14 @@ def test_nD_volume(qtbot):
     assert viewer.dims.ndim == 4
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Flip dims order displayed
+    viewer.dims.order = [0, 2, 1, 3]
+    assert viewer.dims.order == [0, 2, 1, 3]
+
+    # Flip dims order including non-displayed
+    viewer.dims.order = [1, 0, 2, 3]
+    assert viewer.dims.order == [1, 0, 2, 3]
 
     # Close the viewer
     viewer.window.close()
@@ -66,6 +82,14 @@ def test_nD_pyramid(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
 
+    # Flip dims order displayed
+    viewer.dims.order = [0, 2, 1]
+    assert viewer.dims.order == [0, 2, 1]
+
+    # Flip dims order including non-displayed
+    viewer.dims.order = [1, 0, 2]
+    assert viewer.dims.order == [1, 0, 2]
+
     # Close the viewer
     viewer.window.close()
 
@@ -87,6 +111,14 @@ def test_nD_labels(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Flip dims order displayed
+    viewer.dims.order = [0, 2, 1]
+    assert viewer.dims.order == [0, 2, 1]
+
+    # Flip dims order including non-displayed
+    viewer.dims.order = [1, 0, 2]
+    assert viewer.dims.order == [1, 0, 2]
 
     # Close the viewer
     viewer.window.close()
@@ -110,6 +142,14 @@ def test_nD_points(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
 
+    # Flip dims order displayed
+    viewer.dims.order = [0, 2, 1]
+    assert viewer.dims.order == [0, 2, 1]
+
+    # Flip dims order including non-displayed
+    viewer.dims.order = [1, 0, 2]
+    assert viewer.dims.order == [1, 0, 2]
+
     # Close the viewer
     viewer.window.close()
 
@@ -131,6 +171,14 @@ def test_nD_vectors(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Flip dims order displayed
+    viewer.dims.order = [0, 2, 1]
+    assert viewer.dims.order == [0, 2, 1]
+
+    # Flip dims order including non-displayed
+    viewer.dims.order = [1, 0, 2]
+    assert viewer.dims.order == [1, 0, 2]
 
     # Close the viewer
     viewer.window.close()
@@ -157,6 +205,14 @@ def test_nD_shapes(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Flip dims order displayed
+    viewer.dims.order = [0, 2, 1]
+    assert viewer.dims.order == [0, 2, 1]
+
+    # Flip dims order including non-displayed
+    viewer.dims.order = [1, 0, 2]
+    assert viewer.dims.order == [1, 0, 2]
 
     # Close the viewer
     viewer.window.close()
