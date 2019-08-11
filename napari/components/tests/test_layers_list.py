@@ -182,32 +182,46 @@ def test_remove_selected():
     layers.remove_selected()
     assert list(layers) == [layer_a, layer_b]
 
-    # remove no layers as none selected
+    # check that the next to last layer is now selected
+    assert [l.selected for l in layers] == [False, True]
+
     layers.remove_selected()
-    assert list(layers) == [layer_a, layer_b]
+    assert list(layers) == [layer_a]
+    assert [l.selected for l in layers] == [True]
 
     # select and remove first layer only
+    layers.append(layer_b)
     layers.append(layer_c)
-    layer_c.selected = False
+    assert list(layers) == [layer_a, layer_b, layer_c]
     layer_a.selected = True
+    layer_b.selected = False
+    layer_c.selected = False
     layers.remove_selected()
     assert list(layers) == [layer_b, layer_c]
+    assert [l.selected for l in layers] == [True, False]
 
     # select and remove first and last layer of four
     layers.append(layer_a)
     layers.append(layer_d)
+    assert list(layers) == [layer_b, layer_c, layer_a, layer_d]
+    layer_a.selected = False
     layer_b.selected = True
+    layer_c.selected = False
+    layer_d.selected = True
     layers.remove_selected()
     assert list(layers) == [layer_c, layer_a]
+    assert [l.selected for l in layers] == [True, False]
 
     # select and remove middle two layers of four
     layers.append(layer_b)
     layers.append(layer_d)
     layer_a.selected = True
     layer_b.selected = True
+    layer_c.selected = False
     layer_d.selected = False
     layers.remove_selected()
     assert list(layers) == [layer_c, layer_d]
+    assert [l.selected for l in layers] == [True, False]
 
     # select and remove all layers
     for l in layers:
