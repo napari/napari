@@ -6,8 +6,6 @@ import numpy as np
 from skimage import data
 import napari
 
-np.random.seed(0)
-
 
 with napari.gui_qt():
     blobs = data.binary_blobs(
@@ -18,6 +16,7 @@ with napari.gui_qt():
 
     # create one random polygon per "plane"
     planes = np.tile(np.arange(128).reshape((128, 1, 1)), (1, 5, 1))
+    np.random.seed(0)
     corners = np.random.uniform(0, 128, size=(128, 5, 2))
     shapes = np.concatenate((planes, corners), axis=2)
 
