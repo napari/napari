@@ -27,6 +27,7 @@ if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
     warn(message=warn_message)
 
 from .viewer import Viewer
+from . import keybindings
 from .view_function import view
 from ._qt import gui_qt
 from ._version import get_versions

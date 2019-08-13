@@ -22,17 +22,10 @@ class ViewerModel(KeymapMixin):
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
-    key_bindings : dict of string: callable
-        Custom key bindings. The dictionary key is a string containing the key
-        pressed and the value is the function to be bound to the key event.
-        The function should accept the viewer object as an input argument.
-        These key bindings are executed instead of any layer specific key
-        bindings.
     themes : dict of str: dict of str: str
         Preset color palettes.
     """
 
-    class_keymap = {}
     themes = palettes
 
     def __init__(self, title='napari'):
@@ -65,7 +58,6 @@ class ViewerModel(KeymapMixin):
         self._cursor_size = None
         self._interactive = True
         self._active_layer = None
-        self.key_bindings = {}
 
         self._palette = None
         self.theme = 'dark'

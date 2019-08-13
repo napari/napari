@@ -13,6 +13,7 @@ class QRangeSlider(QWidget):
 
     rangeChanged = QtCore.Signal(float, float)
     collapsedChanged = QtCore.Signal(bool)
+    focused = QtCore.Signal()
 
     def __init__(self, slider_range, values, parent=None):
         QWidget.__init__(self, parent)
@@ -194,6 +195,7 @@ class QRangeSlider(QWidget):
             self.start_display_min = self.display_min
             self.start_display_max = self.display_max
             self.start_pos = pos
+        self.focused.emit()
 
     def collapse(self):
         if self.default_collapse_logic:

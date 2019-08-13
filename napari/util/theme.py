@@ -13,6 +13,7 @@ palettes = {
         'icon': 'rgb(209, 210, 212)',
         'syntax_style': 'native',
         'console': 'rgb(0, 0, 0)',
+        'canvas': 'black',
     },
     'light': {
         'folder': 'light',
@@ -25,6 +26,7 @@ palettes = {
         'icon': 'rgb(107, 105, 103)',
         'syntax_style': 'default',
         'console': 'rgb(255, 255, 255)',
+        'canvas': 'white',
     },
 }
 
