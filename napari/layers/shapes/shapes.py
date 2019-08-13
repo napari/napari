@@ -238,6 +238,7 @@ class Shapes(Layer):
         with self.freeze_refresh():
 
             self._display_order_stored = []
+            self.dims.clip = False
 
             # The following shape properties are for the new shapes that will
             # be drawn. Each shape has a corresponding property with the
@@ -686,6 +687,7 @@ class Shapes(Layer):
                 self._data_view.add(shape)
 
         self._display_order_stored = copy(self.dims.order)
+        self._update_dims()
         self._update_thumbnail()
 
     def _set_view_slice(self):
@@ -974,6 +976,7 @@ class Shapes(Layer):
                 self._data_view.remove(index)
         self._is_creating = False
         self.refresh()
+        self._update_dims()
         self._update_thumbnail()
 
     def _update_thumbnail(self):

@@ -127,8 +127,10 @@ class ShapeList:
         slice_key = np.array([self.slice_key, self.slice_key])
 
         # Slice key must exactly match mins and maxs of shape
-        self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
-
+        if len(self.shapes) > 0:
+            self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
+        else:
+            self._displayed = []
         disp_indices = np.where(self._displayed)[0]
 
         z_order = self._mesh.triangles_z_order

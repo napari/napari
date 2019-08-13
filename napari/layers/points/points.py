@@ -153,6 +153,7 @@ class Points(Layer):
         with self.freeze_refresh():
             # Save the point coordinates
             self._data = coords
+            self.dims.clip = False
 
             # Save the point style params
             self.symbol = symbol

@@ -29,6 +29,10 @@ class Dims:
         slider when in INTERVAL mode, one for each dimension
     mode : list of DimsMode
         List of DimsMode, one for each dimension
+    clip : bool
+        Flag if to clip indices based on range. Needed for image-like
+        layers, but prevents shape-like layers from adding new shapes
+        outside their range.
     order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
@@ -66,6 +70,7 @@ class Dims:
         self._interval = []
         self._mode = []
         self._order = []
+        self.clip = True
 
         self._ndisplay = 2
         self.ndim = init_ndim
@@ -171,11 +176,14 @@ class Dims:
             if axis in self.displayed:
                 slice_list.append(slice(None))
             else:
-                p = np.clip(
-                    self.point[axis],
-                    np.round(self.range[axis][0]),
-                    np.round(self.range[axis][1]) - 1,
-                )
+                if self.clip:
+                    p = np.clip(
+                        self.point[axis],
+                        np.round(self.range[axis][0]),
+                        np.round(self.range[axis][1]) - 1,
+                    )
+                else:
+                    p = self.point[axis]
                 p = np.round(p).astype(int)
                 slice_list.append(p)
         return tuple(slice_list)
