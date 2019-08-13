@@ -1,4 +1,5 @@
 dask[array]
+numpydoc
 pytest
 pytest-faulthandler
 pytest-qt
