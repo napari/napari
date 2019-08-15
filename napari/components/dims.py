@@ -36,7 +36,7 @@ class Dims:
     order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
-        ndisplay is two or three respectively.
+        ndisplay is 2 or 3.
     ndim : int
         Number of dimensions.
     ndisplay : int
@@ -229,7 +229,12 @@ class Dims:
         range : tuple
             Range specified as (min, max, step)
         """
-        axis = axis % self.ndim
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0:
+            raise ValueError(
+                f'axis is negative, expected positive, got {axis}'
+            )
         if self.range[axis] != range:
             self._range[axis] = range
             self.events.range(axis=axis)
@@ -244,7 +249,12 @@ class Dims:
         value : int or float
             Value of the point
         """
-        axis = axis % self.ndim
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0:
+            raise ValueError(
+                f'axis is negative, expected positive, got {axis}'
+            )
         if self.point[axis] != value:
             self._point[axis] = value
             self.events.axis(axis=axis)
@@ -259,7 +269,12 @@ class Dims:
         interval : tuple
             INTERVAL specified with (min, max)
         """
-        axis = axis % self.ndim
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0:
+            raise ValueError(
+                f'axis is negative, expected positive, got {axis}'
+            )
         if self.interval[axis] != interval:
             self._interval[axis] = interval
             self.events.axis(axis=axis)
@@ -274,7 +289,12 @@ class Dims:
         mode : POINT or INTERVAL
             Whether dimension is in the POINT or INTERVAL mode
         """
-        axis = axis % self.ndim
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0:
+            raise ValueError(
+                f'axis is negative, expected positive, got {axis}'
+            )
         if self.mode[axis] != mode:
             self._mode[axis] = mode
             self.events.axis(axis=axis)

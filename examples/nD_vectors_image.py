@@ -23,10 +23,7 @@ with napari.gui_qt():
     # sample vector image-like data
     # n x m grid of slanted lines
     # random data on the open interval (-1, 1)
-    pos = np.zeros(shape=(m, n, p, 3), dtype=np.float32)
-    for i in range(3):
-        pos[..., i] = 2 * np.random.random_sample((m, n, p)) - 0.5
-
+    pos = np.random.uniform(-1, 1, size=(m, n, p, 3))
     print(image.shape, pos.shape)
 
     # add the vectors

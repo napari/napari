@@ -92,6 +92,23 @@ def test_add_shapes():
     assert viewer.dims.ndim == 2
 
 
+def test_mix_dims():
+    """Test adding images of mixed dimensionality."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+    data = np.random.random((6, 10, 15))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 2
+    assert np.all(viewer.layers[1].data == data)
+    assert viewer.dims.ndim == 3
+
+
 def test_new_labels():
     """Test adding new labels layer."""
     # Add labels to empty viewer

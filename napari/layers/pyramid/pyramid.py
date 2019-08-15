@@ -177,6 +177,9 @@ class Pyramid(Image):
         nd = self.dims.not_displayed
 
         if self.multichannel:
+            # if multichannel need to keep the final axis fixed during the
+            # transpose. The index of the final axis depends on how many
+            # axes are displayed.
             order = self.dims.displayed_order + (self.dims.ndisplay,)
         else:
             order = self.dims.displayed_order
@@ -184,7 +187,7 @@ class Pyramid(Image):
         # Slice thumbnail
         indices = np.array(self.dims.indices)
         downsampled = indices[nd] / self.level_downsamples[-1, nd]
-        downsampled = np.rint(downsampled.astype(float)).astype(int)
+        downsampled = np.round(downsampled.astype(float)).astype(int)
         downsampled = np.clip(downsampled, 0, self.level_shapes[-1, nd] - 1)
         indices[nd] = downsampled
         self._data_thumbnail = np.asarray(
