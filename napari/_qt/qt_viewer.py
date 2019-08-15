@@ -240,13 +240,12 @@ class QtViewer(QSplitter):
         self.canvas.native.setCursor(q_cursor)
 
     def _on_reset_view(self, event):
-        if isinstance(self.view.camera, PanZoomCamera):
-            self.view.camera.rect = event.viewbox
-        elif isinstance(self.view.camera, ArcballCamera):
+        if isinstance(self.view.camera, ArcballCamera):
             self.view.camera.center = event.center
             self.view.camera.scale_factor = event.scale_factor
         else:
-            raise ValueError(f"Invalid camera type {type(self.view.camera)}")
+            # Assumes default camera has the same properties as PanZoomCamera
+            self.view.camera.rect = event.viewbox
 
     def _update_canvas(self, event):
         """Clears draw order and refreshes canvas. Usefeul for when layers are

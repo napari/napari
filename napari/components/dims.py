@@ -85,32 +85,32 @@ class Dims:
 
     @property
     def range(self):
-        """list of 3-tuple (min, max, step): total range and step size of each
+        """List of 3-tuple (min, max, step): total range and step size of each
         dimension.
         """
         return copy(self._range)
 
     @property
     def point(self):
-        """list of int: value of each dimension if in POINT mode.
+        """List of int: value of each dimension if in POINT mode.
         """
         return copy(self._point)
 
     @property
     def interval(self):
-        """list of 2-tuple (min, max): Selection range of each dimension if in
+        """List of 2-tuple (min, max): Selection range of each dimension if in
         INTERVAL mode.
         """
         return copy(self._interval)
 
     @property
     def mode(self):
-        """list of DimsMode: List of DimsMode, one for each dimension."""
+        """List of DimsMode: List of DimsMode, one for each dimension."""
         return copy(self._mode)
 
     @property
     def order(self):
-        """list of int: Display order of dimensions."""
+        """List of int: Display order of dimensions."""
         return self._order
 
     @order.setter
@@ -170,7 +170,7 @@ class Dims:
 
     @property
     def indices(self):
-        """tuple of slice objects for slicing arrays on each dimension."""
+        """Tuple of slice objects for slicing arrays on each dimension."""
         slice_list = []
         for axis in range(self.ndim):
             if axis in self.displayed:
@@ -190,7 +190,7 @@ class Dims:
 
     @property
     def ndisplay(self):
-        """int: Number of displayed dimensions."""
+        """Int: Number of displayed dimensions."""
         return self._ndisplay
 
     @ndisplay.setter
@@ -204,17 +204,17 @@ class Dims:
 
     @property
     def displayed(self):
-        """tuple: Dimensions that are displayed."""
+        """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
     @property
     def not_displayed(self):
-        """tuple: Dimensions that are not displayed."""
+        """Tuple: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property
     def displayed_order(self):
-        """tuple: Order of only displayed dimensions."""
+        """Tuple: Order of only displayed dimensions."""
         order = np.array(self.displayed)
         order[np.argsort(order)] = list(range(len(order)))
         return tuple(order)
