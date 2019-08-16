@@ -44,28 +44,29 @@ task:
 
     - name: windows
       windows_container:
-        image: cirrusci/windowsservercore:2016
+        image: cirrusci/windowsservercore:2019
+        os_version: 2019
       env:
-        PATH: $PATH;$USERPROFILE\anaconda\Scripts;$USERPROFILE\anaconda;$ALLUSERSPROFILE\chocolately\bin
-        # https://github.com/vispy/vispy/blob/master/appveyor.yml#L44
+        ANACONDA_LOCATION: $USERPROFILE\anaconda
+        PATH: $PATH;$ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION
+        # must set this to its default since it doesn't work in env variables
+        # see https://github.com/cirruslabs/cirrus-ci-docs/issues/423
+        CIRRUS_WORKING_DIR: C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build
+        # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
         VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
         PYTHON_ARCH: 64
       system_script:
-        # install chocolatey (windows package manager)
-        - ps: iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
         # install OpenSSL
-        - ps: choco install -y openssl.light
+        - choco install -y openssl.light
         # install OpenGL
         - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
         - powershell ./opengl.ps1
         - ps: rm opengl.ps1
       conda_script:
-        - ps: curl https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe -OutFile install.exe
-        - start /wait "" install.exe /InstallationType=AllUsers /AddToPath=1 /RegisterPython=1 /S /D=%USERPROFILE%\anaconda
+        - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
         - conda update -yn base conda
         - conda install -y python=%PY_VER%
         - pip install setuptools-scm
-        - ps: rm install.exe
 
     - name: osx
       osx_instance:

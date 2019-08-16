@@ -102,7 +102,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         * `_get_range()`: called by `range` property
         * `_refresh()`: called by `refresh` method
         * `data` property (setter & getter)
-        * `class_keymap` class variable (dictionary)
 
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice

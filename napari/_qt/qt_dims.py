@@ -44,6 +44,8 @@ class QtDims(QWidget):
         self.sliders = []
         self._displayed_sliders = []
 
+        self.last_used = None
+
         # Initialises the layout:
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -119,6 +121,7 @@ class QtDims(QWidget):
         elif mode == DimsMode.INTERVAL:
             slider.expand()
             slider.setValues(self.dims.interval[axis])
+        self.last_used = axis
 
     def _update_range(self, axis: int):
         """
@@ -228,6 +231,7 @@ class QtDims(QWidget):
         slider.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+        self.last_used = None
 
     def _create_range_slider_widget(self, axis):
         """
@@ -275,6 +279,12 @@ class QtDims(QWidget):
 
         # linking the listener to the slider:
         slider.rangeChanged.connect(slider_change_listener)
+
+        def slider_focused_listener():
+            self.last_used = self.sliders.index(slider)
+
+        # linking focus listener to the last used:
+        slider.focused.connect(slider_focused_listener)
 
         # Listener to be used for sending events back to model:
         def collapse_change_listener(collapsed):

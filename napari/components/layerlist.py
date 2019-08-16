@@ -130,9 +130,14 @@ class LayerList(ListModel):
             if layer.selected and layer != ignore:
                 layer.selected = False
 
+    def select_all(self):
+        """Selects all layers."""
+        for layer in self:
+            if not layer.selected:
+                layer.selected = True
+
     def remove_selected(self):
-        """Removes selected items from list.
-        """
+        """Removes selected items from list."""
         to_delete = []
         for i in range(len(self)):
             if self[i].selected:
@@ -140,3 +145,41 @@ class LayerList(ListModel):
         to_delete.reverse()
         for i in to_delete:
             self.pop(i)
+        if len(to_delete) > 0:
+            first_to_delete = to_delete[-1]
+            if first_to_delete == 0 and len(self) > 0:
+                self[0].selected = True
+            elif first_to_delete > 0:
+                self[first_to_delete - 1].selected = True
+
+    def select_next(self):
+        """Selects next item from list.
+        """
+        selected = []
+        for i in range(len(self)):
+            if self[i].selected:
+                selected.append(i)
+        if len(selected) > 0:
+            if selected[-1] == len(self) - 1:
+                self.unselect_all(ignore=self[selected[-1]])
+            elif selected[-1] < len(self) - 1:
+                self.unselect_all(ignore=self[selected[-1] + 1])
+                self[selected[-1] + 1].selected = True
+        elif len(self) > 0:
+            self[-1].selected = True
+
+    def select_previous(self):
+        """Selects previous item from list.
+        """
+        selected = []
+        for i in range(len(self)):
+            if self[i].selected:
+                selected.append(i)
+        if len(selected) > 0:
+            if selected[0] == 0:
+                self.unselect_all(ignore=self[0])
+            elif selected[0] > 0:
+                self.unselect_all(ignore=self[selected[0] - 1])
+                self[selected[0] - 1].selected = True
+        elif len(self) > 0:
+            self[0].selected = True
