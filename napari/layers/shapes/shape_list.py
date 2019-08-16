@@ -17,6 +17,14 @@ class ShapeList:
     ----------
     shapes : (N, ) list
         Shape objects.
+    data : (N, ) list of (M, D) array
+        Data arrays for each shape.
+    slice_keys : (N, 2, P) array
+        Array of slice keys for each shape. Each slice key has the min and max
+        values of the P non-displayed dimensions, useful for slicing
+        multidimensional shapes. If the both min and max values of shape are
+        equal then the shape is entirely contained within the slice specified
+        by those values.
     shape_types : (N, ) list of str
         Name of shape type for each shape.
     edge_colors : (N, ) list of str
@@ -33,7 +41,7 @@ class ShapeList:
     Extended Summary
     ----------
     _vertices : np.ndarray
-        Mx2 array of all vertices from all shapes
+        Mx2 array of all displayed vertices from all shapes
     _index : np.ndarray
         Length M array with the index (0, ..., N-1) of each shape that each
         vertex corresponds to
@@ -50,6 +58,10 @@ class ShapeList:
     def __init__(self, data=[]):
 
         self.shapes = []
+        self._displayed = []
+        self._slice_key = []
+        self.displayed_vertices = []
+        self.displayed_index = []
         self._vertices = np.empty((0, 2))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
@@ -59,6 +71,16 @@ class ShapeList:
 
         for d in data:
             self.add(d)
+
+    @property
+    def data(self):
+        """list of (M, D) array: data arrays for each shape."""
+        return [s.data for s in self.shapes]
+
+    @property
+    def slice_keys(self):
+        """(N, 2, P) array: slice key for each shape."""
+        return np.array([s.slice_key for s in self.shapes])
 
     @property
     def shape_types(self):
@@ -90,6 +112,50 @@ class ShapeList:
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
 
+    @property
+    def slice_key(self):
+        """list: slice key for slicing n-dimensional shapes."""
+        return self._slice_key
+
+    @slice_key.setter
+    def slice_key(self, slice_key):
+        slice_key = list(slice_key)
+        if not np.all(self._slice_key == slice_key):
+            self._slice_key = slice_key
+            self._update_displayed()
+
+    def _update_displayed(self):
+        """Update the displayed data based on the slice key."""
+        # The list slice key is repeated to check against both the min and
+        # max values stored in the shapes slice key.
+        slice_key = np.array([self.slice_key, self.slice_key])
+
+        # Slice key must exactly match mins and maxs of shape as then the
+        # shape is entirely contained within the current slice.
+        if len(self.shapes) > 0:
+            self._displayed = np.all(self.slice_keys == slice_key, axis=(1, 2))
+        else:
+            self._displayed = []
+        disp_indices = np.where(self._displayed)[0]
+
+        z_order = self._mesh.triangles_z_order
+        disp_tri = np.isin(
+            self._mesh.triangles_index[z_order, 0], disp_indices
+        )
+        self._mesh.displayed_triangles = self._mesh.triangles[z_order][
+            disp_tri
+        ]
+        self._mesh.displayed_triangles_index = self._mesh.triangles_index[
+            z_order
+        ][disp_tri]
+        self._mesh.displayed_triangles_colors = self._mesh.triangles_colors[
+            z_order
+        ][disp_tri]
+
+        disp_vert = np.isin(self._index, disp_indices)
+        self.displayed_vertices = self._vertices[disp_vert]
+        self.displayed_index = self._index[disp_vert]
+
     def add(self, shape, shape_index=None):
         """Adds a single Shape object
 
@@ -114,7 +180,9 @@ class ShapeList:
             self.shapes[shape_index] = shape
             self._z_index[shape_index] = shape.z_index
 
-        self._vertices = np.append(self._vertices, shape.data, axis=0)
+        self._vertices = np.append(
+            self._vertices, shape.data_displayed, axis=0
+        )
         index = np.repeat(shape_index, len(shape.data))
         self._index = np.append(self._index, index, axis=0)
 
@@ -196,6 +264,7 @@ class ShapeList:
         self._z_index = np.empty((0), dtype=int)
         self._z_order = np.empty((0), dtype=int)
         self._mesh.clear()
+        self._update_displayed()
 
     def remove(self, index, renumber=True):
         """Removes a single shape located at index.
@@ -277,7 +346,8 @@ class ShapeList:
             self._mesh.vertices[indices] = shape._face_vertices
             self._mesh.vertices_centers[indices] = shape._face_vertices
             indices = self._index == index
-            self._vertices[indices] = shape.data
+            self._vertices[indices] = shape.data_displayed
+            self._update_displayed()
 
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list
@@ -295,9 +365,10 @@ class ShapeList:
                 np.arange(idx[z], idx[z] + counts[z]) for z in self._z_order
             ]
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
+        self._update_displayed()
 
     def edit(self, index, data, new_type=None):
-        """Updates the z order of a single shape located at index. If
+        """Updates the data of a single shape located at index. If
         `new_type` is not None then converts the shape type to the new type
 
         Parameters
@@ -305,7 +376,7 @@ class ShapeList:
         index : int
             Location in list of the shape to be changed.
         data : np.ndarray
-            Nx2 array of vertices.
+            NxD array of vertices.
         new_type: None | str | Shape
             If string , must be one of "{'line', 'rectangle', 'ellipse',
             'path', 'polygon'}".
@@ -329,6 +400,7 @@ class ShapeList:
                 face_color=cur_shape.face_color,
                 opacity=cur_shape.opacity,
                 z_index=cur_shape.z_index,
+                dims_order=cur_shape.dims_order,
             )
         else:
             shape = self.shapes[index]
@@ -404,6 +476,21 @@ class ShapeList:
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         color = self.shapes[index].face_color.rgba
         self._mesh.triangles_colors[indices, 3] = color[3] * opacity
+
+    def update_dims_order(self, dims_order):
+        """Updates dimensions order for all shapes.
+
+        Parameters
+        ----------
+        dims_order : (D,) list
+            Order that the dimensions are rendered in.
+        """
+        for index in range(len(self.shapes)):
+            if not self.shapes[index].dims_order == dims_order:
+                shape = self.shapes[index]
+                shape.dims_order = dims_order
+                self.remove(index, renumber=False)
+                self.add(shape, shape_index=index)
 
     def update_z_index(self, index, z_index):
         """Updates the z order of a single shape located at index.
@@ -555,7 +642,9 @@ class ShapeList:
         return centers, offsets, triangles
 
     def shapes_in_box(self, corners):
-        """Determines which shapes, if any, are inside an axis aligned box
+        """Determines which shapes, if any, are inside an axis aligned box.
+
+        Looks only at displayed shapes
 
         Parameters
         ----------
@@ -569,16 +658,16 @@ class ShapeList:
             List of shapes that are inside the box.
         """
 
-        triangles = self._mesh.vertices[self._mesh.triangles]
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         intersects = triangles_intersect_box(triangles, corners)
-        shapes = self._mesh.triangles_index[intersects, 0]
+        shapes = self._mesh.displayed_triangles_index[intersects, 0]
         shapes = np.unique(shapes).tolist()
 
         return shapes
 
     def inside(self, coord):
         """Determines if any shape at given coord by looking inside triangle
-        meshes.
+        meshes. Looks only at displayed shapes
 
         Parameters
         ----------
@@ -591,9 +680,9 @@ class ShapeList:
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
         """
-        triangles = self._mesh.vertices[self._mesh.triangles]
+        triangles = self._mesh.vertices[self._mesh.displayed_triangles]
         indices = inside_triangles(triangles - coord)
-        shapes = self._mesh.triangles_index[indices, 0]
+        shapes = self._mesh.displayed_triangles_index[indices, 0]
 
         if len(shapes) > 0:
             z_list = self._z_order.tolist()
@@ -603,44 +692,9 @@ class ShapeList:
         else:
             return None
 
-    def to_list(self, shape_type=None):
-        """Returns the vertex data assoicated with the shapes as a list
-        where each element of the list corresponds to one shape. Passing a
-        `shape_type` argument leads to only that particular `shape_type`
-        being returned.
-
-        Parameters
-        ----------
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
-
-        Returns
-        ----------
-        data : list
-            List of shape data where each element of the list is an
-            `np.ndarray` corresponding to one shape
-        """
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            data = [s.data for s in self.shapes]
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            data = [s.data for s in self.shapes if isinstance(s, cls)]
-        return data
-
-    def to_masks(
-        self, mask_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None
-    ):
+    def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of
-        shape `mask_shape`. Passing a `shape_type` argument leads to only mask
-        from that particular `shape_type` being returned.
+        shape `mask_shape`.
 
         Parameters
         ----------
@@ -653,9 +707,6 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -664,40 +715,22 @@ class ShapeList:
             N shapes
         """
         if mask_shape is None:
-            mask_shape = self._vertices.max(axis=0).astype('int')
+            mask_shape = self.displayed_vertices.max(axis=0).astype('int')
 
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            data = [
+        masks = np.array(
+            [
                 s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
                 for s in self.shapes
             ]
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            data = [
-                s.to_mask(mask_shape, zoom_factor=zoom_factor, offset=offset)
-                for s in self.shapes
-                if isinstance(s, cls)
-            ]
-        masks = np.array(data)
+        )
 
         return masks
 
-    def to_labels(
-        self, labels_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None
-    ):
+    def to_labels(self, labels_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns a integer labels image, where each shape is embedded in an
         array of shape labels_shape with the value of the index + 1
-        corresponding to it, and 0 for background. Passing a `shape_type`
-        argument leads to only labels from that particular `shape_type` being
-        returned. These labels will be renumbered appropriately. For
-        overlapping shapes z-ordering will be respected.
+        corresponding to it, and 0 for background. For overlapping shapes
+        z-ordering will be respected.
 
         Parameters
         ----------
@@ -710,9 +743,6 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -721,46 +751,24 @@ class ShapeList:
             integer up to N for points inside the corresponding shape.
         """
         if labels_shape is None:
-            labels_shape = self._vertices.max(axis=0).astype(np.int)
+            labels_shape = self.displayed_vertices.max(axis=0).astype(np.int)
 
         labels = np.zeros(labels_shape, dtype=int)
 
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            for ind in self._z_order[::-1]:
-                mask = self.shapes[ind].to_mask(
-                    labels_shape, zoom_factor=zoom_factor, offset=offset
-                )
-                labels[mask] = ind + 1
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
+        for ind in self._z_order[::-1]:
+            mask = self.shapes[ind].to_mask(
+                labels_shape, zoom_factor=zoom_factor, offset=offset
             )
-        else:
-            cls = shape_classes[shape_type]
-            index = [int(s == shape_type) for s in self.shape_types]
-            index = np.cumsum(index)
-            for ind in self._z_order[::-1]:
-                shape = self.shapes[ind]
-                if isinstance(shape, cls):
-                    mask = shape.to_mask(
-                        labels_shape, zoom_factor=zoom_factor, offset=offset
-                    )
-                    labels[mask] = index[ind]
+            labels[mask] = ind + 1
 
         return labels
 
-    def to_colors(
-        self, colors_shape=None, zoom_factor=1, offset=[0, 0], shape_type=None
-    ):
+    def to_colors(self, colors_shape=None, zoom_factor=1, offset=[0, 0]):
         """Rasterize shapes to an RGBA image array.
 
         Each shape is embedded in an array of shape `colors_shape` with the
-        RGBA value of the shape, and 0 for background. Passing a `shape_type`
-        argument leads to only colors from that particular `shape_type` being
-        returned. For overlapping shapes z-ordering will be respected.
+        RGBA value of the shape, and 0 for background. For overlapping shapes
+        z-ordering will be respected.
 
         Parameters
         ----------
@@ -773,9 +781,6 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'} |
-                     None, optional
-            String of shape type to be included.
 
         Returns
         ----------
@@ -784,16 +789,13 @@ class ShapeList:
             value of the shape for points inside the corresponding shape.
         """
         if colors_shape is None:
-            colors_shape = self._vertices.max(axis=0).astype(np.int)
+            colors_shape = self.displayed_vertices.max(axis=0).astype(np.int)
 
         colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
         colors[..., 3] = 1
 
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
-
-        if shape_type is None:
-            for ind in self._z_order[::-1]:
+        for ind in self._z_order[::-1]:
+            if self._displayed[ind]:
                 mask = self.shapes[ind].to_mask(
                     colors_shape, zoom_factor=zoom_factor, offset=offset
                 )
@@ -804,35 +806,12 @@ class ShapeList:
                     col = self.shapes[ind].face_color.rgba
                     col[3] = col[3] * self.shapes[ind].opacity
                 colors[mask, :] = col
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            for ind in self._z_order[::-1]:
-                shape = self.shapes[ind]
-                if isinstance(shape, cls):
-                    mask = shape.to_mask(
-                        colors_shape, zoom_factor=zoom_factor, offset=offset
-                    )
-                    if type(self.shapes[ind]) in [Path, Line]:
-                        col = self.shapes[ind].edge_color.rgba
-                    else:
-                        col = self.shapes[ind].face_color.rgba
-                    colors[mask, :] = col
 
         return colors
 
-    def to_xml_list(self, shape_type=None):
+    def to_xml_list(self):
         """Convert the shapes to a list of xml elements according to the svg
         specification. Z ordering of the shapes will be taken into account.
-
-        Parameters
-        ----------
-        shape_type : {'line', 'rectangle', 'ellipse', 'path', 'polygon'},
-            optional
-            String of which shape types should to be included in the xml.
 
         Returns
         ----------
@@ -840,21 +819,11 @@ class ShapeList:
             List of xml elements defining each shape according to the
             svg specification
         """
-        if type(shape_type) == str:
-            shape_type = ShapeType(shape_type)
 
-        if shape_type is None:
-            xml = [self.shapes[ind].to_xml() for ind in self._z_order[::-1]]
-        elif shape_type not in shape_classes.keys():
-            raise ValueError(
-                f'{shape_type} must be one of {set(shape_classes)}'
-            )
-        else:
-            cls = shape_classes[shape_type]
-            xml = [
-                self.shapes[ind].to_xml()
-                for ind in self._z_order[::-1]
-                if isinstance(self.shapes[ind], cls)
-            ]
+        xml = [
+            self.shapes[ind].to_xml()
+            for ind in self._z_order[::-1]
+            if self._displayed[ind]
+        ]
 
         return xml

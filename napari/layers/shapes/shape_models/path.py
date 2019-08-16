@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import create_box, path_to_mask
+from ..shape_util import create_box
 
 
 class Path(Shape):
@@ -10,7 +10,7 @@ class Path(Shape):
     Parameters
     ----------
     data : np.ndarray
-        Nx2 array of vertices specifying the path.
+        NxD array of vertices specifying the path.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -26,6 +26,8 @@ class Path(Shape):
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+    dims_order : (D,) list
+        Order that the dimensions are to be rendered in.
     """
 
     def __init__(
@@ -37,6 +39,7 @@ class Path(Shape):
         face_color='white',
         opacity=1,
         z_index=0,
+        dims_order=None,
     ):
 
         super().__init__(
@@ -45,58 +48,48 @@ class Path(Shape):
             face_color=face_color,
             opacity=opacity,
             z_index=z_index,
+            dims_order=dims_order,
         )
-        self.data = np.array(data)
+        self._filled = False
+        self.data = data
         self.name = 'path'
 
     @property
     def data(self):
-        """np.ndarray: Nx2 array of vertices.
+        """np.ndarray: NxD array of vertices.
         """
         return self._data
 
     @data.setter
     def data(self, data):
+        data = np.array(data).astype(float)
+
+        if len(self.dims_order) != data.shape[1]:
+            self._dims_order = list(range(data.shape[1]))
+
         if len(data) < 2:
             raise ValueError(
-                """Data shape does not match a path. Path
-                             expects at least two vertices"""
+                f"""Data shape does not match a path. A
+                             Path expects at least two vertices,
+                             {len(data)} provided."""
             )
-        else:
-            # For path connect every all data
-            self._set_meshes(data, face=False, closed=False)
-            self._box = create_box(data)
+
         self._data = data
+        self._update_displayed_data()
 
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
-        """Convert the shape vertices to a boolean mask.
+    def _update_displayed_data(self):
+        """Update the data that is to be displayed."""
+        # For path connect every all data
+        self._set_meshes(self.data_displayed, face=False, closed=False)
+        self._box = create_box(self.data_displayed)
 
-        Set points lying along the edge of the path as `True`. Negative points
-        or points outside the mask_shape after the zoom and offset are clipped.
-
-        Parameters
-        ----------
-        mask_shape : np.ndarray | tuple | None
-            1x2 array of shape of mask to be generated. If non specified, takes
-            the max of the vertices.
-        zoom_factor : float
-            Premultiplier applied to coordinates before generating mask. Used
-            for generating as downsampled mask.
-        offset : 2-tuple
-            Offset subtracted from coordinates before multiplying by the
-            zoom_factor. Used for putting negative coordinates into the mask.
-
-        Returns
-        ----------
-        mask : np.ndarray
-            Boolean array with `True` for points inside the shape
-        """
-        if mask_shape is None:
-            mask_shape = self.data.max(axis=0).astype('int')
-
-        mask = path_to_mask(mask_shape, (self.data - offset) * zoom_factor)
-
-        return mask
+        data_not_displayed = self.data[:, self.dims_not_displayed]
+        self.slice_key = np.round(
+            [
+                np.min(data_not_displayed, axis=0),
+                np.max(data_not_displayed, axis=0),
+            ]
+        ).astype('int')
 
     def to_xml(self):
         """Generates an xml element that defintes the shape according to the
@@ -107,7 +100,8 @@ class Path(Shape):
         element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
-        points = ' '.join([f'{d[1]},{d[0]}' for d in self.data])
+        data = self.data[:, self.dims_displayed]
+        points = ' '.join([f'{d[1]},{d[0]}' for d in data])
 
         props = self.svg_props
         props['fill'] = 'none'

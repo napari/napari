@@ -47,7 +47,6 @@ class ViewerModel(KeymapMixin):
         # Initial dimension must be set to at least the number of visible
         # dimensions of the viewer
         self.dims = Dims(2)
-        self.dims._set_2d_viewing()
 
         self.layers = LayerList()
 
@@ -67,6 +66,7 @@ class ViewerModel(KeymapMixin):
         self._view = None
 
         self.dims.events.display.connect(lambda e: self._update_layers())
+        self.dims.events.display.connect(lambda e: self.reset_view())
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
@@ -205,15 +205,25 @@ class ViewerModel(KeymapMixin):
         """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
+        # Scale the camera to the contents in the scene
         min_shape, max_shape = self._calc_bbox()
-        # TODO: Change dims selection when dims model changes
-        min_shape = np.array(min_shape[-2:])
-        max_shape = np.array(max_shape[-2:])
-        shape = max_shape - min_shape
-        min_shape = min_shape - 0.05 * shape
-        shape = 1.1 * shape
-        rect = (min_shape[1], min_shape[0], shape[1], shape[0])
-        self.events.reset_view(viewbox=rect)
+        centroid = np.add(min_shape, max_shape) / 2
+        centroid = [centroid[i] for i in self.dims.displayed]
+        size = np.subtract(max_shape, min_shape)
+        size = [size[i] for i in self.dims.displayed]
+        corner = [min_shape[i] for i in self.dims.displayed]
+
+        if self.dims.ndisplay == 2:
+            # For a PanZoomCamera emit a 4-tuple of the viewbox
+            corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
+            size = np.multiply(1.1, size)[::-1]
+            rect = tuple(corner) + tuple(size)
+            self.events.reset_view(viewbox=rect)
+        else:
+            # For an ArcballCamera emit the center and scale_factor
+            center = centroid[::-1]
+            scale_factor = 1.5 * np.mean(size)
+            self.events.reset_view(center=center, scale_factor=scale_factor)
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be
@@ -303,7 +313,7 @@ class ViewerModel(KeymapMixin):
         if self._view is not None:
             layer.parent = self._view
         self.layers.append(layer)
-        layer.indices = self.dims.indices
+        self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
             self.reset_view()
@@ -519,9 +529,9 @@ class ViewerModel(KeymapMixin):
         )
         if self.dims.ndim == 2:
             self.dims.ndim = 3
-        self.dims.set_display(-3, True)
+        if self.dims.ndisplay == 2:
+            self.dims.ndisplay = 3
         self.add_layer(layer)
-        self.dims.events.display(axis=self.dims.ndim - 3)
         return layer
 
     def add_points(
@@ -821,11 +831,32 @@ class ViewerModel(KeymapMixin):
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
-    def _update_layers(self):
+    def _update_layers(self, layers=None):
         """Updates the contained layers.
+
+        Parameters
+        ----------
+        layers : list of napari.layers.Layer, optional
+            List of layers to update. If none provided updates all.
         """
-        for layer in self.layers:
-            layer.indices = self.dims.indices
+        layers = layers or self.layers
+
+        for layer in layers:
+            # adjust the order of the global dims based on the number of
+            # dimensions that a layer has - for example a global order of
+            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
+            # or -> [1, 0, 2] for a layer with three as that corresponds to
+            # the relative order of the last two and three dimensions
+            # respectively
+            offset = self.dims.ndim - layer.dims.ndim
+            order = np.array(self.dims.order)
+            layer.dims.order = list(order[order >= offset] - offset)
+
+            # Update the point values of the layers for the dimensions that
+            # the layer has
+            for axis in range(layer.dims.ndim):
+                point = self.dims.point[axis + offset]
+                layer.dims.set_point(axis, point)
 
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and
@@ -874,7 +905,7 @@ class ViewerModel(KeymapMixin):
         ranges = [(inf, -inf, inf)] * ndims
 
         for layer in self.layers:
-            layer_range = layer.range[::-1]
+            layer_range = layer.dims.range[::-1]
             ranges = [
                 (min(a, b), max(c, d), min(e, f))
                 for (a, c, e), (b, d, f) in zip_longest(
@@ -894,6 +925,9 @@ class ViewerModel(KeymapMixin):
         for min, max, step in self._calc_layers_ranges():
             min_shape.append(min)
             max_shape.append(max)
+        if len(min_shape) == 0:
+            min_shape = [0] * self.dims.ndisplay
+            max_shape = [1] * self.dims.ndisplay
 
         return min_shape, max_shape
 

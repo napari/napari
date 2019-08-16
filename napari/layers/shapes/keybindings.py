@@ -34,14 +34,14 @@ def hold_to_lock_aspect_ratio(layer):
     else:
         layer._aspect_ratio = 1
     if layer._is_moving:
-        layer._move(layer.coordinates[-2:])
+        layer._move(layer.coordinates[self.dims.displayed])
 
     yield
 
     # on key release
     layer._fixed_aspect = False
     if layer._is_moving:
-        layer._move(layer.coordinates[-2:])
+        layer._move(layer.coordinates[self.dims.displayed])
 
 
 @Shapes.bind_key('R')
@@ -109,7 +109,7 @@ def paste(layer):
 @Shapes.bind_key('A')
 def select_all(layer):
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
-        layer.selected_data = list(range(layer._nshapes_view))
+        layer.selected_data = list(np.nonzero(self._data_view._displayed)[0])
         layer._set_highlight()
 
 

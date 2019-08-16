@@ -113,6 +113,9 @@ class Volume(Layer):
             self._data = volume
             self.metadata = metadata or {}
 
+            self.dims.ndim = volume.ndim
+            self.dims.ndisplay = 3
+
             self.spacing = spacing or [1] * len(volume.shape)
 
             # Intitialize volume views and thumbnails with zeros
@@ -137,14 +140,8 @@ class Volume(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            # Re intitialize indices
-            self._indices = (0,) * (self.ndim - 3) + (
-                slice(None, None, None),
-                slice(None, None, None),
-                slice(None, None, None),
-            )
-
             # Trigger generation of view slice and thumbnail
+            self._update_dims()
             self._set_view_slice()
 
     @property
@@ -156,10 +153,13 @@ class Volume(Layer):
     def data(self, data):
         self._data = data
         self.events.data()
+        self._update_dims()
         self.refresh()
 
-    def _get_shape(self):
-        return tuple(np.multiply(self.data.shape, self.spacing))
+    def _get_range(self):
+        return tuple(
+            (0, m, 1) for m in np.multiply(self.data.shape, self.spacing)
+        )
 
     @property
     def spacing(self):
@@ -169,8 +169,7 @@ class Volume(Layer):
     @spacing.setter
     def spacing(self, spacing):
         self._spacing = spacing
-        displayed = [-3, -2, -1]
-        self.scale = [self._spacing[s] for s in displayed[::-1]]
+        self.scale = [self._spacing[s] for s in self.dims.displayed[::-1]]
 
     @property
     def colormap(self):
@@ -257,11 +256,9 @@ class Volume(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        indices = list(self.indices)
-        indices[:-3] = np.clip(
-            indices[:-3], 0, np.subtract(self.shape[:-3], 1)
+        self._data_view = np.asarray(self.data[self.dims.indices]).transpose(
+            self.dims.displayed_order
         )
-        self._data_view = np.asarray(self.data[tuple(indices)])
 
         self._node.set_data(self._data_view, clim=self.clim)
 
@@ -275,7 +272,6 @@ class Volume(Layer):
         """Update thumbnail with current image data and colormap."""
         # take max projection of volume along first axis
         image = np.max(self._data_thumbnail, axis=0)
-        # print(image.shape)
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()

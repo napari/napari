@@ -13,7 +13,7 @@ def test_random_labels():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.range == tuple((0, m, 1) for m in shape)
+    assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -52,7 +52,7 @@ def test_changing_labels():
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
-    assert layer.range == tuple((0, m, 1) for m in shape_b)
+    assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -65,13 +65,11 @@ def test_changing_labels_dims():
     data_b = np.random.randint(20, size=shape_b)
     layer = Labels(data_a)
 
-    # Prep indices for swtich to 3D
-    layer._indices = (0,) + layer._indices
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
-    assert layer.range == tuple((0, m, 1) for m in shape_b)
+    assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer._data_view.shape == shape_b[-2:]
 
 

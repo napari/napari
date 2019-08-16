@@ -92,6 +92,23 @@ def test_add_shapes():
     assert viewer.dims.ndim == 2
 
 
+def test_mix_dims():
+    """Test adding images of mixed dimensionality."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+    data = np.random.random((6, 10, 15))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 2
+    assert np.all(viewer.layers[1].data == data)
+    assert viewer.dims.ndim == 3
+
+
 def test_new_labels():
     """Test adding new labels layer."""
     # Add labels to empty viewer
@@ -150,6 +167,35 @@ def test_new_shapes():
     assert len(viewer.layers) == 2
     assert len(viewer.layers[1].data) == 0
     assert viewer.dims.ndim == 2
+
+
+def test_swappable_dims():
+    """Test swapping dims after adding layers."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    image_data = np.random.random((7, 12, 10, 15))
+    viewer.add_image(image_data)
+    assert np.all(viewer.layers['Image']._data_view == image_data[0, 0, :, :])
+
+    points_data = np.random.randint(6, size=(10, 4))
+    viewer.add_points(points_data)
+
+    vectors_data = np.random.randint(6, size=(10, 2, 4))
+    viewer.add_vectors(vectors_data)
+
+    labels_data = np.random.randint(20, size=(7, 12, 10, 15))
+    viewer.add_labels(labels_data)
+    assert np.all(
+        viewer.layers['Labels']._data_view == labels_data[0, 0, :, :]
+    )
+
+    # Swap dims
+    viewer.dims.order = [0, 2, 1, 3]
+    assert viewer.dims.order == [0, 2, 1, 3]
+    assert np.all(viewer.layers['Image']._data_view == image_data[0, :, 0, :])
+    assert np.all(
+        viewer.layers['Labels']._data_view == labels_data[0, :, 0, :]
+    )
 
 
 def test_svg():

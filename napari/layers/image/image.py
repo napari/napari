@@ -160,13 +160,8 @@ class Image(Layer):
             self._need_display_update = False
             self._need_visual_update = False
 
-            # Re intitialize indices depending on image dims
-            self._indices = (0,) * (self.ndim - 2) + (
-                slice(None, None, None),
-                slice(None, None, None),
-            )
-
             # Trigger generation of view slice and thumbnail
+            self._update_dims()
             self._set_view_slice()
 
     @property
@@ -179,13 +174,16 @@ class Image(Layer):
         self._data = data
         if self.multichannel:
             self._multichannel = is_multichannel(data.shape)
+        self._update_dims()
         self.events.data()
         self.refresh()
 
-    def _get_shape(self):
+    def _get_range(self):
         if self.multichannel:
-            return self.data.shape[:-1]
-        return self.data.shape
+            shape = self.data.shape[:-1]
+        else:
+            shape = self.data.shape
+        return tuple((0, m, 1) for m in shape)
 
     @property
     def multichannel(self):
@@ -275,11 +273,17 @@ class Image(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        indices = list(self.indices)
-        indices[:-2] = np.clip(
-            indices[:-2], 0, np.subtract(self.shape[:-2], 1)
+        if self.multichannel:
+            # if multichannel need to keep the final axis fixed during the
+            # transpose. The index of the final axis depends on how many
+            # axes are displayed.
+            order = self.dims.displayed_order + (self.dims.ndisplay,)
+        else:
+            order = self.dims.displayed_order
+
+        self._data_view = np.asarray(self.data[self.dims.indices]).transpose(
+            order
         )
-        self._data_view = np.asarray(self.data[tuple(indices)])
 
         self._node.set_data(self._data_view)
 
@@ -356,9 +360,10 @@ class Image(Layer):
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-        coord[-2:] = np.clip(coord[-2:], 0, np.asarray(shape) - 1)
-
-        value = self._data_view[tuple(coord[-2:])]
+        slice_coord = np.clip(
+            coord[self.dims.displayed], 0, np.subtract(shape, 1)
+        )
+        value = self._data_view[tuple(slice_coord)]
 
         return coord, value
 
@@ -414,8 +419,8 @@ class Image(Layer):
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
-        width = str(self.shape[-1])
-        height = str(self.shape[-2])
+        width = str(self.shape[self.dims.displayed[1]])
+        height = str(self.shape[self.dims.displayed[0]])
         opacity = str(self.opacity)
         xml = Element(
             'image', width=width, height=height, opacity=opacity, **props

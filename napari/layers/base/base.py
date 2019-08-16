@@ -5,6 +5,7 @@ from xml.etree.ElementTree import Element, tostring
 import numpy as np
 from skimage import img_as_ubyte
 
+from ...components import Dims
 from ...util.event import Event
 from ...util.keybindings import KeymapMixin
 from ._visual_wrapper import VisualWrapper
@@ -61,15 +62,10 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     coordinates : tuple of float
         Coordinates of the cursor in the image space of each layer. The length
         of the tuple is equal to the number of dimensions of the layer.
-    indices : tuple of int or Slice
-        Used for slicing arrays on each dimension.
     position : 2-tuple of int
         Cursor position in canvas ordered (x, y).
     shape : tuple of int
         Size of the data in the layer.
-    range : list of 3-tuple of int
-        Ranges of data for slicing specifed by (min, max, step), one for each
-        axis.
     ndim : int
         Dimensionality of the layer.
     selected : bool
@@ -103,7 +99,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     Notes
     -----
     Must define the following:
-        * `_get_shape()`: called by `shape` property
+        * `_get_range()`: called by `range` property
         * `_refresh()`: called by `refresh` method
         * `data` property (setter & getter)
 
@@ -129,6 +125,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         super().__init__(
             central_node, opacity=opacity, blending=blending, visible=visible
         )
+
         self._selected = True
         self._freeze = False
         self._status = 'Ready'
@@ -136,9 +133,9 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
-        self._indices = (slice(None, None, None), slice(None, None, None))
         self._position = (0, 0)
         self.coordinates = (0, 0)
+        self.dims = Dims(2)
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
@@ -158,6 +155,9 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self.name = name
 
         self.events.opacity.connect(lambda e: self._update_thumbnail())
+        self.dims.events.display.connect(lambda e: self.refresh())
+        self.dims.events.axis.connect(lambda e: self.refresh())
+        self.dims.events.axis.connect(lambda e: self._update_coordinates())
 
     def __str__(self):
         """Return self.name."""
@@ -186,19 +186,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self.events.name()
 
     @property
-    def indices(self):
-        """Tuple of int or Slice: Used for slicing arrays on each dimension."""
-        return self._indices
-
-    @indices.setter
-    def indices(self, indices):
-        if indices == self.indices:
-            return
-        self._indices = indices[-self.ndim :]
-        self._update_coordinates()
-        self._set_view_slice()
-
-    @property
     def position(self):
         """2-tuple of int: Cursor position in canvas ordered (x, y)."""
         return self._position
@@ -216,11 +203,25 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         """
         if self._node.canvas is not None:
             transform = self._node.canvas.scene.node_transform(self._node)
-            position = transform.map(list(self.position))[:2]
-            coords = list(self.indices)
-            coords[-2] = position[1]
-            coords[-1] = position[0]
-            self.coordinates = tuple(coords)
+            position = transform.map(list(self.position))[
+                : len(self.dims.displayed)
+            ]
+            position = position[::-1]
+        else:
+            position = [0] * len(self.dims.displayed)
+
+        coords = list(self.dims.indices)
+        for d, p in zip(self.dims.displayed, position):
+            coords[d] = p
+        self.coordinates = tuple(coords)
+
+    def _update_dims(self):
+        """Updates dims model, which is useful after data has been changed."""
+        range = self._get_range()
+        self.dims.ndim = len(range)
+        for i, r in enumerate(range):
+            self.dims.set_range(i, r)
+        self._update_coordinates()
 
     @property
     @abstractmethod
@@ -234,7 +235,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_shape(self):
+    def _get_range(self):
         raise NotImplementedError()
 
     @property
@@ -254,19 +255,14 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     @property
     def ndim(self):
         """int: Number of dimensions in the data."""
-        return len(self.shape)
+        return self.dims.ndim
 
     @property
     def shape(self):
         """tuple of int: Shape of the data."""
-        return self._get_shape()
-
-    @property
-    def range(self):
-        """list of 3-tuple of int: ranges of data for slicing specifed by
-        (min, max, step).
-        """
-        return tuple((0, max, 1) for max in self.shape)
+        return tuple(
+            np.round(r[1] - r[0]).astype(int) for r in self.dims.range
+        )
 
     @property
     def selected(self):
@@ -428,8 +424,8 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         """
 
         if canvas_shape is None:
-            min_shape = [r[0] for r in self.range[-2:]]
-            max_shape = [r[1] for r in self.range[-2:]]
+            min_shape = [r[0] for r in self.dims.range[-2:]]
+            max_shape = [r[1] for r in self.dims.range[-2:]]
             shape = np.subtract(max_shape, min_shape)
         else:
             shape = canvas_shape[2:]

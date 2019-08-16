@@ -17,8 +17,8 @@ def test_qt_viewer(qtbot):
     assert view.layers.vbox_layout.count() == 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_add_image(qtbot):
@@ -36,8 +36,8 @@ def test_add_image(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_add_volume(qtbot):
@@ -55,8 +55,8 @@ def test_add_volume(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == 1
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_add_pyramid(qtbot):
@@ -75,8 +75,8 @@ def test_add_pyramid(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_add_labels(qtbot):
@@ -94,8 +94,8 @@ def test_add_labels(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_add_points(qtbot):
@@ -113,8 +113,8 @@ def test_add_points(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_add_vectors(qtbot):
@@ -132,8 +132,8 @@ def test_add_vectors(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_add_shapes(qtbot):
@@ -151,8 +151,8 @@ def test_add_shapes(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_new_labels(qtbot):
@@ -168,8 +168,8 @@ def test_new_labels(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add labels with image already present
     viewer = ViewerModel()
@@ -185,8 +185,8 @@ def test_new_labels(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_new_points(qtbot):
@@ -202,8 +202,8 @@ def test_new_points(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
     viewer = ViewerModel()
@@ -219,8 +219,8 @@ def test_new_points(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_new_shapes(qtbot):
@@ -236,8 +236,8 @@ def test_new_shapes(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
     viewer = ViewerModel()
@@ -253,8 +253,8 @@ def test_new_shapes(qtbot):
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == 0
-    assert np.sum(view.dims._displayed) == 0
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
 
 def test_screenshot(qtbot):

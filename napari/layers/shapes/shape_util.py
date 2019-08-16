@@ -3,37 +3,6 @@ from ...util import segment_normal
 from vispy.geometry import PolygonData
 
 
-def slice_by_plane(data):
-    """Determine if shape is entirely defined within a single 2D plane
-
-    Parameters
-    ----------
-    data : (N, D) array
-        Array of vertices specifying the shape.
-
-    Returns
-    ----------
-    key : tuple of int or bool
-        If shape is 2D returns an empty tuple, otherwise return the tuple
-        of int defining the 2D plane if the shape is entirely definied
-        within a single 2D plane. Otherwise return False as the shape is
-        invalid.
-    value : (N, 2) array or False
-        Array of vertices specifying the shape in the 2D plane or False
-        if no such specification exists.
-    """
-    # TODO make which coordinate are the displayed 2D coordinates changable
-    # instead of assuming they are the last two dimensions. This feature
-    # will be implemented here after it is implemented on the main dims model.
-    # The key can then be a tuple: (slice_dims, coords)
-    if data.shape[1] == 2:
-        return (), data
-    elif np.all(data[:, :-2] == data[0, :-2]):
-        return tuple(data[0, :-2].astype('int')), data[:, -2:]
-    else:
-        return False, False
-
-
 def inside_triangles(triangles):
     """Checks which triangles contain the origin
 
@@ -459,8 +428,8 @@ def find_corners(data):
     corners : np.ndarray
         4x2 array of corners of the boudning box
     """
-    min_val = [data[:, 0].min(axis=0), data[:, 1].min(axis=0)]
-    max_val = [data[:, 0].max(axis=0), data[:, 1].max(axis=0)]
+    min_val = data.min(axis=0)
+    max_val = data.max(axis=0)
     tl = np.array([min_val[0], min_val[1]])
     tr = np.array([max_val[0], min_val[1]])
     br = np.array([max_val[0], max_val[1]])

@@ -73,10 +73,9 @@ def generate_vector_meshes(vectors, width, length):
 
     Parameters
     ----------
-    vectors : (N, 2, D) array
+    vectors : (N, 2, 2) array
         A list of N vectors with start point and projections of the vector
-        in D dimensions. Vectors are projected onto the last two
-        dimensions if D > 2.
+        in 2 dimensions.
     width : float
         width of the line to be drawn
     length : float
@@ -89,7 +88,7 @@ def generate_vector_meshes(vectors, width, length):
     triangles : (2N, 2) array
         Vertex indices that form the mesh triangles
     """
-    vectors = np.reshape(copy(vectors[:, :, -2:]), (-1, 2))
+    vectors = np.reshape(copy(vectors), (-1, 2))
     vectors[1::2] = vectors[::2] + length * vectors[1::2]
     centers = np.repeat(vectors, 2, axis=0)
     offsets = segment_normal(vectors[::2, :], vectors[1::2, :])

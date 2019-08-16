@@ -27,14 +27,11 @@ def test_display():
     Test display setting.
     """
     dims = Dims(4)
-    assert dims.display == [False] * 4
+    assert dims.order == [0, 1, 2, 3]
+    assert dims.ndisplay == 2
 
-    dims.set_display(0, True)
-    dims.set_display(1, True)
-    assert dims.display == [True, True, False, False]
-
-    dims._set_2d_viewing()
-    assert dims.display == [False, False, True, True]
+    dims.order = [2, 3, 1, 0]
+    assert dims.order == [2, 3, 1, 0]
 
 
 def test_point():
@@ -89,16 +86,20 @@ def test_indices():
     Test indices values.
     """
     dims = Dims(4)
-    # On instantiation no dims are displayed and the indices default to 0
-    assert dims.indices == (0,) * 4
-
-    dims._set_2d_viewing()
-    # On 2D viewing the last two dims are now set to sliced mode
+    # On instantiation the last two dims are set to sliced mode
     assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
+    print(dims.point, dims.ndim, dims.indices)
 
+    # Set the values of the first two dims in point mode outside of range
     dims.set_point(0, 2)
     dims.set_point(1, 3)
-    # Set the values of the first two dims in point mode
+    assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
+
+    # Increase range and then set points again
+    dims.set_range(0, (0, 4, 2))
+    dims.set_range(1, (0, 4, 2))
+    dims.set_point(0, 2)
+    dims.set_point(1, 3)
     assert dims.indices == (2, 3) + (slice(None, None, None),) * 2
 
 

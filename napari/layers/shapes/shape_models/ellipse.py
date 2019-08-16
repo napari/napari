@@ -6,7 +6,6 @@ from ..shape_util import (
     triangulate_ellipse,
     center_radii_to_corners,
     rectangle_to_box,
-    poly_to_mask,
 )
 
 
@@ -15,9 +14,9 @@ class Ellipse(Shape):
 
     Parameters
     ----------
-    data : (4, 2) array or (2, 2) array.
+    data : (4, D) array or (2, 2) array.
         Either a (2, 2) array specifying the center and radii of an axis
-        aligned ellipse, or a (4, 2) array specifying the four corners of a
+        aligned ellipse, or a (4, D) array specifying the four corners of a
         boudning box that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
@@ -34,6 +33,8 @@ class Ellipse(Shape):
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
+    dims_order : (D,) list
+        Order that the dimensions are to be rendered in.
     """
 
     def __init__(
@@ -45,6 +46,7 @@ class Ellipse(Shape):
         face_color='white',
         opacity=1,
         z_index=0,
+        dims_order=None,
     ):
 
         super().__init__(
@@ -53,35 +55,56 @@ class Ellipse(Shape):
             face_color=face_color,
             opacity=opacity,
             z_index=z_index,
+            dims_order=dims_order,
         )
 
         self._closed = True
-        self.data = np.array(data)
+        self._use_face_vertices = True
+        self.data = data
         self.name = 'ellipse'
 
     @property
     def data(self):
-        """(4, 2) array: ellipse vertices.
+        """(4, D) array: ellipse vertices.
         """
         return self._data
 
     @data.setter
     def data(self, data):
-        if len(data) == 2:
+        data = np.array(data).astype(float)
+
+        if len(self.dims_order) != data.shape[1]:
+            self._dims_order = list(range(data.shape[1]))
+
+        if len(data) == 2 and data.shape[1] == 2:
             data = center_radii_to_corners(data[0], data[1])
+
         if len(data) != 4:
             raise ValueError(
-                """Data shape does not match an ellipse.
-                             Ellipse expects four corner vertices"""
+                f"""Data shape does not match a ellipse.
+                             Ellipse expects four corner vertices,
+                             {len(data)} provided."""
             )
-        else:
-            # Build boundary vertices with num_segments
-            vertices, triangles = triangulate_ellipse(data)
-            self._set_meshes(vertices[1:-1], face=False)
-            self._face_vertices = vertices
-            self._face_triangles = triangles
-            self._box = rectangle_to_box(data)
+
         self._data = data
+        self._update_displayed_data()
+
+    def _update_displayed_data(self):
+        """Update the data that is to be displayed."""
+        # Build boundary vertices with num_segments
+        vertices, triangles = triangulate_ellipse(self.data_displayed)
+        self._set_meshes(vertices[1:-1], face=False)
+        self._face_vertices = vertices
+        self._face_triangles = triangles
+        self._box = rectangle_to_box(self.data_displayed)
+
+        data_not_displayed = self.data[:, self.dims_not_displayed]
+        self.slice_key = np.round(
+            [
+                np.min(data_not_displayed, axis=0),
+                np.max(data_not_displayed, axis=0),
+            ]
+        ).astype('int')
 
     def transform(self, transform):
         """Performs a linear transform on the shape
@@ -92,7 +115,9 @@ class Ellipse(Shape):
             2x2 array specifying linear transform.
         """
         self._box = self._box @ transform.T
-        self._data = self._data @ transform.T
+        self._data[:, self.dims_displayed] = (
+            self._data[:, self.dims_displayed] @ transform.T
+        )
         self._face_vertices = self._face_vertices @ transform.T
 
         points = self._face_vertices[1:-1]
@@ -104,38 +129,6 @@ class Ellipse(Shape):
         self._edge_offsets = offsets
         self._edge_triangles = triangles
 
-    def to_mask(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
-        """Convert the shape vertices to a boolean mask. 
-
-        Set points lying inside the shape as `True`. Negative points or points
-        outside the mask_shape after the zoom and offset are clipped.
-
-        Parameters
-        ----------
-        mask_shape : np.ndarray | tuple | None
-            1x2 array of shape of mask to be generated. If non specified, takes
-            the max of the vertices.
-        zoom_factor : float
-            Premultiplier applied to coordinates before generating mask. Used
-            for generating as downsampled mask.
-        offset : 2-tuple
-            Offset subtracted from coordinates before multiplying by the
-            zoom_factor. Used for putting negative coordinates into the mask.
-
-        Returns
-        ----------
-        mask : np.ndarray
-            Boolean array with `True` for points inside the shape
-        """
-        if mask_shape is None:
-            mask_shape = self.data.max(axis=0).astype('int')
-
-        mask = poly_to_mask(
-            mask_shape, (self._face_vertices - offset) * zoom_factor
-        )
-
-        return mask
-
     def to_xml(self):
         """Generates an xml element that defintes the shape according to the
         svg specification.
@@ -146,7 +139,7 @@ class Ellipse(Shape):
             xml element specifying the shape according to svg.
         """
         props = self.svg_props
-        data = self.data[:, ::-1]
+        data = self.data[:, self.dims_displayed[::-1]]
 
         offset = data[1] - data[0]
         angle = -np.arctan2(offset[0], -offset[1])

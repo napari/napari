@@ -17,8 +17,10 @@ def test_creating_view(qtbot):
     # Check that the dims model has been appended to the dims view
     assert view.dims == dims
 
-    # Check the number of sliders is two less than the number of dimensions
-    assert view.nsliders == ndim - 2
+    # Check the number of displayed sliders is two less than the number of
+    # dimensions
+    assert view.nsliders == view.dims.ndim
+    assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
 
 
 def test_changing_ndim(qtbot):
@@ -32,11 +34,13 @@ def test_changing_ndim(qtbot):
 
     # Check that adding dimensions adds sliders
     view.dims.ndim = 5
-    assert view.nsliders == 3
+    assert view.nsliders == view.dims.ndim
+    assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
 
     # Check that removing dimensions removes sliders
     view.dims.ndim = 2
-    assert view.nsliders == 0
+    assert view.nsliders == view.dims.ndim
+    assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
 
 
 def test_changing_display(qtbot):
@@ -48,12 +52,13 @@ def test_changing_display(qtbot):
 
     qtbot.addWidget(view)
 
-    assert view.nsliders == 2
-    assert np.sum(view._displayed) == 2
+    assert view.nsliders == view.dims.ndim
+    assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
 
     # Check changing displayed removes a slider
-    view.dims.set_display(1, True)
-    assert np.sum(view._displayed) == 1
+    view.dims.ndisplay = 3
+    assert view.nsliders == view.dims.ndim
+    assert np.sum(view._displayed_sliders) == view.dims.ndim - 3
 
 
 def test_slider_values(qtbot):
