@@ -2,7 +2,6 @@ import os
 from .vendored import colorconv, cm
 import numpy as np
 from vispy.color import get_colormap, get_colormaps, BaseColormap, Colormap
-from ..._vispy.color import Colormap as LabelColormap
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -200,7 +199,7 @@ def label_colormap(num_colors=256, seed=0.5):
         axis=1,
     )
     colors[0, :] = 0  # ensure alpha is 0 for label 0
-    cmap = LabelColormap(
+    cmap = Colormap(
         colors=colors, controls=control_points, interpolation='zero'
     )
     return cmap
