@@ -4,14 +4,14 @@ from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
 from skimage import img_as_ubyte
+from ._constants import Blending
 
 from ...components import Dims
-from ...util.event import Event
+from ...util.event import EmitterGroup, Event
 from ...util.keybindings import KeymapMixin
-from ._visual_wrapper import VisualWrapper
 
 
-class Layer(VisualWrapper, KeymapMixin, ABC):
+class Layer(KeymapMixin, ABC):
     """Base layer class.
 
     Parameters
@@ -86,16 +86,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
 
-    Extended Summary
-    ----------------
-    _master_transform : vispy.visuals.transforms.STTransform
-        Transform positioning the layer visual inside the scenecanvas.
-    _order : int
-        Order in which the visual is drawn in the scenegraph. Lower values
-        are closer to the viewer.
-    _parent : vispy.View
-        View
-
     Notes
     -----
     Must define the following:
@@ -114,18 +104,13 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
     """
 
     def __init__(
-        self,
-        central_node,
-        *,
-        name=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
+        self, *, name=None, opacity=1, blending='translucent', visible=True
     ):
-        super().__init__(
-            central_node, opacity=opacity, blending=blending, visible=visible
-        )
+        super().__init__()
 
+        self._opacity = opacity
+        self._blending = Blending(blending)
+        self._visible = visible
         self._selected = True
         self._freeze = False
         self._status = 'Ready'
@@ -140,7 +125,12 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
-        self.events.add(
+        self.events = EmitterGroup(
+            source=self,
+            auto_connect=True,
+            blending=Event,
+            opacity=Event,
+            visible=Event,
             select=Event,
             deselect=Event,
             data=Event,
@@ -154,10 +144,8 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         )
         self.name = name
 
-        self.events.opacity.connect(lambda e: self._update_thumbnail())
         self.dims.events.display.connect(lambda e: self.refresh())
         self.dims.events.axis.connect(lambda e: self.refresh())
-        self.dims.events.axis.connect(lambda e: self._update_coordinates())
 
     def __str__(self):
         """Return self.name."""
@@ -186,6 +174,60 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self.events.name()
 
     @property
+    def opacity(self):
+        """float: Opacity value between 0.0 and 1.0.
+        """
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, opacity):
+        if not 0.0 <= opacity <= 1.0:
+            raise ValueError(
+                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+            )
+
+        self._opacity = opacity
+        self._update_thumbnail()
+        self.events.opacity()
+
+    @property
+    def blending(self):
+        """Blending mode: Determines how RGB and alpha values get mixed.
+
+            Blending.OPAQUE
+                Allows for only the top layer to be visible and corresponds to
+                depth_test=True, cull_face=False, blend=False.
+            Blending.TRANSLUCENT
+                Allows for multiple layers to be blended with different opacity
+                and corresponds to depth_test=True, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            Blending.ADDITIVE
+                Allows for multiple layers to be blended together with
+                different colors and opacity. Useful for creating overlays. It
+                corresponds to depth_test=False, cull_face=False, blend=True,
+                blend_func=('src_alpha', 'one').
+        """
+        return str(self._blending)
+
+    @blending.setter
+    def blending(self, blending):
+        if isinstance(blending, str):
+            blending = Blending(blending)
+
+        self._blending = blending
+        self.events.blending()
+
+    @property
+    def visible(self):
+        """bool: Whether the visual is currently being displayed."""
+        return self._visible
+
+    @visible.setter
+    def visible(self, visibility):
+        self._visible = visibility
+        self.events.visible()
+
+    @property
     def position(self):
         """2-tuple of int: Cursor position in canvas ordered (x, y)."""
         return self._position
@@ -195,25 +237,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         if self._position == position:
             return
         self._position = position
-        self._update_coordinates()
-
-    def _update_coordinates(self):
-        """Insert the cursor position (x, y) into the correct position in the
-        tuple of indices and update the cursor coordinates.
-        """
-        if self._node.canvas is not None:
-            transform = self._node.canvas.scene.node_transform(self._node)
-            position = transform.map(list(self.position))[
-                : len(self.dims.displayed)
-            ]
-            position = position[::-1]
-        else:
-            position = [0] * len(self.dims.displayed)
-
-        coords = list(self.dims.indices)
-        for d, p in zip(self.dims.displayed, position):
-            coords[d] = p
-        self.coordinates = tuple(coords)
+        # self._update_coordinates()
 
     def _update_dims(self):
         """Updates dims model, which is useful after data has been changed."""
@@ -221,7 +245,7 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self.dims.ndim = len(range)
         for i, r in enumerate(range):
             self.dims.set_range(i, r)
-        self._update_coordinates()
+        # self._update_coordinates()
 
     @property
     @abstractmethod
@@ -340,30 +364,6 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
-    @property
-    def scale_factor(self):
-        """float: Conversion factor from canvas coordinates to image
-        coordinates, which depends on the current zoom level.
-        """
-        if self._node.canvas is not None:
-            transform = self._node.canvas.scene.node_transform(self._node)
-            scale_factor = transform.map([1, 1])[0] - transform.map([0, 0])[0]
-        else:
-            scale_factor = 1
-        return scale_factor
-
-    def _update(self):
-        """Update the underlying visual."""
-        if self._need_display_update:
-            self._need_display_update = False
-            if hasattr(self._node, '_need_colortransform_update'):
-                self._node._need_colortransform_update = True
-            self._set_view_slice()
-
-        if self._need_visual_update:
-            self._need_visual_update = False
-            self._node.update()
-
     @abstractmethod
     def _set_view_slice(self):
         raise NotImplementedError()
@@ -465,33 +465,3 @@ class Layer(VisualWrapper, KeymapMixin, ABC):
                 f.write(svg)
 
         return svg
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        return
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        return
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        return
-
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-        """
-        return
-
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
-        """
-        return
-
-    def on_draw(self, event):
-        """Called whenever the canvas is drawn.
-        """
-        return

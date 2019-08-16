@@ -17,6 +17,7 @@ from qtpy.QtWidgets import QStackedWidget, QSizePolicy
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from vispy.visuals.transforms import ChainTransform
 from vispy.app import use_app
 
 from .qt_dims import QtDims
@@ -53,6 +54,8 @@ class QtViewer(QSplitter):
         self.layers = QtLayerList(self.viewer.layers)
         self.buttons = QtLayersButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
+
+        self.vispy_layers = {}
 
         if self.console.shell is not None:
             self.console.style().unpolish(self.console)
@@ -128,12 +131,41 @@ class QtViewer(QSplitter):
         self.viewer.events.palette.connect(
             lambda event: self._update_palette(event.palette)
         )
-        self.viewer.layers.events.reordered.connect(self._update_canvas)
+        self.viewer.layers.events.reordered.connect(self._reorder_layers)
+        self.viewer.layers.events.added.connect(self._add_layer)
+        self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.dims.events.display.connect(
             lambda event: self._update_camera()
         )
 
         self.setAcceptDrops(True)
+
+    def _add_layer(self, event):
+        """When a layer is added, set its parent and order."""
+        layers = event.source
+        layer = event.item
+        vispy_layer = create_vispy_node(layer)
+        vispy_layer.node._order = -len(layers)
+        vispy_layer.node.parent = self.viewer.view
+        self.vispy_layers[layer] = vispy_layer
+
+    def _remove_layer(self, event):
+        """When a layer is removed, remove its parent."""
+        layer = event.item
+        vispy_layer = self.layer_nodes[layer]
+        vispy_layer.node._order = 0
+        vispy_layer.node.transforms = ChainTransform()
+        vispy_layer.node.parent = None
+        del self.vispy_layers[layer]
+
+    def _reorder_layers(event):
+        """When the list is reordered, propagate changes to draw order."""
+        layers = event.source
+        for i, layer in enumerate(layers):
+            vispy_layer = self.vispy_layers[layer]
+            vispy_layer.node._order = -i
+        self.canvas._draw_order.clear()
+        self.canvas.update()
 
     def _update_camera(self):
         if self.viewer.dims.ndisplay == 3:
@@ -144,9 +176,6 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                # TO DO: Remove once we have removed vispy node from individual
-                # layers as then model / view separate
-                self.viewer._view = self.view
                 self.viewer.reset_view()
         else:
             # Set 2D camera
@@ -158,9 +187,6 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                # TO DO: Remove once we have removed vispy node from individual
-                # layers as then model / view separate
-                self.viewer._view = self.view
                 self.viewer.reset_view()
 
     def screenshot(self):
@@ -246,13 +272,6 @@ class QtViewer(QSplitter):
         else:
             # Assumes default camera has the same properties as PanZoomCamera
             self.view.camera.rect = event.viewbox
-
-    def _update_canvas(self, event):
-        """Clears draw order and refreshes canvas. Usefeul for when layers are
-        reoredered.
-        """
-        self.canvas._draw_order.clear()
-        self.canvas.update()
 
     def _update_palette(self, palette):
         # template and apply the primary stylesheet

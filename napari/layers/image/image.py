@@ -7,7 +7,6 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from vispy.scene.visuals import Image as ImageNode
 from ...util.misc import (
     is_multichannel,
     calc_data_range,
@@ -118,13 +117,8 @@ class Image(Layer):
         **kwargs,
     ):
 
-        visual = ImageNode(None, method='auto')
         super().__init__(
-            visual,
-            name=name,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
+            name=name, opacity=opacity, blending=blending, visible=visible
         )
 
         self.events.add(clim=Event, colormap=Event, interpolation=Event)
@@ -150,9 +144,9 @@ class Image(Layer):
             else:
                 self._clim_range = clim_range
             if clim is None:
-                self.clim = copy(self._clim_range)
+                self._clim = copy(self._clim_range)
             else:
-                self.clim = clim
+                self._clim = clim
             self.colormap = colormap
             self.interpolation = interpolation
 
@@ -204,7 +198,7 @@ class Image(Layer):
     def colormap(self):
         """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
         """
-        return self._colormap_name, self._node.cmap
+        return self._colormap_name, self._cmap
 
     @colormap.setter
     def colormap(self, colormap):
@@ -226,7 +220,7 @@ class Image(Layer):
             warnings.warn(f'invalid value for colormap: {colormap}')
             name = self._colormap_name
         self._colormap_name = name
-        self._node.cmap = self._colormaps[name]
+        self._cmap = self._colormaps[name]
         self._update_thumbnail()
         self.events.colormap()
 
@@ -239,13 +233,13 @@ class Image(Layer):
     @property
     def clim(self):
         """list of float: Limits to use for the colormap."""
-        return list(self._node.clim)
+        return list(self._clim)
 
     @clim.setter
     def clim(self, clim):
         self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
         self.status = self._clim_msg
-        self._node.clim = clim
+        self._clim = clim
         if clim[0] < self._clim_range[0]:
             self._clim_range[0] = copy(clim[0])
         if clim[1] > self._clim_range[1]:
@@ -268,7 +262,7 @@ class Image(Layer):
         if isinstance(interpolation, str):
             interpolation = Interpolation(interpolation)
         self._interpolation = interpolation
-        self._node.interpolation = interpolation.value
+        # self._node.interpolation = interpolation.value
         self.events.interpolation()
 
     def _set_view_slice(self):
@@ -285,10 +279,10 @@ class Image(Layer):
             order
         )
 
-        self._node.set_data(self._data_view)
+        # self._node.set_data(self._data_view)
 
         self._need_visual_update = True
-        self._update()
+        # self._update()
 
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)

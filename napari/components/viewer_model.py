@@ -61,10 +61,6 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         self.theme = 'dark'
 
-        # TODO: this should be eventually removed!
-        # attached by QtViewer when it is constructed by the model
-        self._view = None
-
         self.dims.events.display.connect(lambda e: self._update_layers())
         self.dims.events.display.connect(lambda e: self.reset_view())
         self.dims.events.axis.connect(lambda e: self._update_layers())
@@ -309,9 +305,6 @@ class ViewerModel(KeymapMixin):
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
-
-        if self._view is not None:
-            layer.parent = self._view
         self.layers.append(layer)
         self._update_layers(layers=[layer])
 
