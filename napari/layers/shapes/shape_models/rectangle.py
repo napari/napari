@@ -9,8 +9,8 @@ class Rectangle(Shape):
 
     Parameters
     ----------
-    data : (4, D) or (2, D) array
-        Either a (2, D) array specifying the two corners of an axis aligned
+    data : (4, D) or (2, 2) array
+        Either a (2, 2) array specifying the two corners of an axis aligned
         rectangle, or a (4, D) array specifying the four corners of a bounding
         box that contains the rectangle. These need not be axis aligned.
     edge_width : float

@@ -198,7 +198,7 @@ class Pyramid(Image):
         indices = np.array(self.dims.indices)
         level = self.data_level
         downsampled = indices[nd] / self.level_downsamples[level, nd]
-        downsampled = np.rint(downsampled.astype(float)).astype(int)
+        downsampled = np.round(downsampled.astype(float)).astype(int)
         downsampled = np.clip(downsampled, 0, self.level_shapes[level, nd] - 1)
         indices[nd] = downsampled
 

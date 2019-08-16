@@ -14,8 +14,8 @@ class Ellipse(Shape):
 
     Parameters
     ----------
-    data : (4, D) array or (2, D) array.
-        Either a (2, D) array specifying the center and radii of an axis
+    data : (4, D) array or (2, 2) array.
+        Either a (2, 2) array specifying the center and radii of an axis
         aligned ellipse, or a (4, D) array specifying the four corners of a
         boudning box that contains the ellipse. These need not be axis aligned.
     edge_width : float

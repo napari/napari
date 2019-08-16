@@ -23,7 +23,7 @@ class ShapeList:
         Array of slice keys for each shape. Each slice key has the min and max
         values of the P non-displayed dimensions, useful for slicing
         multidimensional shapes. If the both min and max values of shape are
-        equal than the shape is entirely contained within the slice specified
+        equal then the shape is entirely contained within the slice specified
         by those values.
     shape_types : (N, ) list of str
         Name of shape type for each shape.
@@ -126,6 +126,8 @@ class ShapeList:
 
     def _update_displayed(self):
         """Update the displayed data based on the slice key."""
+        # The list slice key is repeated to check against both the min and
+        # max values stored in the shapes slice key.
         slice_key = np.array([self.slice_key, self.slice_key])
 
         # Slice key must exactly match mins and maxs of shape as then the
