@@ -1,7 +1,7 @@
 from vispy.scene.visuals import Image as ImageNode
 from .vispy_base_layer import VispyBaseLayer
-from ..util.misc import interpolate_coordinates
-from ..layers.labels._constants import Mode
+from ...util.misc import interpolate_coordinates
+from ..labels._constants import Mode
 
 
 class VispyLabelsLayer(VispyBaseLayer):

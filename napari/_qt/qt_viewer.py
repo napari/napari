@@ -31,7 +31,7 @@ from ..util.io import read
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
 from .qt_console import QtConsole
-from .._vispy import create_vispy_node
+from ..layers import create_vispy_node
 
 
 # set vispy application to the appropriate qt backend

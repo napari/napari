@@ -6,6 +6,7 @@ to the super constructor.
 """
 
 
+from ._vispy import create_vispy_node
 from .base import Layer
 from .image import Image
 from .points import Points
