@@ -7,7 +7,6 @@ from base64 import b64encode
 from imageio import imwrite
 
 from ..base import Layer
-from vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
@@ -110,16 +109,10 @@ class Labels(Layer):
         **kwargs,
     ):
 
-        visual = ImageNode(None, method='auto')
         super().__init__(
-            visual,
-            name=name,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
+            name=name, opacity=opacity, blending=blending, visible=visible
         )
         self.events.add(
-            colormap=Event,
             mode=Event,
             n_dimensional=Event,
             contiguous=Event,
@@ -138,8 +131,6 @@ class Labels(Layer):
             self._colormap_name,
             colormaps.label_colormap(self.num_colors),
         )
-        self._node.clim = [0.0, 1.0]
-        self._node._cmap = self.colormap[1]
 
         self._n_dimensional = True
         self._contiguous = True
@@ -172,7 +163,7 @@ class Labels(Layer):
         self._data = data
         self._update_dims()
         self.events.data()
-        self.refresh()
+        self._set_view_slice()
 
     def _get_range(self):
         return tuple((0, m, 1) for m in self.data.shape)
@@ -216,7 +207,7 @@ class Labels(Layer):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def num_colors(self):
@@ -230,7 +221,7 @@ class Labels(Layer):
             self._colormap_name,
             colormaps.label_colormap(num_colors),
         )
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def selected_label(self):
@@ -300,7 +291,7 @@ class Labels(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
-        self.refresh()
+        self._set_view_slice()
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
@@ -326,7 +317,7 @@ class Labels(Layer):
     def new_colormap(self):
         self._seed = np.random.rand()
         self._selected_color = self.get_color(self.selected_label)
-        self.refresh()
+        self._set_view_slice()
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
@@ -343,15 +334,9 @@ class Labels(Layer):
             self.dims.displayed_order
         )
 
-        image = self._raw_to_displayed(self._data_view)
-        self._node.set_data(image)
-
-        self._need_visual_update = True
-        self._update()
-
-        coord, label = self.get_value()
-        self.status = self.get_message(coord, label)
         self._update_thumbnail()
+        self._update_coordinates()
+        self.events.set_data()
 
     def fill(self, coord, old_label, new_label):
         """Replace an existing label with a new label, either just at the
@@ -397,7 +382,7 @@ class Labels(Layer):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.indices)] = labels
 
-        self.refresh()
+        self._set_view_slice()
 
     def paint(self, coord, new_label):
         """Paint over existing labels with a new label, using the selected
@@ -449,7 +434,7 @@ class Labels(Layer):
         # update the labels image
         self.data[slice_coord] = new_label
 
-        self.refresh()
+        self._set_view_slice()
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -538,76 +523,3 @@ class Labels(Layer):
             'image', width=width, height=height, opacity=opacity, **props
         )
         return [xml]
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if event.pos is None:
-            return
-        self.position = tuple(event.pos)
-        coord, label = self.get_value()
-
-        if self._mode == Mode.PAN_ZOOM:
-            # If in pan/zoom mode do nothing
-            pass
-        elif self._mode == Mode.PICKER:
-            self.selected_label = label
-        elif self._mode == Mode.PAINT:
-            # Start painting with new label
-            new_label = self.selected_label
-            self.paint(coord, new_label)
-            self._last_cursor_coord = coord
-            self.status = self.get_message(coord, new_label)
-        elif self._mode == Mode.FILL:
-            # Fill clicked on region with new label
-            old_label = label
-            new_label = self.selected_label
-            self.fill(coord, old_label, new_label)
-            self.status = self.get_message(coord, new_label)
-        else:
-            raise ValueError("Mode not recongnized")
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if event.pos is None:
-            return
-        self.position = tuple(event.pos)
-        coord, label = self.get_value()
-
-        if self._mode == Mode.PAINT and event.is_dragging:
-            new_label = self.selected_label
-            if self._last_cursor_coord is None:
-                interp_coord = [coord]
-            else:
-                interp_coord = interpolate_coordinates(
-                    self._last_cursor_coord, coord, self.brush_size
-                )
-            with self.freeze_refresh():
-                for c in interp_coord:
-                    self.paint(c, new_label)
-            self.refresh()
-            self._last_cursor_coord = coord
-            label = new_label
-
-        self.status = self.get_message(coord, label)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        self._last_cursor_coord = None

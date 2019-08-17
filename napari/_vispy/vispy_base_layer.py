@@ -133,7 +133,7 @@ class VispyBaseLayer(ABC):
         self.node.visible = self.layer.visible
 
     def _on_opacity_change(self):
-        self.node.visible = self.layer.opacity
+        self.node.opacity = self.layer.opacity
 
     def _on_blending_change(self):
         self.node.set_gl_state(self.layer.blending)
@@ -159,9 +159,10 @@ class VispyBaseLayer(ABC):
         return tuple(position[::-1])
 
     def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        return
+        """Called whenever mouse moves over canvas."""
+        if event.pos is None:
+            return
+        self.layer.position = self._transform_position(list(event.pos))
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

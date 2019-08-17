@@ -1,5 +1,6 @@
 from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
+from .vispy_labels_layer import VispyLabelsLayer
 
 
 def create_vispy_node(layer):

@@ -152,6 +152,7 @@ class Image(Layer):
         else:
             self._clim = clim
         self.colormap = colormap
+        self.clim = self._clim
         self.interpolation = interpolation
 
         # Set update flags
