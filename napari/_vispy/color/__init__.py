@@ -1,1 +1,0 @@
-from .colormap import Colormap
