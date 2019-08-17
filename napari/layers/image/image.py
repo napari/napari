@@ -262,7 +262,6 @@ class Image(Layer):
         if isinstance(interpolation, str):
             interpolation = Interpolation(interpolation)
         self._interpolation = interpolation
-        # self._node.interpolation = interpolation.value
         self.events.interpolation()
 
     def _set_view_slice(self):
@@ -279,16 +278,12 @@ class Image(Layer):
             order
         )
 
-        # self._node.set_data(self._data_view)
-
-        self._need_visual_update = True
-        # self._update()
-
         coord, value = self.get_value()
         self.status = self.get_message(coord, value)
 
         self._data_thumbnail = self._data_view
         self._update_thumbnail()
+        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
@@ -420,11 +415,3 @@ class Image(Layer):
             'image', width=width, height=height, opacity=opacity, **props
         )
         return [xml]
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self.position = tuple(event.pos)
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)

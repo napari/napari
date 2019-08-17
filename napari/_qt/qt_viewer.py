@@ -31,6 +31,7 @@ from ..util.io import read
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
 from .qt_console import QtConsole
+from .._vispy.util import create_vispy_node
 
 
 # set vispy application to the appropriate qt backend
@@ -146,7 +147,7 @@ class QtViewer(QSplitter):
         layer = event.item
         vispy_layer = create_vispy_node(layer)
         vispy_layer.node._order = -len(layers)
-        vispy_layer.node.parent = self.viewer.view
+        vispy_layer.node.parent = self.view
         self.vispy_layers[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -295,21 +296,24 @@ class QtViewer(QSplitter):
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            layer.on_mouse_move(event)
+            vispy_layer = self.vispy_layers[layer]
+            vispy_layer.on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            layer.on_mouse_press(event)
+            vispy_layer = self.vispy_layers[layer]
+            vispy_layer.on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            layer.on_mouse_release(event)
+            vispy_layer = self.vispy_layers[layer]
+            vispy_layer.on_mouse_release(event)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
@@ -356,7 +360,8 @@ class QtViewer(QSplitter):
         """Called whenever drawn in canvas. Called for all layers, not just top
         """
         for layer in self.viewer.layers:
-            layer.on_draw(event)
+            vispy_layer = self.vispy_layers[layer]
+            vispy_layer.on_draw(event)
 
     def keyPressEvent(self, event):
         self.canvas._backend._keyEvent(self.canvas.events.key_press, event)

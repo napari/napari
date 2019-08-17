@@ -128,6 +128,8 @@ class Layer(KeymapMixin, ABC):
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
+            refresh=Event,
+            set_data=Event,
             blending=Event,
             opacity=Event,
             visible=Event,
@@ -377,13 +379,7 @@ class Layer(KeymapMixin, ABC):
         """
         if self._freeze:
             return
-        self._refresh()
-
-    def _refresh(self):
-        """Fully refresh the underlying visual.
-        """
-        self._need_display_update = True
-        self._update()
+        self.events.refresh()
 
     @contextmanager
     def freeze_refresh(self):
