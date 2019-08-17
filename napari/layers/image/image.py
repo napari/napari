@@ -281,11 +281,9 @@ class Image(Layer):
             order
         )
 
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)
-
         self._data_thumbnail = self._data_view
         self._update_thumbnail()
+        self._update_coordinates()
         self.events.set_data()
 
     def _update_thumbnail(self):

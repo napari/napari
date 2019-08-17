@@ -140,7 +140,6 @@ class Layer(KeymapMixin, ABC):
 
         self.dims.events.display.connect(lambda e: self._set_view_slice())
         self.dims.events.axis.connect(lambda e: self._set_view_slice())
-        self.dims.events.axis.connect(lambda e: self._update_coordinates())
 
     def __str__(self):
         """Return self.name."""
