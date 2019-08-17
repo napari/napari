@@ -16,8 +16,6 @@ class Layer(KeymapMixin, ABC):
 
     Parameters
     ----------
-    central_node : vispy.scene.visuals.VisualNode
-        Visual node that controls all others.
     name : str, optional
         Name of the layer. If not provided, is automatically generated
         from `cls._basename()`
@@ -63,7 +61,7 @@ class Layer(KeymapMixin, ABC):
         Coordinates of the cursor in the image space of each layer. The length
         of the tuple is equal to the number of dimensions of the layer.
     position : 2-tuple of int
-        Cursor position in canvas ordered (x, y).
+        Cursor position in the image space of only the displayed dimensions.
     shape : tuple of int
         Size of the data in the layer.
     ndim : int
@@ -90,17 +88,11 @@ class Layer(KeymapMixin, ABC):
     -----
     Must define the following:
         * `_get_range()`: called by `range` property
-        * `_refresh()`: called by `refresh` method
         * `data` property (setter & getter)
 
     May define the following:
         * `_set_view_slice(indices)`: called to set currently viewed slice
         * `_basename()`: base/default name of the layer
-
-    Methods
-    -------
-    refresh()
-        Refresh the current view.
     """
 
     def __init__(
@@ -146,8 +138,9 @@ class Layer(KeymapMixin, ABC):
         )
         self.name = name
 
-        self.dims.events.display.connect(lambda e: self.refresh())
-        self.dims.events.axis.connect(lambda e: self.refresh())
+        self.dims.events.display.connect(lambda e: self._set_view_slice())
+        self.dims.events.axis.connect(lambda e: self._set_view_slice())
+        self.dims.events.axis.connect(lambda e: self._update_coordinates())
 
     def __str__(self):
         """Return self.name."""
@@ -231,7 +224,7 @@ class Layer(KeymapMixin, ABC):
 
     @property
     def position(self):
-        """2-tuple of int: Cursor position in canvas ordered (x, y)."""
+        """tuple of int: Cursor position in image of displayed dimensions."""
         return self._position
 
     @position.setter
@@ -239,15 +232,17 @@ class Layer(KeymapMixin, ABC):
         if self._position == position:
             return
         self._position = position
-        # self._update_coordinates()
+        self._update_coordinates()
 
     def _update_dims(self):
         """Updates dims model, which is useful after data has been changed."""
         range = self._get_range()
-        self.dims.ndim = len(range)
+        if len(range) != self.dims.ndim:
+            self._position = (0,) * len(range)
+            self.dims.ndim = len(range)
         for i, r in enumerate(range):
             self.dims.set_range(i, r)
-        # self._update_coordinates()
+        self._update_coordinates()
 
     @property
     @abstractmethod
@@ -374,18 +369,22 @@ class Layer(KeymapMixin, ABC):
     def _update_thumbnail(self):
         raise NotImplementedError()
 
-    def refresh(self):
-        """Fully refreshes the layer. If layer is frozen refresh will not occur
-        """
-        if self._freeze:
-            return
-        self.events.refresh()
-
     @contextmanager
-    def freeze_refresh(self):
-        self._freeze = True
+    def block_update_properties(self):
+        self._update_properties = False
         yield
-        self._freeze = False
+        self._update_properties = True
+
+    def _update_coordinates(self):
+        """Insert the cursor position into the correct position in the
+        tuple of indices and update the cursor coordinates.
+        """
+        coords = list(self.dims.indices)
+        for d, p in zip(self.dims.displayed, self.position):
+            coords[d] = p
+        self.coordinates = tuple(coords)
+        coord, value = self.get_value()
+        self.status = self.get_message(coord, value)
 
     def to_xml_list(self):
         """Generates a list of xml elements for the layer.

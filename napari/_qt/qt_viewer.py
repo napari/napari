@@ -146,15 +146,15 @@ class QtViewer(QSplitter):
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_node(layer)
-        vispy_layer.node._order = -len(layers)
-        vispy_layer.node.parent = self.view
+        vispy_layer.node.parent = self.view.scene
+        vispy_layer._order = -len(layers)
         self.vispy_layers[layer] = vispy_layer
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent."""
         layer = event.item
         vispy_layer = self.layer_nodes[layer]
-        vispy_layer.node._order = 0
+        vispy_layer._order = 0
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del self.vispy_layers[layer]
@@ -164,7 +164,7 @@ class QtViewer(QSplitter):
         layers = event.source
         for i, layer in enumerate(layers):
             vispy_layer = self.vispy_layers[layer]
-            vispy_layer.node._order = -i
+            vispy_layer._order = -i
         self.canvas._draw_order.clear()
         self.canvas.update()
 
@@ -296,24 +296,21 @@ class QtViewer(QSplitter):
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            vispy_layer = self.vispy_layers[layer]
-            vispy_layer.on_mouse_move(event)
+            self.vispy_layers[layer].on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            vispy_layer = self.vispy_layers[layer]
-            vispy_layer.on_mouse_press(event)
+            self.vispy_layers[layer].on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            vispy_layer = self.vispy_layers[layer]
-            vispy_layer.on_mouse_release(event)
+            self.vispy_layers[layer].on_mouse_release(event)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
@@ -360,8 +357,7 @@ class QtViewer(QSplitter):
         """Called whenever drawn in canvas. Called for all layers, not just top
         """
         for layer in self.viewer.layers:
-            vispy_layer = self.vispy_layers[layer]
-            vispy_layer.on_draw(event)
+            self.vispy_layers[layer].on_draw(event)
 
     def keyPressEvent(self, event):
         self.canvas._backend._keyEvent(self.canvas.events.key_press, event)

@@ -123,40 +123,44 @@ class Image(Layer):
 
         self.events.add(clim=Event, colormap=Event, interpolation=Event)
 
-        with self.freeze_refresh():
-            # Set data
-            self._data = image
-            self.metadata = metadata or {}
-            self.multichannel = multichannel
+        # Set data
+        self._data = image
+        self.metadata = metadata or {}
+        if multichannel is False:
+            self._multichannel = multichannel
+        else:
+            # If multichannel is True or None then guess if multichannel
+            # allowed or not, and if allowed set it to be True
+            self._multichannel = is_multichannel(self.data.shape)
 
-            # Intitialize image views and thumbnails with zeros
-            if self.multichannel:
-                self._data_view = np.zeros((1, 1) + (self.shape[-1],))
-            else:
-                self._data_view = np.zeros((1, 1))
-            self._data_thumbnail = self._data_view
+        # Intitialize image views and thumbnails with zeros
+        if self.multichannel:
+            self._data_view = np.zeros((1, 1) + (self.shape[-1],))
+        else:
+            self._data_view = np.zeros((1, 1))
+        self._data_thumbnail = self._data_view
 
-            # Set clims and colormaps
-            self._colormap_name = ''
-            self._clim_msg = ''
-            if clim_range is None:
-                self._clim_range = calc_data_range(self.data)
-            else:
-                self._clim_range = clim_range
-            if clim is None:
-                self._clim = copy(self._clim_range)
-            else:
-                self._clim = clim
-            self.colormap = colormap
-            self.interpolation = interpolation
+        # Set clims and colormaps
+        self._colormap_name = ''
+        self._clim_msg = ''
+        if clim_range is None:
+            self._clim_range = calc_data_range(self.data)
+        else:
+            self._clim_range = clim_range
+        if clim is None:
+            self._clim = copy(self._clim_range)
+        else:
+            self._clim = clim
+        self.colormap = colormap
+        self.interpolation = interpolation
 
-            # Set update flags
-            self._need_display_update = False
-            self._need_visual_update = False
+        # Set update flags
+        self._need_display_update = False
+        self._need_visual_update = False
 
-            # Trigger generation of view slice and thumbnail
-            self._update_dims()
-            self._set_view_slice()
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
+        self._set_view_slice()
 
     @property
     def data(self):
@@ -168,9 +172,9 @@ class Image(Layer):
         self._data = data
         if self.multichannel:
             self._multichannel = is_multichannel(data.shape)
-        self._update_dims()
         self.events.data()
-        self.refresh()
+        self._update_dims()
+        self._set_view_slice()
 
     def _get_range(self):
         if self.multichannel:
@@ -192,7 +196,7 @@ class Image(Layer):
             # If multichannel is True or None then guess if multichannel
             # allowed or not, and if allowed set it to be True
             self._multichannel = is_multichannel(self.data.shape)
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def colormap(self):
@@ -229,7 +233,6 @@ class Image(Layer):
         """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
 
-    # wrap visual properties:
     @property
     def clim(self):
         """list of float: Limits to use for the colormap."""

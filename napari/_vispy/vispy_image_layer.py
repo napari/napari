@@ -1,9 +1,3 @@
-#from qtpy.QtWidgets import QHBoxLayout
-#from . import QVRangeSlider
-#from .qt_base_layer import QtLayerControls, QtLayerProperties
-#from qtpy.QtCore import Qt
-#from qtpy.QtWidgets import QLabel, QComboBox
-#from ..layers.image._constants import Interpolation
 from vispy.scene.visuals import Image as ImageNode
 from .vispy_base_layer import VispyBaseLayer
 
@@ -14,11 +8,26 @@ class VispyImageLayer(VispyBaseLayer):
         super().__init__(layer, node)
 
         self.layer.events.interpolation.connect(lambda e: self._on_interpolation_change())
+        self.layer.events.colormap.connect(lambda e: self._on_colormap_change())
+        self.layer.events.clim.connect(lambda e: self._on_clim_change())
 
-    def _on_opacity_change(self):
+        self._on_interpolation_change()
+        self._on_colormap_change()
+        self._on_clim_change()
+        self._on_data_change()
+
+    def _on_interpolation_change(self):
         self.node.interpolation = self.layer.interpolation
 
+    def _on_colormap_change(self):
+        self.node.cmap = self.layer.colormap[1]
+
+    def _on_clim_change(self):
+        self.node.clim = self.layer.clim
+
     def _on_data_change(self):
+        if hasattr(self.node, '_need_colortransform_update'):
+            self.node._need_colortransform_update = True
         self.node.set_data(self.layer._data_view)
         self.node.update()
 
@@ -26,6 +35,5 @@ class VispyImageLayer(VispyBaseLayer):
         """Called whenever mouse moves over canvas."""
         if event.pos is None:
             return
-        #self.position = tuple(event.pos)
-        #coord, value = self.get_value()
-        #self.status = self.get_message(coord, value)
+        self.layer.position = self._transform_position(list(event.pos))
+        
