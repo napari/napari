@@ -7,8 +7,12 @@ class VispyImageLayer(VispyBaseLayer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
 
-        self.layer.events.interpolation.connect(lambda e: self._on_interpolation_change())
-        self.layer.events.colormap.connect(lambda e: self._on_colormap_change())
+        self.layer.events.interpolation.connect(
+            lambda e: self._on_interpolation_change()
+        )
+        self.layer.events.colormap.connect(
+            lambda e: self._on_colormap_change()
+        )
         self.layer.events.clim.connect(lambda e: self._on_clim_change())
 
         self._on_interpolation_change()
@@ -36,4 +40,3 @@ class VispyImageLayer(VispyBaseLayer):
         if event.pos is None:
             return
         self.layer.position = self._transform_position(list(event.pos))
-        
