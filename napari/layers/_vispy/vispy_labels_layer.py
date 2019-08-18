@@ -14,9 +14,7 @@ class VispyLabelsLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-        if hasattr(self.node, '_need_colortransform_update'):
-            self.node._need_colortransform_update = True
-
+        self.node._need_colortransform_update = True
         image = self.layer._raw_to_displayed(self.layer._data_view)
         self.node.set_data(image)
         self.node.update()

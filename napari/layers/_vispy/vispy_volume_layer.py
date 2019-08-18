@@ -21,8 +21,6 @@ class VispyVolumeLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-        if hasattr(self.node, '_need_colortransform_update'):
-            self.node._need_colortransform_update = True
         self.node.set_data(self.layer._data_view, clim=self.layer.clim)
         self.node.update()
 
@@ -35,9 +33,3 @@ class VispyVolumeLayer(VispyBaseLayer):
             cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
         )
         self.node.cmap = cmap
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self.layer.position = self._transform_position(list(event.pos))

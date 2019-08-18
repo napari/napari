@@ -21,8 +21,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_data_change(self):
-        if hasattr(self.node, '_need_colortransform_update'):
-            self.node._need_colortransform_update = True
+        self.node._need_colortransform_update = True
         self.node.set_data(self.layer._data_view)
         self.node.update()
 
@@ -34,9 +33,3 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_clim_change(self):
         self.node.clim = self.layer.clim
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self.layer.position = self._transform_position(list(event.pos))

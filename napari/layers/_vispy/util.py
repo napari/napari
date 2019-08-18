@@ -1,6 +1,7 @@
 from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_labels_layer import VispyLabelsLayer
+from .vispy_vectors_layer import VispyVectorsLayer
 from .vispy_volume_layer import VispyVolumeLayer
 
 
