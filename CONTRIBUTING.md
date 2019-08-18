@@ -104,13 +104,6 @@ You can view them with:
 $ git status
 ```
 
-If you are changing anything with files and folder structure,
-remember to update doctree
-```sh
-$ cd docs
-$ sphinx-apidoc -f -P -o source ../napari
-```
-
 Add and commit your changed files:
 ```sh
 $ git add my-file-or-directory
@@ -156,6 +149,18 @@ $ git push -u origin your-branch-name
 ```
 
 You can then make a [pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `master` branch.
+
+## Building the docs
+
+From the project root:
+```sh
+$ make docs
+```
+
+The docs will be built at `docs/build/html`.
+
+Most web browsers will allow you to preview HTML pages.
+Try entering `file:///absolute/path/to/napari/docs/build/html/index.html` in your address bar.
 
 ## Questions, comments, and feedback
 
