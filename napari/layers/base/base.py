@@ -112,6 +112,8 @@ class Layer(KeymapMixin, ABC):
         self._interactive = True
         self._position = (0, 0)
         self.coordinates = (0, 0)
+        self.scale_factor = 1
+        self._spacing = (1, 1)
         self.dims = Dims(2)
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -127,6 +129,7 @@ class Layer(KeymapMixin, ABC):
             visible=Event,
             select=Event,
             deselect=Event,
+            spacing=Event,
             data=Event,
             name=Event,
             thumbnail=Event,
@@ -222,6 +225,16 @@ class Layer(KeymapMixin, ABC):
         self.events.visible()
 
     @property
+    def spacing(self):
+        """list: Anisotropy factors to scale the layer by."""
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, spacing):
+        self._spacing = spacing
+        self.events.spacing()
+
+    @property
     def position(self):
         """tuple of int: Cursor position in image of displayed dimensions."""
         return self._position
@@ -238,6 +251,7 @@ class Layer(KeymapMixin, ABC):
         range = self._get_range()
         if len(range) != self.dims.ndim:
             self._position = (0,) * len(range)
+            self._spacing = (1,) * len(range)
             self.dims.ndim = len(range)
         for i, r in enumerate(range):
             self.dims.set_range(i, r)

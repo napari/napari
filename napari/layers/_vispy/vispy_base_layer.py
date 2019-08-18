@@ -53,10 +53,15 @@ class VispyBaseLayer(ABC):
 
         self.layer.events.visible.connect(lambda e: self._on_visible_change())
         self.layer.events.opacity.connect(lambda e: self._on_opacity_change())
+        self.layer.events.blending.connect(
+            lambda e: self._on_blending_change()
+        )
+        self.layer.events.spacing.connect(lambda e: self._on_spacing_change())
 
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
+        self._on_spacing_change()
 
     @property
     def _master_transform(self):
@@ -139,6 +144,11 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
+    def _on_spacing_change(self):
+        self.scale = [
+            self.layer.spacing[s] for s in self.layer.dims.displayed[::-1]
+        ]
+
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.
 
@@ -177,4 +187,4 @@ class VispyBaseLayer(ABC):
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
         """
-        return
+        self.layer.scale_factor = self.scale_factor

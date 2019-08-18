@@ -83,7 +83,7 @@ class VispyLabelsLayer(VispyBaseLayer):
             self.layer._last_cursor_coord = coord
             label = new_label
 
-        self.layer.status = self.get_message(coord, label)
+        self.layer.status = self.layer.get_message(coord, label)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
