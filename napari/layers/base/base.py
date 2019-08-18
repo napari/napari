@@ -473,3 +473,17 @@ class Layer(KeymapMixin, ABC):
                 f.write(svg)
 
         return svg
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas."""
+        return
+
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+        """
+        return
+
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
+        """
+        return

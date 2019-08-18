@@ -132,7 +132,7 @@ class Labels(Layer):
             colormaps.label_colormap(self.num_colors),
         )
 
-        self._n_dimensional = True
+        self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
         self._last_cursor_coord = None
@@ -523,3 +523,70 @@ class Labels(Layer):
             'image', width=width, height=height, opacity=opacity, **props
         )
         return [xml]
+
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
+        """
+        coord, label = self.get_value()
+
+        if self._mode == Mode.PAN_ZOOM:
+            # If in pan/zoom mode do nothing
+            pass
+        elif self._mode == Mode.PICKER:
+            self.selected_label = label
+        elif self._mode == Mode.PAINT:
+            # Start painting with new label
+            new_label = self.selected_label
+            self.paint(coord, new_label)
+            self._last_cursor_coord = coord
+            self.status = self.get_message(coord, new_label)
+        elif self._mode == Mode.FILL:
+            # Fill clicked on region with new label
+            old_label = label
+            new_label = self.selected_label
+            self.fill(coord, old_label, new_label)
+            self.status = self.get_message(coord, new_label)
+        else:
+            raise ValueError("Mode not recongnized")
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
+        """
+        coord, label = self.get_value()
+
+        if self._mode == Mode.PAINT and event.is_dragging:
+            new_label = self.selected_label
+            if self._last_cursor_coord is None:
+                interp_coord = [coord]
+            else:
+                interp_coord = interpolate_coordinates(
+                    self._last_cursor_coord, coord, self.brush_size
+                )
+            with self.events.set_data.blocker():
+                for c in interp_coord:
+                    self.paint(c, new_label)
+            self._set_view_slice()
+            self._last_cursor_coord = coord
+            label = new_label
+
+        self.status = self.get_message(coord, label)
+
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
+
+        Parameters
+        ----------
+        event : Event
+            Vispy event
+        """
+        self._last_cursor_coord = None
