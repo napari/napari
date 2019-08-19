@@ -845,16 +845,16 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
     layer = Shapes(data)
-    value = layer.get_value((0, 0))
+    c, value = layer.get_value()
     assert value == (9, None)
 
     layer.mode = 'select'
     layer.selected_data = [9]
-    value = layer.get_value((0, 0))
+    c, value = layer.get_value()
     assert value == (9, 7)
 
     layer = Shapes(data + 5)
-    value = layer.get_value((0, 0))
+    c, value = layer.get_value()
     assert value == (None, None)
 
 
@@ -864,13 +864,13 @@ def test_message():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    msg = layer.get_message(layer.coordinates, 3, 2)
+    msg = layer.get_message(layer.coordinates, (3, 2))
     assert type(msg) == str
 
-    msg = layer.get_message(layer.coordinates, 4, None)
+    msg = layer.get_message(layer.coordinates, (4, None))
     assert type(msg) == str
 
-    msg = layer.get_message(layer.coordinates, None, None)
+    msg = layer.get_message(layer.coordinates, (None, None))
     assert type(msg) == str
 
 

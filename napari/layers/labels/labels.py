@@ -162,8 +162,8 @@ class Labels(Layer):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self.events.data()
         self._set_view_slice()
+        self.events.data()
 
     def _get_range(self):
         return tuple((0, m, 1) for m in self.data.shape)

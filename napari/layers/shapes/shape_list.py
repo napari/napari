@@ -340,6 +340,7 @@ class ShapeList:
             )
             self._mesh.vertices_centers[indices] = shape._edge_vertices
             self._mesh.vertices_offsets[indices] = shape._edge_offsets
+            self._update_displayed()
 
         if face:
             indices = np.all(self._mesh.vertices_index == [index, 0], axis=1)
@@ -439,6 +440,7 @@ class ShapeList:
         color = self.shapes[index].edge_color.rgba
         color[3] = color[3] * self.shapes[index].opacity
         self._mesh.triangles_colors[indices] = color
+        self._update_displayed()
 
     def update_face_color(self, index, face_color):
         """Updates the face color of a single shape located at index.
@@ -457,6 +459,7 @@ class ShapeList:
         color = self.shapes[index].face_color.rgba
         color[3] = color[3] * self.shapes[index].opacity
         self._mesh.triangles_colors[indices] = color
+        self._update_displayed()
 
     def update_opacity(self, index, opacity):
         """Updates the face color of a single shape located at index.
@@ -476,6 +479,7 @@ class ShapeList:
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         color = self.shapes[index].face_color.rgba
         self._mesh.triangles_colors[indices, 3] = color[3] * opacity
+        self._update_displayed()
 
     def update_dims_order(self, dims_order):
         """Updates dimensions order for all shapes.

@@ -244,9 +244,9 @@ class Points(Layer):
                 self.edge_colors += [self.edge_color for i in range(adding)]
                 self.face_colors += [self.face_color for i in range(adding)]
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
-        self.events.data()
         self._update_dims()
         self._set_view_slice()
+        self.events.data()
 
     def _get_range(self):
         """Determine ranges for slicing given by (min, max, step)."""
@@ -583,7 +583,6 @@ class Points(Layer):
         self._set_highlight(force=True)
         self._update_thumbnail()
         self.status = self.get_message(self.coordinates, self._hover_point)
-        #        self._update_coordinates()
         self.events.set_data()
 
     def _set_highlight(self, force=False):

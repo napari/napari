@@ -130,9 +130,9 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self.dims.displayed)
 
-        self.events.data()
         self._update_dims()
         self._set_view_slice()
+        self.events.data()
 
     def _get_range(self):
         """Determine ranges for slicing given by (min, max, step)."""

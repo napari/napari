@@ -173,9 +173,9 @@ class Image(Layer):
         self._data = data
         if self.multichannel:
             self._multichannel = is_multichannel(data.shape)
-        self.events.data()
         self._update_dims()
         self._set_view_slice()
+        self.events.data()
 
     def _get_range(self):
         if self.multichannel:

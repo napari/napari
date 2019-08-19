@@ -85,7 +85,6 @@ with napari.gui_qt():
         face_color='purple',
         opacity=0.75,
     )
-    layer.refresh()
 
     # Set the layer mode with a string
     layer.mode = 'select'

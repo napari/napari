@@ -46,7 +46,7 @@ class VispyBaseLayer(ABC):
 
         self.layer = layer
         self.node = node
-        self._position = (0, 0)
+        self._position = (0,) * self.layer.ndim
         self.camera = None
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
@@ -181,7 +181,7 @@ class VispyBaseLayer(ABC):
             ]
             coords = tuple(position[::-1])
         else:
-            coords = (0,) * 2
+            coords = (0,) * len(self.layer.dims.displayed)
         return coords
 
     def on_mouse_move(self, event):

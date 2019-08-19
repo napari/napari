@@ -110,8 +110,8 @@ class Volume(Layer):
         with self.dims.events.display.blocker():
             self.dims.ndisplay = 3
 
-        self.scale = scale or [1] * self.dims.ndim
-        self.translate = [0] * self.dims.ndim
+        self._scale = scale or [1] * self.dims.ndim
+        self._translate = [0] * self.dims.ndim
         self._position = (0,) * self.dims.ndim
 
         # Intitialize volume views and thumbnails with zeros
@@ -144,9 +144,9 @@ class Volume(Layer):
     @data.setter
     def data(self, data):
         self._data = data
-        self.events.data()
         self._update_dims()
         self._set_view_slice()
+        self.events.data()
 
     def _get_range(self):
         return tuple(

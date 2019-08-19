@@ -94,14 +94,14 @@ def test_name():
     assert layer.name == 'img'
 
 
-def test_spacing():
+def test_scale():
     """Test instantiating anisotropic 3D volume."""
     shape = (10, 15, 20)
-    spacing = [3, 1, 1]
-    full_shape = tuple(np.multiply(shape, spacing))
+    scale = [3, 1, 1]
+    full_shape = tuple(np.multiply(shape, scale))
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Volume(data, spacing=spacing)
+    layer = Volume(data, scale=scale)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == full_shape

@@ -111,9 +111,9 @@ class Pyramid(Image):
     @data.setter
     def data(self, data):
         self._data = data
-        self.events.data()
         self._update_dims()
         self._set_view_slice()
+        self.events.data()
 
     def _get_range(self):
         """Shape of the base of pyramid.
