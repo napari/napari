@@ -670,12 +670,12 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    value = layer.get_value()
+    coord, value = layer.get_value()
     assert layer.coordinates == (0, 0)
     assert value == 9
 
-    layer.data = layer.data + 5
-    value = layer.get_value()
+    layer.data = layer.data + 20
+    coord, value = layer.get_value()
     assert value == None
 
 

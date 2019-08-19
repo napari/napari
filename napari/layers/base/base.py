@@ -113,7 +113,8 @@ class Layer(KeymapMixin, ABC):
         self._position = (0, 0)
         self.coordinates = (0, 0)
         self.scale_factor = 1
-        self._spacing = (1, 1)
+        self._scale = [1] * 2
+        self._translate = [0] * 2
         self.dims = Dims(2)
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -129,7 +130,8 @@ class Layer(KeymapMixin, ABC):
             visible=Event,
             select=Event,
             deselect=Event,
-            spacing=Event,
+            scale=Event,
+            translate=Event,
             data=Event,
             name=Event,
             thumbnail=Event,
@@ -225,14 +227,24 @@ class Layer(KeymapMixin, ABC):
         self.events.visible()
 
     @property
-    def spacing(self):
+    def scale(self):
         """list: Anisotropy factors to scale the layer by."""
-        return self._spacing
+        return self._scale
 
-    @spacing.setter
-    def spacing(self, spacing):
-        self._spacing = spacing
-        self.events.spacing()
+    @scale.setter
+    def scale(self, scale):
+        self._scale = scale
+        self.events.scale()
+
+    @property
+    def translate(self):
+        """list: Factors to shift the layer by."""
+        return self._translate
+
+    @translate.setter
+    def translate(self, translate):
+        self._translate = translate
+        self.events.translate()
 
     @property
     def position(self):
@@ -251,7 +263,8 @@ class Layer(KeymapMixin, ABC):
         range = self._get_range()
         if len(range) != self.dims.ndim:
             self._position = (0,) * len(range)
-            self._spacing = (1,) * len(range)
+            self._scale = (1,) * len(range)
+            self._translate = (0,) * len(range)
             self.dims.ndim = len(range)
         for i, r in enumerate(range):
             self.dims.set_range(i, r)

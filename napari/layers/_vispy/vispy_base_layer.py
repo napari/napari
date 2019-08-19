@@ -47,6 +47,7 @@ class VispyBaseLayer(ABC):
         self.layer = layer
         self.node = node
         self._position = (0, 0)
+        self.camera = None
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
         self.layer.events.set_data.connect(lambda e: self._on_data_change())
@@ -56,12 +57,16 @@ class VispyBaseLayer(ABC):
         self.layer.events.blending.connect(
             lambda e: self._on_blending_change()
         )
-        self.layer.events.spacing.connect(lambda e: self._on_spacing_change())
+        self.layer.events.scale.connect(lambda e: self._on_scale_change())
+        self.layer.events.translate.connect(
+            lambda e: self._on_translate_change()
+        )
 
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
-        self._on_spacing_change()
+        self._on_scale_change()
+        self._on_translate_change()
 
     @property
     def _master_transform(self):
@@ -144,10 +149,17 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
-    def _on_spacing_change(self):
+    def _on_scale_change(self):
         self.scale = [
-            self.layer.spacing[s] for s in self.layer.dims.displayed[::-1]
+            self.layer.scale[d] for d in self.layer.dims.displayed[::-1]
         ]
+        self.layer.position = self._transform_position(self._position)
+
+    def _on_translate_change(self):
+        self.translate = [
+            self.layer.translate[d] for d in self.layer.dims.displayed[::-1]
+        ]
+        self.layer.position = self._transform_position(self._position)
 
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.
@@ -162,17 +174,22 @@ class VispyBaseLayer(ABC):
         coords : tuple
             Coordinates of cursor in image space for displayed dimensions only
         """
-        transform = self.node.canvas.scene.node_transform(self.node)
-        position = transform.map(list(position))[
-            : len(self.layer.dims.displayed)
-        ]
-        return tuple(position[::-1])
+        if self.node.canvas is not None:
+            transform = self.node.canvas.scene.node_transform(self.node)
+            position = transform.map(list(position))[
+                : len(self.layer.dims.displayed)
+            ]
+            coords = tuple(position[::-1])
+        else:
+            coords = (0,) * 2
+        return coords
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas."""
         if event.pos is None:
             return
-        self.layer.position = self._transform_position(list(event.pos))
+        self._position = list(event.pos)
+        self.layer.position = self._transform_position(self._position)
         self.layer.on_mouse_move(event)
 
     def on_mouse_press(self, event):
@@ -180,7 +197,8 @@ class VispyBaseLayer(ABC):
         """
         if event.pos is None:
             return
-        self.layer.position = self._transform_position(list(event.pos))
+        self._position = list(event.pos)
+        self.layer.position = self._transform_position(self._position)
         self.layer.on_mouse_press(event)
 
     def on_mouse_release(self, event):
@@ -188,7 +206,8 @@ class VispyBaseLayer(ABC):
         """
         if event.pos is None:
             return
-        self.layer.position = self._transform_position(list(event.pos))
+        self._position = list(event.pos)
+        self.layer.position = self._transform_position(self._position)
         self.layer.on_mouse_release(event)
 
     def on_draw(self, event):

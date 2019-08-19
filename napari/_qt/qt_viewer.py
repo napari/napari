@@ -146,6 +146,7 @@ class QtViewer(QSplitter):
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_node(layer)
+        vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         vispy_layer._order = -len(layers)
         self.vispy_layers[layer] = vispy_layer

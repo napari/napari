@@ -460,7 +460,7 @@ class ViewerModel(KeymapMixin):
         opacity=1,
         blending='translucent',
         visible=True,
-        spacing=None,
+        scale=None,
         name=None,
         **kwargs,
     ):
@@ -496,7 +496,7 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        spacing : list, optional
+        scale : list, optional
             List of anisotropy factors to scale the volume by. Must be one for
             each dimension.
         name : str, keyword-only
@@ -516,7 +516,7 @@ class ViewerModel(KeymapMixin):
             opacity=opacity,
             blending=blending,
             visible=visible,
-            spacing=spacing,
+            scale=scale,
             name=name,
             **kwargs,
         )

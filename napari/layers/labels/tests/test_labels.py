@@ -244,14 +244,14 @@ def test_n_dimensional():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.n_dimensional == True
-
-    layer.n_dimensional = False
     assert layer.n_dimensional == False
+
+    layer.n_dimensional = True
+    assert layer.n_dimensional == True
 
 
 def test_selecting_label():
-    """Test changing n_dimensional."""
+    """Test selecting label."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)

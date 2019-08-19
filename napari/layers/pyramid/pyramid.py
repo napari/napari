@@ -91,22 +91,17 @@ class Pyramid(Image):
 
     def __init__(self, pyramid, *args, **kwargs):
 
-        with self.freeze_refresh():
-            self._data_level = 0
-            super().__init__(
-                np.array([np.asarray(pyramid[-1])]), *args, **kwargs
-            )
-            self._data = pyramid
-            self._data_level = len(pyramid) - 1
-            self._top_left = np.array([0, 0])
+        self._data_level = 0
+        super().__init__(np.array([np.asarray(pyramid[-1])]), *args, **kwargs)
+        self._data = pyramid
+        self._data_level = len(pyramid) - 1
+        self._top_left = np.zeros(self.ndim, dtype=int)
 
-            self.scale = self.level_downsamples[
-                self.data_level, self.dims.displayed[::-1]
-            ]
+        self.scale = self.level_downsamples[self.data_level]
 
-            # Trigger generation of view slice and thumbnail
-            self._update_dims()
-            self._set_view_slice()
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
+        self._set_view_slice()
 
     @property
     def data(self):
@@ -116,9 +111,9 @@ class Pyramid(Image):
     @data.setter
     def data(self, data):
         self._data = data
-        self._update_dims()
         self.events.data()
-        self.refresh()
+        self._update_dims()
+        self._set_view_slice()
 
     def _get_range(self):
         """Shape of the base of pyramid.
@@ -140,11 +135,8 @@ class Pyramid(Image):
         if self._data_level == level:
             return
         self._data_level = level
-        self.scale = self.level_downsamples[
-            self.data_level, self.dims.displayed[::-1]
-        ]
-        self._top_left = self.find_top_left()
-        self.refresh()
+        self.scale = self.level_downsamples[self.data_level]
+        self._set_view_slice()
 
     @property
     def level_shapes(self):
@@ -162,18 +154,18 @@ class Pyramid(Image):
 
     @property
     def top_left(self):
-        """2-tuple: Location of top left canvas pixel in image."""
+        """tuple: Location of top left canvas pixel in image."""
         return self._top_left
 
     @top_left.setter
     def top_left(self, top_left):
         if np.all(self._top_left == top_left):
             return
-        self._top_left = top_left
-        self.refresh()
+        self._top_left = top_left.astype(int)
+        self._set_view_slice()
 
-    def _slice_data(self):
-        """Determine the slice of image from the indices."""
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with."""
         nd = self.dims.not_displayed
 
         if self.multichannel:
@@ -204,32 +196,23 @@ class Pyramid(Image):
 
         disp_shape = self.level_shapes[level, self.dims.displayed]
         if np.any(disp_shape > self._max_tile_shape):
-            for i, d in enumerate(self.dims.displayed):
+            for d in self.dims.displayed:
                 indices[d] = slice(
-                    self._top_left[i],
-                    self._top_left[i] + self._max_tile_shape,
+                    self._top_left[d],
+                    self._top_left[d] + self._max_tile_shape,
                     1,
                 )
-            self.translate = self._top_left[::-1] * self.scale[:2]
+            self.translate = self._top_left * self.scale
         else:
-            self.translate = [0, 0]
-        self._update_coordinates()
+            self.translate = [0] * self.ndim
 
         self._data_view = np.asarray(
             self.data[level][tuple(indices)]
         ).transpose(order)
 
-    def _set_view_slice(self):
-        """Set the view given the indices to slice with."""
-        self._slice_data()
-        self._node.set_data(self._data_view)
-
-        self._need_visual_update = True
-        self._update()
-
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)
         self._update_thumbnail()
+        self._update_coordinates()
+        self.events.set_data()
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -256,78 +239,23 @@ class Pyramid(Image):
 
         value = self._data_view[tuple(slice_coord)]
 
-        pos_coord = np.array(
-            [self.coordinates[d] for d in self.dims.displayed]
+        pos_in_slice = np.array(
+            [
+                self.coordinates[d] + self.translate[d] / self.scale[d]
+                for d in self.dims.displayed
+            ]
         )
-        pos_in_slice = pos_coord + self.translate[[1, 0]] / self.scale[:2]
 
         # Make sure pos in slice doesn't go off edge
         shape = [
             self.level_shapes[self.data_level][d] for d in self.dims.displayed
         ]
         pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
-        for j, d in enumerate(self.dims.displayed):
-            coord[d] = np.round(pos_in_slice[j] * self.scale[j]).astype(int)
+
+        for i, d in enumerate(self.dims.displayed):
+            coord[d] = np.round(pos_in_slice[i] * self.scale[d]).astype(int)
 
         return coord, value
-
-    def compute_data_level(self, size):
-        """Computed what level of the pyramid should be viewed given the
-        current size of the requested field of view.
-
-        Parameters
-        ----------
-        size : 2-tuple
-            Requested size of field of view in image coordinates
-
-        Returns
-        ----------
-        level : int
-            Level of the pyramid to be viewing.
-        """
-        # Convert requested field of view from the camera into log units
-        size = np.log2(np.max(size))
-
-        # Max allowed tile in log units
-        max_size = np.log2(self._max_tile_shape)
-
-        # Allow for 2x coverage of field of view with max tile
-        diff = size - max_size + 1
-
-        # Find closed downsample level to diff
-        ds = self.level_downsamples[:, self.dims.displayed].max(axis=1)
-        level = np.argmin(abs(np.log2(ds) - diff))
-
-        return level
-
-    def find_top_left(self):
-        """Finds the top left pixel of the canvas. Depends on the current
-        pan and zoom position
-
-        Returns
-        ----------
-        top_left : (2,) int array
-            Coordinates of top left pixel.
-        """
-
-        # Find image coordinate of top left canvas pixel
-        transform = self._node.canvas.scene.node_transform(self._node)
-        pos = transform.map([0, 0])[:2] + self.translate[:2] / self.scale[:2]
-
-        shape = [self.level_shapes[0][d] for d in self.dims.displayed]
-
-        # Clip according to the max image shape
-        pos = [
-            np.clip(pos[1], 0, shape[0] - 1),
-            np.clip(pos[0], 0, shape[1] - 1),
-        ]
-
-        # Convert to offset for image array
-        top_left = np.array(pos)
-        scale = self._max_tile_shape / 4
-        top_left = scale * np.floor(top_left / scale)
-
-        return top_left.astype(int)
 
     def get_message(self, coord, value):
         """Generate a status message based on the coordinates and information
@@ -358,14 +286,3 @@ class Pyramid(Image):
 
         msg = f'{coord}, {self.data_level}, {self.name}, value {v_str}'
         return msg
-
-    def on_draw(self, event):
-        """Called whenever the canvas is drawn, which happens whenever new
-        data is sent to the canvas or the camera is moved.
-        """
-        size = self._parent.camera.rect.size
-        data_level = self.compute_data_level(size)
-        if data_level != self.data_level:
-            self.data_level = data_level
-        else:
-            self.top_left = self.find_top_left()
