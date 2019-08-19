@@ -442,41 +442,19 @@ class Labels(Layer):
 
         Returns
         ----------
-        coord : sequence of float
+        coord : tuple of int
             Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
+        value : int or float or sequence of int or float or None
+            Value of the data at the coord, or none if coord is outside range.
         """
         coord = np.round(self.coordinates).astype(int)
-        slice_coord = np.clip(
-            coord[self.dims.displayed],
-            0,
-            np.subtract(self._data_view.shape, 1),
-        )
-        value = self._data_view[tuple(slice_coord)]
+        shape = self._data_view.shape
+        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
+            value = self._data_view[tuple(coord[self.dims.displayed])]
+        else:
+            value = None
 
-        return coord, value
-
-    def get_message(self, coord, value):
-        """Generates a string based on the coordinates and information about
-        what shapes are hovered over
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        value : int
-            Value of the label image at the coord.
-
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-        int_coord = np.round(coord).astype(int)
-        msg = f'{int_coord}, {self.name}, label {value}'
-
-        return msg
+        return value
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colors.
@@ -532,25 +510,24 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
-        coord, label = self.get_value()
-
         if self._mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
             pass
         elif self._mode == Mode.PICKER:
+            label = self.get_value()
             self.selected_label = label
         elif self._mode == Mode.PAINT:
             # Start painting with new label
+            coord = np.round(self.coordinates).astype(int)
             new_label = self.selected_label
             self.paint(coord, new_label)
             self._last_cursor_coord = coord
-            self.status = self.get_message(coord, new_label)
         elif self._mode == Mode.FILL:
             # Fill clicked on region with new label
-            old_label = label
+            coord = np.round(self.coordinates).astype(int)
+            label = self.get_value()
             new_label = self.selected_label
-            self.fill(coord, old_label, new_label)
-            self.status = self.get_message(coord, new_label)
+            self.fill(coord, label, new_label)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -562,10 +539,9 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
-        coord, label = self.get_value()
-
         if self._mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
+            coord = np.round(self.coordinates).astype(int)
             if self._last_cursor_coord is None:
                 interp_coord = [coord]
             else:
@@ -577,9 +553,6 @@ class Labels(Layer):
                     self.paint(c, new_label)
             self._set_view_slice()
             self._last_cursor_coord = coord
-            label = new_label
-
-        self.status = self.get_message(coord, label)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.

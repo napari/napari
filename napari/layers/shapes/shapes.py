@@ -954,12 +954,10 @@ class Shapes(Layer):
             self._data_view.remove(index)
         self.selected_data = []
         coord = [self.coordinates[i] for i in self.dims.displayed]
-        c, s = self.get_value()
-        shape = s[0]
-        vertex = s[1]
+        shape, vertex = self.get_value()
         self._hover_shape = shape
         self._hover_vertex = vertex
-        self.status = self.get_message(coord, (shape, vertex))
+        self.status = self.get_message((shape, vertex))
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -1101,33 +1099,7 @@ class Shapes(Layer):
             # Check if mouse inside shape
             shape = self._data_view.inside(coord)
             value = (shape, None)
-        return self.coordinates, value
-
-    def get_message(self, coord, value):
-        """Generate a string based on the coordinates hover values
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        shape : int | None
-            Index of shape if any to be highlighted.
-        vertex : int | None
-            Index of vertex if any to be highlighted.
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-        shape = value[0]
-        vertex = value[1]
-        int_coord = np.round(coord).astype(int)
-        msg = f'{int_coord}, {self.name}'
-        if shape is not None:
-            msg = msg + ', shape ' + str(shape)
-            if vertex is not None:
-                msg = msg + ', vertex ' + str(vertex)
-        return msg
+        return value
 
     def move_to_front(self):
         """Moves selected objects to be displayed in front of all others."""
@@ -1441,9 +1413,7 @@ class Shapes(Layer):
             pass
         elif self._mode in [Mode.SELECT, Mode.DIRECT]:
             if not self._is_moving and not self._is_selecting:
-                c, s = self.get_value()
-                shape = s[0]
-                vertex = s[1]
+                shape, vertex = self.get_value()
                 self._moving_shape = shape
                 self._moving_vertex = vertex
                 if vertex is None:
@@ -1462,7 +1432,7 @@ class Shapes(Layer):
                     else:
                         self.selected_data = []
                 self._set_highlight()
-                self.status = self.get_message(coord, (shape, vertex))
+                self.status = self.get_message((shape, vertex))
         elif self._mode in (
             [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
         ):
@@ -1535,7 +1505,7 @@ class Shapes(Layer):
                 self._data_view.edit(index, data_full, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_data)
             self.status = self.get_message(
-                coord, (self._hover_shape, self._hover_vertex)
+                (self._hover_shape, self._hover_vertex)
             )
         elif self._mode == Mode.VERTEX_INSERT:
             if len(self.selected_data) == 0:
@@ -1607,17 +1577,13 @@ class Shapes(Layer):
                 data_full = self.expand_shape(vertices)
                 self._data_view.edit(index, data_full, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_data)
-            c, s = self.get_value()
-            shape = s[0]
-            vertex = s[1]
+            shape, vertex = self.get_value()
             self._hover_shape = shape
             self._hover_vertex = vertex
             self._set_view_slice()
-            self.status = self.get_message(coord, (shape, vertex))
+            self.status = self.get_message((shape, vertex))
         elif self._mode == Mode.VERTEX_REMOVE:
-            c, s = self.get_value()
-            shape = s[0]
-            vertex = s[1]
+            shape, vertex = self.get_value()
             if vertex is not None:
                 # have clicked on a current vertex so remove
                 index = shape
@@ -1659,13 +1625,11 @@ class Shapes(Layer):
                         )
                         shapes = self.selected_data
                         self._selected_box = self.interaction_box(shapes)
-                c, s = self.get_value()
-                shape = s[0]
-                vertex = s[1]
+                shape, vertex = self.get_value()
                 self._hover_shape = shape
                 self._hover_vertex = vertex
                 self._set_view_slice()
-                self.status = self.get_message(coord, (shape, vertex))
+                self.status = self.get_message((shape, vertex))
         else:
             raise ValueError("Mode not recongnized")
 
@@ -1681,9 +1645,7 @@ class Shapes(Layer):
 
         if self._mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode just look at coord all
-            c, s = self.get_value()
-            shape = s[0]
-            vertex = s[1]
+            shape, vertex = self.get_value()
         elif self._mode == Mode.SELECT:
             if event.is_dragging:
                 # Drag any selected shapes
@@ -1694,9 +1656,9 @@ class Shapes(Layer):
                 pass
             else:
                 # Highlight boxes if hover over any
-                c, s = self.get_value()
-                self._hover_shape = s[0]
-                self._hover_vertex = s[1]
+                shape, vertex = self.get_value()
+                self._hover_shape = shape
+                self._hover_vertex = vertex
                 self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
@@ -1710,9 +1672,9 @@ class Shapes(Layer):
                 pass
             else:
                 # Highlight boxes if hover over any
-                c, s = self.get_value()
-                self._hover_shape = s[0]
-                self._hover_vertex = s[1]
+                shape, vertex = self.get_value()
+                self._hover_shape = shape
+                self._hover_vertex = vertex
                 self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
@@ -1726,9 +1688,7 @@ class Shapes(Layer):
                 shape = self._hover_shape
                 vertex = self._hover_vertex
             else:
-                c, s = self.get_value()
-                shape = s[0]
-                vertex = s[1]
+                shape, vertex = self.get_value()
         elif self._mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             # While drawing a path or doing nothing
             if self._is_creating:
@@ -1737,20 +1697,18 @@ class Shapes(Layer):
                 shape = self._hover_shape
                 vertex = self._hover_vertex
             else:
-                c, s = self.get_value()
-                shape = s[0]
-                vertex = s[1]
+                shape, vertex = self.get_value()
         elif self._mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
-            c, s = self.get_value()
-            self._hover_shape = s[0]
-            self._hover_vertex = s[1]
+            shape, vertex = self.get_value()
+            self._hover_shape = shape
+            self._hover_vertex = vertex
             self._set_highlight()
             shape = self._hover_shape
             vertex = self._hover_vertex
         else:
             raise ValueError("Mode not recongnized")
 
-        self.status = self.get_message(coord, (shape, vertex))
+        self.status = self.get_message((shape, vertex))
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -1767,9 +1725,7 @@ class Shapes(Layer):
             # If in pan/zoom mode do nothing
             pass
         elif self._mode == Mode.SELECT:
-            c, s = self.get_value()
-            shape = s[0]
-            vertex = s[1]
+            shape, vertex = self.get_value()
             if not self._is_moving and not self._is_selecting and not shift:
                 if shape is not None:
                     self.selected_data = [shape]
@@ -1790,12 +1746,10 @@ class Shapes(Layer):
             self._hover_shape = shape
             self._hover_vertex = shape
             self._set_highlight()
-            self.status = self.get_message(coord, (shape, vertex))
+            self.status = self.get_message((shape, vertex))
             self._update_thumbnail()
         elif self._mode == Mode.DIRECT:
-            c, s = self.get_value()
-            shape = s[0]
-            vertex = s[1]
+            shape, vertex = self.get_value()
             if not self._is_moving and not self._is_selecting and not shift:
                 if shape is not None:
                     self.selected_data = [shape]
@@ -1816,16 +1770,14 @@ class Shapes(Layer):
             self._hover_shape = shape
             self._hover_vertex = shape
             self._set_highlight()
-            self.status = self.get_message(coord, (shape, vertex))
+            self.status = self.get_message((shape, vertex))
             self._update_thumbnail()
         elif self._mode in (
             [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
         ):
             self._finish_drawing()
-            c, s = self.get_value()
-            shape = s[0]
-            vertex = s[1]
-            self.status = self.get_message(coord, (shape, vertex))
+            shape, vertex = self.get_value()
+            self.status = self.get_message((shape, vertex))
         elif self._mode in (
             [
                 Mode.ADD_PATH,

@@ -97,8 +97,6 @@ class Pyramid(Image):
         self._data_level = len(pyramid) - 1
         self._top_left = np.zeros(self.ndim, dtype=int)
 
-        self.scale = self.level_downsamples[self.data_level]
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
         self._set_view_slice()
@@ -135,7 +133,6 @@ class Pyramid(Image):
         if self._data_level == level:
             return
         self._data_level = level
-        self.scale = self.level_downsamples[self.data_level]
         self._set_view_slice()
 
     @property
@@ -195,6 +192,11 @@ class Pyramid(Image):
         indices[nd] = downsampled
 
         disp_shape = self.level_shapes[level, self.dims.displayed]
+        scale = np.ones(self.ndim)
+        for d in self.dims.displayed:
+            scale[d] = self.level_downsamples[self.data_level][d]
+        self.scale = scale
+
         if np.any(disp_shape > self._max_tile_shape):
             for d in self.dims.displayed:
                 indices[d] = slice(
@@ -220,69 +222,21 @@ class Pyramid(Image):
 
         Returns
         ----------
-        coord : sequence of int
-            Position of mouse cursor in data.
-        value : int or float or sequence of int or float
+        value : tuple
             Value of the data at the coord.
-        msg : string
-            String containing a message that can be used as
-            a status update.
         """
         coord = np.round(self.coordinates).astype(int)
         if self.multichannel:
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-        slice_coord = np.clip(
-            coord[self.dims.displayed], 0, np.subtract(shape, 1)
-        )
 
-        value = self._data_view[tuple(slice_coord)]
-
-        pos_in_slice = np.array(
-            [
-                self.coordinates[d] + self.translate[d] / self.scale[d]
-                for d in self.dims.displayed
-            ]
-        )
-
-        # Make sure pos in slice doesn't go off edge
-        shape = [
-            self.level_shapes[self.data_level][d] for d in self.dims.displayed
-        ]
-        pos_in_slice = np.clip(pos_in_slice, 0, np.subtract(shape, 1))
-
-        for i, d in enumerate(self.dims.displayed):
-            coord[d] = np.round(pos_in_slice[i] * self.scale[d]).astype(int)
-
-        return coord, value
-
-    def get_message(self, coord, value):
-        """Generate a status message based on the coordinates and information
-        about what shapes are hovered over
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        value : int, float, or sequence of int or float
-            Value of the data at the coord.
-
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-        if isinstance(value, np.ndarray):
-            if isinstance(value[0], np.integer) or isinstance(value[0], int):
-                v_str = str(value)
-            else:
-                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
+        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
+            value = (
+                self.data_level,
+                self._data_view[tuple(coord[self.dims.displayed])],
+            )
         else:
-            if isinstance(value, np.integer) or isinstance(value, int):
-                v_str = str(value)
-            else:
-                v_str = f'{value:0.3}'
+            value = None
 
-        msg = f'{coord}, {self.data_level}, {self.name}, value {v_str}'
-        return msg
+        return value

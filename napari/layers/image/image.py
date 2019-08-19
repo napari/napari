@@ -13,6 +13,7 @@ from ...util.misc import (
     increment_unnamed_colormap,
 )
 from ...util.event import Event
+from ...util.status_messages import format_float
 from ._constants import Interpolation, AVAILABLE_COLORMAPS
 
 
@@ -241,7 +242,7 @@ class Image(Layer):
 
     @clim.setter
     def clim(self, clim):
-        self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
+        self._clim_msg = format_float(clim[0]) + ', ' + format_float(clim[1])
         self.status = self._clim_msg
         self._clim = clim
         if clim[0] < self._clim_range[0]:
@@ -341,54 +342,21 @@ class Image(Layer):
 
         Returns
         ----------
-        coord : 2-tuple of int
-            Position of cursor in image space.
-        value : int, float, or sequence of int or float
-            Value of the data at the coord.
+        value : int, float, or sequence of int or float, or None
+            Value of the data at the coord, or none if coord is outside range.
         """
         coord = np.round(self.coordinates).astype(int)
         if self.multichannel:
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-        slice_coord = np.clip(
-            coord[self.dims.displayed], 0, np.subtract(shape, 1)
-        )
-        value = self._data_view[tuple(slice_coord)]
 
-        return coord, value
-
-    def get_message(self, coord, value):
-        """Generate a status message based on the coordinates and information
-        about what shapes are hovered over
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
-
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-
-        msg = f'{coord}, {self.name}' + ', value '
-        if isinstance(value, np.ndarray):
-            if isinstance(value[0], np.integer):
-                msg = msg + str(value)
-            else:
-                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
-                msg = msg + v_str
+        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
+            value = self._data_view[tuple(coord[self.dims.displayed])]
         else:
-            if isinstance(value, (np.integer, np.bool_)):
-                msg = msg + str(value)
-            else:
-                msg = msg + f'{value:0.3}'
+            value = None
 
-        return msg
+        return value
 
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the

@@ -9,6 +9,7 @@ from ._constants import Blending
 from ...components import Dims
 from ...util.event import EmitterGroup, Event
 from ...util.keybindings import KeymapMixin
+from ...util.status_messages import status_format
 
 
 class Layer(KeymapMixin, ABC):
@@ -395,6 +396,10 @@ class Layer(KeymapMixin, ABC):
     def _update_thumbnail(self):
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_value(self):
+        raise NotImplementedError()
+
     @contextmanager
     def block_update_properties(self):
         self._update_properties = False
@@ -409,8 +414,42 @@ class Layer(KeymapMixin, ABC):
         for d, p in zip(self.dims.displayed, self.position):
             coords[d] = p
         self.coordinates = tuple(coords)
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)
+        value = self.get_value()
+        self.status = self.get_message(value)
+
+    def get_message(self, value=None):
+        """Generate a status message based on the coordinates and value
+
+        Parameters
+        ----------
+        coord : tuple
+            Position of mouse cursor in image coordinates.
+        value : int, float, tuple, None
+            Value of the data at the coord.
+
+        Returns
+        ----------
+        msg : string
+            String containing a message that can be used as a status update.
+        """
+
+        full_coord = np.round(
+            np.multiply(self.coordinates, self.scale) + self.translate
+        ).astype(int)
+
+        msg = f'{self.name} {full_coord}'
+
+        if value is not None and not np.all(value == (None, None)):
+            msg += ': '
+            if type(value) == tuple:
+                msg += status_format(value[0])
+                if value[1] is not None:
+                    msg += ', '
+                    msg += status_format(value[1])
+            else:
+                msg += status_format(value)
+
+        return msg
 
     def to_xml_list(self):
         """Generates a list of xml elements for the layer.

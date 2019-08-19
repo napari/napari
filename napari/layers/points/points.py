@@ -543,7 +543,7 @@ class Points(Layer):
         else:
             selection = None
 
-        return self.coordinates, selection
+        return selection
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -582,7 +582,7 @@ class Points(Layer):
 
         self._set_highlight(force=True)
         self._update_thumbnail()
-        self.status = self.get_message(self.coordinates, self._hover_point)
+        self._update_coordinates()
         self.events.set_data()
 
     def _set_highlight(self, force=False):
@@ -638,30 +638,6 @@ class Points(Layer):
 
         self._highlight_box = pos
         self.events.highlight()
-
-    def get_message(self, coord, value):
-        """Return coordinate and value string.
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in data.
-        value : int
-            Index of the point at the coord if any.
-
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as
-            a status update.
-        """
-        int_coord = np.round(coord).astype(int)
-        msg = f'{int_coord}, {self.name}'
-        if value is None:
-            pass
-        else:
-            msg = msg + ', index ' + str(value)
-        return msg
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -840,11 +816,10 @@ class Points(Layer):
                     )
                     self._set_highlight()
             else:
-                coords, self._hover_point = self.get_value()
+                self._hover_point = self.get_value()
                 self._set_highlight()
         else:
-            coords, self._hover_point = self.get_value()
-        self.status = self.get_message(self.coordinates, self._hover_point)
+            self._hover_point = self.get_value()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -852,7 +827,7 @@ class Points(Layer):
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.SELECT:
-            coords, point = self.get_value()
+            point = self.get_value()
             if shift and point is not None:
                 if point in self.selected_data:
                     self.selected_data -= [point]
