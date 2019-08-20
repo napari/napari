@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 
 class VispyBaseLayer(ABC):
-    """Wrapper around ``vispy.scene.VisualNode`` objects.
+    """Base object for individual layer views
 
     Meant to be subclassed.
 

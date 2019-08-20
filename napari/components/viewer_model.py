@@ -612,6 +612,7 @@ class ViewerModel(KeymapMixin):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        n_dimensional=False,
         name=None,
         **kwargs,
     ):
@@ -656,7 +657,7 @@ class ViewerModel(KeymapMixin):
             opacity=opacity,
             blending=blending,
             visible=visible,
-            n_dimensional=False,
+            n_dimensional=n_dimensional,
             name=name,
             **kwargs,
         )
