@@ -37,6 +37,8 @@ class Labels(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    n_dimensional : bool
+        If `True`, paint and fill edit labels across all dimensions.
     name : str
         Name of the layer.
 
@@ -105,6 +107,7 @@ class Labels(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        n_dimensional=False,
         name=None,
         **kwargs,
     ):
@@ -132,7 +135,7 @@ class Labels(Layer):
             colormaps.label_colormap(self.num_colors),
         )
 
-        self._n_dimensional = False
+        self._n_dimensional = n_dimensional
         self._contiguous = True
         self._brush_size = 10
         self._last_cursor_coord = None
@@ -514,20 +517,16 @@ class Labels(Layer):
             # If in pan/zoom mode do nothing
             pass
         elif self._mode == Mode.PICKER:
-            label = self.get_value()
-            self.selected_label = label
+            self.selected_label = self._value
         elif self._mode == Mode.PAINT:
             # Start painting with new label
             coord = np.round(self.coordinates).astype(int)
-            new_label = self.selected_label
-            self.paint(coord, new_label)
+            self.paint(coord, self.selected_label)
             self._last_cursor_coord = coord
         elif self._mode == Mode.FILL:
             # Fill clicked on region with new label
             coord = np.round(self.coordinates).astype(int)
-            label = self.get_value()
-            new_label = self.selected_label
-            self.fill(coord, label, new_label)
+            self.fill(coord, self._value, self.selected_label)
         else:
             raise ValueError("Mode not recongnized")
 

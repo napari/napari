@@ -638,6 +638,8 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
+        n_dimensional : bool
+            If `True`, paint and fill edit labels across all dimensions.
         name : str
             Name of the layer.
 
@@ -654,6 +656,7 @@ class ViewerModel(KeymapMixin):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            n_dimensional=False,
             name=name,
             **kwargs,
         )

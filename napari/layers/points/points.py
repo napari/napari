@@ -172,8 +172,8 @@ class Points(Layer):
         # Indices of selected points within the currently viewed slice
         self._selected_view = []
         # Index of hovered point
-        self._hover_point = None
-        self._hover_point_stored = None
+        self._value = None
+        self._value_stored = None
         self._selected_box = None
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -597,30 +597,28 @@ class Points(Layer):
         # Check if any point ids have changed since last call
         if (
             self.selected_data == self._selected_data_stored
-            and self._hover_point == self._hover_point_stored
+            and self._value == self._value_stored
             and np.all(self._drag_box == self._drag_box_stored)
         ) and not force:
             return
         self._selected_data_stored = copy(self.selected_data)
-        self._hover_point_stored = copy(self._hover_point)
+        self._value_stored = copy(self._value)
         self._drag_box_stored = copy(self._drag_box)
 
         if self._mode == Mode.SELECT and (
-            self._hover_point is not None or len(self._selected_view) > 0
+            self._value is not None or len(self._selected_view) > 0
         ):
             if len(self._selected_view) > 0:
                 index = copy(self._selected_view)
-                if self._hover_point is not None:
-                    hover_point = list(self._indices_view).index(
-                        self._hover_point
-                    )
+                if self._value is not None:
+                    hover_point = list(self._indices_view).index(self._value)
                     if hover_point in index:
                         pass
                     else:
                         index.append(hover_point)
                 index.sort()
             else:
-                hover_point = list(self._indices_view).index(self._hover_point)
+                hover_point = list(self._indices_view).index(self._value)
                 index = [hover_point]
 
             self._highlight_index = index
@@ -684,8 +682,8 @@ class Points(Layer):
             for i in index[::-1]:
                 del self.edge_colors[i]
                 del self.face_colors[i]
-            if self._hover_point in self.selected_data:
-                self._hover_point = None
+            if self._value in self.selected_data:
+                self._value = None
             self.selected_data = []
             self.data = np.delete(self.data, index, axis=0)
 
@@ -816,10 +814,7 @@ class Points(Layer):
                     )
                     self._set_highlight()
             else:
-                self._hover_point = self.get_value()
                 self._set_highlight()
-        else:
-            self._hover_point = self.get_value()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -827,15 +822,16 @@ class Points(Layer):
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.SELECT:
-            point = self.get_value()
-            if shift and point is not None:
-                if point in self.selected_data:
-                    self.selected_data -= [point]
+            if shift and self._value is not None:
+                if self._value in self.selected_data:
+                    self.selected_data = [
+                        x for x in self.selected_data if x != self._value
+                    ]
                 else:
-                    self.selected_data += [point]
-            elif point is not None:
-                if point not in self.selected_data:
-                    self.selected_data = [point]
+                    self.selected_data += [self._value]
+            elif self._value is not None:
+                if self._value not in self.selected_data:
+                    self.selected_data = [self._value]
             else:
                 self.selected_data = []
             self._set_highlight()

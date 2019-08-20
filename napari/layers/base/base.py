@@ -113,6 +113,7 @@ class Layer(KeymapMixin, ABC):
         self._interactive = True
         self._position = (0, 0)
         self.coordinates = (0, 0)
+        self._value = None
         self.scale_factor = 1
         self._scale = [1] * 2
         self._translate = [0] * 2
@@ -414,18 +415,11 @@ class Layer(KeymapMixin, ABC):
         for d, p in zip(self.dims.displayed, self.position):
             coords[d] = p
         self.coordinates = tuple(coords)
-        value = self.get_value()
-        self.status = self.get_message(value)
+        self._value = self.get_value()
+        self.status = self.get_message()
 
-    def get_message(self, value=None):
+    def get_message(self):
         """Generate a status message based on the coordinates and value
-
-        Parameters
-        ----------
-        coord : tuple
-            Position of mouse cursor in image coordinates.
-        value : int, float, tuple, None
-            Value of the data at the coord.
 
         Returns
         ----------
@@ -438,6 +432,8 @@ class Layer(KeymapMixin, ABC):
         ).astype(int)
 
         msg = f'{self.name} {full_coord}'
+
+        value = self._value
 
         if value is not None and not np.all(value == (None, None)):
             msg += ': '
