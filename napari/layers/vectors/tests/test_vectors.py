@@ -221,6 +221,27 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+def test_value():
+    """Test getting the value of the data at the current coordinates."""
+    np.random.seed(0)
+    data = np.random.random((10, 2, 2))
+    data[:, 0, :] = 20 * data[:, 0, :]
+    layer = Vectors(data)
+    value = layer.get_value()
+    assert layer.coordinates == (0, 0)
+    assert value == None
+
+
+def test_message():
+    """Test converting value and coords to message."""
+    np.random.seed(0)
+    data = np.random.random((10, 2, 2))
+    data[:, 0, :] = 20 * data[:, 0, :]
+    layer = Vectors(data)
+    msg = layer.get_message()
+    assert type(msg) == str
+
+
 def test_xml_list():
     """Test the xml generation."""
     np.random.seed(0)

@@ -235,3 +235,22 @@ def test_clim_range():
     layer = Volume(data, clim=[0.3, 0.6], clim_range=[0, 2])
     assert layer.clim == [0.3, 0.6]
     assert layer._clim_range == [0, 2]
+
+
+def test_value():
+    """Test getting the value of the data at the current coordinates."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Volume(data)
+    value = layer.get_value()
+    assert layer.coordinates == (0, 0, 0)
+    assert value == data[0, 0, 0]
+
+
+def test_message():
+    """Test converting value and coords to message."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Volume(data)
+    msg = layer.get_message()
+    assert type(msg) == str

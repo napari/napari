@@ -129,10 +129,6 @@ class Shapes(Layer):
         of the box. The 9th point is the center of the box, and the last point
         is the location of the rotation handle that can be used to rotate the
         box.
-    _moving_shape : None | int
-        Index of any shape currently being moved if any. `None` otherwise.
-    _moving_vertex : None | int
-        Index of any vertex currently being moved if any. `None` otherwise.
     _drag_start : None | np.ndarray
         If a drag has been started and is in progress then a length 2 array of
         the initial coordinates of the drag. `None` otherwise.
@@ -253,14 +249,12 @@ class Shapes(Layer):
 
         self._value = (None, None)
         self._value_stored = (None, None)
+        self._moving_value = (None, None)
         self._displayed_data = []
         self._selected_data = []
         self._selected_data_stored = []
         self._selected_data_history = []
         self._selected_box = None
-
-        self._moving_shape = None
-        self._moving_vertex = None
 
         self._drag_start = None
         self._fixed_vertex = None
@@ -872,16 +866,15 @@ class Shapes(Layer):
 
     def _finish_drawing(self):
         """Reset properties used in shape drawing."""
-        index = copy(self._moving_shape)
+        index = copy(self._moving_value[0])
         self._is_moving = False
         self.selected_data = []
         self._drag_start = None
         self._drag_box = None
         self._is_selecting = False
         self._fixed_vertex = None
-        self._moving_shape = None
-        self._moving_vertex = None
         self._value = (None, None)
+        self._moving_value = (None, None)
         if self._is_creating is True and self._mode == Mode.ADD_PATH:
             vertices = self._data_view.displayed_vertices[
                 self._data_view.displayed_index == index
@@ -1033,7 +1026,7 @@ class Shapes(Layer):
             if no vertex is found.
         """
         if self._is_moving:
-            return (self._moving_shape, self._moving_vertex)
+            return self._moving_value
 
         coord = [self.coordinates[i] for i in self.dims.displayed]
 
@@ -1146,7 +1139,7 @@ class Shapes(Layer):
         coord : sequence of two int
             Position of mouse cursor in image coordinates.
         """
-        vertex = self._moving_vertex
+        vertex = self._moving_value[1]
         if self._mode in (
             [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
         ):
@@ -1283,7 +1276,7 @@ class Shapes(Layer):
             if len(self.selected_data) > 0:
                 if vertex is not None:
                     self._is_moving = True
-                    index = self._moving_shape
+                    index = self._moving_value[0]
                     shape_type = type(self._data_view.shapes[index])
                     if shape_type == Ellipse:
                         # DIRECT vertex moving of ellipse not implemented
@@ -1394,8 +1387,7 @@ class Shapes(Layer):
             pass
         elif self._mode in [Mode.SELECT, Mode.DIRECT]:
             if not self._is_moving and not self._is_selecting:
-                self._moving_shape = copy(self._value[0])
-                self._moving_vertex = copy(self._value[1])
+                self._moving_value = copy(self._value)
                 if self._value[1] is None:
                     if shift and self._value[0] is not None:
                         if self._value[0] in self.selected_data:
@@ -1444,10 +1436,8 @@ class Shapes(Layer):
             data_full = self.expand_shape(data)
             self.add(data_full, shape_type=shape_type)
             self.selected_data = [self.nshapes - 1]
-            ind = 4
-            self._moving_shape = self.selected_data[0]
-            self._moving_vertex = ind
-            self._value = (self.selected_data[0], ind)
+            self._value = (self.selected_data[0], 4)
+            self._moving_value = copy(self._value)
             self._is_creating = True
             self._set_view_slice()
         elif self._mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
@@ -1457,15 +1447,13 @@ class Shapes(Layer):
                 data_full = self.expand_shape(data)
                 self.add(data_full, shape_type='path')
                 self.selected_data = [self.nshapes - 1]
-                ind = 1
-                self._moving_shape = self.selected_data[0]
-                self._moving_vertex = ind
-                self._value = (self.selected_data[0], ind)
+                self._value = (self.selected_data[0], 1)
+                self._moving_value = copy(self._value)
                 self._is_creating = True
                 self._set_highlight()
             else:
                 # Add to an existing path or polygon
-                index = self._moving_shape
+                index = self._moving_value[0]
                 if self._mode == Mode.ADD_POLYGON:
                     new_type = Polygon
                 else:
@@ -1475,8 +1463,8 @@ class Shapes(Layer):
                 ]
                 vertices = np.concatenate((vertices, [coord]), axis=0)
                 # Change the selected vertex
-                self._moving_vertex = self._moving_vertex + 1
                 self._value = (self._value[0], self._value[1] + 1)
+                self._moving_value = copy(self._value)
                 data_full = self.expand_shape(vertices)
                 self._data_view.edit(index, data_full, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_data)
@@ -1679,8 +1667,7 @@ class Shapes(Layer):
             self._drag_start = None
             self._drag_box = None
             self._fixed_vertex = None
-            self._moving_shape = None
-            self._moving_vertex = None
+            self._moving_value = (None, None)
             self._set_highlight()
             self._update_thumbnail()
         elif self._mode == Mode.DIRECT:
@@ -1699,8 +1686,7 @@ class Shapes(Layer):
             self._drag_start = None
             self._drag_box = None
             self._fixed_vertex = None
-            self._moving_shape = None
-            self._moving_vertex = None
+            self._moving_value = (None, None)
             self._set_highlight()
             self._update_thumbnail()
         elif self._mode in (
