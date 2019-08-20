@@ -83,6 +83,7 @@ def dims_focus_down(viewer):
         return
 
     axis = viewer.window.qt_viewer.dims.last_used
+
     if axis is None:
         viewer.window.qt_viewer.dims.last_used = displayed[0]
     else:
