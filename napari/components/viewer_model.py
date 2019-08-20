@@ -497,8 +497,8 @@ class ViewerModel(KeymapMixin):
         visible : bool
             Whether the layer visual is currently being displayed.
         scale : list, optional
-            List of anisotropy factors to scale the volume by. Must be one for
-            each dimension.
+            List of anisotropy factors to scale the volume by. The length
+            should be equal to the number of dimensions.
         name : str, keyword-only
             Name of the layer.
 

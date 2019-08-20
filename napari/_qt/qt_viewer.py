@@ -31,7 +31,7 @@ from ..util.io import read
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
 from .qt_console import QtConsole
-from ..layers import create_vispy_node
+from .._vispy import create_vispy_visual
 
 
 # set vispy application to the appropriate qt backend
@@ -56,7 +56,8 @@ class QtViewer(QSplitter):
         self.buttons = QtLayersButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
 
-        self.vispy_layers = {}
+        # This dictionary holds the corresponding vispy visual for each layer
+        self.layer_to_visual = {}
 
         if self.console.shell is not None:
             self.console.style().unpolish(self.console)
@@ -145,11 +146,11 @@ class QtViewer(QSplitter):
         """When a layer is added, set its parent and order."""
         layers = event.source
         layer = event.item
-        vispy_layer = create_vispy_node(layer)
+        vispy_layer = create_vispy_visual(layer)
         vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         vispy_layer._order = -len(layers)
-        self.vispy_layers[layer] = vispy_layer
+        self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent."""
@@ -158,13 +159,13 @@ class QtViewer(QSplitter):
         vispy_layer._order = 0
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
-        del self.vispy_layers[layer]
+        del self.layer_to_visual[layer]
 
     def _reorder_layers(event):
         """When the list is reordered, propagate changes to draw order."""
         layers = event.source
         for i, layer in enumerate(layers):
-            vispy_layer = self.vispy_layers[layer]
+            vispy_layer = self.layer_to_visual[layer]
             vispy_layer._order = -i
         self.canvas._draw_order.clear()
         self.canvas.update()
@@ -297,21 +298,21 @@ class QtViewer(QSplitter):
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            self.vispy_layers[layer].on_mouse_move(event)
+            self.layer_to_visual[layer].on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            self.vispy_layers[layer].on_mouse_press(event)
+            self.layer_to_visual[layer].on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            self.vispy_layers[layer].on_mouse_release(event)
+            self.layer_to_visual[layer].on_mouse_release(event)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
@@ -358,7 +359,7 @@ class QtViewer(QSplitter):
         """Called whenever drawn in canvas. Called for all layers, not just top
         """
         for layer in self.viewer.layers:
-            self.vispy_layers[layer].on_draw(event)
+            self.layer_to_visual[layer].on_draw(event)
 
     def keyPressEvent(self, event):
         self.canvas._backend._keyEvent(self.canvas.events.key_press, event)

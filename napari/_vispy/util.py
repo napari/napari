@@ -1,4 +1,3 @@
-from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_labels_layer import VispyLabelsLayer
 from .vispy_points_layer import VispyPointsLayer
@@ -7,10 +6,20 @@ from .vispy_shapes_layer import VispyShapesLayer
 from .vispy_vectors_layer import VispyVectorsLayer
 from .vispy_volume_layer import VispyVolumeLayer
 
+layer_to_visual = {
+    'Image': VispyImageLayer,
+    'Labels': VispyLabelsLayer,
+    'Points': VispyPointsLayer,
+    'Pyramid': VispyPyramidLayer,
+    'Shapes': VispyShapesLayer,
+    'Vectors': VispyVectorsLayer,
+    'Volume': VispyVolumeLayer,
+}
 
-def create_vispy_node(layer):
+
+def create_vispy_visual(layer):
     """
-    Create vispy visual node for a layer based on its layer type.
+    Create vispy visual for a layer based on its layer type.
 
     Parameters
     ----------
@@ -19,14 +28,10 @@ def create_vispy_node(layer):
 
     Returns
     ----------
-        node : vispy.scene.visuals.VisualNode
+        visual : vispy.scene.visuals.VisualNode
             Vispy visual node
     """
-    name = 'Vispy' + type(layer).__name__ + 'Layer'
-    try:
-        VispyLayer = globals()[name]
-        properties = VispyLayer(layer)
-    except KeyError:
-        properties = VispyBaseLayer(layer)
+    name = type(layer).__name__
+    visual = layer_to_visual[name](layer)
 
-    return properties
+    return visual

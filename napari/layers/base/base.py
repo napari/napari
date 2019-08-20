@@ -262,13 +262,14 @@ class Layer(KeymapMixin, ABC):
 
     def _update_dims(self):
         """Updates dims model, which is useful after data has been changed."""
-        range = self._get_range()
-        if len(range) != self.dims.ndim:
-            self._position = (0,) * len(range)
-            self._scale = (1,) * len(range)
-            self._translate = (0,) * len(range)
-            self.dims.ndim = len(range)
-        for i, r in enumerate(range):
+        curr_range = self._get_range()
+        ndim = len(curr_range)
+        if ndim != self.dims.ndim:
+            self._position = (0,) * ndim
+            self._scale = (1,) * ndim
+            self._translate = (0,) * ndim
+            self.dims.ndim = ndim
+        for i, r in enumerate(curr_range):
             self.dims.set_range(i, r)
         self._update_coordinates()
 
