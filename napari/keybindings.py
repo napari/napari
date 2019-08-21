@@ -11,11 +11,23 @@ def toggle_fullscreen(viewer):
         viewer.window._qt_window.showFullScreen()
 
 
-@Viewer.bind_key('Control-T')
+@Viewer.bind_key('Control-Shift-T')
 def toggle_theme(viewer):
     theme_names = list(viewer.themes.keys())
     cur_theme = theme_names.index(viewer.theme)
     viewer.theme = theme_names[(cur_theme + 1) % len(theme_names)]
+
+
+@Viewer.bind_key('Control-E')
+def roll_dims(viewer):
+    viewer.dims.order = np.roll(viewer.dims.order, 1)
+
+
+@Viewer.bind_key('Control-T')
+def transpose_displayed_dims(viewer):
+    order = viewer.dims.order
+    order[-2], order[-1] = order[-1], order[-2]
+    viewer.dims.order = order
 
 
 @Viewer.bind_key('Left')
@@ -48,7 +60,9 @@ def increment_dims_right(viewer):
 
 @Viewer.bind_key('Up')
 def dims_focus_up(viewer):
-    displayed = list(np.nonzero(viewer.window.qt_viewer.dims._displayed)[0])
+    displayed = list(
+        np.nonzero(viewer.window.qt_viewer.dims._displayed_sliders)[0]
+    )
     if len(displayed) == 0:
         return
 
@@ -62,11 +76,14 @@ def dims_focus_up(viewer):
 
 @Viewer.bind_key('Down')
 def dims_focus_down(viewer):
-    displayed = list(np.nonzero(viewer.window.qt_viewer.dims._displayed)[0])
+    displayed = list(
+        np.nonzero(viewer.window.qt_viewer.dims._displayed_sliders)[0]
+    )
     if len(displayed) == 0:
         return
 
     axis = viewer.window.qt_viewer.dims.last_used
+
     if axis is None:
         viewer.window.qt_viewer.dims.last_used = displayed[0]
     else:
