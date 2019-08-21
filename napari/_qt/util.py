@@ -1,33 +1,4 @@
-from ..layers import Image, Labels, Points, Pyramid, Shapes, Vectors, Volume
 from .qt_base_layer import QtLayerProperties, QtLayerControls
-from .qt_image_layer import QtImageProperties, QtImageControls
-from .qt_points_layer import QtPointsProperties, QtPointsControls
-from .qt_vectors_layer import QtVectorsProperties
-from .qt_shapes_layer import QtShapesProperties, QtShapesControls
-from .qt_labels_layer import QtLabelsProperties, QtLabelsControls
-from .qt_volume_layer import QtVolumeProperties, QtVolumeControls
-
-
-layer_to_properties = {
-    Image: QtImageProperties,
-    Labels: QtLabelsProperties,
-    Points: QtPointsProperties,
-    Pyramid: QtImageProperties,
-    Shapes: QtShapesProperties,
-    Vectors: QtVectorsProperties,
-    Volume: QtVolumeProperties,
-}
-
-
-layer_to_controls = {
-    Image: QtImageControls,
-    Labels: QtLabelsControls,
-    Points: QtPointsControls,
-    Pyramid: QtImageControls,
-    Shapes: QtShapesControls,
-    Vectors: QtLayerControls,
-    Volume: QtVolumeControls,
-}
 
 
 def create_qt_properties(layer):
@@ -44,9 +15,7 @@ def create_qt_properties(layer):
         properties : napari.layers.base.QtLayerProperties
             Qt propetry widget
     """
-    properties = layer_to_properties[type(layer)](layer)
-
-    return properties
+    return QtLayerProperties(layer)
 
 
 def create_qt_controls(layer):
@@ -63,6 +32,4 @@ def create_qt_controls(layer):
         controls : napari.layers.base.QtLayerControls
             Qt controls widget
     """
-    controls = layer_to_controls[type(layer)](layer)
-
-    return controls
+    return QtLayerControls(layer)
