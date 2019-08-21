@@ -3,7 +3,6 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from copy import copy
 from ..base import Layer
-from vispy.scene.visuals import Mesh
 from ...util.event import Event
 from .vectors_util import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
@@ -84,15 +83,11 @@ class Vectors(Layer):
     ):
 
         super().__init__(
-            Mesh(),
-            name=name,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
+            name=name, opacity=opacity, blending=blending, visible=visible
         )
 
         # events for non-napari calculations
-        self.events.add(length=Event, edge_width=Event)
+        self.events.add(length=Event, edge_width=Event, edge_color=Event)
 
         # Save the vector style params
         self._edge_width = edge_width
@@ -109,17 +104,12 @@ class Vectors(Layer):
         # length attribute
         self._length = length
 
-        # update flags
-        self._need_display_update = False
-        self._need_visual_update = False
-
         # assign vector data and establish default behavior
-        with self.freeze_refresh():
-            self.data = vectors
+        self.data = vectors
 
-            # Trigger generation of view slice and thumbnail
-            self._update_dims()
-            self._set_view_slice()
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
+        self._set_view_slice()
 
     @property
     def data(self) -> np.ndarray:
@@ -141,8 +131,8 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self._update_dims()
+        self._set_view_slice()
         self.events.data()
-        self.refresh()
 
     def _get_range(self):
         """Determine ranges for slicing given by (min, max, step)."""
@@ -177,7 +167,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.edge_width()
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def length(self) -> Union[int, float]:
@@ -198,7 +188,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.length()
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def edge_color(self) -> str:
@@ -208,7 +198,7 @@ class Vectors(Layer):
     def edge_color(self, edge_color: str):
         """str: edge color of all the vectors."""
         self._edge_color = edge_color
-        self.refresh()
+        self.events.edge_color()
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -247,17 +237,15 @@ class Vectors(Layer):
             self._data_view = self.data[:, :, disp]
 
         if len(faces) == 0:
-            self._node.set_data(vertices=None, faces=None)
+            self._view_vertices = None
+            self._view_faces = None
         else:
-            self._node.set_data(
-                vertices=vertices[:, ::-1] + 0.5,
-                faces=faces,
-                color=self.edge_color,
-            )
+            self._view_vertices = vertices[:, ::-1] + 0.5
+            self._view_faces = faces
 
-        self._need_visual_update = True
-        self._update()
         self._update_thumbnail()
+        self._update_coordinates()
+        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -331,3 +319,15 @@ class Vectors(Layer):
             xml_list.append(element)
 
         return xml_list
+
+    def get_value(self):
+        """Returns coordinates, values, and a string for a given mouse position
+        and set of indices.
+
+        Returns
+        ----------
+        value : int, None
+            Value of the data at the coord.
+        """
+
+        return None

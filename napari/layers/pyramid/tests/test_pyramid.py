@@ -275,9 +275,9 @@ def test_value():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
-    coord, value = layer.get_value()
-    assert np.all(coord == [0, 0])
-    assert value == data[-1][0, 0]
+    value = layer.get_value()
+    assert layer.coordinates == (0, 0)
+    assert value == (2, data[-1][0, 0])
 
 
 def test_message():
@@ -286,8 +286,7 @@ def test_message():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
-    coord, value = layer.get_value()
-    msg = layer.get_message(coord, value)
+    msg = layer.get_message()
     assert type(msg) == str
 
 

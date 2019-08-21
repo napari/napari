@@ -17,6 +17,7 @@ from qtpy.QtWidgets import QStackedWidget, QSizePolicy
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from vispy.visuals.transforms import ChainTransform
 from vispy.app import use_app
 
 from .qt_dims import QtDims
@@ -30,6 +31,7 @@ from ..util.io import read
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
 from .qt_console import QtConsole
+from .._vispy import create_vispy_visual
 
 
 # set vispy application to the appropriate qt backend
@@ -53,6 +55,9 @@ class QtViewer(QSplitter):
         self.layers = QtLayerList(self.viewer.layers)
         self.buttons = QtLayersButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
+
+        # This dictionary holds the corresponding vispy visual for each layer
+        self.layer_to_visual = {}
 
         if self.console.shell is not None:
             self.console.style().unpolish(self.console)
@@ -128,12 +133,42 @@ class QtViewer(QSplitter):
         self.viewer.events.palette.connect(
             lambda event: self._update_palette(event.palette)
         )
-        self.viewer.layers.events.reordered.connect(self._update_canvas)
+        self.viewer.layers.events.reordered.connect(self._reorder_layers)
+        self.viewer.layers.events.added.connect(self._add_layer)
+        self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.dims.events.display.connect(
             lambda event: self._update_camera()
         )
 
         self.setAcceptDrops(True)
+
+    def _add_layer(self, event):
+        """When a layer is added, set its parent and order."""
+        layers = event.source
+        layer = event.item
+        vispy_layer = create_vispy_visual(layer)
+        vispy_layer.camera = self.view.camera
+        vispy_layer.node.parent = self.view.scene
+        vispy_layer._order = -len(layers)
+        self.layer_to_visual[layer] = vispy_layer
+
+    def _remove_layer(self, event):
+        """When a layer is removed, remove its parent."""
+        layer = event.item
+        vispy_layer = self.layer_nodes[layer]
+        vispy_layer._order = 0
+        vispy_layer.node.transforms = ChainTransform()
+        vispy_layer.node.parent = None
+        del self.layer_to_visual[layer]
+
+    def _reorder_layers(event):
+        """When the list is reordered, propagate changes to draw order."""
+        layers = event.source
+        for i, layer in enumerate(layers):
+            vispy_layer = self.layer_to_visual[layer]
+            vispy_layer._order = -i
+        self.canvas._draw_order.clear()
+        self.canvas.update()
 
     def _update_camera(self):
         if self.viewer.dims.ndisplay == 3:
@@ -144,9 +179,6 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                # TO DO: Remove once we have removed vispy node from individual
-                # layers as then model / view separate
-                self.viewer._view = self.view
                 self.viewer.reset_view()
         else:
             # Set 2D camera
@@ -158,9 +190,6 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                # TO DO: Remove once we have removed vispy node from individual
-                # layers as then model / view separate
-                self.viewer._view = self.view
                 self.viewer.reset_view()
 
     def screenshot(self):
@@ -247,13 +276,6 @@ class QtViewer(QSplitter):
             # Assumes default camera has the same properties as PanZoomCamera
             self.view.camera.rect = event.viewbox
 
-    def _update_canvas(self, event):
-        """Clears draw order and refreshes canvas. Usefeul for when layers are
-        reoredered.
-        """
-        self.canvas._draw_order.clear()
-        self.canvas.update()
-
     def _update_palette(self, palette):
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
@@ -276,21 +298,21 @@ class QtViewer(QSplitter):
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            layer.on_mouse_move(event)
+            self.layer_to_visual[layer].on_mouse_move(event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            layer.on_mouse_press(event)
+            self.layer_to_visual[layer].on_mouse_press(event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
         layer = self.viewer.active_layer
         if layer is not None:
-            layer.on_mouse_release(event)
+            self.layer_to_visual[layer].on_mouse_release(event)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
@@ -337,7 +359,7 @@ class QtViewer(QSplitter):
         """Called whenever drawn in canvas. Called for all layers, not just top
         """
         for layer in self.viewer.layers:
-            layer.on_draw(event)
+            self.layer_to_visual[layer].on_draw(event)
 
     def keyPressEvent(self, event):
         self.canvas._backend._keyEvent(self.canvas.events.key_press, event)

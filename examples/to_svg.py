@@ -86,7 +86,6 @@ with napari.gui_qt():
         face_color='purple',
         opacity=0.75,
     )
-    layer.refresh()
 
     masks = layer.to_masks([512, 512])
     masks_layer = viewer.add_image(masks.astype(float), name='masks')

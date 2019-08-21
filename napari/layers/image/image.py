@@ -7,13 +7,13 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from vispy.scene.visuals import Image as ImageNode
 from ...util.misc import (
     is_multichannel,
     calc_data_range,
     increment_unnamed_colormap,
 )
 from ...util.event import Event
+from ...util.status_messages import format_float
 from ._constants import Interpolation, AVAILABLE_COLORMAPS
 
 
@@ -118,51 +118,51 @@ class Image(Layer):
         **kwargs,
     ):
 
-        visual = ImageNode(None, method='auto')
         super().__init__(
-            visual,
-            name=name,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
+            name=name, opacity=opacity, blending=blending, visible=visible
         )
 
         self.events.add(clim=Event, colormap=Event, interpolation=Event)
 
-        with self.freeze_refresh():
-            # Set data
-            self._data = image
-            self.metadata = metadata or {}
-            self.multichannel = multichannel
+        # Set data
+        self._data = image
+        self.metadata = metadata or {}
+        if multichannel is False:
+            self._multichannel = multichannel
+        else:
+            # If multichannel is True or None then guess if multichannel
+            # allowed or not, and if allowed set it to be True
+            self._multichannel = is_multichannel(self.data.shape)
 
-            # Intitialize image views and thumbnails with zeros
-            if self.multichannel:
-                self._data_view = np.zeros((1, 1) + (self.shape[-1],))
-            else:
-                self._data_view = np.zeros((1, 1))
-            self._data_thumbnail = self._data_view
+        # Intitialize image views and thumbnails with zeros
+        if self.multichannel:
+            self._data_view = np.zeros((1, 1) + (self.shape[-1],))
+        else:
+            self._data_view = np.zeros((1, 1))
+        self._data_thumbnail = self._data_view
 
-            # Set clims and colormaps
-            self._colormap_name = ''
-            self._clim_msg = ''
-            if clim_range is None:
-                self._clim_range = calc_data_range(self.data)
-            else:
-                self._clim_range = clim_range
-            if clim is None:
-                self.clim = copy(self._clim_range)
-            else:
-                self.clim = clim
-            self.colormap = colormap
-            self.interpolation = interpolation
+        # Set clims and colormaps
+        self._colormap_name = ''
+        self._clim_msg = ''
+        if clim_range is None:
+            self._clim_range = calc_data_range(self.data)
+        else:
+            self._clim_range = clim_range
+        if clim is None:
+            self._clim = copy(self._clim_range)
+        else:
+            self._clim = clim
+        self.colormap = colormap
+        self.clim = self._clim
+        self.interpolation = interpolation
 
-            # Set update flags
-            self._need_display_update = False
-            self._need_visual_update = False
+        # Set update flags
+        self._need_display_update = False
+        self._need_visual_update = False
 
-            # Trigger generation of view slice and thumbnail
-            self._update_dims()
-            self._set_view_slice()
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
+        self._set_view_slice()
 
     @property
     def data(self):
@@ -175,8 +175,8 @@ class Image(Layer):
         if self.multichannel:
             self._multichannel = is_multichannel(data.shape)
         self._update_dims()
+        self._set_view_slice()
         self.events.data()
-        self.refresh()
 
     def _get_range(self):
         if self.multichannel:
@@ -198,13 +198,13 @@ class Image(Layer):
             # If multichannel is True or None then guess if multichannel
             # allowed or not, and if allowed set it to be True
             self._multichannel = is_multichannel(self.data.shape)
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def colormap(self):
         """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
         """
-        return self._colormap_name, self._node.cmap
+        return self._colormap_name, self._cmap
 
     @colormap.setter
     def colormap(self, colormap):
@@ -226,7 +226,7 @@ class Image(Layer):
             warnings.warn(f'invalid value for colormap: {colormap}')
             name = self._colormap_name
         self._colormap_name = name
-        self._node.cmap = self._colormaps[name]
+        self._cmap = self._colormaps[name]
         self._update_thumbnail()
         self.events.colormap()
 
@@ -235,17 +235,16 @@ class Image(Layer):
         """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
 
-    # wrap visual properties:
     @property
     def clim(self):
         """list of float: Limits to use for the colormap."""
-        return list(self._node.clim)
+        return list(self._clim)
 
     @clim.setter
     def clim(self, clim):
-        self._clim_msg = f'{float(clim[0]): 0.3}, {float(clim[1]): 0.3}'
+        self._clim_msg = format_float(clim[0]) + ', ' + format_float(clim[1])
         self.status = self._clim_msg
-        self._node.clim = clim
+        self._clim = clim
         if clim[0] < self._clim_range[0]:
             self._clim_range[0] = copy(clim[0])
         if clim[1] > self._clim_range[1]:
@@ -268,7 +267,6 @@ class Image(Layer):
         if isinstance(interpolation, str):
             interpolation = Interpolation(interpolation)
         self._interpolation = interpolation
-        self._node.interpolation = interpolation.value
         self.events.interpolation()
 
     def _set_view_slice(self):
@@ -285,16 +283,10 @@ class Image(Layer):
             order
         )
 
-        self._node.set_data(self._data_view)
-
-        self._need_visual_update = True
-        self._update()
-
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)
-
         self._data_thumbnail = self._data_view
         self._update_thumbnail()
+        self._update_coordinates()
+        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
@@ -350,54 +342,21 @@ class Image(Layer):
 
         Returns
         ----------
-        coord : 2-tuple of int
-            Position of cursor in image space.
-        value : int, float, or sequence of int or float
-            Value of the data at the coord.
+        value : int, float, or sequence of int or float, or None
+            Value of the data at the coord, or none if coord is outside range.
         """
         coord = np.round(self.coordinates).astype(int)
         if self.multichannel:
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
-        slice_coord = np.clip(
-            coord[self.dims.displayed], 0, np.subtract(shape, 1)
-        )
-        value = self._data_view[tuple(slice_coord)]
 
-        return coord, value
-
-    def get_message(self, coord, value):
-        """Generate a status message based on the coordinates and information
-        about what shapes are hovered over
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
-
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-
-        msg = f'{coord}, {self.name}' + ', value '
-        if isinstance(value, np.ndarray):
-            if isinstance(value[0], np.integer):
-                msg = msg + str(value)
-            else:
-                v_str = '[' + str.join(', ', [f'{v:0.3}' for v in value]) + ']'
-                msg = msg + v_str
+        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
+            value = self._data_view[tuple(coord[self.dims.displayed])]
         else:
-            if isinstance(value, (np.integer, np.bool_)):
-                msg = msg + str(value)
-            else:
-                msg = msg + f'{value:0.3}'
+            value = None
 
-        return msg
+        return value
 
     def to_xml_list(self):
         """Generates a list with a single xml element that defines the
@@ -426,11 +385,3 @@ class Image(Layer):
             'image', width=width, height=height, opacity=opacity, **props
         )
         return [xml]
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self.position = tuple(event.pos)
-        coord, value = self.get_value()
-        self.status = self.get_message(coord, value)

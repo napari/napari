@@ -1,34 +1,15 @@
 from ..layers import Layer
-
 from ..util.naming import inc_name_count
 from ..util.list import ListModel
-from vispy.visuals.transforms import ChainTransform
 
 
 def _add(event):
-    """When a layer is added, set its name and order."""
+    """When a layer is added, set its name."""
     layers = event.source
     layer = event.item
     layer.name = layers._coerce_name(layer.name, layer)
-    layer._order = -len(layers)
     layer.events.name.connect(lambda e: layers._update_name(e))
     layers.unselect_all(ignore=layer)
-
-
-def _remove(event):
-    """When a layer is removed, remove its viewer."""
-    layers = event.source
-    layer = event.item
-    layer._order = 0
-    layer._node.transforms = ChainTransform()
-    layer._node.parent = None
-
-
-def _reorder(event):
-    """When the list is reordered, propagate those changes to draw order."""
-    layers = event.source
-    for i in range(len(layers)):
-        layers[i]._order = -i
 
 
 class LayerList(ListModel):
@@ -49,8 +30,6 @@ class LayerList(ListModel):
         )
 
         self.events.added.connect(_add)
-        self.events.removed.connect(_remove)
-        self.events.reordered.connect(_reorder)
 
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)

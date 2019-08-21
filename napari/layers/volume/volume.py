@@ -3,7 +3,6 @@ import numpy as np
 from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
-from vispy.scene.visuals import Volume as VolumeNode
 from ..base import Layer
 from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
@@ -44,9 +43,9 @@ class Volume(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    spacing : list, optional
-        List of anisotropy factors to scale the volume by. Must be one for
-        each dimension.
+    scale : list, optional
+        List of anisotropy factors to scale the volume by. The length
+        should be equal to the number of dimensions.
     name : str, keyword-only
         Name of the layer.
 
@@ -66,7 +65,7 @@ class Volume(Layer):
         luminance volumes.
     clim_range : list (2,) of float
         Range for the color limits for luminace volumes.
-    spacing : list
+    scale : list
         List of anisotropy factors to scale the volume by. Must be one for
         each dimension.
 
@@ -90,59 +89,52 @@ class Volume(Layer):
         opacity=1,
         blending='translucent',
         visible=True,
-        spacing=None,
+        scale=None,
         name=None,
         **kwargs,
     ):
 
-        visual = VolumeNode(np.empty((1, 1, 1)))
         super().__init__(
-            visual,
-            name=name,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
+            name=name, opacity=opacity, blending=blending, visible=visible
         )
 
         self._rendering = self._default_rendering
 
         self.events.add(clim=Event, colormap=Event, rendering=Event)
 
-        with self.freeze_refresh():
-            # Set data
-            self._data = volume
-            self.metadata = metadata or {}
+        # Set data
+        self._data = volume
+        self.metadata = metadata or {}
 
-            self.dims.ndim = volume.ndim
+        self.dims.ndim = volume.ndim
+        with self.dims.events.display.blocker():
             self.dims.ndisplay = 3
 
-            self.spacing = spacing or [1] * len(volume.shape)
+        self._scale = scale or [1] * self.dims.ndim
+        self._translate = [0] * self.dims.ndim
+        self._position = (0,) * self.dims.ndim
 
-            # Intitialize volume views and thumbnails with zeros
-            self._data_view = np.zeros((1, 1, 1))
-            self._data_thumbnail = self._data_view
+        # Intitialize volume views and thumbnails with zeros
+        self._data_view = np.zeros((1, 1, 1))
+        self._data_thumbnail = self._data_view
 
-            # Set clims and colormaps
-            self._colormap_name = ''
-            self._clim_msg = ''
-            if clim_range is None:
-                self._clim_range = calc_data_range(self.data)
-            else:
-                self._clim_range = clim_range
+        # Set clims and colormaps
+        self._colormap_name = ''
+        self._clim_msg = ''
+        if clim_range is None:
+            self._clim_range = calc_data_range(self.data)
+        else:
+            self._clim_range = clim_range
 
-            if clim is None:
-                self.clim = self._clim_range
-            else:
-                self.clim = clim
-            self.colormap = colormap
+        if clim is None:
+            self.clim = self._clim_range
+        else:
+            self.clim = clim
+        self.colormap = colormap
 
-            # Set update flags
-            self._need_display_update = False
-            self._need_visual_update = False
-
-            # Trigger generation of view slice and thumbnail
-            self._update_dims()
-            self._set_view_slice()
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
+        self._set_view_slice()
 
     @property
     def data(self):
@@ -152,30 +144,20 @@ class Volume(Layer):
     @data.setter
     def data(self, data):
         self._data = data
-        self.events.data()
         self._update_dims()
-        self.refresh()
+        self._set_view_slice()
+        self.events.data()
 
     def _get_range(self):
         return tuple(
-            (0, m, 1) for m in np.multiply(self.data.shape, self.spacing)
+            (0, m, 1) for m in np.multiply(self.data.shape, self.scale)
         )
-
-    @property
-    def spacing(self):
-        """list: Anisotropy factors to scale the volume by."""
-        return self._spacing
-
-    @spacing.setter
-    def spacing(self, spacing):
-        self._spacing = spacing
-        self.scale = [self._spacing[s] for s in self.dims.displayed[::-1]]
 
     @property
     def colormap(self):
         """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
         """
-        return self._colormap_name, self._node.cmap
+        return self._colormap_name, self._cmap
 
     @colormap.setter
     def colormap(self, colormap):
@@ -198,10 +180,7 @@ class Volume(Layer):
             name = self._colormap_name
         self._colormap_name = name
         cmap = self._colormaps[name]
-        self._node.view_program['texture2D_LUT'] = (
-            cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
-        )
-        self._node.cmap = cmap
+        self._cmap = cmap
         self._update_thumbnail()
         self.events.colormap()
 
@@ -224,7 +203,6 @@ class Volume(Layer):
             self._clim_range[0] = copy(clim[0])
         if clim[1] > self._clim_range[1]:
             self._clim_range[1] = copy(clim[1])
-        self.refresh()
         self.events.clim()
 
     @property
@@ -249,9 +227,7 @@ class Volume(Layer):
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
 
-        self._node.method = rendering.value
         self._rendering = rendering
-        self.refresh()
         self.events.rendering()
 
     def _set_view_slice(self):
@@ -260,13 +236,10 @@ class Volume(Layer):
             self.dims.displayed_order
         )
 
-        self._node.set_data(self._data_view, clim=self.clim)
-
-        self._need_visual_update = True
-        self._update()
-
         self._data_thumbnail = self._data_view
         self._update_thumbnail()
+        self._update_coordinates()
+        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
@@ -290,3 +263,22 @@ class Volume(Layer):
         colormapped = colormapped.reshape(downsampled.shape + (4,))
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
+
+    def get_value(self):
+        """Returns coordinates, values, and a string for a given mouse position
+        and set of indices.
+
+        Returns
+        ----------
+        value : int, float, or sequence of int or float, or None
+            Value of the data at the coord, or none if coord is outside range.
+        """
+        coord = np.round(self.coordinates).astype(int)
+        shape = self._data_view.shape
+
+        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
+            value = self._data_view[tuple(coord[self.dims.displayed])]
+        else:
+            value = None
+
+        return value

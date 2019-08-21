@@ -61,10 +61,6 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         self.theme = 'dark'
 
-        # TODO: this should be eventually removed!
-        # attached by QtViewer when it is constructed by the model
-        self._view = None
-
         self.dims.events.display.connect(lambda e: self._update_layers())
         self.dims.events.display.connect(lambda e: self.reset_view())
         self.dims.events.axis.connect(lambda e: self._update_layers())
@@ -309,9 +305,6 @@ class ViewerModel(KeymapMixin):
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
-
-        if self._view is not None:
-            layer.parent = self._view
         self.layers.append(layer)
         self._update_layers(layers=[layer])
 
@@ -467,7 +460,7 @@ class ViewerModel(KeymapMixin):
         opacity=1,
         blending='translucent',
         visible=True,
-        spacing=None,
+        scale=None,
         name=None,
         **kwargs,
     ):
@@ -503,9 +496,9 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        spacing : list, optional
-            List of anisotropy factors to scale the volume by. Must be one for
-            each dimension.
+        scale : list, optional
+            List of anisotropy factors to scale the volume by. The length
+            should be equal to the number of dimensions.
         name : str, keyword-only
             Name of the layer.
 
@@ -523,7 +516,7 @@ class ViewerModel(KeymapMixin):
             opacity=opacity,
             blending=blending,
             visible=visible,
-            spacing=spacing,
+            scale=scale,
             name=name,
             **kwargs,
         )
@@ -619,6 +612,7 @@ class ViewerModel(KeymapMixin):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        n_dimensional=False,
         name=None,
         **kwargs,
     ):
@@ -645,6 +639,8 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
+        n_dimensional : bool
+            If `True`, paint and fill edit labels across all dimensions.
         name : str
             Name of the layer.
 
@@ -661,6 +657,7 @@ class ViewerModel(KeymapMixin):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            n_dimensional=n_dimensional,
             name=name,
             **kwargs,
         )

@@ -134,7 +134,6 @@ class QtLabelsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.selected_label.connect(self._on_selection_change)
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contig_change)
@@ -233,9 +232,6 @@ class QtLabelsProperties(QtLayerProperties):
             self.layer.n_dimensional = True
         else:
             self.layer.n_dimensional = False
-
-    def _on_colormap_change(self, event):
-        self.layer._node.cmap = self.layer.colormap
 
     def _on_selection_change(self, event):
         with self.layer.events.selected_label.blocker():

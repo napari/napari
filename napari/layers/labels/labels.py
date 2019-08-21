@@ -7,7 +7,6 @@ from base64 import b64encode
 from imageio import imwrite
 
 from ..base import Layer
-from vispy.scene.visuals import Image as ImageNode
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
@@ -38,6 +37,8 @@ class Labels(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    n_dimensional : bool
+        If `True`, paint and fill edit labels across all dimensions.
     name : str
         Name of the layer.
 
@@ -106,20 +107,15 @@ class Labels(Layer):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        n_dimensional=False,
         name=None,
         **kwargs,
     ):
 
-        visual = ImageNode(None, method='auto')
         super().__init__(
-            visual,
-            name=name,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
+            name=name, opacity=opacity, blending=blending, visible=visible
         )
         self.events.add(
-            colormap=Event,
             mode=Event,
             n_dimensional=Event,
             contiguous=Event,
@@ -138,10 +134,8 @@ class Labels(Layer):
             self._colormap_name,
             colormaps.label_colormap(self.num_colors),
         )
-        self._node.clim = [0.0, 1.0]
-        self._node._cmap = self.colormap[1]
 
-        self._n_dimensional = True
+        self._n_dimensional = n_dimensional
         self._contiguous = True
         self._brush_size = 10
         self._last_cursor_coord = None
@@ -171,8 +165,8 @@ class Labels(Layer):
     def data(self, data):
         self._data = data
         self._update_dims()
+        self._set_view_slice()
         self.events.data()
-        self.refresh()
 
     def _get_range(self):
         return tuple((0, m, 1) for m in self.data.shape)
@@ -216,7 +210,7 @@ class Labels(Layer):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def num_colors(self):
@@ -230,7 +224,7 @@ class Labels(Layer):
             self._colormap_name,
             colormaps.label_colormap(num_colors),
         )
-        self.refresh()
+        self._set_view_slice()
 
     @property
     def selected_label(self):
@@ -300,7 +294,7 @@ class Labels(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
-        self.refresh()
+        self._set_view_slice()
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
@@ -326,7 +320,7 @@ class Labels(Layer):
     def new_colormap(self):
         self._seed = np.random.rand()
         self._selected_color = self.get_color(self.selected_label)
-        self.refresh()
+        self._set_view_slice()
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
@@ -343,15 +337,9 @@ class Labels(Layer):
             self.dims.displayed_order
         )
 
-        image = self._raw_to_displayed(self._data_view)
-        self._node.set_data(image)
-
-        self._need_visual_update = True
-        self._update()
-
-        coord, label = self.get_value()
-        self.status = self.get_message(coord, label)
         self._update_thumbnail()
+        self._update_coordinates()
+        self.events.set_data()
 
     def fill(self, coord, old_label, new_label):
         """Replace an existing label with a new label, either just at the
@@ -397,7 +385,7 @@ class Labels(Layer):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.indices)] = labels
 
-        self.refresh()
+        self._set_view_slice()
 
     def paint(self, coord, new_label):
         """Paint over existing labels with a new label, using the selected
@@ -449,7 +437,7 @@ class Labels(Layer):
         # update the labels image
         self.data[slice_coord] = new_label
 
-        self.refresh()
+        self._set_view_slice()
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -457,41 +445,19 @@ class Labels(Layer):
 
         Returns
         ----------
-        coord : sequence of float
+        coord : tuple of int
             Position of mouse cursor in data.
-        value : int or float or sequence of int or float
-            Value of the data at the coord.
+        value : int or float or sequence of int or float or None
+            Value of the data at the coord, or none if coord is outside range.
         """
         coord = np.round(self.coordinates).astype(int)
-        slice_coord = np.clip(
-            coord[self.dims.displayed],
-            0,
-            np.subtract(self._data_view.shape, 1),
-        )
-        value = self._data_view[tuple(slice_coord)]
+        shape = self._data_view.shape
+        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
+            value = self._data_view[tuple(coord[self.dims.displayed])]
+        else:
+            value = None
 
-        return coord, value
-
-    def get_message(self, coord, value):
-        """Generates a string based on the coordinates and information about
-        what shapes are hovered over
-
-        Parameters
-        ----------
-        coord : sequence of int
-            Position of mouse cursor in image coordinates.
-        value : int
-            Value of the label image at the coord.
-
-        Returns
-        ----------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-        int_coord = np.round(coord).astype(int)
-        msg = f'{int_coord}, {self.name}, label {value}'
-
-        return msg
+        return value
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colors.
@@ -547,28 +513,20 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
-        if event.pos is None:
-            return
-        self.position = tuple(event.pos)
-        coord, label = self.get_value()
-
         if self._mode == Mode.PAN_ZOOM:
             # If in pan/zoom mode do nothing
             pass
         elif self._mode == Mode.PICKER:
-            self.selected_label = label
+            self.selected_label = self._value
         elif self._mode == Mode.PAINT:
             # Start painting with new label
-            new_label = self.selected_label
-            self.paint(coord, new_label)
+            coord = np.round(self.coordinates).astype(int)
+            self.paint(coord, self.selected_label)
             self._last_cursor_coord = coord
-            self.status = self.get_message(coord, new_label)
         elif self._mode == Mode.FILL:
             # Fill clicked on region with new label
-            old_label = label
-            new_label = self.selected_label
-            self.fill(coord, old_label, new_label)
-            self.status = self.get_message(coord, new_label)
+            coord = np.round(self.coordinates).astype(int)
+            self.fill(coord, self._value, self.selected_label)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -580,27 +538,20 @@ class Labels(Layer):
         event : Event
             Vispy event
         """
-        if event.pos is None:
-            return
-        self.position = tuple(event.pos)
-        coord, label = self.get_value()
-
         if self._mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
+            coord = np.round(self.coordinates).astype(int)
             if self._last_cursor_coord is None:
                 interp_coord = [coord]
             else:
                 interp_coord = interpolate_coordinates(
                     self._last_cursor_coord, coord, self.brush_size
                 )
-            with self.freeze_refresh():
+            with self.events.set_data.blocker():
                 for c in interp_coord:
                     self.paint(c, new_label)
-            self.refresh()
+            self._set_view_slice()
             self._last_cursor_coord = coord
-            label = new_label
-
-        self.status = self.get_message(coord, label)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
