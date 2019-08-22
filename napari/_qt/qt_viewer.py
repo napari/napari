@@ -171,6 +171,7 @@ class QtViewer(QSplitter):
         self.canvas.update()
 
     def _update_camera(self):
+        print('_update_camera!!!!!')
         if self.viewer.dims.ndisplay == 3:
             # Set a 3D camera
             if not isinstance(self.view.camera, ArcballCamera):

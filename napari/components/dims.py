@@ -119,6 +119,8 @@ class Dims:
             raise ValueError(
                 f"Invalid ordering {order} for {self.ndim} dimensions"
             )
+        if np.all(self._order == order):
+            return
         self._order = order
         self.events.display()
 
@@ -199,6 +201,8 @@ class Dims:
             raise ValueError(
                 f"Invalid number of dimensions to be displayed {ndisplay}"
             )
+        if self._ndisplay == ndisplay:
+            return
         self._ndisplay = ndisplay
         self.events.display()
 

@@ -15,6 +15,7 @@ from ...util.misc import (
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Interpolation, AVAILABLE_COLORMAPS
+from ..volume._constants import Rendering
 
 
 class Image(Layer):
@@ -59,6 +60,8 @@ class Image(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    ndisplay : int
+        Number of displayed dimensions.
     name : str
         Name of the layer.
 
@@ -98,8 +101,7 @@ class Image(Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-
-    default_interpolation = str(Interpolation.NEAREST)
+    _default_rendering = Rendering.MIP
 
     def __init__(
         self,
@@ -114,6 +116,7 @@ class Image(Layer):
         opacity=1,
         blending='translucent',
         visible=True,
+        ndisplay=2,
         name=None,
         **kwargs,
     ):
@@ -122,7 +125,9 @@ class Image(Layer):
             name=name, opacity=opacity, blending=blending, visible=visible
         )
 
-        self.events.add(clim=Event, colormap=Event, interpolation=Event)
+        self.events.add(
+            clim=Event, colormap=Event, interpolation=Event, rendering=Event
+        )
 
         # Set data
         self._data = image
@@ -155,6 +160,7 @@ class Image(Layer):
         self.colormap = colormap
         self.clim = self._clim
         self.interpolation = interpolation
+        self._rendering = self._default_rendering
 
         # Set update flags
         self._need_display_update = False
@@ -162,6 +168,7 @@ class Image(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+        self.dims.ndisplay = ndisplay
         self._set_view_slice()
 
     @property
@@ -269,6 +276,31 @@ class Image(Layer):
         self._interpolation = interpolation
         self.events.interpolation()
 
+    @property
+    def rendering(self):
+        """Rendering: Rendering mode.
+            Selects a preset rendering mode in vispy that determines how
+            volume is displayed
+            * translucent: voxel colors are blended along the view ray until
+              the result is opaque.
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * additive: voxel colors are added along the view ray until
+              the result is saturated.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.
+        """
+        return str(self._rendering)
+
+    @rendering.setter
+    def rendering(self, rendering):
+        if isinstance(rendering, str):
+            rendering = Rendering(rendering)
+
+        self._rendering = rendering
+        self.events.rendering()
+
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         if self.multichannel:
@@ -290,7 +322,10 @@ class Image(Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._data_thumbnail
+        if self.dims.ndisplay == 3:
+            image = np.max(self._data_thumbnail, axis=0)
+        else:
+            image = self._data_thumbnail
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
@@ -368,7 +403,11 @@ class Image(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        image = np.clip(self._data_view, self.clim[0], self.clim[1])
+        if self.dims.ndisplay == 3:
+            image = np.max(self._data_thumbnail, axis=0)
+        else:
+            image = self._data_thumbnail
+        image = np.clip(image, self.clim[0], self.clim[1])
         image = image - self.clim[0]
         color_range = self.clim[1] - self.clim[0]
         if color_range != 0:
