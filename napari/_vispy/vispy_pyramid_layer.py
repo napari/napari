@@ -1,9 +1,11 @@
-from vispy.scene.visuals import Image as ImageNode
-from .vispy_base_layer import VispyBaseLayer
 import numpy as np
+from vispy.scene.visuals import Image as ImageNode
+
+from ..layers import Pyramid
+from .vispy_base_layer import VispyBaseLayer
 
 
-class VispyPyramidLayer(VispyBaseLayer):
+class VispyPyramidLayer(VispyBaseLayer, layer=Pyramid):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)

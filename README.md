@@ -4,6 +4,7 @@
 
 [![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/master/LICENSE)
 [![Build Status](https://api.cirrus-ci.com/github/Napari/napari.svg)](https://cirrus-ci.com/napari/napari)
+[![codecov](https://codecov.io/gh/napari/napari/branch/master/graph/badge.svg)](https://codecov.io/gh/napari/napari)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari.svg)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/napari.svg)](https://pypi.org/project/napari)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/napari.svg)](https://pypistats.org/packages/napari)

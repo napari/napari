@@ -6,8 +6,7 @@ task:
       image: python:3.6
 
   install_script:
-    # pip >= 19.0 crashes on Linux with Python 3.7
-    - python -m pip install --retries 3 --upgrade "pip<19.0"
+    - python -m pip install --retries 3 --upgrade pip
     - pip install `cat requirements/development.txt | grep black`
 
   test_script:
@@ -81,8 +80,7 @@ task:
         - rm install.sh
 
   install_script:
-    # pip >= 19.0 crashes on Linux with Python 3.7
-    - python -m pip install --retries 3 --upgrade "pip<19.0"
+    - python -m pip install --retries 3 --upgrade pip
     - pip install --retries 3 -r requirements.txt
     - python setup.py develop
 
@@ -92,6 +90,39 @@ task:
 
   test_script:
     - pytest -v
+
+codecov_task:
+  auto_cancellation: true
+
+  depends_on:
+    - linux
+    - osx
+    - windows
+
+  container:
+    image: python:3.6
+
+  env:
+    CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
+    DISPLAY: ":99"
+
+  system_script:
+    - apt-get update
+    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
+
+  # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
+  xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
+  # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
+  herbstluftwm_start_background_script: herbstluftwm
+
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - pip install -r requirements.txt
+    - pip install pytest-cov codecov
+
+  coverage_script:
+    - pytest --cov=./napari
+    - codecov
 
 push_docs_task:
   auto_cancellation: true

@@ -2,9 +2,10 @@ from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Volume as VolumeNode
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
+from ..layers import Image
 
 
-class VispyImageLayer(VispyBaseLayer):
+class VispyImageLayer(VispyBaseLayer, layer=Image):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)

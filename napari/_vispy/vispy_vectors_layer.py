@@ -1,8 +1,10 @@
 from vispy.scene.visuals import Mesh as MeshNode
+
+from ..layers import Vectors
 from .vispy_base_layer import VispyBaseLayer
 
 
-class VispyVectorsLayer(VispyBaseLayer):
+class VispyVectorsLayer(VispyBaseLayer, layer=Vectors):
     def __init__(self, layer):
         node = MeshNode()
         super().__init__(layer, node)

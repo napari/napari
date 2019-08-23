@@ -10,11 +10,12 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 
-from .qt_base_layer import QtLayerControls, QtLayerProperties
+from ..layers import Points
 from ..layers.points._constants import Mode, Symbol
+from .qt_base_layer import QtLayerControls, QtLayerProperties
 
 
-class QtPointsControls(QtLayerControls):
+class QtPointsControls(QtLayerControls, layer=Points):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -114,7 +115,7 @@ class QtDeletePointsButton(QPushButton):
         self.clicked.connect(self.layer.remove_selected)
 
 
-class QtPointsProperties(QtLayerProperties):
+class QtPointsProperties(QtLayerProperties, layer=Points):
     def __init__(self, layer):
         super().__init__(layer)
 

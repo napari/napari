@@ -1,4 +1,5 @@
 from collections import Iterable
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -11,11 +12,12 @@ from qtpy.QtWidgets import (
     QSlider,
 )
 
-from .qt_base_layer import QtLayerControls, QtLayerProperties
+from ..layers import Shapes
 from ..layers.shapes._constants import Mode
+from .qt_base_layer import QtLayerControls, QtLayerProperties
 
 
-class QtShapesControls(QtLayerControls):
+class QtShapesControls(QtLayerControls, layer=Shapes):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -169,7 +171,7 @@ class QtMoveFrontButton(QPushButton):
         self.clicked.connect(self.layer.move_to_front)
 
 
-class QtShapesProperties(QtLayerProperties):
+class QtShapesProperties(QtLayerProperties, layer=Shapes):
     def __init__(self, layer):
         super().__init__(layer)
 
