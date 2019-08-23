@@ -7,5 +7,4 @@ from . import (
     qt_pyramid_layer,
     qt_shapes_layer,
     qt_vectors_layer,
-    qt_volume_layer,
 )

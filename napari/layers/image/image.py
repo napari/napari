@@ -14,8 +14,7 @@ from ...util.misc import (
 )
 from ...util.event import Event
 from ...util.status_messages import format_float
-from ._constants import Interpolation, AVAILABLE_COLORMAPS
-from ..volume._constants import Rendering
+from ._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
 
 
 class Image(Layer):

@@ -18,4 +18,4 @@ with napari.gui_qt():
     )
     viewer = napari.Viewer()
     # add the volume
-    layer = viewer.add_volume(blobs)
+    layer = viewer.add_image(blobs, ndisplay=3)

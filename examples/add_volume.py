@@ -13,5 +13,3 @@ with napari.gui_qt():
     viewer = napari.Viewer()
     # add the volume
     viewer.add_image(blobs, scale=[3, 1, 1], ndisplay=3)
-
-    #viewer.dims.ndisplay = 3

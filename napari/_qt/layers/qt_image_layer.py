@@ -3,8 +3,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 
 from ...layers import Image
-from ...layers.image._constants import Interpolation
-from ...layers.volume._constants import Rendering
+from ...layers.image._constants import Interpolation, Rendering
 from .qt_base_layer import QtLayerControls, QtLayerProperties
 from .. import QVRangeSlider
 

@@ -7,5 +7,4 @@ from . import (
     vispy_pyramid_layer,
     vispy_shapes_layer,
     vispy_vectors_layer,
-    vispy_volume_layer,
 )
