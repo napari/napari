@@ -1,12 +1,14 @@
 from qtpy.QtWidgets import QHBoxLayout
-from . import QVRangeSlider
-from .qt_base_layer import QtLayerControls, QtLayerProperties
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
+
+from ..layers import Image
 from ..layers.image._constants import Interpolation
+from .qt_base_layer import QtLayerControls, QtLayerProperties
+from . import QVRangeSlider
 
 
-class QtImageControls(QtLayerControls):
+class QtImageControls(QtLayerControls, layer=Image):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -48,7 +50,7 @@ class QtImageControls(QtLayerControls):
         self.layer.status = self.layer._clim_msg
 
 
-class QtImageProperties(QtLayerProperties):
+class QtImageProperties(QtLayerProperties, layer=Image):
     def __init__(self, layer):
         super().__init__(layer)
 
