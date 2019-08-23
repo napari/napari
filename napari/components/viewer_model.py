@@ -305,6 +305,7 @@ class ViewerModel(KeymapMixin):
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
+        layer.dims.events.display.connect(self._on_layers_change)
         self.layers.append(layer)
         self._update_layers(layers=[layer])
 

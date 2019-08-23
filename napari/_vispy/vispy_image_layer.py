@@ -31,7 +31,6 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_display_change(self):
-        print('asdfasdfsdsdf')
         if self.layer.dims.ndisplay == 2 and type(self.node) == VolumeNode:
             parent = self.node.parent
             order = self._order
@@ -41,6 +40,8 @@ class VispyImageLayer(VispyBaseLayer):
             self.node = ImageNode(None, method='auto')
             self.node.parent = parent
             self._order = order
+            self.layer._position = (0,) * 2
+            self.layer._set_view_slice()
             self._on_interpolation_change()
             self._on_clim_change()
             self._on_colormap_change()
@@ -59,6 +60,8 @@ class VispyImageLayer(VispyBaseLayer):
             self.node = VolumeNode(np.zeros((1, 1, 1)))
             self.node.parent = parent
             self._order = order
+            self.layer._position = (0,) * 3
+            self.layer._set_view_slice()
             self._on_rendering_change()
             self._on_colormap_change()
             self._on_visible_change()
