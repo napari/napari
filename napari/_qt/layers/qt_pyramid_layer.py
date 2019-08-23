@@ -1,4 +1,4 @@
-from ..layers import Pyramid
+from ...layers import Pyramid
 from .qt_image_layer import QtImageControls, QtImageProperties
 
 

@@ -15,8 +15,8 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtCore import Qt
 
-from ..layers import Labels
-from ..layers.labels._constants import Mode
+from ...layers import Labels
+from ...layers.labels._constants import Mode
 from .qt_base_layer import QtLayerControls, QtLayerProperties
 
 

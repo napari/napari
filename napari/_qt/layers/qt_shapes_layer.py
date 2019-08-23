@@ -12,8 +12,8 @@ from qtpy.QtWidgets import (
     QSlider,
 )
 
-from ..layers import Shapes
-from ..layers.shapes._constants import Mode
+from ...layers import Shapes
+from ...layers.shapes._constants import Mode
 from .qt_base_layer import QtLayerControls, QtLayerProperties
 
 

@@ -13,8 +13,8 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 
-from ..layers.base._constants import Blending
-from ..util.layer_view import LayerView
+from ...layers.base._constants import Blending
+from ...util.layer_view import LayerView
 
 
 class QtLayerControls(LayerView, QFrame):

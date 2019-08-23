@@ -1,8 +1,8 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 
-from ..layers import Volume
-from ..layers.volume._constants import Rendering
+from ...layers import Volume
+from ...layers.volume._constants import Rendering
 from .qt_base_layer import QtLayerProperties
 from .qt_image_layer import QtImageControls
 
