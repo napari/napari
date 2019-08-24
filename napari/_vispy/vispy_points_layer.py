@@ -26,8 +26,7 @@ class VispyPointsLayer(VispyBaseLayer, layer=Points):
             lambda e: self._on_highlight_change()
         )
 
-        self._on_data_change()
-        self._on_highlight_change()
+        self.reset()
 
     def _on_data_change(self):
         if len(self.layer._data_view) > 0:
@@ -88,3 +87,8 @@ class VispyPointsLayer(VispyBaseLayer, layer=Points):
             color=self._highlight_color,
             width=self._highlight_width,
         )
+
+    def reset(self):
+        self._reset_base()
+        self._on_data_change()
+        self._on_highlight_change()

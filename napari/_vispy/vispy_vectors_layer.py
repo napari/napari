@@ -11,7 +11,7 @@ class VispyVectorsLayer(VispyBaseLayer, layer=Vectors):
 
         self.layer.events.edge_color.connect(lambda e: self._on_data_change())
 
-        self._on_data_change()
+        self.reset()
 
     def _on_data_change(self):
         self.node.set_data(
@@ -20,3 +20,7 @@ class VispyVectorsLayer(VispyBaseLayer, layer=Vectors):
             color=self.layer.edge_color,
         )
         self.node.update()
+
+    def reset(self):
+        self._reset_base()
+        self._on_data_change()

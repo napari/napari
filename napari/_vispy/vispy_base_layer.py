@@ -63,12 +63,6 @@ class VispyBaseLayer(LayerView, ABC):
             lambda e: self._on_translate_change()
         )
 
-        self._on_visible_change()
-        self._on_opacity_change()
-        self._on_blending_change()
-        self._on_scale_change()
-        self._on_translate_change()
-
     @property
     def _master_transform(self):
         """vispy.visuals.transforms.STTransform:
@@ -184,6 +178,17 @@ class VispyBaseLayer(LayerView, ABC):
         else:
             coords = (0,) * len(self.layer.dims.displayed)
         return coords
+
+    @abstractmethod
+    def reset(self):
+        raise NotImplementedError()
+
+    def _reset_base(self):
+        self._on_visible_change()
+        self._on_opacity_change()
+        self._on_blending_change()
+        self._on_scale_change()
+        self._on_translate_change()
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas."""

@@ -25,8 +25,7 @@ class VispyShapesLayer(VispyBaseLayer, layer=Shapes):
             lambda e: self._on_highlight_change()
         )
 
-        self._on_data_change()
-        self._on_highlight_change()
+        self.reset()
 
     def _on_data_change(self):
         faces = self.layer._data_view._mesh.displayed_triangles
@@ -72,3 +71,8 @@ class VispyShapesLayer(VispyBaseLayer, layer=Shapes):
 
     def _on_opacity_change(self):
         pass
+
+    def reset(self):
+        self._reset_base()
+        self._on_data_change()
+        self._on_highlight_change()

@@ -773,6 +773,7 @@ class ViewerModel(KeymapMixin):
             offset = self.dims.ndim - layer.dims.ndim
             order = np.array(self.dims.order)
             layer.dims.order = list(order[order >= offset] - offset)
+            layer.dims.ndisplay = self.dims.ndisplay
 
             # Update the point values of the layers for the dimensions that
             # the layer has

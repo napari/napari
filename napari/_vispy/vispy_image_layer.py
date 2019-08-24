@@ -24,12 +24,7 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
             lambda e: self._on_display_change()
         )
 
-        self._on_display_change()
-        self._on_interpolation_change()
-        self._on_rendering_change()
-        self._on_colormap_change()
-        self._on_clim_change()
-        self._on_data_change()
+        self.reset()
 
     def _on_display_change(self):
         if self.layer.dims.ndisplay == 2 and type(self.node) == VolumeNode:
@@ -43,15 +38,8 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
             self._order = order
             self.layer._position = (0,) * 2
             self.layer._set_view_slice()
-            self._on_interpolation_change()
-            self._on_clim_change()
-            self._on_colormap_change()
-            self._on_visible_change()
-            self._on_opacity_change()
-            self._on_blending_change()
-            self._on_scale_change()
-            self._on_translate_change()
-            self._on_data_change()
+            self.reset()
+
         elif self.layer.dims.ndisplay == 3 and type(self.node) == ImageNode:
             parent = self.node.parent
             order = self._order
@@ -63,14 +51,7 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
             self._order = order
             self.layer._position = (0,) * 3
             self.layer._set_view_slice()
-            self._on_rendering_change()
-            self._on_colormap_change()
-            self._on_visible_change()
-            self._on_opacity_change()
-            self._on_blending_change()
-            self._on_scale_change()
-            self._on_translate_change()
-            self._on_data_change()
+            self.reset()
 
     def _on_data_change(self):
         if self.layer.dims.ndisplay == 3:
@@ -101,3 +82,12 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
             self.node.set_data(self.layer._data_view, clim=self.layer.clim)
         else:
             self.node.clim = self.layer.clim
+
+    def reset(self):
+        self._reset_base()
+        self._on_display_change()
+        self._on_interpolation_change()
+        self._on_rendering_change()
+        self._on_colormap_change()
+        self._on_clim_change()
+        self._on_data_change()
