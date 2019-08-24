@@ -23,12 +23,22 @@ class Labels(Layer):
     ----------
     labels : array
         Labels data.
-    metadata : dict
-        Labels metadata.
     num_colors : int
         Number of unique colors to use in colormap.
     seed : float
         Seed for colormap random generator.
+    n_dimensional : bool
+        If `True`, paint and fill edit labels across all dimensions.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    ndisplay : int
+        Number of displayed dimensions.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -37,10 +47,6 @@ class Labels(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    n_dimensional : bool
-        If `True`, paint and fill edit labels across all dimensions.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -101,20 +107,30 @@ class Labels(Layer):
         self,
         labels,
         *,
-        metadata=None,
         num_colors=50,
         seed=0.5,
+        n_dimensional=False,
+        name=None,
+        metadata=None,
+        ndisplay=2,
+        scale=None,
+        translate=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
-        n_dimensional=False,
-        name=None,
-        **kwargs,
     ):
 
         super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
+            name=name,
+            metadata=metadata,
+            ndisplay=ndisplay,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
         )
+
         self.events.add(
             mode=Event,
             n_dimensional=Event,
@@ -125,7 +141,6 @@ class Labels(Layer):
 
         self._data = labels
         self._data_view = np.zeros((1, 1))
-        self.metadata = metadata or {}
         self._seed = seed
 
         self._colormap_name = 'random'
@@ -148,10 +163,6 @@ class Labels(Layer):
         self._status = self.mode
         self._help = 'enter paint or fill mode to edit labels'
 
-        # update flags
-        self._need_display_update = False
-        self._need_visual_update = False
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
         self._set_view_slice()
@@ -169,7 +180,12 @@ class Labels(Layer):
         self.events.data()
 
     def _get_range(self):
-        return tuple((0, m, 1) for m in self.data.shape)
+        if self.dims.ndisplay == 3:
+            scale = self.scale
+        else:
+            scale = 1
+
+        return tuple((0, m, 1) for m in np.multiply(self.data.shape, scale))
 
     @property
     def contiguous(self):

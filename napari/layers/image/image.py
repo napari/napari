@@ -25,8 +25,6 @@ class Image(Layer):
     image : array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-    metadata : dict
-        Image metadata.
     multichannel : bool
         Whether the image is multichannel RGB or RGBA if multichannel. If
         not specified by user and the last dimension of the data has length
@@ -51,6 +49,16 @@ class Image(Layer):
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    ndisplay : int
+        Number of displayed dimensions.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -59,10 +67,7 @@ class Image(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    ndisplay : int
-        Number of displayed dimensions.
-    name : str
-        Name of the layer.
+
 
     Attributes
     ----------
@@ -106,22 +111,30 @@ class Image(Layer):
         self,
         image,
         *,
-        metadata=None,
         multichannel=None,
         colormap='gray',
         clim=None,
         clim_range=None,
         interpolation='nearest',
+        name=None,
+        metadata=None,
+        ndisplay=2,
+        scale=None,
+        translate=None,
         opacity=1,
         blending='translucent',
         visible=True,
-        ndisplay=2,
-        name=None,
-        **kwargs,
     ):
 
         super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
+            name=name,
+            metadata=metadata,
+            ndisplay=ndisplay,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
         )
 
         self.events.add(
@@ -130,7 +143,6 @@ class Image(Layer):
 
         # Set data
         self._data = image
-        self.metadata = metadata or {}
         if multichannel is False:
             self._multichannel = multichannel
         else:
@@ -140,9 +152,11 @@ class Image(Layer):
 
         # Intitialize image views and thumbnails with zeros
         if self.multichannel:
-            self._data_view = np.zeros((1, 1) + (self.shape[-1],))
+            self._data_view = np.zeros(
+                (1,) * self.dims.ndisplay + (self.shape[-1],)
+            )
         else:
-            self._data_view = np.zeros((1, 1))
+            self._data_view = np.zeros((1,) * self.dims.ndisplay)
         self._data_thumbnail = self._data_view
 
         # Set clims and colormaps
@@ -161,13 +175,8 @@ class Image(Layer):
         self.interpolation = interpolation
         self._rendering = self._default_rendering
 
-        # Set update flags
-        self._need_display_update = False
-        self._need_visual_update = False
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self.dims.ndisplay = ndisplay
         self._set_view_slice()
 
     @property
@@ -189,7 +198,13 @@ class Image(Layer):
             shape = self.data.shape[:-1]
         else:
             shape = self.data.shape
-        return tuple((0, m, 1) for m in shape)
+
+        if self.dims.ndisplay == 3:
+            scale = self.scale
+        else:
+            scale = 1
+
+        return tuple((0, m, 1) for m in np.multiply(shape, scale))
 
     @property
     def multichannel(self):

@@ -17,9 +17,16 @@ class Layer(KeymapMixin, ABC):
 
     Parameters
     ----------
-    name : str, optional
-        Name of the layer. If not provided, is automatically generated
-        from `cls._basename()`
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    ndisplay : int
+        Number of displayed dimensions.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -52,10 +59,10 @@ class Layer(KeymapMixin, ABC):
                 different colors and opacity. Useful for creating overlays. It
                 corresponds to depth_test=False, cull_face=False, blend=True,
                 blend_func=('src_alpha', 'one').
-    scale : sequence of float
-        Scale factors for the layer visual in the scenecanvas.
-    translate : sequence of float
-        Translation values for the layer visual in the scenecanvas.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
@@ -97,10 +104,20 @@ class Layer(KeymapMixin, ABC):
     """
 
     def __init__(
-        self, *, name=None, opacity=1, blending='translucent', visible=True
+        self,
+        *,
+        name=None,
+        metadata=None,
+        ndisplay=2,
+        scale=None,
+        translate=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
     ):
         super().__init__()
 
+        self.metadata = metadata or {}
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
@@ -115,9 +132,10 @@ class Layer(KeymapMixin, ABC):
         self.coordinates = (0, 0)
         self._value = None
         self.scale_factor = 1
-        self._scale = [1] * 2
-        self._translate = [0] * 2
+        self._scale = scale or [1] * 2
+        self._translate = translate or [0] * 2
         self.dims = Dims(2)
+        self.dims.ndisplay = ndisplay
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
@@ -146,6 +164,7 @@ class Layer(KeymapMixin, ABC):
         self.name = name
 
         self.dims.events.display.connect(lambda e: self._set_view_slice())
+        self.dims.events.display.connect(lambda e: self._update_dims())
         self.dims.events.axis.connect(lambda e: self._set_view_slice())
 
     def __str__(self):
@@ -264,11 +283,28 @@ class Layer(KeymapMixin, ABC):
         """Updates dims model, which is useful after data has been changed."""
         curr_range = self._get_range()
         ndim = len(curr_range)
+        if len(self.position) > ndim:
+            self._position = self._position[-ndim:]
+        elif len(self.position) < ndim:
+            self._position = (0,) * (ndim - len(self.position)) + tuple(
+                self.position
+            )
+
+        if len(self.scale) > ndim:
+            self._scale = self._scale[-ndim:]
+        elif len(self.position) < ndim:
+            self._scale = (1,) * (ndim - len(self.scale)) + tuple(self.scale)
+
+        if len(self.translate) > ndim:
+            self._translate = self._translate[-ndim:]
+        elif len(self.translate) < ndim:
+            self._translate = (0,) * (ndim - len(self.translate)) + tuple(
+                self.translate
+            )
+
         if ndim != self.dims.ndim:
-            self._position = (0,) * ndim
-            self._scale = (1,) * ndim
-            self._translate = (0,) * ndim
             self.dims.ndim = ndim
+
         for i, r in enumerate(curr_range):
             self.dims.set_range(i, r)
         self._update_coordinates()

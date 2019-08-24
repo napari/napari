@@ -4,7 +4,7 @@ from .viewer import Viewer
 def view(
     *images,
     title='napari',
-    meta=None,
+    metadata=None,
     multichannel=None,
     clim_range=None,
     **named_images,
@@ -50,12 +50,15 @@ def view(
     viewer = Viewer(title=title)
     for image in images:
         viewer.add_image(
-            image, meta=meta, multichannel=multichannel, clim_range=clim_range
+            image,
+            metadata=metadata,
+            multichannel=multichannel,
+            clim_range=clim_range,
         )
     for name, image in named_images.items():
         viewer.add_image(
             image,
-            meta=meta,
+            metadata=metadata,
             multichannel=multichannel,
             clim_range=clim_range,
             name=name,
