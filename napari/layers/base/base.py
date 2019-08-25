@@ -333,6 +333,8 @@ class Layer(KeymapMixin, ABC):
 
     @thumbnail.setter
     def thumbnail(self, thumbnail):
+        if 0 in thumbnail.shape:
+            thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
