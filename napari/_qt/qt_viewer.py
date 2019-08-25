@@ -149,7 +149,10 @@ class QtViewer(QSplitter):
         vispy_layer = VispyBaseLayer(layer)
         vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
-        vispy_layer._order = -len(layers)
+        if self.viewer.dims.ndisplay == 2:
+            vispy_layer.order = -len(layers)
+        else:
+            vispy_layer.order = len(layers)
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -160,12 +163,15 @@ class QtViewer(QSplitter):
         vispy_layer.node.parent = None
         del self.layer_to_visual[layer]
 
-    def _reorder_layers(event):
+    def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order."""
         layers = event.source
         for i, layer in enumerate(layers):
             vispy_layer = self.layer_to_visual[layer]
-            vispy_layer._order = -i
+            if self.viewer.dims.ndisplay == 2:
+                vispy_layer.order = -i
+            else:
+                vispy_layer.order = i
         self.canvas._draw_order.clear()
         self.canvas.update()
 

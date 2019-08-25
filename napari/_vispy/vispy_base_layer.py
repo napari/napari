@@ -76,18 +76,21 @@ class VispyBaseLayer(LayerView, ABC):
         return self.node.transform
 
     @property
-    def _order(self):
+    def order(self):
         """int: Order in which the visual is drawn in the scenegraph.
 
         Lower values are closer to the viewer.
         """
         return self.node.order
 
-    @_order.setter
-    def _order(self, order):
+    @order.setter
+    def order(self, order):
         # workaround for opacity (see: #22)
         order = -order
-        self.z_index = order
+        if self.layer.dims.ndisplay == 2:
+            self.z_index = order
+        else:
+            self.z_index = 0
         # end workaround
         self.node.order = order
 

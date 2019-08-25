@@ -30,24 +30,24 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
     def _on_display_change(self):
         if self.layer.dims.ndisplay == 2 and type(self.node) == VolumeNode:
             parent = self.node.parent
-            order = copy(self._order)
+            order = abs(copy(self.node.order))
             self.node.parent = None
 
             self.node = ImageNode(None, method='auto')
             self.node.parent = parent
-            self._order = order
+            self.order = order
             self.layer._position = (0,) * 2
             self.layer._set_view_slice()
             self.reset()
 
         elif self.layer.dims.ndisplay == 3 and type(self.node) == ImageNode:
             parent = self.node.parent
-            order = copy(self._order)
+            order = abs(copy(self.node.order))
             self.node.parent = None
 
             self.node = VolumeNode(np.zeros((1, 1, 1)))
             self.node.parent = parent
-            self._order = order
+            self.order = order
             self.layer._position = (0,) * 3
             self.layer._set_view_slice()
             self.reset()

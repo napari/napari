@@ -487,16 +487,19 @@ class Labels(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colors.
         """
+        if self.dims.ndisplay == 3:
+            image = np.max(self._data_labels, axis=0)
+        else:
+            image = self._data_labels
+
         zoom_factor = np.divide(
-            self._thumbnail_shape[:2], self._data_labels.shape[:2]
+            self._thumbnail_shape[:2], image.shape[:2]
         ).min()
         # warning filter can be removed with scipy 1.4
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             downsampled = np.round(
-                ndi.zoom(
-                    self._data_labels, zoom_factor, prefilter=False, order=0
-                )
+                ndi.zoom(image, zoom_factor, prefilter=False, order=0)
             )
         downsampled = self._raw_to_displayed(downsampled)
         colormapped = self.colormap[1].map(downsampled)
