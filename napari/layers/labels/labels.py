@@ -93,7 +93,7 @@ class Labels(Layer):
 
     Extended Summary
     ----------
-    _data_view : array (N, M)
+    _data_labels : array (N, M)
         2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
@@ -132,6 +132,10 @@ class Labels(Layer):
         )
 
         self.events.add(
+            clim=Event,
+            colormap=Event,
+            interpolation=Event,
+            rendering=Event,
             mode=Event,
             n_dimensional=Event,
             contiguous=Event,
@@ -140,7 +144,11 @@ class Labels(Layer):
         )
 
         self._data = labels
-        self._data_view = np.zeros((1, 1))
+        self._data_labels = np.zeros((1,) * self.dims.ndisplay)
+        self._data_view = np.zeros((1,) * self.dims.ndisplay)
+        self.clim = [0.0, 1.0]
+        self.interpolation = 'nearest'
+        self.rendering = 'mip'
         self._seed = seed
 
         self._colormap_name = 'random'
@@ -349,9 +357,10 @@ class Labels(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-        self._data_view = np.asarray(self.data[self.dims.indices]).transpose(
+        self._data_labels = np.asarray(self.data[self.dims.indices]).transpose(
             self.dims.displayed_order
         )
+        self._data_view = self._raw_to_displayed(self._data_labels)
 
         self._update_thumbnail()
         self._update_coordinates()
@@ -381,7 +390,7 @@ class Labels(Layer):
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
-            labels = self._data_view
+            labels = self._data_labels
             slice_coord = tuple(int_coord[d] for d in self.dims.displayed)
 
         matches = labels == old_label
@@ -467,9 +476,9 @@ class Labels(Layer):
             Value of the data at the coord, or none if coord is outside range.
         """
         coord = np.round(self.coordinates).astype(int)
-        shape = self._data_view.shape
+        shape = self._data_labels.shape
         if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = self._data_view[tuple(coord[self.dims.displayed])]
+            value = self._data_labels[tuple(coord[self.dims.displayed])]
         else:
             value = None
 
@@ -479,14 +488,14 @@ class Labels(Layer):
         """Update thumbnail with current image data and colors.
         """
         zoom_factor = np.divide(
-            self._thumbnail_shape[:2], self._data_view.shape[:2]
+            self._thumbnail_shape[:2], self._data_labels.shape[:2]
         ).min()
         # warning filter can be removed with scipy 1.4
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             downsampled = np.round(
                 ndi.zoom(
-                    self._data_view, zoom_factor, prefilter=False, order=0
+                    self._data_labels, zoom_factor, prefilter=False, order=0
                 )
             )
         downsampled = self._raw_to_displayed(downsampled)
@@ -507,8 +516,9 @@ class Labels(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        image = self._raw_to_displayed(self._data_view)
-        mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
+        mapped_image = (self.colormap[1].map(self._data_view) * 255).astype(
+            'uint8'
+        )
         mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]

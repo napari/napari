@@ -105,7 +105,6 @@ class Image(Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _default_rendering = Rendering.MIP
 
     def __init__(
         self,
@@ -116,6 +115,7 @@ class Image(Layer):
         clim=None,
         clim_range=None,
         interpolation='nearest',
+        rendering='mip',
         name=None,
         metadata=None,
         ndisplay=2,
@@ -173,7 +173,7 @@ class Image(Layer):
         self.colormap = colormap
         self.clim = self._clim
         self.interpolation = interpolation
-        self._rendering = self._default_rendering
+        self.rendering = rendering
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()

@@ -292,7 +292,7 @@ class Layer(KeymapMixin, ABC):
 
         if len(self.scale) > ndim:
             self._scale = self._scale[-ndim:]
-        elif len(self.position) < ndim:
+        elif len(self.scale) < ndim:
             self._scale = (1,) * (ndim - len(self.scale)) + tuple(self.scale)
 
         if len(self.translate) > ndim:
@@ -307,6 +307,7 @@ class Layer(KeymapMixin, ABC):
 
         for i, r in enumerate(curr_range):
             self.dims.set_range(i, r)
+
         self._update_coordinates()
 
     @property
