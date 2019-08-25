@@ -255,6 +255,7 @@ class Layer(KeymapMixin, ABC):
     @scale.setter
     def scale(self, scale):
         self._scale = scale
+        self._update_dims()
         self.events.scale()
 
     @property
