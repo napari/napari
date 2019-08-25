@@ -1,5 +1,5 @@
 import numpy as np
-
+from copy import copy
 from .viewer import Viewer
 
 
@@ -25,9 +25,17 @@ def roll_dims(viewer):
 
 @Viewer.bind_key('Control-T')
 def transpose_displayed_dims(viewer):
-    order = viewer.dims.order
+    order = copy(viewer.dims.order)
     order[-2], order[-1] = order[-1], order[-2]
     viewer.dims.order = order
+
+
+@Viewer.bind_key('Control-Y')
+def toggle_ndisplay(viewer):
+    if viewer.dims.ndisplay == 3:
+        viewer.dims.ndisplay = 2
+    else:
+        viewer.dims.ndisplay = 3
 
 
 @Viewer.bind_key('Left')

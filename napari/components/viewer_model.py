@@ -820,11 +820,6 @@ class ViewerModel(KeymapMixin):
         self.dims.ndim = len(layer_range)
         for i, r in enumerate(layer_range):
             self.dims.set_range(i, r)
-        ndisplay = 2
-        for layer in self.layers:
-            if layer.dims.ndisplay == 3:
-                ndisplay = 3
-        self.dims.ndisplay = ndisplay
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.

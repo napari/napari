@@ -1,6 +1,7 @@
 from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Volume as VolumeNode
 import numpy as np
+from copy import copy
 from .vispy_base_layer import VispyBaseLayer
 from ..layers import Image
 
@@ -29,9 +30,8 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
     def _on_display_change(self):
         if self.layer.dims.ndisplay == 2 and type(self.node) == VolumeNode:
             parent = self.node.parent
-            order = self._order
+            order = copy(self._order)
             self.node.parent = None
-            self._order = 0
 
             self.node = ImageNode(None, method='auto')
             self.node.parent = parent
@@ -42,9 +42,8 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
 
         elif self.layer.dims.ndisplay == 3 and type(self.node) == ImageNode:
             parent = self.node.parent
-            order = self._order
+            order = copy(self._order)
             self.node.parent = None
-            self._order = 0
 
             self.node = VolumeNode(np.zeros((1, 1, 1)))
             self.node.parent = parent

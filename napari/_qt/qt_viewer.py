@@ -156,7 +156,6 @@ class QtViewer(QSplitter):
         """When a layer is removed, remove its parent."""
         layer = event.item
         vispy_layer = self.layer_to_visual[layer]
-        vispy_layer._order = 0
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del self.layer_to_visual[layer]
