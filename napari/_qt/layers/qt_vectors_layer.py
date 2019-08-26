@@ -1,15 +1,10 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox
 
-from ...layers import Vectors
-from .qt_base_layer import QtLayerControls, QtLayerProperties
+from .qt_base_layer import QtLayerProperties
 
 
-class QtVectorsControls(QtLayerControls, layer=Vectors):
-    pass
-
-
-class QtVectorsProperties(QtLayerProperties, layer=Vectors):
+class QtVectorsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

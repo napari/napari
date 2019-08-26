@@ -14,17 +14,16 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.base._constants import Blending
-from ...util.layer_view import LayerView
 
 
-class QtLayerControls(LayerView, QFrame):
+class QtLayerControls(QFrame):
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
 
 
-class QtLayerProperties(LayerView, QFrame):
+class QtLayerProperties(QFrame):
     def __init__(self, layer):
         super().__init__()
 

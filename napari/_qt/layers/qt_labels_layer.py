@@ -1,6 +1,3 @@
-from collections import Iterable
-
-import numpy as np
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -15,12 +12,13 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtCore import Qt
 
-from ...layers import Labels
-from ...layers.labels._constants import Mode
+import numpy as np
+from collections import Iterable
 from .qt_base_layer import QtLayerControls, QtLayerProperties
+from ...layers.labels._constants import Mode
 
 
-class QtLabelsControls(QtLayerControls, layer=Labels):
+class QtLabelsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -132,7 +130,7 @@ class QtColorBox(QWidget):
             painter.drawRect(0, 0, self._height, self._height)
 
 
-class QtLabelsProperties(QtLayerProperties, layer=Labels):
+class QtLabelsProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 

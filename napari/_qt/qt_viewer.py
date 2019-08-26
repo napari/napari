@@ -31,7 +31,7 @@ from ..util.io import read
 from .qt_controls import QtControls
 from .qt_layer_buttons import QtLayersButtons
 from .qt_console import QtConsole
-from .._vispy import VispyBaseLayer
+from .._vispy import create_vispy_visual
 
 
 # set vispy application to the appropriate qt backend
@@ -146,7 +146,7 @@ class QtViewer(QSplitter):
         """When a layer is added, set its parent and order."""
         layers = event.source
         layer = event.item
-        vispy_layer = VispyBaseLayer(layer)
+        vispy_layer = create_vispy_visual(layer)
         vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         if self.viewer.dims.ndisplay == 2:

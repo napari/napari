@@ -6,7 +6,7 @@ from .vispy_base_layer import VispyBaseLayer
 from ..layers import Image
 
 
-class VispyImageLayer(VispyBaseLayer, layer=Image):
+class VispyImageLayer(VispyBaseLayer):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
