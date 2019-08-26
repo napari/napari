@@ -53,7 +53,8 @@ def test_add_volume(qtbot):
 
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
-    viewer.add_image(data, ndisplay=3)
+    viewer.add_image(data)
+    viewer.dims.ndisplay = 3
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1

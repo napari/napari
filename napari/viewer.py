@@ -10,10 +10,12 @@ class Viewer(ViewerModel):
     ----------
     title : string
         The title of the viewer window.
+    ndisplay : int
+        Number of displayed dimensions.
     """
 
-    def __init__(self, title='napari'):
-        super().__init__(title=title)
+    def __init__(self, title='napari', ndisplay=2):
+        super().__init__(title=title, ndisplay=ndisplay)
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
         self.screenshot = self.window.qt_viewer.screenshot

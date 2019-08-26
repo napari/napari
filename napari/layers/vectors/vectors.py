@@ -82,7 +82,6 @@ class Vectors(Layer):
         edge_width=1,
         edge_color='red',
         length=1,
-        opacity=1,
         name=None,
         metadata=None,
         scale=None,

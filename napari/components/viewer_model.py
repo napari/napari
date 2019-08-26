@@ -28,7 +28,7 @@ class ViewerModel(KeymapMixin):
 
     themes = palettes
 
-    def __init__(self, title='napari'):
+    def __init__(self, title='napari', ndisplay=2):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -44,9 +44,8 @@ class ViewerModel(KeymapMixin):
             palette=Event,
         )
 
-        # Initial dimension must be set to at least the number of visible
-        # dimensions of the viewer
-        self.dims = Dims(2)
+        self.dims = Dims(ndisplay)
+        self.dims.ndisplay = ndisplay
 
         self.layers = LayerList()
 
@@ -308,10 +307,6 @@ class ViewerModel(KeymapMixin):
         layer.dims.events.display.connect(self._on_layers_change)
         layer.dims.events.range.connect(self._on_layers_change)
         self.layers.append(layer)
-        if layer.dims.ndisplay == 3 and self.dims.ndisplay == 2:
-            self.dims.ndisplay = 3
-        if layer.dims.ndisplay == 2 and self.dims.ndisplay == 3:
-            self.dims.ndisplay = 2
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
@@ -720,7 +715,6 @@ class ViewerModel(KeymapMixin):
         edge_width=1,
         edge_color='red',
         length=1,
-        opacity=1,
         name=None,
         metadata=None,
         scale=None,
@@ -772,7 +766,6 @@ class ViewerModel(KeymapMixin):
             edge_width=edge_width,
             edge_color=edge_color,
             length=length,
-            opacity=opacity,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -828,7 +821,11 @@ class ViewerModel(KeymapMixin):
             # respectively
             offset = self.dims.ndim - layer.dims.ndim
             order = np.array(self.dims.order)
-            layer.dims.order = list(order[order >= offset] - offset)
+            if offset <= 0:
+                order = list(range(-offset)) + list(order - offset)
+            else:
+                order = list(order[order >= offset] - offset)
+            layer.dims.order = order
             layer.dims.ndisplay = self.dims.ndisplay
 
             # Update the point values of the layers for the dimensions that

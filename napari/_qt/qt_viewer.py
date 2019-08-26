@@ -178,7 +178,6 @@ class QtViewer(QSplitter):
         if self.viewer.dims.ndisplay == 3:
             # Set a 3D camera
             if not isinstance(self.view.camera, ArcballCamera):
-                layer = self.viewer.layers[1]
                 self.view.camera = ArcballCamera(name="ArcballCamera")
                 # flip y-axis to have correct alignment
                 self.view.camera.flip = (0, 1, 0)
