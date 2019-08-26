@@ -63,6 +63,7 @@ class Dims:
             ndim=None,
             display=None,
             range=None,
+            camera=None,
         )
 
         self._range = []
@@ -123,6 +124,7 @@ class Dims:
             return
         self._order = order
         self.events.display()
+        self.events.camera()
 
     @property
     def ndim(self):
@@ -205,6 +207,7 @@ class Dims:
             return
         self._ndisplay = ndisplay
         self.events.display()
+        self.events.camera()
 
     @property
     def displayed(self):

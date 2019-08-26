@@ -61,7 +61,7 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.display.connect(lambda e: self.reset_view())
+        self.dims.events.camera.connect(lambda e: self.reset_view())
         self.dims.events.display.connect(lambda e: self._update_layers())
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)

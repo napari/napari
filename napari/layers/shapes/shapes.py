@@ -292,7 +292,6 @@ class Shapes(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self):
@@ -305,7 +304,6 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
     def _get_range(self):
@@ -639,7 +637,6 @@ class Shapes(Layer):
 
         self._display_order_stored = copy(self.dims.order)
         self._update_dims()
-        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -887,7 +884,6 @@ class Shapes(Layer):
                 self._data_view.remove(index)
         self._is_creating = False
         self._update_dims()
-        self._set_view_slice()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""

@@ -99,7 +99,6 @@ class Pyramid(Image):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self):
@@ -110,7 +109,6 @@ class Pyramid(Image):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
     def _get_range(self):

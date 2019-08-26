@@ -36,7 +36,7 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
             self.node = ImageNode(None, method='auto')
             self.node.parent = parent
             self.order = order
-            self.layer._position = (0,) * 2
+            self.layer._update_dims()
             self.layer._set_view_slice()
             self.reset()
 
@@ -48,7 +48,7 @@ class VispyImageLayer(VispyBaseLayer, layer=Image):
             self.node = VolumeNode(np.zeros((1, 1, 1)))
             self.node.parent = parent
             self.order = order
-            self.layer._position = (0,) * 3
+            self.layer._update_dims()
             self.layer._set_view_slice()
             self.reset()
 

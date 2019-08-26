@@ -212,7 +212,6 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self) -> np.ndarray:
@@ -250,7 +249,6 @@ class Points(Layer):
                 self.face_colors += [self.face_color for i in range(adding)]
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
     def _get_range(self):
@@ -568,7 +566,7 @@ class Points(Layer):
 
         else:
             # if no points in this slice send dummy data
-            data = np.empty((0, 2))
+            data = np.zeros((0, self.dims.ndisplay))
             sizes = [0]
         self._data_view = data
         self._sizes_view = sizes
@@ -632,7 +630,7 @@ class Points(Layer):
 
         pos = self._selected_box
         if pos is None and not self._is_selecting:
-            pos = np.empty((0, 2))
+            pos = np.zeros((0, 2))
         elif self._is_selecting:
             pos = create_box(self._drag_box)
             pos = pos[list(range(4)) + [0]]

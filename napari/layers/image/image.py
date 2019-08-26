@@ -184,7 +184,6 @@ class Image(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self):

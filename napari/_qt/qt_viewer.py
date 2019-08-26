@@ -136,7 +136,7 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.dims.events.display.connect(
+        self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
 
@@ -178,13 +178,14 @@ class QtViewer(QSplitter):
         if self.viewer.dims.ndisplay == 3:
             # Set a 3D camera
             if not isinstance(self.view.camera, ArcballCamera):
+                layer = self.viewer.layers[1]
                 self.view.camera = ArcballCamera(name="ArcballCamera")
                 # flip y-axis to have correct alignment
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
                 self._reorder_layers(None)
+                self.viewer.reset_view()
         else:
             # Set 2D camera
             if not isinstance(self.view.camera, PanZoomCamera):
@@ -195,8 +196,8 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
                 self._reorder_layers(None)
+                self.viewer.reset_view()
 
     def screenshot(self):
         """Take currently displayed screen and convert to an image array.

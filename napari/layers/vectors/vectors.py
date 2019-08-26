@@ -127,7 +127,6 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
     def _get_range(self):

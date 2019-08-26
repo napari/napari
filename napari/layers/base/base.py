@@ -133,7 +133,7 @@ class Layer(KeymapMixin, ABC):
         self.scale_factor = 1
         self._scale = scale or [1] * ndim
         self._translate = translate or [0] * ndim
-        self._position = (0,) * ndim
+        self._position = (0,) * ndisplay
         self.coordinates = (0,) * ndim
         self.dims = Dims(ndim)
         self.dims.ndisplay = ndisplay
@@ -285,10 +285,12 @@ class Layer(KeymapMixin, ABC):
         """Updates dims model, which is useful after data has been changed."""
         curr_range = self._get_range()
         ndim = len(curr_range)
-        if len(self.position) > ndim:
-            self._position = self._position[-ndim:]
-        elif len(self.position) < ndim:
-            self._position = (0,) * (ndim - len(self.position)) + tuple(
+        ndisplay = self.dims.ndisplay
+
+        if len(self.position) > ndisplay:
+            self._position = self._position[-ndisplay:]
+        elif len(self.position) < ndisplay:
+            self._position = (0,) * (ndisplay - len(self.position)) + tuple(
                 self.position
             )
 
@@ -310,6 +312,7 @@ class Layer(KeymapMixin, ABC):
         for i, r in enumerate(curr_range):
             self.dims.set_range(i, r)
 
+        self._set_view_slice()
         self._update_coordinates()
 
     @property
