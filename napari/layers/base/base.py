@@ -21,8 +21,6 @@ class Layer(KeymapMixin, ABC):
         Name of the layer.
     metadata : dict
         Layer metadata.
-    ndisplay : int
-        Number of displayed dimensions.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -109,7 +107,6 @@ class Layer(KeymapMixin, ABC):
         *,
         name=None,
         metadata=None,
-        ndisplay=2,
         scale=None,
         translate=None,
         opacity=1,
@@ -131,12 +128,13 @@ class Layer(KeymapMixin, ABC):
         self._interactive = True
         self._value = None
         self.scale_factor = 1
+
+        self.dims = Dims(ndim)
         self._scale = scale or [1] * ndim
         self._translate = translate or [0] * ndim
-        self._position = (0,) * ndisplay
         self.coordinates = (0,) * ndim
-        self.dims = Dims(ndim)
-        self.dims.ndisplay = ndisplay
+        self._position = (0,) * self.dims.ndisplay
+
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True

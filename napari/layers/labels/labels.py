@@ -21,7 +21,7 @@ class Labels(Layer):
 
     Parameters
     ----------
-    labels : array
+    data : array
         Labels data.
     num_colors : int
         Number of unique colors to use in colormap.
@@ -33,8 +33,6 @@ class Labels(Layer):
         Name of the layer.
     metadata : dict
         Layer metadata.
-    ndisplay : int
-        Number of displayed dimensions.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -105,14 +103,13 @@ class Labels(Layer):
 
     def __init__(
         self,
-        labels,
+        data,
         *,
         num_colors=50,
         seed=0.5,
         n_dimensional=False,
         name=None,
         metadata=None,
-        ndisplay=2,
         scale=None,
         translate=None,
         opacity=0.7,
@@ -121,10 +118,9 @@ class Labels(Layer):
     ):
 
         super().__init__(
-            labels.ndim,
+            data.ndim,
             name=name,
             metadata=metadata,
-            ndisplay=ndisplay,
             scale=scale,
             translate=translate,
             opacity=opacity,
@@ -144,7 +140,7 @@ class Labels(Layer):
             selected_label=Event,
         )
 
-        self._data = labels
+        self._data = data
         self._data_labels = np.zeros((1,) * self.dims.ndisplay)
         self._data_view = np.zeros((1,) * self.dims.ndisplay)
         self.clim = [0.0, 1.0]

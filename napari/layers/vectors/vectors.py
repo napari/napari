@@ -14,7 +14,7 @@ class Vectors(Layer):
 
     Parameters
     ----------
-    vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
+    data : (N, 2, D) or (N1, N2, ..., ND, D) array
         An (N, 2, D) array is interpreted as "coordinate-like" data and a
         list of N vectors with start point and projections of the vector in
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
@@ -26,6 +26,14 @@ class Vectors(Layer):
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Edge color of all the vectors.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -34,8 +42,6 @@ class Vectors(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -71,19 +77,30 @@ class Vectors(Layer):
 
     def __init__(
         self,
-        vectors,
+        data,
         *,
         edge_width=1,
         edge_color='red',
         length=1,
         opacity=1,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=0.7,
         blending='translucent',
         visible=True,
-        name=None,
     ):
 
         super().__init__(
-            2, name=name, opacity=opacity, blending=blending, visible=visible
+            2,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
         )
 
         # events for non-napari calculations
@@ -105,7 +122,7 @@ class Vectors(Layer):
         self._length = length
 
         # assign vector data and establish default behavior
-        self.data = vectors
+        self.data = data
 
     @property
     def data(self) -> np.ndarray:

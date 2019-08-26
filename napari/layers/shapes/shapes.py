@@ -50,16 +50,22 @@ class Shapes(Layer):
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float or list
-        Opacity of the shapes, between 0.0 and 1.0.
+        Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -193,10 +199,13 @@ class Shapes(Layer):
         edge_color='black',
         face_color='white',
         z_index=0,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
-        name=None,
     ):
 
         if np.array(data).ndim == 3:
@@ -210,7 +219,15 @@ class Shapes(Layer):
 
         # Don't pass on opacity value to base layer as it could be a list
         # and will get set bellow
-        super().__init__(ndim, name=name, blending=blending, visible=visible)
+        super().__init__(
+            ndim,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            blending=blending,
+            visible=visible,
+        )
 
         self._display_order_stored = []
         self.dims.clip = False

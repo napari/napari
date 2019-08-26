@@ -22,7 +22,7 @@ class Image(Layer):
 
     Parameters
     ----------
-    image : array
+    data : array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
     multichannel : bool
@@ -53,8 +53,6 @@ class Image(Layer):
         Name of the layer.
     metadata : dict
         Layer metadata.
-    ndisplay : int
-        Number of displayed dimensions.
     scale : tuple of float
         Scale factors for the layer.
     translate : tuple of float
@@ -108,7 +106,7 @@ class Image(Layer):
 
     def __init__(
         self,
-        image,
+        data,
         *,
         multichannel=None,
         colormap='gray',
@@ -118,7 +116,6 @@ class Image(Layer):
         rendering='mip',
         name=None,
         metadata=None,
-        ndisplay=2,
         scale=None,
         translate=None,
         opacity=1,
@@ -131,18 +128,17 @@ class Image(Layer):
         else:
             # If multichannel is True or None then guess if multichannel
             # allowed or not, and if allowed set it to be True
-            self._multichannel = is_multichannel(image.shape)
+            self._multichannel = is_multichannel(data.shape)
 
         if self.multichannel:
-            ndim = image.ndim - 1
+            ndim = data.ndim - 1
         else:
-            ndim = image.ndim
+            ndim = data.ndim
 
         super().__init__(
             ndim,
             name=name,
             metadata=metadata,
-            ndisplay=ndisplay,
             scale=scale,
             translate=translate,
             opacity=opacity,
@@ -155,7 +151,7 @@ class Image(Layer):
         )
 
         # Set data
-        self._data = image
+        self._data = data
 
         # Intitialize image views and thumbnails with zeros
         if self.multichannel:
@@ -196,7 +192,6 @@ class Image(Layer):
         if self.multichannel:
             self._multichannel = is_multichannel(data.shape)
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
     def _get_range(self):

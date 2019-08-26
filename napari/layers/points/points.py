@@ -16,7 +16,7 @@ class Points(Layer):
 
     Parameters
     ----------
-    coords : array (N, D)
+    data : array (N, D)
         Coordinates for N points in D dimensions.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
@@ -35,6 +35,14 @@ class Points(Layer):
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -43,8 +51,6 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -107,7 +113,7 @@ class Points(Layer):
 
     def __init__(
         self,
-        coords,
+        data,
         *,
         symbol='o',
         size=10,
@@ -115,16 +121,22 @@ class Points(Layer):
         edge_color='black',
         face_color='white',
         n_dimensional=False,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=1,
         blending='translucent',
         visible=True,
-        name=None,
     ):
 
-        ndim = coords.shape[1]
+        ndim = data.shape[1]
         super().__init__(
             ndim,
             name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -143,7 +155,7 @@ class Points(Layer):
         self._colors = get_color_names()
 
         # Save the point coordinates
-        self._data = coords
+        self._data = data
         self.dims.clip = False
 
         # Save the point style params
