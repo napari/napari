@@ -1,10 +1,8 @@
 from vispy.scene.visuals import Image as ImageNode
-
-from ..layers import Labels
 from .vispy_base_layer import VispyBaseLayer
 
 
-class VispyLabelsLayer(VispyBaseLayer, layer=Labels):
+class VispyLabelsLayer(VispyBaseLayer):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)

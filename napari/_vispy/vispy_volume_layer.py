@@ -1,11 +1,9 @@
-import numpy as np
 from vispy.scene.visuals import Volume as VolumeNode
-
-from ..layers import Volume
 from .vispy_base_layer import VispyBaseLayer
+import numpy as np
 
 
-class VispyVolumeLayer(VispyBaseLayer, layer=Volume):
+class VispyVolumeLayer(VispyBaseLayer):
     def __init__(self, layer):
         node = VolumeNode(np.empty((1, 1, 1)))
         super().__init__(layer, node)

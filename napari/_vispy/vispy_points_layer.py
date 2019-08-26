@@ -1,11 +1,9 @@
-import numpy as np
 from vispy.scene.visuals import Line, Markers, Compound
-
-from ..layers import Points
 from .vispy_base_layer import VispyBaseLayer
+import numpy as np
 
 
-class VispyPointsLayer(VispyBaseLayer, layer=Points):
+class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 

@@ -1,1 +1,1 @@
-from .vispy_base_layer import VispyBaseLayer
+from .util import create_vispy_visual

@@ -1,11 +1,9 @@
-import numpy as np
 from vispy.scene.visuals import Line, Markers, Mesh, Compound
-
-from ..layers import Shapes
 from .vispy_base_layer import VispyBaseLayer
+import numpy as np
 
 
-class VispyShapesLayer(VispyBaseLayer, layer=Shapes):
+class VispyShapesLayer(VispyBaseLayer):
     def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:
         # Markers: corresponding to the vertices of the interaction box or the
