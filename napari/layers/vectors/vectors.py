@@ -226,6 +226,14 @@ class Vectors(Layer):
             else:
                 keep_inds = np.repeat(2 * matches, 2)
                 keep_inds[1::2] = keep_inds[1::2] + 1
+                if self.dims.ndisplay == 3:
+                    keep_inds = np.concatenate(
+                        [
+                            keep_inds,
+                            len(self._mesh_triangles) // 2 + keep_inds,
+                        ],
+                        axis=0,
+                    )
                 faces = self._mesh_triangles[keep_inds]
         else:
             faces = self._mesh_triangles
@@ -250,7 +258,7 @@ class Vectors(Layer):
         offset = (
             np.array([self.dims.range[d][0] for d in self.dims.displayed])
             + 0.5
-        )
+        )[-2:]
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
@@ -259,10 +267,10 @@ class Vectors(Layer):
                 self.dims.range[d][1] - self.dims.range[d][0] + 1
                 for d in self.dims.displayed
             ]
-        ).astype(int)
+        ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
-        vectors = copy(self._data_view)
+        vectors = copy(self._data_view[:, :, -2:])
         vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
         downsampled = (vectors - offset) * zoom_factor
         downsampled = np.clip(

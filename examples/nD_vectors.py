@@ -37,7 +37,7 @@ with napari.gui_qt():
     pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
     # add the broadcast vectors
-    layer = viewer.add_vectors(pos, edge_width=0.4, name='broadcast vectors')
+    #layer = viewer.add_vectors(pos, edge_width=0.4, name='broadcast vectors')
 
     planes = np.round(np.linspace(0, 128, n)).astype(int)
     planes = np.concatenate(
@@ -49,3 +49,5 @@ with napari.gui_qt():
     layer = viewer.add_vectors(
         vectors, edge_width=0.4, name='sliced vectors', edge_color='blue'
     )
+
+    viewer.dims.ndisplay = 3

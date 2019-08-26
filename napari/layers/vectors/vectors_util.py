@@ -73,9 +73,9 @@ def generate_vector_meshes(vectors, width, length):
 
     Parameters
     ----------
-    vectors : (N, 2, 2) array
+    vectors : (N, 2, D) array
         A list of N vectors with start point and projections of the vector
-        in 2 dimensions.
+        in D dimensions, where D is 2 or 3.
     width : float
         width of the line to be drawn
     length : float
@@ -83,17 +83,57 @@ def generate_vector_meshes(vectors, width, length):
 
     Returns
     ----------
-    vertices : (4N, 2) array
+    vertices : (4N, D) array
         Vertices of all triangles for the lines
-    triangles : (2N, 2) array
+    triangles : (2N, 3) array
         Vertex indices that form the mesh triangles
     """
-    vectors = np.reshape(copy(vectors), (-1, 2))
+    ndim = vectors.shape[2]
+    if ndim == 2:
+        vertices, triangles = generate_vector_meshes_2D(vectors, width, length)
+    else:
+        v_a, t_a = generate_vector_meshes_2D(
+            vectors, width, length, p=(0, 0, 1)
+        )
+        v_b, t_b = generate_vector_meshes_2D(
+            vectors, width, length, p=(1, 0, 0)
+        )
+        vertices = np.concatenate([v_a, v_b], axis=0)
+        triangles = np.concatenate([t_a, len(v_a) + t_b], axis=0)
+
+    return vertices, triangles
+
+
+def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
+    """Generates list of mesh vertices and triangles from a list of vectors
+
+    Parameters
+    ----------
+    vectors : (N, 2, D) array
+        A list of N vectors with start point and projections of the vector
+        in D dimensions, where D is 2 or 3.
+    width : float
+        width of the line to be drawn
+    length : float
+        length multiplier of the line to be drawn
+    p : 3-tuple, optional
+        orthogonal vector for segment calculation in 3D.
+
+    Returns
+    ----------
+    vertices : (4N, D) array
+        Vertices of all triangles for the lines
+    triangles : (2N, 3) array
+        Vertex indices that form the mesh triangles
+    """
+    ndim = vectors.shape[2]
+    vectors = np.reshape(copy(vectors), (-1, ndim))
     vectors[1::2] = vectors[::2] + length * vectors[1::2]
+
     centers = np.repeat(vectors, 2, axis=0)
-    offsets = segment_normal(vectors[::2, :], vectors[1::2, :])
+    offsets = segment_normal(vectors[::2, :], vectors[1::2, :], p=p)
     offsets = np.repeat(offsets, 4, axis=0)
-    signs = np.ones((len(offsets), 2))
+    signs = np.ones((len(offsets), ndim))
     signs[::2] = -1
     offsets = offsets * signs
 

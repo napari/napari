@@ -157,7 +157,7 @@ def formatdoc(obj):
         del frame
 
 
-def segment_normal(a, b):
+def segment_normal(a, b, p=(0, 0, 1)):
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -166,6 +166,8 @@ def segment_normal(a, b):
         Length 2 array of first point or Nx2 array of points
     b : np.ndarray
         Length 2 array of second point or Nx2 array of points
+    p : 3-tuple, optional
+        orthogonal vector for segment calculation in 3D.
 
     Returns
     -------
@@ -176,12 +178,19 @@ def segment_normal(a, b):
     d = b - a
 
     if d.ndim == 1:
-        normal = np.array([d[1], -d[0]])
+        if len(d) == 2:
+            normal = np.array([d[1], -d[0]])
+        else:
+            normal = np.cross(d, p)
         norm = np.linalg.norm(normal)
         if norm == 0:
             norm = 1
     else:
-        normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
+        if len(d[0]) == 2:
+            normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
+        else:
+            normal = np.cross(d, p)
+
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
