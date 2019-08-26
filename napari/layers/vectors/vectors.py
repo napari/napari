@@ -83,7 +83,7 @@ class Vectors(Layer):
     ):
 
         super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
+            2, name=name, opacity=opacity, blending=blending, visible=visible
         )
 
         # events for non-napari calculations
@@ -106,10 +106,6 @@ class Vectors(Layer):
 
         # assign vector data and establish default behavior
         self.data = vectors
-
-        # Trigger generation of view slice and thumbnail
-        self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self) -> np.ndarray:

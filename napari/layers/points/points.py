@@ -121,8 +121,13 @@ class Points(Layer):
         name=None,
     ):
 
+        ndim = coords.shape[1]
         super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
+            ndim,
+            name=name,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
         )
 
         self.events.add(

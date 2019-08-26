@@ -308,6 +308,10 @@ class ViewerModel(KeymapMixin):
         layer.dims.events.display.connect(self._on_layers_change)
         layer.dims.events.range.connect(self._on_layers_change)
         self.layers.append(layer)
+        if layer.dims.ndisplay == 3 and self.dims.ndisplay == 2:
+            self.dims.ndisplay = 3
+        if layer.dims.ndisplay == 2 and self.dims.ndisplay == 3:
+            self.dims.ndisplay = 2
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:

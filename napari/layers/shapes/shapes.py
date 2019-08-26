@@ -199,9 +199,18 @@ class Shapes(Layer):
         name=None,
     ):
 
+        if np.array(data).ndim == 3:
+            ndim = np.array(data).shape[2]
+        elif len(data) == 0:
+            ndim = 2
+        elif np.array(data[0]).ndim == 1:
+            ndim = np.array(data).shape[1]
+        else:
+            ndim = np.array(data[0]).shape[1]
+
         # Don't pass on opacity value to base layer as it could be a list
         # and will get set bellow
-        super().__init__(name=name, blending=blending, visible=visible)
+        super().__init__(ndim, name=name, blending=blending, visible=visible)
 
         self._display_order_stored = []
         self.dims.clip = False
@@ -230,27 +239,13 @@ class Shapes(Layer):
             self._opacity = 0.7
 
         self._data_view = ShapeList()
-        self._data_not_displayed = []
-
-        if np.array(data).ndim == 3:
-            self.dims.ndim = np.array(data).shape[2]
-        elif len(data) == 0:
-            self.dims.ndim = 2
-        elif np.array(data[0]).ndim == 1:
-            self.dims.ndim = np.array(data).shape[1]
-        else:
-            self.dims.ndim = np.array(data[0]).shape[1]
-
         self._data_slice_keys = np.empty(
             (0, 2, len(self.dims.not_displayed)), dtype=int
         )
-        self._scale = [1] * self.dims.ndim
-        self._translate = [0] * self.dims.ndim
 
         self._value = (None, None)
         self._value_stored = (None, None)
         self._moving_value = (None, None)
-        self._displayed_data = []
         self._selected_data = []
         self._selected_data_stored = []
         self._selected_data_history = []

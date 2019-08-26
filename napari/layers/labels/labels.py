@@ -121,6 +121,7 @@ class Labels(Layer):
     ):
 
         super().__init__(
+            labels.ndim,
             name=name,
             metadata=metadata,
             ndisplay=ndisplay,

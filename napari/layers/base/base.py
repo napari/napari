@@ -105,6 +105,7 @@ class Layer(KeymapMixin, ABC):
 
     def __init__(
         self,
+        ndim,
         *,
         name=None,
         metadata=None,
@@ -128,13 +129,13 @@ class Layer(KeymapMixin, ABC):
         self._cursor = 'standard'
         self._cursor_size = None
         self._interactive = True
-        self._position = (0, 0)
-        self.coordinates = (0, 0)
         self._value = None
         self.scale_factor = 1
-        self._scale = scale or [1] * 2
-        self._translate = translate or [0] * 2
-        self.dims = Dims(2)
+        self._scale = scale or [1] * ndim
+        self._translate = translate or [0] * ndim
+        self._position = (0,) * ndim
+        self.coordinates = (0,) * ndim
+        self.dims = Dims(ndim)
         self.dims.ndisplay = ndisplay
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)

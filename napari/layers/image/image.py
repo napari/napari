@@ -125,8 +125,21 @@ class Image(Layer):
         blending='translucent',
         visible=True,
     ):
+        # Determine if multichannel, and determine dimensionality
+        if multichannel is False:
+            self._multichannel = multichannel
+        else:
+            # If multichannel is True or None then guess if multichannel
+            # allowed or not, and if allowed set it to be True
+            self._multichannel = is_multichannel(image.shape)
+
+        if self.multichannel:
+            ndim = image.ndim - 1
+        else:
+            ndim = image.ndim
 
         super().__init__(
+            ndim,
             name=name,
             metadata=metadata,
             ndisplay=ndisplay,
@@ -143,12 +156,6 @@ class Image(Layer):
 
         # Set data
         self._data = image
-        if multichannel is False:
-            self._multichannel = multichannel
-        else:
-            # If multichannel is True or None then guess if multichannel
-            # allowed or not, and if allowed set it to be True
-            self._multichannel = is_multichannel(self.data.shape)
 
         # Intitialize image views and thumbnails with zeros
         if self.multichannel:
