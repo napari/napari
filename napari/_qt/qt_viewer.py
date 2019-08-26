@@ -165,8 +165,7 @@ class QtViewer(QSplitter):
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order."""
-        layers = event.source
-        for i, layer in enumerate(layers):
+        for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
             if self.viewer.dims.ndisplay == 2:
                 vispy_layer.order = -i
@@ -185,6 +184,7 @@ class QtViewer(QSplitter):
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
+                self._reorder_layers(None)
         else:
             # Set 2D camera
             if not isinstance(self.view.camera, PanZoomCamera):
@@ -196,6 +196,7 @@ class QtViewer(QSplitter):
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
+                self._reorder_layers(None)
 
     def screenshot(self):
         """Take currently displayed screen and convert to an image array.
