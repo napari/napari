@@ -1,11 +1,10 @@
 from vispy.visuals.transforms import STTransform
 from contextlib import contextmanager
 from ..util.event import EmitterGroup, Event
-from ..util.layer_view import LayerView
 from abc import ABC, abstractmethod
 
 
-class VispyBaseLayer(LayerView, ABC):
+class VispyBaseLayer(ABC):
     """Base object for individual layer views
 
     Meant to be subclassed.

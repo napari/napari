@@ -1,10 +1,8 @@
 from vispy.scene.visuals import Image as ImageNode
-
-from ..layers import Image
 from .vispy_base_layer import VispyBaseLayer
 
 
-class VispyImageLayer(VispyBaseLayer, layer=Image):
+class VispyImageLayer(VispyBaseLayer):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)

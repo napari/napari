@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QStackedWidget, QWidget
 from qtpy.QtCore import QSize
-from .qt_base_layer import QtLayerControls
+from .util import create_qt_controls
 
 
 class QtControls(QStackedWidget):
@@ -47,7 +47,7 @@ class QtControls(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        controls = QtLayerControls(layer)
+        controls = create_qt_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
 
