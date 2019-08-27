@@ -38,7 +38,7 @@ def test_switching_displayed_dimensions():
 
     layer.dims.ndisplay = 2
     # check displayed data is now 2D
-    assert layer._data_view.shape == shape[-3:]
+    assert layer._data_view.shape == shape[-2:]
 
     layer = Image(data)
     layer.dims.ndisplay = 3

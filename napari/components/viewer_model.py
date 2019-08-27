@@ -407,7 +407,7 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        pyramid : list
+        data : list
             Pyramid data. List of array like image date. Each image can be N
             dimensional. If the last dimensions of the images have length 3
             or 4 they can be interpreted as RGB or RGBA if multichannel is
@@ -538,10 +538,13 @@ class ViewerModel(KeymapMixin):
             edge_color=edge_color,
             face_color=face_color,
             n_dimensional=n_dimensional,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
             opacity=opacity,
             blending=blending,
             visible=visible,
-            name=name,
         )
         self.add_layer(layer)
         return layer

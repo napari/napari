@@ -133,7 +133,7 @@ def test_opacity():
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert layer.opacity == 1.0
+    assert layer.opacity == 0.7
 
     layer.opacity = 0.5
     assert layer.opacity == 0.5

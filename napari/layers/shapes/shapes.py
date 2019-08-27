@@ -229,6 +229,14 @@ class Shapes(Layer):
             visible=visible,
         )
 
+        self.events.add(
+            mode=Event,
+            edge_width=Event,
+            edge_color=Event,
+            face_color=Event,
+            highlight=Event,
+        )
+
         self._display_order_stored = []
         self.dims.clip = False
 
@@ -285,6 +293,10 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
+        self.events.deselect.connect(lambda x: self._finish_drawing())
+        self.events.face_color.connect(lambda e: self._update_thumbnail())
+        self.events.edge_color.connect(lambda e: self._update_thumbnail())
+
         self.add(
             data,
             shape_type=shape_type,
@@ -294,18 +306,6 @@ class Shapes(Layer):
             opacity=opacity,
             z_index=z_index,
         )
-
-        self.events.add(
-            mode=Event,
-            edge_width=Event,
-            edge_color=Event,
-            face_color=Event,
-            highlight=Event,
-        )
-
-        self.events.deselect.connect(lambda x: self._finish_drawing())
-        self.events.face_color.connect(lambda e: self._update_thumbnail())
-        self.events.edge_color.connect(lambda e: self._update_thumbnail())
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()

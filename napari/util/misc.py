@@ -186,7 +186,7 @@ def segment_normal(a, b, p=(0, 0, 1)):
         if norm == 0:
             norm = 1
     else:
-        if len(d[0]) == 2:
+        if d.shape[1] == 2:
             normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
         else:
             normal = np.cross(d, p)

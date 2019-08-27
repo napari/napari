@@ -197,7 +197,8 @@ class Pyramid(Image):
         scale = np.ones(self.ndim)
         for d in self.dims.displayed:
             scale[d] = self.level_downsamples[self.data_level][d]
-        self.scale = scale
+        self._scale = scale
+        self.events.scale()
 
         if np.any(disp_shape > self._max_tile_shape):
             for d in self.dims.displayed:
