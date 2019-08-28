@@ -1,6 +1,7 @@
 import os.path
 from glob import glob
 import numpy as np
+import sys
 import inspect
 from pathlib import Path
 
@@ -39,7 +40,16 @@ use_app(API_NAME)
 
 
 class QtViewer(QSplitter):
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
+
+    _resource_file = os.path.join(resources_dir, 'stylesheet.qss')
+    if not os.path.exists(_resource_file):
+        _resource_file = os.path.join(
+            os.path.dirname(os.path.abspath(sys.argv[0])),
+            'resources',
+            'stylesheet.qss',
+        )
+
+    with open(_resource_file, 'r') as f:
         raw_stylesheet = f.read()
 
     def __init__(self, viewer):

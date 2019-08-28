@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 from skimage import io
 
-from . import Viewer, gui_qt
+from napari import Viewer, gui_qt
 
 
 def main():
@@ -36,3 +36,7 @@ def main():
                 else:
                     image = np.stack(images, axis=0)
                 v.add_image(image, multichannel=args.multichannel)
+
+
+if __name__ == '__main__':
+    main()
