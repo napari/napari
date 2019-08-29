@@ -16,6 +16,7 @@ with napari.gui_qt():
             for i in range(10)
         ]
     )
-    viewer = napari.Viewer()
+    viewer = napari.Viewer(ndisplay=3)
+
     # add the volume
-    layer = viewer.add_volume(blobs)
+    layer = viewer.add_image(blobs)

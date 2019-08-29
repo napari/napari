@@ -16,10 +16,7 @@ class VispyPyramidLayer(VispyBaseLayer):
         )
         self.layer.events.clim.connect(lambda e: self._on_clim_change())
 
-        self._on_interpolation_change()
-        self._on_colormap_change()
-        self._on_clim_change()
-        self._on_data_change()
+        self.reset()
 
     def _on_data_change(self):
         self.node._need_colortransform_update = True
@@ -119,3 +116,10 @@ class VispyPyramidLayer(VispyBaseLayer):
             self.layer.data_level = data_level
         else:
             self.layer.top_left = self.find_top_left()
+
+    def reset(self):
+        self._reset_base()
+        self._on_interpolation_change()
+        self._on_colormap_change()
+        self._on_clim_change()
+        self._on_data_change()

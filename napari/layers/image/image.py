@@ -14,7 +14,7 @@ from ...util.misc import (
 )
 from ...util.event import Event
 from ...util.status_messages import format_float
-from ._constants import Interpolation, AVAILABLE_COLORMAPS
+from ._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
 
 
 class Image(Layer):
@@ -22,11 +22,9 @@ class Image(Layer):
 
     Parameters
     ----------
-    image : array
+    data : array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-    metadata : dict
-        Image metadata.
     multichannel : bool
         Whether the image is multichannel RGB or RGBA if multichannel. If
         not specified by user and the last dimension of the data has length
@@ -51,6 +49,14 @@ class Image(Layer):
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -59,8 +65,7 @@ class Image(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
+
 
     Attributes
     ----------
@@ -99,46 +104,62 @@ class Image(Layer):
 
     _colormaps = AVAILABLE_COLORMAPS
 
-    default_interpolation = str(Interpolation.NEAREST)
-
     def __init__(
         self,
-        image,
+        data,
         *,
-        metadata=None,
         multichannel=None,
         colormap='gray',
         clim=None,
         clim_range=None,
         interpolation='nearest',
+        rendering='mip',
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=1,
         blending='translucent',
         visible=True,
-        name=None,
-        **kwargs,
     ):
-
-        super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
-        )
-
-        self.events.add(clim=Event, colormap=Event, interpolation=Event)
-
-        # Set data
-        self._data = image
-        self.metadata = metadata or {}
+        # Determine if multichannel, and determine dimensionality
         if multichannel is False:
             self._multichannel = multichannel
         else:
             # If multichannel is True or None then guess if multichannel
             # allowed or not, and if allowed set it to be True
-            self._multichannel = is_multichannel(self.data.shape)
+            self._multichannel = is_multichannel(data.shape)
+
+        if self.multichannel:
+            ndim = data.ndim - 1
+        else:
+            ndim = data.ndim
+
+        super().__init__(
+            ndim,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
+
+        self.events.add(
+            clim=Event, colormap=Event, interpolation=Event, rendering=Event
+        )
+
+        # Set data
+        self._data = data
 
         # Intitialize image views and thumbnails with zeros
         if self.multichannel:
-            self._data_view = np.zeros((1, 1) + (self.shape[-1],))
+            self._data_view = np.zeros(
+                (1,) * self.dims.ndisplay + (self.shape[-1],)
+            )
         else:
-            self._data_view = np.zeros((1, 1))
+            self._data_view = np.zeros((1,) * self.dims.ndisplay)
         self._data_thumbnail = self._data_view
 
         # Set clims and colormaps
@@ -155,14 +176,10 @@ class Image(Layer):
         self.colormap = colormap
         self.clim = self._clim
         self.interpolation = interpolation
-
-        # Set update flags
-        self._need_display_update = False
-        self._need_visual_update = False
+        self.rendering = rendering
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self):
@@ -175,15 +192,23 @@ class Image(Layer):
         if self.multichannel:
             self._multichannel = is_multichannel(data.shape)
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
-    def _get_range(self):
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        if self.multichannel:
+            ndim = self.data.ndim - 1
+        else:
+            ndim = self.data.ndim
+        return ndim
+
+    def _get_extent(self):
         if self.multichannel:
             shape = self.data.shape[:-1]
         else:
             shape = self.data.shape
-        return tuple((0, m, 1) for m in shape)
+
+        return tuple((0, m) for m in shape)
 
     @property
     def multichannel(self):
@@ -269,6 +294,31 @@ class Image(Layer):
         self._interpolation = interpolation
         self.events.interpolation()
 
+    @property
+    def rendering(self):
+        """Rendering: Rendering mode.
+            Selects a preset rendering mode in vispy that determines how
+            volume is displayed
+            * translucent: voxel colors are blended along the view ray until
+              the result is opaque.
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * additive: voxel colors are added along the view ray until
+              the result is saturated.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.
+        """
+        return str(self._rendering)
+
+    @rendering.setter
+    def rendering(self, rendering):
+        if isinstance(rendering, str):
+            rendering = Rendering(rendering)
+
+        self._rendering = rendering
+        self.events.rendering()
+
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         if self.multichannel:
@@ -290,7 +340,10 @@ class Image(Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        image = self._data_thumbnail
+        if self.dims.ndisplay == 3:
+            image = np.max(self._data_thumbnail, axis=0)
+        else:
+            image = self._data_thumbnail
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
@@ -368,7 +421,11 @@ class Image(Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
-        image = np.clip(self._data_view, self.clim[0], self.clim[1])
+        if self.dims.ndisplay == 3:
+            image = np.max(self._data_thumbnail, axis=0)
+        else:
+            image = self._data_thumbnail
+        image = np.clip(image, self.clim[0], self.clim[1])
         image = image - self.clim[0]
         color_range = self.clim[1] - self.clim[0]
         if color_range != 0:

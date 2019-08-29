@@ -1,4 +1,9 @@
+import numpy as np
+from copy import copy
 from vispy.scene.visuals import Line, Markers, Compound
+from vispy.visuals.transforms import ChainTransform
+
+from ..layers import Points
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
 
@@ -24,8 +29,28 @@ class VispyPointsLayer(VispyBaseLayer):
             lambda e: self._on_highlight_change()
         )
 
-        self._on_data_change()
-        self._on_highlight_change()
+        self.layer.dims.events.ndisplay.connect(
+            lambda e: self._on_display_change()
+        )
+
+        self._on_display_change()
+
+    def _on_display_change(self):
+        parent = self.node.parent
+        order = abs(self.node.order)
+        self.node.transforms = ChainTransform()
+        self.node.parent = None
+
+        if self.layer.dims.ndisplay == 2:
+            self.node = Compound([Line(), Markers(), Markers()])
+        else:
+            self.node = Markers()
+
+        self.node.parent = parent
+        self.order = order
+        self.layer._update_dims()
+        self.layer._set_view_slice()
+        self.reset()
 
     def _on_data_change(self):
         if len(self.layer._data_view) > 0:
@@ -44,9 +69,21 @@ class VispyPointsLayer(VispyBaseLayer):
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
-        self.node._subvisuals[2].set_data(
-            self.layer._data_view[::-1, ::-1] + 0.5,
-            size=self.layer._sizes_view[::-1],
+        if len(self.layer._data_view) == 0:
+            data = np.zeros((1, self.layer.dims.ndisplay))
+            size = [0]
+        else:
+            data = self.layer._data_view
+            size = self.layer._sizes_view
+
+        if self.layer.dims.ndisplay == 2:
+            set_data = self.node._subvisuals[2].set_data
+        else:
+            set_data = self.node.set_data
+
+        set_data(
+            data[::-1, ::-1] + 0.5,
+            size=size[::-1],
             edge_width=self.layer.edge_width,
             symbol=self.layer.symbol,
             edge_color=edge_color,
@@ -56,6 +93,9 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_highlight_change(self):
+        if self.layer.dims.ndisplay == 3:
+            return
+
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
             data = self.layer._data_view[self.layer._highlight_index]
@@ -67,8 +107,8 @@ class VispyPointsLayer(VispyBaseLayer):
                 for i in self.layer._indices_view[self.layer._highlight_index]
             ]
         else:
-            data = np.empty((0, 2))
-            size = 1
+            data = np.zeros((1, self.layer.dims.ndisplay))
+            size = 0
             face_color = 'white'
 
         self.node._subvisuals[1].set_data(
@@ -81,8 +121,18 @@ class VispyPointsLayer(VispyBaseLayer):
             scaling=True,
         )
 
+        if 0 in self.layer._highlight_box.shape:
+            pos = np.zeros((1, 2))
+            width = 0
+        else:
+            pos = self.layer._highlight_box
+            width = self._highlight_width
+
         self.node._subvisuals[0].set_data(
-            pos=self.layer._highlight_box[:, [1, 0]] + 0.5,
-            color=self._highlight_color,
-            width=self._highlight_width,
+            pos=pos[:, ::-1] + 0.5, color=self._highlight_color, width=width
         )
+
+    def reset(self):
+        self._reset_base()
+        self._on_data_change()
+        self._on_highlight_change()

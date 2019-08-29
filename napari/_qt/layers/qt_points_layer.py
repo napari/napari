@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
 )
 
 from .qt_base_layer import QtLayerControls, QtLayerProperties
-from ..layers.points._constants import Mode, Symbol
+from ...layers.points._constants import Mode, Symbol
 
 
 class QtPointsControls(QtLayerControls):

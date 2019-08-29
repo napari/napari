@@ -27,10 +27,10 @@ def test_add_image():
 
 def test_add_volume():
     """Test adding volume."""
-    viewer = ViewerModel()
+    viewer = ViewerModel(ndisplay=3)
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
-    viewer.add_volume(data)
+    viewer.add_image(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 3
@@ -186,7 +186,7 @@ def test_swappable_dims():
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
     viewer.add_labels(labels_data)
     assert np.all(
-        viewer.layers['Labels']._data_view == labels_data[0, 0, :, :]
+        viewer.layers['Labels']._data_labels == labels_data[0, 0, :, :]
     )
 
     # Swap dims
@@ -194,7 +194,7 @@ def test_swappable_dims():
     assert viewer.dims.order == [0, 2, 1, 3]
     assert np.all(viewer.layers['Image']._data_view == image_data[0, :, 0, :])
     assert np.all(
-        viewer.layers['Labels']._data_view == labels_data[0, :, 0, :]
+        viewer.layers['Labels']._data_labels == labels_data[0, :, 0, :]
     )
 
 

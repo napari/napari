@@ -16,7 +16,7 @@ class Points(Layer):
 
     Parameters
     ----------
-    coords : array (N, D)
+    data : array (N, D)
         Coordinates for N points in D dimensions.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
@@ -35,6 +35,14 @@ class Points(Layer):
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -43,8 +51,6 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -107,7 +113,7 @@ class Points(Layer):
 
     def __init__(
         self,
-        coords,
+        data,
         *,
         symbol='o',
         size=10,
@@ -115,14 +121,25 @@ class Points(Layer):
         edge_color='black',
         face_color='white',
         n_dimensional=False,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=1,
         blending='translucent',
         visible=True,
-        name=None,
     ):
 
+        ndim = data.shape[1]
         super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
+            ndim,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
         )
 
         self.events.add(
@@ -138,7 +155,7 @@ class Points(Layer):
         self._colors = get_color_names()
 
         # Save the point coordinates
-        self._data = coords
+        self._data = data
         self.dims.clip = False
 
         # Save the point style params
@@ -207,7 +224,6 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self) -> np.ndarray:
@@ -245,10 +261,13 @@ class Points(Layer):
                 self.face_colors += [self.face_color for i in range(adding)]
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
-    def _get_range(self):
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        return self.data.shape[1]
+
+    def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)
@@ -563,7 +582,7 @@ class Points(Layer):
 
         else:
             # if no points in this slice send dummy data
-            data = np.empty((0, 2))
+            data = np.zeros((0, self.dims.ndisplay))
             sizes = [0]
         self._data_view = data
         self._sizes_view = sizes
@@ -627,7 +646,7 @@ class Points(Layer):
 
         pos = self._selected_box
         if pos is None and not self._is_selecting:
-            pos = np.empty((0, 2))
+            pos = np.zeros((0, 2))
         elif self._is_selecting:
             pos = create_box(self._drag_box)
             pos = pos[list(range(4)) + [0]]

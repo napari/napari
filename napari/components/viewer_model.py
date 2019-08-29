@@ -14,6 +14,17 @@ class ViewerModel(KeymapMixin):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
+    Parameters
+    ----------
+    title : string
+        The title of the viewer window.
+    ndisplay : int
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
+
     Attributes
     ----------
     window : Window
@@ -28,7 +39,7 @@ class ViewerModel(KeymapMixin):
 
     themes = palettes
 
-    def __init__(self, title='napari'):
+    def __init__(self, title='napari', ndisplay=2, order=None):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -44,9 +55,15 @@ class ViewerModel(KeymapMixin):
             palette=Event,
         )
 
-        # Initial dimension must be set to at least the number of visible
-        # dimensions of the viewer
-        self.dims = Dims(2)
+        if order is None:
+            ndim = ndisplay
+            order = list(range(ndim))
+        else:
+            ndim = len(order)
+
+        self.dims = Dims(ndim)
+        self.dims.ndisplay = ndisplay
+        self.dims.order = order
 
         self.layers = LayerList()
 
@@ -61,8 +78,9 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.display.connect(lambda e: self._update_layers())
-        self.dims.events.display.connect(lambda e: self.reset_view())
+        self.dims.events.camera.connect(lambda e: self.reset_view())
+        self.dims.events.ndisplay.connect(lambda e: self._update_layers())
+        self.dims.events.order.connect(lambda e: self._update_layers())
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
@@ -305,6 +323,9 @@ class ViewerModel(KeymapMixin):
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
+        layer.dims.events.ndisplay.connect(self._on_layers_change)
+        layer.dims.events.order.connect(self._on_layers_change)
+        layer.dims.events.range.connect(self._on_layers_change)
         self.layers.append(layer)
         self._update_layers(layers=[layer])
 
@@ -313,29 +334,29 @@ class ViewerModel(KeymapMixin):
 
     def add_image(
         self,
-        image,
+        data,
         *,
-        metadata=None,
         multichannel=None,
         colormap='gray',
         clim=None,
         clim_range=None,
         interpolation='nearest',
+        rendering='mip',
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=1,
         blending='translucent',
         visible=True,
-        name=None,
-        **kwargs,
     ):
         """Add an image layer to the layers list.
 
         Parameters
         ----------
-        image : array
+        data : array
             Image data. Can be N dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-        metadata : dict
-            Image metadata.
         multichannel : bool
             Whether the image is multichannel RGB or RGBA if multichannel. If
             not specified by user and the last dimension of the data has length
@@ -360,6 +381,14 @@ class ViewerModel(KeymapMixin):
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -368,8 +397,6 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        name : str
-            Name of the layer.
 
         Returns
         -------
@@ -377,58 +404,66 @@ class ViewerModel(KeymapMixin):
             The newly-created image layer.
         """
         layer = layers.Image(
-            image,
-            metadata=metadata,
+            data,
             multichannel=multichannel,
             colormap=colormap,
             clim=clim,
             clim_range=clim_range,
             interpolation=interpolation,
+            rendering=rendering,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
             opacity=opacity,
             blending=blending,
             visible=visible,
-            name=name,
-            **kwargs,
         )
         self.add_layer(layer)
         return layer
 
-    def add_pyramid(self, pyramid, *args, **kwargs):
+    def add_pyramid(self, data, *args, **kwargs):
         """Add an image pyramid layer to the layers list.
 
         Parameters
         ----------
-        pyramid : list
+        data : list
             Pyramid data. List of array like image date. Each image can be N
             dimensional. If the last dimensions of the images have length 3
             or 4 they can be interpreted as RGB or RGBA if multichannel is
             `True`.
-        metadata : dict, optional
-            Image metadata.
-        multichannel : bool, optional
+        multichannel : bool
             Whether the image is multichannel RGB or RGBA if multichannel. If
             not specified by user and the last dimension of the data has length
             3 or 4 it will be set as `True`. If `False` the image is
             interpreted as a luminance image.
-        colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
+        colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
-        clim : list (2,), optional
+        clim : list (2,)
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image.
-        clim_range : list (2,), optional
+        clim_range : list (2,)
             Range for the color limits. If not passed is be calculated as the
-            min and max of the images. Passing a value prevents this calculation
+            min and max of the image. Passing a value prevents this calculation
             which can be useful when working with very large datasets that are
             dynamically loaded.
-        interpolation : str, optional
+        interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -437,99 +472,19 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        name : str
-            Name of the layer.
 
         Returns
         -------
         layer : :class:`napari.layers.Pyramid`
             The newly-created pyramid layer.
         """
-        layer = layers.Pyramid(pyramid, *args, **kwargs)
-        self.add_layer(layer)
-        return layer
-
-    def add_volume(
-        self,
-        volume,
-        *,
-        metadata=None,
-        colormap='gray',
-        clim=None,
-        clim_range=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
-        scale=None,
-        name=None,
-        **kwargs,
-    ):
-        """Add a volume layer to the layers list.
-
-        Parameters
-        ----------
-        volume : array
-            Volumetric data, must be at least 3-dimensional.
-        metadata : dict, optional
-            Volume metadata.
-        colormap : str, vispy.Color.Colormap, tuple, dict, keyword-only
-            Colormap to use for luminance volumes. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap.
-        clim : list (2,), keyword-only
-            Color limits to be used for determining the colormap bounds for
-            luminance volumes. If not passed is calculated as the min and max
-            of the volume.
-        clim_range : list (2,), keyword-only
-            Range for the color limits. If not passed is be calculated as the
-            min and max of the volume. Passing a value prevents this
-            calculation which can be useful when working with very larg
-            datasets that are dynamically loaded.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-        scale : list, optional
-            List of anisotropy factors to scale the volume by. The length
-            should be equal to the number of dimensions.
-        name : str, keyword-only
-            Name of the layer.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Volume`
-            The newly-created volume layer.
-        """
-        layer = layers.Volume(
-            volume,
-            metadata=metadata,
-            colormap=colormap,
-            clim=clim,
-            clim_range=clim_range,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-            scale=scale,
-            name=name,
-            **kwargs,
-        )
-        if self.dims.ndim == 2:
-            self.dims.ndim = 3
-        if self.dims.ndisplay == 2:
-            self.dims.ndisplay = 3
+        layer = layers.Pyramid(data, *args, **kwargs)
         self.add_layer(layer)
         return layer
 
     def add_points(
         self,
-        coords,
+        data,
         *,
         symbol='o',
         size=10,
@@ -537,16 +492,19 @@ class ViewerModel(KeymapMixin):
         edge_color='black',
         face_color='white',
         n_dimensional=False,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=1,
         blending='translucent',
         visible=True,
-        name=None,
     ):
         """Add a points layer to the layers list.
 
         Parameters
         ----------
-        coords : array (N, D)
+        data : array (N, D)
             Coordinates for N points in D dimensions.
         symbol : str
             Symbol to be used for the point markers. Must be one of the
@@ -565,6 +523,14 @@ class ViewerModel(KeymapMixin):
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -573,8 +539,6 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        name : str
-            Name of the layer.
 
         Returns
         -------
@@ -587,34 +551,38 @@ class ViewerModel(KeymapMixin):
         http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
         layer = layers.Points(
-            coords,
+            data,
             symbol=symbol,
             size=size,
             edge_width=edge_width,
             edge_color=edge_color,
             face_color=face_color,
             n_dimensional=n_dimensional,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
             opacity=opacity,
             blending=blending,
             visible=visible,
-            name=name,
         )
         self.add_layer(layer)
         return layer
 
     def add_labels(
         self,
-        labels,
+        data,
         *,
-        metadata=None,
         num_colors=50,
         seed=0.5,
+        n_dimensional=False,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
-        n_dimensional=False,
-        name=None,
-        **kwargs,
     ):
         """Add a labels (or segmentation) layer to the layers list.
 
@@ -623,14 +591,22 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        labels : array
+        data : array
             Labels data.
-        metadata : dict
-            Labels metadata.
         num_colors : int
             Number of unique colors to use in colormap.
         seed : float
             Seed for colormap random generator.
+        n_dimensional : bool
+            If `True`, paint and fill edit labels across all dimensions.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -639,10 +615,6 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        n_dimensional : bool
-            If `True`, paint and fill edit labels across all dimensions.
-        name : str
-            Name of the layer.
 
         Returns
         -------
@@ -650,16 +622,17 @@ class ViewerModel(KeymapMixin):
             The newly-created labels layer.
         """
         layer = layers.Labels(
-            labels,
-            metadata=metadata,
+            data,
             num_colors=num_colors,
             seed=seed,
+            n_dimensional=n_dimensional,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
             opacity=opacity,
             blending=blending,
             visible=visible,
-            n_dimensional=n_dimensional,
-            name=name,
-            **kwargs,
         )
         self.add_layer(layer)
         return layer
@@ -673,10 +646,13 @@ class ViewerModel(KeymapMixin):
         edge_color='black',
         face_color='white',
         z_index=0,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
-        name=None,
     ):
         """Add a shapes layer to the layers list.
 
@@ -715,16 +691,22 @@ class ViewerModel(KeymapMixin):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
         opacity : float or list
-            Opacity of the shapes, between 0.0 and 1.0.
+            Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        name : str
-            Name of the layer.
 
         Returns
         -------
@@ -738,31 +720,37 @@ class ViewerModel(KeymapMixin):
             edge_color=edge_color,
             face_color=face_color,
             z_index=z_index,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
             opacity=opacity,
             blending=blending,
             visible=visible,
-            name=name,
         )
         self.add_layer(layer)
         return layer
 
     def add_vectors(
         self,
-        vectors,
+        data,
         *,
         edge_width=1,
         edge_color='red',
         length=1,
-        opacity=1,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=0.7,
         blending='translucent',
         visible=True,
-        name=None,
     ):
         """Add a vectors layer to the layers list.
 
         Parameters
         ----------
-        vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
+        data : (N, 2, D) or (N1, N2, ..., ND, D) array
             An (N, 2, D) array is interpreted as "coordinate-like" data and a
             list of N vectors with start point and projections of the vector in
             D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
@@ -774,6 +762,14 @@ class ViewerModel(KeymapMixin):
              Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Edge color of all the vectors.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -782,8 +778,6 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        name : str
-            Name of the layer.
 
         Returns
         -------
@@ -791,14 +785,17 @@ class ViewerModel(KeymapMixin):
             The newly-created vectors layer.
         """
         layer = layers.Vectors(
-            vectors,
+            data,
             edge_width=edge_width,
             edge_color=edge_color,
             length=length,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
             opacity=opacity,
             blending=blending,
             visible=visible,
-            name=name,
         )
         self.add_layer(layer)
         return layer
@@ -847,7 +844,12 @@ class ViewerModel(KeymapMixin):
             # respectively
             offset = self.dims.ndim - layer.dims.ndim
             order = np.array(self.dims.order)
-            layer.dims.order = list(order[order >= offset] - offset)
+            if offset <= 0:
+                order = list(range(-offset)) + list(order - offset)
+            else:
+                order = list(order[order >= offset] - offset)
+            layer.dims.order = order
+            layer.dims.ndisplay = self.dims.ndisplay
 
             # Update the point values of the layers for the dimensions that
             # the layer has
@@ -923,8 +925,8 @@ class ViewerModel(KeymapMixin):
             min_shape.append(min)
             max_shape.append(max)
         if len(min_shape) == 0:
-            min_shape = [0] * self.dims.ndisplay
-            max_shape = [1] * self.dims.ndisplay
+            min_shape = [0] * self.dims.ndim
+            max_shape = [1] * self.dims.ndim
 
         return min_shape, max_shape
 

@@ -50,16 +50,22 @@ class Shapes(Layer):
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float or list
-        Opacity of the shapes, between 0.0 and 1.0.
+        Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -193,15 +199,43 @@ class Shapes(Layer):
         edge_color='black',
         face_color='white',
         z_index=0,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
-        name=None,
     ):
+
+        if np.array(data).ndim == 3:
+            ndim = np.array(data).shape[2]
+        elif len(data) == 0:
+            ndim = 2
+        elif np.array(data[0]).ndim == 1:
+            ndim = np.array(data).shape[1]
+        else:
+            ndim = np.array(data[0]).shape[1]
 
         # Don't pass on opacity value to base layer as it could be a list
         # and will get set bellow
-        super().__init__(name=name, blending=blending, visible=visible)
+        super().__init__(
+            ndim,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            blending=blending,
+            visible=visible,
+        )
+
+        self.events.add(
+            mode=Event,
+            edge_width=Event,
+            edge_color=Event,
+            face_color=Event,
+            highlight=Event,
+        )
 
         self._display_order_stored = []
         self.dims.clip = False
@@ -230,27 +264,13 @@ class Shapes(Layer):
             self._opacity = 0.7
 
         self._data_view = ShapeList()
-        self._data_not_displayed = []
-
-        if np.array(data).ndim == 3:
-            self.dims.ndim = np.array(data).shape[2]
-        elif len(data) == 0:
-            self.dims.ndim = 2
-        elif np.array(data[0]).ndim == 1:
-            self.dims.ndim = np.array(data).shape[1]
-        else:
-            self.dims.ndim = np.array(data[0]).shape[1]
-
         self._data_slice_keys = np.empty(
             (0, 2, len(self.dims.not_displayed)), dtype=int
         )
-        self._scale = [1] * self.dims.ndim
-        self._translate = [0] * self.dims.ndim
 
         self._value = (None, None)
         self._value_stored = (None, None)
         self._moving_value = (None, None)
-        self._displayed_data = []
         self._selected_data = []
         self._selected_data_stored = []
         self._selected_data_history = []
@@ -273,6 +293,10 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
+        self.events.deselect.connect(lambda x: self._finish_drawing())
+        self.events.face_color.connect(lambda e: self._update_thumbnail())
+        self.events.edge_color.connect(lambda e: self._update_thumbnail())
+
         self.add(
             data,
             shape_type=shape_type,
@@ -283,21 +307,8 @@ class Shapes(Layer):
             z_index=z_index,
         )
 
-        self.events.add(
-            mode=Event,
-            edge_width=Event,
-            edge_color=Event,
-            face_color=Event,
-            highlight=Event,
-        )
-
-        self.events.deselect.connect(lambda x: self._finish_drawing())
-        self.events.face_color.connect(lambda e: self._update_thumbnail())
-        self.events.edge_color.connect(lambda e: self._update_thumbnail())
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self):
@@ -310,10 +321,17 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
-    def _get_range(self):
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        if self.nshapes == 0:
+            ndim = self.ndim
+        else:
+            ndim = self.data[0].shape[1]
+        return ndim
+
+    def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if self.nshapes == 0:
             maxs = [1] * self.ndim
@@ -644,7 +662,6 @@ class Shapes(Layer):
 
         self._display_order_stored = copy(self.dims.order)
         self._update_dims()
-        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -892,7 +909,6 @@ class Shapes(Layer):
                 self._data_view.remove(index)
         self._is_creating = False
         self._update_dims()
-        self._set_view_slice()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""

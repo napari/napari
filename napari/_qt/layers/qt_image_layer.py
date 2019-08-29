@@ -1,9 +1,9 @@
 from qtpy.QtWidgets import QHBoxLayout
-from . import QVRangeSlider
+from .. import QVRangeSlider
 from .qt_base_layer import QtLayerControls, QtLayerProperties
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
-from ..layers.image._constants import Interpolation
+from ...layers.image._constants import Interpolation, Rendering
 
 
 class QtImageControls(QtLayerControls):
@@ -54,6 +54,7 @@ class QtImageProperties(QtLayerProperties):
 
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.rendering.connect(self._on_rendering_change)
 
         row = self.grid_layout.rowCount()
         comboBox = QComboBox()
@@ -86,6 +87,21 @@ class QtImageProperties(QtLayerProperties):
         )
         self.grid_layout.addWidget(interp_comboBox, row, self.property_column)
 
+        row = self.grid_layout.rowCount()
+        renderComboBox = QComboBox()
+        for render in Rendering:
+            renderComboBox.addItem(str(render))
+        index = renderComboBox.findText(
+            self.layer.rendering, Qt.MatchFixedString
+        )
+        renderComboBox.setCurrentIndex(index)
+        renderComboBox.activated[str].connect(
+            lambda text=renderComboBox: self.changeRendering(text)
+        )
+        self.renderComboBox = renderComboBox
+        self.grid_layout.addWidget(QLabel('rendering:'), row, self.name_column)
+        self.grid_layout.addWidget(renderComboBox, row, self.property_column)
+
         self.setExpanded(False)
 
     def changeColor(self, text):
@@ -93,6 +109,9 @@ class QtImageProperties(QtLayerProperties):
 
     def changeInterpolation(self, text):
         self.layer.interpolation = text
+
+    def changeRendering(self, text):
+        self.layer.rendering = text
 
     def _on_interpolation_change(self, event):
         with self.layer.events.interpolation.blocker():
@@ -108,3 +127,10 @@ class QtImageProperties(QtLayerProperties):
             self.colormap_combobox.addItem(name)
         if name != self.colormap_combobox.currentText():
             self.colormap_combobox.setCurrentText(name)
+
+    def _on_rendering_change(self, event):
+        with self.layer.events.rendering.blocker():
+            index = self.renderComboBox.findText(
+                self.layer.rendering, Qt.MatchFixedString
+            )
+            self.renderComboBox.setCurrentIndex(index)

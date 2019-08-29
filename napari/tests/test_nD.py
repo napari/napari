@@ -41,7 +41,8 @@ def test_nD_volume(qtbot):
 
     np.random.seed(0)
     data = np.random.random((6, 10, 15, 20))
-    viewer.add_volume(data)
+    viewer.add_image(data)
+    viewer.dims.ndisplay = 3
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
@@ -58,6 +59,56 @@ def test_nD_volume(qtbot):
     # Flip dims order including non-displayed
     viewer.dims.order = [1, 0, 2, 3]
     assert viewer.dims.order == [1, 0, 2, 3]
+
+    # Close the viewer
+    viewer.window.close()
+
+
+def test_nD_volume_launch(qtbot):
+    """Test adding nD volume when viewer launched with 3D."""
+    viewer = Viewer(ndisplay=3)
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    shape = (6, 10, 15, 20)
+    data = np.random.random(shape)
+    viewer.add_image(data)
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.layers[0]._data_view.shape == shape[-3:]
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert viewer.dims.ndim == 4
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Close the viewer
+    viewer.window.close()
+
+
+def test_nD_volume_launch_order(qtbot):
+    """Test adding nD volume when viewer launched with 3D."""
+    order = [1, 0, 2, 3]
+    viewer = Viewer(ndisplay=3, order=order)
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    shape = (6, 10, 15, 20)
+    data = np.random.random(shape)
+    viewer.add_image(data)
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.layers[0]._data_view.shape == tuple(
+        shape[o] for o in order[-3:]
+    )
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert viewer.dims.ndim == 4
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 1
+    assert viewer.dims.order == order
 
     # Close the viewer
     viewer.window.close()

@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
 )
 
 from .qt_base_layer import QtLayerControls, QtLayerProperties
-from ..layers.shapes._constants import Mode
+from ...layers.shapes._constants import Mode
 
 
 class QtShapesControls(QtLayerControls):

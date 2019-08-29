@@ -62,12 +62,6 @@ class VispyBaseLayer(ABC):
             lambda e: self._on_translate_change()
         )
 
-        self._on_visible_change()
-        self._on_opacity_change()
-        self._on_blending_change()
-        self._on_scale_change()
-        self._on_translate_change()
-
     @property
     def _master_transform(self):
         """vispy.visuals.transforms.STTransform:
@@ -81,18 +75,21 @@ class VispyBaseLayer(ABC):
         return self.node.transform
 
     @property
-    def _order(self):
+    def order(self):
         """int: Order in which the visual is drawn in the scenegraph.
 
         Lower values are closer to the viewer.
         """
         return self.node.order
 
-    @_order.setter
-    def _order(self, order):
+    @order.setter
+    def order(self, order):
         # workaround for opacity (see: #22)
         order = -order
-        self.z_index = order
+        if self.layer.dims.ndisplay == 2:
+            self.z_index = order
+        else:
+            self.z_index = 0
         # end workaround
         self.node.order = order
 
@@ -183,6 +180,17 @@ class VispyBaseLayer(ABC):
         else:
             coords = (0,) * len(self.layer.dims.displayed)
         return coords
+
+    @abstractmethod
+    def reset(self):
+        raise NotImplementedError()
+
+    def _reset_base(self):
+        self._on_visible_change()
+        self._on_opacity_change()
+        self._on_blending_change()
+        self._on_scale_change()
+        self._on_translate_change()
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas."""

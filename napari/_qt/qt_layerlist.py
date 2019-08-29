@@ -8,7 +8,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QDrag
 import numpy as np
-from .util import create_qt_properties
+from .layers import create_qt_properties
 
 
 class QtLayerList(QScrollArea):

@@ -136,7 +136,7 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.dims.events.display.connect(
+        self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
 
@@ -149,24 +149,32 @@ class QtViewer(QSplitter):
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
-        vispy_layer._order = -len(layers)
+        # Workaround for bug in #22, and different handling of ordering
+        # for 2D and 3D rendering
+        if self.viewer.dims.ndisplay == 2:
+            vispy_layer.order = -len(layers)
+        else:
+            vispy_layer.order = len(layers)
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent."""
         layer = event.item
-        vispy_layer = self.layer_nodes[layer]
-        vispy_layer._order = 0
+        vispy_layer = self.layer_to_visual[layer]
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del self.layer_to_visual[layer]
 
-    def _reorder_layers(event):
+    def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order."""
-        layers = event.source
-        for i, layer in enumerate(layers):
+        for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
-            vispy_layer._order = -i
+            # Workaround for bug in #22, and different handling of ordering
+            # for 2D and 3D rendering
+            if self.viewer.dims.ndisplay == 2:
+                vispy_layer.order = -i
+            else:
+                vispy_layer.order = i
         self.canvas._draw_order.clear()
         self.canvas.update()
 
@@ -179,6 +187,7 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
+                self._reorder_layers(None)
                 self.viewer.reset_view()
         else:
             # Set 2D camera
@@ -190,6 +199,7 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
+                self._reorder_layers(None)
                 self.viewer.reset_view()
 
     def screenshot(self):

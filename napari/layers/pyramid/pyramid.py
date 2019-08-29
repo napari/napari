@@ -7,37 +7,43 @@ class Pyramid(Image):
 
     Parameters
     ----------
-    pyramid : list
+    data : list
         Pyramid data. List of array like image date. Each image can be N
         dimensional. If the last dimensions of the images have length 3
         or 4 they can be interpreted as RGB or RGBA if multichannel is
         `True`.
-    metadata : dict, optional
-        Image metadata.
-    multichannel : bool, optional
+    multichannel : bool
         Whether the image is multichannel RGB or RGBA if multichannel. If
         not specified by user and the last dimension of the data has length
         3 or 4 it will be set as `True`. If `False` the image is
         interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, 2-tuple, dict, optional
+    colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
-    clim : list (2,), optional
+    clim : list (2,)
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
-    clim_range : list (2,), optional
+    clim_range : list (2,)
         Range for the color limits. If not passed is be calculated as the
-        min and max of the images. Passing a value prevents this calculation
+        min and max of the image. Passing a value prevents this calculation
         which can be useful when working with very large datasets that are
         dynamically loaded.
-    interpolation : str, optional
+    interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -46,8 +52,6 @@ class Pyramid(Image):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -89,17 +93,16 @@ class Pyramid(Image):
 
     _max_tile_shape = 1600
 
-    def __init__(self, pyramid, *args, **kwargs):
+    def __init__(self, data, *args, **kwargs):
 
         self._data_level = 0
-        super().__init__(np.array([np.asarray(pyramid[-1])]), *args, **kwargs)
-        self._data = pyramid
-        self._data_level = len(pyramid) - 1
+        super().__init__(np.array([np.asarray(data[-1])]), *args, **kwargs)
+        self._data = data
+        self._data_level = len(data) - 1
         self._top_left = np.zeros(self.ndim, dtype=int)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self):
@@ -110,8 +113,14 @@ class Pyramid(Image):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
+
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        return len(self.level_shapes[0])
+
+    def _get_extent(self):
+        return tuple((0, m) for m in self.level_shapes[0])
 
     def _get_range(self):
         """Shape of the base of pyramid.
@@ -195,7 +204,8 @@ class Pyramid(Image):
         scale = np.ones(self.ndim)
         for d in self.dims.displayed:
             scale[d] = self.level_downsamples[self.data_level][d]
-        self.scale = scale
+        self._scale = scale
+        self.events.scale()
 
         if np.any(disp_shape > self._max_tile_shape):
             for d in self.dims.displayed:

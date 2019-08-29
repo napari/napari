@@ -42,13 +42,13 @@ def test_add_image(qtbot):
 
 def test_add_volume(qtbot):
     """Test adding volume."""
-    viewer = ViewerModel()
+    viewer = ViewerModel(ndisplay=3)
     view = QtViewer(viewer)
     qtbot.addWidget(view)
 
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
-    viewer.add_volume(data)
+    viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1

@@ -15,7 +15,7 @@ from qtpy.QtCore import Qt
 import numpy as np
 from collections import Iterable
 from .qt_base_layer import QtLayerControls, QtLayerProperties
-from ..layers.labels._constants import Mode
+from ...layers.labels._constants import Mode
 
 
 class QtLabelsControls(QtLayerControls):
