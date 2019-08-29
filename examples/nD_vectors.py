@@ -36,9 +36,6 @@ with napari.gui_qt():
     pos[:, 1, 0] = 2 * radius_space * np.cos(phi_space)
     pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
-    # add the broadcast vectors
-    #layer = viewer.add_vectors(pos, edge_width=0.4, name='broadcast vectors')
-
     planes = np.round(np.linspace(0, 128, n)).astype(int)
     planes = np.concatenate(
         (planes.reshape((n, 1, 1)), np.zeros((n, 1, 1))), axis=1

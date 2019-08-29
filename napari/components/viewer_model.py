@@ -14,6 +14,17 @@ class ViewerModel(KeymapMixin):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
+    Parameters
+    ----------
+    title : string
+        The title of the viewer window.
+    ndisplay : int
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
+
     Attributes
     ----------
     window : Window
@@ -28,7 +39,7 @@ class ViewerModel(KeymapMixin):
 
     themes = palettes
 
-    def __init__(self, title='napari', ndisplay=2):
+    def __init__(self, title='napari', ndisplay=2, order=None):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -44,8 +55,15 @@ class ViewerModel(KeymapMixin):
             palette=Event,
         )
 
-        self.dims = Dims(ndisplay)
+        if order is None:
+            ndim = ndisplay
+            order = list(range(ndim))
+        else:
+            ndim = len(order)
+
+        self.dims = Dims(ndim)
         self.dims.ndisplay = ndisplay
+        self.dims.order = order
 
         self.layers = LayerList()
 
@@ -905,8 +923,8 @@ class ViewerModel(KeymapMixin):
             min_shape.append(min)
             max_shape.append(max)
         if len(min_shape) == 0:
-            min_shape = [0] * self.dims.ndisplay
-            max_shape = [1] * self.dims.ndisplay
+            min_shape = [0] * self.dims.ndim
+            max_shape = [1] * self.dims.ndim
 
         return min_shape, max_shape
 

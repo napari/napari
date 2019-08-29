@@ -194,18 +194,21 @@ class Image(Layer):
         self._update_dims()
         self.events.data()
 
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        if self.multichannel:
+            ndim = self.data.ndim - 1
+        else:
+            ndim = self.data.ndim
+        return ndim
+
     def _get_range(self):
         if self.multichannel:
             shape = self.data.shape[:-1]
         else:
             shape = self.data.shape
 
-        if self.dims.ndisplay == 3:
-            scale = self.scale
-        else:
-            scale = 1
-
-        return tuple((0, m, 1) for m in np.multiply(shape, scale))
+        return tuple((0, m, 1) for m in np.multiply(shape, self.scale))
 
     @property
     def multichannel(self):

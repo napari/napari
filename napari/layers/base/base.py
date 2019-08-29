@@ -281,22 +281,22 @@ class Layer(KeymapMixin, ABC):
 
     def _update_dims(self):
         """Updates dims model, which is useful after data has been changed."""
-        curr_range = self._get_range()
-        ndim = len(curr_range)
+        ndim = self._get_ndim()
         ndisplay = self.dims.ndisplay
 
+        # If the dimensionality is changing then if the number of dimensions
+        # is becoming smaller trim the property from the beginning, and if
+        # the number of dimensions is becoming larger pad from the beginning
         if len(self.position) > ndisplay:
             self._position = self._position[-ndisplay:]
         elif len(self.position) < ndisplay:
             self._position = (0,) * (ndisplay - len(self.position)) + tuple(
                 self.position
             )
-
         if len(self.scale) > ndim:
             self._scale = self._scale[-ndim:]
         elif len(self.scale) < ndim:
             self._scale = (1,) * (ndim - len(self.scale)) + tuple(self.scale)
-
         if len(self.translate) > ndim:
             self._translate = self._translate[-ndim:]
         elif len(self.translate) < ndim:
@@ -307,6 +307,7 @@ class Layer(KeymapMixin, ABC):
         if ndim != self.dims.ndim:
             self.dims.ndim = ndim
 
+        curr_range = self._get_range()
         for i, r in enumerate(curr_range):
             self.dims.set_range(i, r)
 
@@ -326,6 +327,10 @@ class Layer(KeymapMixin, ABC):
 
     @abstractmethod
     def _get_range(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_ndim(self):
         raise NotImplementedError()
 
     @property

@@ -115,6 +115,10 @@ class Pyramid(Image):
         self._update_dims()
         self.events.data()
 
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        return len(self.level_shapes[0])
+
     def _get_range(self):
         """Shape of the base of pyramid.
 

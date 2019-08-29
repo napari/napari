@@ -145,6 +145,10 @@ class Vectors(Layer):
         self._update_dims()
         self.events.data()
 
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        return self.data.shape[2]
+
     def _get_range(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:

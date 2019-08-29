@@ -36,7 +36,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.reset()
 
     def _on_display_change(self):
-        if self.layer.dims.ndisplay == 2 and type(self.node) == Markers:
+        if self.layer.dims.ndisplay == 2 and isinstance(self.node, Markers):
             parent = self.node.parent
             order = abs(copy(self.node.order))
             self.node.transforms = ChainTransform()
@@ -49,7 +49,7 @@ class VispyPointsLayer(VispyBaseLayer):
             self.layer._set_view_slice()
             self.reset()
 
-        elif self.layer.dims.ndisplay == 3 and type(self.node) == Compound:
+        elif self.layer.dims.ndisplay == 3 and isinstance(self.node, Compound):
             parent = self.node.parent
             order = abs(copy(self.node.order))
             self.node.transforms = ChainTransform()
@@ -87,25 +87,19 @@ class VispyPointsLayer(VispyBaseLayer):
             size = self.layer._sizes_view
 
         if self.layer.dims.ndisplay == 2:
-            self.node._subvisuals[2].set_data(
-                data[::-1, ::-1] + 0.5,
-                size=size[::-1],
-                edge_width=self.layer.edge_width,
-                symbol=self.layer.symbol,
-                edge_color=edge_color,
-                face_color=face_color,
-                scaling=True,
-            )
+            set_data = self.node._subvisuals[2].set_data
         else:
-            self.node.set_data(
-                data[::-1, ::-1] + 0.5,
-                size=size[::-1],
-                edge_width=self.layer.edge_width,
-                symbol=self.layer.symbol,
-                edge_color=edge_color,
-                face_color=face_color,
-                scaling=True,
-            )
+            set_data = self.node.set_data
+
+        set_data(
+            data[::-1, ::-1] + 0.5,
+            size=size[::-1],
+            edge_width=self.layer.edge_width,
+            symbol=self.layer.symbol,
+            edge_color=edge_color,
+            face_color=face_color,
+            scaling=True,
+        )
         self.node.update()
 
     def _on_highlight_change(self):

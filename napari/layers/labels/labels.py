@@ -182,13 +182,14 @@ class Labels(Layer):
         self._update_dims()
         self.events.data()
 
-    def _get_range(self):
-        if self.dims.ndisplay == 3:
-            scale = self.scale
-        else:
-            scale = 1
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        return self.data.ndim
 
-        return tuple((0, m, 1) for m in np.multiply(self.data.shape, scale))
+    def _get_range(self):
+        return tuple(
+            (0, m, 1) for m in np.multiply(self.data.shape, self.scale)
+        )
 
     @property
     def contiguous(self):
@@ -515,7 +516,7 @@ class Labels(Layer):
             as a png according to the svg specification.
         """
         mapped_image = (self.colormap[1].map(self._data_view) * 255).astype(
-            'uint8'
+            np.uint8
         )
         mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
         image_str = imwrite('<bytes>', mapped_image, format='png')

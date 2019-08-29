@@ -323,6 +323,14 @@ class Shapes(Layer):
         self._update_dims()
         self.events.data()
 
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        if self.nshapes == 0:
+            ndim = self.ndim
+        else:
+            ndim = self.data[0].shape[1]
+        return ndim
+
     def _get_range(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if self.nshapes == 0:
