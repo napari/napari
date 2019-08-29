@@ -202,13 +202,13 @@ class Image(Layer):
             ndim = self.data.ndim
         return ndim
 
-    def _get_range(self):
+    def _get_extent(self):
         if self.multichannel:
             shape = self.data.shape[:-1]
         else:
             shape = self.data.shape
 
-        return tuple((0, m, 1) for m in np.multiply(shape, self.scale))
+        return tuple((0, m) for m in shape)
 
     @property
     def multichannel(self):

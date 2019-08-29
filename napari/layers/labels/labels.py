@@ -186,10 +186,8 @@ class Labels(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.ndim
 
-    def _get_range(self):
-        return tuple(
-            (0, m, 1) for m in np.multiply(self.data.shape, self.scale)
-        )
+    def _get_extent(self):
+        return tuple((0, m) for m in self.data.shape)
 
     @property
     def contiguous(self):

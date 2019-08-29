@@ -139,7 +139,10 @@ def test_scale():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == full_shape
-    assert layer.dims.range == list((0, m, 1) for m in full_shape)
+    # Note that the scale appears as the step size in the range
+    assert layer.dims.range == list(
+        (0, m, s) for m, s in zip(full_shape, scale)
+    )
     assert layer._data_view.shape == shape[-3:]
 
 

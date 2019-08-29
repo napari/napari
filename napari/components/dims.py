@@ -61,7 +61,8 @@ class Dims:
             auto_connect=True,
             axis=None,
             ndim=None,
-            display=None,
+            ndisplay=None,
+            order=None,
             range=None,
             camera=None,
         )
@@ -116,6 +117,9 @@ class Dims:
 
     @order.setter
     def order(self, order):
+        if np.all(self._order == order):
+            return
+
         if not len(order) == self.ndim:
             raise ValueError(
                 f"Invalid ordering {order} for {self.ndim} dimensions"
@@ -123,7 +127,7 @@ class Dims:
         if np.all(self._order == order):
             return
         self._order = order
-        self.events.display()
+        self.events.order()
         self.events.camera()
 
     @property
@@ -139,7 +143,9 @@ class Dims:
 
     @ndim.setter
     def ndim(self, ndim):
-        if ndim > self.ndim:
+        if self.ndim == ndim:
+            return
+        elif self.ndim < ndim:
             for i in range(self.ndim, ndim):
                 # Insert default values for the new axis at the beginning of
                 # the lists
@@ -159,8 +165,7 @@ class Dims:
             # Notify listeners of which dimensions have been affected
             for axis_changed in range(ndim - self.ndim):
                 self.events.axis(axis=axis_changed)
-
-        elif ndim < self.ndim:
+        elif self.ndim > ndim:
             self._range = self._range[-ndim:]
             self._point = self._point[-ndim:]
             self._interval = self._interval[-ndim:]
@@ -188,7 +193,7 @@ class Dims:
                     )
                 else:
                     p = self.point[axis]
-                p = np.round(p).astype(int)
+                p = np.round(p / self.range[axis][2]).astype(int)
                 slice_list.append(p)
         return tuple(slice_list)
 
@@ -199,14 +204,16 @@ class Dims:
 
     @ndisplay.setter
     def ndisplay(self, ndisplay):
+        if self._ndisplay == ndisplay:
+            return
+
         if ndisplay not in (2, 3):
             raise ValueError(
                 f"Invalid number of dimensions to be displayed {ndisplay}"
             )
-        if self._ndisplay == ndisplay:
-            return
+
         self._ndisplay = ndisplay
-        self.events.display()
+        self.events.ndisplay()
         self.events.camera()
 
     @property

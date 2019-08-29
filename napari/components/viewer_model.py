@@ -79,7 +79,8 @@ class ViewerModel(KeymapMixin):
         self.theme = 'dark'
 
         self.dims.events.camera.connect(lambda e: self.reset_view())
-        self.dims.events.display.connect(lambda e: self._update_layers())
+        self.dims.events.ndisplay.connect(lambda e: self._update_layers())
+        self.dims.events.order.connect(lambda e: self._update_layers())
         self.dims.events.axis.connect(lambda e: self._update_layers())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
@@ -322,7 +323,8 @@ class ViewerModel(KeymapMixin):
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
-        layer.dims.events.display.connect(self._on_layers_change)
+        layer.dims.events.ndisplay.connect(self._on_layers_change)
+        layer.dims.events.order.connect(self._on_layers_change)
         layer.dims.events.range.connect(self._on_layers_change)
         self.layers.append(layer)
         self._update_layers(layers=[layer])

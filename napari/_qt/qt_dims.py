@@ -86,7 +86,8 @@ class QtDims(QWidget):
         def update_display_listener(event):
             self.update_display.emit()
 
-        self.dims.events.display.connect(update_display_listener)
+        self.dims.events.ndisplay.connect(update_display_listener)
+        self.dims.events.order.connect(update_display_listener)
         self.update_display.connect(self._update_display)
 
     @property

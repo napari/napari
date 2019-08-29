@@ -119,6 +119,9 @@ class Pyramid(Image):
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
+    def _get_extent(self):
+        return tuple((0, m) for m in self.level_shapes[0])
+
     def _get_range(self):
         """Shape of the base of pyramid.
 

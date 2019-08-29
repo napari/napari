@@ -267,7 +267,7 @@ class Points(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
 
-    def _get_range(self):
+    def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)

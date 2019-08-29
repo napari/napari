@@ -29,38 +29,28 @@ class VispyPointsLayer(VispyBaseLayer):
             lambda e: self._on_highlight_change()
         )
 
-        self.layer.dims.events.display.connect(
+        self.layer.dims.events.ndisplay.connect(
             lambda e: self._on_display_change()
         )
 
-        self.reset()
+        self._on_display_change()
 
     def _on_display_change(self):
-        if self.layer.dims.ndisplay == 2 and isinstance(self.node, Markers):
-            parent = self.node.parent
-            order = abs(copy(self.node.order))
-            self.node.transforms = ChainTransform()
-            self.node.parent = None
+        parent = self.node.parent
+        order = abs(self.node.order)
+        self.node.transforms = ChainTransform()
+        self.node.parent = None
 
+        if self.layer.dims.ndisplay == 2:
             self.node = Compound([Line(), Markers(), Markers()])
-            self.node.parent = parent
-            self.order = order
-            self.layer._update_dims()
-            self.layer._set_view_slice()
-            self.reset()
-
-        elif self.layer.dims.ndisplay == 3 and isinstance(self.node, Compound):
-            parent = self.node.parent
-            order = abs(copy(self.node.order))
-            self.node.transforms = ChainTransform()
-            self.node.parent = None
-
+        else:
             self.node = Markers()
-            self.node.parent = parent
-            self.order = order
-            self.layer._update_dims()
-            self.layer._set_view_slice()
-            self.reset()
+
+        self.node.parent = parent
+        self.order = order
+        self.layer._update_dims()
+        self.layer._set_view_slice()
+        self.reset()
 
     def _on_data_change(self):
         if len(self.layer._data_view) > 0:

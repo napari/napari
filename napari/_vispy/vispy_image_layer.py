@@ -20,38 +20,27 @@ class VispyImageLayer(VispyBaseLayer):
             lambda e: self._on_colormap_change()
         )
         self.layer.events.clim.connect(lambda e: self._on_clim_change())
-        self.layer.dims.events.display.connect(
+        self.layer.dims.events.ndisplay.connect(
             lambda e: self._on_display_change()
         )
 
-        self.reset()
+        self._on_display_change()
 
     def _on_display_change(self):
-        if self.layer.dims.ndisplay == 2 and isinstance(self.node, VolumeNode):
-            parent = self.node.parent
-            order = abs(self.node.order)
-            self.node.parent = None
+        parent = self.node.parent
+        order = abs(self.node.order)
+        self.node.parent = None
 
+        if self.layer.dims.ndisplay == 2:
             self.node = ImageNode(None, method='auto')
-            self.node.parent = parent
-            self.order = order
-            self.layer._update_dims()
-            self.layer._set_view_slice()
-            self.reset()
-
-        elif self.layer.dims.ndisplay == 3 and isinstance(
-            self.node, ImageNode
-        ):
-            parent = self.node.parent
-            order = abs(self.node.order)
-            self.node.parent = None
-
+        else:
             self.node = VolumeNode(np.zeros((1, 1, 1)))
-            self.node.parent = parent
-            self.order = order
-            self.layer._update_dims()
-            self.layer._set_view_slice()
-            self.reset()
+
+        self.node.parent = parent
+        self.order = order
+        self.layer._update_dims()
+        self.layer._set_view_slice()
+        self.reset()
 
     def _on_data_change(self):
         if self.layer.dims.ndisplay == 3:
@@ -85,7 +74,6 @@ class VispyImageLayer(VispyBaseLayer):
 
     def reset(self):
         self._reset_base()
-        self._on_display_change()
         self._on_interpolation_change()
         self._on_rendering_change()
         self._on_colormap_change()

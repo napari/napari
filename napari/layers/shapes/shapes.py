@@ -331,7 +331,7 @@ class Shapes(Layer):
             ndim = self.data[0].shape[1]
         return ndim
 
-    def _get_range(self):
+    def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if self.nshapes == 0:
             maxs = [1] * self.ndim

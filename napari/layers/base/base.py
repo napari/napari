@@ -162,8 +162,10 @@ class Layer(KeymapMixin, ABC):
         )
         self.name = name
 
-        self.dims.events.display.connect(lambda e: self._set_view_slice())
-        self.dims.events.display.connect(lambda e: self._update_dims())
+        self.dims.events.ndisplay.connect(lambda e: self._set_view_slice())
+        self.dims.events.order.connect(lambda e: self._set_view_slice())
+        self.dims.events.ndisplay.connect(lambda e: self._update_dims())
+        self.dims.events.order.connect(lambda e: self._update_dims())
         self.dims.events.axis.connect(lambda e: self._set_view_slice())
 
     def __str__(self):
@@ -304,8 +306,7 @@ class Layer(KeymapMixin, ABC):
                 self.translate
             )
 
-        if ndim != self.dims.ndim:
-            self.dims.ndim = ndim
+        self.dims.ndim = ndim
 
         curr_range = self._get_range()
         for i, r in enumerate(curr_range):
@@ -326,12 +327,18 @@ class Layer(KeymapMixin, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_range(self):
+    def _get_extent(self):
         raise NotImplementedError()
 
     @abstractmethod
     def _get_ndim(self):
         raise NotImplementedError()
+
+    def _get_range(self):
+        extent = self._get_extent()
+        return tuple(
+            (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
+        )
 
     @property
     def thumbnail(self):
