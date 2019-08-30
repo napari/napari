@@ -32,7 +32,7 @@ class VispyPyramidLayer(VispyBaseLayer):
         self.node.cmap = self.layer.colormap[1]
 
     def _on_contrast_limits_change(self):
-        self.node.contrast_limits = self.layer.contrast_limits
+        self.node.clim = self.layer.contrast_limits
 
     def _on_scale_change(self):
         self.scale = [

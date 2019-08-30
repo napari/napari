@@ -78,7 +78,7 @@ class VispyImageLayer(VispyBaseLayer):
                 contrast_limits=self.layer.contrast_limits,
             )
         else:
-            self.node.contrast_limits = self.layer.contrast_limits
+            self.node.clim = self.layer.contrast_limits
 
     def reset(self):
         self._reset_base()
