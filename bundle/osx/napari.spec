@@ -13,9 +13,9 @@ data_files = [
     (os.path.join(os.path.dirname(vispy.io.__file__), "_data"), os.path.join("vispy", "io", "_data")),
     (os.path.dirname(vispy.util.__file__), os.path.join("vispy", "util")),
     (os.path.dirname(freetype.__file__), os.path.join("freetype")),
-    (os.path.join("napari", "util", "colormaps", "matplotlib_cmaps.txt"),
+    (os.path.join("../..", "napari", "util", "colormaps", "matplotlib_cmaps.txt"),
      os.path.join("util", "colormaps")),
-    (os.path.join("napari", "resources", "stylesheet.qss"), "resources"),
+    (os.path.join("../..", "napari", "resources", "stylesheet.qss"), "resources"),
 ]
 
 hidden_imports = [
@@ -24,7 +24,7 @@ hidden_imports = [
     "freetype"
 ]
 
-a = Analysis(['napari/main.py'],
+a = Analysis(['../../napari/main.py'],
              pathex=['/Users/nicholassofroniew/Github/napari'],
              binaries=[],
              datas=data_files,
