@@ -303,11 +303,11 @@ class ScalarMappable(object):
         'return the colormap'
         return self.cmap
 
-    def get_clim(self):
+    def get_contrast_limits(self):
         'return the min, max of the color limits for image scaling'
         return self.norm.vmin, self.norm.vmax
 
-    def set_clim(self, vmin=None, vmax=None):
+    def set_contrast_limits(self, vmin=None, vmax=None):
         """
         set the norm limits for image scaling; if *vmin* is a length2
         sequence, interpret it as ``(vmin, vmax)`` which is used to

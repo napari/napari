@@ -10,42 +10,46 @@ class QtImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.clim.connect(lambda e: self.clim_slider_update())
+        self.layer.events.contrast_limits.connect(
+            lambda e: self.contrast_limits_slider_update()
+        )
 
-        # Create clim slider
-        self.climSlider = QVRangeSlider(
+        # Create contrast_limits slider
+        self.contrast_limitsSlider = QVRangeSlider(
             slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
         )
-        self.climSlider.setEmitWhileMoving(True)
-        self.climSlider.collapsable = False
-        self.climSlider.setEnabled(True)
+        self.contrast_limitsSlider.setEmitWhileMoving(True)
+        self.contrast_limitsSlider.collapsable = False
+        self.contrast_limitsSlider.setEnabled(True)
 
         layout = QHBoxLayout()
-        layout.addWidget(self.climSlider)
+        layout.addWidget(self.contrast_limitsSlider)
         layout.setContentsMargins(12, 15, 10, 10)
         self.setLayout(layout)
         self.setMouseTracking(True)
 
-        self.climSlider.rangeChanged.connect(self.clim_slider_changed)
-        self.clim_slider_update()
+        self.contrast_limitsSlider.rangeChanged.connect(
+            self.contrast_limits_slider_changed
+        )
+        self.contrast_limits_slider_update()
 
-    def clim_slider_changed(self, slidermin, slidermax):
-        valmin, valmax = self.layer._clim_range
+    def contrast_limits_slider_changed(self, slidermin, slidermax):
+        valmin, valmax = self.layer._contrast_limits_range
         cmin = valmin + slidermin * (valmax - valmin)
         cmax = valmin + slidermax * (valmax - valmin)
-        self.layer.clim = cmin, cmax
+        self.layer.contrast_limits = cmin, cmax
 
-    def clim_slider_update(self):
-        valmin, valmax = self.layer._clim_range
-        cmin, cmax = self.layer.clim
+    def contrast_limits_slider_update(self):
+        valmin, valmax = self.layer._contrast_limits_range
+        cmin, cmax = self.layer.contrast_limits
         slidermin = (cmin - valmin) / (valmax - valmin)
         slidermax = (cmax - valmin) / (valmax - valmin)
-        self.climSlider.blockSignals(True)
-        self.climSlider.setValues((slidermin, slidermax))
-        self.climSlider.blockSignals(False)
+        self.contrast_limitsSlider.blockSignals(True)
+        self.contrast_limitsSlider.setValues((slidermin, slidermax))
+        self.contrast_limitsSlider.blockSignals(False)
 
     def mouseMoveEvent(self, event):
-        self.layer.status = self.layer._clim_msg
+        self.layer.status = self.layer._contrast_limits_msg
 
 
 class QtImageProperties(QtLayerProperties):

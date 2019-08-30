@@ -19,7 +19,9 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.colormap.connect(
             lambda e: self._on_colormap_change()
         )
-        self.layer.events.clim.connect(lambda e: self._on_clim_change())
+        self.layer.events.contrast_limits.connect(
+            lambda e: self._on_contrast_limits_change()
+        )
         self.layer.dims.events.ndisplay.connect(
             lambda e: self._on_display_change()
         )
@@ -44,7 +46,10 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_data_change(self):
         if self.layer.dims.ndisplay == 3:
-            self.node.set_data(self.layer._data_view, clim=self.layer.clim)
+            self.node.set_data(
+                self.layer._data_view,
+                contrast_limits=self.layer.contrast_limits,
+            )
         else:
             self.node._need_colortransform_update = True
             self.node.set_data(self.layer._data_view)
@@ -66,16 +71,19 @@ class VispyImageLayer(VispyBaseLayer):
             )
         self.node.cmap = cmap
 
-    def _on_clim_change(self):
+    def _on_contrast_limits_change(self):
         if self.layer.dims.ndisplay == 3:
-            self.node.set_data(self.layer._data_view, clim=self.layer.clim)
+            self.node.set_data(
+                self.layer._data_view,
+                contrast_limits=self.layer.contrast_limits,
+            )
         else:
-            self.node.clim = self.layer.clim
+            self.node.contrast_limits = self.layer.contrast_limits
 
     def reset(self):
         self._reset_base()
         self._on_interpolation_change()
         self._on_rendering_change()
         self._on_colormap_change()
-        self._on_clim_change()
+        self._on_contrast_limits_change()
         self._on_data_change()

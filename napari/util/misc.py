@@ -26,11 +26,11 @@ def ensure_iterable(arg, color=False):
         return itertools.repeat(arg)
 
 
-def has_clims(arg):
-    """Check if a layer has clims.
+def has_contrast_limitss(arg):
+    """Check if a layer has contrast_limitss.
     """
     if hasattr(arg, '_qt_controls'):
-        if hasattr(arg._qt_controls, 'climSlider'):
+        if hasattr(arg._qt_controls, 'contrast_limitsSlider'):
             return True
         else:
             return False

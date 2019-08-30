@@ -24,11 +24,11 @@ class Pyramid(Image):
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
-    clim : list (2,)
+    contrast_limits : list (2,)
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
-    clim_range : list (2,)
+    contrast_limits_range : list (2,)
         Range for the color limits. If not passed is be calculated as the
         min and max of the image. Passing a value prevents this calculation
         which can be useful when working with very large datasets that are
@@ -72,12 +72,12 @@ class Pyramid(Image):
         are multichannel the colormap is ignored.
     colormaps : tuple of str
         Names of the available colormaps.
-    clim : list (2,) of float
+    contrast_limits : list (2,) of float
         Color limits to be used for determining the colormap bounds for
-        luminance images. If the image are multichannel the clim is ignored.
-    clim_range : list (2,) of float
+        luminance images. If the image are multichannel the contrast_limits is ignored.
+    contrast_limits_range : list (2,) of float
         Range for the color limits for luminace images. If the image are
-        multichannel the clim_range is ignored.
+        multichannel the contrast_limits_range is ignored.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
