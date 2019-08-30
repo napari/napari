@@ -1,3 +1,1 @@
-"""
-Backported/custom features of VisPy.
-"""
+from .util import create_vispy_visual

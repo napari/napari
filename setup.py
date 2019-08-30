@@ -12,7 +12,7 @@ LICENSE = 'BSD 3-Clause'
 DOWNLOAD_URL = 'https://github.com/napari/napari'
 
 CLASSIFIERS = [
-    'Development Status :: 2 - Pre-Alpha',
+    'Development Status :: 3 - Alpha',
     'Environment :: X11 Applications :: Qt',
     'Intended Audience :: Education',
     'Intended Audience :: Science/Research',
@@ -88,6 +88,7 @@ if __name__ == '__main__':
         requires=REQUIRES,
         python_requires=f'>={MIN_PY_VER}',
         packages=PACKAGES,
+        entry_points={'console_scripts': ['napari=napari.main:main']},
         include_package_data=True,
         zip_safe=False,  # the package can run out of an .egg file
     )

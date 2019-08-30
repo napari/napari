@@ -7,20 +7,18 @@ Each vector position is defined by an (x-proj, y-proj) element
 """
 
 import napari
-from napari.util import app_context
-
 import numpy as np
 
-with app_context():
+
+with napari.gui_qt():
     # create the viewer and window
     viewer = napari.Viewer()
 
-    n = 100
-    m = 200
+    n = 20
+    m = 40
 
     image = 0.2 * np.random.random((n, m)) + 0.5
     layer = viewer.add_image(image, clim_range=[0, 1], name='background')
-    layer.colormap = 'gray'
 
     # sample vector image-like data
     # n x m grid of slanted lines
@@ -34,6 +32,6 @@ with app_context():
     pos[:, :, 1] = rand2.reshape((n, m))
 
     # add the vectors
-    vect = viewer.add_vectors(pos, width=0.2, length=2.5)
+    vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
 
     print(image.shape, pos.shape)

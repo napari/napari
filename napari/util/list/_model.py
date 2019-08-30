@@ -57,5 +57,5 @@ class ListModel(MultiIndexList, TypedList):
 
     def pop(self, key):
         obj = super().pop(key)
-        self.events.removed(item=obj)
+        self.events.removed(item=obj, index=key)
         return obj

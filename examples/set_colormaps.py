@@ -7,15 +7,14 @@ import vispy.color
 from skimage import data
 import napari
 
+
 histo = data.astronaut() / 255
-
 rch, gch, bch = np.transpose(histo, (2, 0, 1))
-
 red = vispy.color.Colormap([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
 green = vispy.color.Colormap([[0.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 blue = vispy.color.Colormap([[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
 
-with napari.util.app_context():
+with napari.gui_qt():
     v = napari.Viewer()
 
     rlayer = v.add_image(rch, name='red channel')
@@ -27,6 +26,3 @@ with napari.util.app_context():
     blayer = v.add_image(bch, name='blue channel')
     blayer.blending = 'additive'
     blayer.colormap = {'blue': blue}
-
-    # set the blayer property widget to be expanded
-    blayer._qt_properties.setExpanded(True)

@@ -1,9 +1,7 @@
 import os
-
-from .vendored import colorconv
+from .vendored import colorconv, cm
 import numpy as np
-import vispy.color
-
+from vispy.color import get_colormap, get_colormaps, BaseColormap, Colormap
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -20,7 +18,7 @@ primary_colors = np.array(
 
 
 simple_colormaps = {
-    name: vispy.color.Colormap([[0.0, 0.0, 0.0], color])
+    name: Colormap([[0.0, 0.0, 0.0], color])
     for name, color in zip(primary_color_names, primary_colors)
 }
 
@@ -201,7 +199,93 @@ def label_colormap(num_colors=256, seed=0.5):
         axis=1,
     )
     colors[0, :] = 0  # ensure alpha is 0 for label 0
-    cmap = vispy.color.Colormap(
+    cmap = Colormap(
         colors=colors, controls=control_points, interpolation='zero'
     )
     return cmap
+
+
+def vispy_or_mpl_colormap(name):
+    """Try to get a colormap from vispy, or convert an mpl one to vispy format.
+
+    Parameters
+    ----------
+    name : str
+        The name of the colormap.
+
+    Returns
+    -------
+    cmap : vispy.color.Colormap
+        The found colormap.
+
+    Raises
+    ------
+    KeyError
+        If no colormap with that name is found within vispy or matplotlib.
+    """
+    vispy_cmaps = get_colormaps()
+    if name in vispy_cmaps:
+        cmap = get_colormap(name)
+    else:
+        try:
+            mpl_cmap = getattr(cm, name)
+        except AttributeError:
+            raise KeyError(
+                f'Colormap "{name}" not found in either vispy '
+                'or matplotlib.'
+            )
+        mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
+        cmap = Colormap(mpl_colors)
+    return cmap
+
+
+# Fire and Grays are two colormaps that work well for
+# translucent and additive volume rendering - add
+# them to best_3d_colormaps, append them to
+# all the existing colormaps
+
+
+class TransFire(BaseColormap):
+    glsl_map = """
+    vec4 translucent_fire(float t) {
+        return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
+    }
+    """
+
+    def map(self, t):
+        if isinstance(t, np.ndarray):
+            return np.dstack(
+                [np.power(t, 0.5), t, t * t, np.maximum(0, t * 1.05 - 0.05)]
+            ).astype(np.float32)
+        else:
+            return np.array(
+                [np.power(t, 0.5), t, t * t, np.maximum(0, t * 1.05 - 0.05)],
+                dtype=np.float32,
+            )
+
+
+class TransGrays(BaseColormap):
+    glsl_map = """
+    vec4 translucent_grays(float t) {
+        return vec4(t, t, t, t*0.5);
+    }
+    """
+
+    def map(self, t):
+        if isinstance(t, np.ndarray):
+            return np.dstack([t, t, t, t * 0.5]).astype(np.float32)
+        else:
+            return np.array([t, t, t, t * 0.5], dtype=np.float32)
+
+
+colormaps_3D = {"fire": TransFire(), "gray_trans": TransGrays()}
+colormaps_3D = {k: v for k, v in sorted(colormaps_3D.items())}
+
+
+# A dictionary mapping names to VisPy colormap objects
+ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
+ALL_COLORMAPS.update(simple_colormaps)
+ALL_COLORMAPS.update(colormaps_3D)
+
+# ... sorted alphabetically by name
+AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
