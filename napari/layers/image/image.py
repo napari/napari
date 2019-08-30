@@ -165,7 +165,7 @@ class Image(Layer):
             self._data_view = np.zeros((1,) * self.dims.ndisplay)
         self._data_thumbnail = self._data_view
 
-        # Set contrast_limitss and colormaps
+        # Set contrast_limits and colormaps
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits_range is None:

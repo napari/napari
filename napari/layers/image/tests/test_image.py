@@ -315,7 +315,7 @@ def test_colormaps():
     assert layer.colormap[1] == cmap
 
 
-def test_contrast_limitss():
+def test_contrast_limits():
     """Test setting color limits."""
     np.random.seed(0)
     data = np.random.random((10, 15))
