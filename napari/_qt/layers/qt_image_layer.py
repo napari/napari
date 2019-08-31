@@ -15,20 +15,20 @@ class QtImageControls(QtLayerControls):
         )
 
         # Create contrast_limits slider
-        self.contrast_limitsSlider = QVRangeSlider(
+        self.contrastLimitsSlider = QVRangeSlider(
             slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
         )
-        self.contrast_limitsSlider.setEmitWhileMoving(True)
-        self.contrast_limitsSlider.collapsable = False
-        self.contrast_limitsSlider.setEnabled(True)
+        self.contrastLimitsSlider.setEmitWhileMoving(True)
+        self.contrastLimitsSlider.collapsable = False
+        self.contrastLimitsSlider.setEnabled(True)
 
         layout = QHBoxLayout()
-        layout.addWidget(self.contrast_limitsSlider)
+        layout.addWidget(self.contrastLimitsSlider)
         layout.setContentsMargins(12, 15, 10, 10)
         self.setLayout(layout)
         self.setMouseTracking(True)
 
-        self.contrast_limitsSlider.rangeChanged.connect(
+        self.contrastLimitsSlider.rangeChanged.connect(
             self.contrast_limits_slider_changed
         )
         self.contrast_limits_slider_update()
@@ -44,9 +44,9 @@ class QtImageControls(QtLayerControls):
         cmin, cmax = self.layer.contrast_limits
         slidermin = (cmin - valmin) / (valmax - valmin)
         slidermax = (cmax - valmin) / (valmax - valmin)
-        self.contrast_limitsSlider.blockSignals(True)
-        self.contrast_limitsSlider.setValues((slidermin, slidermax))
-        self.contrast_limitsSlider.blockSignals(False)
+        self.contrastLimitsSlider.blockSignals(True)
+        self.contrastLimitsSlider.setValues((slidermin, slidermax))
+        self.contrastLimitsSlider.blockSignals(False)
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg

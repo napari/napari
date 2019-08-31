@@ -26,18 +26,6 @@ def ensure_iterable(arg, color=False):
         return itertools.repeat(arg)
 
 
-def has_contrast_limits(arg):
-    """Check if a layer has contrast_limits.
-    """
-    if hasattr(arg, '_qt_controls'):
-        if hasattr(arg._qt_controls, 'contrast_limitsSlider'):
-            return True
-        else:
-            return False
-    else:
-        return False
-
-
 def is_iterable(arg, color=False):
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
