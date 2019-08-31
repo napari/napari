@@ -243,21 +243,6 @@ def test_contrast_limits_range():
     assert layer._contrast_limits_range == [0, 1]
     assert layer.contrast_limits == [0.0, 1.0]
 
-    # Set contrast_limits_range as keyword argument
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data, contrast_limits_range=[0, 2])
-    assert layer._contrast_limits_range == [0, 2]
-
-    # Set contrast_limits and contrast_limits_range as keyword arguments
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(
-        data, contrast_limits=[0.3, 0.6], contrast_limits_range=[0, 2]
-    )
-    assert layer.contrast_limits == [0.3, 0.6]
-    assert layer._contrast_limits_range == [0, 2]
-
 
 def test_metadata():
     """Test setting image metadata."""

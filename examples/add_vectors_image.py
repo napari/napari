@@ -18,7 +18,7 @@ with napari.gui_qt():
     m = 40
 
     image = 0.2 * np.random.random((n, m)) + 0.5
-    layer = viewer.add_image(image, contrast_limits_range=[0, 1], name='background')
+    layer = viewer.add_image(image, contrast_limits=[0, 1], name='background')
 
     # sample vector image-like data
     # n x m grid of slanted lines

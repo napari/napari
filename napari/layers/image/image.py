@@ -41,11 +41,6 @@ class Image(Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
-    contrast_limits_range : list (2,)
-        Range for the color limits. If not passed is be calculated as the
-        min and max of the image. Passing a value prevents this calculation
-        which can be useful when working with very large datasets that are
-        dynamically loaded.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
@@ -111,7 +106,6 @@ class Image(Layer):
         multichannel=None,
         colormap='gray',
         contrast_limits=None,
-        contrast_limits_range=None,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -168,14 +162,11 @@ class Image(Layer):
         # Set contrast_limits and colormaps
         self._colormap_name = ''
         self._contrast_limits_msg = ''
-        if contrast_limits_range is None:
+        if contrast_limits is None:
             self._contrast_limits_range = calc_data_range(self.data)
         else:
-            self._contrast_limits_range = contrast_limits_range
-        if contrast_limits is None:
-            self._contrast_limits = copy(self._contrast_limits_range)
-        else:
-            self._contrast_limits = contrast_limits
+            self._contrast_limits_range = contrast_limits
+        self._contrast_limits = copy(self._contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
         self.interpolation = interpolation

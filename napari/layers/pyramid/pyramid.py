@@ -28,11 +28,6 @@ class Pyramid(Image):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
-    contrast_limits_range : list (2,)
-        Range for the color limits. If not passed is be calculated as the
-        min and max of the image. Passing a value prevents this calculation
-        which can be useful when working with very large datasets that are
-        dynamically loaded.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.

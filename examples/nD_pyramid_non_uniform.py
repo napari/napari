@@ -26,4 +26,4 @@ with napari.gui_qt():
     viewer = napari.Viewer()
 
     # add image pyramid
-    viewer.add_pyramid(pyramid, contrast_limits_range=[0, 255])
+    viewer.add_pyramid(pyramid, contrast_limits=[0, 255])
