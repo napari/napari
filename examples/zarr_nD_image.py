@@ -13,6 +13,6 @@ with napari.gui_qt():
 
     array = da.from_zarr(data)
     print(array.shape)
-    # For big data, we should specify the clim range, or napari will try
+    # For big data, we should specify the contrast_limits range, or napari will try
     # to find the min and max of the full image.
-    viewer = napari.view(array, clim_range=[0, 1], multichannel=False)
+    viewer = napari.view(array, contrast_limits=[0, 1], multichannel=False)

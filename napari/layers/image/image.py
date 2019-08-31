@@ -37,15 +37,10 @@ class Image(Layer):
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap.
-    clim : list (2,)
+    contrast_limits : list (2,)
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
-    clim_range : list (2,)
-        Range for the color limits. If not passed is be calculated as the
-        min and max of the image. Passing a value prevents this calculation
-        which can be useful when working with very large datasets that are
-        dynamically loaded.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
@@ -85,12 +80,12 @@ class Image(Layer):
         multichannel the colormap is ignored.
     colormaps : tuple of str
         Names of the available colormaps.
-    clim : list (2,) of float
+    contrast_limits : list (2,) of float
         Color limits to be used for determining the colormap bounds for
-        luminance images. If the image is multichannel the clim is ignored.
-    clim_range : list (2,) of float
+        luminance images. If the image is multichannel the contrast_limits is ignored.
+    contrast_limits_range : list (2,) of float
         Range for the color limits for luminace images. If the image is
-        multichannel the clim_range is ignored.
+        multichannel the contrast_limits_range is ignored.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
@@ -110,8 +105,7 @@ class Image(Layer):
         *,
         multichannel=None,
         colormap='gray',
-        clim=None,
-        clim_range=None,
+        contrast_limits=None,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -147,7 +141,10 @@ class Image(Layer):
         )
 
         self.events.add(
-            clim=Event, colormap=Event, interpolation=Event, rendering=Event
+            contrast_limits=Event,
+            colormap=Event,
+            interpolation=Event,
+            rendering=Event,
         )
 
         # Set data
@@ -162,19 +159,16 @@ class Image(Layer):
             self._data_view = np.zeros((1,) * self.dims.ndisplay)
         self._data_thumbnail = self._data_view
 
-        # Set clims and colormaps
+        # Set contrast_limits and colormaps
         self._colormap_name = ''
-        self._clim_msg = ''
-        if clim_range is None:
-            self._clim_range = calc_data_range(self.data)
+        self._contrast_limits_msg = ''
+        if contrast_limits is None:
+            self._contrast_limits_range = calc_data_range(self.data)
         else:
-            self._clim_range = clim_range
-        if clim is None:
-            self._clim = copy(self._clim_range)
-        else:
-            self._clim = clim
+            self._contrast_limits_range = contrast_limits
+        self._contrast_limits = copy(self._contrast_limits_range)
         self.colormap = colormap
-        self.clim = self._clim
+        self.contrast_limits = self._contrast_limits
         self.interpolation = interpolation
         self.rendering = rendering
 
@@ -261,21 +255,25 @@ class Image(Layer):
         return tuple(self._colormaps.keys())
 
     @property
-    def clim(self):
+    def contrast_limits(self):
         """list of float: Limits to use for the colormap."""
-        return list(self._clim)
+        return list(self._contrast_limits)
 
-    @clim.setter
-    def clim(self, clim):
-        self._clim_msg = format_float(clim[0]) + ', ' + format_float(clim[1])
-        self.status = self._clim_msg
-        self._clim = clim
-        if clim[0] < self._clim_range[0]:
-            self._clim_range[0] = copy(clim[0])
-        if clim[1] > self._clim_range[1]:
-            self._clim_range[1] = copy(clim[1])
+    @contrast_limits.setter
+    def contrast_limits(self, contrast_limits):
+        self._contrast_limits_msg = (
+            format_float(contrast_limits[0])
+            + ', '
+            + format_float(contrast_limits[1])
+        )
+        self.status = self._contrast_limits_msg
+        self._contrast_limits = contrast_limits
+        if contrast_limits[0] < self._contrast_limits_range[0]:
+            self._contrast_limits_range[0] = copy(contrast_limits[0])
+        if contrast_limits[1] > self._contrast_limits_range[1]:
+            self._contrast_limits_range[1] = copy(contrast_limits[1])
         self._update_thumbnail()
-        self.events.clim()
+        self.events.contrast_limits()
 
     @property
     def interpolation(self):
@@ -379,7 +377,7 @@ class Image(Layer):
                 downsampled = ndi.zoom(
                     image, zoom_factor, prefilter=False, order=0
                 )
-            low, high = self.clim
+            low, high = self.contrast_limits
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
             if color_range != 0:
@@ -425,9 +423,11 @@ class Image(Layer):
             image = np.max(self._data_thumbnail, axis=0)
         else:
             image = self._data_thumbnail
-        image = np.clip(image, self.clim[0], self.clim[1])
-        image = image - self.clim[0]
-        color_range = self.clim[1] - self.clim[0]
+        image = np.clip(
+            image, self.contrast_limits[0], self.contrast_limits[1]
+        )
+        image = image - self.contrast_limits[0]
+        color_range = self.contrast_limits[1] - self.contrast_limits[0]
         if color_range != 0:
             image = image / color_range
         mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
