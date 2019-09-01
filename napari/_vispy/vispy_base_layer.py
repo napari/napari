@@ -176,6 +176,8 @@ class VispyBaseLayer(ABC):
             position = transform.map(list(position))[
                 : len(self.layer.dims.displayed)
             ]
+            # Offset position so that pixel center is at 0
+            position = position - 0.5
             coords = tuple(position[::-1])
         else:
             coords = (0,) * len(self.layer.dims.displayed)

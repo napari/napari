@@ -263,7 +263,7 @@ class Vectors(Layer):
             self._view_vertices = None
             self._view_faces = None
         else:
-            self._view_vertices = vertices[:, ::-1] + 0.5
+            self._view_vertices = vertices
             self._view_faces = faces
 
         self._update_thumbnail()
