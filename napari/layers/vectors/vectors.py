@@ -62,7 +62,7 @@ class Vectors(Layer):
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
         rectangle in the slice that it starts in.
-    _mesh_vertices : (2N, 3) array
+    _mesh_triangles : (2N, 3) array
         The integer indices of the `_mesh_vertices` that form the two triangles
         for the mesh representation of the vectors.
     _max_vectors_thumbnail : int
