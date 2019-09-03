@@ -173,12 +173,12 @@ class VispyBaseLayer(ABC):
         """
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
-            position = transform.map(list(position))[
-                : len(self.layer.dims.displayed)
-            ]
-            # Offset position so that pixel center is at 0
-            position = position - 0.5
-            coords = tuple(position[::-1])
+            # Map and offset position so that pixel center is at 0
+            mapped_position = (
+                transform.map(list(position))[: len(self.layer.dims.displayed)]
+                - 0.5
+            )
+            coords = tuple(mapped_position[::-1])
         else:
             coords = (0,) * len(self.layer.dims.displayed)
         return coords
