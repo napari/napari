@@ -57,7 +57,9 @@ class VispyImageLayer(VispyBaseLayer):
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
             try:
-                dtype = dict(i=np.int16, f=np.float32)[dtype.kind]
+                dtype = dict(
+                    i=np.int16, f=np.float32, u=np.uint16, b=np.uint8
+                )[dtype.kind]
             except KeyError:  # not an int or float
                 raise TypeError(
                     f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'
