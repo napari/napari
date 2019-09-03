@@ -342,6 +342,12 @@ class Image(Layer):
             image = np.max(self._data_thumbnail, axis=0)
         else:
             image = self._data_thumbnail
+
+        # float16 not supported by ndi.zoom
+        dtype = np.dtype(image.dtype)
+        if dtype in [np.dtype(np.float16)]:
+            image = image.astype(np.float32)
+
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
