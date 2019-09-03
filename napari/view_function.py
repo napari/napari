@@ -6,11 +6,10 @@ def view(
     title='napari',
     metadata=None,
     multichannel=None,
-    contrast_limits_range=None,
+    contrast_limits=None,
     **named_images,
 ):
     """View one or more input images.
-
     Parameters
     ----------
     *images : ndarray
@@ -25,21 +24,19 @@ def view(
         rather than spatial attributes. If not provided, napari will attempt
         to make an educated guess. If provided, and multiple images are given,
         the same value applies to all images.
-    contrast_limits_range : list | array | None
-        Length two list or array with the default color limit range for the
-        image. If not passed will be calculated as the min and max of the
-        image. Passing a value prevents this calculation which can be useful
+    contrast_limits : list (2,)
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image. Passing a value prevents this calculation which can be useful
         when working with very large datasets that are dynamically loaded.
         If provided, and multiple images are given, the same value applies to
         all images.
     **named_images : dict of str -> ndarray, optional
         Arrays to render as image layers, keyed by layer name.
-
     Returns
     -------
     viewer : napari.Viewer
         A Viewer widget displaying the images.
-
     Notes
     -----
     This convenience function is used to view one or few images with identical
@@ -53,14 +50,14 @@ def view(
             image,
             metadata=metadata,
             multichannel=multichannel,
-            contrast_limits_range=contrast_limits_range,
+            contrast_limits=contrast_limits,
         )
     for name, image in named_images.items():
         viewer.add_image(
             image,
             metadata=metadata,
             multichannel=multichannel,
-            contrast_limits_range=contrast_limits_range,
+            contrast_limits=contrast_limits,
             name=name,
         )
     return viewer
