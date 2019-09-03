@@ -338,8 +338,7 @@ class ViewerModel(KeymapMixin):
         *,
         multichannel=None,
         colormap='gray',
-        clim=None,
-        clim_range=None,
+        contrast_limits=None,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -369,15 +368,10 @@ class ViewerModel(KeymapMixin):
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
-        clim : list (2,)
+        contrast_limits : list (2,)
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image.
-        clim_range : list (2,)
-            Range for the color limits. If not passed is be calculated as the
-            min and max of the image. Passing a value prevents this calculation
-            which can be useful when working with very large datasets that are
-            dynamically loaded.
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
@@ -407,8 +401,7 @@ class ViewerModel(KeymapMixin):
             data,
             multichannel=multichannel,
             colormap=colormap,
-            clim=clim,
-            clim_range=clim_range,
+            contrast_limits=contrast_limits,
             interpolation=interpolation,
             rendering=rendering,
             name=name,
@@ -444,15 +437,10 @@ class ViewerModel(KeymapMixin):
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap.
-        clim : list (2,)
+        contrast_limits : list (2,)
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image.
-        clim_range : list (2,)
-            Range for the color limits. If not passed is be calculated as the
-            min and max of the image. Passing a value prevents this calculation
-            which can be useful when working with very large datasets that are
-            dynamically loaded.
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.

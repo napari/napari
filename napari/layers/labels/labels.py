@@ -129,7 +129,7 @@ class Labels(Layer):
         )
 
         self.events.add(
-            clim=Event,
+            contrast_limits=Event,
             colormap=Event,
             interpolation=Event,
             rendering=Event,
@@ -143,7 +143,7 @@ class Labels(Layer):
         self._data = data
         self._data_labels = np.zeros((1,) * self.dims.ndisplay)
         self._data_view = np.zeros((1,) * self.dims.ndisplay)
-        self.clim = [0.0, 1.0]
+        self.contrast_limits = [0.0, 1.0]
         self.interpolation = 'nearest'
         self.rendering = 'mip'
         self._seed = seed

@@ -23,7 +23,9 @@ class VispyPyramidLayer(VispyBaseLayer):
         self.layer.events.colormap.connect(
             lambda e: self._on_colormap_change()
         )
-        self.layer.events.clim.connect(lambda e: self._on_clim_change())
+        self.layer.events.contrast_limits.connect(
+            lambda e: self._on_contrast_limits_change()
+        )
 
         self.reset()
 
@@ -49,8 +51,8 @@ class VispyPyramidLayer(VispyBaseLayer):
     def _on_colormap_change(self):
         self.node.cmap = self.layer.colormap[1]
 
-    def _on_clim_change(self):
-        self.node.clim = self.layer.clim
+    def _on_contrast_limits_change(self):
+        self.node.clim = self.layer.contrast_limits
 
     def _on_scale_change(self):
         self.scale = [
@@ -141,5 +143,5 @@ class VispyPyramidLayer(VispyBaseLayer):
         self._reset_base()
         self._on_interpolation_change()
         self._on_colormap_change()
-        self._on_clim_change()
+        self._on_contrast_limits_change()
         self._on_data_change()

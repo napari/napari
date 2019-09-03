@@ -203,58 +203,45 @@ def test_colormaps():
     assert layer.colormap[1] == cmap
 
 
-def test_clims():
+def test_contrast_limits():
     """Test setting color limits."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
-    assert layer.clim[0] >= 0
-    assert layer.clim[1] <= 1
-    assert layer.clim[0] < layer.clim[1]
-    assert layer.clim == layer._clim_range
+    assert layer.contrast_limits[0] >= 0
+    assert layer.contrast_limits[1] <= 1
+    assert layer.contrast_limits[0] < layer.contrast_limits[1]
+    assert layer.contrast_limits == layer._contrast_limits_range
 
-    # Change clim property
-    clim = [0, 2]
-    layer.clim = clim
-    assert layer.clim == clim
-    assert layer._clim_range == clim
+    # Change contrast_limits property
+    contrast_limits = [0, 2]
+    layer.contrast_limits = contrast_limits
+    assert layer.contrast_limits == contrast_limits
+    assert layer._contrast_limits_range == contrast_limits
 
-    # Set clim as keyword argument
-    layer = Pyramid(data, clim=clim)
-    assert layer.clim == clim
-    assert layer._clim_range == clim
+    # Set contrast_limits as keyword argument
+    layer = Pyramid(data, contrast_limits=contrast_limits)
+    assert layer.contrast_limits == contrast_limits
+    assert layer._contrast_limits_range == contrast_limits
 
 
-def test_clim_range():
+def test_contrast_limits_range():
     """Test setting color limits range."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Pyramid(data)
-    assert layer._clim_range[0] >= 0
-    assert layer._clim_range[1] <= 1
-    assert layer._clim_range[0] < layer._clim_range[1]
+    assert layer._contrast_limits_range[0] >= 0
+    assert layer._contrast_limits_range[1] <= 1
+    assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
 
-    # If all data is the same value the clim_range and clim defaults to [0, 1]
+    # If all data is the same value the contrast_limits_range and contrast_limits defaults to [0, 1]
     shapes = [(40, 20), (20, 10), (10, 5)]
     data = [np.zeros(s) for s in shapes]
     layer = Pyramid(data)
-    assert layer._clim_range == [0, 1]
-    assert layer.clim == [0.0, 1.0]
-
-    # Set clim_range as keyword argument
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data, clim_range=[0, 2])
-    assert layer._clim_range == [0, 2]
-
-    # Set clim and clim_range as keyword arguments
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data, clim=[0.3, 0.6], clim_range=[0, 2])
-    assert layer.clim == [0.3, 0.6]
-    assert layer._clim_range == [0, 2]
+    assert layer._contrast_limits_range == [0, 1]
+    assert layer.contrast_limits == [0.0, 1.0]
 
 
 def test_metadata():
