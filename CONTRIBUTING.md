@@ -39,7 +39,6 @@ pre-commit install
 
 With help of pre-commit, your future commits to this project will be reformatted with our black configuration,
 which includes settings `skip-string-normalization = true` and `max-line-length = 79`.
-On the command-line, our configuration would be equivalent to `black -S -l 79 -t py36 --exclude vendored\|_vispy .`.
 To learn more, see the [black README](https://github.com/python/black).
 
 ## Building the dev-docs
@@ -126,12 +125,12 @@ $ git checkout master
 
 Fetch changes and update `master`:
 ```sh
-$ git pull upstream/master
+$ git pull upstream master --tags
 ```
 
 This is shorthand for:
 ```sh
-$ git fetch upstream master
+$ git fetch upstream master --tags
 $ git merge upstream/master
 ```
 
