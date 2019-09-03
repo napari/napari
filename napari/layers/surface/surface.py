@@ -128,8 +128,6 @@ class Surface(Layer):
         self._contrast_limits = copy(self._contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
-        self.interpolation = 'nearest'
-        self.rendering = 'mip'
 
         # Data containing vectors in the currently viewed slice
         self._data_view = np.empty((0, 2))

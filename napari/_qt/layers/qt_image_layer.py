@@ -56,55 +56,69 @@ class QtImageProperties(QtLayerProperties):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
-        self.layer.events.rendering.connect(self._on_rendering_change)
+        if hasattr(self.layer, 'colormap'):
+            self.layer.events.colormap.connect(self._on_colormap_change)
+            row = self.grid_layout.rowCount()
+            comboBox = QComboBox()
+            for cmap in self.layer.colormaps:
+                comboBox.addItem(cmap)
+            comboBox._allitems = set(self.layer.colormaps)
+            index = comboBox.findText(
+                self.layer.colormap[0], Qt.MatchFixedString
+            )
+            comboBox.setCurrentIndex(index)
+            comboBox.activated[str].connect(
+                lambda text=comboBox: self.changeColor(text)
+            )
+            self.grid_layout.addWidget(
+                QLabel('colormap:'), row, self.name_column
+            )
+            self.grid_layout.addWidget(comboBox, row, self.property_column)
+            self.colormap_combobox = comboBox
 
-        row = self.grid_layout.rowCount()
-        comboBox = QComboBox()
-        for cmap in self.layer.colormaps:
-            comboBox.addItem(cmap)
-        comboBox._allitems = set(self.layer.colormaps)
-        index = comboBox.findText(self.layer.colormap[0], Qt.MatchFixedString)
-        comboBox.setCurrentIndex(index)
-        comboBox.activated[str].connect(
-            lambda text=comboBox: self.changeColor(text)
-        )
-        self.grid_layout.addWidget(QLabel('colormap:'), row, self.name_column)
-        self.grid_layout.addWidget(comboBox, row, self.property_column)
-        self.colormap_combobox = comboBox
+        if hasattr(self.layer, 'interpolation'):
+            self.layer.events.interpolation.connect(
+                self._on_interpolation_change
+            )
+            row = self.grid_layout.rowCount()
+            interp_comboBox = QComboBox()
+            for interp in Interpolation:
+                interp_comboBox.addItem(str(interp))
+            index = interp_comboBox.findText(
+                self.layer.interpolation, Qt.MatchFixedString
+            )
+            interp_comboBox.setCurrentIndex(index)
+            interp_comboBox.activated[str].connect(
+                lambda text=interp_comboBox: self.changeInterpolation(text)
+            )
+            self.interpComboBox = interp_comboBox
+            self.grid_layout.addWidget(
+                QLabel('interpolation:'), row, self.name_column
+            )
+            self.grid_layout.addWidget(
+                interp_comboBox, row, self.property_column
+            )
 
-        row = self.grid_layout.rowCount()
-        interp_comboBox = QComboBox()
-        for interp in Interpolation:
-            interp_comboBox.addItem(str(interp))
-        index = interp_comboBox.findText(
-            self.layer.interpolation, Qt.MatchFixedString
-        )
-        interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(
-            lambda text=interp_comboBox: self.changeInterpolation(text)
-        )
-        self.interpComboBox = interp_comboBox
-        self.grid_layout.addWidget(
-            QLabel('interpolation:'), row, self.name_column
-        )
-        self.grid_layout.addWidget(interp_comboBox, row, self.property_column)
-
-        row = self.grid_layout.rowCount()
-        renderComboBox = QComboBox()
-        for render in Rendering:
-            renderComboBox.addItem(str(render))
-        index = renderComboBox.findText(
-            self.layer.rendering, Qt.MatchFixedString
-        )
-        renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(
-            lambda text=renderComboBox: self.changeRendering(text)
-        )
-        self.renderComboBox = renderComboBox
-        self.grid_layout.addWidget(QLabel('rendering:'), row, self.name_column)
-        self.grid_layout.addWidget(renderComboBox, row, self.property_column)
+        if hasattr(self.layer, 'rendering'):
+            self.layer.events.rendering.connect(self._on_rendering_change)
+            row = self.grid_layout.rowCount()
+            renderComboBox = QComboBox()
+            for render in Rendering:
+                renderComboBox.addItem(str(render))
+            index = renderComboBox.findText(
+                self.layer.rendering, Qt.MatchFixedString
+            )
+            renderComboBox.setCurrentIndex(index)
+            renderComboBox.activated[str].connect(
+                lambda text=renderComboBox: self.changeRendering(text)
+            )
+            self.renderComboBox = renderComboBox
+            self.grid_layout.addWidget(
+                QLabel('rendering:'), row, self.name_column
+            )
+            self.grid_layout.addWidget(
+                renderComboBox, row, self.property_column
+            )
 
         self.setExpanded(False)
 
