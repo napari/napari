@@ -22,13 +22,24 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.reset()
         self._on_display_change()
 
+    def _on_blending_change(self):
+        self.node.set_gl_state(
+            self.layer.blending, cull_face=False, depth_test=True
+        )
+        self.node.update()
+
     def _on_display_change(self):
         self.order = abs(self.node.order)
+        self.layer._update_dims()
+        self.layer._set_view_slice()
+        self.reset()
+        for b in range(self.layer.dims.ndisplay):
+            self.node.bounds(b)
 
     def _on_data_change(self):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
-            vertices = np.zeros(3, 2)
-            faces = [0, 1, 2]
+            vertices = None
+            faces = None
             values = np.array([0])
         else:
             vertices = self.layer._data_view[:, ::-1] + 0.5

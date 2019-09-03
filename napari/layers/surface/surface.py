@@ -130,7 +130,9 @@ class Surface(Layer):
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.empty((0, 2))
+        self._data_view = np.zeros((0, 2))
+        self._view_faces = np.zeros((0, 3))
+        self._view_values = np.zeros(0)
 
         # assign mesh data and establish default behavior
         self.data = data
@@ -219,48 +221,6 @@ class Surface(Layer):
         self._update_thumbnail()
         self.events.contrast_limits()
 
-    @property
-    def interpolation(self):
-        """{
-            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
-            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
-            'nearest', 'spline16', 'spline36'
-            }: Equipped interpolation method's name.
-        """
-        return str(self._interpolation)
-
-    @interpolation.setter
-    def interpolation(self, interpolation):
-        if isinstance(interpolation, str):
-            interpolation = Interpolation(interpolation)
-        self._interpolation = interpolation
-        self.events.interpolation()
-
-    @property
-    def rendering(self):
-        """Rendering: Rendering mode.
-            Selects a preset rendering mode in vispy that determines how
-            volume is displayed
-            * translucent: voxel colors are blended along the view ray until
-              the result is opaque.
-            * mip: maxiumum intensity projection. Cast a ray and display the
-              maximum value that was encountered.
-            * additive: voxel colors are added along the view ray until
-              the result is saturated.
-            * iso: isosurface. Cast a ray until a certain threshold is
-              encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.
-        """
-        return str(self._rendering)
-
-    @rendering.setter
-    def rendering(self, rendering):
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
-
-        self._rendering = rendering
-        self.events.rendering()
-
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
@@ -269,98 +229,40 @@ class Surface(Layer):
         disp = list(self.dims.displayed)
         indices = np.array(self.dims.indices)
 
-        # if len(vertices) == 0:
-        #     self._view_faces = None
-        #     self._data_view = np.zeros((0, self.dims.ndisplay))
-        # elif self.ndim > self.dims.ndisplay:
-        #     data = self.data[0][:, not_disp].astype('int')
-        #     matches = np.all(data == indices[not_disp], axis=1)
-        #     matches = np.where(matches)[0]
-        #     self._data_view = self.data[0][np.ix_(matches, disp)]
-        #     if len(matches) == 0:
-        #         self._view_faces = None
-        #     else:
-        #         self._view_faces = self.data[1]
-        # else:
-        self._view_faces = self.data[1]
-        self._view_values = self.data[2]
         self._data_view = self.data[0][:, disp]
+        self._view_values = self.data[2]
+
+        if len(vertices) == 0:
+            self._view_faces = np.zeros((0, 3))
+        elif self.ndim > self.dims.ndisplay:
+            vertices = self.data[0][:, not_disp].astype('int')
+            triangles = vertices[self.data[1]]
+            matches = np.all(triangles == indices[not_disp], axis=(1, 2))
+            matches = np.where(matches)[0]
+            if len(matches) == 0:
+                self._view_faces = np.zeros((0, 3))
+            else:
+                self._view_faces = self.data[1][matches]
+        else:
+            self._view_faces = self.data[1]
 
         self._update_thumbnail()
         self._update_coordinates()
         self.events.set_data()
 
     def _update_thumbnail(self):
-        """Update thumbnail with current points and colors."""
-        # calculate min vals for the vertices and pad with 0.5
-        # the offset is needed to ensure that the top left corner of the
-        # vectors corresponds to the top left corner of the thumbnail
-        # offset = (
-        #     np.array([self.dims.range[d][0] for d in self.dims.displayed])
-        #     + 0.5
-        # )[-2:]
-        # # calculate range of values for the vertices and pad with 1
-        # # padding ensures the entire vector can be represented in the thumbnail
-        # # without getting clipped
-        # shape = np.ceil(
-        #     [
-        #         self.dims.range[d][1] - self.dims.range[d][0] + 1
-        #         for d in self.dims.displayed
-        #     ]
-        # ).astype(int)[-2:]
-        # zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
-        #
-        # vectors = copy(self._data_view[:, :, -2:])
-        # vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
-        # downsampled = (vectors - offset) * zoom_factor
-        # downsampled = np.clip(
-        #     downsampled, 0, np.subtract(self._thumbnail_shape[:2], 1)
-        # )
-        # colormapped = np.zeros(self._thumbnail_shape)
-        # colormapped[..., 3] = 1
-        # col = Color(self.edge_color).rgba
-        # if len(downsampled) > self._max_vectors_thumbnail:
-        #     inds = np.random.randint(
-        #         0, len(downsampled), self._max_vectors_thumbnail
-        #     )
-        #     downsampled = downsampled[inds]
-        # for v in downsampled:
-        #     start = v[0]
-        #     stop = v[1]
-        #     step = int(np.ceil(np.max(abs(stop - start))))
-        #     x_vals = np.linspace(start[0], stop[0], step)
-        #     y_vals = np.linspace(start[1], stop[1], step)
-        #     for x, y in zip(x_vals, y_vals):
-        #         colormapped[int(x), int(y), :] = col
-        # colormapped[..., 3] *= self.opacity
-        # self.thumbnail = colormapped
+        """Update thumbnail with current surface."""
         pass
 
     def to_xml_list(self):
-        """Convert vectors to a list of svg xml elements.
+        """Convert surface to a list of svg xml elements.
 
         Returns
         ----------
         xml : list
-            List of xml elements defining each vector as a line according to
-            the svg specification.
+            List of xml elements.
         """
         xml_list = []
-
-        width = str(self.edge_width)
-        edge_color = (255 * Color(self.edge_color).rgba).astype(np.int)
-        stroke = f'rgb{tuple(edge_color[:3])}'
-        opacity = str(self.opacity)
-        props = {'stroke': stroke, 'stroke-width': width, 'opacity': opacity}
-
-        for v in self._data_view:
-            x1 = str(v[0, -2])
-            y1 = str(v[0, -1])
-            x2 = str(v[0, -2] + self.length * v[1, -2])
-            y2 = str(v[0, -1] + self.length * v[1, -1])
-
-            element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **props)
-            xml_list.append(element)
 
         return xml_list
 
