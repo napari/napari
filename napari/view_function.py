@@ -10,7 +10,6 @@ def view(
     **named_images,
 ):
     """View one or more input images.
-
     Parameters
     ----------
     *images : ndarray
@@ -34,12 +33,10 @@ def view(
         all images.
     **named_images : dict of str -> ndarray, optional
         Arrays to render as image layers, keyed by layer name.
-
     Returns
     -------
     viewer : napari.Viewer
         A Viewer widget displaying the images.
-
     Notes
     -----
     This convenience function is used to view one or few images with identical
