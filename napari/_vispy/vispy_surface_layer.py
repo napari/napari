@@ -1,5 +1,6 @@
 from vispy.scene.visuals import Mesh as MeshNode
 from .vispy_base_layer import VispyBaseLayer
+import numpy as np
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -28,14 +29,14 @@ class VispySurfaceLayer(VispyBaseLayer):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = np.zeros(3, 2)
             faces = [0, 1, 2]
+            values = np.array([0])
         else:
             vertices = self.layer._data_view[:, ::-1] + 0.5
             faces = self.layer._view_faces
+            values = self.layer._view_values
 
         self.node.set_data(
-            vertices=vertices,
-            faces=faces,
-            vertex_values=self.layer._view_values,
+            vertices=vertices, faces=faces, vertex_values=values
         )
         self.node.update()
 
