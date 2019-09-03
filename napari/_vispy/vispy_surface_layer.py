@@ -5,6 +5,7 @@ from .vispy_base_layer import VispyBaseLayer
 class VispySurfaceLayer(VispyBaseLayer):
     def __init__(self, layer):
         node = MeshNode()
+
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(
@@ -13,8 +14,15 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.layer.events.contrast_limits.connect(
             lambda e: self._on_contrast_limits_change()
         )
+        self.layer.dims.events.ndisplay.connect(
+            lambda e: self._on_display_change()
+        )
 
         self.reset()
+        self._on_display_change()
+
+    def _on_display_change(self):
+        self.order = abs(self.node.order)
 
     def _on_data_change(self):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
