@@ -29,6 +29,8 @@ class VispyShapesLayer(VispyBaseLayer):
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
+        if vertices is not None:
+            vertices = vertices + 0.5
 
         if len(faces) == 0:
             self.node._subvisuals[3].set_data(vertices=None, faces=None)
@@ -41,6 +43,9 @@ class VispyShapesLayer(VispyBaseLayer):
     def _on_highlight_change(self):
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
+        if vertices is not None:
+            vertices = vertices + 0.5
+
         self.node._subvisuals[2].set_data(
             vertices=vertices, faces=faces, color=self.layer._highlight_color
         )
@@ -54,6 +59,9 @@ class VispyShapesLayer(VispyBaseLayer):
             pos,
             width,
         ) = self.layer._compute_vertices_and_box()
+
+        if vertices is not None:
+            vertices = vertices + 0.5
         self.node._subvisuals[0].set_data(
             vertices,
             size=self.layer._vertex_size,
@@ -63,6 +71,9 @@ class VispyShapesLayer(VispyBaseLayer):
             symbol='square',
             scaling=False,
         )
+
+        if pos is not None:
+            pos = pos + 0.5
         self.node._subvisuals[1].set_data(
             pos=pos, color=edge_color, width=width
         )

@@ -284,12 +284,17 @@ def test_paint():
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
-    layer.brush_size = 10
+    layer.brush_size = 9
     layer.paint([0, 0], 2)
     assert np.unique(layer.data[:5, :5]) == 2
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
-    layer.brush_size = 20
+    layer.brush_size = 10
+    layer.paint([0, 0], 2)
+    assert np.unique(layer.data[:6, :6]) == 2
+    assert np.unique(layer.data[6:10, 6:10]) == 1
+
+    layer.brush_size = 19
     layer.paint([0, 0], 2)
     assert np.unique(layer.data[:5, :5]) == 2
     assert np.unique(layer.data[5:10, 5:10]) == 2

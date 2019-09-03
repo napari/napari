@@ -1,6 +1,7 @@
 from typing import Union
 import warnings
 import numpy as np
+from copy import copy
 from scipy import ndimage as ndi
 from xml.etree.ElementTree import Element
 from base64 import b64encode
@@ -423,10 +424,10 @@ class Labels(Layer):
                 [
                     slice(
                         np.round(
-                            np.clip(c - self.brush_size / 2, 0, s)
+                            np.clip(c - self.brush_size / 2 + 0.5, 0, s)
                         ).astype(int),
                         np.round(
-                            np.clip(c + self.brush_size / 2, 0, s)
+                            np.clip(c + self.brush_size / 2 + 0.5, 0, s)
                         ).astype(int),
                         1,
                     )
@@ -439,12 +440,16 @@ class Labels(Layer):
                 slice_coord[i] = slice(
                     np.round(
                         np.clip(
-                            coord[i] - self.brush_size / 2, 0, self.shape[i]
+                            coord[i] - self.brush_size / 2 + 0.5,
+                            0,
+                            self.shape[i],
                         )
                     ).astype(int),
                     np.round(
                         np.clip(
-                            coord[i] + self.brush_size / 2, 0, self.shape[i]
+                            coord[i] + self.brush_size / 2 + 0.5,
+                            0,
+                            self.shape[i],
                         )
                     ).astype(int),
                     1,
@@ -543,13 +548,11 @@ class Labels(Layer):
             self.selected_label = self._value
         elif self._mode == Mode.PAINT:
             # Start painting with new label
-            coord = np.round(self.coordinates).astype(int)
-            self.paint(coord, self.selected_label)
-            self._last_cursor_coord = coord
+            self.paint(self.coordinates, self.selected_label)
+            self._last_cursor_coord = copy(self.coordinates)
         elif self._mode == Mode.FILL:
             # Fill clicked on region with new label
-            coord = np.round(self.coordinates).astype(int)
-            self.fill(coord, self._value, self.selected_label)
+            self.fill(self.coordinates, self._value, self.selected_label)
         else:
             raise ValueError("Mode not recongnized")
 
@@ -563,18 +566,17 @@ class Labels(Layer):
         """
         if self._mode == Mode.PAINT and event.is_dragging:
             new_label = self.selected_label
-            coord = np.round(self.coordinates).astype(int)
             if self._last_cursor_coord is None:
-                interp_coord = [coord]
+                interp_coord = [self.coordinates]
             else:
                 interp_coord = interpolate_coordinates(
-                    self._last_cursor_coord, coord, self.brush_size
+                    self._last_cursor_coord, self.coordinates, self.brush_size
                 )
             with self.events.set_data.blocker():
                 for c in interp_coord:
                     self.paint(c, new_label)
             self._set_view_slice()
-            self._last_cursor_coord = coord
+            self._last_cursor_coord = copy(self.coordinates)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
