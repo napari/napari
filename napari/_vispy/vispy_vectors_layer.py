@@ -19,7 +19,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             vertices = np.zeros(3, 2)
             faces = [0, 1, 2]
         else:
-            vertices = self.layer._view_vertices
+            vertices = self.layer._view_vertices[:, ::-1] + 0.5
             faces = self.layer._view_faces
 
         self.node.set_data(
