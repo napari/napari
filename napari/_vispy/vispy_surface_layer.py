@@ -18,27 +18,8 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.layer.dims.events.ndisplay.connect(
             lambda e: self._on_display_change()
         )
-
         self.reset()
         self._on_display_change()
-
-    @property
-    def order(self):
-        """int: Order in which the visual is drawn in the scenegraph.
-
-        Lower values are closer to the viewer.
-        """
-        return self.node.order
-
-    @order.setter
-    def order(self, order):
-        self.node.order = -order
-
-    def _on_blending_change(self):
-        self.node.set_gl_state(
-            self.layer.blending, cull_face=False, depth_test=True
-        )
-        self.node.update()
 
     def _on_display_change(self):
         self.layer._update_dims()
