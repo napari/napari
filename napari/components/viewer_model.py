@@ -723,6 +723,8 @@ class ViewerModel(KeymapMixin):
         self,
         data,
         *,
+        faces,
+        values,
         colormap='gray',
         contrast_limits=None,
         name=None,
@@ -737,10 +739,12 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        data : 3-tuple
-            A pair of an (N, D) array of vertices and an (M, 3) array of
-            indices of triangles, and a (N,) array of values to color vertices
-            with.
+        data : (N, D) array
+            Vertices of mesh triangles.
+        faces : (M, 3) array of int
+            Indices of mesh triangles.
+        values : (N,) array
+            Values used to color vertices.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -776,6 +780,8 @@ class ViewerModel(KeymapMixin):
         """
         layer = layers.Surface(
             data,
+            faces=faces,
+            values=values,
             colormap=colormap,
             contrast_limits=contrast_limits,
             name=name,

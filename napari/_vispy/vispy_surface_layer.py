@@ -44,7 +44,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         else:
             vertices = self.layer._data_view[:, ::-1] + 0.5
             faces = self.layer._view_faces
-            values = self.layer._view_values
+            values = self.layer.values
 
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=values

@@ -82,11 +82,24 @@ def test_add_vectors():
 
 
 def test_add_shapes():
-    """Test adding vectors."""
+    """Test adding shapes."""
     viewer = ViewerModel()
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     viewer.add_shapes(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_add_surface():
+    """Test adding surface."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    viewer.add_surface(data, faces=faces, values=values)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2

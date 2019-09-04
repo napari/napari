@@ -158,7 +158,7 @@ def test_add_vectors(qtbot):
 
 
 def test_add_shapes(qtbot):
-    """Test adding vectors."""
+    """Test adding shapes."""
     viewer = Viewer()
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
@@ -166,6 +166,30 @@ def test_add_shapes(qtbot):
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     viewer.add_shapes(data)
+    assert np.all(viewer.layers[0].data == data)
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+
+    assert viewer.dims.ndim == 2
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Close the viewer
+    viewer.window.close()
+
+
+def test_add_surface(qtbot):
+    """Test adding surface."""
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    data = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    viewer.add_surface(data, faces=faces, values=values)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
