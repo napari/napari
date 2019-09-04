@@ -149,12 +149,7 @@ class QtViewer(QSplitter):
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
-        # Workaround for bug in #22, and different handling of ordering
-        # for 2D and 3D rendering
-        if self.viewer.dims.ndisplay == 2:
-            vispy_layer.order = -len(layers)
-        else:
-            vispy_layer.order = len(layers)
+        vispy_layer.order = len(layers)
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -169,12 +164,7 @@ class QtViewer(QSplitter):
         """When the list is reordered, propagate changes to draw order."""
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
-            # Workaround for bug in #22, and different handling of ordering
-            # for 2D and 3D rendering
-            if self.viewer.dims.ndisplay == 2:
-                vispy_layer.order = -i
-            else:
-                vispy_layer.order = i
+            vispy_layer.order = i
         self.canvas._draw_order.clear()
         self.canvas.update()
 
@@ -187,7 +177,6 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                self._reorder_layers(None)
                 self.viewer.reset_view()
         else:
             # Set 2D camera
@@ -199,7 +188,6 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                self._reorder_layers(None)
                 self.viewer.reset_view()
 
     def screenshot(self):

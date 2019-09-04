@@ -26,8 +26,6 @@ class VispyBaseLayer(ABC):
         Scale factors for the layer visual in the scenecanvas.
     translate : sequence of float
         Translation values for the layer visual in the scenecanvas.
-    z_index : int
-        Depth of the layer visual relative to other visuals in the scenecanvas.
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
@@ -36,9 +34,6 @@ class VispyBaseLayer(ABC):
     ----------
     _master_transform : vispy.visuals.transforms.STTransform
         Transform positioning the layer visual inside the scenecanvas.
-    _order : int
-        Order in which the visual is drawn in the scenegraph. Lower values
-        are closer to the viewer.
     """
 
     def __init__(self, layer, node):
@@ -84,13 +79,6 @@ class VispyBaseLayer(ABC):
 
     @order.setter
     def order(self, order):
-        # workaround for opacity (see: #22)
-        order = -order
-        if self.layer.dims.ndisplay == 2:
-            self.z_index = order
-        else:
-            self.z_index = 0
-        # end workaround
         self.node.order = order
 
     @property
@@ -112,18 +100,6 @@ class VispyBaseLayer(ABC):
         self._master_transform.translate = translate
 
     @property
-    def z_index(self):
-        """int: Depth of the visual in the scenecanvas."""
-        return -self._master_transform.translate[2]
-
-    @z_index.setter
-    def z_index(self, index):
-        tr = self._master_transform
-        tl = tr.translate
-        tl[2] = -index
-        tr.translate = tl
-
-    @property
     def scale_factor(self):
         """float: Conversion factor from canvas coordinates to image
         coordinates, which depends on the current zoom level.
@@ -143,7 +119,7 @@ class VispyBaseLayer(ABC):
         self.node.opacity = self.layer.opacity
 
     def _on_blending_change(self):
-        self.node.set_gl_state(self.layer.blending)
+        self.node.set_gl_state(self.layer.blending, depth_test=False)
         self.node.update()
 
     def _on_scale_change(self):
