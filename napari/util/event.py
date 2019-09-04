@@ -242,8 +242,8 @@ class EventEmitter(object):
         assert inspect.isclass(event_class)
         self.event_class = event_class
 
-        self._ignore_callback_errors = True  # False
-        self.print_callback_errors = 'reminders'  # 'always'
+        self._ignore_callback_errors = False  # True
+        self.print_callback_errors = 'reminders'  # 'reminders'
 
     @property
     def ignore_callback_errors(self):

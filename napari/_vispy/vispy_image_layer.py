@@ -38,7 +38,6 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_display_change(self):
         parent = self.node.parent
-        order = abs(self.node.order)
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
@@ -47,7 +46,6 @@ class VispyImageLayer(VispyBaseLayer):
             self.node = VolumeNode(np.zeros((1, 1, 1)))
 
         self.node.parent = parent
-        self.order = order
         self.layer._update_dims()
         self.layer._set_view_slice()
         self.reset()
@@ -57,7 +55,9 @@ class VispyImageLayer(VispyBaseLayer):
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
             try:
-                dtype = dict(i=np.int16, f=np.float32)[dtype.kind]
+                dtype = dict(
+                    i=np.int16, f=np.float32, u=np.uint16, b=np.uint8
+                )[dtype.kind]
             except KeyError:  # not an int or float
                 raise TypeError(
                     f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'
