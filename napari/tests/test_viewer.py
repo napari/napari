@@ -180,7 +180,7 @@ def test_add_shapes(qtbot):
 
 
 def test_add_surface(qtbot):
-    """Test adding surface."""
+    """Test adding 3D surface."""
     viewer = Viewer()
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
@@ -195,7 +195,7 @@ def test_add_surface(qtbot):
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 2
+    assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 

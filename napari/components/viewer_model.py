@@ -775,8 +775,8 @@ class ViewerModel(KeymapMixin):
 
         Returns
         -------
-        layer : :class:`napari.layers.Vectors`
-            The newly-created vectors layer.
+        layer : :class:`napari.layers.Surface`
+            The newly-created surface layer.
         """
         layer = layers.Surface(
             data,

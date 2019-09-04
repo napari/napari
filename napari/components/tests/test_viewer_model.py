@@ -93,7 +93,7 @@ def test_add_shapes():
 
 
 def test_add_surface():
-    """Test adding surface."""
+    """Test adding 3D surface."""
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random((10, 3))
@@ -102,7 +102,7 @@ def test_add_surface():
     viewer.add_surface(data, faces=faces, values=values)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.dims.ndim == 3
 
 
 def test_mix_dims():
