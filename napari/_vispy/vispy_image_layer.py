@@ -38,7 +38,6 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_display_change(self):
         parent = self.node.parent
-        order = abs(self.node.order)
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
@@ -47,7 +46,6 @@ class VispyImageLayer(VispyBaseLayer):
             self.node = VolumeNode(np.zeros((1, 1, 1)))
 
         self.node.parent = parent
-        self.order = order
         self.layer._update_dims()
         self.layer._set_view_slice()
         self.reset()

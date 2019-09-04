@@ -37,7 +37,6 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def _on_display_change(self):
         parent = self.node.parent
-        order = abs(self.node.order)
         self.node.transforms = ChainTransform()
         self.node.parent = None
 
@@ -47,7 +46,6 @@ class VispyPointsLayer(VispyBaseLayer):
             self.node = Markers()
 
         self.node.parent = parent
-        self.order = order
         self.layer._update_dims()
         self.layer._set_view_slice()
         self.reset()
