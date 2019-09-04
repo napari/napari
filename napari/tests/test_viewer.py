@@ -197,6 +197,9 @@ def test_add_surface(qtbot):
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 1
+
+    viewer.dims.ndisplay = 3
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Close the viewer
