@@ -280,7 +280,10 @@ class CallDefault(inspect.Parameter):
         formatted = self._name
 
         # Fill in defaults
-        if self._default is not inspect._empty:
+        if (
+            self._default is not inspect._empty
+            or kind == inspect._KEYWORD_ONLY
+        ):
             formatted = '{}={}'.format(formatted, formatted)
 
         if kind == inspect._VAR_POSITIONAL:
