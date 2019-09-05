@@ -4,7 +4,7 @@ import numpy as np
 import inspect
 from pathlib import Path
 
-from qtpy.QtCore import QCoreApplication, Qt, QSize
+from qtpy.QtCore import QCoreApplication, Qt, QSize, QUrl
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -233,7 +233,7 @@ class QtViewer(QSplitter):
             caption='Select folder',
             directory=self._last_visited_dir,
         )
-        if os.path.splitext(filename)[1] == '.zarr':
+        if os.path.splitext(filename)[1] == '.napari':
             self.viewer.from_zarr(filename)
             self._last_visited_dir = os.path.dirname(filename)
 
@@ -241,10 +241,11 @@ class QtViewer(QSplitter):
         """Saves viewer as a napari zarr file."""
         save_dialog = QFileDialog()
         save_dialog.setWindowTitle('Save viewer...')
+        save_dialog.selectFile(self.viewer.title)
         save_dialog.setDirectory(self._last_visited_dir)
         save_dialog.setAcceptMode(QFileDialog.AcceptSave)
-        save_dialog.setNameFilter('All Files (*);;Zarr Files (*.zarr)')
-        save_dialog.setDefaultSuffix('zarr')
+        save_dialog.setNameFilter('All Files (*);;Napari Files (*.napari)')
+        save_dialog.setDefaultSuffix('napari')
         if save_dialog.exec_() == QFileDialog.Accepted:
             filename = save_dialog.selectedFiles()[0]
             self.viewer.to_zarr(filename)
@@ -401,14 +402,21 @@ class QtViewer(QSplitter):
         """Add local files and web URLS with drag and drop."""
         filenames = []
         for url in event.mimeData().urls():
-            path = url.toString()
-            if os.path.isfile(path):
-                filenames.append(path)
-            elif os.path.isdir(path):
-                filenames = filenames + list(glob(os.path.join(path, '*')))
+            if url.isLocalFile():
+                path = url.toLocalFile()
             else:
-                filenames.append(path)
-        self._add_image_files(filenames)
+                path = url.toString()
+            if os.path.splitext(path[:-1])[1] == '.napari':
+                self.viewer.from_zarr(path[:-1])
+            else:
+                if os.path.isfile(path):
+                    filenames.append(path)
+                elif os.path.isdir(path):
+                    filenames = filenames + list(glob(os.path.join(path, '*')))
+                else:
+                    filenames.append(path)
+        if len(filenames) > 0:
+            self._add_image_files(filenames)
 
 
 def viewbox_key_event(event):

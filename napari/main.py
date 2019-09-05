@@ -4,6 +4,7 @@ napari command line viewer.
 import argparse
 import numpy as np
 from skimage import io
+import os.path
 
 from . import Viewer, gui_qt
 
@@ -25,14 +26,21 @@ def main():
     args = parser.parse_args()
     with gui_qt():
         v = Viewer()
-        images = io.ImageCollection(args.images, conserve_memory=False)
-        if args.layers:
-            for image in images:
-                v.add_image(image, multichannel=args.multichannel)
+        if len(args.images) == 0:
+            return
+        if os.path.splitext(args.images[0])[1] == '.napari':
+            v.from_zarr(args.images[0])
+        elif os.path.splitext(args.images[0][:-1])[1] == '.napari':
+            v.from_zarr(args.images[0][:-1])
         else:
-            if len(images) > 0:
-                if len(images) == 1:
-                    image = images[0]
-                else:
-                    image = np.stack(images, axis=0)
-                v.add_image(image, multichannel=args.multichannel)
+            images = io.ImageCollection(args.images, conserve_memory=False)
+            if args.layers:
+                for image in images:
+                    v.add_image(image, multichannel=args.multichannel)
+            else:
+                if len(images) > 0:
+                    if len(images) == 1:
+                        image = images[0]
+                    else:
+                        image = np.stack(images, axis=0)
+                    v.add_image(image, multichannel=args.multichannel)

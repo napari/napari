@@ -821,9 +821,15 @@ class Points(Layer):
             chunks=(128,) * len(self.data.shape),
             dtype=self.data.dtype,
         )
+        gp.array(
+            'size',
+            self.sizes,
+            shape=self.sizes.shape,
+            chunks=(128,) * len(self.sizes.shape),
+            dtype=self.sizes.dtype,
+        )
         gp.attrs['symbol'] = self.symbol
         gp.attrs['edge_width'] = self.edge_width
-        gp.attrs['size'] = self.size
         gp.attrs['edge_color'] = self.edge_color
         gp.attrs['face_color'] = self.face_color
 
