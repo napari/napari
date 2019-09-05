@@ -4,4 +4,3 @@ pytest
 pytest-faulthandler
 pytest-qt
 xarray
-zarr
