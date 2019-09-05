@@ -577,10 +577,10 @@ class Layer(KeymapMixin, ABC):
 
         return svg
 
-    def to_zarr(self, root, i):
+    def to_zarr(self, root):
         """Append a zarr group with layer data."""
 
-        gp = root.create_group('layer ' + str(i))
+        gp = root.create_group(self.name)
         gp.attrs['layer_type'] = type(self).__name__
         gp.attrs['name'] = self.name
         gp.attrs['metadata'] = self.metadata
@@ -589,6 +589,14 @@ class Layer(KeymapMixin, ABC):
         gp.attrs['opacity'] = self.opacity
         gp.attrs['blending'] = self.blending
         gp.attrs['visible'] = self.visible
+        gp.array(
+            'thumbnail',
+            self.thumbnail,
+            shape=self.thumbnail.shape,
+            chunks=(None, None, None),
+            dtype=self.thumbnail.dtype,
+        )
+
         self._add_zarr_data(gp)
 
         return root

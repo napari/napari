@@ -10,6 +10,10 @@ from .. import layers
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
+from .._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
 
 
 class ViewerModel(KeymapMixin):
@@ -90,7 +94,7 @@ class ViewerModel(KeymapMixin):
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
 
-        self._layer_mapping = {
+        self._add_layer = {
             'Image': self.add_image,
             'Labels': self.add_labels,
             'Points': self.add_points,
@@ -964,15 +968,20 @@ class ViewerModel(KeymapMixin):
         """Create a zarr group with viewer data."""
         root = zarr.group(store=store)
         root.attrs['napari'] = True
+        root.attrs['version'] = __version__
         root.attrs['ndim'] = self.dims.ndim
         root.attrs['ndisplay'] = self.dims.ndisplay
         root.attrs['order'] = [int(o) for o in self.dims.order]
         root.attrs['dims_point'] = [int(p) for p in self.dims.point]
         root.attrs['title'] = self.title
         root.attrs['theme'] = self.theme
+        root.attrs['metadata'] = {}
 
-        for i, layer in enumerate(self.layers):
-            root = layer.to_zarr(root, i)
+        layer_names = []
+        for layer in self.layers:
+            root = layer.to_zarr(root)
+            layer_names.append(layer.name)
+        root.attrs['layer_names'] = layer_names
 
         return root
 
@@ -993,8 +1002,9 @@ class ViewerModel(KeymapMixin):
         self.title = root.attrs['title']
         self.theme = root.attrs['theme']
 
-        for name, g in root.groups():
-            args = copy(g.attrs.asdict())
+        for name in root.attrs['layer_names']:
+            g = root[name]
             layer_type = g.attrs['layer_type']
+            args = copy(g.attrs.asdict())
             del args['layer_type']
-            self._layer_mapping[layer_type](g['data'], **args)
+            self._add_layer[layer_type](g['data'], **args)

@@ -222,11 +222,35 @@ class QtViewer(QSplitter):
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select image(s)...',
-            directory=self._last_visited_dir,  # home dir by default
+            directory=self._last_visited_dir,
         )
-        self._add_files(filenames)
+        self._add_image_files(filenames)
 
-    def _add_files(self, filenames):
+    def _open_viewer(self):
+        """Adds napari zarr file from the menubar."""
+        filename = QFileDialog.getExistingDirectory(
+            parent=self,
+            caption='Select folder',
+            directory=self._last_visited_dir,
+        )
+        if os.path.splitext(filename)[1] == '.zarr':
+            self.viewer.from_zarr(filename)
+            self._last_visited_dir = os.path.dirname(filename)
+
+    def _save_viewer(self):
+        """Saves viewer as a napari zarr file."""
+        save_dialog = QFileDialog()
+        save_dialog.setWindowTitle('Save viewer...')
+        save_dialog.setDirectory(self._last_visited_dir)
+        save_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        save_dialog.setNameFilter('All Files (*);;Zarr Files (*.zarr)')
+        save_dialog.setDefaultSuffix('zarr')
+        if save_dialog.exec_() == QFileDialog.Accepted:
+            filename = save_dialog.selectedFiles()[0]
+            self.viewer.to_zarr(filename)
+            self.viewer.status = 'viewer saved to ' + filename
+
+    def _add_image_files(self, filenames):
         """Adds an image layer to the viewer.
 
         Whether the image is multichannel is determined by
@@ -384,7 +408,7 @@ class QtViewer(QSplitter):
                 filenames = filenames + list(glob(os.path.join(path, '*')))
             else:
                 filenames.append(path)
-        self._add_files(filenames)
+        self._add_image_files(filenames)
 
 
 def viewbox_key_event(event):

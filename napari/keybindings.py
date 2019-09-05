@@ -101,6 +101,10 @@ def dims_focus_down(viewer):
 
 Viewer.bind_key('Control-Backspace', lambda v: v.layers.remove_selected())
 Viewer.bind_key('Control-A', lambda v: v.layers.select_all())
+Viewer.bind_key(
+    'Control-Shift-Backspace',
+    lambda v: (v.layers.select_all(), v.layers.remove_selected()),
+)
 Viewer.bind_key('Control-[', lambda v: v.layers.select_previous())
 Viewer.bind_key('Control-]', lambda v: v.layers.select_next())
 Viewer.bind_key('Control-R', lambda v: v.reset_view())
