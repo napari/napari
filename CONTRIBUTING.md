@@ -32,28 +32,16 @@ Make the development version available globally:
 $ pip install -e .
 ```
 
-Install the `black` formatter hook with:
+We use [`black`](https://github.com/psf/black) to format our code.
+Please enable autoformatting for the repository with
+[`pre-commit`](https://pre-commit.com):
 ```sh
 pre-commit install
 ```
 
-With help of pre-commit, your future commits to this project will be reformatted with our black configuration,
-which includes settings `skip-string-normalization = true` and `max-line-length = 79`.
-To learn more, see the [black README](https://github.com/python/black).
-
-## Building the dev-docs
-
-Go to documentation source
-```sh
-$ cd docs/source
-```
-
-Build the docs with help of given Makefile
-```sh
-$ make html
-```
-
-Then you can find the built docs in `docs/source/_build/html`
+Upon committing, your code will be formatted according to our [`black` configuration](pyproject.toml),
+which includes the settings `skip-string-normalization = true` and `max-line-length = 79`.
+To learn more, see [`black`'s documentation](https://black.readthedocs.io/en/stable/).
 
 ## Building the icons
 
