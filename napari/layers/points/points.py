@@ -155,7 +155,7 @@ class Points(Layer):
         self._colors = get_color_names()
 
         # Save the point coordinates
-        self._data = data
+        self._data = np.asarray(data)
         self.dims.clip = False
 
         # Save the point style params
@@ -811,6 +811,21 @@ class Points(Layer):
             xml_list.append(element)
 
         return xml_list
+
+    def _add_zarr_data(self, gp):
+        """Add layer data to zarr group."""
+        gp.array(
+            'data',
+            self.data,
+            shape=self.data.shape,
+            chunks=(128,) * len(self.data.shape),
+            dtype=self.data.dtype,
+        )
+        gp.attrs['symbol'] = self.symbol
+        gp.attrs['edge_width'] = self.edge_width
+        gp.attrs['size'] = self.size
+        gp.attrs['edge_color'] = self.edge_color
+        gp.attrs['face_color'] = self.face_color
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

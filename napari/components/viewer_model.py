@@ -1,4 +1,6 @@
 import numpy as np
+import zarr
+from copy import copy
 from math import inf
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
@@ -20,7 +22,7 @@ class ViewerModel(KeymapMixin):
         The title of the viewer window.
     ndisplay : int
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
@@ -87,6 +89,15 @@ class ViewerModel(KeymapMixin):
         self.layers.events.added.connect(self._update_active_layer)
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
+
+        self._layer_mapping = {
+            'Image': self.add_image,
+            'Labels': self.add_labels,
+            'Points': self.add_points,
+            'Pyramid': self.add_pyramid,
+            'Shapes': self.add_shapes,
+            'Vectors': self.add_vectors,
+        }
 
     @property
     def palette(self):
@@ -948,3 +959,42 @@ class ViewerModel(KeymapMixin):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor_size = event.cursor_size
+
+    def to_zarr(self, store=None):
+        """Create a zarr group with viewer data."""
+        root = zarr.group(store=store)
+        root.attrs['napari'] = True
+        root.attrs['ndim'] = self.dims.ndim
+        root.attrs['ndisplay'] = self.dims.ndisplay
+        root.attrs['order'] = [int(o) for o in self.dims.order]
+        root.attrs['dims_point'] = [int(p) for p in self.dims.point]
+        root.attrs['title'] = self.title
+        root.attrs['theme'] = self.theme
+
+        for i, layer in enumerate(self.layers):
+            root = layer.to_zarr(root, i)
+
+        return root
+
+    def from_zarr(self, root):
+        """Load a zarr group with viewer data."""
+        if type(root) == str:
+            root = zarr.open(root)
+
+        if 'napari' not in root.attrs:
+            print('zarr object not recognized as a napari zarr')
+            return
+
+        self.dims.ndim = root.attrs['ndim']
+        self.dims.ndisplay = root.attrs['ndisplay']
+        self.dims.order = root.attrs['order']
+        for i, p in enumerate(root.attrs['dims_point']):
+            self.dims.set_point(i, p)
+        self.title = root.attrs['title']
+        self.theme = root.attrs['theme']
+
+        for name, g in root.groups():
+            args = copy(g.attrs.asdict())
+            layer_type = g.attrs['layer_type']
+            del args['layer_type']
+            self._layer_mapping[layer_type](g['data'], **args)

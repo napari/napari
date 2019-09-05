@@ -448,3 +448,18 @@ class Image(Layer):
             'image', width=width, height=height, opacity=opacity, **props
         )
         return [xml]
+
+    def _add_zarr_data(self, gp):
+        """Add layer data to zarr group."""
+        gp.array(
+            'data',
+            self.data,
+            shape=self.data.shape,
+            chunks=(128,) * len(self.data.shape),
+            dtype=self.data.dtype,
+        )
+        gp.attrs['multichannel'] = self.multichannel
+        gp.attrs['colormap'] = self.colormap[0]
+        gp.attrs['contrast_limits'] = self.contrast_limits
+        gp.attrs['interpolation'] = self.interpolation
+        gp.attrs['rendering'] = self.rendering

@@ -533,6 +533,19 @@ class Labels(Layer):
         )
         return [xml]
 
+    def _add_zarr_data(self, gp):
+        """Add layer data to zarr group."""
+        gp.array(
+            'data',
+            self.data,
+            shape=self.data.shape,
+            chunks=(128,) * len(self.data.shape),
+            dtype=self.data.dtype,
+        )
+        gp.attrs['num_colors'] = self.num_colors
+        gp.attrs['seed'] = self.seed
+        gp.attrs['n_dimensional'] = self.n_dimensional
+
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 

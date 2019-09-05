@@ -1387,6 +1387,21 @@ class Shapes(Layer):
 
         return labels
 
+    def _add_zarr_data(self, gp):
+        """Add layer data to zarr group."""
+        gp.array(
+            'data',
+            self.data,
+            shape=self.data.shape,
+            chunks=(128,) * len(self.data.shape),
+            dtype=self.data.dtype,
+        )
+        gp.attrs['shape_type'] = 'polygon'
+        gp.attrs['edge_width'] = self.edge_width
+        gp.attrs['size'] = self.size
+        gp.attrs['edge_color'] = self.edge_color
+        gp.attrs['z_index'] = 0
+
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 

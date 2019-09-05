@@ -121,7 +121,7 @@ class Vectors(Layer):
         self._length = length
 
         # assign vector data and establish default behavior
-        self.data = data
+        self.data = np.asarray(data)
 
     @property
     def data(self) -> np.ndarray:
@@ -354,3 +354,16 @@ class Vectors(Layer):
         """
 
         return None
+
+    def _add_zarr_data(self, gp):
+        """Add layer data to zarr group."""
+        gp.array(
+            'data',
+            self.data,
+            shape=self.data.shape,
+            chunks=(128,) * len(self.data.shape),
+            dtype=self.data.dtype,
+        )
+        gp.attrs['edge_width'] = self.edge_width
+        gp.attrs['edge_color'] = self.edge_color
+        gp.attrs['length'] = self.length

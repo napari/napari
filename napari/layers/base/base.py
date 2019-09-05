@@ -577,6 +577,26 @@ class Layer(KeymapMixin, ABC):
 
         return svg
 
+    def to_zarr(self, root, i):
+        """Append a zarr group with layer data."""
+
+        gp = root.create_group('layer ' + str(i))
+        gp.attrs['layer_type'] = type(self).__name__
+        gp.attrs['name'] = self.name
+        gp.attrs['metadata'] = self.metadata
+        gp.attrs['scale'] = self.scale
+        gp.attrs['translate'] = self.translate
+        gp.attrs['opacity'] = self.opacity
+        gp.attrs['blending'] = self.blending
+        gp.attrs['visible'] = self.visible
+        self._add_zarr_data(gp)
+
+        return root
+
+    def _add_zarr_data(self, gp):
+        """Add layer data to zarr group."""
+        return
+
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas."""
         return

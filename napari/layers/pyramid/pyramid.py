@@ -245,3 +245,20 @@ class Pyramid(Image):
             value = None
 
         return value
+
+    def _add_zarr_data(self, gp):
+        """Add layer data to zarr group."""
+        gp.create_group('data')
+        for i, d in enumerate(self.data):
+            gp['data'].array(
+                str(i),
+                d,
+                shape=d.shape,
+                chunks=(128,) * len(d.shape),
+                dtype=d.dtype,
+            )
+        gp.attrs['multichannel'] = self.multichannel
+        gp.attrs['colormap'] = self.colormap[0]
+        gp.attrs['contrast_limits'] = self.contrast_limits
+        gp.attrs['interpolation'] = self.interpolation
+        gp.attrs['rendering'] = self.rendering
