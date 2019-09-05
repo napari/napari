@@ -2,7 +2,10 @@
 
 This guide documents `napari`'s release process.
 Currently, it only handles distribution, but as the project matures,
-will include generating release notes, documentation, etc.
+it will include generating release notes, documentation, etc.
+
+This is mainly meant for the core developers who will actually be performing the release.
+They will need to have a [PyPI](https://pypi.org) account with upload permissions to the `napari` package.
 
 ## determining the version
 
@@ -44,7 +47,8 @@ You'll need `twine` installed for this step:
 $ pip install twine
 ```
 
-To make sure that everything is working properly, first upload to `test.pypi.org`:
+To make sure that everything is working properly, first upload to `test.pypi.org`,
+entering your credentials when prompted:
 ```bash
 $ python -m twine upload --repository-url=test.pypi.org/legacy/ dist/*
 ```
@@ -60,7 +64,9 @@ If these fail, delete the tag with:
 $ git tag -d vX.Y.Z
 ```
 
-Make your changes and repeat the process from the beginning but with a slightly different tag (e.g. `vX.Y.Z.0`). Once the release passes, remember to reset the tag to the original `vX.Y.Z`.
+Make your changes and repeat the process from the beginning but with a slightly different tag (e.g. `vX.Y.Z.0`).
+Once the release passes, remember to reset the tag name to the original `vX.Y.Z`
+to avoid uploading a mislabeled version.
 
 Then, you may complete the release with:
 ```bash
