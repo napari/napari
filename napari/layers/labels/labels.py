@@ -252,6 +252,11 @@ class Labels(Layer):
 
     @selected_label.setter
     def selected_label(self, selected_label):
+        if selected_label < 0:
+            raise ValueError('cannot reduce selected label below 0')
+        if selected_label == self.selected_label:
+            return
+
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
