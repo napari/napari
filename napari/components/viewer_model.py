@@ -1007,4 +1007,7 @@ class ViewerModel(KeymapMixin):
             layer_type = g.attrs['layer_type']
             args = copy(g.attrs.asdict())
             del args['layer_type']
+            for array_name, array in g.arrays():
+                if array_name not in ['data', 'thumbnail']:
+                    args[array_name] = array
             self._add_layer[layer_type](g['data'], **args)

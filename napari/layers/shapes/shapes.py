@@ -1389,18 +1389,35 @@ class Shapes(Layer):
 
     def _add_zarr_data(self, gp):
         """Add layer data to zarr group."""
+        gp.array('data', self.data, dtype='array:f8')
+        ew = np.array(self.edge_widths)
         gp.array(
-            'data',
-            self.data,
-            shape=self.data.shape,
-            chunks=(128,) * len(self.data.shape),
-            dtype=self.data.dtype,
+            'edge_width',
+            ew,
+            shape=ew.shape,
+            chunks=(128,) * len(ew.shape),
+            dtype=ew.dtype,
         )
-        gp.attrs['shape_type'] = 'polygon'
-        gp.attrs['edge_width'] = self.edge_width
-        gp.attrs['size'] = self.size
-        gp.attrs['edge_color'] = self.edge_color
-        gp.attrs['z_index'] = 0
+        op = np.array(self.opacities)
+        gp.array(
+            'opacity',
+            op,
+            shape=op.shape,
+            chunks=(128,) * len(op.shape),
+            dtype=op.dtype,
+        )
+        z = np.array(self.z_indices)
+        gp.array(
+            'z_index',
+            z,
+            shape=z.shape,
+            chunks=(128,) * len(z.shape),
+            dtype=z.dtype,
+        )
+        gp.array('shape_type', self.shape_types, dtype=str)
+        gp.array('edge_color', self.edge_colors, dtype=str)
+        gp.array('face_color', self.face_colors, dtype=str)
+        del gp.attrs['opacity']
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

@@ -220,7 +220,7 @@ class Points(Layer):
                 ensure_iterable(face_color, color=True), 0, len(self.data)
             )
         )
-        self.sizes = size
+        self.sizes = np.asarray(size)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -828,10 +828,10 @@ class Points(Layer):
             chunks=(128,) * len(self.sizes.shape),
             dtype=self.sizes.dtype,
         )
+        gp.array('edge_color', self.edge_colors, dtype=str)
+        gp.array('face_color', self.face_colors, dtype=str)
         gp.attrs['symbol'] = self.symbol
         gp.attrs['edge_width'] = self.edge_width
-        gp.attrs['edge_color'] = self.edge_color
-        gp.attrs['face_color'] = self.face_color
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
