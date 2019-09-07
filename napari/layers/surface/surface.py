@@ -73,15 +73,11 @@ class Surface(Layer):
 
     Extended Summary
     ----------
-    _data_view : (M, 2, 2) array
-        The start point and projections of N vectors in 2D for vectors whose
-        start point is in the currently viewed slice.
-    _mesh_vertices : (4N, 2) array
-        The four corner points for the mesh representation of each vector as as
-        rectangle in the slice that it starts in.
-    _mesh_triangles : (2N, 3) array
-        The integer indices of the `_mesh_vertices` that form the two triangles
-        for the mesh representation of the vectors.
+    _data_view : (M, 2) or (M, 3) array
+        The coordinates of the vertices given the viewed dimensions.
+    _view_faces : (P, 3) array
+        The integer indices of the vertices that form the triangles
+        in the currently viewed slice.
     """
 
     _colormaps = AVAILABLE_COLORMAPS
