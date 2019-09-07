@@ -584,8 +584,8 @@ class Layer(KeymapMixin, ABC):
         gp.attrs['layer_type'] = type(self).__name__
         gp.attrs['name'] = self.name
         gp.attrs['metadata'] = self.metadata
-        gp.attrs['scale'] = self.scale
-        gp.attrs['translate'] = self.translate
+        gp.attrs['scale'] = list(self.scale)
+        gp.attrs['translate'] = list(self.translate)
         gp.attrs['opacity'] = self.opacity
         gp.attrs['blending'] = self.blending
         gp.attrs['visible'] = self.visible

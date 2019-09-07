@@ -1010,4 +1010,10 @@ class ViewerModel(KeymapMixin):
             for array_name, array in g.arrays():
                 if array_name not in ['data', 'thumbnail']:
                     args[array_name] = array
-            self._add_layer[layer_type](g['data'], **args)
+            if isinstance(g['data'], zarr.Group):
+                data = []
+                for array_name, array in g['data'].arrays():
+                    data.append(array)
+            else:
+                data = g['data']
+            self._add_layer[layer_type](data, **args)

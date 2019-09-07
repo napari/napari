@@ -248,6 +248,7 @@ class Pyramid(Image):
 
     def _add_zarr_data(self, gp):
         """Add layer data to zarr group."""
+        gp.attrs['layer_type'] = type(self).__name__
         gp.create_group('data')
         for i, d in enumerate(self.data):
             gp['data'].array(
