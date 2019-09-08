@@ -101,6 +101,8 @@ class Layer(KeymapMixin, ABC):
         * `_basename()`: base/default name of the layer
     """
 
+    _thumbnail_shape = (32, 32, 4)
+
     def __init__(
         self,
         ndim,
@@ -135,7 +137,6 @@ class Layer(KeymapMixin, ABC):
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
 
-        self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''

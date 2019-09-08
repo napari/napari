@@ -1,10 +1,13 @@
 """Miscellaneous utility functions.
 """
+import warnings
 from enum import Enum
 import re
 import numpy as np
 import inspect
 import itertools
+from scipy import ndimage as ndi
+from skimage import img_as_ubyte
 
 
 def str_to_rgb(arg):
@@ -244,6 +247,44 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
         coords = coords[1:]
 
     return coords
+
+
+def make_thumbnail(image, thumbnail_shape, multichannel=False):
+    """Downsample image to a thumbnail size.
+
+
+    Parameters
+    ----------
+    image : array (M, N) or (M, N, 3) or (M, N, 4)
+        Image array to be downsampled
+    thumbnail_shape : 3-tuple
+        Shape of thumbnail.
+    multichannel : bool
+        Flag if image is multichannel.
+
+    Returns
+    ----------
+    thumbnail : array
+        Downsampled thumbnail.
+    """
+    zoom_factor = np.divide(thumbnail_shape[:2], image.shape[:2]).min()
+    if multichannel:
+        zoom_factor = (zoom_factor, zoom_factor, 1)
+
+    # warning filter can be removed with scipy 1.4
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        thumbnail = ndi.zoom(image, zoom_factor, prefilter=False, order=0)
+
+    if 0 in thumbnail.shape:
+        thumbnail = np.zeros(thumbnail_shape, dtype=np.uint8)
+
+    if thumbnail.dtype != np.uint8:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            thumbnail = img_as_ubyte(thumbnail)
+
+    return thumbnail
 
 
 class StringEnum(Enum):

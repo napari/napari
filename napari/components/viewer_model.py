@@ -1,6 +1,4 @@
 import numpy as np
-import zarr
-from copy import copy
 from math import inf
 from itertools import zip_longest
 from xml.etree.ElementTree import Element, tostring
@@ -10,10 +8,6 @@ from .. import layers
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
-from .._version import get_versions
-
-__version__ = get_versions()['version']
-del get_versions
 
 
 class ViewerModel(KeymapMixin):
@@ -231,7 +225,7 @@ class ViewerModel(KeymapMixin):
         self.events.active_layer(item=self._active_layer)
 
     def reset_view(self):
-        """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
+        """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
         # Scale the camera to the contents in the scene
@@ -243,16 +237,19 @@ class ViewerModel(KeymapMixin):
         corner = [min_shape[i] for i in self.dims.displayed]
 
         if self.dims.ndisplay == 2:
-            # For a PanZoomCamera emit a 4-tuple of the viewbox
+            # For a PanZoomCamera emit a 4-tuple of the rect
             corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
             size = np.multiply(1.1, size)[::-1]
             rect = tuple(corner) + tuple(size)
-            self.events.reset_view(viewbox=rect)
+            self.events.reset_view(rect=rect)
         else:
             # For an ArcballCamera emit the center and scale_factor
             center = centroid[::-1]
             scale_factor = 1.5 * np.mean(size)
-            self.events.reset_view(center=center, scale_factor=scale_factor)
+            quaternion = [0, 0, 0, 0]
+            self.events.reset_view(
+                center=center, scale_factor=scale_factor, quaternion=quaternion
+            )
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be
@@ -963,57 +960,3 @@ class ViewerModel(KeymapMixin):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor_size = event.cursor_size
-
-    def to_zarr(self, store=None):
-        """Create a zarr group with viewer data."""
-        root = zarr.group(store=store)
-        root.attrs['napari'] = True
-        root.attrs['version'] = __version__
-        root.attrs['ndim'] = self.dims.ndim
-        root.attrs['ndisplay'] = self.dims.ndisplay
-        root.attrs['order'] = [int(o) for o in self.dims.order]
-        root.attrs['dims_point'] = [int(p) for p in self.dims.point]
-        root.attrs['title'] = self.title
-        root.attrs['theme'] = self.theme
-        root.attrs['metadata'] = {}
-
-        layer_names = []
-        for layer in self.layers:
-            root = layer.to_zarr(root)
-            layer_names.append(layer.name)
-        root.attrs['layer_names'] = layer_names
-
-        return root
-
-    def from_zarr(self, root):
-        """Load a zarr group with viewer data."""
-        if type(root) == str:
-            root = zarr.open(root)
-
-        if 'napari' not in root.attrs:
-            print('zarr object not recognized as a napari zarr')
-            return
-
-        self.dims.ndim = root.attrs['ndim']
-        self.dims.ndisplay = root.attrs['ndisplay']
-        self.dims.order = root.attrs['order']
-        for i, p in enumerate(root.attrs['dims_point']):
-            self.dims.set_point(i, p)
-        self.title = root.attrs['title']
-        self.theme = root.attrs['theme']
-
-        for name in root.attrs['layer_names']:
-            g = root[name]
-            layer_type = g.attrs['layer_type']
-            args = copy(g.attrs.asdict())
-            del args['layer_type']
-            for array_name, array in g.arrays():
-                if array_name not in ['data', 'thumbnail']:
-                    args[array_name] = array
-            if isinstance(g['data'], zarr.Group):
-                data = []
-                for array_name, array in g['data'].arrays():
-                    data.append(array)
-            else:
-                data = g['data']
-            self._add_layer[layer_type](data, **args)
