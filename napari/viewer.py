@@ -5,6 +5,8 @@ from ._qt.qt_main_window import Window
 from .components import ViewerModel
 from ._version import get_versions
 from .util.misc import make_thumbnail
+from imageio import imwrite
+import os.path
 
 __version__ = get_versions()['version']
 del get_versions
@@ -77,12 +79,23 @@ class Viewer(ViewerModel):
         )
 
         root.array(
+            'screenshot',
+            screenshot,
+            shape=screenshot.shape,
+            chunks=(None, None, None),
+            dtype=screenshot.dtype,
+        )
+
+        root.array(
             'thumbnail',
             thumbnail,
             shape=thumbnail.shape,
             chunks=(None, None, None),
             dtype=thumbnail.dtype,
         )
+
+        if store is not None:
+            imwrite(os.path.join(store, 'screenshot.png'), screenshot)
 
         return root
 
