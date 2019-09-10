@@ -8,6 +8,7 @@ Each vector position is defined by an (x-proj, y-proj) element
 
 import napari
 import numpy as np
+import os.path
 
 
 with napari.gui_qt():
@@ -33,5 +34,6 @@ with napari.gui_qt():
 
     # add the vectors
     vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
+    viewer.title = os.path.splitext(os.path.basename(__file__))[0]
 
     print(image.shape, pos.shape)

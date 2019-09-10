@@ -4,6 +4,7 @@ Display one 3-D volume layer using the add_volume API
 
 from skimage import data
 import napari
+import os.path
 
 
 with napari.gui_qt():
@@ -13,3 +14,4 @@ with napari.gui_qt():
     viewer = napari.Viewer(ndisplay=3)
     # add the volume
     viewer.add_image(blobs, scale=[3, 1, 1])
+    viewer.title = os.path.splitext(os.path.basename(__file__))[0]

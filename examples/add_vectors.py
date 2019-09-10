@@ -10,6 +10,7 @@ Each vector position is defined by an (x, y, x-proj, y-proj) element
 import napari
 from skimage import data
 import numpy as np
+import os.path
 
 
 with napari.gui_qt():
@@ -34,3 +35,4 @@ with napari.gui_qt():
 
     # add the vectors
     layer = viewer.add_vectors(pos, edge_width=3)
+    viewer.title = os.path.splitext(os.path.basename(__file__))[0]

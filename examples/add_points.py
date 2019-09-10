@@ -7,6 +7,7 @@ import numpy as np
 from skimage import data
 from skimage.color import rgb2gray
 import napari
+import os.path
 
 
 with napari.gui_qt():
@@ -62,3 +63,4 @@ with napari.gui_qt():
 
     # change the layer mode
     layer.mode = 'add'
+    viewer.title = os.path.splitext(os.path.basename(__file__))[0]

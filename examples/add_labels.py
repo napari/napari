@@ -9,6 +9,7 @@ from skimage.segmentation import clear_border
 from skimage.measure import label
 from skimage.morphology import closing, square, remove_small_objects
 import napari
+import os.path
 
 
 with napari.gui_qt():
@@ -29,3 +30,4 @@ with napari.gui_qt():
 
     # add the labels
     label_layer = viewer.add_labels(label_image, name='segmentation')
+    viewer.title = os.path.splitext(os.path.basename(__file__))[0]

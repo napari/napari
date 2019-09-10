@@ -28,10 +28,19 @@ def main():
         v = Viewer()
         if len(args.images) == 0:
             return
-        if os.path.splitext(args.images[0])[1] == '.napari':
-            v.from_zarr(args.images[0])
-        elif os.path.splitext(args.images[0][:-1])[1] == '.napari':
-            v.from_zarr(args.images[0][:-1])
+
+        filename = args.images[0]
+        if os.path.splitext(filename)[1] == '.bundle':
+            base_filename = os.path.splitext(filename)[0]
+        elif os.path.splitext(filename[:-1])[1] == '.bundle':
+            base_filename = os.path.splitext(filename[:-1])[0]
+        else:
+            base_filename = filename
+
+        if os.path.splitext(base_filename)[1] == '.napari':
+            v.from_zarr(filename)
+        elif os.path.splitext(base_filename[:-1])[1] == '.napari':
+            v.from_zarr(filename[:-1])
         else:
             images = io.ImageCollection(args.images, conserve_memory=False)
             if args.layers:
