@@ -4,6 +4,8 @@ import warnings
 from enum import Enum
 import re
 import numpy as np
+import subprocess
+import os.path
 import inspect
 import itertools
 from scipy import ndimage as ndi
@@ -285,6 +287,72 @@ def make_thumbnail(image, thumbnail_shape, multichannel=False):
             thumbnail = img_as_ubyte(thumbnail)
 
     return thumbnail
+
+
+def make_square(mat):
+    """Make a matrix square along its first two axes.
+
+
+    Parameters
+    ----------
+    mat : array.
+        Array to be made square.
+
+    Returns
+    ----------
+    out : array
+        Square matrix.
+    """
+    (a, b) = mat.shape[:2]
+    if a > b:
+        padding = ((0, 0), ((a - b) // 2, (a - b + 1) // 2))
+    else:
+        padding = (((b - a) // 2, (b - a + 1) // 2), (0, 0))
+    padding = padding + ((0, 0),) * (mat.ndim - 2)
+    return np.pad(mat, padding, mode='constant')
+
+
+def set_icon(folder, icon):
+    """Set folder to have an icon.
+
+    Parameters
+    ----------
+    folder : str.
+        Path to folder that will be given icon.
+    icon : str.
+        Base name of icon file located inside target folder.
+    """
+    try:
+        resource_file = os.path.join(folder, 'Icon.rsrc')
+        hidden_icon_file = os.path.join(folder, 'Icon\r')
+        icon_file = icon + '.icns'
+
+        # Create a temporary resource file
+        with open(resource_file, "w") as resource:
+            resource.write(f"read 'icns' (-16455)\"{icon_file}\";")
+
+        cmds = [
+            [
+                'Rez',
+                '-a',
+                resource_file,
+                '-o',
+                hidden_icon_file,
+            ],  # Create an Icon file
+            ['SetFile', '-a', 'C', folder],  # Set icon of the folder
+            [
+                'SetFile',
+                '-a',
+                'V',
+                hidden_icon_file,
+            ],  # Set Icon file to be invisible
+            ['rm', '-rf', resource_file],
+        ]  # Remove the temporary resource file
+
+        for c in cmds:
+            subprocess.run(c)
+    except:
+        print('icon not set')
 
 
 class StringEnum(Enum):

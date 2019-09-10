@@ -4,7 +4,7 @@ from ._qt.qt_viewer import QtViewer
 from ._qt.qt_main_window import Window
 from .components import ViewerModel
 from ._version import get_versions
-from .util.misc import make_thumbnail
+from .util.misc import make_square, set_icon
 from imageio import imwrite
 import os.path
 
@@ -74,10 +74,6 @@ class Viewer(ViewerModel):
         layer_gp.attrs['layer_names'] = layer_names
 
         screenshot = self.screenshot()
-        thumbnail = make_thumbnail(
-            screenshot, self._thumbnail_shape, multichannel=True
-        )
-
         root.array(
             'screenshot',
             screenshot,
@@ -86,16 +82,12 @@ class Viewer(ViewerModel):
             dtype=screenshot.dtype,
         )
 
-        root.array(
-            'thumbnail',
-            thumbnail,
-            shape=thumbnail.shape,
-            chunks=(None, None, None),
-            dtype=thumbnail.dtype,
-        )
-
         if store is not None:
-            imwrite(os.path.join(store, 'screenshot.png'), screenshot)
+            icon = make_square(screenshot)
+            imwrite(os.path.join(store, 'screenshot.icns'), icon)
+            imwrite(os.path.join(store, 'screenshot.ico'), icon)
+
+            set_icon(store, 'screenshot')
 
         return root
 
