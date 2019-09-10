@@ -106,41 +106,42 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
+        self.file_menu = self.main_menu.addMenu('&File')
+
         open_viewer = QAction('Open', self._qt_window)
         open_viewer.setShortcut('Ctrl+O')
         open_viewer.setStatusTip('Open viewer')
         open_viewer.triggered.connect(self.qt_viewer._open_viewer)
-        self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_viewer)
 
-        open_images = QAction('Open', self._qt_window)
+        open_images = QAction('Open images', self._qt_window)
         open_images.setShortcut('Ctrl+Shift+O')
         open_images.setStatusTip('Open image file(s)')
         open_images.triggered.connect(self.qt_viewer._open_images)
-        self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
 
         save_viewer = QAction('Save', self._qt_window)
         save_viewer.setShortcut('Ctrl+S')
         save_viewer.setStatusTip('Save viewer')
         save_viewer.triggered.connect(self.qt_viewer._save_viewer)
-        self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(save_viewer)
 
     def _add_view_menu(self):
+        self.view_menu = self.main_menu.addMenu('&View')
+
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
-        self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
 
     def _add_window_menu(self):
+        self.window_menu = self.main_menu.addMenu('&Window')
+
         exit_action = QAction("Close window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
         exit_action.setStatusTip('Close napari window')
         exit_action.triggered.connect(self._qt_window.close)
-        self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
 
     def resize(self, width, height):
