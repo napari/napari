@@ -50,12 +50,12 @@ $ pip install twine
 To make sure that everything is working properly, first upload to `test.pypi.org`,
 entering your credentials when prompted:
 ```bash
-$ python -m twine upload --repository-url=test.pypi.org/legacy/ dist/*
+$ python -m twine upload --repository-url=https://test.pypi.org/legacy/ dist/*
 ```
 
 Then create a new environment and download the release from the test servers:
 ```bash
-$ python -m pip install --extra-index-url test.pypi.org/simple/ napari=X.Y.Z
+$ python -m pip install --extra-index-url https://test.pypi.org/simple/ napari==X.Y.Z
 ```
 
 Try running some examples and tests to verify that everything is working properly.
