@@ -96,12 +96,15 @@ def test_add_surface():
     """Test adding 3D surface."""
     viewer = ViewerModel()
     np.random.seed(0)
-    data = np.random.random((10, 3))
+    vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
     values = np.random.random(10)
-    viewer.add_surface(data, faces=faces, values=values)
+    data = (vertices, faces, values)
+    viewer.add_surface(data)
     assert len(viewer.layers) == 1
-    assert np.all(viewer.layers[0].data == data)
+    assert np.all(
+        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+    )
     assert viewer.dims.ndim == 3
 
 

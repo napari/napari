@@ -51,7 +51,6 @@ class Surface(Layer):
         Whether the layer visual is currently being displayed.
 
     Attributes
-
     ----------
     data : 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of

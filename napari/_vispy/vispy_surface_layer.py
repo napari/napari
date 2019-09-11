@@ -39,14 +39,14 @@ class VispySurfaceLayer(VispyBaseLayer):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = None
             faces = None
-            values = np.array([0])
+            vertex_values = np.array([0])
         else:
             vertices = self.layer._data_view[:, ::-1] + 0.5
             faces = self.layer._view_faces
-            values = self.layer.values
+            vertex_values = self.layer.vertex_values
 
         self.node.set_data(
-            vertices=vertices, faces=faces, vertex_values=values
+            vertices=vertices, faces=faces, vertex_values=vertex_values
         )
         self.node.update()
 

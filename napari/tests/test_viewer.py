@@ -186,11 +186,14 @@ def test_add_surface(qtbot):
     qtbot.addWidget(view)
 
     np.random.seed(0)
-    data = np.random.random((10, 3))
+    vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
     values = np.random.random(10)
-    viewer.add_surface(data, faces=faces, values=values)
-    assert np.all(viewer.layers[0].data == data)
+    data = (vertices, faces, values)
+    viewer.add_surface(data)
+    assert np.all(
+        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+    )
 
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -198,9 +201,6 @@ def test_add_surface(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
-
-    viewer.dims.ndisplay = 3
-    assert np.sum(view.dims._displayed_sliders) == 0
 
     # Close the viewer
     viewer.window.close()
