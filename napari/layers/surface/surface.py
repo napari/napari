@@ -17,12 +17,11 @@ class Surface(Layer):
 
     Parameters
     ----------
-    data : (N, D) array
-        Vertices of mesh triangles.
-    faces : (M, 3) array of int
-        Indices of mesh triangles.
-    values : (N,) array
-        Values used to color vertices.
+    data : 3-tuple of array
+        The first element of the tuple is an (N, D) array of vertices of
+        mesh triangles. The second is an (M, 3) array of int of indices
+        of the mesh triangles. The third element is the (N, ) array of
+        values used to color vertices.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -52,12 +51,18 @@ class Surface(Layer):
         Whether the layer visual is currently being displayed.
 
     Attributes
+
     ----------
-    data : (N, D) array
+    data : 3-tuple of array
+        The first element of the tuple is an (N, D) array of vertices of
+        mesh triangles. The second is an (M, 3) array of int of indices
+        of the mesh triangles. The third element is the (N, ) array of
+        values used to color vertices.
+    vertices : (N, D) array
         Vertices of mesh triangles.
     faces : (M, 3) array of int
         Indices of mesh triangles.
-    values : (N,) array
+    vertex_values : (N,) array
         Values used to color vertices.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
@@ -86,8 +91,6 @@ class Surface(Layer):
         self,
         data,
         *,
-        faces,
-        values,
         colormap='gray',
         contrast_limits=None,
         name=None,
@@ -99,7 +102,7 @@ class Surface(Layer):
         visible=True,
     ):
 
-        ndim = data.shape[1]
+        ndim = data[0].shape[1]
 
         super().__init__(
             ndim,
@@ -124,7 +127,7 @@ class Surface(Layer):
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
-            self._contrast_limits_range = calc_data_range(values)
+            self._contrast_limits_range = calc_data_range(data[2])
         else:
             self._contrast_limits_range = contrast_limits
         self._contrast_limits = copy(self._contrast_limits_range)
@@ -136,32 +139,37 @@ class Surface(Layer):
         self._view_faces = np.zeros((0, 3))
 
         # assign mesh data and establish default behavior
-        self._values = values
-        self._faces = faces
-        self.data = data
+        self._vertices = data[0]
+        self._faces = data[1]
+        self._vertex_values = data[2]
 
     @property
-    def data(self) -> np.ndarray:
-        return self._data
+    def data(self):
+        return (self.vertices, self.faces, self.vertex_values)
 
-    @data.setter
-    def data(self, data: np.ndarray):
+    @property
+    def vertices(self):
+        return self._vertices
+
+    @vertices.setter
+    def vertices(self, vertices):
         """Array of vertices of mesh triangles."""
 
-        self._data = data
+        self._vertices = vertices
 
         self._update_dims()
+        self._set_view_slice()
         self.events.data()
 
     @property
-    def values(self) -> np.ndarray:
-        return self._values
+    def vertex_values(self) -> np.ndarray:
+        return self._vertex_values
 
-    @values.setter
-    def values(self, values: np.ndarray):
+    @vertex_values.setter
+    def vertex_values(self, vertex_values: np.ndarray):
         """Array of values used to color vertices.."""
 
-        self._values = values
+        self._vertex_values = vertex_values
 
         self._set_view_slice()
         self.events.data()
@@ -181,16 +189,16 @@ class Surface(Layer):
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        return self.data.shape[1]
+        return self.vertices.shape[1]
 
     def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
-        if len(self.data) == 0:
-            maxs = np.ones(self.data.shape[1], dtype=int)
-            mins = np.zeros(self.data.shape[1], dtype=int)
+        if len(self.vertices) == 0:
+            maxs = np.ones(self.vertices.shape[1], dtype=int)
+            mins = np.zeros(self.vertices.shape[1], dtype=int)
         else:
-            maxs = np.max(self.data, axis=0)
-            mins = np.min(self.data, axis=0)
+            maxs = np.max(self.vertices, axis=0)
+            mins = np.min(self.vertices, axis=0)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -257,11 +265,11 @@ class Surface(Layer):
         disp = list(self.dims.displayed)
         indices = np.array(self.dims.indices)
 
-        self._data_view = self.data[:, disp]
-        if len(self.data) == 0:
+        self._data_view = self.vertices[:, disp]
+        if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
         elif self.ndim > self.dims.ndisplay:
-            vertices = self.data[:, not_disp].astype('int')
+            vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
             matches = np.where(matches)[0]

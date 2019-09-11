@@ -16,4 +16,4 @@ with napari.gui_qt():
     values = np.linspace(0, 1, len(data))
 
     # add the surface
-    layer = viewer.add_surface(data, faces=faces, values=values)
+    layer = viewer.add_surface((data, faces, values))
