@@ -331,23 +331,18 @@ def set_icon(folder, icon):
         with open(resource_file, "w") as resource:
             resource.write(f"read 'icns' (-16455)\"{icon_file}\";")
 
+        # Create an Icon file
+        # Set icon of the folder
+        # Set Icon file to be invisible
+        # Remove the temporary resource file
+        # Set folder to be a package
         cmds = [
-            [
-                'Rez',
-                '-a',
-                resource_file,
-                '-o',
-                hidden_icon_file,
-            ],  # Create an Icon file
-            ['SetFile', '-a', 'C', folder],  # Set icon of the folder
-            [
-                'SetFile',
-                '-a',
-                'V',
-                hidden_icon_file,
-            ],  # Set Icon file to be invisible
+            ['Rez', '-a', resource_file, '-o', hidden_icon_file],
+            ['SetFile', '-a', 'C', folder],
+            ['SetFile', '-a', 'V', hidden_icon_file],
             ['rm', '-rf', resource_file],
-        ]  # Remove the temporary resource file
+            ['SetFile', '-a', 'B', folder],
+        ]
 
         for c in cmds:
             subprocess.run(c)

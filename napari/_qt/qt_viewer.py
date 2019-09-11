@@ -233,12 +233,8 @@ class QtViewer(QSplitter):
             caption='Select folder',
             directory=self._last_visited_dir,
         )
-        if os.path.splitext(filename)[1] == '.bundle':
-            base_filename = os.path.splitext(filename)[0]
-        else:
-            base_filename = filename
 
-        if os.path.splitext(base_filename)[1] == '.napari':
+        if os.path.splitext(filename)[1] == '.napari':
             self.viewer.from_zarr(filename)
             self._last_visited_dir = os.path.dirname(filename)
 
