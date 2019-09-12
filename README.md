@@ -45,7 +45,7 @@ For more information see our [installation tutorial](https://napari.github.io/na
 
 ## simple example
 
-From inside an IPython shell or Jupyter notebook you can open up an interactive viewer by calling
+From inside an IPython shell (started with `ipython --gui=qt`) or Jupyter notebook you can open up an interactive viewer by calling
 
 ```python
 %gui qt5
