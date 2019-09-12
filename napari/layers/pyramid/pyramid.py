@@ -183,9 +183,13 @@ class Pyramid(Image):
         downsampled = np.round(downsampled.astype(float)).astype(int)
         downsampled = np.clip(downsampled, 0, self.level_shapes[-1, nd] - 1)
         indices[nd] = downsampled
-        self._data_thumbnail = np.asarray(
-            self.data[-1][tuple(indices)]
-        ).transpose(order)
+
+        image = np.asarray(self.data[-1][tuple(indices)]).transpose(order)
+
+        if self.multichannel:
+            self._data_thumbnail = np.clip(image, 0, 1)
+        else:
+            self._data_thumbnail = image
 
         # Slice currently viewed level
         indices = np.array(self.dims.indices)
@@ -213,9 +217,12 @@ class Pyramid(Image):
         else:
             self.translate = [0] * self.ndim
 
-        self._data_view = np.asarray(
-            self.data[level][tuple(indices)]
-        ).transpose(order)
+        image = np.asarray(self.data[level][tuple(indices)]).transpose(order)
+
+        if self.multichannel:
+            self._data_view = np.clip(image, 0, 1)
+        else:
+            self._data_view = image
 
         self._update_thumbnail()
         self._update_coordinates()
