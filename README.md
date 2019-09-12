@@ -51,7 +51,7 @@ From inside an IPython shell or Jupyter notebook you can open up an interactive 
 %gui qt5
 from skimage import data
 import napari
-viewer = napari.view(data.astronaut(), multichannel=True)
+viewer = napari.view(data.astronaut(), rgb=True)
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -63,7 +63,7 @@ from skimage import data
 import napari
 
 with napari.gui_qt():
-    viewer = napari.view(data.astronaut(), multichannel=True)
+    viewer = napari.view(data.astronaut(), rgb=True)
 ```
 
 ## features
