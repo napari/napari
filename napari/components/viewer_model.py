@@ -429,7 +429,7 @@ class ViewerModel(KeymapMixin):
         scale=None,
         translate=None,
         opacity=1,
-        blending='translucent',
+        blending='additive',
         visible=True,
     ):
         """Add image layers to the layers list expanding along axis.
