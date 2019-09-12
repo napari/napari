@@ -329,7 +329,7 @@ class Image(Layer):
 
         image = np.asarray(self.data[self.dims.indices]).transpose(order)
 
-        if self.multichannel:
+        if self.multichannel and image.dtype.kind == 'f':
             self._data_view = np.clip(image, 0, 1)
         else:
             self._data_view = image
