@@ -44,8 +44,8 @@ def is_iterable(arg, color=False):
         return True
 
 
-def is_multichannel(shape):
-    """If last dim is 3 or 4 assume image is multichannel.
+def is_rgb(shape):
+    """If last dim is 3 or 4 assume image is rgb.
     """
     ndim = len(shape)
     last_dim = shape[-1]

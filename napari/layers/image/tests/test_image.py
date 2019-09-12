@@ -16,7 +16,7 @@ def test_random_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -28,7 +28,7 @@ def test_all_zeros_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -41,7 +41,7 @@ def test_integer_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -53,7 +53,7 @@ def test_bool_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -66,7 +66,7 @@ def test_3D_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -79,7 +79,7 @@ def test_3D_image_shape_1():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -92,7 +92,7 @@ def test_4D_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -105,7 +105,7 @@ def test_5D_image_shape_1():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -118,7 +118,7 @@ def test_rgb_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -131,35 +131,35 @@ def test_rgba_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
     assert layer._data_view.shape == shape[-3:]
 
 
 def test_non_rgb_image():
-    """Test forcing Image layer to be 3D and not multichannel."""
+    """Test forcing Image layer to be 3D and not rgb."""
     shape = (10, 15, 3)
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Image(data, multichannel=False)
+    layer = Image(data, rgb=False)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
-def test_non_multichannel_image():
-    """Test forcing Image layer to be 3D and not multichannel."""
-    # If multichannel is set to be True in constructor but the last dim has a
-    # size > 4 then data cannot actually be multichannel
+def test_non_rgb_image():
+    """Test forcing Image layer to be 3D and not rgb."""
+    # If rgb is set to be True in constructor but the last dim has a
+    # size > 4 then data cannot actually be rgb
     shape = (10, 15, 6)
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Image(data, multichannel=True)
+    layer = Image(data, rgb=True)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -176,7 +176,7 @@ def test_changing_image():
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
     assert layer.dims.range == [(0, m, 1) for m in shape_b]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -195,7 +195,7 @@ def test_changing_image_dims():
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
     assert layer.dims.range == [(0, m, 1) for m in shape_b]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape_b[-2:]
 
 

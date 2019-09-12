@@ -5,7 +5,7 @@ def view(
     *images,
     title='napari',
     metadata=None,
-    multichannel=None,
+    rgb=None,
     contrast_limits=None,
     **named_images,
 ):
@@ -19,7 +19,7 @@ def view(
     meta : dictionary, optional
         A dictionary of metadata attributes. If multiple images are provided,
         the metadata applies to all of them.
-    multichannel : bool, optional
+    rgb : bool, optional
         Whether to consider the last dimension of the image(s) as channels
         rather than spatial attributes. If not provided, napari will attempt
         to make an educated guess. If provided, and multiple images are given,
@@ -47,16 +47,13 @@ def view(
     viewer = Viewer(title=title)
     for image in images:
         viewer.add_image(
-            image,
-            metadata=metadata,
-            multichannel=multichannel,
-            contrast_limits=contrast_limits,
+            image, metadata=metadata, rgb=rgb, contrast_limits=contrast_limits
         )
     for name, image in named_images.items():
         viewer.add_image(
             image,
             metadata=metadata,
-            multichannel=multichannel,
+            rgb=rgb,
             contrast_limits=contrast_limits,
             name=name,
         )

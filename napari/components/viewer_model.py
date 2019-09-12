@@ -336,7 +336,7 @@ class ViewerModel(KeymapMixin):
         self,
         data,
         *,
-        multichannel=None,
+        rgb=None,
         colormap='gray',
         contrast_limits=None,
         interpolation='nearest',
@@ -355,9 +355,9 @@ class ViewerModel(KeymapMixin):
         ----------
         data : array
             Image data. Can be N dimensional. If the last dimension has length
-            3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-        multichannel : bool
-            Whether the image is multichannel RGB or RGBA if multichannel. If
+            3 or 4 can be interpreted as RGB or RGBA if rgb is `True`.
+        rgb : bool
+            Whether the image is rgb RGB or RGBA if rgb. If
             not specified by user and the last dimension of the data has length
             3 or 4 it will be set as `True`. If `False` the image is
             interpreted as a luminance image.
@@ -399,7 +399,7 @@ class ViewerModel(KeymapMixin):
         """
         layer = layers.Image(
             data,
-            multichannel=multichannel,
+            rgb=rgb,
             colormap=colormap,
             contrast_limits=contrast_limits,
             interpolation=interpolation,
@@ -415,6 +415,117 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
+    def add_multichannel(
+        self,
+        data,
+        *,
+        channel=-1,
+        colormap=None,
+        contrast_limits=None,
+        interpolation='nearest',
+        rendering='mip',
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+    ):
+        """Add image layers to the layers list expanding along axis.
+
+        Parameters
+        ----------
+        data : array
+            Image data. Can be N dimensional.
+        channel : int
+            Axis to expand colors along.
+        colormap : list, str, vispy.Color.Colormap, tuple, dict
+            Colormaps to use for luminance images. If a string must be the name
+            of a supported colormap from vispy or matplotlib. If a tuple the
+            first value must be a string to assign as a name to a colormap and
+            the second item must be a Colormap. If a dict the key must be a
+            string to assign as a name to a colormap and the value must be a
+            Colormap. If a list then must be same length as the axis that is
+            being expanded and then each colormap is applied to each image.
+        contrast_limits : list (2,)
+            Color limits to be used for determining the colormap bounds for
+            luminance images. If not passed is calculated as the min and max of
+            the image. If list of lists then must be same length as the axis
+            that is being expanded and then each colormap is applied to each
+            image.
+        interpolation : str
+            Interpolation mode used by vispy. Must be one of our supported
+            modes.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
+
+        Returns
+        -------
+        layers : list of :class:`napari.layers.Image`
+            The newly-created image layers.
+        """
+        n_images = data.shape[channel]
+
+        base_colormaps = ['red', 'green', 'blue', 'cyan', 'yellow', 'magenta']
+        if colormap is None:
+            indices = np.arange(n_images) % len(base_colormaps)
+            expanded_colormaps = [base_colormaps[i] for i in indices]
+        elif isinstance(colormap, list):
+            expanded_colormaps = colormap
+        else:
+            expanded_colormaps = [colormap] * n_images
+
+        if contrast_limits is None:
+            expanded_contrast_limits = [None] * n_images
+        else:
+            if isinstance(contrast_limits, list):
+                expanded_contrast_limits = contrast_limits
+            else:
+                expanded_contrast_limits = [contrast_limits] * n_images
+
+        if name is None:
+            expanded_names = [None] * n_images
+        elif isinstance(name, list):
+            expanded_names = name
+        else:
+            expanded_names = [name] * n_images
+
+        layers = []
+        for i in range(data.shape[channel]):
+            image = data.take(i, axis=channel)
+            layer = self.add_image(
+                image,
+                rgb=False,
+                colormap=expanded_colormaps[i],
+                contrast_limits=expanded_contrast_limits[i],
+                interpolation=interpolation,
+                rendering=rendering,
+                name=expanded_names[i],
+                metadata=metadata,
+                scale=scale,
+                translate=translate,
+                opacity=opacity,
+                blending=blending,
+                visible=visible,
+            )
+            layers.append(layer)
+        return layers
+
     def add_pyramid(self, data, *args, **kwargs):
         """Add an image pyramid layer to the layers list.
 
@@ -423,10 +534,10 @@ class ViewerModel(KeymapMixin):
         data : list
             Pyramid data. List of array like image date. Each image can be N
             dimensional. If the last dimensions of the images have length 3
-            or 4 they can be interpreted as RGB or RGBA if multichannel is
+            or 4 they can be interpreted as RGB or RGBA if rgb is
             `True`.
-        multichannel : bool
-            Whether the image is multichannel RGB or RGBA if multichannel. If
+        rgb : bool
+            Whether the image is rgb RGB or RGBA if rgb. If
             not specified by user and the last dimension of the data has length
             3 or 4 it will be set as `True`. If `False` the image is
             interpreted as a luminance image.

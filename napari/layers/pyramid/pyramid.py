@@ -10,10 +10,10 @@ class Pyramid(Image):
     data : list
         Pyramid data. List of array like image date. Each image can be N
         dimensional. If the last dimensions of the images have length 3
-        or 4 they can be interpreted as RGB or RGBA if multichannel is
+        or 4 they can be interpreted as RGB or RGBA if rgb is
         `True`.
-    multichannel : bool
-        Whether the image is multichannel RGB or RGBA if multichannel. If
+    rgb : bool
+        Whether the image is rgb RGB or RGBA if rgb. If
         not specified by user and the last dimension of the data has length
         3 or 4 it will be set as `True`. If `False` the image is
         interpreted as a luminance image.
@@ -53,26 +53,26 @@ class Pyramid(Image):
     data : list
         Pyramid data. List of array like image date. Each image can be N
         dimensional. If the last dimensions of the images have length 3
-        or 4 they can be interpreted as RGB or RGBA if multichannel is `True`.
+        or 4 they can be interpreted as RGB or RGBA if rgb is `True`.
     metadata : dict
         Image metadata.
-    multichannel : bool
-        Whether the images are multichannel RGB or RGBA if multichannel. If not
+    rgb : bool
+        Whether the images are rgb RGB or RGBA if rgb. If not
         specified by user and the last dimension of the data has length 3 or 4
         it will be set as `True`. If `False` the image is interpreted as a
         luminance image.
     colormap : 2-tuple of str, vispy.color.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the images
-        are multichannel the colormap is ignored.
+        are rgb the colormap is ignored.
     colormaps : tuple of str
         Names of the available colormaps.
     contrast_limits : list (2,) of float
         Color limits to be used for determining the colormap bounds for
-        luminance images. If the image are multichannel the contrast_limits is ignored.
+        luminance images. If the image are rgb the contrast_limits is ignored.
     contrast_limits_range : list (2,) of float
         Range for the color limits for luminace images. If the image are
-        multichannel the contrast_limits_range is ignored.
+        rgb the contrast_limits_range is ignored.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
@@ -142,7 +142,7 @@ class Pyramid(Image):
     @property
     def level_shapes(self):
         """array: Shapes of each level of the pyramid."""
-        if self.multichannel:
+        if self.rgb:
             shapes = [im.shape[:-1] for im in self.data]
         else:
             shapes = [im.shape for im in self.data]
@@ -169,8 +169,8 @@ class Pyramid(Image):
         """Set the view given the indices to slice with."""
         nd = self.dims.not_displayed
 
-        if self.multichannel:
-            # if multichannel need to keep the final axis fixed during the
+        if self.rgb:
+            # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
             order = self.dims.displayed_order + (self.dims.ndisplay,)
@@ -231,7 +231,7 @@ class Pyramid(Image):
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
-        if self.multichannel:
+        if self.rgb:
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape
