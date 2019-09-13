@@ -20,6 +20,31 @@ def test_random_image():
     assert layer._data_view.shape == shape[-2:]
 
 
+def test_negative_image():
+    """Test instantiating Image layer with negative data."""
+    shape = (10, 15)
+    np.random.seed(0)
+    # Data between -1.0 and 1.0
+    data = 2 * np.random.random(shape) - 1.0
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.dims.range == [(0, m, 1) for m in shape]
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
+
+    # Data between -10 and 10
+    data = 20 * np.random.random(shape) - 10
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.dims.range == [(0, m, 1) for m in shape]
+    assert layer.multichannel == False
+    assert layer._data_view.shape == shape[-2:]
+
+
 def test_all_zeros_image():
     """Test instantiating Image layer with all zeros data."""
     shape = (10, 15)
@@ -132,6 +157,29 @@ def test_rgba_image():
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
     assert layer.rgb == True
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_negative_rgba_image():
+    """Test instantiating Image layer with negative RGBA data."""
+    shape = (10, 15, 4)
+    np.random.seed(0)
+    # Data between -1.0 and 1.0
+    data = 2 * np.random.random(shape) - 1
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape) - 1
+    assert layer.shape == shape[:-1]
+    assert layer.multichannel == True
+    assert layer._data_view.shape == shape[-3:]
+
+    # Data between -10 and 10
+    data = 20 * np.random.random(shape) - 10
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape) - 1
+    assert layer.shape == shape[:-1]
+    assert layer.multichannel == True
     assert layer._data_view.shape == shape[-3:]
 
 
