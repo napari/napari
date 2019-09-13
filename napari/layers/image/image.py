@@ -22,10 +22,9 @@ class Image(Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`.
     rgb : bool
-        Whether the image is rgb RGB or RGBA if rgb. If
-        not specified by user and the last dimension of the data has length
-        3 or 4 it will be set as `True`. If `False` the image is
-        interpreted as a luminance image.
+        Whether the image is rgb RGB or RGBA. If not specified by user and
+        the last dimension of the data has length 3 or 4 it will be set as
+        `True`. If `False` the image is interpreted as a luminance image.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the

@@ -1,6 +1,6 @@
 import numpy as np
 from math import inf
-from itertools import zip_longest
+import itertools
 from xml.etree.ElementTree import Element, tostring
 from .dims import Dims
 from .layerlist import LayerList
@@ -8,6 +8,7 @@ from .. import layers
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
+from ..util.misc import ensure_iterable, is_iterable
 
 
 class ViewerModel(KeymapMixin):
@@ -357,10 +358,9 @@ class ViewerModel(KeymapMixin):
             Image data. Can be N dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`.
         rgb : bool
-            Whether the image is rgb RGB or RGBA if rgb. If
-            not specified by user and the last dimension of the data has length
-            3 or 4 it will be set as `True`. If `False` the image is
-            interpreted as a luminance image.
+            Whether the image is rgb RGB or RGBA. If not specified by user and
+            the last dimension of the data has length 3 or 4 it will be set as
+            `True`. If `False` the image is interpreted as a luminance image.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -481,41 +481,33 @@ class ViewerModel(KeymapMixin):
         """
         n_images = data.shape[channel]
 
-        base_colormaps = ['red', 'green', 'blue', 'cyan', 'yellow', 'magenta']
+        name = ensure_iterable(name)
+
+        base_colormaps = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
         if colormap is None:
-            indices = np.arange(n_images) % len(base_colormaps)
-            expanded_colormaps = [base_colormaps[i] for i in indices]
-        elif isinstance(colormap, list):
-            expanded_colormaps = colormap
+            colormap = itertools.cycle(base_colormaps)
         else:
-            expanded_colormaps = [colormap] * n_images
+            colormap = ensure_iterable(colormap)
 
-        if contrast_limits is None:
-            expanded_contrast_limits = [None] * n_images
+        # If one pair of clim values is passed then need to iterate them to
+        # all layers.
+        if contrast_limits is not None and not is_iterable(contrast_limits[0]):
+            contrast_limits = itertools.repeat(contrast_limits)
         else:
-            if isinstance(contrast_limits, list):
-                expanded_contrast_limits = contrast_limits
-            else:
-                expanded_contrast_limits = [contrast_limits] * n_images
-
-        if name is None:
-            expanded_names = [None] * n_images
-        elif isinstance(name, list):
-            expanded_names = name
-        else:
-            expanded_names = [name] * n_images
+            contrast_limits = ensure_iterable(contrast_limits)
 
         layers = []
-        for i in range(data.shape[channel]):
+        zipped_args = zip(range(n_images), colormap, contrast_limits, name)
+        for i, cmap, clims, name in zipped_args:
             image = data.take(i, axis=channel)
             layer = self.add_image(
                 image,
                 rgb=False,
-                colormap=expanded_colormaps[i],
-                contrast_limits=expanded_contrast_limits[i],
+                colormap=cmap,
+                contrast_limits=clims,
                 interpolation=interpolation,
                 rendering=rendering,
-                name=expanded_names[i],
+                name=name,
                 metadata=metadata,
                 scale=scale,
                 translate=translate,
@@ -537,10 +529,9 @@ class ViewerModel(KeymapMixin):
             or 4 they can be interpreted as RGB or RGBA if rgb is
             `True`.
         rgb : bool
-            Whether the image is rgb RGB or RGBA if rgb. If
-            not specified by user and the last dimension of the data has length
-            3 or 4 it will be set as `True`. If `False` the image is
-            interpreted as a luminance image.
+            Whether the image is rgb RGB or RGBA. If not specified by user and
+            the last dimension of the data has length 3 or 4 it will be set as
+            `True`. If `False` the image is interpreted as a luminance image.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -1006,7 +997,7 @@ class ViewerModel(KeymapMixin):
             layer_range = layer.dims.range[::-1]
             ranges = [
                 (min(a, b), max(c, d), min(e, f))
-                for (a, c, e), (b, d, f) in zip_longest(
+                for (a, c, e), (b, d, f) in itertools.zip_longest(
                     ranges, layer_range, fillvalue=(inf, -inf, inf)
                 )
             ]

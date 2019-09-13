@@ -31,7 +31,9 @@ def is_iterable(arg, color=False):
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable.
     """
-    if type(arg) is str:
+    if arg is None:
+        return False
+    elif type(arg) is str:
         return False
     elif np.isscalar(arg):
         return False
