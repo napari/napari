@@ -928,7 +928,8 @@ class Shapes(Layer):
                 for d in self.dims.displayed
             ]
         ).astype(int)
-        zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+
+        zoom_factor = np.divide(self._thumbnail_shape[:2], shape[:2]).min()
 
         colormapped = self._data_view.to_colors(
             colors_shape=self._thumbnail_shape[:2],

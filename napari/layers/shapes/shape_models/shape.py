@@ -115,10 +115,11 @@ class Shape(ABC):
         opacity=1,
         z_index=0,
         dims_order=None,
+        ndisplay=2,
     ):
 
         self._dims_order = dims_order or list(range(2))
-        self.ndisplay = 2
+        self.ndisplay = ndisplay
         self.slice_key = None
 
         self._face_vertices = np.empty((0, 2))
@@ -275,7 +276,7 @@ class Shape(ABC):
         Parameters
         ----------
         data : np.ndarray
-            Nx2 array specifying the shape to be triangulated
+            Nx2 or Nx3 array specifying the shape to be triangulated
         closed : bool
             Bool which determines if the edge is closed or not
         face : bool
@@ -457,6 +458,7 @@ class Shape(ABC):
         else:
             data = self.data_displayed
 
+        import pdb; pdb.set_trace()
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:

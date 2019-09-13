@@ -1,3 +1,4 @@
+from copy import copy
 import numpy as np
 from ...util import segment_normal
 from vispy.geometry import PolygonData
@@ -559,7 +560,7 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     Parameters
     ----------
     path : np.ndarray
-        Nx2 array of central coordinates of path to be triangulated
+        Nx2 or Nx3 array of central coordinates of path to be triangulated
     closed : bool
         Bool which determines if the path is closed or not
     limit : float
@@ -572,111 +573,147 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     Returns
     -------
     centers : np.ndarray
-        Mx2 array central coordinates of path trinagles.
+        Mx2 or Mx3 array central coordinates of path trinagles.
     offsets : np.ndarray
-        Mx2 array of the offests to the central coordinates that need to
+        Mx2 or Mx3 array of the offsets to the central coordinates that need to
         be scaled by the line width and then added to the centers to
         generate the actual vertices of the triangulation
     triangles : np.ndarray
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    # Remove any equal adjacent points
-    if len(path) > 2:
-        clean_path = np.array(
+    if path.shape[-1] == 2:
+        # Remove any equal adjacent points
+        if len(path) > 2:
+            clean_path = np.array(
+                [
+                    p
+                    for i, p in enumerate(path)
+                    if i == 0 or not np.all(p == path[i - 1])
+                ]
+            )
+            if clean_path.shape[0] == 1:
+                clean_path = np.concatenate((clean_path, clean_path), axis=0)
+        else:
+            clean_path = path
+
+        if closed:
+            if np.all(clean_path[0] == clean_path[-1]) and len(clean_path) > 2:
+                clean_path = clean_path[:-1]
+            full_path = np.concatenate(
+                ([clean_path[-1]], clean_path, [clean_path[0]]), axis=0
+            )
+            normals = [
+                segment_normal(full_path[i], full_path[i + 1])
+                for i in range(len(clean_path))
+            ]
+            path_length = [
+                np.linalg.norm(full_path[i] - full_path[i + 1])
+                for i in range(len(clean_path))
+            ]
+            normals = np.array(normals)
+            full_path = np.concatenate((clean_path, [clean_path[0]]), axis=0)
+            full_normals = np.concatenate((normals, [normals[0]]), axis=0)
+        else:
+            full_path = np.concatenate((clean_path, [clean_path[-2]]), axis=0)
+            normals = [
+                segment_normal(full_path[i], full_path[i + 1])
+                for i in range(len(clean_path))
+            ]
+            path_length = [
+                np.linalg.norm(full_path[i] - full_path[i + 1])
+                for i in range(len(clean_path))
+            ]
+            normals[-1] = -normals[-1]
+            normals = np.array(normals)
+            full_path = clean_path
+            full_normals = np.concatenate(([normals[0]], normals), axis=0)
+
+        miters = np.array(
+            [full_normals[i : i + 2].mean(axis=0) for i in range(len(full_path))]
+        )
+        miters = np.array(
             [
-                p
-                for i, p in enumerate(path)
-                if i == 0 or not np.all(p == path[i - 1])
+                miters[i] / np.dot(miters[i], full_normals[i])
+                if np.dot(miters[i], full_normals[i]) != 0
+                else full_normals[i]
+                for i in range(len(full_path))
             ]
         )
-        if clean_path.shape[0] == 1:
-            clean_path = np.concatenate((clean_path, clean_path), axis=0)
-    else:
-        clean_path = path
+        miter_lengths = np.linalg.norm(miters, axis=1)
+        miters = 0.5 * miters
+        vertex_offsets = []
+        central_path = []
+        triangles = []
+        m = 0
 
-    if closed:
-        if np.all(clean_path[0] == clean_path[-1]) and len(clean_path) > 2:
-            clean_path = clean_path[:-1]
-        full_path = np.concatenate(
-            ([clean_path[-1]], clean_path, [clean_path[0]]), axis=0
-        )
-        normals = [
-            segment_normal(full_path[i], full_path[i + 1])
-            for i in range(len(clean_path))
-        ]
-        path_length = [
-            np.linalg.norm(full_path[i] - full_path[i + 1])
-            for i in range(len(clean_path))
-        ]
-        normals = np.array(normals)
-        full_path = np.concatenate((clean_path, [clean_path[0]]), axis=0)
-        full_normals = np.concatenate((normals, [normals[0]]), axis=0)
-    else:
-        full_path = np.concatenate((clean_path, [clean_path[-2]]), axis=0)
-        normals = [
-            segment_normal(full_path[i], full_path[i + 1])
-            for i in range(len(clean_path))
-        ]
-        path_length = [
-            np.linalg.norm(full_path[i] - full_path[i + 1])
-            for i in range(len(clean_path))
-        ]
-        normals[-1] = -normals[-1]
-        normals = np.array(normals)
-        full_path = clean_path
-        full_normals = np.concatenate(([normals[0]], normals), axis=0)
-
-    miters = np.array(
-        [full_normals[i : i + 2].mean(axis=0) for i in range(len(full_path))]
-    )
-    miters = np.array(
-        [
-            miters[i] / np.dot(miters[i], full_normals[i])
-            if np.dot(miters[i], full_normals[i]) != 0
-            else full_normals[i]
-            for i in range(len(full_path))
-        ]
-    )
-    miter_lengths = np.linalg.norm(miters, axis=1)
-    miters = 0.5 * miters
-    vertex_offsets = []
-    central_path = []
-    triangles = []
-    m = 0
-
-    for i in range(len(full_path)):
-        if i == 0:
-            if (bevel or miter_lengths[i] > limit) and closed:
+        for i in range(len(full_path)):
+            if i == 0:
+                if (bevel or miter_lengths[i] > limit) and closed:
+                    offset = np.array([miters[i, 1], -miters[i, 0]])
+                    offset = 0.5 * offset / np.linalg.norm(offset)
+                    flip = np.sign(np.dot(offset, full_normals[i]))
+                    vertex_offsets.append(offset)
+                    vertex_offsets.append(
+                        -flip * miters[i] / miter_lengths[i] * limit
+                    )
+                    vertex_offsets.append(-offset)
+                    central_path.append(full_path[i])
+                    central_path.append(full_path[i])
+                    central_path.append(full_path[i])
+                    triangles.append([0, 1, 2])
+                    m = m + 1
+                else:
+                    vertex_offsets.append(-miters[i])
+                    vertex_offsets.append(miters[i])
+                    central_path.append(full_path[i])
+                    central_path.append(full_path[i])
+            elif i == len(full_path) - 1:
+                if closed:
+                    a = vertex_offsets[m + 1]
+                    b = vertex_offsets[1]
+                    ray = full_path[i] - full_path[i - 1]
+                    if np.cross(a, ray) * np.cross(b, ray) > 0:
+                        triangles.append([m, m + 1, 1])
+                        triangles.append([m, 0, 1])
+                    else:
+                        triangles.append([m, m + 1, 1])
+                        triangles.append([m + 1, 0, 1])
+                else:
+                    vertex_offsets.append(-miters[i])
+                    vertex_offsets.append(miters[i])
+                    central_path.append(full_path[i])
+                    central_path.append(full_path[i])
+                    a = vertex_offsets[m + 1]
+                    b = vertex_offsets[m + 3]
+                    ray = full_path[i] - full_path[i - 1]
+                    if np.cross(a, ray) * np.cross(b, ray) > 0:
+                        triangles.append([m, m + 1, m + 3])
+                        triangles.append([m, m + 2, m + 3])
+                    else:
+                        triangles.append([m, m + 1, m + 3])
+                        triangles.append([m + 1, m + 2, m + 3])
+            elif bevel or miter_lengths[i] > limit:
                 offset = np.array([miters[i, 1], -miters[i, 0]])
                 offset = 0.5 * offset / np.linalg.norm(offset)
                 flip = np.sign(np.dot(offset, full_normals[i]))
                 vertex_offsets.append(offset)
-                vertex_offsets.append(
-                    -flip * miters[i] / miter_lengths[i] * limit
-                )
+                vertex_offsets.append(-flip * miters[i] / miter_lengths[i] * limit)
                 vertex_offsets.append(-offset)
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])
-                triangles.append([0, 1, 2])
-                m = m + 1
-            else:
-                vertex_offsets.append(-miters[i])
-                vertex_offsets.append(miters[i])
-                central_path.append(full_path[i])
-                central_path.append(full_path[i])
-        elif i == len(full_path) - 1:
-            if closed:
                 a = vertex_offsets[m + 1]
-                b = vertex_offsets[1]
+                b = vertex_offsets[m + 3]
                 ray = full_path[i] - full_path[i - 1]
                 if np.cross(a, ray) * np.cross(b, ray) > 0:
-                    triangles.append([m, m + 1, 1])
-                    triangles.append([m, 0, 1])
+                    triangles.append([m, m + 1, m + 3])
+                    triangles.append([m, m + 2, m + 3])
                 else:
-                    triangles.append([m, m + 1, 1])
-                    triangles.append([m + 1, 0, 1])
+                    triangles.append([m, m + 1, m + 3])
+                    triangles.append([m + 1, m + 2, m + 3])
+                triangles.append([m + 2, m + 3, m + 4])
+                m = m + 3
             else:
                 vertex_offsets.append(-miters[i])
                 vertex_offsets.append(miters[i])
@@ -691,45 +728,13 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
                 else:
                     triangles.append([m, m + 1, m + 3])
                     triangles.append([m + 1, m + 2, m + 3])
-        elif bevel or miter_lengths[i] > limit:
-            offset = np.array([miters[i, 1], -miters[i, 0]])
-            offset = 0.5 * offset / np.linalg.norm(offset)
-            flip = np.sign(np.dot(offset, full_normals[i]))
-            vertex_offsets.append(offset)
-            vertex_offsets.append(-flip * miters[i] / miter_lengths[i] * limit)
-            vertex_offsets.append(-offset)
-            central_path.append(full_path[i])
-            central_path.append(full_path[i])
-            central_path.append(full_path[i])
-            a = vertex_offsets[m + 1]
-            b = vertex_offsets[m + 3]
-            ray = full_path[i] - full_path[i - 1]
-            if np.cross(a, ray) * np.cross(b, ray) > 0:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m, m + 2, m + 3])
-            else:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m + 1, m + 2, m + 3])
-            triangles.append([m + 2, m + 3, m + 4])
-            m = m + 3
-        else:
-            vertex_offsets.append(-miters[i])
-            vertex_offsets.append(miters[i])
-            central_path.append(full_path[i])
-            central_path.append(full_path[i])
-            a = vertex_offsets[m + 1]
-            b = vertex_offsets[m + 3]
-            ray = full_path[i] - full_path[i - 1]
-            if np.cross(a, ray) * np.cross(b, ray) > 0:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m, m + 2, m + 3])
-            else:
-                triangles.append([m, m + 1, m + 3])
-                triangles.append([m + 1, m + 2, m + 3])
-            m = m + 2
-    centers = np.array(central_path)
-    offsets = np.array(vertex_offsets)
-    triangles = np.array(triangles)
+                m = m + 2
+        centers = np.array(central_path)
+        offsets = np.array(vertex_offsets)
+        triangles = np.array(triangles)
+    else:
+        print("foo")
+        centers, offsets, triangles = generate_vector_meshes(path)
 
     return centers, offsets, triangles
 
@@ -862,3 +867,71 @@ def points_in_poly(points, vertices):
     # if the number of crossings is odd then the point is inside the polygon
 
     return inside
+
+
+def generate_vector_meshes_2D(vectors, p=(0, 0, 1)):
+    """Generates list of mesh vertices and triangles from a list of vectors
+
+    Parameters
+    ----------
+    vectors : (N, D) array
+        A list of N vectors with start point and projections of the vector
+        in D dimensions, where D is 2 or 3.
+    p : 3-tuple, optional
+        orthogonal vector for segment calculation in 3D.
+
+    Returns
+    ----------
+    centers, offsets, triangles
+    """
+    ndim = vectors.shape[2]
+    vectors = np.reshape(copy(vectors), (-1, ndim))
+    centers = np.repeat(vectors, 2, axis=0)
+    offsets = segment_normal(vectors[::2, :], vectors[1::2, :], p=p)
+    offsets = np.repeat(offsets, 4, axis=0)
+    signs = np.ones((len(offsets), ndim))
+    signs[::2] = -1
+    offsets = offsets * signs
+    triangles = np.array(
+        [
+            [2 * i, 2 * i + 1, 2 * i + 2]
+            if i % 2 == 0
+            else [2 * i - 1, 2 * i, 2 * i + 1]
+            for i in range(len(vectors))
+        ]
+    ).astype(np.uint32)
+
+    return centers, offsets, triangles
+
+
+def generate_vector_meshes(vectors):
+    """Generates list of mesh vertices and triangles from a list of vectors
+
+    Parameters
+    ----------
+    vectors : (N, D) array
+        A list of N vectors with start point and projections of the vector
+        in D dimensions, where D is 2 or 3.
+    width : float
+        width of the line to be drawn
+    length : float
+        length multiplier of the line to be drawn
+
+    Returns
+    ----------
+    vertices : (4N, D) array
+        Vertices of all triangles for the lines
+    triangles : (2N, 3) array
+        Vertex indices that form the mesh triangles
+    """
+    ndim = vectors.shape[2]
+    if ndim == 2:
+        centers, offsets, triangles = generate_vector_meshes_2D(vectors)
+    else:
+        c_a, o_a, t_a = generate_vector_meshes_2D(vectors, p=(0, 0, 1))
+        c_b, o_b, t_b = generate_vector_meshes_2D(vectors, p=(1, 0, 0))
+        centers = np.concatenate([c_a, c_b], axis=0)
+        triangles = np.concatenate([t_a, len(c_a) + t_b], axis=0)
+        offsets = np.concatenate([o_a, o_b], axis=0)
+
+    return centers, offsets, triangles

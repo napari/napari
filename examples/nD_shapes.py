@@ -25,8 +25,9 @@ with napari.gui_qt():
 
     layer = viewer.add_shapes(
         np.array(shapes),
-        shape_type='polygon',
+        shape_type='path',
         face_color=colors,
+        edge_color='red',
         name='sliced',
     )
 
