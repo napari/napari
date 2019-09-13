@@ -31,7 +31,7 @@ def test_negative_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
     # Data between -10 and 10
@@ -41,7 +41,7 @@ def test_negative_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -170,7 +170,7 @@ def test_negative_rgba_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
     assert layer._data_view.shape == shape[-3:]
 
     # Data between -10 and 10
@@ -179,7 +179,7 @@ def test_negative_rgba_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
     assert layer._data_view.shape == shape[-3:]
 
 

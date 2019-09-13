@@ -19,7 +19,7 @@ def main():
         help='Treat multiple input images as layers.',
     )
     parser.add_argument(
-        '-m', '--rgb', help='Treat images as RGB.', action='store_true'
+        '-r', '--rgb', help='Treat images as RGB.', action='store_true'
     )
     args = parser.parse_args()
     with gui_qt():
