@@ -2,6 +2,8 @@
 napari command line viewer.
 """
 import argparse
+import sys
+
 import numpy as np
 from skimage import io
 
@@ -36,3 +38,7 @@ def main():
                 else:
                     image = np.stack(images, axis=0)
                 v.add_image(image, multichannel=args.multichannel)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
