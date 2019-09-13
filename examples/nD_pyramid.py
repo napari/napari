@@ -18,7 +18,7 @@ base = np.round(np.array([base * (16 - i) / 16 for i in range(16)])).astype(
 )
 print('base shape', base.shape)
 pyramid = list(
-    pyramid_gaussian(base, downscale=2, max_layer=3, multichannel=True)
+    pyramid_gaussian(base, downscale=2, max_layer=3, rgb=True)
 )
 print('pyramid level shapes: ', [p.shape[:-1] for p in pyramid])
 

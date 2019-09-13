@@ -13,7 +13,7 @@ import numpy as np
 # create pyramid from astronaut image
 base = np.tile(data.astronaut(), (8, 8, 1))
 pyramid = list(
-    pyramid_gaussian(base, downscale=2, max_layer=4, multichannel=True)
+    pyramid_gaussian(base, downscale=2, max_layer=4, rgb=True)
 )
 print('pyramid level shapes: ', [p.shape[:2] for p in pyramid])
 

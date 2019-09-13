@@ -1,6 +1,6 @@
 import numpy as np
 from math import inf
-from itertools import zip_longest
+import itertools
 from xml.etree.ElementTree import Element, tostring
 from .dims import Dims
 from .layerlist import LayerList
@@ -8,6 +8,7 @@ from .. import layers
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
+from ..util.misc import ensure_iterable, is_iterable
 
 
 class ViewerModel(KeymapMixin):
@@ -336,7 +337,7 @@ class ViewerModel(KeymapMixin):
         self,
         data,
         *,
-        multichannel=None,
+        rgb=None,
         colormap='gray',
         contrast_limits=None,
         interpolation='nearest',
@@ -355,12 +356,11 @@ class ViewerModel(KeymapMixin):
         ----------
         data : array
             Image data. Can be N dimensional. If the last dimension has length
-            3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-        multichannel : bool
-            Whether the image is multichannel RGB or RGBA if multichannel. If
-            not specified by user and the last dimension of the data has length
-            3 or 4 it will be set as `True`. If `False` the image is
-            interpreted as a luminance image.
+            3 or 4 can be interpreted as RGB or RGBA if rgb is `True`.
+        rgb : bool
+            Whether the image is rgb RGB or RGBA. If not specified by user and
+            the last dimension of the data has length 3 or 4 it will be set as
+            `True`. If `False` the image is interpreted as a luminance image.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -399,7 +399,7 @@ class ViewerModel(KeymapMixin):
         """
         layer = layers.Image(
             data,
-            multichannel=multichannel,
+            rgb=rgb,
             colormap=colormap,
             contrast_limits=contrast_limits,
             interpolation=interpolation,
@@ -415,6 +415,109 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
+    def add_multichannel(
+        self,
+        data,
+        *,
+        channel=-1,
+        colormap=None,
+        contrast_limits=None,
+        interpolation='nearest',
+        rendering='mip',
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=1,
+        blending='additive',
+        visible=True,
+    ):
+        """Add image layers to the layers list expanding along axis.
+
+        Parameters
+        ----------
+        data : array
+            Image data. Can be N dimensional.
+        channel : int
+            Axis to expand colors along.
+        colormap : list, str, vispy.Color.Colormap, tuple, dict
+            Colormaps to use for luminance images. If a string must be the name
+            of a supported colormap from vispy or matplotlib. If a tuple the
+            first value must be a string to assign as a name to a colormap and
+            the second item must be a Colormap. If a dict the key must be a
+            string to assign as a name to a colormap and the value must be a
+            Colormap. If a list then must be same length as the axis that is
+            being expanded and then each colormap is applied to each image.
+        contrast_limits : list (2,)
+            Color limits to be used for determining the colormap bounds for
+            luminance images. If not passed is calculated as the min and max of
+            the image. If list of lists then must be same length as the axis
+            that is being expanded and then each colormap is applied to each
+            image.
+        interpolation : str
+            Interpolation mode used by vispy. Must be one of our supported
+            modes.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
+
+        Returns
+        -------
+        layers : list of :class:`napari.layers.Image`
+            The newly-created image layers.
+        """
+        n_images = data.shape[channel]
+
+        name = ensure_iterable(name)
+
+        base_colormaps = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+        if colormap is None:
+            colormap = itertools.cycle(base_colormaps)
+        else:
+            colormap = ensure_iterable(colormap)
+
+        # If one pair of clim values is passed then need to iterate them to
+        # all layers.
+        if contrast_limits is not None and not is_iterable(contrast_limits[0]):
+            contrast_limits = itertools.repeat(contrast_limits)
+        else:
+            contrast_limits = ensure_iterable(contrast_limits)
+
+        layers = []
+        zipped_args = zip(range(n_images), colormap, contrast_limits, name)
+        for i, cmap, clims, name in zipped_args:
+            image = data.take(i, axis=channel)
+            layer = self.add_image(
+                image,
+                rgb=False,
+                colormap=cmap,
+                contrast_limits=clims,
+                interpolation=interpolation,
+                rendering=rendering,
+                name=name,
+                metadata=metadata,
+                scale=scale,
+                translate=translate,
+                opacity=opacity,
+                blending=blending,
+                visible=visible,
+            )
+            layers.append(layer)
+        return layers
+
     def add_pyramid(self, data, *args, **kwargs):
         """Add an image pyramid layer to the layers list.
 
@@ -423,13 +526,12 @@ class ViewerModel(KeymapMixin):
         data : list
             Pyramid data. List of array like image date. Each image can be N
             dimensional. If the last dimensions of the images have length 3
-            or 4 they can be interpreted as RGB or RGBA if multichannel is
+            or 4 they can be interpreted as RGB or RGBA if rgb is
             `True`.
-        multichannel : bool
-            Whether the image is multichannel RGB or RGBA if multichannel. If
-            not specified by user and the last dimension of the data has length
-            3 or 4 it will be set as `True`. If `False` the image is
-            interpreted as a luminance image.
+        rgb : bool
+            Whether the image is rgb RGB or RGBA. If not specified by user and
+            the last dimension of the data has length 3 or 4 it will be set as
+            `True`. If `False` the image is interpreted as a luminance image.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -895,7 +997,7 @@ class ViewerModel(KeymapMixin):
             layer_range = layer.dims.range[::-1]
             ranges = [
                 (min(a, b), max(c, d), min(e, f))
-                for (a, c, e), (b, d, f) in zip_longest(
+                for (a, c, e), (b, d, f) in itertools.zip_longest(
                     ranges, layer_range, fillvalue=(inf, -inf, inf)
                 )
             ]

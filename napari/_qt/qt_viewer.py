@@ -24,7 +24,7 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
-from ..util.misc import is_multichannel
+from ..util.misc import is_rgb
 from ..util.keybindings import components_to_key_combo
 from ..util.io import read
 
@@ -229,8 +229,8 @@ class QtViewer(QSplitter):
     def _add_files(self, filenames):
         """Adds an image layer to the viewer.
 
-        Whether the image is multichannel is determined by
-        :func:`napari.util.misc.is_multichannel`.
+        Whether the image is rgb is determined by
+        :func:`napari.util.misc.is_rgb`.
 
         If multiple images are selected, they are stacked along the 0th
         axis.
@@ -242,9 +242,7 @@ class QtViewer(QSplitter):
         """
         if len(filenames) > 0:
             image = read(filenames)
-            self.viewer.add_image(
-                image, multichannel=is_multichannel(image.shape)
-            )
+            self.viewer.add_image(image, rgb=is_rgb(image.shape))
             self._last_visited_dir = os.path.dirname(filenames[0])
 
     def _on_interactive(self, event):

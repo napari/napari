@@ -1,1 +1,1 @@
-from .misc import is_multichannel, segment_normal
+from .misc import is_rgb, segment_normal
