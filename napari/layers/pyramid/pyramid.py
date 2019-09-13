@@ -185,7 +185,7 @@ class Pyramid(Image):
 
         image = np.asarray(self.data[-1][tuple(indices)]).transpose(order)
 
-        if self.multichannel and image.dtype.kind == 'f':
+        if self.rgb and image.dtype.kind == 'f':
             self._data_thumbnail = np.clip(image, 0, 1)
         else:
             self._data_thumbnail = image
