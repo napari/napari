@@ -2,6 +2,7 @@ from copy import copy
 import numpy as np
 from ...util import segment_normal
 from vispy.geometry import PolygonData
+from vispy.visuals.tube import _frenet_frames
 
 
 def inside_triangles(triangles):
@@ -738,7 +739,7 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
         offsets = np.array(vertex_offsets)
         triangles = np.array(triangles)
     else:
-        centers, offsets, triangles = generate_3D_path_meshes(clean_path)
+        centers, offsets, triangles = generate_tube_meshes(clean_path)
 
     return centers, offsets, triangles
 
@@ -938,5 +939,74 @@ def generate_3D_path_meshes(path):
         centers = np.concatenate([c_a, c_b], axis=0)
         triangles = np.concatenate([t_a, len(c_a) + t_b], axis=0)
         offsets = np.concatenate([o_a, o_b], axis=0)
+
+    return centers, offsets, triangles
+
+
+def generate_tube_meshes(path, tube_points=10):
+    """Generates list of mesh vertices and triangles from a path
+
+    Adapted from vispy.visuals.TubeVisual
+    https://github.com/vispy/vispy/blob/master/vispy/visuals/tube.py
+
+    Parameters
+    ----------
+    path : (N, 3) array
+        Vertices specifying the path.
+    tube_points : int
+        The number of points in the circle-approximating polygon of the
+        tube's cross section.
+
+    Returns
+    ----------
+    centers : (M, 3) array
+        Vertices of all triangles for the lines
+    offsets : (M, D) array
+        offsets of all triangles for the lines
+    triangles : (P, 3) array
+        Vertex indices that form the mesh triangles
+    """
+    closed = False
+
+    # make sure we are working with floats
+    points = np.array(path).astype(float)
+
+    tangents, normals, binormals = _frenet_frames(points, closed)
+
+    segments = len(points) - 1
+
+    # get the positions of each vertex
+    grid = np.zeros((len(points), tube_points, 3))
+    grid_off = np.zeros((len(points), tube_points, 3))
+    for i in range(len(points)):
+        pos = points[i]
+        normal = normals[i]
+        binormal = binormals[i]
+
+        # Add a vertex for each point on the circle
+        v = np.arange(tube_points, dtype=np.float) / tube_points * 2 * np.pi
+        cx = -1.0 * np.cos(v)
+        cy = np.sin(v)
+        grid[i] = pos
+        grid_off[i] = cx[:, np.newaxis] * normal + cy[:, np.newaxis] * binormal
+
+    # construct the mesh
+    indices = []
+    for i in range(segments):
+        for j in range(tube_points):
+            ip = (i + 1) % segments if closed else i + 1
+            jp = (j + 1) % tube_points
+
+            index_a = i * tube_points + j
+            index_b = ip * tube_points + j
+            index_c = ip * tube_points + jp
+            index_d = i * tube_points + jp
+
+            indices.append([index_a, index_b, index_d])
+            indices.append([index_b, index_c, index_d])
+    triangles = np.array(indices, dtype=np.uint32)
+
+    centers = grid.reshape(grid.shape[0] * grid.shape[1], 3)
+    offsets = grid_off.reshape(grid_off.shape[0] * grid_off.shape[1], 3)
 
     return centers, offsets, triangles
