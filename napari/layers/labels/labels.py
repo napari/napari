@@ -169,6 +169,10 @@ class Labels(Layer):
         self._status = self.mode
         self._help = 'enter paint or fill mode to edit labels'
 
+        self._block_saving = False
+        self._undo_history = []
+        self._redo_history = []
+
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
@@ -229,7 +233,7 @@ class Labels(Layer):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self._set_view_slice()
+        self._set_view_slice_keep_history()
 
     @property
     def num_colors(self):
@@ -243,7 +247,7 @@ class Labels(Layer):
             self._colormap_name,
             colormaps.label_colormap(num_colors),
         )
-        self._set_view_slice()
+        self._set_view_slice_keep_history()
 
     @property
     def selected_label(self):
@@ -301,16 +305,16 @@ class Labels(Layer):
         elif mode == Mode.PICKER:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, ' 'click to pick a label'
+            self.help = 'hold <space> to pan/zoom, click to pick a label'
         elif mode == Mode.PAINT:
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, ' 'drag to paint a label'
+            self.help = 'hold <space> to pan/zoom, drag to paint a label'
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, ' 'click to fill a label'
+            self.help = 'hold <space> to pan/zoom, click to fill a label'
         else:
             raise ValueError("Mode not recongnized")
 
@@ -318,7 +322,7 @@ class Labels(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
-        self._set_view_slice()
+        self._set_view_slice_keep_history()
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
@@ -344,7 +348,7 @@ class Labels(Layer):
     def new_colormap(self):
         self._seed = np.random.rand()
         self._selected_color = self.get_color(self.selected_label)
-        self._set_view_slice()
+        self._set_view_slice_keep_history()
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
@@ -355,8 +359,8 @@ class Labels(Layer):
             col = self.colormap[1].map(val)[0]
         return col
 
-    def _set_view_slice(self):
-        """Sets the view given the indices to slice with."""
+    def _set_view_slice_keep_history(self):
+        """Set the view without resetting the undo history."""
         self._data_labels = np.asarray(self.data[self.dims.indices]).transpose(
             self.dims.displayed_order
         )
@@ -365,6 +369,33 @@ class Labels(Layer):
         self._update_thumbnail()
         self._update_coordinates()
         self.events.set_data()
+
+    def _set_view_slice(self):
+        """Sets the view given the indices to slice with."""
+        self._set_view_slice_keep_history()
+        self._undo_history = []
+        self._redo_history = []
+
+    def _save_history(self):
+        self._redo_history = []
+        if not self._block_saving:
+            self._undo_history.append(self.data[self.dims.indices].copy())
+
+    def _load_history(self, before, after):
+        if len(before) == 0:
+            return
+
+        prev = before.pop()
+        after.append(self.data[self.dims.indices].copy())
+        self.data[self.dims.indices] = prev
+
+        self._set_view_slice_keep_history()
+
+    def undo(self):
+        self._load_history(self._undo_history, self._redo_history)
+
+    def redo(self):
+        self._load_history(self._redo_history, self._undo_history)
 
     def fill(self, coord, old_label, new_label):
         """Replace an existing label with a new label, either just at the
@@ -382,6 +413,8 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
+        self._save_history()
+
         int_coord = np.round(coord).astype(int)
 
         if self.n_dimensional or self.ndim == 2:
@@ -408,9 +441,9 @@ class Labels(Layer):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            self.data[tuple(self.indices)] = labels
+            self.data[tuple(self.dims.indices)] = labels
 
-        self._set_view_slice()
+        self._set_view_slice_keep_history()
 
     def paint(self, coord, new_label):
         """Paint over existing labels with a new label, using the selected
@@ -424,6 +457,8 @@ class Labels(Layer):
         new_label : int
             Value of the new label to be filled in.
         """
+        self._save_history()
+
         if self.n_dimensional or self.ndim == 2:
             slice_coord = tuple(
                 [
@@ -466,7 +501,7 @@ class Labels(Layer):
         # update the labels image
         self.data[slice_coord] = new_label
 
-        self._set_view_slice()
+        self._set_view_slice_keep_history()
 
     def get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
@@ -553,6 +588,8 @@ class Labels(Layer):
             self.selected_label = self._value
         elif self._mode == Mode.PAINT:
             # Start painting with new label
+            self._save_history()
+            self._block_saving = True
             self.paint(self.coordinates, self.selected_label)
             self._last_cursor_coord = copy(self.coordinates)
         elif self._mode == Mode.FILL:
@@ -580,7 +617,7 @@ class Labels(Layer):
             with self.events.set_data.blocker():
                 for c in interp_coord:
                     self.paint(c, new_label)
-            self._set_view_slice()
+            self._set_view_slice_keep_history()
             self._last_cursor_coord = copy(self.coordinates)
 
     def on_mouse_release(self, event):
@@ -592,3 +629,4 @@ class Labels(Layer):
             Vispy event
         """
         self._last_cursor_coord = None
+        self._block_saving = False

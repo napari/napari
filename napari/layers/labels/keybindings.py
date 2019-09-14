@@ -53,3 +53,7 @@ def decrease_label_id(layer):
 @Labels.bind_key('I')
 def increase_label_id(layer):
     layer.selected_label += 1
+
+
+Labels.bind_key('Control-Z', Labels.undo)
+Labels.bind_key('Control-Shift-Z', Labels.redo)
