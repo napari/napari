@@ -16,8 +16,8 @@ class VispyVectorsLayer(VispyBaseLayer):
             len(self.layer._view_vertices) == 0
             or len(self.layer._view_faces) == 0
         ):
-            vertices = np.zeros(3, 2)
-            faces = [0, 1, 2]
+            vertices = np.zeros((3, 2))
+            faces = np.array([[0, 1, 2]])
         else:
             vertices = self.layer._view_vertices[:, ::-1] + 0.5
             faces = self.layer._view_faces

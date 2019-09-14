@@ -582,21 +582,21 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
         Px3 array of the indices of the vertices that will form the
         triangles of the triangulation
     """
-    if path.shape[-1] == 2:
-        # Remove any equal adjacent points
-        if len(path) > 2:
-            clean_path = np.array(
-                [
-                    p
-                    for i, p in enumerate(path)
-                    if i == 0 or not np.all(p == path[i - 1])
-                ]
-            )
-            if clean_path.shape[0] == 1:
-                clean_path = np.concatenate((clean_path, clean_path), axis=0)
-        else:
-            clean_path = path
+    # Remove any equal adjacent points
+    if len(path) > 2:
+        clean_path = np.array(
+            [
+                p
+                for i, p in enumerate(path)
+                if i == 0 or not np.all(p == path[i - 1])
+            ]
+        )
+        if clean_path.shape[0] == 1:
+            clean_path = np.concatenate((clean_path, clean_path), axis=0)
+    else:
+        clean_path = path
 
+    if clean_path.shape[-1] == 2:
         if closed:
             if np.all(clean_path[0] == clean_path[-1]) and len(clean_path) > 2:
                 clean_path = clean_path[:-1]
@@ -738,8 +738,7 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
         offsets = np.array(vertex_offsets)
         triangles = np.array(triangles)
     else:
-        print("foo")
-        centers, offsets, triangles = generate_vector_meshes(path)
+        centers, offsets, triangles = generate_3D_path_meshes(clean_path)
 
     return centers, offsets, triangles
 
@@ -874,25 +873,29 @@ def points_in_poly(points, vertices):
     return inside
 
 
-def generate_vector_meshes_2D(vectors, p=(0, 0, 1)):
-    """Generates list of mesh vertices and triangles from a list of vectors
+def generate_3D_path_meshes_2D(path, p=(0, 0, 1)):
+    """Generates list of mesh vertices and triangles from a path
 
     Parameters
     ----------
-    vectors : (N, D) array
-        A list of N vectors with start point and projections of the vector
-        in D dimensions, where D is 2 or 3.
+    path : (N, D) array
+        Vertices specifying the path where D is 2 or 3.
     p : 3-tuple, optional
         orthogonal vector for segment calculation in 3D.
 
     Returns
     ----------
-    centers, offsets, triangles
+    centers : (4N-4, D) array
+        Vertices of all triangles for the lines
+    offsets : (4N-4, D) array
+        offsets of all triangles for the lines
+    triangles : (2N-2, 3) array
+        Vertex indices that form the mesh triangles
     """
-    ndim = vectors.shape[2]
-    vectors = np.reshape(copy(vectors), (-1, ndim))
-    centers = np.repeat(vectors, 2, axis=0)
-    offsets = segment_normal(vectors[::2, :], vectors[1::2, :], p=p)
+    ndim = path.shape[1]
+
+    centers = np.repeat(path, 4, axis=0)[2:-2]
+    offsets = segment_normal(path[:-1, :], path[1:, :], p=p)
     offsets = np.repeat(offsets, 4, axis=0)
     signs = np.ones((len(offsets), ndim))
     signs[::2] = -1
@@ -902,39 +905,36 @@ def generate_vector_meshes_2D(vectors, p=(0, 0, 1)):
             [2 * i, 2 * i + 1, 2 * i + 2]
             if i % 2 == 0
             else [2 * i - 1, 2 * i, 2 * i + 1]
-            for i in range(len(vectors))
+            for i in range(2 * len(path) - 2)
         ]
     ).astype(np.uint32)
 
     return centers, offsets, triangles
 
 
-def generate_vector_meshes(vectors):
-    """Generates list of mesh vertices and triangles from a list of vectors
+def generate_3D_path_meshes(path):
+    """Generates list of mesh vertices and triangles from a path
 
     Parameters
     ----------
-    vectors : (N, D) array
-        A list of N vectors with start point and projections of the vector
-        in D dimensions, where D is 2 or 3.
-    width : float
-        width of the line to be drawn
-    length : float
-        length multiplier of the line to be drawn
+    path : (N, D) array
+        Vertices specifying the path where D is 2 or 3.
 
     Returns
     ----------
-    vertices : (4N, D) array
+    centers : (4N-4, D) array
         Vertices of all triangles for the lines
-    triangles : (2N, 3) array
+    offsets : (4N-4, D) array
+        offsets of all triangles for the lines
+    triangles : (2N-2, 3) array
         Vertex indices that form the mesh triangles
     """
-    ndim = vectors.shape[2]
+    ndim = path.shape[1]
     if ndim == 2:
-        centers, offsets, triangles = generate_vector_meshes_2D(vectors)
+        centers, offsets, triangles = generate_3D_path_meshes_2D(path)
     else:
-        c_a, o_a, t_a = generate_vector_meshes_2D(vectors, p=(0, 0, 1))
-        c_b, o_b, t_b = generate_vector_meshes_2D(vectors, p=(1, 0, 0))
+        c_a, o_a, t_a = generate_3D_path_meshes_2D(path, p=(0, 0, 1))
+        c_b, o_b, t_b = generate_3D_path_meshes_2D(path, p=(1, 0, 0))
         centers = np.concatenate([c_a, c_b], axis=0)
         triangles = np.concatenate([t_a, len(c_a) + t_b], axis=0)
         offsets = np.concatenate([o_a, o_b], axis=0)

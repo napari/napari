@@ -35,6 +35,8 @@ class Shape(ABC):
         ontop of others.
     dims_order : (D,) list
         Order that the dimensions are to be rendered in.
+    ndisplay : int
+        Number of displayed dimensions.
 
     Attributes
     ----------
@@ -119,13 +121,13 @@ class Shape(ABC):
     ):
 
         self._dims_order = dims_order or list(range(2))
-        self.ndisplay = ndisplay
+        self._ndisplay = ndisplay
         self.slice_key = None
 
-        self._face_vertices = np.empty((0, 2))
+        self._face_vertices = np.empty((0, self.ndisplay))
         self._face_triangles = np.empty((0, 3), dtype=np.uint32)
-        self._edge_vertices = np.empty((0, 2))
-        self._edge_offsets = np.empty((0, 2))
+        self._edge_vertices = np.empty((0, self.ndisplay))
+        self._edge_offsets = np.empty((0, self.ndisplay))
         self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
         self._edge_color_name = 'black'
@@ -155,6 +157,18 @@ class Shape(ABC):
     @abstractmethod
     def _update_displayed_data(self):
         raise NotImplementedError()
+
+    @property
+    def ndisplay(self):
+        """int: Number of displayed dimensions."""
+        return self._ndisplay
+
+    @ndisplay.setter
+    def ndisplay(self, ndisplay):
+        if self.ndisplay == ndisplay:
+            return
+        self._ndisplay = ndisplay
+        self._update_displayed_data()
 
     @property
     def dims_order(self):
@@ -289,6 +303,10 @@ class Shape(ABC):
             self._edge_vertices = centers
             self._edge_offsets = offsets
             self._edge_triangles = triangles
+        else:
+            self._edge_vertices = np.empty((0, self.ndisplay))
+            self._edge_offsets = np.empty((0, self.ndisplay))
+
         if face:
             clean_data = np.array(
                 [
@@ -302,6 +320,8 @@ class Shape(ABC):
                 if len(triangles) > 0:
                     self._face_vertices = vertices
                     self._face_triangles = triangles
+        else:
+            self._face_vertices = np.empty((0, self.ndisplay))
 
     def transform(self, transform):
         """Performs a linear transform on the shape
@@ -458,7 +478,6 @@ class Shape(ABC):
         else:
             data = self.data_displayed
 
-        print('asdf', data.shape, len(shape_plane), len(offset))
         data = data[:, -len(shape_plane) :]
 
         if self._filled:

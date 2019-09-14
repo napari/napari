@@ -32,18 +32,24 @@ class VispyShapesLayer(VispyBaseLayer):
         if vertices is not None:
             vertices = vertices + 0.5
 
-        if len(faces) == 0:
-            self.node._subvisuals[3].set_data(vertices=None, faces=None)
-        else:
-            self.node._subvisuals[3].set_data(
-                vertices=vertices[:, ::-1], faces=faces, face_colors=colors
-            )
+        if len(vertices) == 0 or len(faces) == 0:
+            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            faces = np.array([[0, 1, 2]])
+            colors = np.array([[0, 0, 0, 0]])
+
+        self.node._subvisuals[3].set_data(
+            vertices=vertices[:, ::-1], faces=faces, face_colors=colors
+        )
         self.node.update()
 
     def _on_highlight_change(self):
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
-        if vertices is not None:
+
+        if vertices is None or len(vertices) == 0 or len(faces) == 0:
+            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            faces = np.array([[0, 1, 2]])
+        else:
             vertices = vertices + 0.5
 
         self.node._subvisuals[2].set_data(
@@ -60,11 +66,16 @@ class VispyShapesLayer(VispyBaseLayer):
             width,
         ) = self.layer._compute_vertices_and_box()
 
-        if vertices is not None:
+        if vertices is None or len(vertices) == 0:
+            vertices = np.zeros((1, self.layer.dims.ndisplay))
+            size = 0
+        else:
             vertices = vertices + 0.5
+            size = self.layer._vertex_size
+
         self.node._subvisuals[0].set_data(
             vertices,
-            size=self.layer._vertex_size,
+            size=size,
             face_color=face_color,
             edge_color=edge_color,
             edge_width=1.5,
@@ -72,8 +83,12 @@ class VispyShapesLayer(VispyBaseLayer):
             scaling=False,
         )
 
-        if pos is not None:
+        if pos is None or len(pos) == 0:
+            pos = np.zeros((1, self.layer.dims.ndisplay))
+            width = 0
+        else:
             pos = pos + 0.5
+
         self.node._subvisuals[1].set_data(
             pos=pos, color=edge_color, width=width
         )

@@ -238,6 +238,7 @@ class Shapes(Layer):
         )
 
         self._display_order_stored = []
+        self._ndisplay_stored = self.dims.ndisplay
         self.dims.clip = False
 
         # The following shape properties are for the new shapes that will
@@ -263,7 +264,7 @@ class Shapes(Layer):
         else:
             self._opacity = 0.7
 
-        self._data_view = ShapeList()
+        self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
         self._data_slice_keys = np.empty(
             (0, 2, len(self.dims.not_displayed)), dtype=int
         )
@@ -655,16 +656,23 @@ class Shapes(Layer):
                     opacity=o,
                     z_index=z,
                     dims_order=self.dims.order,
+                    ndisplay=self.dims.ndisplay,
                 )
 
                 # Add shape
                 self._data_view.add(shape)
 
         self._display_order_stored = copy(self.dims.order)
+        self._ndisplay_stored = copy(self.dims.ndisplay)
         self._update_dims()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
+        if not self.dims.ndisplay == self._ndisplay_stored:
+            self.selected_data = []
+            self._data_view.ndisplay = self.dims.ndisplay
+            self._ndisplay_stored = copy(self.dims.ndisplay)
+            self._clipboard = {}
 
         if not self.dims.order == self._display_order_stored:
             self.selected_data = []

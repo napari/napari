@@ -12,6 +12,8 @@ class ShapeList:
     ----------
     data : list
         List of Shape objects
+    ndisplay : int
+        Number of displayed dimensions.
 
     Attributes
     ----------
@@ -19,6 +21,8 @@ class ShapeList:
         Shape objects.
     data : (N, ) list of (M, D) array
         Data arrays for each shape.
+    ndisplay : int
+        Number of displayed dimensions.
     slice_keys : (N, 2, P) array
         Array of slice keys for each shape. Each slice key has the min and max
         values of the P non-displayed dimensions, useful for slicing
@@ -55,19 +59,20 @@ class ShapeList:
         be rendered.
     """
 
-    def __init__(self, data=[]):
+    def __init__(self, data=[], ndisplay=2):
 
+        self._ndisplay = ndisplay
         self.shapes = []
         self._displayed = []
         self._slice_key = []
         self.displayed_vertices = []
         self.displayed_index = []
-        self._vertices = np.empty((0, 2))
+        self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
         self._z_order = np.empty((0), dtype=int)
 
-        self._mesh = Mesh()
+        self._mesh = Mesh(ndisplay=self.ndisplay)
 
         for d in data:
             self.add(d)
@@ -76,6 +81,27 @@ class ShapeList:
     def data(self):
         """list of (M, D) array: data arrays for each shape."""
         return [s.data for s in self.shapes]
+
+    @property
+    def ndisplay(self):
+        """int: Number of displayed dimensions."""
+        return self._ndisplay
+
+    @ndisplay.setter
+    def ndisplay(self, ndisplay):
+        if self.ndisplay == ndisplay:
+            return
+
+        self._ndisplay = ndisplay
+        self._mesh.ndisplay = self.ndisplay
+        self._vertices = np.empty((0, self.ndisplay))
+        self._index = np.empty((0), dtype=int)
+        for index in range(len(self.shapes)):
+            shape = self.shapes[index]
+            shape.ndisplay = self.ndisplay
+            self.remove(index, renumber=False)
+            self.add(shape, shape_index=index)
+        self._update_z_order()
 
     @property
     def slice_keys(self):
@@ -173,10 +199,12 @@ class ShapeList:
             raise ValueError('shape must be subclass of Shape')
 
         if shape_index is None:
+            z_refresh = True
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             self._z_index = np.append(self._z_index, shape.z_index)
         else:
+            z_refresh = False
             self.shapes[shape_index] = shape
             self._z_index[shape_index] = shape.z_index
 
@@ -252,14 +280,15 @@ class ShapeList:
             self._mesh.triangles_colors, color_array, axis=0
         )
 
-        # Set z_order
-        self._update_z_order()
+        if z_refresh:
+            # Set z_order
+            self._update_z_order()
 
     def remove_all(self):
         """Removes all shapes
         """
         self.shapes = []
-        self._vertices = np.empty((0, 2))
+        self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
         self._z_index = np.empty((0), dtype=int)
         self._z_order = np.empty((0), dtype=int)
@@ -409,6 +438,7 @@ class ShapeList:
 
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
+        self._update_z_order()
 
     def update_edge_width(self, index, edge_width):
         """Updates the edge width of a single shape located at index.
@@ -495,6 +525,7 @@ class ShapeList:
                 shape.dims_order = dims_order
                 self.remove(index, renumber=False)
                 self.add(shape, shape_index=index)
+        self._update_z_order()
 
     def update_z_index(self, index, z_index):
         """Updates the z order of a single shape located at index.
@@ -540,6 +571,7 @@ class ShapeList:
         shape = self.shapes[index]
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
+        self._update_z_order()
 
     def rotate(self, index, angle, center=None):
         """Perfroms a rotation on a single shape located at index
@@ -586,6 +618,7 @@ class ShapeList:
         shape = self.shapes[index]
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
+        self._update_z_order()
 
     def outline(self, indices):
         """Finds outlines of shapes listed in indices
