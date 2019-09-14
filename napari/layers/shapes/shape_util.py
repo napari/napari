@@ -630,7 +630,10 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
             full_normals = np.concatenate(([normals[0]], normals), axis=0)
 
         miters = np.array(
-            [full_normals[i : i + 2].mean(axis=0) for i in range(len(full_path))]
+            [
+                full_normals[i : i + 2].mean(axis=0)
+                for i in range(len(full_path))
+            ]
         )
         miters = np.array(
             [
@@ -698,7 +701,9 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
                 offset = 0.5 * offset / np.linalg.norm(offset)
                 flip = np.sign(np.dot(offset, full_normals[i]))
                 vertex_offsets.append(offset)
-                vertex_offsets.append(-flip * miters[i] / miter_lengths[i] * limit)
+                vertex_offsets.append(
+                    -flip * miters[i] / miter_lengths[i] * limit
+                )
                 vertex_offsets.append(-offset)
                 central_path.append(full_path[i])
                 central_path.append(full_path[i])

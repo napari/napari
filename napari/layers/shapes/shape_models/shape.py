@@ -458,7 +458,9 @@ class Shape(ABC):
         else:
             data = self.data_displayed
 
-        import pdb; pdb.set_trace()
+        print('asdf', data.shape, len(shape_plane), len(offset))
+        data = data[:, -len(shape_plane) :]
+
         if self._filled:
             mask_p = poly_to_mask(shape_plane, (data - offset) * zoom_factor)
         else:
