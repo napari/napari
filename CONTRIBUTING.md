@@ -32,29 +32,16 @@ Make the development version available globally:
 $ pip install -e .
 ```
 
-Install the `black` formatter hook with:
+We use [`black`](https://github.com/psf/black) to format our code.
+Please enable autoformatting for the repository with
+[`pre-commit`](https://pre-commit.com):
 ```sh
 pre-commit install
 ```
 
-With help of pre-commit, your future commits to this project will be reformatted with our black configuration,
-which includes settings `skip-string-normalization = true` and `max-line-length = 79`.
-On the command-line, our configuration would be equivalent to `black -S -l 79 -t py36 --exclude vendored\|_vispy .`.
-To learn more, see the [black README](https://github.com/python/black).
-
-## Building the dev-docs
-
-Go to documentation source
-```sh
-$ cd docs/source
-```
-
-Build the docs with help of given Makefile
-```sh
-$ make html
-```
-
-Then you can find the built docs in `docs/source/_build/html`
+Upon committing, your code will be formatted according to our [`black` configuration](pyproject.toml),
+which includes the settings `skip-string-normalization = true` and `max-line-length = 79`.
+To learn more, see [`black`'s documentation](https://black.readthedocs.io/en/stable/).
 
 ## Building the icons
 
@@ -104,13 +91,6 @@ You can view them with:
 $ git status
 ```
 
-If you are changing anything with files and folder structure,
-remember to update doctree
-```sh
-$ cd docs
-$ sphinx-apidoc -f -P -o source ../napari
-```
-
 Add and commit your changed files:
 ```sh
 $ git add my-file-or-directory
@@ -133,12 +113,12 @@ $ git checkout master
 
 Fetch changes and update `master`:
 ```sh
-$ git pull upstream/master
+$ git pull upstream master --tags
 ```
 
 This is shorthand for:
 ```sh
-$ git fetch upstream master
+$ git fetch upstream master --tags
 $ git merge upstream/master
 ```
 
@@ -156,6 +136,18 @@ $ git push -u origin your-branch-name
 ```
 
 You can then make a [pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `master` branch.
+
+## Building the docs
+
+From the project root:
+```sh
+$ make docs
+```
+
+The docs will be built at `docs/build/html`.
+
+Most web browsers will allow you to preview HTML pages.
+Try entering `file:///absolute/path/to/napari/docs/build/html/index.html` in your address bar.
 
 ## Questions, comments, and feedback
 

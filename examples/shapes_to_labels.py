@@ -7,16 +7,15 @@ your shapes.
 import numpy as np
 from skimage import data
 import napari
-from napari.util import app_context
 from vispy.color import Colormap
 
-with app_context():
+
+with napari.gui_qt():
     # create the viewer and window
     viewer = napari.Viewer()
 
     # add the image
     img_layer = viewer.add_image(data.camera(), name='photographer')
-    img_layer.colormap = 'gray'
 
     # create a list of polygons
     polygons = [
@@ -72,14 +71,14 @@ with app_context():
     )
 
     # change some properties of the layer
-    layer.selected_shapes = list(range(layer.nshapes))
+    layer.selected_data = list(range(layer.nshapes))
     layer.edge_width = 5
     layer.opacity = 0.75
-    layer.selected_shapes = []
+    layer.selected_data = []
 
     # add an ellipse to the layer
     ellipse = np.array([[59, 222], [110, 289], [170, 243], [119, 176]])
-    layer.add_shapes(
+    layer.add(
         ellipse,
         shape_type='ellipse',
         edge_width=5,
@@ -87,7 +86,6 @@ with app_context():
         face_color='purple',
         opacity=0.75,
     )
-    layer.refresh()
 
     masks = layer.to_masks([512, 512])
     masks_layer = viewer.add_image(masks.astype(float), name='masks')

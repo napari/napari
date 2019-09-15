@@ -3,6 +3,6 @@ repos:
     rev: stable
     hooks:
     - id: black
-      language_version: python3
-      require_serial: true
-      exclude: 'vendored|_vispy'
+      # force black to run on whole repo & keep settings from pyproject.toml
+      pass_filenames: false
+      args: [.]

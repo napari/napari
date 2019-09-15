@@ -18,6 +18,7 @@ insert = """<style type="text/css">
 
 icons = [
     'add',
+    'console',
     'delete',
     'delete_shape',
     'direct',
@@ -40,7 +41,6 @@ icons = [
     'properties_expand',
     'rectangle',
     'select',
-    'select_point',
     'vertex_insert',
     'vertex_remove',
     'visibility',

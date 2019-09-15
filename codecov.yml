@@ -1,0 +1,3 @@
+ignore:
+  - napari/_version.py
+  - napari/resources

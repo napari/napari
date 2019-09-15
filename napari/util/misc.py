@@ -26,24 +26,14 @@ def ensure_iterable(arg, color=False):
         return itertools.repeat(arg)
 
 
-def has_clims(arg):
-    """Check if a layer has clims.
-    """
-    if hasattr(arg, '_qt_controls'):
-        if hasattr(arg._qt_controls, 'climSlider'):
-            return True
-        else:
-            return False
-    else:
-        return False
-
-
 def is_iterable(arg, color=False):
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable.
     """
-    if type(arg) is str:
+    if arg is None:
+        return False
+    elif type(arg) is str:
         return False
     elif np.isscalar(arg):
         return False
@@ -56,58 +46,58 @@ def is_iterable(arg, color=False):
         return True
 
 
-def is_multichannel(meta):
-    """Determines if an image is RGB after checking its metadata.
+def is_rgb(shape):
+    """If last dim is 3 or 4 assume image is rgb.
     """
-    try:
-        return meta['itype'] in ('rgb', 'rgba', 'multi', 'multichannel')
-    except KeyError:
-        return False
-
-
-def guess_multichannel(shape):
-    """If last dim is 3 or 4 assume image is multichannel.
-    """
+    ndim = len(shape)
     last_dim = shape[-1]
 
-    if last_dim in (3, 4):
+    if ndim > 2 and last_dim < 5:
         return True
     else:
         return False
 
 
-def guess_metadata(image, meta, multichannel, kwargs):
-    """Guesses an image's metadata.
+def increment_unnamed_colormap(name, names):
+    """Increment name for unnamed colormap.
 
     Parameters
     ----------
-    image : np.ndarray
-        Image data.
-    meta : dict or None
-        Image metadata.
-    multichannel : bool or None
-        Whether the image is multichannel. Guesses if None.
-    kwargs : dict
-        Parameters that will be translated to metadata.
+    name : str
+        Name of colormap to be incremented.
+    names : str
+        Names of existing colormaps.
 
     Returns
     -------
-    meta : dict
-        Guessed image metadata.
+    name : str
+        Name of colormap after incrementing.
     """
-    if isinstance(meta, dict):
-        meta = dict(meta, **kwargs)
+    if name == '[unnamed colormap]':
+        past_names = [n for n in names if n.startswith('[unnamed colormap')]
+        name = f'[unnamed colormap {len(past_names)}]'
+    return name
 
-    if meta is None:
-        meta = kwargs
 
-    if multichannel is None:
-        multichannel = guess_multichannel(image.shape)
+def calc_data_range(data):
+    """Calculate range of data values. If all values are equal return [0, 1].
 
-    if multichannel:
-        meta['itype'] = 'multi'
+    Parameters
+    -------
+    data : array
+        Data to calculate range of values over.
 
-    return meta
+    Returns
+    -------
+    values : list of float
+        Range of values.
+    """
+    min = data.min()
+    max = data.max()
+    if min == max:
+        min = 0
+        max = 1
+    return [float(min), float(max)]
 
 
 def compute_max_shape(shapes, max_dims=None):
@@ -157,7 +147,7 @@ def formatdoc(obj):
         del frame
 
 
-def segment_normal(a, b):
+def segment_normal(a, b, p=(0, 0, 1)):
     """Determines the unit normal of the vector from a to b.
 
     Parameters
@@ -166,6 +156,8 @@ def segment_normal(a, b):
         Length 2 array of first point or Nx2 array of points
     b : np.ndarray
         Length 2 array of second point or Nx2 array of points
+    p : 3-tuple, optional
+        orthogonal vector for segment calculation in 3D.
 
     Returns
     -------
@@ -176,12 +168,19 @@ def segment_normal(a, b):
     d = b - a
 
     if d.ndim == 1:
-        normal = np.array([d[1], -d[0]])
+        if len(d) == 2:
+            normal = np.array([d[1], -d[0]])
+        else:
+            normal = np.cross(d, p)
         norm = np.linalg.norm(normal)
         if norm == 0:
             norm = 1
     else:
-        normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
+        if d.shape[1] == 2:
+            normal = np.stack([d[:, 1], -d[:, 0]], axis=0).transpose(1, 0)
+        else:
+            normal = np.cross(d, p)
+
         norm = np.linalg.norm(normal, axis=1, keepdims=True)
         ind = norm == 0
         norm[ind] = 1
@@ -216,6 +215,39 @@ def segment_normal_vector(a, b):
     return unit_norm
 
 
+def interpolate_coordinates(old_coord, new_coord, brush_size):
+    """Interpolates coordinates depending on brush size.
+
+    Useful for ensuring painting is continuous in labels layer.
+
+    Parameters
+    ----------
+    old_coord : np.ndarray, 1x2
+        Last position of cursor.
+    new_coord : np.ndarray, 1x2
+        Current position of cursor.
+    brush_size : float
+        Size of brush, which determines spacing of interploation.
+
+    Returns
+    ----------
+    coords : np.array, Nx2
+        List of coordinates to ensure painting is continous
+    """
+    num_step = round(
+        max(abs(np.array(new_coord) - np.array(old_coord))) / brush_size * 4
+    )
+    coords = [
+        np.linspace(old_coord[i], new_coord[i], num=num_step + 1)
+        for i in range(len(new_coord))
+    ]
+    coords = np.stack(coords).T
+    if len(coords) > 1:
+        coords = coords[1:]
+
+    return coords
+
+
 class StringEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value
@@ -233,3 +265,89 @@ class StringEnum(Enum):
         string of the Enum name
         """
         return self.value
+
+
+camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
+
+
+def camel_to_snake(name):
+    # https://gist.github.com/jaytaylor/3660565
+    return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
+
+
+class CallDefault(inspect.Parameter):
+    def __str__(self):
+        """wrap defaults"""
+        kind = self.kind
+        formatted = self._name
+
+        # Fill in defaults
+        if (
+            self._default is not inspect._empty
+            or kind == inspect._KEYWORD_ONLY
+        ):
+            formatted = '{}={}'.format(formatted, formatted)
+
+        if kind == inspect._VAR_POSITIONAL:
+            formatted = '*' + formatted
+        elif kind == inspect._VAR_KEYWORD:
+            formatted = '**' + formatted
+
+        return formatted
+
+
+class CallSignature(inspect.Signature):
+    _parameter_cls = CallDefault
+
+    def __str__(self):
+        """do not render separators
+
+        commented code is what was taken out from
+        the copy/pasted inspect module code :)
+        """
+        result = []
+        # render_pos_only_separator = False
+        # render_kw_only_separator = True
+        for param in self.parameters.values():
+            formatted = str(param)
+
+            # kind = param.kind
+
+            # if kind == inspect._POSITIONAL_ONLY:
+            #     render_pos_only_separator = True
+            # elif render_pos_only_separator:
+            #     # It's not a positional-only parameter, and the flag
+            #     # is set to 'True' (there were pos-only params before.)
+            #     result.append('/')
+            #     render_pos_only_separator = False
+
+            # if kind == inspect._VAR_POSITIONAL:
+            #     # OK, we have an '*args'-like parameter, so we won't need
+            #     # a '*' to separate keyword-only arguments
+            #     render_kw_only_separator = False
+            # elif kind == inspect._KEYWORD_ONLY and render_kw_only_separator:
+            #     # We have a keyword-only parameter to render and we haven't
+            #     # rendered an '*args'-like parameter before, so add a '*'
+            #     # separator to the parameters list ("foo(arg1, *, arg2)" case)
+            #     result.append('*')
+            #     # This condition should be only triggered once, so
+            #     # reset the flag
+            #     render_kw_only_separator = False
+
+            result.append(formatted)
+
+        # if render_pos_only_separator:
+        #     # There were only positional-only parameters, hence the
+        #     # flag was not reset to 'False'
+        #     result.append('/')
+
+        rendered = '({})'.format(', '.join(result))
+
+        if self.return_annotation is not inspect._empty:
+            anno = inspect.formatannotation(self.return_annotation)
+            rendered += ' -> {}'.format(anno)
+
+        return rendered
+
+
+callsignature = CallSignature.from_callable

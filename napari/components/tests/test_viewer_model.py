@@ -1,0 +1,228 @@
+import numpy as np
+from napari.components import ViewerModel
+
+
+def test_viewer_model():
+    """Test instantiating viewer model."""
+    viewer = ViewerModel()
+    assert viewer.title == 'napari'
+    assert len(viewer.layers) == 0
+    assert viewer.dims.ndim == 2
+
+    # Create viewer model with custom title
+    viewer = ViewerModel(title='testing')
+    assert viewer.title == 'testing'
+
+
+def test_add_image():
+    """Test adding image."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_add_volume():
+    """Test adding volume."""
+    viewer = ViewerModel(ndisplay=3)
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
+
+
+def test_add_pyramid():
+    """Test adding image pyramid."""
+    viewer = ViewerModel()
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    viewer.add_pyramid(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_add_labels():
+    """Test adding labels image."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    viewer.add_labels(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_add_points():
+    """Test adding points."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 2))
+    viewer.add_points(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_add_vectors():
+    """Test adding vectors."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 2, 2))
+    viewer.add_vectors(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_add_shapes():
+    """Test adding vectors."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = 20 * np.random.random((10, 4, 2))
+    viewer.add_shapes(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+
+def test_mix_dims():
+    """Test adding images of mixed dimensionality."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 2
+
+    data = np.random.random((6, 10, 15))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 2
+    assert np.all(viewer.layers[1].data == data)
+    assert viewer.dims.ndim == 3
+
+
+def test_new_labels():
+    """Test adding new labels layer."""
+    # Add labels to empty viewer
+    viewer = ViewerModel()
+    viewer._new_labels()
+    assert len(viewer.layers) == 1
+    assert np.max(viewer.layers[0].data) == 0
+    assert viewer.dims.ndim == 2
+
+    # Add labels with image already present
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert np.max(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
+
+
+def test_new_points():
+    """Test adding new points layer."""
+    # Add labels to empty viewer
+    viewer = ViewerModel()
+    viewer._new_points()
+    assert len(viewer.layers) == 1
+    assert len(viewer.layers[0].data) == 0
+    assert viewer.dims.ndim == 2
+
+    # Add points with image already present
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    viewer._new_points()
+    assert len(viewer.layers) == 2
+    assert len(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
+
+
+def test_new_shapes():
+    """Test adding new shapes layer."""
+    # Add labels to empty viewer
+    viewer = ViewerModel()
+    viewer._new_shapes()
+    assert len(viewer.layers) == 1
+    assert len(viewer.layers[0].data) == 0
+    assert viewer.dims.ndim == 2
+
+    # Add points with image already present
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    viewer._new_shapes()
+    assert len(viewer.layers) == 2
+    assert len(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
+
+
+def test_swappable_dims():
+    """Test swapping dims after adding layers."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    image_data = np.random.random((7, 12, 10, 15))
+    viewer.add_image(image_data)
+    assert np.all(viewer.layers['Image']._data_view == image_data[0, 0, :, :])
+
+    points_data = np.random.randint(6, size=(10, 4))
+    viewer.add_points(points_data)
+
+    vectors_data = np.random.randint(6, size=(10, 2, 4))
+    viewer.add_vectors(vectors_data)
+
+    labels_data = np.random.randint(20, size=(7, 12, 10, 15))
+    viewer.add_labels(labels_data)
+    assert np.all(
+        viewer.layers['Labels']._data_labels == labels_data[0, 0, :, :]
+    )
+
+    # Swap dims
+    viewer.dims.order = [0, 2, 1, 3]
+    assert viewer.dims.order == [0, 2, 1, 3]
+    assert np.all(viewer.layers['Image']._data_view == image_data[0, :, 0, :])
+    assert np.all(
+        viewer.layers['Labels']._data_labels == labels_data[0, :, 0, :]
+    )
+
+
+def test_svg():
+    "Test generating svg"
+    viewer = ViewerModel()
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+
+    # Add labels
+    data = np.random.randint(20, size=(10, 15))
+    viewer.add_labels(data)
+
+    # Add points
+    data = 20 * np.random.random((10, 2))
+    viewer.add_points(data)
+
+    # Add vectors
+    data = 20 * np.random.random((10, 2, 2))
+    viewer.add_vectors(data)
+
+    # Add shapes
+    data = 20 * np.random.random((10, 4, 2))
+    viewer.add_shapes(data)
+
+    # Generate svg
+    svg = viewer.to_svg()
+    assert type(svg) == str

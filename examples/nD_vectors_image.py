@@ -6,35 +6,25 @@ which are vector projections centered on a pixel of the MxNxP grid
 """
 
 import napari
-from napari.util import app_context
-
 import numpy as np
 
-with app_context():
+
+with napari.gui_qt():
     # create the viewer and window
     viewer = napari.Viewer()
 
-    m = 40
-    n = 60
-    p = 80
+    m = 10
+    n = 20
+    p = 40
 
     image = 0.2 * np.random.random((m, n, p)) + 0.5
-    layer = viewer.add_image(image, clim_range=[0, 1], name='background')
-    layer.colormap = 'gray'
+    layer = viewer.add_image(image, contrast_limits=[0, 1], name='background')
 
     # sample vector image-like data
     # n x m grid of slanted lines
     # random data on the open interval (-1, 1)
-    pos = np.zeros(shape=(m, n, p, 3), dtype=np.float32)
-    rand1 = 2 * (np.random.random_sample(n * m * p) - 0.5)
-    rand2 = 2 * (np.random.random_sample(n * m * p) - 0.5)
-
-    # assign projections for each vector
-    pos[:, :, :, 0] = 0
-    pos[:, :, :, 1] = rand1.reshape((m, n, p))
-    pos[:, :, :, 2] = rand2.reshape((m, n, p))
-
+    pos = np.random.uniform(-1, 1, size=(m, n, p, 3))
     print(image.shape, pos.shape)
 
     # add the vectors
-    vect = viewer.add_vectors(pos, width=0.2, length=2.5)
+    vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)

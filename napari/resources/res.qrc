@@ -3,6 +3,7 @@
     <file>icons/cursor/cursor_disabled.png</file>
     <file>icons/cursor/cursor_square.png</file>
     <file>icons/light/add.svg</file>
+    <file>icons/light/console.svg</file>
     <file>icons/light/delete.svg</file>
     <file>icons/light/delete_shape.svg</file>
     <file>icons/light/direct.svg</file>
@@ -25,13 +26,13 @@
     <file>icons/light/properties_expand.svg</file>
     <file>icons/light/rectangle.svg</file>
     <file>icons/light/select.svg</file>
-    <file>icons/light/select_point.svg</file>
     <file>icons/light/vertex_insert.svg</file>
     <file>icons/light/vertex_remove.svg</file>
     <file>icons/light/visibility.svg</file>
     <file>icons/light/visibility_off.svg</file>
     <file>icons/light/zoom.svg</file>
     <file>icons/dark/add.svg</file>
+    <file>icons/dark/console.svg</file>
     <file>icons/dark/delete.svg</file>
     <file>icons/dark/delete_shape.svg</file>
     <file>icons/dark/direct.svg</file>
@@ -55,7 +56,6 @@
     <file>icons/dark/properties_expand.svg</file>
     <file>icons/dark/rectangle.svg</file>
     <file>icons/dark/select.svg</file>
-    <file>icons/dark/select_point.svg</file>
     <file>icons/dark/vertex_insert.svg</file>
     <file>icons/dark/vertex_remove.svg</file>
     <file>icons/dark/visibility.svg</file>
