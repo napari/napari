@@ -306,6 +306,7 @@ class Shape(ABC):
         else:
             self._edge_vertices = np.empty((0, self.ndisplay))
             self._edge_offsets = np.empty((0, self.ndisplay))
+            self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
 
         if face:
             clean_data = np.array(
@@ -315,13 +316,30 @@ class Shape(ABC):
                     if i == 0 or not np.all(p == data[i - 1])
                 ]
             )
-            if not is_collinear(clean_data):
-                vertices, triangles = triangulate_face(clean_data)
+
+            if not is_collinear(clean_data[:, -2:]):
+                if clean_data.shape[1] == 2:
+                    vertices, triangles = triangulate_face(clean_data)
+                elif len(np.unique(clean_data[:, 0])) == 1:
+                    val = np.unique(clean_data[:, 0])
+                    vertices, triangles = triangulate_face(clean_data[:, -2:])
+                    exp = np.expand_dims(np.repeat(val, len(vertices)), axis=1)
+                    vertices = np.concatenate([exp, vertices], axis=1)
+                else:
+                    triangles = []
+                    vertices = []
                 if len(triangles) > 0:
                     self._face_vertices = vertices
                     self._face_triangles = triangles
+                else:
+                    self._face_vertices = np.empty((0, self.ndisplay))
+                    self._face_triangles = np.empty((0, 3), dtype=np.uint32)
+            else:
+                self._face_vertices = np.empty((0, self.ndisplay))
+                self._face_triangles = np.empty((0, 3), dtype=np.uint32)
         else:
             self._face_vertices = np.empty((0, self.ndisplay))
+            self._face_triangles = np.empty((0, 3), dtype=np.uint32)
 
     def transform(self, transform):
         """Performs a linear transform on the shape
