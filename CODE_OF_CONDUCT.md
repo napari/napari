@@ -46,19 +46,18 @@ We know that it is painfully common for internet communication to start at or de
 
 For clearly intentional breaches, report those to the Code of Conduct committee (see below). For possibly unintentional breaches, you may reply to the person and point out this code of conduct (either in public or in private, whatever is most appropriate). If you would prefer not to do that, please feel free to report to the Code of Conduct Committee directly, or ask the Committee for advice, in confidence.
 
-You can report issues to the napari Code of Conduct committee, at `XXXX@XXXX.XXXX` . Currently, the committee consists of:
+You can report issues to the napari Code of Conduct committee, at `napari-conduct@googlegroups.com` . Currently, the committee consists of:
 
-* `XXXXXXXX`
+* `[Juan Nunez-Iglesias](https://github.com/jni) (chair)`
 
-* `XXXXXXXX`
+* `[Nicholas Sofroniew](https://github.com/sofroniewn)`
 
-* `XXXXXXXX`
+* `[Kira Evans](https://github.com/kne42)`
 
 If your report involves any members of the committee, or if they feel they have a conflict of interest in handling it, then they will recuse themselves from considering your report. Alternatively, if for any reason you feel uncomfortable making a report to the committee, then you can also contact:
 
-* `XXXXXXXX` or
+* `[Charlotte Weaver](https://github.com/csweaver)` at charlottesweaver@gmail.com
 
-* `XXXXXXXX`
 
 ## Incident reporting resolution & Code of Conduct enforcement
 *This section summarizes the most important points, more details can be found in [napari Code of Conduct - How to follow up on a report.](https://github.com/napari/napari/blob/master/REPORT_HANDLING_MANUAL.md)*
