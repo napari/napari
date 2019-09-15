@@ -72,6 +72,16 @@ QSplitter::handle:vertical {
     height: 2px;
 }
 
+QtDivider {
+  spacing: 0px;
+  padding: 0px;
+  margin: 0px;
+  min-width: 50px;
+  max-width: 50px;
+  min-height: 2px;
+  max-height: 2px;
+}
+
 QtDivider[selected=true] {
   background-color: {{ text }};
 }
@@ -158,36 +168,82 @@ QtAdditionButton::indicator {
 
 /* ------------------------------------------------------ */
 
-QtLayerProperties {
-    border: 0px;
-    background-color: {{ foreground }};
-    border-radius: 3px;
-    padding: 0px;
-    margin: 0px;
+QtLayerWidget {
+  border: 0px;
+  background-color: {{ foreground }};
+  border-radius: 3px;
+  padding: 3px;
+  margin: 0px;
+  min-height: 38px;
+  max-height: 38px;
+  min-width: 250px;
+  max-width: 250px;
 }
 
-QtLayerProperties[selected="true"] {
-    border: 1px solid {{ text }};
+QtLayerWidget[selected="true"] {
+  border: 1px solid {{ text }};
 }
 
-QtLayerProperties > QFrame {
-    background-color: {{ foreground }};
-    border: 0px;
-    padding: 0px;
-    margin: 0px;
+QtLayerWidget > QLabel {
+  border: 0px;
+  padding: 0px;
+  margin: 0px;
+  qproperty-alignment: AlignCenter;
 }
 
-QtLayerProperties > QFrame > QSlider {
+QtLayerWidget > QLineEdit {
+  background-color: {{ foreground }};
+  border: none;
+  padding: 0px;
+  margin: 0px;
+  border-radius: 0px;
+  font-size: 18px;
+  qproperty-alignment: right;
+}
+
+QtLayerWidget > QLineEdit:disabled {
+  background-color: {{ foreground }};
+  border: none;
+  border-radius: 3px;
+}
+
+QtLayerWidget > QCheckBox#visibility {
+  border: 0px;
+  background-color: {{ foreground }};
+  spacing: 0px;
+  margin-left: 4px;
+  margin-right: 0px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding: 0px;
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
+  width: 24px;
+  height: 24px;
+  image: url(":/icons/{{ folder }}/visibility_off.svg");
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator:checked {
+  width: 24px;
+  height: 24px;
+  image: url(":/icons/{{ folder }}/visibility.svg");
+}
+
+
+/* ------------------------------------------------------ */
+
+QtLayerProperties > QSlider {
    background-color: {{ foreground }};
 }
 
-QtLayerProperties > QFrame > QSlider::groove:horizontal {
+QtLayerProperties > QSlider::groove:horizontal {
    border: 0px;
    background: {{ primary }};
    height: 8px;
 }
 
-QtLayerProperties > QFrame > QSlider::handle:horizontal {
+QtLayerProperties > QSlider::handle:horizontal {
    background: {{ secondary }};
    border: 0px;
    width: 16px;
@@ -196,25 +252,11 @@ QtLayerProperties > QFrame > QSlider::handle:horizontal {
    border-radius: 8px;
 }
 
-QtLayerProperties > QFrame > QSlider::sub-page:horizontal {
+QtLayerProperties > QSlider::sub-page:horizontal {
     background: {{ secondary }};
 }
 
-QtLayerProperties > QFrame > QLineEdit {
-    background-color: {{ foreground }};
-    border: none;
-    border-radius: 0px;
-    font-size: 18px;
-    qproperty-alignment: left;
-}
-
-QtLayerProperties > QFrame > QLineEdit:disabled {
-    background-color: {{ foreground }};
-    border: none;
-    border-radius: 3px;
-}
-
-QtLayerProperties > QFrame > QPushButton#expand {
+QtLayerProperties > QPushButton#expand {
   background-color: {{ foreground }};
   border: 0px;
   height: 20px;
@@ -222,15 +264,15 @@ QtLayerProperties > QFrame > QPushButton#expand {
   width: 20px;
 }
 
-QtLayerProperties > QFrame > QPushButton#expand[expanded=true] {
+QtLayerProperties > QPushButton#expand[expanded=true] {
   image: url(":/icons/{{ folder }}/properties_expand.svg");
 }
 
-QtLayerProperties > QFrame > QPushButton#expand[expanded=false] {
+QtLayerProperties > QPushButton#expand[expanded=false] {
   image: url(":/icons/{{ folder }}/properties_contract.svg");
 }
 
-QtLayerProperties > QFrame > QComboBox {
+QtLayerProperties > QComboBox {
    background-color: {{ primary }};
    padding-left: 6px;
    padding-right: 10px;
@@ -238,7 +280,7 @@ QtLayerProperties > QFrame > QComboBox {
    padding-bottom: 3px;
 }
 
-QtLayerProperties > QFrame > QComboBox::drop-down {
+QtLayerProperties > QComboBox::drop-down {
    subcontrol-origin: padding;
    subcontrol-position: top right;
    width: 30px;
@@ -246,13 +288,13 @@ QtLayerProperties > QFrame > QComboBox::drop-down {
    border-bottom-right-radius: 10px;
 }
 
-QtLayerProperties > QFrame > QComboBox::down-arrow {
+QtLayerProperties > QComboBox::down-arrow {
    image: url(":/icons/{{ folder }}/drop_down.svg");
    width: 14px;
    height: 14px;
 }
 
-QtLayerProperties > QFrame > QSpinBox {
+QtLayerProperties > QSpinBox {
    background-color: {{ primary }};
    padding-left: 14px;
    padding-right: 6px;
@@ -260,7 +302,7 @@ QtLayerProperties > QFrame > QSpinBox {
    padding-bottom: 3px;
 }
 
-QtLayerProperties > QFrame > QSpinBox::up-button {
+QtLayerProperties > QSpinBox::up-button {
     background-color: {{ primary }};
     subcontrol-origin: margin;
     subcontrol-position: center right;
@@ -269,7 +311,7 @@ QtLayerProperties > QFrame > QSpinBox::up-button {
     right: 6px;
 }
 
-QtLayerProperties > QFrame > QSpinBox::down-button {
+QtLayerProperties > QSpinBox::down-button {
     background-color: {{ primary }};
     subcontrol-origin: margin;
     subcontrol-position: center left;
@@ -278,68 +320,47 @@ QtLayerProperties > QFrame > QSpinBox::down-button {
     left: 6px;
 }
 
-QtLayerProperties > QFrame >  QSpinBox::up-arrow {
+QtLayerProperties >  QSpinBox::up-arrow {
    image: url(":/icons/{{ folder }}/plus.svg");
    width: 14px;
    height: 14px;
 }
 
-QtLayerProperties > QFrame > QSpinBox::down-arrow {
+QtLayerProperties > QSpinBox::down-arrow {
    image: url(":/icons/{{ folder }}/minus.svg");
    width: 14px;
    height: 14px;
 }
 
-QtLayerProperties > QFrame > QPushButton#shuffle {
+QtLayerProperties > QPushButton#shuffle {
   background-color: {{ secondary }};
   border: 3px solid {{ secondary }};
   text-align: left;
   padding-left: 5px;
 }
 
-QtLayerProperties > QFrame > QLabel#shuffle-label {
+QtLayerProperties > QLabel#shuffle-label {
   margin-top: 4px;
 }
 
-QtLayerProperties > QFrame > QPushButton#shuffle:pressed {
+QtLayerProperties > QPushButton#shuffle:pressed {
   background-color: {{ foreground }};
   border: 3px solid {{ secondary }};
 }
 
-QtLayerProperties > QFrame > QCheckBox#visibility {
-   background-color: {{ foreground }};
-   spacing: 0px;
-}
-
-QtLayerProperties > QFrame > QCheckBox#visibility::indicator:unchecked {
-   border: 0px;
-   border-radius: 4px;
-   width: 24px;
-   height: 24px;
-   image: url(":/icons/{{ folder }}/visibility_off.svg");
-}
-
-QtLayerProperties > QFrame > QCheckBox#visibility::indicator:checked {
-   background-color: {{ foreground }};
-   border: 0px;
-   width: 24px;
-   height: 24px;
-   image: url(":/icons/{{ folder }}/visibility.svg");
-}
-
-QtLayerProperties > QFrame > QCheckBox {
+QtLayerProperties > QCheckBox {
   background-color: {{ foreground }};
   spacing: 50px;
 }
 
-QtLayerProperties > QFrame > QCheckBox::indicator {
+QtLayerProperties > QCheckBox::indicator {
    border: 3px solid {{ secondary }};
    border-radius: 4px;
    width: 13px;
    height: 13px;
 }
 
-QtLayerProperties > QFrame > QCheckBox::indicator:checked {
+QtLayerProperties > QCheckBox::indicator:checked {
    background-color: {{ secondary }};
    width: 13px;
    height: 13px;

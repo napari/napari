@@ -1,14 +1,19 @@
 from qtpy.QtCore import Qt, QMimeData
+from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QFrame,
     QScrollArea,
     QApplication,
+    QLineEdit,
+    QFrame,
+    QLabel,
+    QCheckBox,
+    QHBoxLayout,
 )
 from qtpy.QtGui import QDrag
 import numpy as np
-from .layers import create_qt_properties
 
 
 class QtLayerList(QScrollArea):
@@ -40,8 +45,8 @@ class QtLayerList(QScrollArea):
         layer = event.item
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
-        properties = create_qt_properties(layer)
-        self.vbox_layout.insertWidget(index, properties)
+        widget = QtLayerWidget(layer)
+        self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
 
     def _remove(self, event):
@@ -218,7 +223,7 @@ class QtDivider(QFrame):
     def __init__(self):
         super().__init__()
         self.setSelected(False)
-        self.setFixedSize(50, 2)
+        self.setContentsMargins(0, 0, 0, 0)
 
     def setSelected(self, selected):
         if selected:
@@ -227,3 +232,95 @@ class QtDivider(QFrame):
         else:
             self.setProperty('selected', False)
             self.style().polish(self)
+
+
+class QtLayerWidget(QFrame):
+    def __init__(self, layer):
+        super().__init__()
+
+        self.layer = layer
+        layer.events.select.connect(lambda v: self.setSelected(True))
+        layer.events.deselect.connect(lambda v: self.setSelected(False))
+        layer.events.name.connect(self._on_layer_name_change)
+        layer.events.visible.connect(self._on_visible_change)
+        layer.events.thumbnail.connect(self._on_thumbnail_change)
+
+        self.setObjectName('layer')
+
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+
+        cb = QCheckBox(self)
+        cb.setObjectName('visibility')
+        cb.setToolTip('Layer visibility')
+        cb.setChecked(self.layer.visible)
+        cb.setProperty('mode', 'visibility')
+        cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
+        self.visibleCheckBox = cb
+        self.layout.addWidget(cb)
+
+        tb = QLabel(self)
+        tb.setObjectName('thumbmnail')
+        tb.setToolTip('Layer thumbmnail')
+        self.thumbnail_label = tb
+        self._on_thumbnail_change(None)
+        self.layout.addWidget(tb)
+
+        textbox = QLineEdit(self)
+        textbox.setText(layer.name)
+        textbox.home(False)
+        textbox.setToolTip('Layer name')
+        textbox.setAcceptDrops(False)
+        textbox.setEnabled(True)
+        textbox.editingFinished.connect(self.changeText)
+        self.nameTextBox = textbox
+        self.layout.addWidget(textbox)
+
+        msg = 'Click to select\nDrag to rearrange'
+        self.setToolTip(msg)
+        self.setSelected(self.layer.selected)
+
+    def setSelected(self, state):
+        self.setProperty('selected', state)
+        self.nameTextBox.setEnabled(state)
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    def changeVisible(self, state):
+        if state == Qt.Checked:
+            self.layer.visible = True
+        else:
+            self.layer.visible = False
+
+    def changeText(self):
+        self.layer.name = self.nameTextBox.text()
+
+    def mouseReleaseEvent(self, event):
+        event.ignore()
+
+    def mousePressEvent(self, event):
+        event.ignore()
+
+    def mouseMoveEvent(self, event):
+        event.ignore()
+
+    def _on_layer_name_change(self, event):
+        with self.layer.events.name.blocker():
+            self.nameTextBox.setText(self.layer.name)
+            self.nameTextBox.home(False)
+
+    def _on_visible_change(self, event):
+        with self.layer.events.visible.blocker():
+            self.visibleCheckBox.setChecked(self.layer.visible)
+
+    def _on_thumbnail_change(self, event):
+        thumbnail = self.layer.thumbnail
+        # Note that QImage expects the image width followed by height
+        image = QImage(
+            thumbnail,
+            thumbnail.shape[1],
+            thumbnail.shape[0],
+            QImage.Format_RGBA8888,
+        )
+        self.thumbnail_label.setPixmap(QPixmap.fromImage(image))
