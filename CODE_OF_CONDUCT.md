@@ -46,7 +46,7 @@ We know that it is painfully common for internet communication to start at or de
 
 For clearly intentional breaches, report those to the Code of Conduct committee (see below). For possibly unintentional breaches, you may reply to the person and point out this code of conduct (either in public or in private, whatever is most appropriate). If you would prefer not to do that, please feel free to report to the Code of Conduct Committee directly, or ask the Committee for advice, in confidence.
 
-You can report issues to the napari Code of Conduct committee, at `napari-conduct@googlegroups.com` . Currently, the committee consists of:
+You can report issues to the napari Code of Conduct committee, at napari-conduct@googlegroups.com . Currently, the committee consists of:
 
 * [Juan Nunez-Iglesias](https://github.com/jni) (chair)
 
