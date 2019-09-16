@@ -29,6 +29,7 @@ class QtLayerList(QScrollArea):
         self.vbox_layout.addWidget(QtDivider())
         self.vbox_layout.addStretch(1)
         self.vbox_layout.setContentsMargins(0, 0, 0, 0)
+        self.vbox_layout.setSpacing(4)
         self.centers = []
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
@@ -223,7 +224,9 @@ class QtDivider(QFrame):
     def __init__(self):
         super().__init__()
         self.setSelected(False)
-        self.setContentsMargins(0, 0, 0, 0)
+        self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
 
     def setSelected(self, selected):
         if selected:

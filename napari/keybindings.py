@@ -66,41 +66,12 @@ def increment_dims_right(viewer):
         viewer.dims.set_point(axis, new_point)
 
 
-@Viewer.bind_key('Up')
-def dims_focus_up(viewer):
-    displayed = list(
-        np.nonzero(viewer.window.qt_viewer.dims._displayed_sliders)[0]
-    )
-    if len(displayed) == 0:
-        return
-
-    axis = viewer.window.qt_viewer.dims.last_used
-    if axis is None:
-        viewer.window.qt_viewer.dims.last_used = displayed[-1]
-    else:
-        index = (displayed.index(axis) + 1) % len(displayed)
-        viewer.window.qt_viewer.dims.last_used = displayed[index]
-
-
-@Viewer.bind_key('Down')
-def dims_focus_down(viewer):
-    displayed = list(
-        np.nonzero(viewer.window.qt_viewer.dims._displayed_sliders)[0]
-    )
-    if len(displayed) == 0:
-        return
-
-    axis = viewer.window.qt_viewer.dims.last_used
-
-    if axis is None:
-        viewer.window.qt_viewer.dims.last_used = displayed[0]
-    else:
-        index = (displayed.index(axis) - 1) % len(displayed)
-        viewer.window.qt_viewer.dims.last_used = displayed[index]
-
-
+# Viewer.bind_key('Control-[', lambda v: v.window.qt_viewer.dims.focus_up())
+# Viewer.bind_key('Control-]', lambda v: v.window.qt_viewer.dims.focus_down())
 Viewer.bind_key('Control-Backspace', lambda v: v.layers.remove_selected())
 Viewer.bind_key('Control-A', lambda v: v.layers.select_all())
-Viewer.bind_key('Control-[', lambda v: v.layers.select_previous())
-Viewer.bind_key('Control-]', lambda v: v.layers.select_next())
+Viewer.bind_key('Up', lambda v: v.layers.select_next())
+Viewer.bind_key('Down', lambda v: v.layers.select_previous())
+Viewer.bind_key('Control-]', lambda v: v.layers.select_previous())
+Viewer.bind_key('Control-[', lambda v: v.layers.select_next())
 Viewer.bind_key('Control-R', lambda v: v.reset_view())

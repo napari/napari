@@ -42,8 +42,11 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .out-prompt { color: #b72121; }
 
 QtLayerList {
-    min-width: 275px;
-    max-width: 275px;
+    min-width: 250px;
+    max-width: 250px;
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
 }
 
 QtControls {
@@ -75,6 +78,7 @@ QSplitter::handle:vertical {
 QtDivider {
   spacing: 0px;
   padding: 0px;
+  border: 0px;
   margin: 0px;
   min-width: 50px;
   max-width: 50px;
@@ -169,15 +173,15 @@ QtAdditionButton::indicator {
 /* ------------------------------------------------------ */
 
 QtLayerWidget {
-  border: 0px;
+  border: 1px solid {{ foreground }};
   background-color: {{ foreground }};
   border-radius: 3px;
   padding: 3px;
   margin: 0px;
   min-height: 38px;
   max-height: 38px;
-  min-width: 250px;
-  max-width: 250px;
+  min-width: 220px;
+  max-width: 220px;
 }
 
 QtLayerWidget[selected="true"] {

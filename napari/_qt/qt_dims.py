@@ -307,3 +307,25 @@ class QtDims(QWidget):
         slider.collapsedChanged.connect(collapse_change_listener)
 
         return slider
+
+    def focus_up(self):
+        displayed = list(np.nonzero(self._displayed_sliders)[0])
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) + 1) % len(displayed)
+            self.last_used = displayed[index]
+
+    def focus_down(self):
+        displayed = list(np.nonzero(self._displayed_sliders)[0])
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) - 1) % len(displayed)
+            self.last_used = displayed[index]
