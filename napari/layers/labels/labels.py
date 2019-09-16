@@ -102,6 +102,8 @@ class Labels(Layer):
         after painting is done. Used for interpolating brush strokes.
     """
 
+    _history_limit = 100
+
     def __init__(
         self,
         data,
@@ -170,8 +172,6 @@ class Labels(Layer):
         self._help = 'enter paint or fill mode to edit labels'
 
         self._block_saving = False
-        self._undo_history = []
-        self._redo_history = []
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -376,10 +376,18 @@ class Labels(Layer):
         self._undo_history = []
         self._redo_history = []
 
+    def _trim_history(self):
+        while (
+            len(self._undo_history) + len(self._redo_history)
+            > self._history_limit
+        ):
+            del self._undo_history[0]
+
     def _save_history(self):
         self._redo_history = []
         if not self._block_saving:
             self._undo_history.append(self.data[self.dims.indices].copy())
+            self._trim_history()
 
     def _load_history(self, before, after):
         if len(before) == 0:
