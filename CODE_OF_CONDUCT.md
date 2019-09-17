@@ -22,11 +22,12 @@ We strive to:
 
 
 > * Violent threats or language directed against another person.
-> * Sexist, racist, or otherwise discriminatory jokes and language.
+> * Sexist, racist, ableist, or otherwise discriminatory jokes and language.
 > * Posting sexually explicit or violent material.
 > * Posting (or threatening to post) other people’s personally identifying information (“doxing”).
 > * Sharing private content, such as emails sent privately or non-publicly, or unlogged forums such as IRC channel history, without the sender’s consent.
-> * Personal insults, especially those using racist or sexist terms.
+> * Personal insults, especially those using sexist, racist, or ableist terms.
+> * Intentional or repeated misgendering of participants who have explicitly requested to be addressed by specific pronouns.
 > * Unwelcome sexual attention.
 > * Excessive profanity. Please avoid swearwords; people differ greatly in their sensitivity to swearing.
 > * Repeated harassment of others. In general, if someone asks you to stop, then stop.
