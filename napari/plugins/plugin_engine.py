@@ -54,10 +54,13 @@ def crawl(
             type(elem) in [Function, type]
             and elem.__module__ is not None
             and elem.__module__.startswith(module.__name__)
+            and elem not in visited
         ):
             hierarchy[elem_name] = elem
+            visited.add(elem)
         # note: add elif to insert *variables*, eg. magic structuring elements,
         # into some special namespace, so that plugins can define constants.
+
     # check whether the module is a package, and if so, recurse into
     # sub-packages. See:
     # https://docs.python.org/3/reference/import.html#package-path-rules
