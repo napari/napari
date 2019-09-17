@@ -22,9 +22,11 @@ from qtpy.QtWidgets import (  # noqa: E402
     QLabel,
     QAction,
     QShortcut,
+    QInputDialog,
 )
 from qtpy.QtGui import QKeySequence  # noqa: E402
 from ..util.theme import template  # noqa: E402
+from ..plugins import plugin_engine  # noqa: E402
 
 
 class Window:
@@ -111,6 +113,47 @@ class Window:
             self.main_menu.setVisible(True)
             self._main_menu_shortcut.setEnabled(False)
 
+    def _add_plugin(self):
+        """Launch a pop-up dialog to select a new plugin to add."""
+        module, success = QInputDialog.getText(
+            self._qt_window, 'Enter module name', 'Module:'
+        )
+        if success:
+            self.add_plugin(module)
+
+    def _add_hierarchy_to_menu(self, module_hierarchy: dict, menu):
+        for name, func_or_mod in module_hierarchy.items():
+            if type(func_or_mod) == dict:  # submenu
+                new_menu = menu.addMenu('&' + name)
+                self._add_hierarchy_to_menu(func_or_mod, new_menu)
+            else:  # function or class
+                action = QAction(name, self._qt_window)
+                if func_or_mod.__doc__ is not None:
+                    action.setStatusTip(func_or_mod.__doc__.split('\n')[0])
+                action.triggered.connect(lambda: print(f'activating {name}'))
+                menu.addAction(action)
+
+    def add_plugin(self, module: str):
+        """Add a plugin to the viewer window.
+
+        Parameters
+        ----------
+        module : string
+            If a Python module, it will be crawled for functions and classes,
+            and these will be added to the Plugins menu.
+
+        Notes
+        -----
+        On-demand installation of remote packages is not yet implemented.
+        """
+        module_hierarchy = plugin_engine.crawl(module)
+        self._add_hierarchy_to_menu(module_hierarchy, self.plugins_menu)
+        # - Create function popup/drawer windows with appropriate parameter
+        #   selection
+        # - Output of function linked to layer types *or* pure Python values
+        #   (viewable in variable explorer)
+        # - Add functions to plugins menu
+
     def _add_file_menu(self):
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
@@ -135,6 +178,15 @@ class Window:
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
+
+    def _add_plugins_menu(self):
+        add_plugin = QAction('Add a plugin module', self._qt_window)
+        add_plugin.setShortcut('Ctrl+Shift+P')
+        add_plugin.setStatusTip('Add functionality from a Python module')
+        add_plugin.triggered.connect(self._add_plugin)
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+        self.plugins_menu.addAction(add_plugin)
+        self.plugins_menu.addSeparator()
 
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
