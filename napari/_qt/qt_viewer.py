@@ -91,8 +91,8 @@ class QtViewer(QSplitter):
 
         layers_widget = QWidget()
         layers_layout = QVBoxLayout()
-        layers_layout.addWidget(self.layers)
         layers_layout.addWidget(self.buttons)
+        layers_layout.addWidget(self.layers)
         layers_widget.setLayout(layers_layout)
         layers_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 

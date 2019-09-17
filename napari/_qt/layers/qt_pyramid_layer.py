@@ -1,10 +1,6 @@
 from ...layers import Pyramid
-from .qt_image_layer import QtImageControls, QtImageProperties
+from .qt_image_layer import QtImageControls
 
 
 class QtPyramidControls(QtImageControls, layer=Pyramid):
-    pass
-
-
-class QtPyramidProperties(QtImageProperties, layer=Pyramid):
     pass

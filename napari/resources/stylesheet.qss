@@ -50,8 +50,8 @@ QtLayerList {
 }
 
 QtControls {
-    min-width: 40px;
-    max-width: 40px;
+    min-width: 140px;
+    max-width: 140px;
 }
 
 QLabel {
@@ -195,6 +195,30 @@ QtLayerWidget > QLabel {
   qproperty-alignment: AlignCenter;
 }
 
+QtLayerWidget > QLabel#Shapes {
+  max-width: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  image: url(":/icons/{{ folder }}/new_shapes.svg");
+}
+
+QtLayerWidget > QLabel#Points {
+  max-width: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  image: url(":/icons/{{ folder }}/new_points.svg");
+}
+
+QtLayerWidget > QLabel#Labels {
+  max-width: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  image: url(":/icons/{{ folder }}/new_labels.svg");
+}
+
 QtLayerWidget > QLineEdit {
   background-color: {{ foreground }};
   border: none;
@@ -237,17 +261,22 @@ QtLayerWidget > QCheckBox#visibility::indicator:checked {
 
 /* ------------------------------------------------------ */
 
-QtLayerProperties > QSlider {
+QtLayerControls > QLabel {
+  min-height: 18px;
+  max-height: 18px;
+}
+
+QtLayerControls > QSlider {
    background-color: {{ foreground }};
 }
 
-QtLayerProperties > QSlider::groove:horizontal {
+QtLayerControls > QSlider::groove:horizontal {
    border: 0px;
    background: {{ primary }};
    height: 8px;
 }
 
-QtLayerProperties > QSlider::handle:horizontal {
+QtLayerControls > QSlider::handle:horizontal {
    background: {{ secondary }};
    border: 0px;
    width: 16px;
@@ -256,11 +285,11 @@ QtLayerProperties > QSlider::handle:horizontal {
    border-radius: 8px;
 }
 
-QtLayerProperties > QSlider::sub-page:horizontal {
+QtLayerControls > QSlider::sub-page:horizontal {
     background: {{ secondary }};
 }
 
-QtLayerProperties > QPushButton#expand {
+QtLayerControls > QPushButton#expand {
   background-color: {{ foreground }};
   border: 0px;
   height: 20px;
@@ -268,15 +297,15 @@ QtLayerProperties > QPushButton#expand {
   width: 20px;
 }
 
-QtLayerProperties > QPushButton#expand[expanded=true] {
+QtLayerControls > QPushButton#expand[expanded=true] {
   image: url(":/icons/{{ folder }}/properties_expand.svg");
 }
 
-QtLayerProperties > QPushButton#expand[expanded=false] {
+QtLayerControls > QPushButton#expand[expanded=false] {
   image: url(":/icons/{{ folder }}/properties_contract.svg");
 }
 
-QtLayerProperties > QComboBox {
+QtLayerControls > QComboBox {
    background-color: {{ primary }};
    padding-left: 6px;
    padding-right: 10px;
@@ -284,7 +313,7 @@ QtLayerProperties > QComboBox {
    padding-bottom: 3px;
 }
 
-QtLayerProperties > QComboBox::drop-down {
+QtLayerControls > QComboBox::drop-down {
    subcontrol-origin: padding;
    subcontrol-position: top right;
    width: 30px;
@@ -292,13 +321,13 @@ QtLayerProperties > QComboBox::drop-down {
    border-bottom-right-radius: 10px;
 }
 
-QtLayerProperties > QComboBox::down-arrow {
+QtLayerControls > QComboBox::down-arrow {
    image: url(":/icons/{{ folder }}/drop_down.svg");
    width: 14px;
    height: 14px;
 }
 
-QtLayerProperties > QSpinBox {
+QtLayerControls > QSpinBox {
    background-color: {{ primary }};
    padding-left: 14px;
    padding-right: 6px;
@@ -306,7 +335,7 @@ QtLayerProperties > QSpinBox {
    padding-bottom: 3px;
 }
 
-QtLayerProperties > QSpinBox::up-button {
+QtLayerControls > QSpinBox::up-button {
     background-color: {{ primary }};
     subcontrol-origin: margin;
     subcontrol-position: center right;
@@ -315,7 +344,7 @@ QtLayerProperties > QSpinBox::up-button {
     right: 6px;
 }
 
-QtLayerProperties > QSpinBox::down-button {
+QtLayerControls > QSpinBox::down-button {
     background-color: {{ primary }};
     subcontrol-origin: margin;
     subcontrol-position: center left;
@@ -324,47 +353,47 @@ QtLayerProperties > QSpinBox::down-button {
     left: 6px;
 }
 
-QtLayerProperties >  QSpinBox::up-arrow {
+QtLayerControls >  QSpinBox::up-arrow {
    image: url(":/icons/{{ folder }}/plus.svg");
    width: 14px;
    height: 14px;
 }
 
-QtLayerProperties > QSpinBox::down-arrow {
+QtLayerControls > QSpinBox::down-arrow {
    image: url(":/icons/{{ folder }}/minus.svg");
    width: 14px;
    height: 14px;
 }
 
-QtLayerProperties > QPushButton#shuffle {
+QtLayerControls > QPushButton#shuffle {
   background-color: {{ secondary }};
   border: 3px solid {{ secondary }};
   text-align: left;
   padding-left: 5px;
 }
 
-QtLayerProperties > QLabel#shuffle-label {
+QtLayerControls > QLabel#shuffle-label {
   margin-top: 4px;
 }
 
-QtLayerProperties > QPushButton#shuffle:pressed {
+QtLayerControls > QPushButton#shuffle:pressed {
   background-color: {{ foreground }};
   border: 3px solid {{ secondary }};
 }
 
-QtLayerProperties > QCheckBox {
+QtLayerControls > QCheckBox {
   background-color: {{ foreground }};
   spacing: 50px;
 }
 
-QtLayerProperties > QCheckBox::indicator {
+QtLayerControls > QCheckBox::indicator {
    border: 3px solid {{ secondary }};
    border-radius: 4px;
    width: 13px;
    height: 13px;
 }
 
-QtLayerProperties > QCheckBox::indicator:checked {
+QtLayerControls > QCheckBox::indicator:checked {
    background-color: {{ secondary }};
    width: 13px;
    height: 13px;

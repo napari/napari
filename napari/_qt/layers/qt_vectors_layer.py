@@ -1,10 +1,8 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox
 
-from .qt_base_layer import QtLayerProperties
 
-
-class QtVectorsProperties(QtLayerProperties):
+class QtVectorsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -24,9 +22,8 @@ class QtVectorsProperties(QtLayerProperties):
         face_comboBox.activated[str].connect(
             lambda text=face_comboBox: self.change_edge_color(text)
         )
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('color:'), row, self.name_column)
-        self.grid_layout.addWidget(face_comboBox, row, self.property_column)
+        self.vbox_layout.addWidget(QLabel('color:'))
+        self.vbox_layout.addWidget(face_comboBox)
 
         # line width in pixels
         self.width_field = QDoubleSpinBox()
@@ -35,9 +32,8 @@ class QtVectorsProperties(QtLayerProperties):
         value = self.layer.edge_width
         self.width_field.setValue(value)
         self.width_field.valueChanged.connect(self.change_width)
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('width:'), row, self.name_column)
-        self.grid_layout.addWidget(self.width_field, row, self.property_column)
+        self.vbox_layout.addWidget(QLabel('width:'))
+        self.vbox_layout.addWidget(self.width_field)
 
         # line length
         self.length_field = QDoubleSpinBox()
@@ -46,11 +42,8 @@ class QtVectorsProperties(QtLayerProperties):
         self.length_field.setValue(value)
         self.length_field.setMinimum(0.1)
         self.length_field.valueChanged.connect(self.change_length)
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('length:'), row, self.name_column)
-        self.grid_layout.addWidget(
-            self.length_field, row, self.property_column
-        )
+        self.vbox_layout.addWidget(QLabel('length:'), row, self.name_column)
+        self.vbox_layout.addWidget(self.length_field)
 
         self.setExpanded(False)
 

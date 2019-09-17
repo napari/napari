@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QHBoxLayout
 from .. import QVRangeSlider
-from .qt_base_layer import QtLayerControls, QtLayerProperties
+from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 from ...layers.image._constants import Interpolation, Rendering
@@ -10,9 +10,53 @@ class QtImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
+        self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.contrast_limits.connect(
             lambda e: self.contrast_limits_slider_update()
         )
+
+        comboBox = QComboBox()
+        for cmap in self.layer.colormaps:
+            comboBox.addItem(cmap)
+        comboBox._allitems = set(self.layer.colormaps)
+        index = comboBox.findText(self.layer.colormap[0], Qt.MatchFixedString)
+        comboBox.setCurrentIndex(index)
+        comboBox.activated[str].connect(
+            lambda text=comboBox: self.changeColor(text)
+        )
+        self.vbox_layout.addWidget(QLabel('colormap:'))
+        self.vbox_layout.addWidget(comboBox)
+        self.colormap_combobox = comboBox
+
+        interp_comboBox = QComboBox()
+        for interp in Interpolation:
+            interp_comboBox.addItem(str(interp))
+        index = interp_comboBox.findText(
+            self.layer.interpolation, Qt.MatchFixedString
+        )
+        interp_comboBox.setCurrentIndex(index)
+        interp_comboBox.activated[str].connect(
+            lambda text=interp_comboBox: self.changeInterpolation(text)
+        )
+        self.interpComboBox = interp_comboBox
+        self.vbox_layout.addWidget(QLabel('interpolation:'))
+        self.vbox_layout.addWidget(interp_comboBox)
+
+        renderComboBox = QComboBox()
+        for render in Rendering:
+            renderComboBox.addItem(str(render))
+        index = renderComboBox.findText(
+            self.layer.rendering, Qt.MatchFixedString
+        )
+        renderComboBox.setCurrentIndex(index)
+        renderComboBox.activated[str].connect(
+            lambda text=renderComboBox: self.changeRendering(text)
+        )
+        self.renderComboBox = renderComboBox
+        self.vbox_layout.addWidget(QLabel('rendering:'))
+        self.vbox_layout.addWidget(renderComboBox)
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QVRangeSlider(
@@ -22,10 +66,7 @@ class QtImageControls(QtLayerControls):
         self.contrastLimitsSlider.collapsable = False
         self.contrastLimitsSlider.setEnabled(True)
 
-        layout = QHBoxLayout()
-        layout.addWidget(self.contrastLimitsSlider)
-        layout.setContentsMargins(12, 15, 10, 10)
-        self.setLayout(layout)
+        self.vbox_layout.addWidget(self.contrastLimitsSlider)
         self.setMouseTracking(True)
 
         self.contrastLimitsSlider.rangeChanged.connect(
@@ -50,63 +91,6 @@ class QtImageControls(QtLayerControls):
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
-
-
-class QtImageProperties(QtLayerProperties):
-    def __init__(self, layer):
-        super().__init__(layer)
-
-        self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
-        self.layer.events.rendering.connect(self._on_rendering_change)
-
-        row = self.grid_layout.rowCount()
-        comboBox = QComboBox()
-        for cmap in self.layer.colormaps:
-            comboBox.addItem(cmap)
-        comboBox._allitems = set(self.layer.colormaps)
-        index = comboBox.findText(self.layer.colormap[0], Qt.MatchFixedString)
-        comboBox.setCurrentIndex(index)
-        comboBox.activated[str].connect(
-            lambda text=comboBox: self.changeColor(text)
-        )
-        self.grid_layout.addWidget(QLabel('colormap:'), row, self.name_column)
-        self.grid_layout.addWidget(comboBox, row, self.property_column)
-        self.colormap_combobox = comboBox
-
-        row = self.grid_layout.rowCount()
-        interp_comboBox = QComboBox()
-        for interp in Interpolation:
-            interp_comboBox.addItem(str(interp))
-        index = interp_comboBox.findText(
-            self.layer.interpolation, Qt.MatchFixedString
-        )
-        interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(
-            lambda text=interp_comboBox: self.changeInterpolation(text)
-        )
-        self.interpComboBox = interp_comboBox
-        self.grid_layout.addWidget(
-            QLabel('interpolation:'), row, self.name_column
-        )
-        self.grid_layout.addWidget(interp_comboBox, row, self.property_column)
-
-        row = self.grid_layout.rowCount()
-        renderComboBox = QComboBox()
-        for render in Rendering:
-            renderComboBox.addItem(str(render))
-        index = renderComboBox.findText(
-            self.layer.rendering, Qt.MatchFixedString
-        )
-        renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(
-            lambda text=renderComboBox: self.changeRendering(text)
-        )
-        self.renderComboBox = renderComboBox
-        self.grid_layout.addWidget(QLabel('rendering:'), row, self.name_column)
-        self.grid_layout.addWidget(renderComboBox, row, self.property_column)
-
-        self.setExpanded(False)
 
     def changeColor(self, text):
         self.layer.colormap = text

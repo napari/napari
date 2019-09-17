@@ -13,13 +13,13 @@ class QtLayersButtons(QFrame):
         self.consoleButton = QtConsoleButton(self.viewer)
 
         layout = QHBoxLayout()
-        layout.addStretch(0)
         layout.setContentsMargins(0, 18, 34, 4)
+        layout.addWidget(self.consoleButton)
+        layout.addStretch(0)
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
         layout.addWidget(self.deleteButton)
-        layout.addWidget(self.consoleButton)
         self.setLayout(layout)
 
 

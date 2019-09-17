@@ -280,6 +280,13 @@ class QtLayerWidget(QFrame):
         self.nameTextBox = textbox
         self.layout.addWidget(textbox)
 
+        ltb = QLabel(self)
+        layer_type = type(layer).__name__
+        ltb.setObjectName(layer_type)
+        ltb.setToolTip('Layer type')
+        self.type_label = ltb
+        self.layout.addWidget(ltb)
+
         msg = 'Click to select\nDrag to rearrange'
         self.setToolTip(msg)
         self.setSelected(self.layer.selected)
