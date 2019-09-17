@@ -61,6 +61,7 @@ class Window:
 
         self._add_file_menu()
         self._add_view_menu()
+        self._add_plugins_menu()
         self._add_window_menu()
         self._add_help_menu()
 
