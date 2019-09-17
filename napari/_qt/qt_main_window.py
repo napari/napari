@@ -148,7 +148,8 @@ class Window:
         On-demand installation of remote packages is not yet implemented.
         """
         module_hierarchy = plugin_engine.crawl(module)
-        self._add_hierarchy_to_menu(module_hierarchy, self.plugins_menu)
+        menu = self.plugins_menu.addMenu('&' + module)
+        self._add_hierarchy_to_menu(module_hierarchy, menu)
         # - Create function popup/drawer windows with appropriate parameter
         #   selection
         # - Output of function linked to layer types *or* pure Python values
