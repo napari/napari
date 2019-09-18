@@ -174,7 +174,7 @@ def test_update_console(qtbot):
 
 
 def test_changing_display_surface(qtbot):
-    """Test adding 3D surface and chaning its display."""
+    """Test adding 3D surface and changing its display."""
     viewer = Viewer()
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
