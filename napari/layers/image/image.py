@@ -7,11 +7,7 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ...util.misc import (
-    is_multichannel,
-    calc_data_range,
-    increment_unnamed_colormap,
-)
+from ...util.misc import is_rgb, calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
@@ -24,12 +20,11 @@ class Image(Layer):
     ----------
     data : array
         Image data. Can be N dimensional. If the last dimension has length
-        3 or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
-    multichannel : bool
-        Whether the image is multichannel RGB or RGBA if multichannel. If
-        not specified by user and the last dimension of the data has length
-        3 or 4 it will be set as `True`. If `False` the image is
-        interpreted as a luminance image.
+        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`.
+    rgb : bool
+        Whether the image is rgb RGB or RGBA. If not specified by user and
+        the last dimension of the data has length 3 or 4 it will be set as
+        `True`. If `False` the image is interpreted as a luminance image.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -66,26 +61,26 @@ class Image(Layer):
     ----------
     data : array
         Image data. Can be N dimensional. If the last dimension has length 3
-        or 4 can be interpreted as RGB or RGBA if multichannel is `True`.
+        or 4 can be interpreted as RGB or RGBA if rgb is `True`.
     metadata : dict
         Image metadata.
-    multichannel : bool
-        Whether the image is multichannel RGB or RGBA if multichannel. If not
+    rgb : bool
+        Whether the image is rgb RGB or RGBA if rgb. If not
         specified by user and the last dimension of the data has length 3 or 4
         it will be set as `True`. If `False` the image is interpreted as a
         luminance image.
     colormap : 2-tuple of str, vispy.color.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
-        multichannel the colormap is ignored.
+        rgb the colormap is ignored.
     colormaps : tuple of str
         Names of the available colormaps.
     contrast_limits : list (2,) of float
         Color limits to be used for determining the colormap bounds for
-        luminance images. If the image is multichannel the contrast_limits is ignored.
+        luminance images. If the image is rgb the contrast_limits is ignored.
     contrast_limits_range : list (2,) of float
         Range for the color limits for luminace images. If the image is
-        multichannel the contrast_limits_range is ignored.
+        rgb the contrast_limits_range is ignored.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
@@ -103,7 +98,7 @@ class Image(Layer):
         self,
         data,
         *,
-        multichannel=None,
+        rgb=None,
         colormap='gray',
         contrast_limits=None,
         interpolation='nearest',
@@ -116,15 +111,15 @@ class Image(Layer):
         blending='translucent',
         visible=True,
     ):
-        # Determine if multichannel, and determine dimensionality
-        if multichannel is False:
-            self._multichannel = multichannel
+        # Determine if rgb, and determine dimensionality
+        if rgb is False:
+            self._rgb = rgb
         else:
-            # If multichannel is True or None then guess if multichannel
+            # If rgb is True or None then guess if rgb
             # allowed or not, and if allowed set it to be True
-            self._multichannel = is_multichannel(data.shape)
+            self._rgb = is_rgb(data.shape)
 
-        if self.multichannel:
+        if self.rgb:
             ndim = data.ndim - 1
         else:
             ndim = data.ndim
@@ -151,7 +146,7 @@ class Image(Layer):
         self._data = data
 
         # Intitialize image views and thumbnails with zeros
-        if self.multichannel:
+        if self.rgb:
             self._data_view = np.zeros(
                 (1,) * self.dims.ndisplay + (self.shape[-1],)
             )
@@ -183,21 +178,21 @@ class Image(Layer):
     @data.setter
     def data(self, data):
         self._data = data
-        if self.multichannel:
-            self._multichannel = is_multichannel(data.shape)
+        if self.rgb:
+            self._rgb = is_rgb(data.shape)
         self._update_dims()
         self.events.data()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        if self.multichannel:
+        if self.rgb:
             ndim = self.data.ndim - 1
         else:
             ndim = self.data.ndim
         return ndim
 
     def _get_extent(self):
-        if self.multichannel:
+        if self.rgb:
             shape = self.data.shape[:-1]
         else:
             shape = self.data.shape
@@ -205,18 +200,18 @@ class Image(Layer):
         return tuple((0, m) for m in shape)
 
     @property
-    def multichannel(self):
-        """bool: Whether the image is multichannel."""
-        return self._multichannel
+    def rgb(self):
+        """bool: Whether the image is rgb."""
+        return self._rgb
 
-    @multichannel.setter
-    def multichannel(self, multichannel):
-        if multichannel is False:
-            self._multichannel = multichannel
+    @rgb.setter
+    def rgb(self, rgb):
+        if rgb is False:
+            self._rgb = rgb
         else:
-            # If multichannel is True or None then guess if multichannel
+            # If rgb is True or None then guess if rgb
             # allowed or not, and if allowed set it to be True
-            self._multichannel = is_multichannel(self.data.shape)
+            self._rgb = is_rgb(self.data.shape)
         self._set_view_slice()
 
     @property
@@ -319,8 +314,8 @@ class Image(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        if self.multichannel:
-            # if multichannel need to keep the final axis fixed during the
+        if self.rgb:
+            # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
             order = self.dims.displayed_order + (self.dims.ndisplay,)
@@ -329,7 +324,7 @@ class Image(Layer):
 
         image = np.asarray(self.data[self.dims.indices]).transpose(order)
 
-        if self.multichannel and image.dtype.kind == 'f':
+        if self.rgb and image.dtype.kind == 'f':
             self._data_view = np.clip(image, 0, 1)
         else:
             self._data_view = image
@@ -354,7 +349,7 @@ class Image(Layer):
         zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
-        if self.multichannel:
+        if self.rgb:
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -406,7 +401,7 @@ class Image(Layer):
             Value of the data at the coord, or none if coord is outside range.
         """
         coord = np.round(self.coordinates).astype(int)
-        if self.multichannel:
+        if self.rgb:
             shape = self._data_view.shape[:-1]
         else:
             shape = self._data_view.shape

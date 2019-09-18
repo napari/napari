@@ -1,18 +1,18 @@
-from napari.util.misc import is_multichannel, callsignature
+from napari.util.misc import is_rgb, callsignature
 
 
-def test_is_multichannel():
+def test_is_rgb():
     shape = (10, 15)
-    assert not is_multichannel(shape)
+    assert not is_rgb(shape)
 
     shape = (10, 15, 6)
-    assert not is_multichannel(shape)
+    assert not is_rgb(shape)
 
     shape = (10, 15, 3)
-    assert is_multichannel(shape)
+    assert is_rgb(shape)
 
     shape = (10, 15, 4)
-    assert is_multichannel(shape)
+    assert is_rgb(shape)
 
 
 def test_callsignature():

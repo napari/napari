@@ -13,7 +13,7 @@ def test_random_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.ndim == 2
 
 
@@ -26,7 +26,7 @@ def test_3D_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.ndim == 2
 
 
@@ -39,7 +39,7 @@ def test_non_uniform_3D_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.ndim == 2
 
 
@@ -52,7 +52,7 @@ def test_rgb_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
     assert layer._data_view.ndim == 3
 
 
@@ -65,20 +65,20 @@ def test_3D_rgb_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
     assert layer._data_view.ndim == 3
 
 
 def test_non_rgb_image():
-    """Test forcing Pyramid layer to be 3D and not multichannel."""
+    """Test forcing Pyramid layer to be 3D and not rgb."""
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data, multichannel=False)
+    layer = Pyramid(data, rgb=False)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.multichannel == False
+    assert layer.rgb == False
 
 
 def test_name():

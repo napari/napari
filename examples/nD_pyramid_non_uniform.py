@@ -14,7 +14,7 @@ import numpy as np
 astronaut = data.astronaut()
 base = np.tile(astronaut, (3, 3, 1))
 pyramid = list(
-    pyramid_gaussian(base, downscale=2, max_layer=3, multichannel=True)
+    pyramid_gaussian(base, downscale=2, max_layer=3, rgb=True)
 )
 pyramid = [
     np.array([p * (abs(3 - i) + 1) / 4 for i in range(6)]) for p in pyramid
