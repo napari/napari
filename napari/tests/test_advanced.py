@@ -171,3 +171,48 @@ def test_update_console(qtbot):
 
     # Close the viewer
     viewer.window.close()
+
+
+def test_changing_display_surface(qtbot):
+    """Test adding 3D surface and changing its display."""
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    viewer.add_surface(data)
+    assert np.all(
+        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+    )
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+
+    assert viewer.dims.ndim == 3
+    assert view.dims.nsliders == viewer.dims.ndim
+
+    # Check display is currently 2D with one slider
+    assert viewer.layers[0]._data_view.shape[1] == 2
+    assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Make display 3D
+    viewer.dims.ndisplay = 3
+    assert viewer.layers[0]._data_view.shape[1] == 3
+    assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Make display 2D again
+    viewer.dims.ndisplay = 2
+    assert viewer.layers[0]._data_view.shape[1] == 2
+    assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Iterate over all values in first dimension
+    len_slider = viewer.dims.range[0]
+    for s in len_slider:
+        viewer.dims.set_point(0, s)
+
+    # Close the viewer
+    viewer.window.close()
