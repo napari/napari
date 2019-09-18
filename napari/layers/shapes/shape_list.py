@@ -214,6 +214,38 @@ class ShapeList:
         index = np.repeat(shape_index, len(shape.data))
         self._index = np.append(self._index, index, axis=0)
 
+        # Add faces to mesh
+        m = len(self._mesh.vertices)
+        vertices = shape._face_vertices
+        self._mesh.vertices = np.append(self._mesh.vertices, vertices, axis=0)
+        vertices = shape._face_vertices
+        self._mesh.vertices_centers = np.append(
+            self._mesh.vertices_centers, vertices, axis=0
+        )
+        vertices = np.zeros(shape._face_vertices.shape)
+        self._mesh.vertices_offsets = np.append(
+            self._mesh.vertices_offsets, vertices, axis=0
+        )
+        index = np.repeat([[shape_index, 0]], len(vertices), axis=0)
+        self._mesh.vertices_index = np.append(
+            self._mesh.vertices_index, index, axis=0
+        )
+
+        triangles = shape._face_triangles + m
+        self._mesh.triangles = np.append(
+            self._mesh.triangles, triangles, axis=0
+        )
+        index = np.repeat([[shape_index, 0]], len(triangles), axis=0)
+        self._mesh.triangles_index = np.append(
+            self._mesh.triangles_index, index, axis=0
+        )
+        color = shape.face_color.rgba
+        color[3] = color[3] * shape.opacity
+        color_array = np.repeat([color], len(triangles), axis=0)
+        self._mesh.triangles_colors = np.append(
+            self._mesh.triangles_colors, color_array, axis=0
+        )
+
         # Add edges to mesh
         m = len(self._mesh.vertices)
         vertices = (
@@ -242,38 +274,6 @@ class ShapeList:
             self._mesh.triangles_index, index, axis=0
         )
         color = shape.edge_color.rgba
-        color[3] = color[3] * shape.opacity
-        color_array = np.repeat([color], len(triangles), axis=0)
-        self._mesh.triangles_colors = np.append(
-            self._mesh.triangles_colors, color_array, axis=0
-        )
-
-        # Add faces to mesh
-        m = len(self._mesh.vertices)
-        vertices = shape._face_vertices
-        self._mesh.vertices = np.append(self._mesh.vertices, vertices, axis=0)
-        vertices = shape._face_vertices
-        self._mesh.vertices_centers = np.append(
-            self._mesh.vertices_centers, vertices, axis=0
-        )
-        vertices = np.zeros(shape._face_vertices.shape)
-        self._mesh.vertices_offsets = np.append(
-            self._mesh.vertices_offsets, vertices, axis=0
-        )
-        index = np.repeat([[shape_index, 0]], len(vertices), axis=0)
-        self._mesh.vertices_index = np.append(
-            self._mesh.vertices_index, index, axis=0
-        )
-
-        triangles = shape._face_triangles + m
-        self._mesh.triangles = np.append(
-            self._mesh.triangles, triangles, axis=0
-        )
-        index = np.repeat([[shape_index, 0]], len(triangles), axis=0)
-        self._mesh.triangles_index = np.append(
-            self._mesh.triangles_index, index, axis=0
-        )
-        color = shape.face_color.rgba
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -382,7 +382,7 @@ class ShapeList:
     def _update_z_order(self):
         """Updates the z order of the triangles given the z_index list
         """
-        self._z_order = np.argsort(self._z_index)[::-1]
+        self._z_order = np.argsort(self._z_index)
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty((0), dtype=int)
         else:

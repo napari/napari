@@ -17,7 +17,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # Lines: The lines of the interaction box used for highlights.
         # Markers: The the outlines for each point used for highlights.
         # Markers: The actual markers of each point.
-        node = Compound([Line(), Markers(), Markers()])
+        node = Compound([Markers(), Markers(), Line()])
 
         super().__init__(layer, node)
 
@@ -41,7 +41,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
-            self.node = Compound([Line(), Markers(), Markers()])
+            self.node = Compound([Markers(), Markers(), Line()])
         else:
             self.node = Markers()
 
@@ -53,12 +53,10 @@ class VispyPointsLayer(VispyBaseLayer):
     def _on_data_change(self):
         if len(self.layer._data_view) > 0:
             edge_color = [
-                self.layer.edge_colors[i]
-                for i in self.layer._indices_view[::-1]
+                self.layer.edge_colors[i] for i in self.layer._indices_view
             ]
             face_color = [
-                self.layer.face_colors[i]
-                for i in self.layer._indices_view[::-1]
+                self.layer.face_colors[i] for i in self.layer._indices_view
             ]
         else:
             edge_color = 'white'
@@ -75,13 +73,13 @@ class VispyPointsLayer(VispyBaseLayer):
             size = self.layer._sizes_view
 
         if self.layer.dims.ndisplay == 2:
-            set_data = self.node._subvisuals[2].set_data
+            set_data = self.node._subvisuals[0].set_data
         else:
             set_data = self.node.set_data
 
         set_data(
-            data[::-1, ::-1] + 0.5,
-            size=size[::-1],
+            data[:, ::-1] + 0.5,
+            size=size,
             edge_width=self.layer.edge_width,
             symbol=self.layer.symbol,
             edge_color=edge_color,
@@ -126,7 +124,7 @@ class VispyPointsLayer(VispyBaseLayer):
             pos = self.layer._highlight_box
             width = self._highlight_width
 
-        self.node._subvisuals[0].set_data(
+        self.node._subvisuals[2].set_data(
             pos=pos[:, ::-1] + 0.5, color=self._highlight_color, width=width
         )
 
