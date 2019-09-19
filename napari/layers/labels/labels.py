@@ -1,10 +1,12 @@
-from typing import Union
 import warnings
-import numpy as np
+from base64 import b64encode
+from collections import deque
 from copy import copy
+from typing import Union
+
+import numpy as np
 from scipy import ndimage as ndi
 from xml.etree.ElementTree import Element
-from base64 import b64encode
 from imageio import imwrite
 
 from ..base import Layer
@@ -373,18 +375,18 @@ class Labels(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         self._set_view_slice_keep_history()
-        self._undo_history = []
-        self._redo_history = []
+        self._undo_history = deque()
+        self._redo_history = deque()
 
     def _trim_history(self):
         while (
             len(self._undo_history) + len(self._redo_history)
             > self._history_limit
         ):
-            del self._undo_history[0]
+            self._undo_history.popleft()
 
     def _save_history(self):
-        self._redo_history = []
+        self._redo_history = deque()
         if not self._block_saving:
             self._undo_history.append(self.data[self.dims.indices].copy())
             self._trim_history()
