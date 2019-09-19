@@ -1,9 +1,10 @@
-from ..layers import Image, Labels, Points, Pyramid, Shapes, Vectors
+from ..layers import Image, Labels, Points, Pyramid, Shapes, Surface, Vectors
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_pyramid_layer import VispyPyramidLayer
 from .vispy_shapes_layer import VispyShapesLayer
 from .vispy_vectors_layer import VispyVectorsLayer
+from .vispy_surface_layer import VispySurfaceLayer
 
 
 layer_to_visual = {
@@ -12,6 +13,7 @@ layer_to_visual = {
     Points: VispyPointsLayer,
     Pyramid: VispyPyramidLayer,
     Shapes: VispyShapesLayer,
+    Surface: VispySurfaceLayer,
     Vectors: VispyVectorsLayer,
 }
 
