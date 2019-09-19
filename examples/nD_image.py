@@ -17,4 +17,4 @@ with napari.gui_qt():
         ],
         axis=0,
     )
-    viewer = napari.view(blobs.astype(float))
+    viewer = napari.add_image(blobs.astype(float))

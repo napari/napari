@@ -8,8 +8,8 @@ import napari
 
 with napari.gui_qt():
     # create the viewer with an image
-    viewer = napari.view(
-        astronaut=data.astronaut(), rgb=True, title='napari'
+    viewer = napari.add_image(
+        data.astronaut(), rgb=True, name='astronaut'
     )
 
     # set the theme to 'light'

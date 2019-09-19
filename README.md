@@ -51,7 +51,7 @@ From inside an IPython shell (started with `ipython --gui=qt`) or Jupyter notebo
 %gui qt5
 from skimage import data
 import napari
-viewer = napari.view(data.astronaut(), rgb=True)
+viewer = napari.add_image(data.astronaut())
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -63,7 +63,7 @@ from skimage import data
 import napari
 
 with napari.gui_qt():
-    viewer = napari.view(data.astronaut(), rgb=True)
+    viewer = napari.add_image(data.astronaut())
 ```
 
 ## features
@@ -78,15 +78,18 @@ from skimage.color import rgb2gray
 import napari
 
 with napari.gui_qt():
-    # create the viewer with four layers
-    viewer = napari.view(astronaut=rgb2gray(data.astronaut()),
-                         photographer=data.camera(),
-                         coins=data.coins(),
-                         moon=data.moon())
+    # create the viewer and then add some more layers
+    viewer = napari.add_image(rgb2gray(data.astronaut()), name='astronaut')
+    viewer.add_image(data.camera(), name='photographer')
+    viewer.add_image(data.coins(), name='coins')
+    viewer.add_image(data.moon(), name='moon')
+
     # remove a layer
     viewer.layers.remove('coins')
     # swap layer order
     viewer.layers['astronaut', 'moon'] = viewer.layers['moon', 'astronaut']
+
+    #You can also adjust their opacities and blending in the viewer
 ```
 
 ![image](resources/screenshot-layers.png)
@@ -100,9 +103,8 @@ from skimage.color import rgb2gray
 import napari
 
 with napari.gui_qt():
-    # set up viewer
-    viewer = napari.Viewer()
-    viewer.add_image(rgb2gray(data.astronaut()))
+    # add an image
+    viewer = napari.add_image(rgb2gray(data.astronaut()))
     # create three xy coordinates
     points = np.array([[100, 100], [200, 200], [333, 111]])
     # specify three sizes
@@ -136,7 +138,7 @@ with napari.gui_qt():
                                         n_dim=3, volume_fraction=f)
                      for f in np.linspace(0.05, 0.5, 10)], axis=0)
     # add image data to the viewer
-    viewer = napari.view(blobs.astype(float))
+    viewer = napari.add_image(blobs.astype(float))
 
     # add points to the viewer
     points = np.array(

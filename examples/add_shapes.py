@@ -10,11 +10,8 @@ import napari
 
 
 with napari.gui_qt():
-    # create the viewer and window
-    viewer = napari.Viewer()
-
     # add the image
-    layer = viewer.add_image(data.camera(), name='photographer')
+    viewer = napari.add_image(data.camera(), name='photographer')
 
     # create a list of polygons
     polygons = [

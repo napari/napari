@@ -15,4 +15,4 @@ with napari.gui_qt():
     print(array.shape)
     # For big data, we should specify the contrast_limits range, or napari will try
     # to find the min and max of the full image.
-    viewer = napari.view(array, contrast_limits=[0, 1], rgb=False)
+    viewer = napari.add_image(array, contrast_limits=[0, 1], rgb=False)

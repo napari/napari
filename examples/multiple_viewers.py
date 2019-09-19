@@ -8,16 +8,10 @@ import napari
 
 
 with napari.gui_qt():
-    # create the viewer and window
-    viewer_a = napari.Viewer()
-
     # add the image
     photographer = data.camera()
-    viewer_a.add_image(photographer, name='photographer')
-
-    # create a new viewer
-    viewer_b = napari.Viewer()
+    viewer_a = napari.add_image(photographer, name='photographer')
 
     # add the image
     astronaut = data.astronaut()
-    viewer_b.add_image(astronaut, name='astronaut')
+    viewer_b = napari.add_image(astronaut, name='astronaut')
