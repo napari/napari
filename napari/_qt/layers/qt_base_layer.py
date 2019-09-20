@@ -26,7 +26,8 @@ class QtLayerControls(QFrame):
         self.setObjectName('layer')
 
         self.vbox_layout = QVBoxLayout()
-        self.vbox_layout.setContentsMargins(12, 15, 10, 10)
+        self.vbox_layout.setContentsMargins(0, 0, 0, 0)
+        self.vbox_layout.setSpacing(2)
         self.setLayout(self.vbox_layout)
 
         sld = QSlider(Qt.Horizontal, self)

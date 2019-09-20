@@ -66,7 +66,7 @@ class QtLabelsControls(QtLayerControls):
         self.vbox_layout.addWidget(QLabel('brush size:'))
         self.vbox_layout.addWidget(sld)
 
-        contig_cb = QCheckBox()
+        contig_cb = QCheckBox('contiguous:')
         contig_cb.setToolTip('contiguous editing')
         contig_cb.setChecked(self.layer.contiguous)
         contig_cb.stateChanged.connect(

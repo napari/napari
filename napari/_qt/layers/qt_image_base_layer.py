@@ -1,5 +1,5 @@
 from qtpy.QtWidgets import QHBoxLayout
-from .. import QVRangeSlider
+from .. import QHRangeSlider
 from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
@@ -28,7 +28,8 @@ class QtBaseImageControls(QtLayerControls):
         self.colormap_combobox = comboBox
 
         # Create contrast_limits slider
-        self.contrastLimitsSlider = QVRangeSlider(
+        self.vbox_layout.addWidget(QLabel('contrast limits:'))
+        self.contrastLimitsSlider = QHRangeSlider(
             slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
         )
         self.contrastLimitsSlider.setEmitWhileMoving(True)

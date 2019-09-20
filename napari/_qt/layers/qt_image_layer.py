@@ -1,5 +1,4 @@
 from qtpy.QtWidgets import QHBoxLayout
-from .. import QVRangeSlider
 from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
@@ -41,6 +40,7 @@ class QtImageControls(QtBaseImageControls):
         self.renderComboBox = renderComboBox
         self.vbox_layout.addWidget(QLabel('rendering:'))
         self.vbox_layout.addWidget(renderComboBox)
+        self.vbox_layout.addStretch(0)
 
     def changeInterpolation(self, text):
         self.layer.interpolation = text

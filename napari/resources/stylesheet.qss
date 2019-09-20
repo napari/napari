@@ -267,10 +267,24 @@ QtLayerWidget > QCheckBox#visibility::indicator:checked {
 QtLayerControls > QLabel {
   min-height: 18px;
   max-height: 18px;
+  padding: 0px;
+  border: 0px;
+  margin: 0px;
+  background-color: {{ background }};
+  qproperty-alignment: AlignLeft;
+}
+
+QtLayerControls > QHRangeSlider {
+  min-height: 16px;
+  max-height: 16px;
+  qproperty-barColor: {{ secondary }};
+  qproperty-backgroundColor: {{ primary }};
+  qproperty-handleColor: {{ secondary }};
+  qproperty-handleBorderColor: {{ secondary }};
 }
 
 QtLayerControls > QSlider {
-   background-color: {{ foreground }};
+   background-color: {{ background }};
 }
 
 QtLayerControls > QSlider::groove:horizontal {
@@ -292,21 +306,6 @@ QtLayerControls > QSlider::sub-page:horizontal {
     background: {{ secondary }};
 }
 
-QtLayerControls > QPushButton#expand {
-  background-color: {{ foreground }};
-  border: 0px;
-  height: 20px;
-  padding: 0px;
-  width: 20px;
-}
-
-QtLayerControls > QPushButton#expand[expanded=true] {
-  image: url(":/icons/{{ folder }}/properties_expand.svg");
-}
-
-QtLayerControls > QPushButton#expand[expanded=false] {
-  image: url(":/icons/{{ folder }}/properties_contract.svg");
-}
 
 QtLayerControls > QComboBox {
    background-color: {{ primary }};
@@ -385,21 +384,20 @@ QtLayerControls > QPushButton#shuffle:pressed {
 }
 
 QtLayerControls > QCheckBox {
-  background-color: {{ foreground }};
-  spacing: 50px;
+  background-color: {{ background }};
+  min-width: 40px;
+  max-width: 40px;
+  min-height: 20px;
+  max-height: 20px;
 }
 
 QtLayerControls > QCheckBox::indicator {
    border: 3px solid {{ secondary }};
    border-radius: 4px;
-   width: 13px;
-   height: 13px;
 }
 
 QtLayerControls > QCheckBox::indicator:checked {
    background-color: {{ secondary }};
-   width: 13px;
-   height: 13px;
 }
 
 
