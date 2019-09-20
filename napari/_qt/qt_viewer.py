@@ -9,9 +9,9 @@ from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
+    QGridLayout,
     QFrame,
     QFileDialog,
-    QSplitter,
 )
 from qtpy.QtWidgets import QStackedWidget, QSizePolicy
 from qtpy.QtGui import QCursor, QPixmap
@@ -29,7 +29,7 @@ from ..util.keybindings import components_to_key_combo
 from ..util.io import read
 
 from .qt_controls import QtControls
-from .qt_layer_buttons import QtLayersButtons
+from .qt_viewer_buttons import QtLayerButtons, QtConsoleButton
 from .qt_console import QtConsole
 from .._vispy import create_vispy_visual
 
@@ -38,7 +38,7 @@ from .._vispy import create_vispy_visual
 use_app(API_NAME)
 
 
-class QtViewer(QSplitter):
+class QtViewer(QFrame):
     with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
         raw_stylesheet = f.read()
 
@@ -53,7 +53,8 @@ class QtViewer(QSplitter):
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtControls(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
-        self.buttons = QtLayersButtons(self.viewer)
+        self.layerbuttons = QtLayerButtons(self.viewer)
+        self.consoleButton = QtConsoleButton(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
 
         # This dictionary holds the corresponding vispy visual for each layer
@@ -63,11 +64,9 @@ class QtViewer(QSplitter):
             self.console.style().unpolish(self.console)
             self.console.style().polish(self.console)
             self.console.hide()
-            self.buttons.consoleButton.clicked.connect(
-                lambda: self._toggle_console()
-            )
+            self.consoleButton.clicked.connect(lambda: self._toggle_console())
         else:
-            self.buttons.consoleButton.setEnabled(False)
+            self.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -83,32 +82,18 @@ class QtViewer(QSplitter):
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
 
-        main_widget = QWidget()
-        main_layout = QVBoxLayout()
+        main_layout = QGridLayout()
         main_layout.setContentsMargins(15, 20, 15, 10)
-        main_layout.addWidget(self.canvas.native)
-        main_layout.addWidget(self.dims)
-        main_widget.setLayout(main_layout)
-
-        layers_widget = QWidget()
-        layers_layout = QVBoxLayout()
-        layers_layout.addWidget(self.buttons)
-        layers_layout.addWidget(self.layers)
-        layers_widget.setLayout(layers_layout)
-        layers_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-
-        top = QWidget()
-        top_layout = QHBoxLayout()
-        top_layout.addWidget(main_widget)
-        top_layout.addWidget(self.controls)
-        top_layout.addWidget(layers_widget)
-        top.setLayout(top_layout)
-
-        self.setOrientation(Qt.Vertical)
-        self.addWidget(top)
+        main_layout.addWidget(self.canvas.native, 0, 2, 2, 1)
+        main_layout.addWidget(self.dims, 2, 2)
+        main_layout.addWidget(self.layerbuttons, 0, 0)
+        main_layout.addWidget(self.layers, 1, 0)
+        main_layout.addWidget(self.controls, 1, 1)
+        main_layout.addWidget(self.consoleButton, 2, 0)
+        self.setLayout(main_layout)
 
         if self.console.shell is not None:
-            self.addWidget(self.console)
+            main_layout.addWidget(self.console, 3, 0, 1, 3)
 
         self._last_visited_dir = str(Path.home())
 
@@ -282,11 +267,9 @@ class QtViewer(QSplitter):
     def _toggle_console(self):
         """Toggle console visible and not visible."""
         self.console.setVisible(not self.console.isVisible())
-        self.buttons.consoleButton.setProperty(
-            'expanded', self.console.isVisible()
-        )
-        self.buttons.consoleButton.style().unpolish(self.buttons.consoleButton)
-        self.buttons.consoleButton.style().polish(self.buttons.consoleButton)
+        self.consoleButton.setProperty('expanded', self.console.isVisible())
+        self.consoleButton.style().unpolish(self.consoleButton)
+        self.consoleButton.style().polish(self.consoleButton)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

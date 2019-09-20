@@ -80,8 +80,8 @@ QtDivider {
   padding: 0px;
   border: 0px;
   margin: 0px 3px 0px 3px;
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 214px;
+  max-width: 214px;
   min-height: 1px;
   max-height: 1px;
 }
@@ -173,13 +173,13 @@ QtAdditionButton::indicator {
 /* ------------------------------------------------------ */
 
 QtLayerWidget {
-  border: 1px solid {{ foreground }};
+  border: 1px solid {{ background }};
   background-color: {{ foreground }};
-  border-radius: 3px;
-  padding: 3px;
+  border-radius: 2px;
+  padding: 0px;
   margin: 0px;
-  min-height: 38px;
-  max-height: 38px;
+  min-height: 32px;
+  max-height: 32px;
   min-width: 220px;
   max-width: 220px;
 }
@@ -196,26 +196,29 @@ QtLayerWidget > QLabel {
 }
 
 QtLayerWidget > QLabel#Shapes {
-  max-width: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  max-height: 24px;
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
   image: url(":/icons/{{ folder }}/new_shapes.svg");
 }
 
 QtLayerWidget > QLabel#Points {
-  max-width: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  max-height: 24px;
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
   image: url(":/icons/{{ folder }}/new_points.svg");
 }
 
 QtLayerWidget > QLabel#Labels {
-  max-width: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  max-height: 24px;
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
   image: url(":/icons/{{ folder }}/new_labels.svg");
 }
 
@@ -225,7 +228,7 @@ QtLayerWidget > QLineEdit {
   padding: 0px;
   margin: 0px;
   border-radius: 0px;
-  font-size: 18px;
+  font-size: 16px;
   qproperty-alignment: right;
 }
 
@@ -247,14 +250,14 @@ QtLayerWidget > QCheckBox#visibility {
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   image: url(":/icons/{{ folder }}/visibility_off.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   image: url(":/icons/{{ folder }}/visibility.svg");
 }
 

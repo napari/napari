@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import QHBoxLayout, QPushButton, QFrame
 
 
-class QtLayersButtons(QFrame):
+class QtLayerButtons(QFrame):
     def __init__(self, viewer):
         super().__init__()
 
@@ -10,16 +10,14 @@ class QtLayersButtons(QFrame):
         self.newPointsButton = QtNewPointsButton(self.viewer)
         self.newShapesButton = QtNewShapesButton(self.viewer)
         self.newLabelsButton = QtNewLabelsButton(self.viewer)
-        self.consoleButton = QtConsoleButton(self.viewer)
 
         layout = QHBoxLayout()
-        layout.setContentsMargins(0, 18, 34, 4)
-        layout.addWidget(self.consoleButton)
-        layout.addStretch(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
         layout.addWidget(self.deleteButton)
+        layout.addStretch(0)
         self.setLayout(layout)
 
 

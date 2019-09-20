@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QCheckBox,
     QHBoxLayout,
+    QSizePolicy,
 )
 from qtpy.QtGui import QDrag
 import numpy as np
@@ -29,10 +30,11 @@ class QtLayerList(QScrollArea):
         self.vbox_layout.addWidget(QtDivider())
         self.vbox_layout.addStretch(1)
         self.vbox_layout.setContentsMargins(0, 0, 0, 0)
-        self.vbox_layout.setSpacing(4)
+        self.vbox_layout.setSpacing(2)
         self.centers = []
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
         self.layers.events.added.connect(self._add)
         self.layers.events.removed.connect(self._remove)
@@ -254,6 +256,13 @@ class QtLayerWidget(QFrame):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
+        tb = QLabel(self)
+        tb.setObjectName('thumbmnail')
+        tb.setToolTip('Layer thumbmnail')
+        self.thumbnail_label = tb
+        self._on_thumbnail_change(None)
+        self.layout.addWidget(tb)
+
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
         cb.setToolTip('Layer visibility')
@@ -262,13 +271,6 @@ class QtLayerWidget(QFrame):
         cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
         self.visibleCheckBox = cb
         self.layout.addWidget(cb)
-
-        tb = QLabel(self)
-        tb.setObjectName('thumbmnail')
-        tb.setToolTip('Layer thumbmnail')
-        self.thumbnail_label = tb
-        self._on_thumbnail_change(None)
-        self.layout.addWidget(tb)
 
         textbox = QLineEdit(self)
         textbox.setText(layer.name)
@@ -284,7 +286,7 @@ class QtLayerWidget(QFrame):
         layer_type = type(layer).__name__
         ltb.setObjectName(layer_type)
         ltb.setToolTip('Layer type')
-        self.type_label = ltb
+        self.typeLabel = ltb
         self.layout.addWidget(ltb)
 
         msg = 'Click to select\nDrag to rearrange'
