@@ -42,8 +42,8 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .out-prompt { color: #b72121; }
 
 QtLayerList {
-    min-width: 250px;
-    max-width: 250px;
+    min-width: 240px;
+    max-width: 240px;
     padding: 0px;
     margin: 0px;
     border: 0px;
@@ -124,14 +124,14 @@ QSlider::sub-page:horizontal {
 QScrollBar:vertical {
     background-color: {{ background }};
     width: 16px;
-    margin: 16px 2px 16px 2px;
+    margin: 1px 4px 1px 4px;
     border-radius: 3px;
 }
 
 QScrollBar::handle:vertical {
     background-color: {{ foreground }};
     border: 0px;
-    min-height: 8px;
+    min-height: 10px;
     border-radius: 3px;
 }
 
@@ -267,6 +267,8 @@ QtLayerWidget > QCheckBox#visibility::indicator:checked {
 QtLayerControls > QLabel {
   min-height: 18px;
   max-height: 18px;
+  min-width: 180px;
+  max-width: 180px;
   padding: 0px;
   border: 0px;
   margin: 0px;
@@ -355,7 +357,7 @@ QtLayerControls > QSpinBox::down-button {
     left: 6px;
 }
 
-QtLayerControls >  QSpinBox::up-arrow {
+QtLayerControls > QSpinBox::up-arrow {
    image: url(":/icons/{{ folder }}/plus.svg");
    width: 14px;
    height: 14px;
@@ -367,11 +369,49 @@ QtLayerControls > QSpinBox::down-arrow {
    height: 14px;
 }
 
+
+QtLayerControls > QDoubleSpinBox {
+   background-color: {{ primary }};
+   padding-left: 14px;
+   padding-right: 6px;
+   padding-top: 2px;
+   padding-bottom: 3px;
+}
+
+QtLayerControls > QDoubleSpinBox::up-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center right;
+    width: 16px;
+    height: 16px;
+    right: 6px;
+}
+
+QtLayerControls > QDoubleSpinBox::down-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center left;
+    width: 16px;
+    height: 16px;
+    left: 6px;
+}
+
+QtLayerControls > QDoubleSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayerControls > QDoubleSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+   width: 14px;
+   height: 14px;
+}
+
 QtLayerControls > QPushButton#shuffle {
   background-color: {{ secondary }};
   border: 3px solid {{ secondary }};
-  text-align: left;
-  padding-left: 5px;
+  text-align: center;
 }
 
 QtLayerControls > QLabel#shuffle-label {
@@ -385,8 +425,6 @@ QtLayerControls > QPushButton#shuffle:pressed {
 
 QtLayerControls > QCheckBox {
   background-color: {{ background }};
-  min-width: 40px;
-  max-width: 40px;
   min-height: 20px;
   max-height: 20px;
 }

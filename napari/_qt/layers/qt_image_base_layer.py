@@ -23,21 +23,15 @@ class QtBaseImageControls(QtLayerControls):
         comboBox.activated[str].connect(
             lambda text=comboBox: self.changeColor(text)
         )
-        self.vbox_layout.addWidget(QLabel('colormap:'))
-        self.vbox_layout.addWidget(comboBox)
-        self.colormap_combobox = comboBox
+        self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
-        self.vbox_layout.addWidget(QLabel('contrast limits:'))
         self.contrastLimitsSlider = QHRangeSlider(
-            slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
+            slider_range=[0, 1, 0.0001], values=[0, 1]
         )
         self.contrastLimitsSlider.setEmitWhileMoving(True)
         self.contrastLimitsSlider.collapsable = False
         self.contrastLimitsSlider.setEnabled(True)
-
-        self.vbox_layout.addWidget(self.contrastLimitsSlider)
-        self.setMouseTracking(True)
 
         self.contrastLimitsSlider.rangeChanged.connect(
             self.contrast_limits_slider_changed
@@ -49,11 +43,11 @@ class QtBaseImageControls(QtLayerControls):
 
     def _on_colormap_change(self, event):
         name = self.layer.colormap[0]
-        if name not in self.colormap_combobox._allitems:
-            self.colormap_combobox._allitems.add(name)
-            self.colormap_combobox.addItem(name)
-        if name != self.colormap_combobox.currentText():
-            self.colormap_combobox.setCurrentText(name)
+        if name not in self.colormapComboBox._allitems:
+            self.colormapComboBox._allitems.add(name)
+            self.colormapComboBox.addItem(name)
+        if name != self.colormapComboBox.currentText():
+            self.colormapComboBox.setCurrentText(name)
 
     def contrast_limits_slider_changed(self, slidermin, slidermax):
         valmin, valmax = self.layer._contrast_limits_range

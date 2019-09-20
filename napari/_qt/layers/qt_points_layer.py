@@ -27,7 +27,6 @@ class QtPointsControls(QtLayerControls):
 
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(110)
         sld.setMinimum(1)
         sld.setMaximum(100)
         sld.setSingleStep(1)
@@ -35,8 +34,6 @@ class QtPointsControls(QtLayerControls):
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.sizeSlider = sld
-        self.vbox_layout.addWidget(QLabel('size:'))
-        self.vbox_layout.addWidget(sld)
 
         face_comboBox = QComboBox()
         colors = self.layer._colors
@@ -50,8 +47,6 @@ class QtPointsControls(QtLayerControls):
             lambda text=face_comboBox: self.changeFaceColor(text)
         )
         self.faceComboBox = face_comboBox
-        self.vbox_layout.addWidget(QLabel('face_color:'))
-        self.vbox_layout.addWidget(face_comboBox)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
@@ -65,8 +60,6 @@ class QtPointsControls(QtLayerControls):
             lambda text=edge_comboBox: self.changeEdgeColor(text)
         )
         self.edgeComboBox = edge_comboBox
-        self.vbox_layout.addWidget(QLabel('edge_color:'))
-        self.vbox_layout.addWidget(edge_comboBox)
 
         symbol_comboBox = QComboBox()
         for s in Symbol:
@@ -79,8 +72,6 @@ class QtPointsControls(QtLayerControls):
             lambda text=symbol_comboBox: self.changeSymbol(text)
         )
         self.symbolComboBox = symbol_comboBox
-        self.vbox_layout.addWidget(QLabel('symbol:'))
-        self.vbox_layout.addWidget(symbol_comboBox)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('N-dimensional points')
@@ -89,8 +80,6 @@ class QtPointsControls(QtLayerControls):
             lambda state=ndim_cb: self.change_ndim(state)
         )
         self.ndimCheckBox = ndim_cb
-        self.vbox_layout.addWidget(QLabel('n-dim:'))
-        self.vbox_layout.addWidget(ndim_cb)
 
         self.select_button = QtSelectButton(layer)
         self.addition_button = QtAdditionButton(layer)
@@ -102,12 +91,25 @@ class QtPointsControls(QtLayerControls):
         self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
 
-        self.vbox_layout.addWidget(self.panzoom_button)
-        self.vbox_layout.addWidget(self.select_button)
-        self.vbox_layout.addWidget(self.addition_button)
-        self.vbox_layout.addWidget(self.delete_button)
-        self.vbox_layout.addStretch(0)
-        self.setMouseTracking(True)
+        self.grid_layout.addWidget(self.panzoom_button, 0, 0)
+        self.grid_layout.addWidget(self.select_button, 0, 1)
+        self.grid_layout.addWidget(self.addition_button, 0, 2)
+        self.grid_layout.addWidget(self.delete_button, 0, 3)
+        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0, 1, 4)
+        self.grid_layout.addWidget(self.opacitySilder, 2, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('point size:'), 3, 0, 1, 4)
+        self.grid_layout.addWidget(self.sizeSlider, 4, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('blending:'), 5, 0, 1, 4)
+        self.grid_layout.addWidget(self.blendComboBox, 6, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('face color:'), 7, 0, 1, 3)
+        self.grid_layout.addWidget(self.faceComboBox, 8, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('edge color:'), 9, 0, 1, 3)
+        self.grid_layout.addWidget(self.edgeComboBox, 10, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('symbol:'), 11, 0, 1, 3)
+        self.grid_layout.addWidget(self.symbolComboBox, 12, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 13, 0, 1, 3)
+        self.grid_layout.addWidget(self.ndimCheckBox, 13, 3)
+        self.grid_layout.setRowStretch(14, 1)
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer.mode

@@ -90,6 +90,8 @@ class QtViewer(QFrame):
         main_layout.addWidget(self.layers, 1, 0)
         main_layout.addWidget(self.controls, 1, 1)
         main_layout.addWidget(self.consoleButton, 2, 0)
+        main_layout.setColumnStretch(2, 1)
+        main_layout.setSpacing(10)
         self.setLayout(main_layout)
 
         if self.console.shell is not None:

@@ -5,6 +5,8 @@ from .qt_image_layer import QtImageControls
 from .qt_points_layer import QtPointsControls
 from .qt_shapes_layer import QtShapesControls
 from .qt_labels_layer import QtLabelsControls
+from .qt_surface_layer import QtSurfaceControls
+from .qt_vectors_layer import QtVectorsControls
 
 
 layer_to_controls = {
@@ -13,8 +15,8 @@ layer_to_controls = {
     Points: QtPointsControls,
     Pyramid: QtImageControls,
     Shapes: QtShapesControls,
-    Surface: QtBaseImageControls,
-    Vectors: QtLayerControls,
+    Surface: QtSurfaceControls,
+    Vectors: QtVectorsControls,
 }
 
 

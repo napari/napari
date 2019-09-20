@@ -28,30 +28,24 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
 
-        self.colormap_update = QPushButton('click')
-        self.colormap_update.setObjectName('shuffle')
-        self.colormap_update.clicked.connect(self.changeColor)
-        self.colormap_update.setFixedWidth(112)
-        self.colormap_update.setFixedHeight(25)
-        shuffle_label = QLabel('shuffle colors:')
-        shuffle_label.setObjectName('shuffle-label')
-        self.vbox_layout.addWidget(shuffle_label)
-        self.vbox_layout.addWidget(self.colormap_update)
+        # shuffle colormap button
+        self.colormapUpdate = QPushButton('shuffle colors')
+        self.colormapUpdate.setObjectName('shuffle')
+        self.colormapUpdate.clicked.connect(self.changeColor)
+        self.colormapUpdate.setFixedWidth(112)
+        self.colormapUpdate.setFixedHeight(25)
 
         # selection spinbox
-        self.selection_spinbox = QSpinBox()
-        self.selection_spinbox.setSingleStep(1)
-        self.selection_spinbox.setMinimum(0)
-        self.selection_spinbox.setMaximum(2147483647)
-        self.selection_spinbox.setValue(self.layer.selected_label)
-        self.selection_spinbox.setFixedWidth(75)
-        self.selection_spinbox.valueChanged.connect(self.changeSelection)
-        self.vbox_layout.addWidget(QLabel('label:'))
-        self.vbox_layout.addWidget(self.selection_spinbox)
+        self.selectionSpinBox = QSpinBox()
+        self.selectionSpinBox.setSingleStep(1)
+        self.selectionSpinBox.setMinimum(0)
+        self.selectionSpinBox.setMaximum(2147483647)
+        self.selectionSpinBox.setValue(self.layer.selected_label)
+        self.selectionSpinBox.setFixedWidth(75)
+        self.selectionSpinBox.valueChanged.connect(self.changeSelection)
 
         sld = QSlider(Qt.Horizontal, self)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(110)
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
@@ -62,19 +56,15 @@ class QtLabelsControls(QtLayerControls):
             value = value[:2].mean()
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
-        self.brush_size_slider = sld
-        self.vbox_layout.addWidget(QLabel('brush size:'))
-        self.vbox_layout.addWidget(sld)
+        self.brushSizeSlider = sld
 
-        contig_cb = QCheckBox('contiguous:')
+        contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
         contig_cb.setChecked(self.layer.contiguous)
         contig_cb.stateChanged.connect(
             lambda state=contig_cb: self.change_contig(state)
         )
-        self.contig_checkbox = contig_cb
-        self.vbox_layout.addWidget(QLabel('contiguous:'))
-        self.vbox_layout.addWidget(contig_cb)
+        self.contigCheckBox = contig_cb
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
@@ -82,9 +72,7 @@ class QtLabelsControls(QtLayerControls):
         ndim_cb.stateChanged.connect(
             lambda state=ndim_cb: self.change_ndim(state)
         )
-        self.ndim_checkbox = ndim_cb
-        self.vbox_layout.addWidget(QLabel('n-dim:'))
-        self.vbox_layout.addWidget(ndim_cb)
+        self.ndimCheckBox = ndim_cb
 
         self.panzoom_button = QtModeButton(
             layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode'
@@ -102,16 +90,27 @@ class QtLabelsControls(QtLayerControls):
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
-
-        self.vbox_layout.addWidget(self.panzoom_button)
-        self.vbox_layout.addWidget(self.paint_button)
-        self.vbox_layout.addWidget(self.pick_button)
-        self.vbox_layout.addWidget(self.fill_button)
-        self.vbox_layout.addWidget(QtColorBox(layer))
-        self.vbox_layout.addStretch(0)
-        self.setMouseTracking(True)
-
         self.panzoom_button.setChecked(True)
+
+        self.grid_layout.addWidget(self.panzoom_button, 0, 0)
+        self.grid_layout.addWidget(self.paint_button, 0, 1)
+        self.grid_layout.addWidget(self.fill_button, 0, 2)
+        self.grid_layout.addWidget(self.pick_button, 0, 3)
+        self.grid_layout.addWidget(QLabel('label:'), 1, 0, 1, 4)
+        self.grid_layout.addWidget(self.selectionSpinBox, 2, 0, 1, 3)
+        self.grid_layout.addWidget(QtColorBox(layer), 2, 3)
+        self.grid_layout.addWidget(QLabel('opacity:'), 3, 0, 1, 4)
+        self.grid_layout.addWidget(self.opacitySilder, 4, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('brush size:'), 5, 0, 1, 4)
+        self.grid_layout.addWidget(self.brushSizeSlider, 6, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('blending:'), 7, 0, 1, 4)
+        self.grid_layout.addWidget(self.blendComboBox, 8, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 9, 0, 1, 3)
+        self.grid_layout.addWidget(self.contigCheckBox, 9, 3)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 10, 0, 1, 3)
+        self.grid_layout.addWidget(self.ndimCheckBox, 10, 3)
+        self.grid_layout.addWidget(self.colormapUpdate, 11, 0, 1, 4)
+        self.grid_layout.setRowStretch(12, 1)
 
     def mouseMoveEvent(self, event):
         self.layer.status = str(self.layer.mode)
@@ -153,21 +152,21 @@ class QtLabelsControls(QtLayerControls):
     def _on_selection_change(self, event):
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
-            self.selection_spinbox.setValue(int(value))
+            self.selectionSpinBox.setValue(int(value))
 
     def _on_brush_size_change(self, event):
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
             value = np.clip(int(value), 1, 40)
-            self.brush_size_slider.setValue(value)
+            self.brushSizeSlider.setValue(value)
 
     def _on_n_dim_change(self, event):
         with self.layer.events.n_dimensional.blocker():
-            self.ndim_checkbox.setChecked(self.layer.n_dimensional)
+            self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_contig_change(self, event):
         with self.layer.events.contiguous.blocker():
-            self.contig_checkbox.setChecked(self.layer.contiguous)
+            self.contigCheckBox.setChecked(self.layer.contiguous)
 
 
 class QtModeButton(QRadioButton):

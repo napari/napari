@@ -24,8 +24,6 @@ class QtImageControls(QtBaseImageControls):
             lambda text=interp_comboBox: self.changeInterpolation(text)
         )
         self.interpComboBox = interp_comboBox
-        self.vbox_layout.addWidget(QLabel('interpolation:'))
-        self.vbox_layout.addWidget(interp_comboBox)
 
         renderComboBox = QComboBox()
         for render in Rendering:
@@ -38,9 +36,20 @@ class QtImageControls(QtBaseImageControls):
             lambda text=renderComboBox: self.changeRendering(text)
         )
         self.renderComboBox = renderComboBox
-        self.vbox_layout.addWidget(QLabel('rendering:'))
-        self.vbox_layout.addWidget(renderComboBox)
-        self.vbox_layout.addStretch(0)
+
+        self.grid_layout.addWidget(QLabel('opacity:'), 0, 0, 1, 3)
+        self.grid_layout.addWidget(self.opacitySilder, 1, 0, 1, 3)
+        self.grid_layout.addWidget(QLabel('contrast limits:'), 2, 0, 1, 3)
+        self.grid_layout.addWidget(self.contrastLimitsSlider, 3, 0, 1, 3)
+        self.grid_layout.addWidget(QLabel('colormap:'), 4, 0, 1, 3)
+        self.grid_layout.addWidget(self.colormapComboBox, 5, 0, 1, 3)
+        self.grid_layout.addWidget(QLabel('blending:'), 6, 0, 1, 3)
+        self.grid_layout.addWidget(self.blendComboBox, 7, 0, 1, 3)
+        self.grid_layout.addWidget(QLabel('rendering:'), 8, 0, 1, 3)
+        self.grid_layout.addWidget(self.renderComboBox, 9, 0, 1, 3)
+        self.grid_layout.addWidget(QLabel('interpolation:'), 10, 0, 1, 3)
+        self.grid_layout.addWidget(self.interpComboBox, 11, 0, 1, 3)
+        self.grid_layout.setRowStretch(12, 1)
 
     def changeInterpolation(self, text):
         self.layer.interpolation = text

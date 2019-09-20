@@ -24,13 +24,14 @@ class QtLayerControls(QFrame):
         layer.events.blending.connect(self._on_blending_change)
         layer.events.opacity.connect(self._on_opacity_change)
         self.setObjectName('layer')
+        self.setMouseTracking(True)
 
-        self.vbox_layout = QVBoxLayout()
-        self.vbox_layout.setContentsMargins(0, 0, 0, 0)
-        self.vbox_layout.setSpacing(2)
-        self.setLayout(self.vbox_layout)
+        self.grid_layout = QGridLayout()
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setSpacing(2)
+        self.setLayout(self.grid_layout)
 
-        sld = QSlider(Qt.Horizontal, self)
+        sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(100)
@@ -40,8 +41,6 @@ class QtLayerControls(QFrame):
             lambda value=sld: self.changeOpacity(value)
         )
         self.opacitySilder = sld
-        self.vbox_layout.addWidget(QLabel('opacity:'))
-        self.vbox_layout.addWidget(sld)
 
         blend_comboBox = QComboBox()
         for blend in Blending:
@@ -54,8 +53,6 @@ class QtLayerControls(QFrame):
             lambda text=blend_comboBox: self.changeBlending(text)
         )
         self.blendComboBox = blend_comboBox
-        self.vbox_layout.addWidget(QLabel('blending:'))
-        self.vbox_layout.addWidget(blend_comboBox)
 
     def changeOpacity(self, value):
         with self.layer.events.blocker(self._on_opacity_change):
