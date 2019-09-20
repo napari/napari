@@ -11,7 +11,7 @@ with napari.gui_qt():
         length=128, blob_size_fraction=0.05, n_dim=2, volume_fraction=0.25
     ).astype(float)
 
-    viewer = napari.add_image(blobs, name='blobs')
+    viewer = napari.view_image(blobs, name='blobs')
 
     @viewer.bind_key('a')
     def accept_image(viewer):

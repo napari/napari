@@ -8,7 +8,7 @@ def test_add_image(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 15))
 
-    viewer = napari.add_image(data)
+    viewer = napari.view_image(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
@@ -29,7 +29,7 @@ def test_add_volume(qtbot):
     """Test adding volume."""
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
-    viewer = napari.add_image(data)
+    viewer = napari.view_image(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
     viewer.dims.ndisplay = 3
@@ -52,7 +52,7 @@ def test_add_pyramid(qtbot):
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer = napari.add_pyramid(data)
+    viewer = napari.view_pyramid(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
@@ -73,7 +73,7 @@ def test_add_labels(qtbot):
     """Test adding labels image."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    viewer = napari.add_labels(data)
+    viewer = napari.view_labels(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
@@ -94,7 +94,7 @@ def test_add_points(qtbot):
     """Test adding points."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
-    viewer = napari.add_points(data)
+    viewer = napari.view_points(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
@@ -115,7 +115,7 @@ def test_add_vectors(qtbot):
     """Test adding vectors."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 2))
-    viewer = napari.add_vectors(data)
+    viewer = napari.view_vectors(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
     assert np.all(viewer.layers[0].data == data)
@@ -135,7 +135,7 @@ def test_add_shapes(qtbot):
     """Test adding shapes."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
-    viewer = napari.add_shapes(data)
+    viewer = napari.view_shapes(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 
@@ -159,7 +159,7 @@ def test_add_surface(qtbot):
     faces = np.random.randint(10, size=(6, 3))
     values = np.random.random(10)
     data = (vertices, faces, values)
-    viewer = napari.add_surface(data)
+    viewer = napari.view_surface(data)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 

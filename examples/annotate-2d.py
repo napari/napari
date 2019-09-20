@@ -11,7 +11,7 @@ import napari
 print("click to add points; close the window when finished.")
 
 with napari.gui_qt():
-    viewer = napari.add_image(data.astronaut(), rgb=True)
+    viewer = napari.view_image(data.astronaut(), rgb=True)
     points = viewer.add_points(np.zeros((0, 2)))
     points.mode = 'add'
 

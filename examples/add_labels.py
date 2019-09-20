@@ -25,7 +25,7 @@ with napari.gui_qt():
     label_image = label(cleared)
 
     # initialise viewer with coins image
-    viewer = napari.add_image(image, name='coins', rgb=False)
+    viewer = napari.view_image(image, name='coins', rgb=False)
 
     # add the labels
     label_layer = viewer.add_labels(label_image, name='segmentation')

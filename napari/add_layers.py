@@ -4,7 +4,7 @@ from .viewer import Viewer
 from .util.misc import ensure_iterable, is_iterable
 
 
-def add_image(
+def view_image(
     data,
     *,
     rgb=None,
@@ -86,7 +86,7 @@ def add_image(
     return viewer
 
 
-def add_multichannel(
+def view_multichannel(
     data,
     *,
     channel=-1,
@@ -189,7 +189,7 @@ def add_multichannel(
     return viewer
 
 
-def add_pyramid(data, *args, **kwargs):
+def view_pyramid(data, *args, **kwargs):
     """Create a viewer and add a pyramid layer.
 
     Parameters
@@ -244,7 +244,7 @@ def add_pyramid(data, *args, **kwargs):
     return viewer
 
 
-def add_points(
+def view_points(
     data,
     *,
     symbol='o',
@@ -331,7 +331,7 @@ def add_points(
     return viewer
 
 
-def add_labels(
+def view_labels(
     data,
     *,
     num_colors=50,
@@ -399,7 +399,7 @@ def add_labels(
     return viewer
 
 
-def add_shapes(
+def view_shapes(
     data,
     *,
     shape_type='rectangle',
@@ -493,7 +493,7 @@ def add_shapes(
     return viewer
 
 
-def add_surface(
+def view_surface(
     data,
     *,
     colormap='gray',
@@ -564,7 +564,7 @@ def add_surface(
     return viewer
 
 
-def add_vectors(
+def view_vectors(
     data,
     *,
     edge_width=1,

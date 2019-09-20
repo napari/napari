@@ -11,7 +11,7 @@ import napari
 
 with napari.gui_qt():
     # add the image
-    viewer = napari.add_image(data.camera(), name='photographer')
+    viewer = napari.view_image(data.camera(), name='photographer')
 
     # create a list of polygons
     polygons = [

@@ -51,7 +51,7 @@ From inside an IPython shell (started with `ipython --gui=qt`) or Jupyter notebo
 %gui qt5
 from skimage import data
 import napari
-viewer = napari.add_image(data.astronaut())
+viewer = napari.view_image(data.astronaut())
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -63,7 +63,7 @@ from skimage import data
 import napari
 
 with napari.gui_qt():
-    viewer = napari.add_image(data.astronaut())
+    viewer = napari.view_image(data.astronaut())
 ```
 
 ## features
@@ -79,7 +79,7 @@ import napari
 
 with napari.gui_qt():
     # create the viewer and then add some more layers
-    viewer = napari.add_image(rgb2gray(data.astronaut()), name='astronaut')
+    viewer = napari.view_image(rgb2gray(data.astronaut()), name='astronaut')
     viewer.add_image(data.camera(), name='photographer')
     viewer.add_image(data.coins(), name='coins')
     viewer.add_image(data.moon(), name='moon')
@@ -104,7 +104,7 @@ import napari
 
 with napari.gui_qt():
     # add an image
-    viewer = napari.add_image(rgb2gray(data.astronaut()))
+    viewer = napari.view_image(rgb2gray(data.astronaut()))
     # create three xy coordinates
     points = np.array([[100, 100], [200, 200], [333, 111]])
     # specify three sizes
@@ -138,7 +138,7 @@ with napari.gui_qt():
                                         n_dim=3, volume_fraction=f)
                      for f in np.linspace(0.05, 0.5, 10)], axis=0)
     # add image data to the viewer
-    viewer = napari.add_image(blobs.astype(float))
+    viewer = napari.view_image(blobs.astype(float))
 
     # add points to the viewer
     points = np.array(

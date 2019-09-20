@@ -24,4 +24,4 @@ print('pyramid level shapes: ', [p.shape[:-1] for p in pyramid])
 
 with napari.gui_qt():
     # add image pyramid
-    napari.add_pyramid(pyramid, contrast_limits=[0, 255])
+    napari.view_pyramid(pyramid, contrast_limits=[0, 255])

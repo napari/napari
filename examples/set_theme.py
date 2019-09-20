@@ -8,7 +8,7 @@ import napari
 
 with napari.gui_qt():
     # create the viewer with an image
-    viewer = napari.add_image(
+    viewer = napari.view_image(
         data.astronaut(), rgb=True, name='astronaut'
     )
 
