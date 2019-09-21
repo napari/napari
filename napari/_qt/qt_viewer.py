@@ -84,18 +84,33 @@ class QtViewer(QFrame):
 
         main_layout = QGridLayout()
         main_layout.setContentsMargins(15, 20, 15, 10)
-        main_layout.addWidget(self.canvas.native, 0, 2, 2, 1)
-        main_layout.addWidget(self.dims, 2, 2)
-        main_layout.addWidget(self.layerbuttons, 0, 0)
-        main_layout.addWidget(self.layers, 1, 0)
-        main_layout.addWidget(self.controls, 1, 1)
-        main_layout.addWidget(self.consoleButton, 2, 0)
-        main_layout.setColumnStretch(2, 1)
-        main_layout.setSpacing(10)
-        self.setLayout(main_layout)
+        layout_option = 2
+        if layout_option == 1:
+            main_layout.addWidget(self.canvas.native, 0, 2, 2, 1)
+            main_layout.addWidget(self.dims, 2, 2)
+            main_layout.addWidget(self.layerbuttons, 0, 0)
+            main_layout.addWidget(self.layers, 1, 0)
+            main_layout.addWidget(self.controls, 1, 1)
+            main_layout.addWidget(self.consoleButton, 2, 0)
+            if self.console.shell is not None:
+                main_layout.addWidget(self.console, 3, 0, 1, 3)
+            main_layout.setColumnStretch(2, 1)
+            main_layout.setSpacing(10)
 
-        if self.console.shell is not None:
-            main_layout.addWidget(self.console, 3, 0, 1, 3)
+        elif layout_option == 2:
+            main_layout.addWidget(self.canvas.native, 0, 0, 3, 1)
+            main_layout.addWidget(self.dims, 2, 0)
+            main_layout.addWidget(self.layerbuttons, 0, 1)
+            main_layout.addWidget(self.consoleButton, 0, 2)
+            main_layout.addWidget(self.layers, 1, 1, 1, 2)
+            self.layers.setFixedHeight(200)
+            main_layout.addWidget(self.controls, 2, 1, 1, 2)
+            if self.console.shell is not None:
+                main_layout.addWidget(self.console, 3, 0, 1, 3)
+            main_layout.setColumnStretch(0, 1)
+            main_layout.setSpacing(10)
+
+        self.setLayout(main_layout)
 
         self._last_visited_dir = str(Path.home())
 
