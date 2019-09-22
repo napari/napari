@@ -17,6 +17,8 @@ insert = """<style type="text/css">
 </style>"""
 
 icons = [
+    '2D',
+    '3D',
     'add',
     'console',
     'delete',
@@ -29,9 +31,12 @@ icons = [
     'minus',
     'move_back',
     'move_front',
+    'new_image',
     'new_labels',
     'new_points',
     'new_shapes',
+    'new_surface',
+    'new_vectors',
     'paint',
     'path',
     'picker',

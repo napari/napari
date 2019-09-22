@@ -218,6 +218,42 @@ QtLayerWidget > QLabel#Labels {
   image: url(":/icons/{{ folder }}/new_labels.svg");
 }
 
+QtLayerWidget > QLabel#Image {
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
+  image: url(":/icons/{{ folder }}/new_image.svg");
+}
+
+QtLayerWidget > QLabel#Pyramid {
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
+  image: url(":/icons/{{ folder }}/new_image.svg");
+}
+
+QtLayerWidget > QLabel#Surface {
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
+  image: url(":/icons/{{ folder }}/new_surface.svg");
+}
+
+QtLayerWidget > QLabel#Vectors {
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
+  image: url(":/icons/{{ folder }}/new_vectors.svg");
+}
+
 QtLayerWidget > QLineEdit {
   background-color: {{ foreground }};
   border: none;
@@ -530,6 +566,36 @@ QtConsoleButton {
   min-height : 28px;
   max-height : 28px;
   image: url(":/icons/{{ folder }}/console.svg");
+}
+
+QtNDisplayButton {
+  background-color: {{ foreground }};
+  min-width : 28px;
+  max-width : 28px;
+  min-height : 28px;
+  max-height : 28px;
+  border-radius: 3px;
+}
+
+QtNDisplayButton::indicator {
+  background-color: {{ foreground }};
+  min-width : 28px;
+  max-width : 28px;
+  min-height : 28px;
+  max-height : 28px;
+  border-radius: 3px;
+}
+
+QtNDisplayButton::indicator:unchecked {
+  image: url(":/icons/{{ folder }}/3D.svg");
+}
+
+QtNDisplayButton::indicator:checked {
+  image: url(":/icons/{{ folder }}/2D.svg");
+}
+
+QtNDisplayButton::indicator:hover {
+  background-color: {{ primary }};
 }
 
 /* ------------------------------------------------------ */

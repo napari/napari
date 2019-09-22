@@ -29,7 +29,7 @@ from ..util.keybindings import components_to_key_combo
 from ..util.io import read
 
 from .qt_controls import QtControls
-from .qt_viewer_buttons import QtLayerButtons, QtConsoleButton
+from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
 from .._vispy import create_vispy_visual
 
@@ -53,8 +53,8 @@ class QtViewer(QFrame):
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtControls(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
-        self.layerbuttons = QtLayerButtons(self.viewer)
-        self.consoleButton = QtConsoleButton(self.viewer)
+        self.layerButtons = QtLayerButtons(self.viewer)
+        self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
 
         # This dictionary holds the corresponding vispy visual for each layer
@@ -64,9 +64,11 @@ class QtViewer(QFrame):
             self.console.style().unpolish(self.console)
             self.console.style().polish(self.console)
             self.console.hide()
-            self.consoleButton.clicked.connect(lambda: self._toggle_console())
+            self.viewerButtons.consoleButton.clicked.connect(
+                lambda: self._toggle_console()
+            )
         else:
-            self.consoleButton.setEnabled(False)
+            self.viewerButtons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -89,10 +91,10 @@ class QtViewer(QFrame):
             self.controls.setFixedWidth(140)
             main_layout.addWidget(self.canvas.native, 0, 2, 2, 1)
             main_layout.addWidget(self.dims, 2, 2)
-            main_layout.addWidget(self.layerbuttons, 0, 0)
+            main_layout.addWidget(self.layerButtons, 0, 0)
             main_layout.addWidget(self.layers, 1, 0)
             main_layout.addWidget(self.controls, 1, 1)
-            main_layout.addWidget(self.consoleButton, 2, 0)
+            main_layout.addWidget(self.viewerButtons, 2, 0)
             if self.console.shell is not None:
                 main_layout.addWidget(self.console, 3, 0, 1, 3)
             main_layout.setColumnStretch(2, 1)
@@ -100,10 +102,10 @@ class QtViewer(QFrame):
 
         elif layout_option == 2:
             self.controls.setFixedWidth(240)
-            main_layout.addWidget(self.canvas.native, 0, 0, 3, 1)
+            main_layout.addWidget(self.canvas.native, 0, 0, 2, 1)
             main_layout.addWidget(self.dims, 2, 0)
-            main_layout.addWidget(self.layerbuttons, 0, 1)
-            main_layout.addWidget(self.consoleButton, 0, 2)
+            main_layout.addWidget(self.layerButtons, 0, 1)
+            main_layout.addWidget(self.viewerButtons, 0, 2)
             main_layout.addWidget(self.layers, 1, 1, 1, 2)
             self.layers.setFixedHeight(200)
             main_layout.addWidget(self.controls, 2, 1, 1, 2)
@@ -113,15 +115,17 @@ class QtViewer(QFrame):
             main_layout.setSpacing(10)
         elif layout_option == 3:
             self.controls.setFixedWidth(220)
+            self.layerButtons.setFixedWidth(220)
+            self.viewerButtons.setFixedWidth(220)
             self.controls.setFixedHeight(200)
-            main_layout.addWidget(self.canvas.native, 0, 2, 3, 1)
-            main_layout.addWidget(self.dims, 2, 2)
-            main_layout.addWidget(self.controls, 0, 0, 1, 2)
-            main_layout.addWidget(self.layers, 1, 0, 1, 2)
-            main_layout.addWidget(self.layerbuttons, 2, 1)
-            main_layout.addWidget(self.consoleButton, 2, 0)
+            main_layout.addWidget(self.canvas.native, 0, 1, 3, 1)
+            main_layout.addWidget(self.dims, 3, 1)
+            main_layout.addWidget(self.controls, 0, 0)
+            main_layout.addWidget(self.layerButtons, 1, 0)
+            main_layout.addWidget(self.layers, 2, 0)
+            main_layout.addWidget(self.viewerButtons, 3, 0)
             if self.console.shell is not None:
-                main_layout.addWidget(self.console, 3, 0, 1, 3)
+                main_layout.addWidget(self.console, 4, 0, 1, 2)
             main_layout.setColumnStretch(2, 1)
             main_layout.setSpacing(10)
 
@@ -299,9 +303,15 @@ class QtViewer(QFrame):
     def _toggle_console(self):
         """Toggle console visible and not visible."""
         self.console.setVisible(not self.console.isVisible())
-        self.consoleButton.setProperty('expanded', self.console.isVisible())
-        self.consoleButton.style().unpolish(self.consoleButton)
-        self.consoleButton.style().polish(self.consoleButton)
+        self.viewerButtons.consoleButton.setProperty(
+            'expanded', self.console.isVisible()
+        )
+        self.viewerButtons.consoleButton.style().unpolish(
+            self.viewerButtons.consoleButton
+        )
+        self.viewerButtons.consoleButton.style().polish(
+            self.viewerButtons.consoleButton
+        )
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
