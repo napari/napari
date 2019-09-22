@@ -49,10 +49,6 @@ QtLayerList {
     border: 0px;
 }
 
-QtControls {
-    min-width: 140px;
-    max-width: 140px;
-}
 
 QLabel {
    background-color: {{ foreground }};
@@ -264,6 +260,17 @@ QtLayerWidget > QCheckBox#visibility::indicator:checked {
 
 /* ------------------------------------------------------ */
 
+QtControls {
+    border: 1px solid {{ foreground }};
+    background-color: {{ foreground }};
+    border-radius: 2px;
+    padding: 4px;
+}
+
+QtLayerControls {
+    background-color: {{ foreground }};
+}
+
 QtLayerControls > QLabel {
   min-height: 18px;
   max-height: 18px;
@@ -272,7 +279,7 @@ QtLayerControls > QLabel {
   padding: 0px;
   border: 0px;
   margin: 0px;
-  background-color: {{ background }};
+  background-color: {{ foreground }};
   qproperty-alignment: AlignLeft;
 }
 
@@ -286,7 +293,7 @@ QtLayerControls > QHRangeSlider {
 }
 
 QtLayerControls > QSlider {
-   background-color: {{ background }};
+   background-color: {{ foreground }};
 }
 
 QtLayerControls > QSlider::groove:horizontal {
@@ -409,8 +416,8 @@ QtLayerControls > QDoubleSpinBox::down-arrow {
 }
 
 QtLayerControls > QPushButton#shuffle {
-  background-color: {{ secondary }};
-  border: 3px solid {{ secondary }};
+  background-color: {{ primary }};
+  border: 3px solid {{ primary }};
   text-align: center;
 }
 
@@ -420,11 +427,11 @@ QtLayerControls > QLabel#shuffle-label {
 
 QtLayerControls > QPushButton#shuffle:pressed {
   background-color: {{ foreground }};
-  border: 3px solid {{ secondary }};
+  border: 3px solid {{ primary }};
 }
 
 QtLayerControls > QCheckBox {
-  background-color: {{ background }};
+  background-color: {{ foreground }};
   min-height: 20px;
   max-height: 20px;
 }
@@ -438,6 +445,35 @@ QtLayerControls > QCheckBox::indicator:checked {
    background-color: {{ secondary }};
 }
 
+QtLayerControls > QRadioButton {
+   background-color: {{ primary }};
+   border-radius: 3px;
+}
+
+QtLayerControls > QRadioButton::indicator:checked {
+  background-color: {{ secondary }};
+  border-radius: 3px;
+}
+
+QtLayerControls > QRadioButton::indicator:unchecked:hover {
+  background-color: {{ highlight }};
+  border-radius: 3px;
+}
+
+QtLayerControls > QPushButton {
+   background-color: {{ primary }};
+   border-radius: 3px;
+}
+
+QtLayerControls > QPushButton:hover {
+    background-color: {{ highlight }};
+    border-radius: 3px;
+}
+
+QtLayerControls > QPushButton:pressed {
+  background-color: {{ secondary }};
+  border-radius: 3px;
+}
 
 /* ------------------------------------------------------ */
 
