@@ -51,7 +51,8 @@ def crawl(
     for elem_name in dir(module):
         elem = getattr(module, elem_name)
         if (
-            type(elem) in [Function, type]
+            not elem_name.startswith('_')
+            and type(elem) in [Function, type]
             and elem.__module__ is not None
             and elem.__module__.startswith(module.__name__)
             and elem not in visited
