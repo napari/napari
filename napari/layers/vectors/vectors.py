@@ -4,6 +4,7 @@ import numpy as np
 from copy import copy
 from ..base import Layer
 from ...util.event import Event
+from ...util.status_messages import format_float
 from .vectors_util import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
 
@@ -183,6 +184,7 @@ class Vectors(Layer):
 
         self.events.edge_width()
         self._set_view_slice()
+        self.status = format_float(self.edge_width)
 
     @property
     def length(self) -> Union[int, float]:
@@ -204,6 +206,7 @@ class Vectors(Layer):
 
         self.events.length()
         self._set_view_slice()
+        self.status = format_float(self.length)
 
     @property
     def edge_color(self) -> str:

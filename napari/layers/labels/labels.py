@@ -11,6 +11,7 @@ from ..base import Layer
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
+from ...util.status_messages import format_float
 from ._constants import Mode
 
 
@@ -219,6 +220,7 @@ class Labels(Layer):
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
         self.cursor_size = self._brush_size / self.scale_factor
+        self.status = format_float(self.brush_size)
         self.events.brush_size()
 
     @property
