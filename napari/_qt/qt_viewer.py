@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QGridLayout,
     QFrame,
     QFileDialog,
+    QSplitter,
 )
 from qtpy.QtWidgets import QStackedWidget, QSizePolicy
 from qtpy.QtGui import QCursor, QPixmap
@@ -38,7 +39,7 @@ from .._vispy import create_vispy_visual
 use_app(API_NAME)
 
 
-class QtViewer(QFrame):
+class QtViewer(QSplitter):
     with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
         raw_stylesheet = f.read()
 
@@ -84,6 +85,9 @@ class QtViewer(QFrame):
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
 
+        self.setOrientation(Qt.Vertical)
+        main_widget = QWidget()
+        self.addWidget(main_widget)
         main_layout = QGridLayout()
         main_layout.setContentsMargins(15, 20, 15, 10)
         layout_option = 3
@@ -96,10 +100,9 @@ class QtViewer(QFrame):
             main_layout.addWidget(self.controls, 1, 1)
             main_layout.addWidget(self.viewerButtons, 2, 0)
             if self.console.shell is not None:
-                main_layout.addWidget(self.console, 3, 0, 1, 3)
+                self.addWidget(self.console, 3, 0, 1, 3)
             main_layout.setColumnStretch(2, 1)
             main_layout.setSpacing(10)
-
         elif layout_option == 2:
             self.controls.setFixedWidth(240)
             main_layout.addWidget(self.canvas.native, 0, 0, 2, 1)
@@ -110,7 +113,7 @@ class QtViewer(QFrame):
             self.layers.setFixedHeight(200)
             main_layout.addWidget(self.controls, 2, 1, 1, 2)
             if self.console.shell is not None:
-                main_layout.addWidget(self.console, 3, 0, 1, 3)
+                self.addWidget(self.console, 3, 0, 1, 3)
             main_layout.setColumnStretch(0, 1)
             main_layout.setSpacing(10)
         elif layout_option == 3:
@@ -125,11 +128,10 @@ class QtViewer(QFrame):
             main_layout.addWidget(self.layers, 2, 0)
             main_layout.addWidget(self.viewerButtons, 3, 0)
             if self.console.shell is not None:
-                main_layout.addWidget(self.console, 4, 0, 1, 2)
+                self.addWidget(self.console)
             main_layout.setColumnStretch(1, 1)
             main_layout.setSpacing(10)
-
-        self.setLayout(main_layout)
+        main_widget.setLayout(main_layout)
 
         self._last_visited_dir = str(Path.home())
 
