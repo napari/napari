@@ -11,6 +11,7 @@ from ...util.misc import is_rgb, calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
+from ...util.colormaps import make_colorbar
 
 
 class Image(Layer):
@@ -90,6 +91,8 @@ class Image(Layer):
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
         `True`.
+    _colorbar : array
+        Colorbar for current colormap.
     """
 
     _colormaps = AVAILABLE_COLORMAPS
@@ -241,6 +244,7 @@ class Image(Layer):
             name = self._colormap_name
         self._colormap_name = name
         self._cmap = self._colormaps[name]
+        self._colorbar = make_colorbar(self._cmap)
         self._update_thumbnail()
         self.events.colormap()
 

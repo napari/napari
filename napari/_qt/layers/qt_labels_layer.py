@@ -36,6 +36,7 @@ class QtLabelsControls(QtLayerControls):
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
+        self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.setSingleStep(1)
         self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.setMaximum(2147483647)
@@ -155,6 +156,8 @@ class QtLabelsControls(QtLayerControls):
 
     def changeSelection(self, value):
         self.layer.selected_label = value
+        self.selectionSpinBox.clearFocus()
+        self.setFocus()
 
     def changeSize(self, value):
         self.layer.brush_size = value
@@ -214,7 +217,7 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self.layer = layer
-        self._height = 28
+        self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
@@ -234,8 +237,8 @@ class QtColorBox(QWidget):
         """
         painter = QPainter(self)
         if self.layer._selected_color is None:
-            for i in range(self._height // 6 + 1):
-                for j in range(self._height // 6 + 1):
+            for i in range(self._height // 6):
+                for j in range(self._height // 6):
                     if (i % 2 == 0 and j % 2 == 0) or (
                         i % 2 == 1 and j % 2 == 1
                     ):

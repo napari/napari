@@ -27,6 +27,7 @@ class QtVectorsControls(QtLayerControls):
 
         # line width in pixels
         self.widthSpinBox = QDoubleSpinBox()
+        self.widthSpinBox.setKeyboardTracking(False)
         self.widthSpinBox.setSingleStep(0.1)
         self.widthSpinBox.setMinimum(0.1)
         value = self.layer.edge_width
@@ -35,6 +36,7 @@ class QtVectorsControls(QtLayerControls):
 
         # line length
         self.lengthSpinBox = QDoubleSpinBox()
+        self.lengthSpinBox.setKeyboardTracking(False)
         self.lengthSpinBox.setSingleStep(0.1)
         value = self.layer.length
         self.lengthSpinBox.setValue(value)
@@ -76,9 +78,13 @@ class QtVectorsControls(QtLayerControls):
 
     def change_width(self, value):
         self.layer.edge_width = value
+        self.widthSpinBox.clearFocus()
+        self.setFocus()
 
     def change_length(self, value):
         self.layer.length = value
+        self.lengthSpinBox.clearFocus()
+        self.setFocus()
 
     def _on_len_change(self, event):
         with self.layer.events.length.blocker():

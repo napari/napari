@@ -259,7 +259,7 @@ class QtLayerWidget(QFrame):
         tb = QLabel(self)
         tb.setObjectName('thumbmnail')
         tb.setToolTip('Layer thumbmnail')
-        self.thumbnail_label = tb
+        self.thumbnailLabel = tb
         self._on_thumbnail_change(None)
         self.layout.addWidget(tb)
 
@@ -335,4 +335,4 @@ class QtLayerWidget(QFrame):
             thumbnail.shape[0],
             QImage.Format_RGBA8888,
         )
-        self.thumbnail_label.setPixmap(QPixmap.fromImage(image))
+        self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))

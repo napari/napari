@@ -8,6 +8,7 @@ from ...util.event import Event
 from ..image._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
 from ...util.status_messages import format_float
 from ...util.misc import calc_data_range, increment_unnamed_colormap
+from ...util.colormaps import make_colorbar
 from vispy.color import get_color_names, Color
 
 
@@ -82,6 +83,8 @@ class Surface(Layer):
     _view_faces : (P, 3) array
         The integer indices of the vertices that form the triangles
         in the currently viewed slice.
+    _colorbar : array
+        Colorbar for current colormap.
     """
 
     _colormaps = AVAILABLE_COLORMAPS
@@ -228,6 +231,7 @@ class Surface(Layer):
             name = self._colormap_name
         self._colormap_name = name
         self._cmap = self._colormaps[name]
+        self._colorbar = make_colorbar(self._cmap)
         self._update_thumbnail()
         self.events.colormap()
 

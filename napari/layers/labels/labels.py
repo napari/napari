@@ -229,7 +229,9 @@ class Labels(Layer):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
+        self._selected_color = self.get_color(self.selected_label)
         self._set_view_slice()
+        self.events.selected_label()
 
     @property
     def num_colors(self):
@@ -244,6 +246,8 @@ class Labels(Layer):
             colormaps.label_colormap(num_colors),
         )
         self._set_view_slice()
+        self._selected_color = self.get_color(self.selected_label)
+        self.events.selected_label()
 
     @property
     def selected_label(self):
@@ -342,9 +346,7 @@ class Labels(Layer):
         return image
 
     def new_colormap(self):
-        self._seed = np.random.rand()
-        self._selected_color = self.get_color(self.selected_label)
-        self._set_view_slice()
+        self.seed = np.random.rand()
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""

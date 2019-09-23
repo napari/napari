@@ -3,6 +3,7 @@ from .. import QHRangeSlider
 from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
+from qtpy.QtGui import QImage, QPixmap
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -18,8 +19,6 @@ class QtBaseImageControls(QtLayerControls):
         for cmap in self.layer.colormaps:
             comboBox.addItem(cmap)
         comboBox._allitems = set(self.layer.colormaps)
-        index = comboBox.findText(self.layer.colormap[0], Qt.MatchFixedString)
-        comboBox.setCurrentIndex(index)
         comboBox.activated[str].connect(
             lambda text=comboBox: self.changeColor(text)
         )
@@ -38,6 +37,12 @@ class QtBaseImageControls(QtLayerControls):
         )
         self.contrast_limits_slider_update()
 
+        self.colorbarLabel = QLabel()
+        self.colorbarLabel.setObjectName('colorbar')
+        self.colorbarLabel.setToolTip('Colorbar')
+
+        self._on_colormap_change(None)
+
     def changeColor(self, text):
         self.layer.colormap = text
 
@@ -48,6 +53,15 @@ class QtBaseImageControls(QtLayerControls):
             self.colormapComboBox.addItem(name)
         if name != self.colormapComboBox.currentText():
             self.colormapComboBox.setCurrentText(name)
+
+        # Note that QImage expects the image width followed by height
+        image = QImage(
+            self.layer._colorbar,
+            self.layer._colorbar.shape[1],
+            self.layer._colorbar.shape[0],
+            QImage.Format_RGBA8888,
+        )
+        self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
     def contrast_limits_slider_changed(self, slidermin, slidermax):
         valmin, valmax = self.layer._contrast_limits_range
