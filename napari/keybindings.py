@@ -66,12 +66,16 @@ def increment_dims_right(viewer):
         viewer.dims.set_point(axis, new_point)
 
 
-# Viewer.bind_key('Control-[', lambda v: v.window.qt_viewer.dims.focus_up())
-# Viewer.bind_key('Control-]', lambda v: v.window.qt_viewer.dims.focus_down())
+Viewer.bind_key('Control-[', lambda v: v.window.qt_viewer.dims.focus_up())
+Viewer.bind_key('Control-]', lambda v: v.window.qt_viewer.dims.focus_down())
 Viewer.bind_key('Control-Backspace', lambda v: v.layers.remove_selected())
 Viewer.bind_key('Control-A', lambda v: v.layers.select_all())
+Viewer.bind_key(
+    'Control-Shift-Backspace',
+    lambda v: (v.layers.select_all(), v.layers.remove_selected()),
+)
 Viewer.bind_key('Up', lambda v: v.layers.select_next())
 Viewer.bind_key('Down', lambda v: v.layers.select_previous())
-Viewer.bind_key('Control-]', lambda v: v.layers.select_previous())
-Viewer.bind_key('Control-[', lambda v: v.layers.select_next())
+Viewer.bind_key('Shift-Up', lambda v: v.layers.select_next(shift=True))
+Viewer.bind_key('Shift-Down', lambda v: v.layers.select_previous(shift=True))
 Viewer.bind_key('Control-R', lambda v: v.reset_view())

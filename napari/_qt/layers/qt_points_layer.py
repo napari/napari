@@ -8,8 +8,9 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QRadioButton,
     QPushButton,
+    QFrame,
 )
-
+from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.points._constants import Mode, Symbol
 
@@ -39,27 +40,27 @@ class QtPointsControls(QtLayerControls):
         colors = self.layer._colors
         for c in colors:
             face_comboBox.addItem(c)
-        index = face_comboBox.findText(
-            self.layer.face_color, Qt.MatchFixedString
-        )
-        face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(
             lambda text=face_comboBox: self.changeFaceColor(text)
         )
         self.faceComboBox = face_comboBox
+        self.faceColorSwatch = QFrame()
+        self.faceColorSwatch.setObjectName('swatch')
+        self.faceColorSwatch.setToolTip('Face color swatch')
+        self._on_face_color_change(None)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
         for c in colors:
             edge_comboBox.addItem(c)
-        index = edge_comboBox.findText(
-            self.layer.edge_color, Qt.MatchFixedString
-        )
-        edge_comboBox.setCurrentIndex(index)
         edge_comboBox.activated[str].connect(
             lambda text=edge_comboBox: self.changeEdgeColor(text)
         )
         self.edgeComboBox = edge_comboBox
+        self.edgeColorSwatch = QFrame()
+        self.edgeColorSwatch.setObjectName('swatch')
+        self.edgeColorSwatch.setToolTip('Edge color swatch')
+        self._on_edge_color_change(None)
 
         symbol_comboBox = QComboBox()
         for s in Symbol:
@@ -126,9 +127,11 @@ class QtPointsControls(QtLayerControls):
             self.grid_layout.addWidget(QLabel('symbol:'), 4, 0, 1, 3)
             self.grid_layout.addWidget(self.symbolComboBox, 4, 3, 1, 4)
             self.grid_layout.addWidget(QLabel('face color:'), 5, 0, 1, 3)
-            self.grid_layout.addWidget(self.faceComboBox, 5, 3, 1, 4)
+            self.grid_layout.addWidget(self.faceComboBox, 5, 3, 1, 3)
+            self.grid_layout.addWidget(self.faceColorSwatch, 5, 6)
             self.grid_layout.addWidget(QLabel('edge color:'), 6, 0, 1, 3)
-            self.grid_layout.addWidget(self.edgeComboBox, 6, 3, 1, 4)
+            self.grid_layout.addWidget(self.edgeComboBox, 6, 3, 1, 3)
+            self.grid_layout.addWidget(self.edgeColorSwatch, 6, 6)
             self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0, 1, 3)
             self.grid_layout.addWidget(self.ndimCheckBox, 7, 3)
             self.grid_layout.setRowStretch(8, 1)
@@ -188,6 +191,8 @@ class QtPointsControls(QtLayerControls):
                 self.layer.edge_color, Qt.MatchFixedString
             )
             self.edgeComboBox.setCurrentIndex(index)
+            color = Color(self.layer.edge_color).hex
+            self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event):
         with self.layer.events.face_color.blocker():
@@ -195,6 +200,8 @@ class QtPointsControls(QtLayerControls):
                 self.layer.face_color, Qt.MatchFixedString
             )
             self.faceComboBox.setCurrentIndex(index)
+            color = Color(self.layer.face_color).hex
+            self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
 
 class QtPanZoomButton(QRadioButton):

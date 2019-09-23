@@ -1,6 +1,7 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox
+from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox, QFrame
 from .qt_base_layer import QtLayerControls
+from vispy.color import Color
 
 
 class QtVectorsControls(QtLayerControls):
@@ -9,21 +10,21 @@ class QtVectorsControls(QtLayerControls):
 
         self.layer.events.edge_width.connect(self._on_width_change)
         self.layer.events.length.connect(self._on_len_change)
+        self.layer.events.edge_color.connect(self._on_edge_color_change)
 
         # vector color adjustment and widget
-        face_comboBox = QComboBox()
+        edge_comboBox = QComboBox()
         colors = self.layer._colors
         for c in colors:
-            face_comboBox.addItem(c)
-        index = face_comboBox.findText(
-            self.layer.edge_color, Qt.MatchFixedString
+            edge_comboBox.addItem(c)
+        edge_comboBox.activated[str].connect(
+            lambda text=edge_comboBox: self.change_edge_color(text)
         )
-        if index >= 0:
-            face_comboBox.setCurrentIndex(index)
-        face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.change_edge_color(text)
-        )
-        self.faceComboBox = face_comboBox
+        self.edgeComboBox = edge_comboBox
+        self.edgeColorSwatch = QFrame()
+        self.edgeColorSwatch.setObjectName('swatch')
+        self.edgeColorSwatch.setToolTip('Edge color swatch')
+        self._on_edge_color_change(None)
 
         # line width in pixels
         self.widthSpinBox = QDoubleSpinBox()
@@ -51,8 +52,8 @@ class QtVectorsControls(QtLayerControls):
             self.grid_layout.addWidget(self.widthSpinBox, 3, 0, 1, 4)
             self.grid_layout.addWidget(QLabel('length:'), 4, 0, 1, 4)
             self.grid_layout.addWidget(self.lengthSpinBox, 5, 0, 1, 4)
-            self.grid_layout.addWidget(QLabel('face color:'), 6, 0, 1, 4)
-            self.grid_layout.addWidget(self.faceComboBox, 7, 0, 1, 4)
+            self.grid_layout.addWidget(QLabel('edge color:'), 6, 0, 1, 4)
+            self.grid_layout.addWidget(self.edgeComboBox, 7, 0, 1, 4)
             self.grid_layout.addWidget(QLabel('blending:'), 8, 0, 1, 3)
             self.grid_layout.addWidget(self.blendComboBox, 9, 0, 1, 3)
             self.grid_layout.setRowStretch(10, 1)
@@ -63,10 +64,11 @@ class QtVectorsControls(QtLayerControls):
             self.grid_layout.addWidget(self.widthSpinBox, 1, 3, 1, 4)
             self.grid_layout.addWidget(QLabel('length:'), 2, 0, 1, 3)
             self.grid_layout.addWidget(self.lengthSpinBox, 2, 3, 1, 4)
-            self.grid_layout.addWidget(QLabel('face color:'), 3, 0, 1, 3)
-            self.grid_layout.addWidget(self.faceComboBox, 3, 3, 1, 4)
-            self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 3)
-            self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 4)
+            self.grid_layout.addWidget(QLabel('blending:'), 3, 0, 1, 3)
+            self.grid_layout.addWidget(self.blendComboBox, 3, 3, 1, 4)
+            self.grid_layout.addWidget(QLabel('edge color:'), 4, 0, 1, 3)
+            self.grid_layout.addWidget(self.edgeComboBox, 4, 3, 1, 3)
+            self.grid_layout.addWidget(self.edgeColorSwatch, 4, 6)
             self.grid_layout.setRowStretch(5, 1)
             self.grid_layout.setVerticalSpacing(4)
 
@@ -93,3 +95,12 @@ class QtVectorsControls(QtLayerControls):
     def _on_width_change(self, event):
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
+
+    def _on_edge_color_change(self, event):
+        with self.layer.events.edge_color.blocker():
+            index = self.edgeComboBox.findText(
+                self.layer.edge_color, Qt.MatchFixedString
+            )
+            self.edgeComboBox.setCurrentIndex(index)
+            color = Color(self.layer.edge_color).hex
+            self.edgeColorSwatch.setStyleSheet("background-color: " + color)

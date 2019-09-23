@@ -51,6 +51,7 @@ class QtLayerList(QScrollArea):
         widget = QtLayerWidget(layer)
         self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
+        layer.events.select.connect(self._scroll_on_select)
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`."""
@@ -100,6 +101,21 @@ class QtLayerList(QScrollArea):
                 # Insert the property widget and divider into new location
                 self.vbox_layout.insertWidget(index_new, widget)
                 self.vbox_layout.insertWidget(index_new + 1, divider)
+
+    def _scroll_on_select(self, event):
+        layer = event.source
+        total = len(self.layers)
+        layer_index = self.layers.index(layer)
+        # Find property widget and divider for layer to be removed
+        index = 2 * (total - layer_index) - 1
+        widget = self.vbox_layout.itemAt(index).widget()
+        self.ensureWidgetVisible(widget)
+
+    def keyPressEvent(self, event):
+        event.ignore()
+
+    def keyReleaseEvent(self, event):
+        event.ignore()
 
     def mousePressEvent(self, event):
         # Check if mouse press happens on a layer properties widget or

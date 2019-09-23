@@ -214,6 +214,7 @@ class Vectors(Layer):
         """str: edge color of all the vectors."""
         self._edge_color = edge_color
         self.events.edge_color()
+        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""

@@ -9,8 +9,9 @@ from qtpy.QtWidgets import (
     QLabel,
     QComboBox,
     QSlider,
+    QFrame,
 )
-
+from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.shapes._constants import Mode
 
@@ -44,29 +45,27 @@ class QtShapesControls(QtLayerControls):
         colors = self.layer._colors
         for c in colors:
             face_comboBox.addItem(c)
-        index = face_comboBox.findText(
-            self.layer.face_color, Qt.MatchFixedString
-        )
-        if index >= 0:
-            face_comboBox.setCurrentIndex(index)
         face_comboBox.activated[str].connect(
             lambda text=face_comboBox: self.changeFaceColor(text)
         )
         self.faceComboBox = face_comboBox
+        self.faceColorSwatch = QFrame()
+        self.faceColorSwatch.setObjectName('swatch')
+        self.faceColorSwatch.setToolTip('Face color swatch')
+        self._on_face_color_change(None)
 
         edge_comboBox = QComboBox()
         colors = self.layer._colors
         for c in colors:
             edge_comboBox.addItem(c)
-        index = edge_comboBox.findText(
-            self.layer.edge_color, Qt.MatchFixedString
-        )
-        if index >= 0:
-            edge_comboBox.setCurrentIndex(index)
         edge_comboBox.activated[str].connect(
             lambda text=edge_comboBox: self.changeEdgeColor(text)
         )
         self.edgeComboBox = edge_comboBox
+        self.edgeColorSwatch = QFrame()
+        self.edgeColorSwatch.setObjectName('swatch')
+        self.edgeColorSwatch.setToolTip('Edge color swatch')
+        self._on_edge_color_change(None)
 
         self.select_button = QtModeButton(
             layer, 'select', Mode.SELECT, 'Select mode'
@@ -163,9 +162,11 @@ class QtShapesControls(QtLayerControls):
             self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 3)
             self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 4)
             self.grid_layout.addWidget(QLabel('face color:'), 5, 0, 1, 3)
-            self.grid_layout.addWidget(self.faceComboBox, 5, 3, 1, 4)
+            self.grid_layout.addWidget(self.faceComboBox, 5, 3, 1, 3)
+            self.grid_layout.addWidget(self.faceColorSwatch, 5, 6)
             self.grid_layout.addWidget(QLabel('edge color:'), 6, 0, 1, 3)
-            self.grid_layout.addWidget(self.edgeComboBox, 6, 3, 1, 4)
+            self.grid_layout.addWidget(self.edgeComboBox, 6, 3, 1, 3)
+            self.grid_layout.addWidget(self.edgeColorSwatch, 6, 6)
             self.grid_layout.setRowStretch(7, 1)
             self.grid_layout.setVerticalSpacing(4)
 
@@ -218,6 +219,8 @@ class QtShapesControls(QtLayerControls):
                 self.layer.edge_color, Qt.MatchFixedString
             )
             self.edgeComboBox.setCurrentIndex(index)
+            color = Color(self.layer.edge_color).hex
+            self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event):
         with self.layer.events.face_color.blocker():
@@ -225,6 +228,8 @@ class QtShapesControls(QtLayerControls):
                 self.layer.face_color, Qt.MatchFixedString
             )
             self.faceComboBox.setCurrentIndex(index)
+            color = Color(self.layer.face_color).hex
+            self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
 
 class QtModeButton(QRadioButton):
