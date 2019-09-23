@@ -123,6 +123,10 @@ class QtLayerList(QScrollArea):
 
     def _scroll_on_select(self, event):
         layer = event.source
+        self._ensure_visible(layer)
+
+    def _ensure_visible(self, layer):
+        """Ensure layer widget for at particular layer is visible."""
         total = len(self.layers)
         layer_index = self.layers.index(layer)
         # Find property widget and divider for layer to be removed
@@ -197,6 +201,10 @@ class QtLayerList(QScrollArea):
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
         dropAction = drag.exec_()
+        if self.drag_name is not None:
+            index = self.layers.index(self.drag_name)
+            layer = self.layers[index]
+            self._ensure_visible(layer)
 
     def dragLeaveEvent(self, event):
         """Unselects layer dividers."""
@@ -249,8 +257,7 @@ class QtLayerList(QScrollArea):
         # Determine the current location of the widget being dragged
         total = self.vboxLayout.count() // 2 - 1
         insert = total - divider_index
-        layer_name = event.mimeData().text()
-        index = self.layers.index(layer_name)
+        index = self.layers.index(self.drag_name)
         # If the widget being dragged hasn't moved above or below any other
         # widgets then don't highlight any dividers
         selected = not (insert == index) and not (insert - 1 == index)
@@ -272,8 +279,8 @@ class QtLayerList(QScrollArea):
         divider_index = next(center_list, len(self.centers))
         total = self.vboxLayout.count() // 2 - 1
         insert = total - divider_index
-        layer_name = event.mimeData().text()
-        index = self.layers.index(layer_name)
+        index = self.layers.index(self.drag_name)
+        layer = self.layers[index]
         if index != insert and index + 1 != insert:
             if insert >= index:
                 insert -= 1
@@ -332,7 +339,6 @@ class QtLayerWidget(QFrame):
         self.layout.addWidget(cb)
 
         textbox = QLineEdit(self)
-        # textbox.setKeyboardTracking(False)
         textbox.setText(layer.name)
         textbox.home(False)
         textbox.setToolTip('Layer name')
