@@ -77,7 +77,9 @@ def crawl(
                     modname = filename
                 if modname is not None:
                     fully_qualified_modname = module.__name__ + '.' + modname
-                    hierarchy[modname] = crawl(
+                    subhierarchy = crawl(
                         fully_qualified_modname, name=modname, visited=visited
                     )
+                    if len(subhierarchy) > 0:
+                        hierarchy[modname] = subhierarchy
     return hierarchy
