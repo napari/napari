@@ -256,17 +256,21 @@ QtLayerWidget > QLabel#Vectors {
 
 QtLayerWidget > QLineEdit {
   background-color: {{ foreground }};
-  border: none;
+  border: 2px solid {{ foreground }};
+  border-radius: 3px;
   padding: 0px;
   margin: 0px;
-  border-radius: 0px;
   font-size: 16px;
   qproperty-alignment: right;
 }
 
+QtLayerWidget > QLineEdit:focus {
+  border: 2px solid {{ secondary }};
+}
+
 QtLayerWidget > QLineEdit:disabled {
   background-color: {{ foreground }};
-  border: none;
+  border: 2px solid {{ foreground }};
   border-radius: 3px;
 }
 

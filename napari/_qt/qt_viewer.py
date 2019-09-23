@@ -121,12 +121,12 @@ class QtViewer(QFrame):
             main_layout.addWidget(self.canvas.native, 0, 1, 3, 1)
             main_layout.addWidget(self.dims, 3, 1)
             main_layout.addWidget(self.controls, 0, 0)
-            main_layout.addWidget(self.layers, 1, 0)
-            main_layout.addWidget(self.layerButtons, 2, 0)
+            main_layout.addWidget(self.layerButtons, 1, 0)
+            main_layout.addWidget(self.layers, 2, 0)
             main_layout.addWidget(self.viewerButtons, 3, 0)
             if self.console.shell is not None:
                 main_layout.addWidget(self.console, 4, 0, 1, 2)
-            main_layout.setColumnStretch(2, 1)
+            main_layout.setColumnStretch(1, 1)
             main_layout.setSpacing(10)
 
         self.setLayout(main_layout)

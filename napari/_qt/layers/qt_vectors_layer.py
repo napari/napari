@@ -102,5 +102,5 @@ class QtVectorsControls(QtLayerControls):
                 self.layer.edge_color, Qt.MatchFixedString
             )
             self.edgeComboBox.setCurrentIndex(index)
-            color = Color(self.layer.edge_color).hex
-            self.edgeColorSwatch.setStyleSheet("background-color: " + color)
+        color = Color(self.layer.edge_color).hex
+        self.edgeColorSwatch.setStyleSheet("background-color: " + color)

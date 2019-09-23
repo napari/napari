@@ -191,8 +191,8 @@ class QtPointsControls(QtLayerControls):
                 self.layer.edge_color, Qt.MatchFixedString
             )
             self.edgeComboBox.setCurrentIndex(index)
-            color = Color(self.layer.edge_color).hex
-            self.edgeColorSwatch.setStyleSheet("background-color: " + color)
+        color = Color(self.layer.edge_color).hex
+        self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event):
         with self.layer.events.face_color.blocker():
@@ -200,8 +200,8 @@ class QtPointsControls(QtLayerControls):
                 self.layer.face_color, Qt.MatchFixedString
             )
             self.faceComboBox.setCurrentIndex(index)
-            color = Color(self.layer.face_color).hex
-            self.faceColorSwatch.setStyleSheet("background-color: " + color)
+        color = Color(self.layer.face_color).hex
+        self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
 
 class QtPanZoomButton(QRadioButton):
