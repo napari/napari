@@ -1,6 +1,8 @@
 import importlib
+import io
 import os
 import warnings
+from contextlib import redirect_stdout
 from typing import Union as U, Dict, Set
 from types import FunctionType as Function, ModuleType as Module
 
@@ -48,7 +50,8 @@ def crawl(
         ):
             return hierarchy
         try:
-            module = importlib.import_module(module)
+            with redirect_stdout(io.StringIO()):
+                module = importlib.import_module(module)
         except ImportError:
             return hierarchy
         except Exception as exc:
