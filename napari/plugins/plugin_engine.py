@@ -1,5 +1,6 @@
 import importlib
 import os
+import warnings
 from typing import Union as U, Dict, Set
 from types import FunctionType as Function, ModuleType as Module
 
@@ -50,6 +51,11 @@ def crawl(
             module = importlib.import_module(module)
         except ImportError:
             return hierarchy
+        except Exception as exc:
+            warnings.warn(
+                f'{type(exc)} raised while attempting to import '
+                f'{module}. Ignoring.'
+            )
     for elem_name in dir(module):
         elem = getattr(module, elem_name)
         if (
