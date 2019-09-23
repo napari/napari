@@ -41,6 +41,8 @@ def crawl(
         module_components = module.split('.')
         if (
             module_components[-1].startswith('test_')
+            or module_components[-1].startswith('_')
+            or module.startswith('_')
             or 'tests' in module_components
         ):
             return hierarchy
