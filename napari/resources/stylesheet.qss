@@ -300,11 +300,25 @@ QtLayerWidget > QCheckBox#visibility::indicator:checked {
 
 /* ------------------------------------------------------ */
 
+QtLayerButtons {
+  min-width: 220px;
+  max-width: 220px;
+}
+
+QtViewerButtons {
+  min-width: 220px;
+  max-width: 220px;
+}
+
 QtControls {
     border: 1px solid {{ foreground }};
     background-color: {{ foreground }};
     border-radius: 2px;
     padding: 4px;
+    min-height: 210px;
+    max-height: 210px;
+    min-width: 220px;
+    max-width: 220px;
 }
 
 QtLayerControls {
