@@ -69,7 +69,7 @@ def crawl(
             for filename in os.listdir(path):
                 pathname = os.path.join(path, filename)
                 modname = None
-                if filename.endswith('.py'):
+                if filename.endswith('.py') and filename != '__init__.py':
                     modname = filename[:-3]
                 elif os.path.isdir(pathname) and '__init__.py' in os.listdir(
                     pathname
