@@ -32,25 +32,13 @@ def test_image_dytpes(qtbot, dtype):
     viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
 
-    # Close the viewer
-    viewer.window.close()
-
-
-@pytest.mark.parametrize('dtype', dtypes)
-def test_pyramid_dytpes(qtbot, dtype):
-    """Test different dtype pyramids."""
-    np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
     # add dtype pyramid data
     data = [
         np.random.randint(20, size=(30, 40)).astype(dtype),
         np.random.randint(20, size=(15, 20)).astype(dtype),
     ]
-    viewer.add_pyramid(data)
-    assert np.all(viewer.layers[0].data == data)
+    viewer.add_image(data, pyramid=True)
+    assert np.all(viewer.layers[1].data == data)
 
     # Close the viewer
     viewer.window.close()

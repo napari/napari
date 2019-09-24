@@ -20,9 +20,9 @@ class Image(Layer):
     ----------
     data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
-        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
-        and arrays are decreaing in shape then the data is treated as an
-        image pyramid.
+        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
+        list and arrays are decreaing in shape then the data is treated as
+        an image pyramid.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -107,6 +107,7 @@ class Image(Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
+    _max_tile_shape = 1600
 
     def __init__(
         self,
@@ -128,11 +129,9 @@ class Image(Layer):
     ):
         # Determine if pyramid
         if pyramid is None:
-            self.pyramid = isinstance(data, list)
-        else:
-            self.pyramid = pyramid
+            pyramid = isinstance(data, list)
 
-        if self.pyramid:
+        if pyramid:
             init_shape = data[0].shape
             self._data_level = len(data) - 1
         else:
@@ -171,6 +170,7 @@ class Image(Layer):
         )
 
         # Set data
+        self.pyramid = pyramid
         self._data = data
         self._top_left = np.zeros(ndim, dtype=int)
 
@@ -187,7 +187,11 @@ class Image(Layer):
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
-            self._contrast_limits_range = calc_data_range(self.data)
+            if self.pyramid:
+                input_data = self.data[-1]
+            else:
+                input_data = self.data
+            self._contrast_limits_range = calc_data_range(input_data)
         else:
             self._contrast_limits_range = contrast_limits
         self._contrast_limits = copy(self._contrast_limits_range)
@@ -218,16 +222,6 @@ class Image(Layer):
 
     def _get_extent(self):
         return tuple((0, m) for m in self.level_shapes[0])
-
-    def _get_range(self):
-        """Shape of the image or base of pyramid.
-
-        Returns
-        ----------
-        shape : list
-            Shape of the image or base of pyramid.
-        """
-        return tuple((0, m, 1) for m in self.level_shapes[0])
 
     @property
     def rgb(self):
@@ -388,6 +382,8 @@ class Image(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
+        nd = self.dims.not_displayed
+
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
@@ -396,16 +392,74 @@ class Image(Layer):
         else:
             order = self.dims.displayed_order
 
-        image = np.asarray(self.data[self.dims.indices]).transpose(order)
+        if self.pyramid:
+            # If 3d redering just show lowest level of pyramid
+            if self.dims.ndisplay == 3:
+                self.data_level = len(self.data) - 1
+
+            # Slice currently viewed level
+            level = self.data_level
+            indices = np.array(self.dims.indices)
+            downsampled = indices[nd] / self.level_downsamples[level, nd]
+            downsampled = np.round(downsampled.astype(float)).astype(int)
+            downsampled = np.clip(
+                downsampled, 0, self.level_shapes[level, nd] - 1
+            )
+            indices[nd] = downsampled
+
+            disp_shape = self.level_shapes[level, self.dims.displayed]
+            scale = np.ones(self.ndim)
+            for d in self.dims.displayed:
+                scale[d] = self.level_downsamples[self.data_level][d]
+            self._scale_view = scale
+
+            if np.any(disp_shape > self._max_tile_shape):
+                for d in self.dims.displayed:
+                    indices[d] = slice(
+                        self._top_left[d],
+                        self._top_left[d] + self._max_tile_shape,
+                        1,
+                    )
+                self._translate_view = (
+                    self._top_left * self.scale * self._scale_view
+                )
+            else:
+                self._translate_view = [0] * self.ndim
+
+            image = np.asarray(self.data[level][tuple(indices)]).transpose(
+                order
+            )
+
+            if level == len(self.data) - 1:
+                thumbnail = image
+            else:
+                # Slice thumbnail
+                indices = np.array(self.dims.indices)
+                downsampled = indices[nd] / self.level_downsamples[-1, nd]
+                downsampled = np.round(downsampled.astype(float)).astype(int)
+                downsampled = np.clip(
+                    downsampled, 0, self.level_shapes[-1, nd] - 1
+                )
+                indices[nd] = downsampled
+                thumbnail = np.asarray(
+                    self.data[-1][tuple(indices)]
+                ).transpose(order)
+        else:
+            image = np.asarray(self.data[self.dims.indices]).transpose(order)
+            thumbnail = image
 
         if self.rgb and image.dtype.kind == 'f':
             self._data_view = np.clip(image, 0, 1)
+            self._data_thumbnail = np.clip(thumbnail, 0, 1)
         else:
             self._data_view = image
+            self._data_thumbnail = thumbnail
 
-        self._data_thumbnail = self._data_view
         self._update_thumbnail()
         self._update_coordinates()
+        if self.pyramid:
+            self.events.scale()
+            self.events.translate()
         self.events.set_data()
 
     def _update_thumbnail(self):
@@ -481,12 +535,12 @@ class Image(Layer):
             shape = self._data_view.shape
 
         if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = (
-                self.data_level,
-                self._data_view[tuple(coord[self.dims.displayed])],
-            )
+            value = self._data_view[tuple(coord[self.dims.displayed])]
         else:
             value = None
+
+        if self.pyramid:
+            value = (self.data_level, value)
 
         return value
 
