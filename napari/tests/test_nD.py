@@ -15,7 +15,7 @@ def test_nD_image(qtbot):
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -46,7 +46,7 @@ def test_nD_volume(qtbot):
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 4
     assert view.dims.nsliders == viewer.dims.ndim
@@ -78,7 +78,7 @@ def test_nD_volume_launch(qtbot):
     assert viewer.layers[0]._data_view.shape == shape[-3:]
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
     assert viewer.dims.ndim == 4
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
@@ -104,7 +104,7 @@ def test_nD_volume_launch_order(qtbot):
     )
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
     assert viewer.dims.ndim == 4
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
@@ -127,7 +127,7 @@ def test_nD_pyramid(qtbot):
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -157,7 +157,7 @@ def test_nD_labels(qtbot):
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -187,7 +187,7 @@ def test_nD_points(qtbot):
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -217,7 +217,7 @@ def test_nD_vectors(qtbot):
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
@@ -251,7 +251,7 @@ def test_nD_shapes(qtbot):
         [np.all(ld == d) for ld, d in zip(viewer.layers[0].data, data)]
     )
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
