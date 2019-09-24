@@ -2,7 +2,7 @@ import numpy as np
 import napari
 
 
-def test_add_image(qtbot):
+def test_view_image(qtbot):
     """Test adding image."""
 
     np.random.seed(0)
@@ -24,10 +24,6 @@ def test_add_image(qtbot):
     # Close the viewer
     viewer.window.close()
 
-
-def test_add_volume(qtbot):
-    """Test adding volume."""
-    np.random.seed(0)
     data = np.random.random((10, 15, 20))
     viewer = napari.view_image(data)
     view = viewer.window.qt_viewer
@@ -47,7 +43,7 @@ def test_add_volume(qtbot):
     viewer.window.close()
 
 
-def test_add_pyramid(qtbot):
+def test_view_pyramid(qtbot):
     """Test adding image pyramid."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
@@ -69,7 +65,7 @@ def test_add_pyramid(qtbot):
     viewer.window.close()
 
 
-def test_add_labels(qtbot):
+def test_view_labels(qtbot):
     """Test adding labels image."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
@@ -90,7 +86,7 @@ def test_add_labels(qtbot):
     viewer.window.close()
 
 
-def test_add_points(qtbot):
+def test_view_points(qtbot):
     """Test adding points."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
@@ -111,7 +107,7 @@ def test_add_points(qtbot):
     viewer.window.close()
 
 
-def test_add_vectors(qtbot):
+def test_view_vectors(qtbot):
     """Test adding vectors."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 2))
@@ -131,7 +127,7 @@ def test_add_vectors(qtbot):
     viewer.window.close()
 
 
-def test_add_shapes(qtbot):
+def test_view_shapes(qtbot):
     """Test adding shapes."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
@@ -152,7 +148,7 @@ def test_add_shapes(qtbot):
     viewer.window.close()
 
 
-def test_add_surface(qtbot):
+def test_view_surface(qtbot):
     """Test adding 3D surface."""
     np.random.seed(0)
     vertices = np.random.random((10, 3))
