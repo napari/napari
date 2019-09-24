@@ -171,3 +171,51 @@ def test_update_console(qtbot):
 
     # Close the viewer
     viewer.window.close()
+
+
+def test_labels_undo_redo(qtbot):
+    """Test undoing/redoing on the labels layer."""
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    data = np.zeros((50, 50), dtype=np.uint8)
+    data[:5, :5] = 1
+    data[5:10, 5:10] = 2
+    data[25:, 25:] = 3
+
+    labels = viewer.add_labels(data)
+
+    l1 = labels.data.copy()
+
+    # fill
+    labels.fill((30, 30), 3, 42)
+
+    l2 = labels.data.copy()
+    assert not np.array_equal(l1, l2)
+
+    # undo
+    labels.undo()
+    assert np.array_equal(l1, labels.data)
+
+    # redo
+    labels.redo()
+    assert np.array_equal(l2, labels.data)
+
+    # history limit
+    labels._history_limit = 1
+    labels.fill((0, 0), 1, 3)
+
+    l3 = labels.data.copy()
+
+    assert not np.array_equal(l3, l2)
+
+    labels.undo()
+    assert np.array_equal(l2, labels.data)
+
+    # cannot undo as limit exceded
+    labels.undo()
+    assert np.array_equal(l2, labels.data)
+
+    # Close the viewer
+    viewer.window.close()
