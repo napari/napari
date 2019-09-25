@@ -821,6 +821,77 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
+    def add_surface(
+        self,
+        data,
+        *,
+        colormap='gray',
+        contrast_limits=None,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+    ):
+        """Add a surface layer to the layers list.
+
+        Parameters
+        ----------
+        data : 3-tuple of array
+            The first element of the tuple is an (N, D) array of vertices of
+            mesh triangles. The second is an (M, 3) array of int of indices
+            of the mesh triangles. The third element is the (N, ) array of
+            values used to color vertices.
+        colormap : str, vispy.Color.Colormap, tuple, dict
+            Colormap to use for luminance images. If a string must be the name
+            of a supported colormap from vispy or matplotlib. If a tuple the
+            first value must be a string to assign as a name to a colormap and
+            the second item must be a Colormap. If a dict the key must be a
+            string to assign as a name to a colormap and the value must be a
+            Colormap.
+        contrast_limits : list (2,)
+            Color limits to be used for determining the colormap bounds for
+            luminance images. If not passed is calculated as the min and max of
+            the image.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Surface`
+            The newly-created surface layer.
+        """
+        layer = layers.Surface(
+            data,
+            colormap=colormap,
+            contrast_limits=contrast_limits,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
+        self.add_layer(layer)
+        return layer
+
     def add_vectors(
         self,
         data,

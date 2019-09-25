@@ -119,7 +119,7 @@ class VispyBaseLayer(ABC):
         self.node.opacity = self.layer.opacity
 
     def _on_blending_change(self):
-        self.node.set_gl_state(self.layer.blending, depth_test=False)
+        self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
     def _on_scale_change(self):

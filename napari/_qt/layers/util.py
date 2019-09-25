@@ -1,5 +1,6 @@
-from ...layers import Image, Labels, Points, Pyramid, Shapes, Vectors
+from ...layers import Image, Labels, Points, Pyramid, Shapes, Surface, Vectors
 from .qt_base_layer import QtLayerProperties, QtLayerControls
+from .qt_image_base_layer import QtImageBaseProperties
 from .qt_image_layer import QtImageProperties, QtImageControls
 from .qt_points_layer import QtPointsProperties, QtPointsControls
 from .qt_vectors_layer import QtVectorsProperties
@@ -13,6 +14,7 @@ layer_to_properties = {
     Points: QtPointsProperties,
     Pyramid: QtImageProperties,
     Shapes: QtShapesProperties,
+    Surface: QtImageBaseProperties,
     Vectors: QtVectorsProperties,
 }
 
@@ -23,6 +25,7 @@ layer_to_controls = {
     Points: QtPointsControls,
     Pyramid: QtImageControls,
     Shapes: QtShapesControls,
+    Surface: QtImageControls,
     Vectors: QtLayerControls,
 }
 

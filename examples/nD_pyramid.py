@@ -18,13 +18,10 @@ base = np.round(np.array([base * (16 - i) / 16 for i in range(16)])).astype(
 )
 print('base shape', base.shape)
 pyramid = list(
-    pyramid_gaussian(base, downscale=2, max_layer=3, rgb=True)
+    pyramid_gaussian(base, downscale=2, max_layer=3, multichannel=True)
 )
 print('pyramid level shapes: ', [p.shape[:-1] for p in pyramid])
 
 with napari.gui_qt():
-    # create the viewer
-    viewer = napari.Viewer()
-
     # add image pyramid
-    viewer.add_pyramid(pyramid, contrast_limits=[0, 255])
+    napari.view_pyramid(pyramid, contrast_limits=[0, 255])
