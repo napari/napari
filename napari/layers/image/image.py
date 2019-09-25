@@ -7,7 +7,12 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ...util.misc import is_rgb, calc_data_range, increment_unnamed_colormap
+from ...util.misc import (
+    is_rgb,
+    calc_data_range,
+    increment_unnamed_colormap,
+    is_pyramid,
+)
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
@@ -129,14 +134,12 @@ class Image(Layer):
     ):
         # Determine if pyramid
         if pyramid is None:
-            pyramid = isinstance(data, list)
+            pyramid = is_pyramid(data)
 
         if pyramid:
             init_shape = data[0].shape
-            self._data_level = len(data) - 1
         else:
             init_shape = data.shape
-            self._data_level = 0
 
         # Determine if rgb, and determine dimensionality
         if rgb is False:
@@ -173,6 +176,10 @@ class Image(Layer):
         self.pyramid = pyramid
         self._data = data
         self._top_left = np.zeros(ndim, dtype=int)
+        if self.pyramid:
+            self._data_level = len(data) - 1
+        else:
+            self._data_level = 0
 
         # Intitialize image views and thumbnails with zeros
         if self.rgb:

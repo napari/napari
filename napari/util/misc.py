@@ -58,6 +58,16 @@ def is_rgb(shape):
         return False
 
 
+def is_pyramid(data):
+    """If data is a list of arrays of decreaing size.
+    """
+    if isinstance(data, list):
+        size = [np.prod(d.shape) for d in data]
+        return np.all(size[:-1] > size[1:])
+    else:
+        return False
+
+
 def increment_unnamed_colormap(name, names):
     """Increment name for unnamed colormap.
 

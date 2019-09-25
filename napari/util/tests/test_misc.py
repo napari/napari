@@ -1,4 +1,5 @@
-from napari.util.misc import is_rgb, callsignature
+import numpy as np
+from napari.util.misc import is_rgb, callsignature, is_pyramid
 
 
 def test_is_rgb():
@@ -13,6 +14,26 @@ def test_is_rgb():
 
     shape = (10, 15, 4)
     assert is_rgb(shape)
+
+
+def test_is_pyramid():
+    data = np.random.random((10, 15))
+    assert not is_pyramid(data)
+
+    data = np.random.random((10, 15, 6))
+    assert not is_pyramid(data)
+
+    data = [np.random.random((10, 15, 6))]
+    assert not is_pyramid(data)
+
+    data = [np.random.random((10, 15, 6)), np.random.random((10, 15, 6))]
+    assert not is_pyramid(data)
+
+    data = [np.random.random((10, 15, 6)), np.random.random((5, 7, 3))]
+    assert is_pyramid(data)
+
+    data = [np.random.random((10, 15, 6)), np.random.random((10, 7, 3))]
+    assert is_pyramid(data)
 
 
 def test_callsignature():
