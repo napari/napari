@@ -132,12 +132,12 @@ def test_get_pyramid_and_rgb():
     assert not rgb
     assert ndim == 3
 
-    shape = (20_000, 20_000)
+    shape = (20_000, 20)
     data = np.random.random(shape)
     ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data)
     assert pyramid
     assert data_pyramid[0].shape == shape
-    assert data_pyramid[1].shape == (shape[0] / 2, shape[1] / 2)
+    assert data_pyramid[1].shape == (shape[0] / 2, shape[1])
     assert not rgb
     assert ndim == 2
 
