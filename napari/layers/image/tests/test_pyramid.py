@@ -297,3 +297,44 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == 1
     assert type(xml[0]) == Element
+
+
+def test_create_random_pyramid():
+    """Test instantiating Image layer with random 2D data."""
+    shape = (20_000, 20_000)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.pyramid == True
+    assert layer._data_pyramid[0].shape == shape
+    assert layer._data_pyramid[1].shape == (shape[0] / 2, shape[1] / 2)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2
+
+    shape = (20_000, 2_000)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.pyramid == True
+    assert layer._data_pyramid[0].shape == shape
+    assert layer._data_pyramid[1].shape == (shape[0] / 2, shape[1])
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2
+
+    shape = (2_000, 2_000)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.pyramid == False
+    assert layer._data_pyramid == None
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2

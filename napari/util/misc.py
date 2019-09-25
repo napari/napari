@@ -5,6 +5,7 @@ import re
 import numpy as np
 import inspect
 import itertools
+from scipy import ndimage as ndi
 
 
 def str_to_rgb(arg):
@@ -66,6 +67,123 @@ def is_pyramid(data):
         return np.all(size[:-1] > size[1:])
     else:
         return False
+
+
+def should_be_pyramid(shape):
+    """Check if any data axes needs to be pyramided
+
+    Parameters
+    ----------
+    shape : tuple of int
+        Shape of data to be tested
+
+    Returns
+    -------
+    pyr_axes : tuple of bool
+        If any axis is above pyramiding threshold.
+    """
+    return np.log2(shape) > 13
+
+
+def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
+    """Check if data is or needs to be a pyramid and make one if needed.
+
+    Parameters
+    ----------
+    data : array or list
+        Data to be checked if pyramid or if needs to be turned into a pyramid.
+    pyramid : bool, optional
+        Value that can force data to be considered as a pyramid, otherwise computed.
+    rgb : bool, optional
+        Value that can force data to be considered as a rgb, otherwise computed.
+
+    Returns
+    -------
+    ndim : int
+        Dimensionality of the data.
+    rgb : bool
+        If data is rgb.
+    pyramid : bool
+        If data is a pyramid or a pyramid has been generated.
+    data_pyramid : list or None
+        If None then data is not and does not need to be a pyramid. Otherwise
+        is a list of arrays where each array is a level of the pyramid.
+    """
+
+    # Determine if pyramid
+    if pyramid is None:
+        pyramid = is_pyramid(data)
+
+    if pyramid:
+        init_shape = data[0].shape
+    else:
+        init_shape = data.shape
+
+    # Determine if rgb, and determine dimensionality
+    if rgb is False:
+        pass
+    else:
+        # If rgb is True or None then guess if rgb
+        # allowed or not, and if allowed set it to be True
+        rgb = is_rgb(init_shape)
+
+    if rgb:
+        ndim = len(init_shape) - 1
+    else:
+        ndim = len(init_shape)
+
+    if not pyramid:
+        # Guess if data should be pyramid
+        pyr_axes = should_be_pyramid(data.shape)
+        if np.any(pyr_axes):
+            pyramid = True
+            # Set axes to be downsampled to have a factor of 2
+            downscale = np.ones(len(data.shape))
+            downscale[pyr_axes] = 2
+            largest = np.min(np.array(data.shape)[pyr_axes])
+            # Determine number of downsample steps needed
+            max_layer = np.floor(np.log2(largest) - 9).astype(int)
+            data_pyramid = fast_pyramid(
+                data, downscale=downscale, max_layer=max_layer
+            )
+        else:
+            data_pyramid = None
+    else:
+        data_pyramid = data
+
+    return ndim, rgb, pyramid, data_pyramid
+
+
+def fast_pyramid(data, downscale=2, max_layer=None):
+    """Compute fast image pyramid.
+
+    Parameters
+    ----------
+    data : array
+        Data from which pyramid is to be generated.
+    downscale : int or list
+        Factor to downscale each step of the pyramid by. If a list, one value
+        must be provided for every axis of the array.
+    max_layer : int, optional
+        The maximum number of layers of the pyramid to be created.
+
+    Returns
+    -------
+    pyramid : list
+        List of arrays where each array is a level of the generated pyramid.
+    """
+
+    if max_layer is None:
+        max_layer = np.floor(np.log2(np.max(data.shape))).astype(int) + 1
+
+    zoom_factor = np.divide(1, downscale)
+
+    pyramid = [data]
+    for i in range(max_layer - 1):
+        pyramid.append(
+            ndi.zoom(pyramid[i], zoom_factor, prefilter=False, order=0)
+        )
+    return pyramid
 
 
 def increment_unnamed_colormap(name, names):

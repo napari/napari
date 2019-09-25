@@ -8,10 +8,9 @@ from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
 from ...util.misc import (
-    is_rgb,
     calc_data_range,
     increment_unnamed_colormap,
-    is_pyramid,
+    get_pyramid_and_rgb,
 )
 from ...util.event import Event
 from ...util.status_messages import format_float
@@ -132,27 +131,9 @@ class Image(Layer):
         blending='translucent',
         visible=True,
     ):
-        # Determine if pyramid
-        if pyramid is None:
-            pyramid = is_pyramid(data)
-
-        if pyramid:
-            init_shape = data[0].shape
-        else:
-            init_shape = data.shape
-
-        # Determine if rgb, and determine dimensionality
-        if rgb is False:
-            self._rgb = rgb
-        else:
-            # If rgb is True or None then guess if rgb
-            # allowed or not, and if allowed set it to be True
-            self._rgb = is_rgb(init_shape)
-
-        if self.rgb:
-            ndim = len(init_shape) - 1
-        else:
-            ndim = len(init_shape)
+        ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(
+            data, pyramid=pyramid, rgb=rgb
+        )
 
         super().__init__(
             ndim,
@@ -174,10 +155,12 @@ class Image(Layer):
 
         # Set data
         self.pyramid = pyramid
+        self.rgb = rgb
         self._data = data
+        self._data_pyramid = data_pyramid
         self._top_left = np.zeros(ndim, dtype=int)
         if self.pyramid:
-            self._data_level = len(data) - 1
+            self._data_level = len(data_pyramid) - 1
         else:
             self._data_level = 0
 
@@ -195,7 +178,7 @@ class Image(Layer):
         self._contrast_limits_msg = ''
         if contrast_limits is None:
             if self.pyramid:
-                input_data = self.data[-1]
+                input_data = self._data_pyramid[-1]
             else:
                 input_data = self.data
             self._contrast_limits_range = calc_data_range(input_data)
@@ -217,9 +200,12 @@ class Image(Layer):
 
     @data.setter
     def data(self, data):
+        ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data)
+        self.pyramid = pyramid
+        self.rgb = rgb
         self._data = data
-        if self.rgb:
-            self._rgb = is_rgb(data.shape)
+        self._data_pyramid = data_pyramid
+
         self._update_dims()
         self.events.data()
 
@@ -229,21 +215,6 @@ class Image(Layer):
 
     def _get_extent(self):
         return tuple((0, m) for m in self.level_shapes[0])
-
-    @property
-    def rgb(self):
-        """bool: Whether the image is rgb."""
-        return self._rgb
-
-    @rgb.setter
-    def rgb(self, rgb):
-        if rgb is False:
-            self._rgb = rgb
-        else:
-            # If rgb is True or None then guess if rgb
-            # allowed or not, and if allowed set it to be True
-            self._rgb = is_rgb(self.data.shape)
-        self._set_view_slice()
 
     @property
     def data_level(self):
@@ -262,9 +233,9 @@ class Image(Layer):
         """array: Shapes of each level of the pyramid or just of image."""
         if self.pyramid:
             if self.rgb:
-                shapes = [im.shape[:-1] for im in self.data]
+                shapes = [im.shape[:-1] for im in self._data_pyramid]
             else:
-                shapes = [im.shape for im in self.data]
+                shapes = [im.shape for im in self._data_pyramid]
         else:
             if self.rgb:
                 shapes = [self.data.shape[:-1]]
@@ -402,7 +373,7 @@ class Image(Layer):
         if self.pyramid:
             # If 3d redering just show lowest level of pyramid
             if self.dims.ndisplay == 3:
-                self.data_level = len(self.data) - 1
+                self.data_level = len(self._data_pyramid) - 1
 
             # Slice currently viewed level
             level = self.data_level
@@ -433,11 +404,11 @@ class Image(Layer):
             else:
                 self._translate_view = [0] * self.ndim
 
-            image = np.asarray(self.data[level][tuple(indices)]).transpose(
-                order
-            )
+            image = np.asarray(
+                self._data_pyramid[level][tuple(indices)]
+            ).transpose(order)
 
-            if level == len(self.data) - 1:
+            if level == len(self._data_pyramid) - 1:
                 thumbnail = image
             else:
                 # Slice thumbnail
@@ -449,7 +420,7 @@ class Image(Layer):
                 )
                 indices[nd] = downsampled
                 thumbnail = np.asarray(
-                    self.data[-1][tuple(indices)]
+                    self._data_pyramid[-1][tuple(indices)]
                 ).transpose(order)
         else:
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
