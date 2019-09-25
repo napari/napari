@@ -93,9 +93,11 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     data : array or list
         Data to be checked if pyramid or if needs to be turned into a pyramid.
     pyramid : bool, optional
-        Value that can force data to be considered as a pyramid, otherwise computed.
+        Value that can force data to be considered as a pyramid, otherwise
+        computed.
     rgb : bool, optional
-        Value that can force data to be considered as a rgb, otherwise computed.
+        Value that can force data to be considered as a rgb, otherwise
+        computed.
 
     Returns
     -------
