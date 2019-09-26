@@ -9,7 +9,7 @@ from ._constants import Blending
 from ...components import Dims
 from ...util.event import EmitterGroup, Event
 from ...util.keybindings import KeymapMixin
-from ...util.status_messages import status_format
+from ...util.status_messages import status_format, format_float
 
 
 class Layer(KeymapMixin, ABC):
@@ -212,6 +212,7 @@ class Layer(KeymapMixin, ABC):
 
         self._opacity = opacity
         self._update_thumbnail()
+        self.status = format_float(self.opacity)
         self.events.opacity()
 
     @property
