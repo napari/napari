@@ -7,7 +7,7 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-base
 rendering), and the scientific Python stack (numpy, scipy).
 
-This is our first major release, timed for the 2019 SciPy Conference in Austin.
+This is our first minor release, timed for the 2019 SciPy Conference in Austin.
 It marks our transition from pre-alpha to alpha, and establishes a reasonable
 API for adding images, shapes, and other basic layer types to an interactive
 viewer. It supports launching a viewer with python scripting or from Jupyter

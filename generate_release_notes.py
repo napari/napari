@@ -3,13 +3,13 @@ Start with:
 ```
 export GH_TOKEN=<your-gh-api-token>
 ```
-Then, for a major release:
+Then, for to include everything from a certain release to master:
 ```
 python /path/to/generate_release_notes.py v0.14.0 master --version 0.15.0
 ```
-For a minor release:
+Or two include only things between two releases:
 ```
-python /path/to/generate_release_notes.py v.14.2 v0.14.x --version 0.14.3
+python /path/to/generate_release_notes.py v.14.2 v0.14.3 --version 0.14.3
 ```
 You should probably redirect the output with:
 ```
