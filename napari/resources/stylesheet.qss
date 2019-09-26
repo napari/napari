@@ -5,6 +5,18 @@ QRangeSlider {
   qproperty-handleBorderColor: {{ highlight }};
 }
 
+QtDims > QRangeSlider[last_used=true] {
+  qproperty-barColor: {{ secondary }};
+  qproperty-handleColor: {{ secondary }};
+  qproperty-handleBorderColor: {{ secondary }};
+}
+
+QtDims > QRangeSlider[last_used=false] {
+  qproperty-barColor: {{ highlight }};
+  qproperty-handleColor: {{ highlight }};
+  qproperty-handleBorderColor: {{ highlight }};
+}
+
 /* ------------------------------------------------------ */
 
 QWidget {

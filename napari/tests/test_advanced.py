@@ -190,7 +190,7 @@ def test_changing_display_surface(qtbot):
     )
 
     assert len(viewer.layers) == 1
-    assert view.layers.vboxLayout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim

@@ -92,6 +92,8 @@ class QtPointsControls(QtLayerControls):
         self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
 
+        # grid_layout created in QtLayerControls
+        # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(self.panzoom_button, 0, 6)
         self.grid_layout.addWidget(self.select_button, 0, 5)
         self.grid_layout.addWidget(self.addition_button, 0, 4)

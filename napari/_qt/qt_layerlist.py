@@ -26,12 +26,15 @@ class QtLayerList(QScrollArea):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scrollWidget = QWidget()
         self.setWidget(scrollWidget)
-        self.vboxLayout = QVBoxLayout(scrollWidget)
-        self.vboxLayout.addWidget(QtDivider())
-        self.vboxLayout.addStretch(1)
-        self.vboxLayout.setContentsMargins(0, 0, 0, 0)
-        self.vboxLayout.setSpacing(2)
+        self.vbox_layout = QVBoxLayout(scrollWidget)
+        self.vbox_layout.addWidget(QtDivider())
+        self.vbox_layout.addStretch(1)
+        self.vbox_layout.setContentsMargins(0, 0, 0, 0)
+        self.vbox_layout.setSpacing(2)
         self.centers = []
+
+        # Create a timer to be used for autoscrolling the layers list up and
+        # down when dragging a layer near the end of the displayed area
         self.dragTimer = QTimer()
         self.dragTimer.setSingleShot(False)
         self.dragTimer.setInterval(20)
@@ -55,8 +58,8 @@ class QtLayerList(QScrollArea):
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
         widget = QtLayerWidget(layer)
-        self.vboxLayout.insertWidget(index, widget)
-        self.vboxLayout.insertWidget(index + 1, QtDivider())
+        self.vbox_layout.insertWidget(index, widget)
+        self.vbox_layout.insertWidget(index + 1, QtDivider())
         layer.events.select.connect(self._scroll_on_select)
 
     def _remove(self, event):
@@ -65,11 +68,11 @@ class QtLayerList(QScrollArea):
         total = len(self.layers)
         # Find property widget and divider for layer to be removed
         index = 2 * (total - layer_index) + 1
-        widget = self.vboxLayout.itemAt(index).widget()
-        divider = self.vboxLayout.itemAt(index + 1).widget()
-        self.vboxLayout.removeWidget(widget)
+        widget = self.vbox_layout.itemAt(index).widget()
+        divider = self.vbox_layout.itemAt(index + 1).widget()
+        self.vbox_layout.removeWidget(widget)
         widget.deleteLater()
-        self.vboxLayout.removeWidget(divider)
+        self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
 
     def _reorder(self):
@@ -81,7 +84,7 @@ class QtLayerList(QScrollArea):
 
         # Create list of the current property and divider widgets
         widgets = [
-            self.vboxLayout.itemAt(i + 1).widget() for i in range(2 * total)
+            self.vbox_layout.itemAt(i + 1).widget() for i in range(2 * total)
         ]
         # Take every other widget to ignore the dividers and get just the
         # property widgets
@@ -98,17 +101,18 @@ class QtLayerList(QScrollArea):
             widget = widgets[index]
             divider = widgets[index + 1]
             # Check if current index does not match new index
-            index_current = self.vboxLayout.indexOf(widget)
+            index_current = self.vbox_layout.indexOf(widget)
             index_new = 2 * (total - i) - 1
             if index_current != index_new:
                 # Remove that property widget and divider
-                self.vboxLayout.removeWidget(widget)
-                self.vboxLayout.removeWidget(divider)
+                self.vbox_layout.removeWidget(widget)
+                self.vbox_layout.removeWidget(divider)
                 # Insert the property widget and divider into new location
-                self.vboxLayout.insertWidget(index_new, widget)
-                self.vboxLayout.insertWidget(index_new + 1, divider)
+                self.vbox_layout.insertWidget(index_new, widget)
+                self.vbox_layout.insertWidget(index_new + 1, divider)
 
     def _force_scroll(self):
+        """Force the scroll bar to automattically scroll either up or down."""
         cur_value = self.verticalScrollBar().value()
         if self._scroll_up:
             new_value = cur_value - self.verticalScrollBar().singleStep() / 4
@@ -122,6 +126,7 @@ class QtLayerList(QScrollArea):
             self.verticalScrollBar().setValue(new_value)
 
     def _scroll_on_select(self, event):
+        """Scroll to ensure that the currently selected layer is visible."""
         layer = event.source
         self._ensure_visible(layer)
 
@@ -131,7 +136,7 @@ class QtLayerList(QScrollArea):
         layer_index = self.layers.index(layer)
         # Find property widget and divider for layer to be removed
         index = 2 * (total - layer_index) - 1
-        widget = self.vboxLayout.itemAt(index).widget()
+        widget = self.vbox_layout.itemAt(index).widget()
         self.ensureWidgetVisible(widget)
 
     def keyPressEvent(self, event):
@@ -210,15 +215,15 @@ class QtLayerList(QScrollArea):
         """Unselects layer dividers."""
         event.ignore()
         self.dragTimer.stop()
-        for i in range(0, self.vboxLayout.count(), 2):
-            self.vboxLayout.itemAt(i).widget().setSelected(False)
+        for i in range(0, self.vbox_layout.count(), 2):
+            self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dragEnterEvent(self, event):
         if event.source() == self:
             event.accept()
             divs = []
-            for i in range(0, self.vboxLayout.count(), 2):
-                widget = self.vboxLayout.itemAt(i).widget()
+            for i in range(0, self.vbox_layout.count(), 2):
+                widget = self.vbox_layout.itemAt(i).widget()
                 divs.append(widget.y() + widget.frameGeometry().height() / 2)
             self.centers = [
                 (divs[i + 1] + divs[i]) / 2 for i in range(len(divs) - 1)
@@ -255,29 +260,29 @@ class QtLayerList(QScrollArea):
         center_list = (i for i, x in enumerate(self.centers) if x > cord)
         divider_index = next(center_list, len(self.centers))
         # Determine the current location of the widget being dragged
-        total = self.vboxLayout.count() // 2 - 1
+        total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
         index = self.layers.index(self.drag_name)
         # If the widget being dragged hasn't moved above or below any other
         # widgets then don't highlight any dividers
         selected = not (insert == index) and not (insert - 1 == index)
         # Set the selected state of all the dividers
-        for i in range(0, self.vboxLayout.count(), 2):
+        for i in range(0, self.vbox_layout.count(), 2):
             if i == 2 * divider_index:
-                self.vboxLayout.itemAt(i).widget().setSelected(selected)
+                self.vbox_layout.itemAt(i).widget().setSelected(selected)
             else:
-                self.vboxLayout.itemAt(i).widget().setSelected(False)
+                self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
         if self.dragTimer.isActive():
             self.dragTimer.stop()
 
-        for i in range(0, self.vboxLayout.count(), 2):
-            self.vboxLayout.itemAt(i).widget().setSelected(False)
+        for i in range(0, self.vbox_layout.count(), 2):
+            self.vbox_layout.itemAt(i).widget().setSelected(False)
         cord = event.pos().y() + self.verticalScrollBar().value()
         center_list = (i for i, x in enumerate(self.centers) if x > cord)
         divider_index = next(center_list, len(self.centers))
-        total = self.vboxLayout.count() // 2 - 1
+        total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
         index = self.layers.index(self.drag_name)
         layer = self.layers[index]

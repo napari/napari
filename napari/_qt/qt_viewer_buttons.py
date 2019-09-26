@@ -109,6 +109,7 @@ class QtNDisplayButton(QCheckBox):
 
         self.viewer = viewer
         self.setToolTip('Toggle number of displayed dimensions')
+        self.viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
 
         self.setChecked(self.viewer.dims.ndisplay == 3)
         self.stateChanged.connect(
@@ -120,3 +121,7 @@ class QtNDisplayButton(QCheckBox):
             self.viewer.dims.ndisplay = 3
         else:
             self.viewer.dims.ndisplay = 2
+
+    def _on_ndisplay_change(self, event):
+        with self.viewer.dims.events.ndisplay.blocker():
+            self.setChecked(self.viewer.dims.ndisplay == 3)

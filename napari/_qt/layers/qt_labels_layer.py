@@ -92,6 +92,8 @@ class QtLabelsControls(QtLayerControls):
         self.button_group.addButton(self.fill_button)
         self.panzoom_button.setChecked(True)
 
+        # grid_layout created in QtLayerControls
+        # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(self.panzoom_button, 0, 6)
         self.grid_layout.addWidget(self.paint_button, 0, 5)
         self.grid_layout.addWidget(self.fill_button, 0, 4)

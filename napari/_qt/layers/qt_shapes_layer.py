@@ -115,6 +115,8 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.vertex_insert_button)
         self.button_group.addButton(self.vertex_remove_button)
 
+        # grid_layout created in QtLayerControls
+        # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(self.panzoom_button, 0, 6)
         self.grid_layout.addWidget(self.select_button, 0, 5)
         self.grid_layout.addWidget(self.direct_button, 0, 4)
