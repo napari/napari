@@ -9,9 +9,10 @@ from qtpy.QtWidgets import (
     QLabel,
     QComboBox,
     QSlider,
+    QFrame,
 )
-
-from .qt_base_layer import QtLayerControls, QtLayerProperties
+from vispy.color import Color
+from .qt_base_layer import QtLayerControls
 from ...layers.shapes._constants import Mode
 
 
@@ -20,6 +21,51 @@ class QtShapesControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self.set_mode)
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self.layer.events.edge_color.connect(self._on_edge_color_change)
+        self.layer.events.face_color.connect(self._on_face_color_change)
+
+        sld = QSlider(Qt.Horizontal)
+        sld.setFocusPolicy(Qt.NoFocus)
+        sld.setMinimum(0)
+        sld.setMaximum(40)
+        sld.setSingleStep(1)
+        value = self.layer.edge_width
+        if isinstance(value, Iterable):
+            if isinstance(value, list):
+                value = np.asarray(value)
+            value = value.mean()
+        sld.setValue(int(value))
+        sld.valueChanged[int].connect(
+            lambda value=sld: self.changeWidth(value)
+        )
+        self.widthSlider = sld
+
+        face_comboBox = QComboBox()
+        colors = self.layer._colors
+        for c in colors:
+            face_comboBox.addItem(c)
+        face_comboBox.activated[str].connect(
+            lambda text=face_comboBox: self.changeFaceColor(text)
+        )
+        self.faceComboBox = face_comboBox
+        self.faceColorSwatch = QFrame()
+        self.faceColorSwatch.setObjectName('swatch')
+        self.faceColorSwatch.setToolTip('Face color swatch')
+        self._on_face_color_change(None)
+
+        edge_comboBox = QComboBox()
+        colors = self.layer._colors
+        for c in colors:
+            edge_comboBox.addItem(c)
+        edge_comboBox.activated[str].connect(
+            lambda text=edge_comboBox: self.changeEdgeColor(text)
+        )
+        self.edgeComboBox = edge_comboBox
+        self.edgeColorSwatch = QFrame()
+        self.edgeColorSwatch.setObjectName('swatch')
+        self.edgeColorSwatch.setToolTip('Edge color swatch')
+        self._on_edge_color_change(None)
 
         self.select_button = QtModeButton(
             layer, 'select', Mode.SELECT, 'Select mode'
@@ -55,6 +101,7 @@ class QtShapesControls(QtLayerControls):
         self.move_front_button = QtMoveFrontButton(layer)
         self.move_back_button = QtMoveBackButton(layer)
         self.delete_button = QtDeleteShapeButton(layer)
+        self.panzoom_button.setChecked(True)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -68,26 +115,35 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.vertex_insert_button)
         self.button_group.addButton(self.vertex_remove_button)
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(12, 20, 10, 10)
-        layout.addWidget(self.panzoom_button)
-        layout.addWidget(self.select_button)
-        layout.addWidget(self.direct_button)
-        layout.addWidget(self.vertex_insert_button)
-        layout.addWidget(self.vertex_remove_button)
-        layout.addWidget(self.rectangle_button)
-        layout.addWidget(self.ellipse_button)
-        layout.addWidget(self.line_button)
-        layout.addWidget(self.path_button)
-        layout.addWidget(self.polygon_button)
-        layout.addWidget(self.move_front_button)
-        layout.addWidget(self.move_back_button)
-        layout.addWidget(self.delete_button)
-        layout.addStretch(0)
-        self.setLayout(layout)
-        self.setMouseTracking(True)
-
-        self.panzoom_button.setChecked(True)
+        # grid_layout created in QtLayerControls
+        # addWidget(widget, row, column, [row_span, column_span])
+        self.grid_layout.addWidget(self.panzoom_button, 0, 6)
+        self.grid_layout.addWidget(self.select_button, 0, 5)
+        self.grid_layout.addWidget(self.direct_button, 0, 4)
+        self.grid_layout.addWidget(self.delete_button, 1, 1)
+        self.grid_layout.addWidget(self.vertex_insert_button, 0, 3)
+        self.grid_layout.addWidget(self.vertex_remove_button, 0, 2)
+        self.grid_layout.addWidget(self.move_front_button, 0, 1)
+        self.grid_layout.addWidget(self.move_back_button, 0, 0)
+        self.grid_layout.addWidget(self.rectangle_button, 1, 2)
+        self.grid_layout.addWidget(self.ellipse_button, 1, 3)
+        self.grid_layout.addWidget(self.line_button, 1, 4)
+        self.grid_layout.addWidget(self.path_button, 1, 5)
+        self.grid_layout.addWidget(self.polygon_button, 1, 6)
+        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0, 1, 3)
+        self.grid_layout.addWidget(self.opacitySilder, 2, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('edge width:'), 3, 0, 1, 3)
+        self.grid_layout.addWidget(self.widthSlider, 3, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 3)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('face color:'), 5, 0, 1, 3)
+        self.grid_layout.addWidget(self.faceComboBox, 5, 3, 1, 3)
+        self.grid_layout.addWidget(self.faceColorSwatch, 5, 6)
+        self.grid_layout.addWidget(QLabel('edge color:'), 6, 0, 1, 3)
+        self.grid_layout.addWidget(self.edgeComboBox, 6, 3, 1, 3)
+        self.grid_layout.addWidget(self.edgeColorSwatch, 6, 6)
+        self.grid_layout.setRowStretch(7, 1)
+        self.grid_layout.setVerticalSpacing(4)
 
     def mouseMoveEvent(self, event):
         self.layer.status = str(self.layer.mode)
@@ -116,6 +172,39 @@ class QtShapesControls(QtLayerControls):
             self.vertex_remove_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
+
+    def changeFaceColor(self, text):
+        self.layer.face_color = text
+
+    def changeEdgeColor(self, text):
+        self.layer.edge_color = text
+
+    def changeWidth(self, value):
+        self.layer.edge_width = float(value) / 2
+
+    def _on_edge_width_change(self, event):
+        with self.layer.events.edge_width.blocker():
+            value = self.layer.edge_width
+            value = np.clip(int(2 * value), 0, 40)
+            self.widthSlider.setValue(value)
+
+    def _on_edge_color_change(self, event):
+        with self.layer.events.edge_color.blocker():
+            index = self.edgeComboBox.findText(
+                self.layer.edge_color, Qt.MatchFixedString
+            )
+            self.edgeComboBox.setCurrentIndex(index)
+        color = Color(self.layer.edge_color).hex
+        self.edgeColorSwatch.setStyleSheet("background-color: " + color)
+
+    def _on_face_color_change(self, event):
+        with self.layer.events.face_color.blocker():
+            index = self.faceComboBox.findText(
+                self.layer.face_color, Qt.MatchFixedString
+            )
+            self.faceComboBox.setCurrentIndex(index)
+        color = Color(self.layer.face_color).hex
+        self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
 
 class QtModeButton(QRadioButton):
@@ -167,101 +256,3 @@ class QtMoveFrontButton(QPushButton):
         self.setFixedHeight(28)
         self.setToolTip('Move to front')
         self.clicked.connect(self.layer.move_to_front)
-
-
-class QtShapesProperties(QtLayerProperties):
-    def __init__(self, layer):
-        super().__init__(layer)
-
-        self.layer.events.edge_width.connect(self._on_edge_width_change)
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
-        self.layer.events.face_color.connect(self._on_face_color_change)
-
-        sld = QSlider(Qt.Horizontal, self)
-        sld.setFocusPolicy(Qt.NoFocus)
-        sld.setFixedWidth(75)
-        sld.setMinimum(0)
-        sld.setMaximum(40)
-        sld.setSingleStep(1)
-        value = self.layer.edge_width
-        if isinstance(value, Iterable):
-            if isinstance(value, list):
-                value = np.asarray(value)
-            value = value.mean()
-        sld.setValue(int(value))
-        sld.valueChanged[int].connect(
-            lambda value=sld: self.changeWidth(value)
-        )
-        self.widthSlider = sld
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(QLabel('width:'), row, self.name_column)
-        self.grid_layout.addWidget(sld, row, self.property_column)
-
-        face_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            face_comboBox.addItem(c)
-        index = face_comboBox.findText(
-            self.layer.face_color, Qt.MatchFixedString
-        )
-        if index >= 0:
-            face_comboBox.setCurrentIndex(index)
-        face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.changeFaceColor(text)
-        )
-        self.faceComboBox = face_comboBox
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(
-            QLabel('face_color:'), row, self.name_column
-        )
-        self.grid_layout.addWidget(face_comboBox, row, self.property_column)
-
-        edge_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            edge_comboBox.addItem(c)
-        index = edge_comboBox.findText(
-            self.layer.edge_color, Qt.MatchFixedString
-        )
-        if index >= 0:
-            edge_comboBox.setCurrentIndex(index)
-        edge_comboBox.activated[str].connect(
-            lambda text=edge_comboBox: self.changeEdgeColor(text)
-        )
-        self.edgeComboBox = edge_comboBox
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(
-            QLabel('edge_color:'), row, self.name_column
-        )
-        self.grid_layout.addWidget(edge_comboBox, row, self.property_column)
-
-        self.setExpanded(False)
-
-    def changeFaceColor(self, text):
-        self.layer.face_color = text
-
-    def changeEdgeColor(self, text):
-        self.layer.edge_color = text
-
-    def changeWidth(self, value):
-        self.layer.edge_width = float(value) / 2
-
-    def _on_edge_width_change(self, event):
-        with self.layer.events.edge_width.blocker():
-            value = self.layer.edge_width
-            value = np.clip(int(2 * value), 0, 40)
-            self.widthSlider.setValue(value)
-
-    def _on_edge_color_change(self, event):
-        with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(
-                self.layer.edge_color, Qt.MatchFixedString
-            )
-            self.edgeComboBox.setCurrentIndex(index)
-
-    def _on_face_color_change(self, event):
-        with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(
-                self.layer.face_color, Qt.MatchFixedString
-            )
-            self.faceComboBox.setCurrentIndex(index)

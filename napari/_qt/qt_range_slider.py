@@ -361,10 +361,7 @@ class QHRangeSlider(QRangeSlider):
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
         painter.drawRect(
-            self.bar_width / 2,
-            h / 2 - self.slider_width / 2,
-            w - self.bar_width,
-            self.slider_width,
+            0, h / 2 - self.slider_width / 2, w, self.slider_width
         )
 
         # Range Bar
@@ -372,9 +369,9 @@ class QHRangeSlider(QRangeSlider):
         painter.setBrush(self.bar_color)
         if self.collapsed:
             painter.drawRect(
-                self.bar_width / 2,
+                0,
                 h / 2 - self.slider_width / 2,
-                self.display_max - self.bar_width / 2,
+                self.display_max,
                 self.slider_width,
             )
         else:
@@ -461,10 +458,7 @@ class QVRangeSlider(QRangeSlider):
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
         painter.drawRect(
-            w / 2 - self.slider_width / 2,
-            self.bar_width / 2,
-            self.slider_width,
-            h - self.bar_width,
+            w / 2 - self.slider_width / 2, 0, self.slider_width, h
         )
 
         # Range Bar
@@ -475,7 +469,7 @@ class QVRangeSlider(QRangeSlider):
                 w / 2 - self.slider_width / 2,
                 h - self.display_max,
                 self.slider_width,
-                self.display_max - self.bar_width / 2,
+                self.display_max,
             )
         else:
             painter.drawRect(

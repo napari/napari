@@ -1,22 +1,12 @@
 from ...layers import Image, Labels, Points, Pyramid, Shapes, Surface, Vectors
-from .qt_base_layer import QtLayerProperties, QtLayerControls
-from .qt_image_base_layer import QtImageBaseProperties
-from .qt_image_layer import QtImageProperties, QtImageControls
-from .qt_points_layer import QtPointsProperties, QtPointsControls
-from .qt_vectors_layer import QtVectorsProperties
-from .qt_shapes_layer import QtShapesProperties, QtShapesControls
-from .qt_labels_layer import QtLabelsProperties, QtLabelsControls
-
-
-layer_to_properties = {
-    Image: QtImageProperties,
-    Labels: QtLabelsProperties,
-    Points: QtPointsProperties,
-    Pyramid: QtImageProperties,
-    Shapes: QtShapesProperties,
-    Surface: QtImageBaseProperties,
-    Vectors: QtVectorsProperties,
-}
+from .qt_base_layer import QtLayerControls
+from .qt_image_base_layer import QtBaseImageControls
+from .qt_image_layer import QtImageControls
+from .qt_points_layer import QtPointsControls
+from .qt_shapes_layer import QtShapesControls
+from .qt_labels_layer import QtLabelsControls
+from .qt_surface_layer import QtSurfaceControls
+from .qt_vectors_layer import QtVectorsControls
 
 
 layer_to_controls = {
@@ -25,28 +15,9 @@ layer_to_controls = {
     Points: QtPointsControls,
     Pyramid: QtImageControls,
     Shapes: QtShapesControls,
-    Surface: QtImageControls,
-    Vectors: QtLayerControls,
+    Surface: QtSurfaceControls,
+    Vectors: QtVectorsControls,
 }
-
-
-def create_qt_properties(layer):
-    """
-    Create a qt properties widget for a layer based on its layer type.
-
-    Parameters
-    ----------
-        layer : napari.layers._base_layer.Layer
-            Layer that needs its propetry widget created.
-
-    Returns
-    ----------
-        properties : napari.layers.base.QtLayerProperties
-            Qt propetry widget
-    """
-    properties = layer_to_properties[type(layer)](layer)
-
-    return properties
 
 
 def create_qt_controls(layer):
