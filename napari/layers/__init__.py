@@ -13,4 +13,3 @@ from .vectors import Vectors
 from .surface import Surface
 from .shapes import Shapes
 from .labels import Labels
-from .pyramid import Pyramid

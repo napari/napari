@@ -48,7 +48,7 @@ def test_view_pyramid(qtbot):
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer = napari.view_pyramid(data)
+    viewer = napari.view_image(data, is_pyramid=True)
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
 

@@ -1,16 +1,31 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from vispy.color import Colormap
-from napari.layers import Pyramid
+from napari.layers import Image
 
 
 def test_random_pyramid():
-    """Test instantiating Pyramid layer with random 2D data."""
+    """Test instantiating Image layer with random 2D pyramid data."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.data == data
+    assert layer.is_pyramid == True
+    assert layer.ndim == len(shapes[0])
+    assert layer.shape == shapes[0]
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2
+
+
+def test_infer_pyramid():
+    """Test instantiating Image layer with random 2D pyramid data."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data)
+    assert layer.data == data
+    assert layer.is_pyramid == True
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb == False
@@ -18,11 +33,11 @@ def test_random_pyramid():
 
 
 def test_3D_pyramid():
-    """Test instantiating Pyramid layer with 3D data."""
+    """Test instantiating Image layer with 3D data."""
     shapes = [(8, 40, 20), (4, 20, 10), (2, 10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -31,11 +46,11 @@ def test_3D_pyramid():
 
 
 def test_non_uniform_3D_pyramid():
-    """Test instantiating Pyramid layer non-uniform 3D data."""
+    """Test instantiating Image layer non-uniform 3D data."""
     shapes = [(8, 40, 20), (8, 20, 10), (8, 10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -44,11 +59,11 @@ def test_non_uniform_3D_pyramid():
 
 
 def test_rgb_pyramid():
-    """Test instantiating Pyramid layer with RGB data."""
+    """Test instantiating Image layer with RGB data."""
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
@@ -57,11 +72,11 @@ def test_rgb_pyramid():
 
 
 def test_3D_rgb_pyramid():
-    """Test instantiating Pyramid layer with 3D RGB data."""
+    """Test instantiating Image layer with 3D RGB data."""
     shapes = [(8, 40, 20, 3), (4, 20, 10, 3), (2, 10, 5, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
@@ -70,11 +85,11 @@ def test_3D_rgb_pyramid():
 
 
 def test_non_rgb_image():
-    """Test forcing Pyramid layer to be 3D and not rgb."""
+    """Test forcing Image layer to be 3D and not rgb."""
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data, rgb=False)
+    layer = Image(data, is_pyramid=True, rgb=False)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -86,10 +101,10 @@ def test_name():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
-    assert layer.name == 'Pyramid'
+    layer = Image(data, is_pyramid=True)
+    assert layer.name == 'Image'
 
-    layer = Pyramid(data, name='random')
+    layer = Image(data, is_pyramid=True, name='random')
     assert layer.name == 'random'
 
     layer.name = 'img'
@@ -101,13 +116,13 @@ def test_visiblity():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.visible == True
 
     layer.visible = False
     assert layer.visible == False
 
-    layer = Pyramid(data, visible=False)
+    layer = Image(data, is_pyramid=True, visible=False)
     assert layer.visible == False
 
     layer.visible = True
@@ -119,13 +134,13 @@ def test_opacity():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.opacity == 1.0
 
     layer.opacity = 0.5
     assert layer.opacity == 0.5
 
-    layer = Pyramid(data, opacity=0.6)
+    layer = Image(data, is_pyramid=True, opacity=0.6)
     assert layer.opacity == 0.6
 
     layer.opacity = 0.3
@@ -137,13 +152,13 @@ def test_blending():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.blending == 'translucent'
 
     layer.blending = 'additive'
     assert layer.blending == 'additive'
 
-    layer = Pyramid(data, blending='additive')
+    layer = Image(data, is_pyramid=True, blending='additive')
     assert layer.blending == 'additive'
 
     layer.blending = 'opaque'
@@ -155,10 +170,10 @@ def test_interpolation():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.interpolation == 'nearest'
 
-    layer = Pyramid(data, interpolation='bicubic')
+    layer = Image(data, is_pyramid=True, interpolation='bicubic')
     assert layer.interpolation == 'bicubic'
 
     layer.interpolation = 'bilinear'
@@ -170,7 +185,7 @@ def test_colormaps():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.colormap[0] == 'gray'
     assert type(layer.colormap[1]) == Colormap
 
@@ -188,17 +203,17 @@ def test_colormaps():
     assert layer.colormap[0] == 'new'
     assert layer.colormap[1] == cmap
 
-    layer = Pyramid(data, colormap='magma')
+    layer = Image(data, is_pyramid=True, colormap='magma')
     assert layer.colormap[0] == 'magma'
     assert type(layer.colormap[1]) == Colormap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer = Pyramid(data, colormap=('custom', cmap))
+    layer = Image(data, is_pyramid=True, colormap=('custom', cmap))
     assert layer.colormap[0] == 'custom'
     assert layer.colormap[1] == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer = Pyramid(data, colormap={'new': cmap})
+    layer = Image(data, is_pyramid=True, colormap={'new': cmap})
     assert layer.colormap[0] == 'new'
     assert layer.colormap[1] == cmap
 
@@ -208,7 +223,7 @@ def test_contrast_limits():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
@@ -221,7 +236,7 @@ def test_contrast_limits():
     assert layer._contrast_limits_range == contrast_limits
 
     # Set contrast_limits as keyword argument
-    layer = Pyramid(data, contrast_limits=contrast_limits)
+    layer = Image(data, is_pyramid=True, contrast_limits=contrast_limits)
     assert layer.contrast_limits == contrast_limits
     assert layer._contrast_limits_range == contrast_limits
 
@@ -231,7 +246,7 @@ def test_contrast_limits_range():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer._contrast_limits_range[0] >= 0
     assert layer._contrast_limits_range[1] <= 1
     assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
@@ -239,7 +254,7 @@ def test_contrast_limits_range():
     # If all data is the same value the contrast_limits_range and contrast_limits defaults to [0, 1]
     shapes = [(40, 20), (20, 10), (10, 5)]
     data = [np.zeros(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer._contrast_limits_range == [0, 1]
     assert layer.contrast_limits == [0.0, 1.0]
 
@@ -249,10 +264,10 @@ def test_metadata():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     assert layer.metadata == {}
 
-    layer = Pyramid(data, metadata={'unit': 'cm'})
+    layer = Image(data, is_pyramid=True, metadata={'unit': 'cm'})
     assert layer.metadata == {'unit': 'cm'}
 
 
@@ -261,7 +276,7 @@ def test_value():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     value = layer.get_value()
     assert layer.coordinates == (0, 0)
     assert value == (2, data[-1][0, 0])
@@ -272,7 +287,7 @@ def test_message():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     msg = layer.get_message()
     assert type(msg) == str
 
@@ -282,7 +297,7 @@ def test_thumbnail():
     shapes = [(40, 40), (20, 20), (10, 10)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
@@ -292,8 +307,24 @@ def test_xml_list():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Pyramid(data)
+    layer = Image(data, is_pyramid=True)
     xml = layer.to_xml_list()
     assert type(xml) == list
     assert len(xml) == 1
     assert type(xml[0]) == Element
+
+
+def test_create_random_pyramid():
+    """Test instantiating Image layer with random 2D data."""
+    shape = (20_000, 20)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.is_pyramid == True
+    assert layer._data_pyramid[0].shape == shape
+    assert layer._data_pyramid[1].shape == (shape[0] / 2, shape[1])
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2

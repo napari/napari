@@ -30,7 +30,6 @@ from .viewer import Viewer
 from . import keybindings
 from .view_layers import (
     view_image,
-    view_pyramid,
     view_labels,
     view_surface,
     view_shapes,
