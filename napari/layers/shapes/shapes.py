@@ -1040,6 +1040,8 @@ class Shapes(Layer):
     def get_value(self):
         """Determine if any shape at given coord using triangle meshes.
 
+        Getting value is not supported yet for 3D meshes
+
         Returns
         ----------
         shape : int | None
@@ -1049,6 +1051,9 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
+        if self.dims.ndisplay == 3:
+            return (None, None)
+
         if self._is_moving:
             return self._moving_value
 
@@ -1097,6 +1102,7 @@ class Shapes(Layer):
             # Check if mouse inside shape
             shape = self._data_view.inside(coord)
             value = (shape, None)
+
         return value
 
     def move_to_front(self):

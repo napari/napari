@@ -37,6 +37,8 @@ class VispyShapesLayer(VispyBaseLayer):
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
 
+        # Note that the indicies of the vertices need to be resversed to
+        # go from numpy style to xyz
         self.node._subvisuals[0].set_data(
             vertices=vertices[:, ::-1], faces=faces, face_colors=colors
         )

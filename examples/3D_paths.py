@@ -15,7 +15,8 @@ with napari.gui_qt():
                 length=128, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.05
             )
 
-    viewer = napari.view(blobs.astype(float))
+    viewer = napari.Viewer(ndisplay=3)
+    viewer.add_image(blobs.astype(float))
 
     # sample vector coord-like data
     path = np.array([np.array([[0, 0, 0], [0, 10, 10], [0, 5, 15], [20, 5, 15],
@@ -27,5 +28,3 @@ with napari.gui_qt():
     layer = viewer.add_shapes(
         path, shape_type='path', edge_width=4, edge_color=['red', 'blue']
     )
-
-    #viewer.dims.ndisplay = 3
