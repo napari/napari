@@ -98,7 +98,7 @@ class VispyImageLayer(VispyBaseLayer):
             self.layer.scale[d] * self.layer._scale_view[d]
             for d in self.layer.dims.displayed[::-1]
         ]
-        if self.layer.pyramid:
+        if self.layer.is_pyramid:
             self.layer.top_left = self.find_top_left()
         self.layer.position = self._transform_position(self._position)
 
@@ -179,7 +179,7 @@ class VispyImageLayer(VispyBaseLayer):
         """Called whenever the canvas is drawn, which happens whenever new
         data is sent to the canvas or the camera is moved.
         """
-        if self.layer.pyramid:
+        if self.layer.is_pyramid:
             self.layer.scale_factor = self.scale_factor
             size = self.camera.rect.size
             data_level = self.compute_data_level(size)

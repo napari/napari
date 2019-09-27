@@ -53,7 +53,7 @@ def test_should_be_pyramid():
     shape = (16_0000, 15, 3)
     assert np.any(should_be_pyramid(shape))
 
-    shape = (2 ** 13 + 1, 100, 3)
+    shape = (2 ** 13, 100, 3)
     assert np.any(should_be_pyramid(shape))
 
     shape = (2 ** 13 - 1, 100, 4)

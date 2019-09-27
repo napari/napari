@@ -136,7 +136,7 @@ class Layer(KeymapMixin, ABC):
         self._translate_view = np.zeros(ndim)
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
-        self.pyramid = False
+        self.is_pyramid = False
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)

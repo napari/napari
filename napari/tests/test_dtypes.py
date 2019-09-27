@@ -37,7 +37,7 @@ def test_image_dytpes(qtbot, dtype):
         np.random.randint(20, size=(30, 40)).astype(dtype),
         np.random.randint(20, size=(15, 20)).astype(dtype),
     ]
-    viewer.add_image(data, pyramid=True)
+    viewer.add_image(data, is_pyramid=True)
     assert np.all(viewer.layers[1].data == data)
 
     # Close the viewer

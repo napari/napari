@@ -60,7 +60,7 @@ def is_rgb(shape):
 
 
 def is_pyramid(data):
-    """If data is a list of arrays of decreaing size.
+    """If data is a list of arrays of decreasing size.
     """
     if isinstance(data, list):
         size = [np.prod(d.shape) for d in data]
@@ -70,7 +70,7 @@ def is_pyramid(data):
 
 
 def should_be_pyramid(shape):
-    """Check if any data axes needs to be pyramided
+    """Check if any data axes needs to be pyramidified
 
     Parameters
     ----------
@@ -80,9 +80,9 @@ def should_be_pyramid(shape):
     Returns
     -------
     pyr_axes : tuple of bool
-        If any axis is above pyramiding threshold.
+        True wherever an axis exceeds the pyramid threshold.
     """
-    return np.log2(shape) > 13
+    return np.log2(shape) >= 13
 
 
 def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
@@ -158,6 +158,9 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
 
 def fast_pyramid(data, downscale=2, max_layer=None):
     """Compute fast image pyramid.
+
+    In the interest of speed this method subsamples, rather than downsamples,
+    the input image.
 
     Parameters
     ----------

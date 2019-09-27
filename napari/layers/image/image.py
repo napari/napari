@@ -26,13 +26,13 @@ class Image(Layer):
     data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
-        list and arrays are decreaing in shape then the data is treated as
+        list and arrays are decreasing in shape then the data is treated as
         an image pyramid.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    pyramid : bool
+    is_pyramid : bool
         Whether the data is an image pyramid or not. Pyramid data is
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
@@ -84,7 +84,7 @@ class Image(Layer):
         specified by user and the last dimension of the data has length 3 or 4
         it will be set as `True`. If `False` the image is interpreted as a
         luminance image.
-    pyramid : bool
+    is_pyramid : bool
         Whether the data is an image pyramid or not. Pyramid data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
@@ -121,7 +121,7 @@ class Image(Layer):
         data,
         *,
         rgb=None,
-        pyramid=None,
+        is_pyramid=None,
         colormap='gray',
         contrast_limits=None,
         interpolation='nearest',
@@ -134,8 +134,8 @@ class Image(Layer):
         blending='translucent',
         visible=True,
     ):
-        ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, pyramid=pyramid, rgb=rgb
+        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
+            data, pyramid=is_pyramid, rgb=rgb
         )
 
         super().__init__(
@@ -157,12 +157,12 @@ class Image(Layer):
         )
 
         # Set data
-        self.pyramid = pyramid
+        self.is_pyramid = is_pyramid
         self.rgb = rgb
         self._data = data
         self._data_pyramid = data_pyramid
         self._top_left = np.zeros(ndim, dtype=int)
-        if self.pyramid:
+        if self.is_pyramid:
             self._data_level = len(data_pyramid) - 1
         else:
             self._data_level = 0
@@ -180,7 +180,7 @@ class Image(Layer):
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
-            if self.pyramid:
+            if self.is_pyramid:
                 input_data = self._data_pyramid[-1]
             else:
                 input_data = self.data
@@ -203,8 +203,8 @@ class Image(Layer):
 
     @data.setter
     def data(self, data):
-        ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data)
-        self.pyramid = pyramid
+        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(data)
+        self.is_pyramid = is_pyramid
         self.rgb = rgb
         self._data = data
         self._data_pyramid = data_pyramid
@@ -234,7 +234,7 @@ class Image(Layer):
     @property
     def level_shapes(self):
         """array: Shapes of each level of the pyramid or just of image."""
-        if self.pyramid:
+        if self.is_pyramid:
             if self.rgb:
                 shapes = [im.shape[:-1] for im in self._data_pyramid]
             else:
@@ -364,7 +364,7 @@ class Image(Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        nd = self.dims.not_displayed
+        not_disp = self.dims.not_displayed
 
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
@@ -374,7 +374,7 @@ class Image(Layer):
         else:
             order = self.dims.displayed_order
 
-        if self.pyramid:
+        if self.is_pyramid:
             # If 3d redering just show lowest level of pyramid
             if self.dims.ndisplay == 3:
                 self.data_level = len(self._data_pyramid) - 1
@@ -382,12 +382,16 @@ class Image(Layer):
             # Slice currently viewed level
             level = self.data_level
             indices = np.array(self.dims.indices)
-            downsampled = indices[nd] / self.level_downsamples[level, nd]
-            downsampled = np.round(downsampled.astype(float)).astype(int)
-            downsampled = np.clip(
-                downsampled, 0, self.level_shapes[level, nd] - 1
+            downsampled_indices = (
+                indices[not_disp] / self.level_downsamples[level, not_disp]
             )
-            indices[nd] = downsampled
+            downsampled_indices = np.round(
+                downsampled_indices.astype(float)
+            ).astype(int)
+            downsampled_indices = np.clip(
+                downsampled_indices, 0, self.level_shapes[level, not_disp] - 1
+            )
+            indices[not_disp] = downsampled_indices
 
             disp_shape = self.level_shapes[level, self.dims.displayed]
             scale = np.ones(self.ndim)
@@ -417,12 +421,16 @@ class Image(Layer):
             else:
                 # Slice thumbnail
                 indices = np.array(self.dims.indices)
-                downsampled = indices[nd] / self.level_downsamples[-1, nd]
-                downsampled = np.round(downsampled.astype(float)).astype(int)
-                downsampled = np.clip(
-                    downsampled, 0, self.level_shapes[-1, nd] - 1
+                downsampled_indices = (
+                    indices[not_disp] / self.level_downsamples[-1, not_disp]
                 )
-                indices[nd] = downsampled
+                downsampled_indices = np.round(
+                    downsampled_indices.astype(float)
+                ).astype(int)
+                downsampled_indices = np.clip(
+                    downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
+                )
+                indices[not_disp] = downsampled_indices
                 thumbnail = np.asarray(
                     self._data_pyramid[-1][tuple(indices)]
                 ).transpose(order)
@@ -439,7 +447,7 @@ class Image(Layer):
 
         self._update_thumbnail()
         self._update_coordinates()
-        if self.pyramid:
+        if self.is_pyramid:
             self.events.scale()
             self.events.translate()
         self.events.set_data()
@@ -521,7 +529,7 @@ class Image(Layer):
         else:
             value = None
 
-        if self.pyramid:
+        if self.is_pyramid:
             value = (self.data_level, value)
 
         return value

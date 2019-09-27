@@ -8,7 +8,7 @@ def view_image(
     data,
     *,
     rgb=None,
-    pyramid=None,
+    is_pyramid=None,
     colormap='gray',
     contrast_limits=None,
     interpolation='nearest',
@@ -28,13 +28,13 @@ def view_image(
     data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
-        list and arrays are decreaing in shape then the data is treated as
+        list and arrays are decreasing in shape then the data is treated as
         an image pyramid.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    pyramid : bool
+    is_pyramid : bool
         Whether the data is an image pyramid or not. Pyramid data is
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
@@ -80,7 +80,7 @@ def view_image(
     viewer.add_image(
         data,
         rgb=rgb,
-        pyramid=pyramid,
+        is_pyramid=is_pyramid,
         colormap=colormap,
         contrast_limits=contrast_limits,
         interpolation=interpolation,
