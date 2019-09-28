@@ -369,7 +369,20 @@ class Layer(KeymapMixin, ABC):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 thumbnail = img_as_ubyte(thumbnail)
-        self._thumbnail = thumbnail
+
+        padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
+        pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
+        thumbnail = np.pad(thumbnail, pad_amounts)
+
+        # blend thumbnail with opaque black background
+        background = np.zeros(self._thumbnail_shape, dtype=np.uint8)
+        background[..., 3] = 255
+
+        f_dest = thumbnail[..., 3][..., None] / 255
+        f_source = 1 - f_dest
+        thumbnail = thumbnail * f_dest + background * f_source
+
+        self._thumbnail = thumbnail.astype(np.uint8)
         self.events.thumbnail()
 
     @property

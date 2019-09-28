@@ -362,6 +362,24 @@ class Image(Layer):
         self._rendering = rendering
         self.events.rendering()
 
+    def _raw_to_displayed(self, raw):
+        """Determine displayed image from raw image.
+
+        For normal image layers, just return the actual image.
+
+        Parameters
+        -------
+        raw : array
+            Raw array.
+
+        Returns
+        -------
+        image : array
+            Displayed array.
+        """
+        image = raw
+        return image
+
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
@@ -439,11 +457,16 @@ class Image(Layer):
             thumbnail = image
 
         if self.rgb and image.dtype.kind == 'f':
-            self._data_view = np.clip(image, 0, 1)
-            self._data_thumbnail = np.clip(thumbnail, 0, 1)
+            self._data_raw = np.clip(image, 0, 1)
+            self._data_view = self._raw_to_displayed(self._data_raw)
+            self._data_thumbnail = self._raw_to_displayed(
+                np.clip(thumbnail, 0, 1)
+            )
+
         else:
-            self._data_view = image
-            self._data_thumbnail = thumbnail
+            self._data_raw = image
+            self._data_view = self._raw_to_displayed(self._data_raw)
+            self._data_thumbnail = self._raw_to_displayed(thumbnail)
 
         self._update_thumbnail()
         self._update_coordinates()
@@ -520,12 +543,12 @@ class Image(Layer):
         """
         coord = np.round(self.coordinates).astype(int)
         if self.rgb:
-            shape = self._data_view.shape[:-1]
+            shape = self._data_raw.shape[:-1]
         else:
-            shape = self._data_view.shape
+            shape = self._data_raw.shape
 
         if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = self._data_view[tuple(coord[self.dims.displayed])]
+            value = self._data_raw[tuple(coord[self.dims.displayed])]
         else:
             value = None
 

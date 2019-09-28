@@ -9,7 +9,7 @@ from scipy import ndimage as ndi
 from xml.etree.ElementTree import Element
 from imageio import imwrite
 
-from ..base import Layer
+from ..image import Image
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
@@ -17,7 +17,7 @@ from ...util.status_messages import format_float
 from ._constants import Mode
 
 
-class Labels(Layer):
+class Labels(Image):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -25,8 +25,14 @@ class Labels(Layer):
 
     Parameters
     ----------
-    data : array
-        Labels data.
+    data : array or list of array
+        Labels data as an array or pyramid.
+    is_pyramid : bool
+        Whether the data is an image pyramid or not. Pyramid data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be a pyramid. The first image in the list
+        should be the largest.
     num_colors : int
         Number of unique colors to use in colormap.
     seed : float
@@ -56,6 +62,10 @@ class Labels(Layer):
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
+    is_pyramid : bool
+        Whether the data is an image pyramid or not. Pyramid data is
+        represented by a list of array like image data. The first image in the
+        list should be the largest.
     metadata : dict
         Labels metadata.
     num_colors : int
@@ -95,7 +105,7 @@ class Labels(Layer):
 
     Extended Summary
     ----------
-    _data_labels : array (N, M)
+    _data_raw : array (N, M)
         2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
@@ -111,6 +121,7 @@ class Labels(Layer):
         self,
         data,
         *,
+        is_pyramid=None,
         num_colors=50,
         seed=0.5,
         n_dimensional=False,
@@ -123,8 +134,18 @@ class Labels(Layer):
         visible=True,
     ):
 
+        self._seed = seed
+        self._num_colors = num_colors
+        colormap = ('random', colormaps.label_colormap(self.num_colors))
+
         super().__init__(
-            data.ndim,
+            data,
+            rgb=False,
+            is_pyramid=is_pyramid,
+            colormap=colormap,
+            contrast_limits=[0.0, 1.0],
+            interpolation='nearest',
+            rendering='mip',
             name=name,
             metadata=metadata,
             scale=scale,
@@ -135,10 +156,6 @@ class Labels(Layer):
         )
 
         self.events.add(
-            contrast_limits=Event,
-            colormap=Event,
-            interpolation=Event,
-            rendering=Event,
             mode=Event,
             n_dimensional=Event,
             contiguous=Event,
@@ -146,21 +163,7 @@ class Labels(Layer):
             selected_label=Event,
         )
 
-        self._data = data
-        self._data_labels = np.zeros((1,) * self.dims.ndisplay)
-        self._data_view = np.zeros((1,) * self.dims.ndisplay)
-        self.contrast_limits = [0.0, 1.0]
-        self.interpolation = 'nearest'
-        self.rendering = 'mip'
-        self._seed = seed
-
-        self._colormap_name = 'random'
-        self._num_colors = num_colors
-        self.colormap = (
-            self._colormap_name,
-            colormaps.label_colormap(self.num_colors),
-        )
-
+        self._data_raw = np.zeros((1,) * self.dims.ndisplay)
         self._n_dimensional = n_dimensional
         self._contiguous = True
         self._brush_size = 10
@@ -175,27 +178,14 @@ class Labels(Layer):
         self._help = 'enter paint or fill mode to edit labels'
 
         self._block_saving = False
+        self._reset_history()
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
-    @property
-    def data(self):
-        """array: Labels data."""
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._data = data
-        self._update_dims()
-        self.events.data()
-
-    def _get_ndim(self):
-        """Determine number of dimensions of the layer."""
-        return self.data.ndim
-
-    def _get_extent(self):
-        return tuple((0, m) for m in self.data.shape)
+        self.dims.events.ndisplay.connect(lambda e: self._reset_history())
+        self.dims.events.order.connect(lambda e: self._reset_history())
+        self.dims.events.axis.connect(lambda e: self._reset_history())
 
     @property
     def contiguous(self):
@@ -238,7 +228,7 @@ class Labels(Layer):
     def seed(self, seed):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
-        self._set_view_slice_keep_history()
+        self._set_view_slice()
         self.events.selected_label()
 
     @property
@@ -253,7 +243,7 @@ class Labels(Layer):
             self._colormap_name,
             colormaps.label_colormap(num_colors),
         )
-        self._set_view_slice_keep_history()
+        self._set_view_slice()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
@@ -330,7 +320,7 @@ class Labels(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
-        self._set_view_slice_keep_history()
+        self._set_view_slice()
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.
@@ -365,20 +355,7 @@ class Labels(Layer):
             col = self.colormap[1].map(val)[0]
         return col
 
-    def _set_view_slice_keep_history(self):
-        """Set the view without resetting the undo history."""
-        self._data_labels = np.asarray(self.data[self.dims.indices]).transpose(
-            self.dims.displayed_order
-        )
-        self._data_view = self._raw_to_displayed(self._data_labels)
-
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
-
-    def _set_view_slice(self):
-        """Sets the view given the indices to slice with."""
-        self._set_view_slice_keep_history()
+    def _reset_history(self):
         self._undo_history = deque()
         self._redo_history = deque()
 
@@ -403,7 +380,7 @@ class Labels(Layer):
         after.append(self.data[self.dims.indices].copy())
         self.data[self.dims.indices] = prev
 
-        self._set_view_slice_keep_history()
+        self._set_view_slice()
 
     def undo(self):
         self._load_history(self._undo_history, self._redo_history)
@@ -437,7 +414,7 @@ class Labels(Layer):
             slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
-            labels = self._data_labels
+            labels = self._data_raw
             slice_coord = tuple(int_coord[d] for d in self.dims.displayed)
 
         matches = labels == old_label
@@ -457,7 +434,7 @@ class Labels(Layer):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.dims.indices)] = labels
 
-        self._set_view_slice_keep_history()
+        self._set_view_slice()
 
     def paint(self, coord, new_label):
         """Paint over existing labels with a new label, using the selected
@@ -515,77 +492,7 @@ class Labels(Layer):
         # update the labels image
         self.data[slice_coord] = new_label
 
-        self._set_view_slice_keep_history()
-
-    def get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
-
-        Returns
-        ----------
-        coord : tuple of int
-            Position of mouse cursor in data.
-        value : int or float or sequence of int or float or None
-            Value of the data at the coord, or none if coord is outside range.
-        """
-        coord = np.round(self.coordinates).astype(int)
-        shape = self._data_labels.shape
-        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = self._data_labels[tuple(coord[self.dims.displayed])]
-        else:
-            value = None
-
-        return value
-
-    def _update_thumbnail(self):
-        """Update thumbnail with current image data and colors.
-        """
-        if self.dims.ndisplay == 3:
-            image = np.max(self._data_labels, axis=0)
-        else:
-            image = self._data_labels
-
-        zoom_factor = np.divide(
-            self._thumbnail_shape[:2], image.shape[:2]
-        ).min()
-        # warning filter can be removed with scipy 1.4
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            downsampled = np.round(
-                ndi.zoom(image, zoom_factor, prefilter=False, order=0)
-            )
-        downsampled = self._raw_to_displayed(downsampled)
-        colormapped = self.colormap[1].map(downsampled)
-        colormapped = colormapped.reshape(downsampled.shape + (4,))
-        # render background as black instead of transparent
-        colormapped[..., 3] = 1
-        colormapped[..., 3] *= self.opacity
-        self.thumbnail = colormapped
-
-    def to_xml_list(self):
-        """Generates a list with a single xml element that defines the
-        currently viewed image as a png according to the svg specification.
-
-        Returns
-        ----------
-        xml : list of xml.etree.ElementTree.Element
-            List of a single xml element specifying the currently viewed image
-            as a png according to the svg specification.
-        """
-        mapped_image = (self.colormap[1].map(self._data_view) * 255).astype(
-            np.uint8
-        )
-        mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
-        image_str = imwrite('<bytes>', mapped_image, format='png')
-        image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
-        props = {'xlink:href': image_str}
-        width = str(self.shape[self.dims.displayed[1]])
-        height = str(self.shape[self.dims.displayed[0]])
-        opacity = str(self.opacity)
-        xml = Element(
-            'image', width=width, height=height, opacity=opacity, **props
-        )
-        return [xml]
+        self._set_view_slice()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -631,7 +538,7 @@ class Labels(Layer):
             with self.events.set_data.blocker():
                 for c in interp_coord:
                     self.paint(c, new_label)
-            self._set_view_slice_keep_history()
+            self._set_view_slice()
             self._last_cursor_coord = copy(self.coordinates)
 
     def on_mouse_release(self, event):
