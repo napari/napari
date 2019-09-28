@@ -326,7 +326,6 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        print('asdfasd', event.is_dragging)
         if not event.is_dragging:
             for mouse_move_func in self.viewer.mouse_move_callbacks:
                 mouse_move_func(self.viewer, event)
