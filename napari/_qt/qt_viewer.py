@@ -70,6 +70,7 @@ class QtViewer(QSplitter):
             self.buttons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.canvas.events.ignore_callback_errors = False
         self.canvas.native.setMinimumSize(QSize(200, 200))
 
         self.canvas.connect(self.on_mouse_move)
@@ -295,10 +296,20 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        event = ReadOnlyWrapper(event)
+        for mouse_drag_func in self.viewer.mouse_drag_callbacks:
+            gen = mouse_drag_func(self.viewer, event)
+            if inspect.isgeneratorfunction(mouse_drag_func):
+                try:
+                    next(gen)
+                    self.viewer._mouse_drag_gen[mouse_drag_func] = gen
+                    self.viewer._persisted_mouse_event[gen] = event
+                except StopIteration:
+                    pass
+
         layer = self.viewer.active_layer
         if layer is not None:
             self.layer_to_visual[layer].on_mouse_press(event)
-            event = ReadOnlyWrapper(event)
             for mouse_drag_func in layer.mouse_drag_callbacks:
                 gen = mouse_drag_func(layer, event)
                 if inspect.isgeneratorfunction(mouse_drag_func):
@@ -315,11 +326,24 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        print('asdfasd', event.is_dragging)
+        if not event.is_dragging:
+            for mouse_move_func in self.viewer.mouse_move_callbacks:
+                mouse_move_func(self.viewer, event)
+        for func, gen in tuple(self.viewer._mouse_drag_gen.items()):
+            self.viewer._persisted_mouse_event[gen].__wrapped__ = event
+            try:
+                next(gen)
+            except StopIteration:
+                del self.viewer._mouse_drag_gen[func]
+                del self.viewer._persisted_mouse_event[gen]
+
         layer = self.viewer.active_layer
         if layer is not None:
             self.layer_to_visual[layer].on_mouse_move(event)
-            for mouse_move_func in layer.mouse_move_callbacks:
-                mouse_move_func(layer, event)
+            if not event.is_dragging:
+                for mouse_move_func in layer.mouse_move_callbacks:
+                    mouse_move_func(layer, event)
             for func, gen in tuple(layer._mouse_drag_gen.items()):
                 layer._persisted_mouse_event[gen].__wrapped__ = event
                 try:
@@ -331,6 +355,15 @@ class QtViewer(QSplitter):
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
+        for func, gen in tuple(self.viewer._mouse_drag_gen.items()):
+            self.viewer._persisted_mouse_event[gen].__wrapped__ = event
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+            del self.viewer._mouse_drag_gen[func]
+            del self.viewer._persisted_mouse_event[gen]
+
         layer = self.viewer.active_layer
         if layer is not None:
             self.layer_to_visual[layer].on_mouse_release(event)

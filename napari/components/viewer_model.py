@@ -89,6 +89,11 @@ class ViewerModel(KeymapMixin):
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
 
+        self.mouse_move_callbacks = []
+        self.mouse_drag_callbacks = []
+        self._persisted_mouse_event = {}
+        self._mouse_drag_gen = {}
+
     @property
     def palette(self):
         """dict of str: str : Color palette with which to style the viewer.
