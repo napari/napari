@@ -13,6 +13,7 @@ from ..base import Layer
 from ...util.colormaps import colormaps
 from ...util.event import Event
 from ...util.misc import interpolate_coordinates
+from ...util.status_messages import format_float
 from ._constants import Mode
 
 
@@ -225,6 +226,7 @@ class Labels(Layer):
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
         self.cursor_size = self._brush_size / self.scale_factor
+        self.status = format_float(self.brush_size)
         self.events.brush_size()
 
     @property
@@ -235,7 +237,9 @@ class Labels(Layer):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
+        self._selected_color = self.get_color(self.selected_label)
         self._set_view_slice_keep_history()
+        self.events.selected_label()
 
     @property
     def num_colors(self):
@@ -250,6 +254,8 @@ class Labels(Layer):
             colormaps.label_colormap(num_colors),
         )
         self._set_view_slice_keep_history()
+        self._selected_color = self.get_color(self.selected_label)
+        self.events.selected_label()
 
     @property
     def selected_label(self):
@@ -348,9 +354,7 @@ class Labels(Layer):
         return image
 
     def new_colormap(self):
-        self._seed = np.random.rand()
-        self._selected_color = self.get_color(self.selected_label)
-        self._set_view_slice_keep_history()
+        self.seed = np.random.rand()
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""

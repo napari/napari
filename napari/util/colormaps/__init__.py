@@ -4,3 +4,4 @@ from .colormaps import (
     AVAILABLE_COLORMAPS,
     ALL_COLORMAPS,
 )
+from .colorbars import make_colorbar

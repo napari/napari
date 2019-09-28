@@ -45,7 +45,7 @@ class QtDims(QWidget):
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
-        self.last_used = None
+        self._last_used = None
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -100,6 +100,31 @@ class QtDims(QWidget):
             Number of sliders displayed
         """
         return len(self.sliders)
+
+    @property
+    def last_used(self):
+        """int: Index of slider last used.
+        """
+        return self._last_used
+
+    @last_used.setter
+    def last_used(self, last_used):
+        if last_used == self.last_used:
+            return
+
+        formerly_used = self.last_used
+        if formerly_used is not None:
+            sld = self.sliders[formerly_used]
+            sld.setProperty('last_used', False)
+            sld.style().unpolish(sld)
+            sld.style().polish(sld)
+
+        self._last_used = last_used
+        if last_used is not None:
+            sld = self.sliders[last_used]
+            sld.setProperty('last_used', True)
+            sld.style().unpolish(sld)
+            sld.style().polish(sld)
 
     def _update_slider(self, axis: int):
         """
@@ -164,7 +189,7 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        for axis, slider in enumerate(self.sliders):
+        for axis, slider in reversed(list(enumerate(self.sliders))):
             if axis in self.dims.displayed:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
@@ -307,3 +332,27 @@ class QtDims(QWidget):
         slider.collapsedChanged.connect(collapse_change_listener)
 
         return slider
+
+    def focus_up(self):
+        """Shift focused dimension slider to be the next slider above."""
+        displayed = list(np.nonzero(self._displayed_sliders)[0])
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) + 1) % len(displayed)
+            self.last_used = displayed[index]
+
+    def focus_down(self):
+        """Shift focused dimension slider to be the next slider bellow."""
+        displayed = list(np.nonzero(self._displayed_sliders)[0])
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) - 1) % len(displayed)
+            self.last_used = displayed[index]

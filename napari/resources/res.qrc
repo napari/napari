@@ -2,6 +2,8 @@
 <qresource>
     <file>icons/cursor/cursor_disabled.png</file>
     <file>icons/cursor/cursor_square.png</file>
+    <file>icons/light/2D.svg</file>
+    <file>icons/light/3D.svg</file>
     <file>icons/light/add.svg</file>
     <file>icons/light/console.svg</file>
     <file>icons/light/delete.svg</file>
@@ -14,9 +16,12 @@
     <file>icons/light/minus.svg</file>
     <file>icons/light/move_back.svg</file>
     <file>icons/light/move_front.svg</file>
+    <file>icons/light/new_image.svg</file>
     <file>icons/light/new_labels.svg</file>
     <file>icons/light/new_points.svg</file>
     <file>icons/light/new_shapes.svg</file>
+    <file>icons/light/new_surface.svg</file>
+    <file>icons/light/new_vectors.svg</file>
     <file>icons/light/paint.svg</file>
     <file>icons/light/path.svg</file>
     <file>icons/light/picker.svg</file>
@@ -31,6 +36,8 @@
     <file>icons/light/visibility.svg</file>
     <file>icons/light/visibility_off.svg</file>
     <file>icons/light/zoom.svg</file>
+    <file>icons/dark/2D.svg</file>
+    <file>icons/dark/3D.svg</file>
     <file>icons/dark/add.svg</file>
     <file>icons/dark/console.svg</file>
     <file>icons/dark/delete.svg</file>
@@ -44,9 +51,12 @@
     <file>icons/dark/minus.svg</file>
     <file>icons/dark/move_back.svg</file>
     <file>icons/dark/move_front.svg</file>
+    <file>icons/dark/new_image.svg</file>
     <file>icons/dark/new_labels.svg</file>
     <file>icons/dark/new_points.svg</file>
     <file>icons/dark/new_shapes.svg</file>
+    <file>icons/dark/new_surface.svg</file>
+    <file>icons/dark/new_vectors.svg</file>
     <file>icons/dark/paint.svg</file>
     <file>icons/dark/path.svg</file>
     <file>icons/dark/picker.svg</file>
