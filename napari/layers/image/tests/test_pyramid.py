@@ -273,13 +273,13 @@ def test_metadata():
 
 def test_value():
     """Test getting the value of the data at the current coordinates."""
-    shapes = [(40, 20), (20, 10), (10, 5)]
+    shapes = [(40, 20), (20, 10)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, is_pyramid=True)
     value = layer.get_value()
     assert layer.coordinates == (0, 0)
-    assert value == (2, data[-1][0, 0])
+    assert value == (1, data[-1][0, 0])
 
 
 def test_message():
