@@ -179,6 +179,7 @@ class VispyImageLayer(VispyBaseLayer):
         """Called whenever the canvas is drawn, which happens whenever new
         data is sent to the canvas or the camera is moved.
         """
+        self.layer.scale_factor = self.scale_factor
         if self.layer.is_pyramid:
             self.layer.scale_factor = self.scale_factor
             size = self.camera.rect.size
