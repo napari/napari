@@ -619,6 +619,7 @@ class ViewerModel(KeymapMixin):
         self,
         data,
         *,
+        is_pyramid=None,
         num_colors=50,
         seed=0.5,
         n_dimensional=False,
@@ -637,8 +638,14 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        data : array
-            Labels data.
+        data : array or list of array
+            Labels data as an array or pyramid.
+        is_pyramid : bool
+            Whether the data is an image pyramid or not. Pyramid data is
+            represented by a list of array like image data. If not specified by
+            the user and if the data is a list of arrays that decrease in shape
+            then it will be taken to be a pyramid. The first image in the list
+            should be the largest.
         num_colors : int
             Number of unique colors to use in colormap.
         seed : float
@@ -669,6 +676,7 @@ class ViewerModel(KeymapMixin):
         """
         layer = layers.Labels(
             data,
+            is_pyramid=is_pyramid,
             num_colors=num_colors,
             seed=seed,
             n_dimensional=n_dimensional,
