@@ -187,8 +187,6 @@ class Labels(Image):
         self.dims.events.ndisplay.connect(lambda e: self._reset_history())
         self.dims.events.order.connect(lambda e: self._reset_history())
         self.dims.events.axis.connect(lambda e: self._reset_history())
-        self.events.data.connect(lambda e: self._set_editable())
-        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
 
     @property
     def contiguous(self):
@@ -329,6 +327,7 @@ class Labels(Image):
         self._set_view_slice()
 
     def _set_editable(self, editable=None):
+        """Set editable mode based on layer properties."""
         if editable is None:
             if self.is_pyramid or self.dims.ndisplay == 3:
                 self.editable = False

@@ -24,6 +24,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.events.edge_width.connect(self._on_edge_width_change)
         self.layer.events.edge_color.connect(self._on_edge_color_change)
         self.layer.events.face_color.connect(self._on_face_color_change)
+        self.layer.events.editable.connect(self._on_editable_change)
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -205,6 +206,20 @@ class QtShapesControls(QtLayerControls):
             self.faceComboBox.setCurrentIndex(index)
         color = Color(self.layer.face_color).hex
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
+
+    def _on_editable_change(self, event):
+        self.select_button.setEnabled(self.layer.editable)
+        self.direct_button.setEnabled(self.layer.editable)
+        self.rectangle_button.setEnabled(self.layer.editable)
+        self.ellipse_button.setEnabled(self.layer.editable)
+        self.line_button.setEnabled(self.layer.editable)
+        self.path_button.setEnabled(self.layer.editable)
+        self.polygon_button.setEnabled(self.layer.editable)
+        self.vertex_remove_button.setEnabled(self.layer.editable)
+        self.vertex_insert_button.setEnabled(self.layer.editable)
+        self.delete_button.setEnabled(self.layer.editable)
+        self.move_back_button.setEnabled(self.layer.editable)
+        self.move_front_button.setEnabled(self.layer.editable)
 
 
 class QtModeButton(QRadioButton):

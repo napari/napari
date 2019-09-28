@@ -463,6 +463,10 @@ class Points(Layer):
     def mode(self, mode):
         if isinstance(mode, str):
             mode = Mode(mode)
+
+        if not self.editable:
+            mode = Mode.PAN_ZOOM
+
         if mode == self._mode:
             return
         old_mode = self._mode
@@ -490,6 +494,17 @@ class Points(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
+
+    def _set_editable(self, editable=None):
+        """Set editable mode based on layer properties."""
+        if editable is None:
+            if self.dims.ndisplay == 3:
+                self.editable = False
+            else:
+                self.editable = True
+
+        if self.editable == False:
+            self.mode = Mode.PAN_ZOOM
 
     def _slice_data(self, indices):
         """Determines the slice of points given the indices.

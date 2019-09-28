@@ -167,6 +167,8 @@ class Layer(KeymapMixin, ABC):
         )
         self.name = name
 
+        self.events.data.connect(lambda e: self._set_editable())
+        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
         self.dims.events.ndisplay.connect(lambda e: self._set_view_slice())
         self.dims.events.order.connect(lambda e: self._set_view_slice())
         self.dims.events.ndisplay.connect(lambda e: self._update_dims())
