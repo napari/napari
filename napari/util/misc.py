@@ -69,6 +69,26 @@ def is_pyramid(data):
         return False
 
 
+def trim_pyramid(pyramid):
+    """Trim very small arrays of top of pyramid.
+
+    Parameters
+    ----------
+    pyramid : list of array
+        Pyramid data
+
+    Returns
+    -------
+    trimmed : list of array
+        Trimmed pyramid data
+    """
+    keep = [np.any(np.greater_equal(p.shape, 2 ** 6 - 1)) for p in pyramid]
+    if np.sum(keep) >= 2:
+        return [p for k, p in zip(keep, pyramid) if k]
+    else:
+        return pyramid[:2]
+
+
 def should_be_pyramid(shape):
     """Check if any data axes needs to be pyramidified
 
@@ -148,10 +168,11 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
             data_pyramid = fast_pyramid(
                 data, downscale=downscale, max_layer=max_layer
             )
+            data_pyramid = trim_pyramid(data_pyramid)
         else:
             data_pyramid = None
     else:
-        data_pyramid = data
+        data_pyramid = trim_pyramid(data)
 
     return ndim, rgb, pyramid, data_pyramid
 

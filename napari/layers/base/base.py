@@ -137,6 +137,7 @@ class Layer(KeymapMixin, ABC):
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
         self.is_pyramid = False
+        self._editable = True
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -162,6 +163,7 @@ class Layer(KeymapMixin, ABC):
             interactive=Event,
             cursor=Event,
             cursor_size=Event,
+            editable=Event,
         )
         self.name = name
 
@@ -251,6 +253,19 @@ class Layer(KeymapMixin, ABC):
     def visible(self, visibility):
         self._visible = visibility
         self.events.visible()
+
+    @property
+    def editable(self):
+        """bool: Whether the current layer data is editable from the viewer."""
+        return self._editable
+
+    @editable.setter
+    def editable(self, editable):
+        if self._editable == editable:
+            return
+        self._editable = editable
+        self._set_editable(editable=editable)
+        self.events.editable()
 
     @property
     def scale(self):
@@ -349,6 +364,10 @@ class Layer(KeymapMixin, ABC):
     @abstractmethod
     def _get_ndim(self):
         raise NotImplementedError()
+
+    def _set_editable(self, editable=None):
+        if editable is None:
+            self.editable = True
 
     def _get_range(self):
         extent = self._get_extent()

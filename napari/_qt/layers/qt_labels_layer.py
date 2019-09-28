@@ -22,11 +22,12 @@ class QtLabelsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.mode.connect(self.set_mode)
+        self.layer.events.mode.connect(self._on_mode_change)
         self.layer.events.selected_label.connect(self._on_selection_change)
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
+        self.layer.events.editable.connect(self._on_editable_change)
 
         # shuffle colormap button
         self.colormapUpdate = QPushButton('shuffle colors')
@@ -40,39 +41,34 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setSingleStep(1)
         self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.setMaximum(2147483647)
-        self.selectionSpinBox.setValue(self.layer.selected_label)
         self.selectionSpinBox.setFixedWidth(75)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
+        self._on_selection_change(None)
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        value = self.layer.brush_size
-        if isinstance(value, Iterable):
-            if isinstance(value, list):
-                value = np.asarray(value)
-            value = value[:2].mean()
-        sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.brushSizeSlider = sld
+        self._on_brush_size_change(None)
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
-        contig_cb.setChecked(self.layer.contiguous)
         contig_cb.stateChanged.connect(
             lambda state=contig_cb: self.change_contig(state)
         )
         self.contigCheckBox = contig_cb
+        self._on_contig_change(None)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
-        ndim_cb.setChecked(self.layer.n_dimensional)
         ndim_cb.stateChanged.connect(
             lambda state=ndim_cb: self.change_ndim(state)
         )
         self.ndimCheckBox = ndim_cb
+        self._on_n_dim_change(None)
 
         self.panzoom_button = QtModeButton(
             layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode'
@@ -91,6 +87,7 @@ class QtLabelsControls(QtLayerControls):
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
         self.panzoom_button.setChecked(True)
+        self._on_editable_change(None)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
@@ -118,7 +115,7 @@ class QtLabelsControls(QtLayerControls):
     def mouseMoveEvent(self, event):
         self.layer.status = str(self.layer.mode)
 
-    def set_mode(self, event):
+    def _on_mode_change(self, event):
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
@@ -172,6 +169,11 @@ class QtLabelsControls(QtLayerControls):
     def _on_contig_change(self, event):
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
+
+    def _on_editable_change(self, event):
+        self.pick_button.setEnabled(self.layer.editable)
+        self.paint_button.setEnabled(self.layer.editable)
+        self.fill_button.setEnabled(self.layer.editable)
 
 
 class QtModeButton(QRadioButton):

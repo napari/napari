@@ -6,6 +6,7 @@ from napari.util.misc import (
     should_be_pyramid,
     get_pyramid_and_rgb,
     fast_pyramid,
+    trim_pyramid,
 )
 
 
@@ -41,6 +42,30 @@ def test_is_pyramid():
 
     data = [np.random.random((10, 15, 6)), np.random.random((10, 7, 3))]
     assert is_pyramid(data)
+
+
+def test_trim_pyramid():
+
+    data = [np.random.random((20, 30)), np.random.random((10, 15))]
+    trimmed = trim_pyramid(data)
+    assert np.all([np.all(t == d) for t, d in zip(data, trimmed)])
+
+    data = [
+        np.random.random((40, 60)),
+        np.random.random((20, 30)),
+        np.random.random((10, 15)),
+    ]
+    trimmed = trim_pyramid(data)
+    assert np.all([np.all(t == d) for t, d in zip(data[:2], trimmed)])
+
+    data = [
+        np.random.random((400, 10)),
+        np.random.random((200, 10)),
+        np.random.random((100, 10)),
+        np.random.random((50, 10)),
+    ]
+    trimmed = trim_pyramid(data)
+    assert np.all([np.all(t == d) for t, d in zip(data[:3], trimmed)])
 
 
 def test_should_be_pyramid():

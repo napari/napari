@@ -182,10 +182,13 @@ class Labels(Image):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+        self._set_editable()
 
         self.dims.events.ndisplay.connect(lambda e: self._reset_history())
         self.dims.events.order.connect(lambda e: self._reset_history())
         self.dims.events.axis.connect(lambda e: self._reset_history())
+        self.events.data.connect(lambda e: self._set_editable())
+        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
 
     @property
     def contiguous(self):
@@ -293,6 +296,9 @@ class Labels(Image):
         if isinstance(mode, str):
             mode = Mode(mode)
 
+        if not self.editable:
+            mode = Mode.PAN_ZOOM
+
         if mode == self._mode:
             return
 
@@ -321,6 +327,17 @@ class Labels(Image):
 
         self.events.mode(mode=mode)
         self._set_view_slice()
+
+    def _set_editable(self, editable=None):
+        if editable is None:
+            if self.is_pyramid or self.dims.ndisplay == 3:
+                self.editable = False
+            else:
+                self.editable = True
+
+        if self.editable == False:
+            self.mode = Mode.PAN_ZOOM
+            self._reset_history()
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.

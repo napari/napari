@@ -671,6 +671,10 @@ QtModeButton {
   border-radius: 3px;
 }
 
+QtModeButton:disabled {
+  background-color: {{ background }};
+}
+
 QtModeButton::indicator {
   subcontrol-position:
   center center;
