@@ -70,7 +70,6 @@ class QtViewer(QSplitter):
             self.buttons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
-        self.canvas.events.ignore_callback_errors = False
         self.canvas.native.setMinimumSize(QSize(200, 200))
 
         self.canvas.connect(self.on_mouse_move)
