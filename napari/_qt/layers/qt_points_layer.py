@@ -189,7 +189,7 @@ class QtPanZoomButton(QRadioButton):
         super().__init__()
 
         self.layer = layer
-        self.setToolTip('Pan/zoom mode')
+        self.setToolTip('Pan/zoom')
         self.setChecked(True)
         self.toggled.connect(lambda state=self: self._set_mode(state))
         self.setFixedWidth(28)
@@ -205,7 +205,7 @@ class QtSelectButton(QRadioButton):
         super().__init__()
 
         self.layer = layer
-        self.setToolTip('Select mode')
+        self.setToolTip('Select points')
         self.setChecked(False)
         self.toggled.connect(lambda state=self: self._set_mode(state))
         self.setFixedWidth(28)
@@ -221,7 +221,7 @@ class QtAdditionButton(QRadioButton):
         super().__init__()
 
         self.layer = layer
-        self.setToolTip('Addition mode')
+        self.setToolTip('Add points')
         self.setChecked(False)
         self.toggled.connect(lambda state=self: self._set_mode(state))
         self.setFixedWidth(28)
@@ -239,5 +239,5 @@ class QtDeletePointsButton(QPushButton):
         self.layer = layer
         self.setFixedWidth(28)
         self.setFixedHeight(28)
-        self.setToolTip('Delete selected')
+        self.setToolTip('Delete selected points')
         self.clicked.connect(self.layer.remove_selected)

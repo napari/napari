@@ -68,13 +68,13 @@ class QtShapesControls(QtLayerControls):
         self._on_edge_color_change(None)
 
         self.select_button = QtModeButton(
-            layer, 'select', Mode.SELECT, 'Select mode'
+            layer, 'select', Mode.SELECT, 'Select shapes'
         )
         self.direct_button = QtModeButton(
-            layer, 'direct', Mode.DIRECT, 'Direct select mode'
+            layer, 'direct', Mode.DIRECT, 'Select vertices'
         )
         self.panzoom_button = QtModeButton(
-            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode'
+            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom'
         )
         self.rectangle_button = QtModeButton(
             layer, 'rectangle', Mode.ADD_RECTANGLE, 'Add rectangles'
@@ -232,7 +232,7 @@ class QtDeleteShapeButton(QPushButton):
         self.layer = layer
         self.setFixedWidth(28)
         self.setFixedHeight(28)
-        self.setToolTip('Delete selected')
+        self.setToolTip('Delete selected shapes')
         self.clicked.connect(self.layer.remove_selected)
 
 
