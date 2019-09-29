@@ -21,7 +21,7 @@ class ViewerModel(KeymapMixin):
         The title of the viewer window.
     ndisplay : int
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
@@ -217,7 +217,7 @@ class ViewerModel(KeymapMixin):
         self.events.active_layer(item=self._active_layer)
 
     def reset_view(self):
-        """Resets the camera's view using `event.viewbox` a 4-tuple of the x, y
+        """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
         # Scale the camera to the contents in the scene
@@ -229,16 +229,21 @@ class ViewerModel(KeymapMixin):
         corner = [min_shape[i] for i in self.dims.displayed]
 
         if self.dims.ndisplay == 2:
-            # For a PanZoomCamera emit a 4-tuple of the viewbox
+            # For a PanZoomCamera emit a 4-tuple of the rect
             corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
             size = np.multiply(1.1, size)[::-1]
             rect = tuple(corner) + tuple(size)
-            self.events.reset_view(viewbox=rect)
+            self.events.reset_view(rect=rect)
         else:
             # For an ArcballCamera emit the center and scale_factor
             center = centroid[::-1]
-            scale_factor = 1.5 * np.mean(size)
-            self.events.reset_view(center=center, scale_factor=scale_factor)
+            scale_factor = 1.1 * np.mean(size[-2:])
+            # set initial camera angle so that it matches top layer of 2D view
+            # when transitioning to 3D view
+            quaternion = [np.pi / 2, 1, 0, 0]
+            self.events.reset_view(
+                center=center, scale_factor=scale_factor, quaternion=quaternion
+            )
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be

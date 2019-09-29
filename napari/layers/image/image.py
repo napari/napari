@@ -336,7 +336,7 @@ class Image(Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        if self.dims.ndisplay == 3:
+        if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(self._data_thumbnail, axis=0)
         else:
             image = self._data_thumbnail

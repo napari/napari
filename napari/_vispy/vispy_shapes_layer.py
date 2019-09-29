@@ -29,18 +29,22 @@ class VispyShapesLayer(VispyBaseLayer):
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
+
+        # Note that the indicies of the vertices need to be resversed to
+        # go from numpy style to xyz
         if vertices is not None:
-            vertices = vertices + 0.5
+            vertices = vertices[:, ::-1] + 0.5
 
         if len(vertices) == 0 or len(faces) == 0:
             vertices = np.zeros((3, self.layer.dims.ndisplay))
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
 
-        # Note that the indicies of the vertices need to be resversed to
-        # go from numpy style to xyz
+        if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
+            vertices = np.pad(vertices, ((0, 0), (0, 1)))
+
         self.node._subvisuals[0].set_data(
-            vertices=vertices[:, ::-1], faces=faces, face_colors=colors
+            vertices=vertices, faces=faces, face_colors=colors
         )
         self.node.update()
 

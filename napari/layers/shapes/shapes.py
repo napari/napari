@@ -670,7 +670,7 @@ class Shapes(Layer):
         """Set the view given the slicing indices."""
         if not self.dims.ndisplay == self._ndisplay_stored:
             self.selected_data = []
-            self._data_view.ndisplay = self.dims.ndisplay
+            self._data_view.ndisplay = min(self.dims.ndim, self.dims.ndisplay)
             self._ndisplay_stored = copy(self.dims.ndisplay)
             self._clipboard = {}
 
