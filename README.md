@@ -45,10 +45,9 @@ For more information see our [installation tutorial](https://napari.github.io/na
 
 ## simple example
 
-From inside an IPython shell (started with `ipython --gui=qt`) or Jupyter notebook you can open up an interactive viewer by calling
+From inside an IPython shell (started with `ipython --gui=qt`) or Jupyter notebook (after running a cell with magic command `%gui qt5`) you can open up an interactive viewer by calling
 
 ```python
-%gui qt5
 from skimage import data
 import napari
 viewer = napari.view_image(data.astronaut(), rgb=True)
@@ -102,7 +101,7 @@ with napari.gui_qt():
  [333, 111]]
 ```
 
-![image](resources/screenshot-add-points-data.png)
+![image](resources/screenshot-add-points-data.gif)
 
 You can also draw lines and polygons on an image with a `Shapes` layer. You can then adjust the properties of then shapes and vertices, including their positions and fill and stroke colors. Run `examples/add_shapes.py` to generate and interact with the following example:
 
@@ -118,7 +117,7 @@ You can render and quickly browse slices of multi-dimensional arrays in 2D or vi
 
 ## tutorials
 
-For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/)
+For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/). These are still a work in progress, but we'll be updating them regularly.
 
 ## plans
 
