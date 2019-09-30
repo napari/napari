@@ -1,4 +1,5 @@
-from vispy.scene.visuals import Line, Markers, Mesh, Compound
+from vispy.scene.visuals import Line, Mesh, Compound
+from .markers import Markers
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
 
