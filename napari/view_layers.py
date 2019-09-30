@@ -204,6 +204,7 @@ def view_points(
     *,
     symbol='o',
     size=10,
+    anisotropy=None,
     edge_width=1,
     edge_color='black',
     face_color='white',
@@ -226,10 +227,14 @@ def view_points(
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-    size : float, array
+    size : float, tuple
         Size of the point marker. If given as a scalar, all points are made
-        the same size. If given as an array, size must be the same
-        broadcastable to the same shape as the data.
+        the same size. If given as a tuple, size must be the same length
+        as the number of points.
+    anisotropy : tuple, optional
+        List of anisotropy factors, must be one per dimension. These act as
+        pre-multipliers on the size of each point. If not provided,
+        defaults as 1 for each dimension.
     edge_width : float
         Width of the symbol edge in pixels.
     edge_color : str
@@ -271,6 +276,7 @@ def view_points(
         data,
         symbol=symbol,
         size=size,
+        anisotropy=anisotropy,
         edge_width=edge_width,
         edge_color=edge_color,
         face_color=face_color,

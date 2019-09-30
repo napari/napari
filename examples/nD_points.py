@@ -32,5 +32,5 @@ with napari.gui_qt():
         ]
     )
     viewer.add_points(
-        points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
+        points, anisotropy=[0, 0.5, 1, 1], size=10, face_color='blue', n_dimensional=True
     )

@@ -23,10 +23,14 @@ class Points(Layer):
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
         square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-    size : float, array
+    size : float, tuple
         Size of the point marker. If given as a scalar, all points are made
-        the same size. If given as an array, size must be the same
-        broadcastable to the same shape as the data.
+        the same size. If given as a tuple, size must be the same length
+        as the number of points.
+    anisotropy : tuple, optional
+        List of anisotropy factors, must be one per dimension. These act as
+        pre-multipliers on the size of each point. If not provided,
+        defaults as 1 for each dimension.
     edge_width : float
         Width of the symbol edge in pixels.
     edge_color : str
@@ -62,6 +66,9 @@ class Points(Layer):
     size : float
         Size of the marker for the next point to be added or the currently
         selected point.
+    anisotropy : tuple
+        List of anisotropy factors, must be one per dimension. These act as
+        pre-multipliers on the size of each point.
     edge_width : float
         Width of the marker edges in pixels for all points
     edge_color : str
@@ -79,9 +86,10 @@ class Points(Layer):
         n-dimensions according to specified point marker size.
     selected_data : list
         Integer indices of any selected points.
-    sizes : array (N, D)
-        Array of sizes for each point in each dimension. Must have the same
-        shape as the layer `data`.
+    sizes : array (N,)
+        Array of sizes for each point. Get multiplied with the anisotropy
+        factor for each dimension to create the size for each point in each
+        dimension.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -118,6 +126,7 @@ class Points(Layer):
         *,
         symbol='o',
         size=10,
+        anisotropy=None,
         edge_width=1,
         edge_color='black',
         face_color='white',
@@ -163,6 +172,8 @@ class Points(Layer):
         self.symbol = symbol
         self._n_dimensional = n_dimensional
         self.edge_width = edge_width
+
+        self._anisotropy = anisotropy or np.ones(self.dims.ndim)
 
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
@@ -250,14 +261,7 @@ class Points(Layer):
             # new ones
             with self.events.set_data.blocker():
                 adding = len(data) - cur_npoints
-                if len(self._sizes) > 0:
-                    new_size = copy(self._sizes[-1])
-                    for i in self.dims.displayed:
-                        new_size[i] = self.size
-                else:
-                    # Add the default size, with a value for each dimension
-                    new_size = np.repeat(self.size, self._sizes.shape[1])
-                size = np.repeat([new_size], adding, axis=0)
+                size = np.repeat([self.size], adding, axis=0)
                 self.edge_colors += [self.edge_color for i in range(adding)]
                 self.face_colors += [self.face_color for i in range(adding)]
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
@@ -309,20 +313,21 @@ class Points(Layer):
 
     @property
     def sizes(self) -> Union[int, float, np.ndarray, list]:
-        """(N, D) array: sizes of all N points in D dimensions."""
+        """(N,) array: sizes of all N points."""
         return self._sizes
 
     @sizes.setter
     def sizes(self, size: Union[int, float, np.ndarray, list]) -> None:
-        try:
-            self._sizes = np.broadcast_to(size, self.data.shape).copy()
-        except:
-            try:
-                self._sizes = np.broadcast_to(
-                    size, self.data.shape[::-1]
-                ).T.copy()
-            except:
-                raise ValueError("Size is not compatible for broadcasting")
+        if np.isscalar(size):
+            size = [size] * len(self.data)
+
+        if not len(self.data) == len(size):
+            raise ValueError("Size is not compatible for broadcasting")
+        else:
+            self._sizes = np.asarray(size)
+        self._actual_sizes = np.multiply(
+            np.expand_dims(self._sizes, 1), self.anisotropy
+        )
         self._set_view_slice()
 
     @property
@@ -335,10 +340,29 @@ class Points(Layer):
         self._size = size
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
-                self.sizes[i, :] = (self.sizes[i, :] > 0) * size
+                self.sizes[i] = size
+                self._actual_sizes[i] = np.multiply(size, self.anisotropy)
             self._set_view_slice()
         self.status = format_float(self.size)
         self.events.size()
+
+    @property
+    def anisotropy(self) -> Union[tuple]:
+        """tuple: anisotropy factor for each dimension."""
+
+        return self._anisotropy
+
+    @anisotropy.setter
+    def anisotropy(self, anisotropy: Union[None, tuple]) -> None:
+        if anisotropy is None:
+            anisotropy = np.ones(self.dims.ndim)
+        if np.all(self._anisotropy == anisotropy):
+            return
+        self._anisotropy = anisotropy
+        self._actual_sizes[i] = np.multiply(
+            np.expand_dims(self.sizes, 1), self.anisotropy
+        )
+        self._set_view_slice()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -410,9 +434,7 @@ class Points(Layer):
             with self.block_update_properties():
                 self.face_color = face_color
 
-        size = list(
-            set([self.sizes[i, self.dims.displayed].mean() for i in index])
-        )
+        size = list(set([self.sizes[i] for i in index]))
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -517,7 +539,7 @@ class Points(Layer):
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(self.data[:, not_disp] - indices[not_disp])
-                sizes = self.sizes[:, not_disp] / 2
+                sizes = self._actual_sizes[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)
                 in_slice_data = self.data[np.ix_(matches, disp)]
                 size_match = sizes[matches]
@@ -576,7 +598,9 @@ class Points(Layer):
         if len(in_slice_data) > 0:
             # Get the point sizes
             sizes = (
-                self.sizes[np.ix_(indices, self.dims.displayed)].mean(axis=1)
+                self._actual_sizes[np.ix_(indices, self.dims.displayed)].mean(
+                    axis=1
+                )
                 * scale
             )
 
@@ -701,6 +725,7 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._sizes = np.delete(self._sizes, index, axis=0)
+            self._actual_sizes = np.delete(self._actual_sizes, index, axis=0)
             for i in index[::-1]:
                 del self.edge_colors[i]
                 del self.face_colors[i]
@@ -764,6 +789,13 @@ class Points(Layer):
             self._data = np.append(self.data, data, axis=0)
             self._sizes = np.append(
                 self.sizes, deepcopy(self._clipboard['size']), axis=0
+            )
+            actual_sizes = np.multiply(
+                np.expand_dims(deepcopy(self._clipboard['size']), 1),
+                self.anisotropy,
+            )
+            self._actual_sizes = np.append(
+                self._actual_sizes, actual_sizes, axis=0
             )
             self.edge_colors = self.edge_colors + deepcopy(
                 self._clipboard['edge_color']

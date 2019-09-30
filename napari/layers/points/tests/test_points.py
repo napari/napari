@@ -438,33 +438,39 @@ def test_size():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.size == 10
-    assert layer.sizes.shape == shape
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
     assert np.unique(layer.sizes)[0] == 10
+    assert np.all(layer.anisotropy == [1, 1])
 
     # Add a new point, it should get current size
     coord = [17, 17]
     layer.add(coord)
-    assert layer.sizes.shape == (11, 2)
+    assert layer.sizes.shape == (11,)
+    assert layer._actual_sizes.shape == (11, 2)
     assert np.unique(layer.sizes)[0] == 10
 
     # Setting size affects newly added points not current points
     layer.size = 20
     assert layer.size == 20
-    assert layer.sizes.shape == (11, 2)
+    assert layer.sizes.shape == (11,)
+    assert layer._actual_sizes.shape == (11, 2)
     assert np.unique(layer.sizes)[0] == 10
 
     # Add new point, should have new size
     coord = [18, 18]
     layer.add(coord)
-    assert layer.sizes.shape == (12, 2)
+    assert layer.sizes.shape == (12,)
+    assert layer._actual_sizes.shape == (12, 2)
     assert np.unique(layer.sizes[:11])[0] == 10
-    assert np.all(layer.sizes[11] == [20, 20])
+    assert layer.sizes[11] == 20
 
     # Select data and change size
     layer.selected_data = [0, 1]
     assert layer.size == 10
     layer.size = 16
-    assert layer.sizes.shape == (12, 2)
+    assert layer.sizes.shape == (12,)
+    assert layer._actual_sizes.shape == (12, 2)
     assert np.unique(layer.sizes[2:11])[0] == 10
     assert np.unique(layer.sizes[:2])[0] == 16
 
@@ -475,7 +481,8 @@ def test_size():
     # Create new layer with new size data
     layer = Points(data, size=15)
     assert layer.size == 15
-    assert layer.sizes.shape == shape
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
     assert np.unique(layer.sizes)[0] == 15
 
 
@@ -485,52 +492,62 @@ def test_size_with_arrays():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    sizes = 5 * np.random.random(shape)
+    sizes = 5 * np.random.random(shape[0])
     layer.sizes = sizes
     assert np.all(layer.sizes == sizes)
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
+    assert np.all(layer.anisotropy == [1, 1])
 
     # Test broadcasting of sizes
-    sizes = [5, 5]
-    layer.sizes = sizes
-    assert np.all(layer.sizes[0] == sizes)
+    sizes = 5
+    layer.sizes = 5
+    assert np.all(layer.sizes == 5)
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
 
     # Create new layer with new size array data
-    sizes = 5 * np.random.random(shape)
+    sizes = 5 * np.random.random(shape[0])
     layer = Points(data, size=sizes)
     assert layer.size == 10
-    assert layer.sizes.shape == shape
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
     assert np.all(layer.sizes == sizes)
 
     # Create new layer with new size array data
-    sizes = [5, 5]
-    layer = Points(data, size=sizes)
-    assert layer.size == 10
-    assert layer.sizes.shape == shape
-    assert np.all(layer.sizes[0] == sizes)
+    layer = Points(data, size=5)
+    assert layer.size == 5
+    assert np.all(layer.sizes == 5)
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
 
     # Add new point, should have new size
     coord = [18, 18]
     layer.size = 13
     layer.add(coord)
-    assert layer.sizes.shape == (11, 2)
+    assert layer.sizes.shape == (11,)
+    assert layer._actual_sizes.shape == (11, 2)
     assert np.unique(layer.sizes[:10])[0] == 5
-    assert np.all(layer.sizes[10] == [13, 13])
+    assert layer.sizes[10] == 13
 
     # Select data and change size
     layer.selected_data = [0, 1]
     assert layer.size == 5
     layer.size = 16
-    assert layer.sizes.shape == (11, 2)
+    assert layer.sizes.shape == (11,)
+    assert layer._actual_sizes.shape == (11, 2)
     assert np.unique(layer.sizes[2:10])[0] == 5
     assert np.unique(layer.sizes[:2])[0] == 16
 
-    # Check removing data adjusts colors correctly
+    # Check removing data adjusts sizes correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == 9
     assert len(layer.sizes) == 9
-    assert np.all(layer.sizes[0] == [16, 16])
-    assert np.all(layer.sizes[1] == [5, 5])
+    assert layer.sizes[0] == 16
+    assert layer.sizes[1] == 5
+    assert np.all(layer._actual_sizes[0] == [16, 16])
+    assert np.all(layer._actual_sizes[1] == [5, 5])
 
 
 def test_size_with_3D_arrays():
@@ -541,69 +558,37 @@ def test_size_with_3D_arrays():
     data[:2, 0] = 0
     layer = Points(data)
     assert layer.size == 10
-    assert layer.sizes.shape == shape
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
     assert np.unique(layer.sizes)[0] == 10
+    assert np.all(layer.anisotropy == [1, 1, 1])
 
-    sizes = 5 * np.random.random(shape)
+    sizes = 5 * np.random.random(shape[0])
     layer.sizes = sizes
     assert np.all(layer.sizes == sizes)
 
-    # Test broadcasting of sizes
-    sizes = [1, 5, 5]
-    layer.sizes = sizes
-    assert np.all(layer.sizes[0] == sizes)
-
     # Create new layer with new size array data
-    sizes = 5 * np.random.random(shape)
+    sizes = 5 * np.random.random(shape[0])
     layer = Points(data, size=sizes)
     assert layer.size == 10
-    assert layer.sizes.shape == shape
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
     assert np.all(layer.sizes == sizes)
 
-    # Create new layer with new size array data
-    sizes = [1, 5, 5]
-    layer = Points(data, size=sizes)
+
+def test_anisotropy():
+    """Test anisotropy factors."""
+    shape = (10, 3)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    sizes = 5 * np.random.random(shape[0])
+    layer = Points(data, anisotropy=[0, 1, 1], size=sizes)
     assert layer.size == 10
-    assert layer.sizes.shape == shape
-    assert np.all(layer.sizes[0] == sizes)
-
-    # Add new point, should have new size in last dim only
-    coord = [4, 18, 18]
-    layer.size = 13
-    layer.add(coord)
-    assert layer.sizes.shape == (11, 3)
-    assert np.unique(layer.sizes[:10, 1:])[0] == 5
-    assert np.all(layer.sizes[10] == [1, 13, 13])
-
-    # Select data and change size
-    layer.selected_data = [0, 1]
-    assert layer.size == 5
-    layer.size = 16
-    assert layer.sizes.shape == (11, 3)
-    assert np.unique(layer.sizes[2:10, 1:])[0] == 5
-    assert np.all(layer.sizes[0] == [16, 16, 16])
-
-    # Create new 3D layer with new 2D points size data
-    sizes = [0, 5, 5]
-    layer = Points(data, size=sizes)
-    assert layer.size == 10
-    assert layer.sizes.shape == shape
-    assert np.all(layer.sizes[0] == sizes)
-
-    # Add new point, should have new size only in last 2 dimensions
-    coord = [4, 18, 18]
-    layer.size = 13
-    layer.add(coord)
-    assert layer.sizes.shape == (11, 3)
-    assert np.all(layer.sizes[10] == [0, 13, 13])
-
-    # Select data and change size
-    layer.selected_data = [0, 1]
-    assert layer.size == 5
-    layer.size = 16
-    assert layer.sizes.shape == (11, 3)
-    assert np.unique(layer.sizes[2:10, 1:])[0] == 5
-    assert np.all(layer.sizes[0] == [0, 16, 16])
+    assert layer.sizes.shape == (shape[0],)
+    assert layer._actual_sizes.shape == shape
+    assert np.all(layer.sizes == sizes)
+    assert np.all(layer.anisotropy == [0, 1, 1])
+    assert np.unique(layer._actual_sizes[:, 0])[0] == 0
 
 
 def test_interaction_box():
