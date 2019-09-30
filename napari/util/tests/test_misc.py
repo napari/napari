@@ -166,6 +166,12 @@ def test_get_pyramid_and_rgb():
     assert not rgb
     assert ndim == 2
 
+    ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data, pyramid=False)
+    assert not pyramid
+    assert data_pyramid is None
+    assert not rgb
+    assert ndim == 2
+
 
 def test_callsignature():
     # no arguments
