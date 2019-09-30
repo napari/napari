@@ -19,6 +19,12 @@ def test_viewer(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+
     # Close the viewer
     viewer.window.close()
 
@@ -40,6 +46,12 @@ def test_add_image(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
 
     # Close the viewer
     viewer.window.close()
@@ -64,6 +76,12 @@ def test_add_volume(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+
     # Close the viewer
     viewer.window.close()
 
@@ -87,6 +105,12 @@ def test_add_pyramid(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+
     # Close the viewer
     viewer.window.close()
 
@@ -108,6 +132,12 @@ def test_add_labels(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
 
     # Close the viewer
     viewer.window.close()
@@ -131,6 +161,12 @@ def test_add_points(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+
     # Close the viewer
     viewer.window.close()
 
@@ -153,6 +189,12 @@ def test_add_vectors(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+
     # Close the viewer
     viewer.window.close()
 
@@ -174,6 +216,12 @@ def test_add_shapes(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
 
     # Close the viewer
     viewer.window.close()
@@ -201,6 +249,12 @@ def test_add_surface(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
 
     # Close the viewer
     viewer.window.close()

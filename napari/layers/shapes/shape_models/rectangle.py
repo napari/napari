@@ -42,6 +42,7 @@ class Rectangle(Shape):
         opacity=1,
         z_index=0,
         dims_order=None,
+        ndisplay=2,
     ):
 
         super().__init__(
@@ -51,6 +52,7 @@ class Rectangle(Shape):
             opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,
+            ndisplay=ndisplay,
         )
 
         self._closed = True

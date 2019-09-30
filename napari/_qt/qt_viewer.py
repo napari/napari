@@ -166,7 +166,7 @@ class QtViewer(QSplitter):
             if not isinstance(self.view.camera, ArcballCamera):
                 self.view.camera = ArcballCamera(name="ArcballCamera")
                 # flip y-axis to have correct alignment
-                self.view.camera.flip = (0, 1, 0)
+                # self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
@@ -258,11 +258,14 @@ class QtViewer(QSplitter):
 
     def _on_reset_view(self, event):
         if isinstance(self.view.camera, ArcballCamera):
+            self.view.camera._quaternion = self.view.camera._quaternion.create_from_axis_angle(
+                *event.quaternion
+            )
             self.view.camera.center = event.center
             self.view.camera.scale_factor = event.scale_factor
         else:
             # Assumes default camera has the same properties as PanZoomCamera
-            self.view.camera.rect = event.viewbox
+            self.view.camera.rect = event.rect
 
     def _update_palette(self, palette):
         # template and apply the primary stylesheet

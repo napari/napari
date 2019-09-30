@@ -46,6 +46,12 @@ class VispySurfaceLayer(VispyBaseLayer):
             faces = self.layer._view_faces
             vertex_values = self.layer.vertex_values
 
+        if (
+            vertices is not None
+            and self.layer.dims.ndisplay == 3
+            and self.layer.dims.ndim == 2
+        ):
+            vertices = np.pad(vertices, ((0, 0), (0, 1)))
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
