@@ -70,31 +70,9 @@ with napari.gui_qt():
 
 Check out the scripts in the `examples` folder to see some of the functionality we're developing!
 
-For example, you can add multiple images in different layers and tweak their opacity on GUI to see blended images
+napari support six main different layer types, `Image`, `Labels`, `Points`, `Vectors`, `Shapes`, and `Surface`, each corresponding to a different data type, visualization, and interactivity. You can add multiple layers of all the different types into the viewer and then start working with them and adjusting their properties.
 
-```python
-from skimage import data
-from skimage.color import rgb2gray
-import napari
-
-with napari.gui_qt():
-    # create the viewer and then add some more layers
-    viewer = napari.view_image(rgb2gray(data.astronaut()), name='astronaut')
-    viewer.add_image(data.camera(), name='photographer')
-    viewer.add_image(data.coins(), name='coins')
-    viewer.add_image(data.moon(), name='moon')
-
-    # remove a layer
-    viewer.layers.remove('coins')
-    # swap layer order
-    viewer.layers['astronaut', 'moon'] = viewer.layers['moon', 'astronaut']
-
-    #You can also adjust their opacities and blending in the viewer
-```
-
-![image](resources/screenshot-layers.png)
-
-You can add points on top of an image
+For example, you can add points on top of an image with a `Points` layer as seen in this example:
 
 ```python
 import numpy as np
@@ -110,74 +88,50 @@ with napari.gui_qt():
     # specify three sizes
     size = np.array([10, 20, 20])
     # add them to the viewer
-    points = viewer.add_points(points, size=size)
+    viewer.add_points(points, size=size)
 ```
 
 ![image](resources/screenshot-add-points.png)
 
-**napari** supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the points, including any additional ones you have drawn, by calling
+**napari** supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks or from our built-in console. In this you can retrieve the locations of the points, including any additional ones you have drawn, by calling
 
 ```python
->>> points.data
+>>> viewer.layers['points'].data
 [[100, 100],
  [200, 200],
  [333, 111]]
 ```
 
-You can render and quickly browse slices of multi-dimensional arrays
+![image](resources/screenshot-add-points-data.png)
 
-```python
-
-import numpy as np
-from skimage import data
-import napari
-
-with napari.gui_qt():
-    # create fake 3d data
-    blobs = np.stack([data.binary_blobs(length=128, blob_size_fraction=0.05,
-                                        n_dim=3, volume_fraction=f)
-                     for f in np.linspace(0.05, 0.5, 10)], axis=0)
-    # add image data to the viewer
-    viewer = napari.view_image(blobs.astype(float))
-
-    # add points to the viewer
-    points = np.array(
-        [
-            [0, 0, 100, 100],
-            [0, 0, 50, 120],
-            [1, 0, 100, 40],
-            [2, 10, 110, 100],
-            [9, 8, 80, 100],
-        ]
-    )
-    viewer.add_points(
-        points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
-    )
-
-```
-
-![image](resources/screenshot-nD-slicing.gif)
-
-You can draw lines and polygons on an image, including selection and adjustment of shapes and vertices, and control over fill and stroke color. Run `examples/add_shapes.py` to generate and interact with the following example.
+You can also draw lines and polygons on an image with a `Shapes` layer. You can then adjust the properties of then shapes and vertices, including their positions and fill and stroke colors. Run `examples/add_shapes.py` to generate and interact with the following example:
 
 ![image](resources/screenshot-add-shapes.png)
 
-You can also paint pixel-wise labels, useful for creating masks for segmentation, and fill in closed regions using the paint bucket. Run `examples/add_labels.py` to generate and interact with the following example.
+You can also paint pixel-wise labels with a `Labels` layer, which is useful for creating masks for segmentation. Run `examples/add_labels.py` to generate and interact with the following example:
 
 ![image](resources/screenshot-add-labels.png)
 
-For details checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/)
+You can render and quickly browse slices of multi-dimensional arrays in 2D or visualize them in 3D. Run `examples/nD_labels.py` to generate and interact with the following example:
+
+![image](resources/screenshot-nD-slicing.gif)
+
+## tutorials
+
+For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/)
 
 ## plans
 
 We're working on several features, including
 
-- support for 3D volumetric rendering
-- support for multiple canvases
+- support for multiple linked canvases
 - a plugin ecosystem for integrating image processing and machine learning tools
 
-See [this issue](https://github.com/napari/napari/issues/301) for some of the features on the roadmap for our `0.2` release. Feel free to add comments or ideas!
+See [this issue](https://github.com/napari/napari/issues/420) for some of the features on the roadmap for our `0.3` release. Feel free to add comments or ideas!
 
 ## contributing
 
 Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+
+## help
+We're a community partner on the [imagesc forum](https://forum.image.sc/tags/napari) and all help and support requests should be posted on the forum with the tag `napari`. We look forward to interacting with you there.
