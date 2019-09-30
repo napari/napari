@@ -616,6 +616,10 @@ QtLayerControls > QRadioButton {
    border-radius: 3px;
 }
 
+QtLayerControls > QRadioButton:disabled {
+  background-color: {{ background }};
+}
+
 QtLayerControls > QRadioButton::indicator:checked {
   background-color: {{ secondary }};
   border-radius: 3px;
@@ -629,6 +633,10 @@ QtLayerControls > QRadioButton::indicator:unchecked:hover {
 QtLayerControls > QPushButton {
    background-color: {{ primary }};
    border-radius: 3px;
+}
+
+QtLayerControls > QPushButton:disabled {
+  background-color: {{ background }};
 }
 
 QtLayerControls > QPushButton:hover {
@@ -733,6 +741,10 @@ QtNDisplayButton::indicator:hover {
 QtModeButton {
   background-color: {{ foreground }};
   border-radius: 3px;
+}
+
+QtModeButton:disabled {
+  background-color: {{ background }};
 }
 
 QtModeButton::indicator {

@@ -520,6 +520,9 @@ class Shapes(Layer):
         if isinstance(mode, str):
             mode = Mode(mode)
 
+        if not self.editable:
+            mode = Mode.PAN_ZOOM
+
         if mode == self._mode:
             return
         old_mode = self._mode
@@ -565,6 +568,17 @@ class Shapes(Layer):
         if not (mode in draw_modes and old_mode in draw_modes):
             self._finish_drawing()
         self._set_view_slice()
+
+    def _set_editable(self, editable=None):
+        """Set editable mode based on layer properties."""
+        if editable is None:
+            if self.dims.ndisplay == 3:
+                self.editable = False
+            else:
+                self.editable = True
+
+        if self.editable == False:
+            self.mode = Mode.PAN_ZOOM
 
     def add(
         self,

@@ -279,7 +279,10 @@ def test_value():
     layer = Image(data, is_pyramid=True)
     value = layer.get_value()
     assert layer.coordinates == (0, 0)
-    assert value == (2, data[-1][0, 0])
+    # Note that here, because the shapes of the pyramid are all very small
+    # data that will be rendered will only ever come from the bottom two
+    # levels of the pyramid.
+    assert value == (1, data[1][0, 0])
 
 
 def test_message():
