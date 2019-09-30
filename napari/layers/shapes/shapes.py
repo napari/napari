@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 from ...util.event import Event
 from ...util.misc import ensure_iterable
+from ...util.status_messages import format_float
 from ..base import Layer
 from vispy.color import get_color_names
 from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
@@ -360,6 +361,7 @@ class Shapes(Layer):
             index = self.selected_data
             for i in index:
                 self._data_view.update_edge_width(i, edge_width)
+        self.status = format_float(self.edge_width)
         self.events.edge_width()
 
     @property
@@ -407,6 +409,7 @@ class Shapes(Layer):
             index = self.selected_data
             for i in index:
                 self._data_view.update_opacity(i, opacity)
+        self.status = format_float(self.opacity)
         self.events.opacity()
 
     @property

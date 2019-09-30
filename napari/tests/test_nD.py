@@ -142,7 +142,7 @@ def test_nD_pyramid(qtbot):
     shapes = [(8, 40, 20), (4, 20, 10), (4, 10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer.add_pyramid(data)
+    viewer.add_image(data, is_pyramid=True)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1

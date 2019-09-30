@@ -9,7 +9,7 @@ from ._constants import Blending
 from ...components import Dims
 from ...util.event import EmitterGroup, Event
 from ...util.keybindings import KeymapMixin
-from ...util.status_messages import status_format
+from ...util.status_messages import status_format, format_float
 
 
 class Layer(KeymapMixin, ABC):
@@ -132,8 +132,11 @@ class Layer(KeymapMixin, ABC):
         self.dims = Dims(ndim)
         self._scale = scale or [1] * ndim
         self._translate = translate or [0] * ndim
+        self._scale_view = np.ones(ndim)
+        self._translate_view = np.zeros(ndim)
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
+        self.is_pyramid = False
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -209,6 +212,7 @@ class Layer(KeymapMixin, ABC):
 
         self._opacity = opacity
         self._update_thumbnail()
+        self.status = format_float(self.opacity)
         self.events.opacity()
 
     @property
@@ -305,6 +309,18 @@ class Layer(KeymapMixin, ABC):
             self._translate = (0,) * (ndim - len(self.translate)) + tuple(
                 self.translate
             )
+        if len(self._scale_view) > ndim:
+            self._scale_view = self._scale_view[-ndim:]
+        elif len(self._scale_view) < ndim:
+            self._scale_view = (1,) * (ndim - len(self._scale_view)) + tuple(
+                self._scale_view
+            )
+        if len(self._translate_view) > ndim:
+            self._translate_view = self._translate_view[-ndim:]
+        elif len(self._translate_view) < ndim:
+            self._translate_view = (0,) * (
+                ndim - len(self._translate_view)
+            ) + tuple(self._translate_view)
 
         self.dims.ndim = ndim
 
@@ -481,9 +497,11 @@ class Layer(KeymapMixin, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
+        full_scale = np.multiply(self.scale, self._scale_view)
+        full_translate = np.add(self.translate, self._translate_view)
 
         full_coord = np.round(
-            np.multiply(self.coordinates, self.scale) + self.translate
+            np.multiply(self.coordinates, full_scale) + full_translate
         ).astype(int)
 
         msg = f'{self.name} {full_coord}'

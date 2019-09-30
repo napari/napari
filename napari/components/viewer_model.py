@@ -343,6 +343,7 @@ class ViewerModel(KeymapMixin):
         data,
         *,
         rgb=None,
+        is_pyramid=None,
         colormap='gray',
         contrast_limits=None,
         interpolation='nearest',
@@ -359,13 +360,21 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        data : array
+        data : array or list of array
             Image data. Can be N dimensional. If the last dimension has length
-            3 or 4 can be interpreted as RGB or RGBA if rgb is `True`.
+            3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
+            list and arrays are decreasing in shape then the data is treated as
+            an image pyramid.
         rgb : bool
             Whether the image is rgb RGB or RGBA. If not specified by user and
             the last dimension of the data has length 3 or 4 it will be set as
             `True`. If `False` the image is interpreted as a luminance image.
+        is_pyramid : bool
+            Whether the data is an image pyramid or not. Pyramid data is
+            represented by a list of array like image data. If not specified by
+            the user and if the data is a list of arrays that decrease in shape
+            then it will be taken to be a pyramid. The first image in the list
+            should be the largest.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -405,6 +414,7 @@ class ViewerModel(KeymapMixin):
         layer = layers.Image(
             data,
             rgb=rgb,
+            is_pyramid=is_pyramid,
             colormap=colormap,
             contrast_limits=contrast_limits,
             interpolation=interpolation,
@@ -522,60 +532,6 @@ class ViewerModel(KeymapMixin):
             )
             layers.append(layer)
         return layers
-
-    def add_pyramid(self, data, *args, **kwargs):
-        """Add an image pyramid layer to the layers list.
-
-        Parameters
-        ----------
-        data : list
-            Pyramid data. List of array like image date. Each image can be N
-            dimensional. If the last dimensions of the images have length 3
-            or 4 they can be interpreted as RGB or RGBA if rgb is
-            `True`.
-        rgb : bool
-            Whether the image is rgb RGB or RGBA. If not specified by user and
-            the last dimension of the data has length 3 or 4 it will be set as
-            `True`. If `False` the image is interpreted as a luminance image.
-        colormap : str, vispy.Color.Colormap, tuple, dict
-            Colormap to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap.
-        contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image.
-        interpolation : str
-            Interpolation mode used by vispy. Must be one of our supported
-            modes.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Pyramid`
-            The newly-created pyramid layer.
-        """
-        layer = layers.Pyramid(data, *args, **kwargs)
-        self.add_layer(layer)
-        return layer
 
     def add_points(
         self,

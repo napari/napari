@@ -113,7 +113,7 @@ def test_4D_volume():
 def test_changing_volume():
     """Test changing Image data."""
     shape_a = (10, 15, 30)
-    shape_b = (20, 12, 4)
+    shape_b = (20, 12, 6)
     np.random.seed(0)
     data_a = np.random.random(shape_a)
     data_b = np.random.random(shape_b)
