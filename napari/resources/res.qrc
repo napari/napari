@@ -12,6 +12,7 @@
     <file>icons/light/drop_down.svg</file>
     <file>icons/light/ellipse.svg</file>
     <file>icons/light/fill.svg</file>
+    <file>icons/light/left_arrow.svg</file>
     <file>icons/light/line.svg</file>
     <file>icons/light/minus.svg</file>
     <file>icons/light/move_back.svg</file>
@@ -30,6 +31,7 @@
     <file>icons/light/properties_contract.svg</file>
     <file>icons/light/properties_expand.svg</file>
     <file>icons/light/rectangle.svg</file>
+    <file>icons/light/right_arrow.svg</file>
     <file>icons/light/select.svg</file>
     <file>icons/light/vertex_insert.svg</file>
     <file>icons/light/vertex_remove.svg</file>
@@ -46,6 +48,7 @@
     <file>icons/dark/drop_down.svg</file>
     <file>icons/dark/ellipse.svg</file>
     <file>icons/dark/fill.svg</file>
+    <file>icons/dark/left_arrow.svg</file>
     <file>icons/dark/line.svg</file>
     <file>icons/dark/menu.svg</file>
     <file>icons/dark/minus.svg</file>
@@ -65,6 +68,7 @@
     <file>icons/dark/properties_contract.svg</file>
     <file>icons/dark/properties_expand.svg</file>
     <file>icons/dark/rectangle.svg</file>
+    <file>icons/dark/right_arrow.svg</file>
     <file>icons/dark/select.svg</file>
     <file>icons/dark/vertex_insert.svg</file>
     <file>icons/dark/vertex_remove.svg</file>

@@ -66,8 +66,8 @@ def increment_dims_right(viewer):
         viewer.dims.set_point(axis, new_point)
 
 
-Viewer.bind_key('Control-Up', lambda v: v.window.qt_viewer.dims.focus_up())
-Viewer.bind_key('Control-Down', lambda v: v.window.qt_viewer.dims.focus_down())
+Viewer.bind_key('Alt-Up', lambda v: v.window.qt_viewer.dims.focus_up())
+Viewer.bind_key('Alt-Down', lambda v: v.window.qt_viewer.dims.focus_down())
 Viewer.bind_key('Control-Backspace', lambda v: v.layers.remove_selected())
 Viewer.bind_key('Control-A', lambda v: v.layers.select_all())
 Viewer.bind_key(

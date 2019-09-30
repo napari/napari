@@ -43,7 +43,7 @@ class QtDeleteButton(QPushButton):
         super().__init__()
 
         self.viewer = viewer
-        self.setToolTip('Delete layers')
+        self.setToolTip('Delete selected layers')
         self.setAcceptDrops(True)
         self.clicked.connect(lambda: self.viewer.layers.remove_selected())
 

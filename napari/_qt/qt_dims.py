@@ -1,8 +1,7 @@
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
+from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollBar
 import numpy as np
 
-from . import QHRangeSlider
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
 
@@ -25,8 +24,6 @@ class QtDims(QWidget):
         List of slider widgets
     """
 
-    SLIDERHEIGHT = 26
-
     # Qt Signals for sending events to Qt thread
     update_ndim = Signal()
     update_axis = Signal(int)
@@ -36,6 +33,8 @@ class QtDims(QWidget):
     def __init__(self, dims: Dims, parent=None):
 
         super().__init__(parent=parent)
+
+        self.SLIDERHEIGHT = 22
 
         # We keep a reference to the view:
         self.dims = dims
@@ -143,11 +142,7 @@ class QtDims(QWidget):
 
         mode = self.dims.mode[axis]
         if mode == DimsMode.POINT:
-            slider.collapse()
             slider.setValue(self.dims.point[axis])
-        elif mode == DimsMode.INTERVAL:
-            slider.expand()
-            slider.setValues(self.dims.interval[axis])
         self.last_used = axis
 
     def _update_range(self, axis: int):
@@ -179,7 +174,10 @@ class QtDims(QWidget):
                     self._displayed_sliders[axis] = True
                     self.last_used = axis
                     slider.show()
-                slider.setRange(range)
+                slider.setMinimum(range[0])
+                slider.setMaximum(range[1])
+                slider.setSingleStep(range[2])
+                slider.setPageStep(range[2])
         else:
             self._displayed_sliders[axis] = False
             slider.hide()
@@ -284,52 +282,26 @@ class QtDims(QWidget):
         range = (range[0], range[1] - range[2], range[2])
         point = self.dims.point[axis]
 
-        slider = QHRangeSlider(
-            slider_range=range, values=(point, point), parent=self
-        )
-
-        slider.setFocusPolicy(Qt.StrongFocus)
-
-        # notify of changes while sliding:
-        slider.setEmitWhileMoving(True)
-
-        # allows range slider to collapse to a single knob:
-        slider.collapsable = True
-
-        # and sets it in the correct state:
-        if self.dims.mode[axis] == DimsMode.POINT:
-            slider.collapse()
-        else:
-            slider.expand()
+        slider = QScrollBar(Qt.Horizontal)
+        slider.setFocusPolicy(Qt.NoFocus)
+        slider.setMinimum(range[0])
+        slider.setMaximum(range[1])
+        slider.setSingleStep(range[2])
+        slider.setPageStep(range[2])
+        slider.setValue(point)
 
         # Listener to be used for sending events back to model:
-        def slider_change_listener(min, max):
-            if slider.collapsed:
-                self.dims.set_point(axis, min)
-            elif not slider.collapsed:
-                self.dims.set_interval(axis, (min, max))
+        def slider_change_listener(value):
+            self.dims.set_point(axis, value)
 
         # linking the listener to the slider:
-        slider.rangeChanged.connect(slider_change_listener)
+        slider.valueChanged.connect(slider_change_listener)
 
         def slider_focused_listener():
             self.last_used = self.sliders.index(slider)
 
         # linking focus listener to the last used:
-        slider.focused.connect(slider_focused_listener)
-
-        # Listener to be used for sending events back to model:
-        def collapse_change_listener(collapsed):
-            if collapsed:
-                interval = self.dims.interval[axis]
-                if interval is not None:
-                    min, max = interval
-                    self.dims.set_point(axis, (max + min) / 2)
-            self.dims.set_mode(
-                axis, DimsMode.POINT if collapsed else DimsMode.INTERVAL
-            )
-
-        slider.collapsedChanged.connect(collapse_change_listener)
+        slider.sliderPressed.connect(slider_focused_listener)
 
         return slider
 
