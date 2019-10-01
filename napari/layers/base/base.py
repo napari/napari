@@ -393,7 +393,7 @@ class Layer(KeymapMixin, ABC):
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
-        thumbnail = np.pad(thumbnail, pad_amounts)
+        thumbnail = np.pad(thumbnail, pad_amounts, mode='constant')
 
         # blend thumbnail with opaque black background
         background = np.zeros(self._thumbnail_shape, dtype=np.uint8)
