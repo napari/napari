@@ -77,3 +77,29 @@ Don't forget to push the new tag to the repo!
 ```bash
 $ git push upstream --tags
 ```
+
+## generating release notes
+
+1. Review and cleanup ``docs/release/release_dev.txt``.
+
+2. Make a list of merges, contributors, and reviewers by running
+   ``generate_release_notes.py -h`` and following that file's usage. For minor or major releases generate the list to include everything since the last minor or major release.
+   For other releases generate the list to include
+   everything since the last release for which there
+   are release notes (which should just be the last release).
+
+3. Paste this list at the end of the ``release_dev.txt``.
+
+4. Scan the PR titles for highlights, deprecations, API changes,
+   and bugfixes, and mention these in the relevant sections of the notes.
+   Try to present the information in an expressive way by mentioning
+   the affected functions, elaborating on the changes and their
+   consequences. If possible, organize semantically close PRs in groups.
+
+5. Rename the file to ``doc/release/release_<major>_<minor>.txt`` for a minor release and ``doc/release/release_<major>_<minor>_<release>.txt`` otherwise
+
+6. Copy ``doc/release/release_template.txt`` to
+   ``doc/release/release_dev.txt`` for the next release.
+
+7. Copy relevant deprecations from ``release_<major>_<minor>_<release>.txt``
+   to ``release_dev.txt``.
