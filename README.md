@@ -25,13 +25,7 @@ We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/
 $ pip install napari
 ```
 
-We're working on improving Windows support. For mac0S we also require at least version 10.12.
-
-To install from the master branch on Github use
-
-```sh
-$ pip install git+https://github.com/napari/napari
-```
+We're working on improving our Windows support.
 
 To clone the repository locally and install in editable mode use
 
@@ -45,7 +39,7 @@ For more information see our [installation tutorial](https://napari.github.io/na
 
 ## simple example
 
-From inside an IPython shell (started with `ipython --gui=qt`) or Jupyter notebook (after running a cell with magic command `%gui qt5`) you can open up an interactive viewer by calling
+From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt5`) you can open up an interactive viewer by calling
 
 ```python
 from skimage import data
@@ -93,7 +87,7 @@ See [this issue](https://github.com/napari/napari/issues/420) for some of the fe
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## help
 
