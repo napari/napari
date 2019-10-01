@@ -67,53 +67,15 @@ with napari.gui_qt():
 
 ## features
 
-Check out the scripts in the `examples` folder to see some of the functionality we're developing!
+Check out the scripts in our `examples` folder to see some of the functionality we're developing!
 
-napari support six main different layer types, `Image`, `Labels`, `Points`, `Vectors`, `Shapes`, and `Surface`, each corresponding to a different data type, visualization, and interactivity. You can add multiple layers of all the different types into the viewer and then start working with them and adjusting their properties.
+**napari** supports six main different layer types, `Image`, `Labels`, `Points`, `Vectors`, `Shapes`, and `Surface`, each corresponding to a different data type, visualization, and interactivity. You can add multiple layers of different types into the viewer and then start working with them, adjusting their properties.
 
-For example, you can add points on top of an image with a `Points` layer as seen in this example:
+All our layer types support n-dimensional data and the viewer provides the ability to quickly browse and visualize either 2D or 3D slices of the data.
 
-```python
-import numpy as np
-from skimage import data
-from skimage.color import rgb2gray
-import napari
+**napari** also supports bidirectional communication between the viewer and the Python kernel, which is especially useful when launching from jupyter notebooks or when using our built-in console. Using the console allows you to interactively load and save data from the viewer and control all the features of the viewer programmatically.
 
-with napari.gui_qt():
-    # add an image
-    viewer = napari.view_image(rgb2gray(data.astronaut()))
-    # create three xy coordinates
-    points = np.array([[100, 100], [200, 200], [333, 111]])
-    # specify three sizes
-    size = np.array([10, 20, 20])
-    # add them to the viewer
-    viewer.add_points(points, size=size)
-```
-
-![image](resources/screenshot-add-points.png)
-
-**napari** supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks or from our built-in console. In this you can retrieve the locations of the points, including any additional ones you have drawn, by calling
-
-```python
->>> viewer.layers['points'].data
-[[100, 100],
- [200, 200],
- [333, 111]]
-```
-
-![image](resources/screenshot-add-points-data.gif)
-
-You can also draw lines and polygons on an image with a `Shapes` layer. You can then adjust the properties of then shapes and vertices, including their positions and fill and stroke colors. Run `examples/add_shapes.py` to generate and interact with the following example:
-
-![image](resources/screenshot-add-shapes.png)
-
-You can also paint pixel-wise labels with a `Labels` layer, which is useful for creating masks for segmentation. Run `examples/add_labels.py` to generate and interact with the following example:
-
-![image](resources/screenshot-add-labels.png)
-
-You can render and quickly browse slices of multi-dimensional arrays in 2D or visualize them in 3D. Run `examples/nD_labels.py` to generate and interact with the following example:
-
-![image](resources/screenshot-nD-slicing.gif)
+You can extend **napari** using custom shortcuts, key bindings, and mouse functions.
 
 ## tutorials
 
@@ -124,6 +86,7 @@ For more details on how to use `napari` checkout our [in-depth tutorials](https:
 We're working on several features, including
 
 - support for multiple linked canvases
+- script & macro generation
 - a plugin ecosystem for integrating image processing and machine learning tools
 
 See [this issue](https://github.com/napari/napari/issues/420) for some of the features on the roadmap for our `0.3` release. Feel free to add comments or ideas!
@@ -133,4 +96,5 @@ See [this issue](https://github.com/napari/napari/issues/420) for some of the fe
 Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## help
+
 We're a community partner on the [imagesc forum](https://forum.image.sc/tags/napari) and all help and support requests should be posted on the forum with the tag `napari`. We look forward to interacting with you there.
