@@ -27,7 +27,7 @@ from ..resources import resources_dir
 from ..util.theme import template
 from ..util.misc import is_rgb
 from ..util.keybindings import components_to_key_combo
-from ..util.io import read
+from ..util import io
 
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -210,7 +210,7 @@ class QtViewer(QSplitter):
         return arr
 
     def _open_images(self):
-        """Adds image files from the menubar."""
+        """Add image files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Select image(s)...',
@@ -219,7 +219,7 @@ class QtViewer(QSplitter):
         self._add_files(filenames)
 
     def _add_files(self, filenames):
-        """Adds an image layer to the viewer.
+        """Add an image layer to the viewer.
 
         Whether the image is rgb is determined by
         :func:`napari.util.misc.is_rgb`.
@@ -233,7 +233,7 @@ class QtViewer(QSplitter):
             List of filenames to be opened
         """
         if len(filenames) > 0:
-            image = read(filenames)
+            image = io.magic_read(filenames)
             self.viewer.add_image(image, rgb=is_rgb(image.shape))
             self._last_visited_dir = os.path.dirname(filenames[0])
 
@@ -377,7 +377,7 @@ class QtViewer(QSplitter):
             path = url.toString()
             if os.path.isfile(path):
                 filenames.append(path)
-            elif os.path.isdir(path):
+            elif os.path.isdir(path) and not path.endswith('.zarr'):
                 filenames = filenames + list(glob(os.path.join(path, '*')))
             else:
                 filenames.append(path)

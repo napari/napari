@@ -1,18 +1,21 @@
 """
-Display one 4-D image layer using the add_image API
+Display a zarr array
 """
 
-import dask.array as da
-import zarr
+try:
+    import zarr
+except ImportError:
+    raise ImportError("""This example uses a zarr array but zarr is not
+    installed. To install try 'pip install zarr'.""")
+
 import napari
 
 
 with napari.gui_qt():
-    data = zarr.zeros((102_000, 200, 210), chunks=(100, 200, 210))
-    data[53_000:53_100, 100:110, 110:120] = 1
+    data = zarr.zeros((102_0, 200, 210), chunks=(100, 200, 210))
+    data[53_0:53_1, 100:110, 110:120] = 1
 
-    array = da.from_zarr(data)
-    print(array.shape)
+    print(data.shape)
     # For big data, we should specify the contrast_limits range, or napari will try
     # to find the min and max of the full image.
-    viewer = napari.view_image(array, contrast_limits=[0, 1], rgb=False)
+    viewer = napari.view_image(data, contrast_limits=[0, 1], rgb=False)
