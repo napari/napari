@@ -29,11 +29,17 @@ class QtViewerButtons(QFrame):
         self.viewer = viewer
         self.consoleButton = QtConsoleButton(self.viewer)
         self.ndisplayButton = QtNDisplayButton(self.viewer)
+        self.rollDimsButton = QtRollDimsButton(self.viewer)
+        self.transposeDimsButton = QtTransposeDimsButton(self.viewer)
+        self.resetViewButton = QtResetViewButton(self.viewer)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.consoleButton)
         layout.addWidget(self.ndisplayButton)
+        layout.addWidget(self.rollDimsButton)
+        layout.addWidget(self.transposeDimsButton)
+        layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
 
@@ -92,6 +98,33 @@ class QtNewLabelsButton(QPushButton):
         self.viewer = viewer
         self.setToolTip('New labels layer')
         self.clicked.connect(lambda: self.viewer._new_labels())
+
+
+class QtResetViewButton(QPushButton):
+    def __init__(self, viewer):
+        super().__init__()
+
+        self.viewer = viewer
+        self.setToolTip('Reset view')
+        self.clicked.connect(lambda: self.viewer.reset_view())
+
+
+class QtRollDimsButton(QPushButton):
+    def __init__(self, viewer):
+        super().__init__()
+
+        self.viewer = viewer
+        self.setToolTip('Roll dimensions order for display')
+        self.clicked.connect(lambda: self.viewer.dims._roll())
+
+
+class QtTransposeDimsButton(QPushButton):
+    def __init__(self, viewer):
+        super().__init__()
+
+        self.viewer = viewer
+        self.setToolTip('Transpose displayed dimensions')
+        self.clicked.connect(lambda: self.viewer.dims._transpose())
 
 
 class QtConsoleButton(QPushButton):

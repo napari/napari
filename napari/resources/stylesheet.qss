@@ -736,6 +736,33 @@ QtNDisplayButton::indicator:hover {
   background-color: {{ primary }};
 }
 
+QtRollDimsButton {
+   image: url(":/icons/{{ folder }}/roll.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   border-radius: 3px;
+}
+
+QtTransposeDimsButton {
+   image: url(":/icons/{{ folder }}/transpose.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   border-radius: 3px;
+}
+
+QtResetViewButton {
+   image: url(":/icons/{{ folder }}/home.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   border-radius: 3px;
+}
+
 /* ------------------------------------------------------ */
 
 QtModeButton {

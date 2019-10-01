@@ -18,18 +18,6 @@ def toggle_theme(viewer):
     viewer.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
 
-@Viewer.bind_key('Control-E')
-def roll_dims(viewer):
-    viewer.dims.order = np.roll(viewer.dims.order, 1)
-
-
-@Viewer.bind_key('Control-T')
-def transpose_displayed_dims(viewer):
-    order = copy(viewer.dims.order)
-    order[-2], order[-1] = order[-1], order[-2]
-    viewer.dims.order = order
-
-
 @Viewer.bind_key('Control-Y')
 def toggle_ndisplay(viewer):
     if viewer.dims.ndisplay == 3:
@@ -66,6 +54,8 @@ def increment_dims_right(viewer):
         viewer.dims.set_point(axis, new_point)
 
 
+Viewer.bind_key('Control-E', lambda v: v.dims._roll())
+Viewer.bind_key('Control-T', lambda v: v.dims._transpose())
 Viewer.bind_key('Alt-Up', lambda v: v.window.qt_viewer.dims.focus_up())
 Viewer.bind_key('Alt-Down', lambda v: v.window.qt_viewer.dims.focus_down())
 Viewer.bind_key('Control-Backspace', lambda v: v.layers.remove_selected())

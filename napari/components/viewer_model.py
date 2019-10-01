@@ -237,7 +237,7 @@ class ViewerModel(KeymapMixin):
         else:
             # For an ArcballCamera emit the center and scale_factor
             center = centroid[::-1]
-            scale_factor = 1.1 * np.mean(size[-2:])
+            scale_factor = 1.1 * np.max(size[-2:])
             # set initial camera angle so that it matches top layer of 2D view
             # when transitioning to 3D view
             quaternion = [np.pi / 2, 1, 0, 0]
