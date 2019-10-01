@@ -107,12 +107,13 @@ Pull Requests
 - Update NumPy pad call for 1.16.4 (#559)
 - WIP Unify IO between different modalities (#560)
 
-10 authors added to this release [alphabetical by first name or login]
+11 authors added to this release [alphabetical by first name or login]
 ----------------------------------------------------------------------
 - Ahmet Can Solak
 - Alexandre de Siqueira
 - Ariel Rokem
 - Christoph Gohlke
+- Jan Eglinger
 - Juan Nunez-Iglesias
 - Kira Evans
 - Mars Huang
