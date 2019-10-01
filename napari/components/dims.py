@@ -312,3 +312,13 @@ class Dims:
         if self.mode[axis] != mode:
             self._mode[axis] = mode
             self.events.axis(axis=axis)
+
+    def _roll(self):
+        """Roll order of dimensions for display."""
+        self.order = np.roll(self.order, 1)
+
+    def _transpose(self):
+        """Transpose displayed dimensions."""
+        order = copy(self.order)
+        order[-2], order[-1] = order[-1], order[-2]
+        self.order = order

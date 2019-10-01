@@ -15,10 +15,7 @@ https://github.com/napari/napari
 
 New Features
 ------------
-- Add `viewer.add_multichannel` method to rapidly add expand a multichannel
-array along one particular axis with different colormaps (#528).
-- Add a `Surface` layer to render already generated meshes. Support nD meshes
-rendered in 2D or 3D (#503).
+
 
 Improvements
 ------------
@@ -37,7 +34,6 @@ Bugfixes
 
 Deprecations
 ------------
-- Drop `napari.view` method. Replaced with `napari.view_*` methods in (#542)
 
 
 Contributors to this release
