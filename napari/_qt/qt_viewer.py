@@ -377,7 +377,7 @@ class QtViewer(QSplitter):
             path = url.toString()
             if os.path.isfile(path):
                 filenames.append(path)
-            elif os.path.isdir(path):
+            elif os.path.isdir(path) and not path.endswith('.zarr'):
                 filenames = filenames + list(glob(os.path.join(path, '*')))
             else:
                 filenames.append(path)
