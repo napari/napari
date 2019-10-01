@@ -203,7 +203,9 @@ class Image(Layer):
 
     @data.setter
     def data(self, data):
-        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(data)
+        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
+            data, pyramid=self.is_pyramid, rgb=self.rgb
+        )
         self.is_pyramid = is_pyramid
         self.rgb = rgb
         self._data = data

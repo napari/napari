@@ -113,8 +113,8 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     data : array or list
         Data to be checked if pyramid or if needs to be turned into a pyramid.
     pyramid : bool, optional
-        Value that can force data to be considered as a pyramid, otherwise
-        computed.
+        Value that can force data to be considered as a pyramid or not,
+        otherwise computed.
     rgb : bool, optional
         Value that can force data to be considered as a rgb, otherwise
         computed.
@@ -131,12 +131,9 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
         If None then data is not and does not need to be a pyramid. Otherwise
         is a list of arrays where each array is a level of the pyramid.
     """
-
-    # Determine if pyramid
-    if pyramid is None:
-        pyramid = is_pyramid(data)
-
-    if pyramid:
+    # Determine if data currently is a pyramid
+    currently_pyramid = is_pyramid(data)
+    if currently_pyramid:
         init_shape = data[0].shape
     else:
         init_shape = data.shape
@@ -154,25 +151,36 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     else:
         ndim = len(init_shape)
 
-    if not pyramid:
-        # Guess if data should be pyramid
-        pyr_axes = should_be_pyramid(data.shape)
-        if np.any(pyr_axes):
-            pyramid = True
-            # Set axes to be downsampled to have a factor of 2
-            downscale = np.ones(len(data.shape))
-            downscale[pyr_axes] = 2
-            largest = np.min(np.array(data.shape)[pyr_axes])
-            # Determine number of downsample steps needed
-            max_layer = np.floor(np.log2(largest) - 9).astype(int)
-            data_pyramid = fast_pyramid(
-                data, downscale=downscale, max_layer=max_layer
+    if pyramid is False:
+        if currently_pyramid:
+            raise ValueError(
+                """Non pyramided data was requested, but pyramid
+                             data was passed"""
             )
-            data_pyramid = trim_pyramid(data_pyramid)
         else:
             data_pyramid = None
     else:
-        data_pyramid = trim_pyramid(data)
+        if currently_pyramid:
+            data_pyramid = trim_pyramid(data)
+            pyramid = True
+        else:
+            # Guess if data should be pyramid
+            pyr_axes = should_be_pyramid(data.shape)
+            if np.any(pyr_axes):
+                pyramid = True
+                # Set axes to be downsampled to have a factor of 2
+                downscale = np.ones(len(data.shape))
+                downscale[pyr_axes] = 2
+                largest = np.min(np.array(data.shape)[pyr_axes])
+                # Determine number of downsample steps needed
+                max_layer = np.floor(np.log2(largest) - 9).astype(int)
+                data_pyramid = fast_pyramid(
+                    data, downscale=downscale, max_layer=max_layer
+                )
+                data_pyramid = trim_pyramid(data_pyramid)
+            else:
+                data_pyramid = None
+                pyramid = False
 
     return ndim, rgb, pyramid, data_pyramid
 
