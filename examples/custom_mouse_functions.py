@@ -39,8 +39,8 @@ with napari.gui_qt():
                 data[binary_new] = val
             size = np.sum(binary_new)
             layer.data = data
-            msg = f'clicked at {cords} on blob {val} which is {size} now pixels'
+            msg = f'clicked at {cords} on blob {val} which is now {size} pixels'
         else:
-            msg = f'clicked at {cords} on blob {val} which is ignored'
+            msg = f'clicked at {cords} on background which is ignored'
         layer.status = msg
         print(msg)
