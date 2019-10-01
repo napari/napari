@@ -16,7 +16,7 @@ notebooks.
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
-Other Pull Requests
+Pull Requests
 *******************
 - Add shapes (#100)
 - Vectors Layer (#129)

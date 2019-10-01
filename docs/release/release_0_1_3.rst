@@ -14,7 +14,7 @@ New Features
 ------------
 - Support for volumetric rendering of images
 
-Other Pull Requests
+Pull Requests
 *******************
 - Tutorials (#395)
 - fix import in cli (#403)

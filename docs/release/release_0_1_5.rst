@@ -16,7 +16,7 @@ New Features
 - Support for swappable dimensions
 - Support for 3D rendering for more layer types
 
-Other Pull Requests
+Pull Requests
 *******************
 - Expose args for blending, visible, opacity (#434)
 - test add_* signatures and improve docstring testing (#439)

@@ -188,7 +188,7 @@ for pull in tqdm(
 
 
 # add Other PRs to the ordered dict to make doc generation easier.
-highlights['Other Pull Request'] = other_pull_requests
+highlights['Pull Request'] = other_pull_requests
 
 
 # Now generate the release notes
