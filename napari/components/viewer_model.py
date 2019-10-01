@@ -557,14 +557,15 @@ class ViewerModel(KeymapMixin):
             Symbol to be used for the point markers. Must be one of the
             following: arrow, clobber, cross, diamond, disc, hbar, ring,
             square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-        size : float, tuple
+        size : float, tuple, list, array (N,)
             Size of the point marker. If given as a scalar, all points are made
-            the same size. If given as a tuple, size must be the same length
-            as the number of points.
-        anisotropy : tuple, optional
+            the same size. If given as a tuple, list, or 1-D array size must be
+            the same length as the number of points.
+        anisotropy : tuple, list, array (D,), optional
             List of anisotropy factors, must be one per dimension. These act as
-            pre-multipliers on the size of each point. If not provided,
-            defaults as 1 for each dimension.
+            pre-multipliers on the size of each point. Note that the anisotropy
+            is only displayed for dimensions out of plane for the view. If not
+            provided, defaults as 1 for each dimension.
         edge_width : float
             Width of the symbol edge in pixels.
         edge_color : str
