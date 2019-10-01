@@ -99,7 +99,7 @@ def view_image(
 def view_multichannel(
     data,
     *,
-    channel=-1,
+    axis=-1,
     colormap=None,
     contrast_limits=None,
     interpolation='nearest',
@@ -118,7 +118,7 @@ def view_multichannel(
     ----------
     data : array
         Image data. Can be N dimensional.
-    channel : int
+    axis : int
         Axis to expand colors along.
     colormap : list, str, vispy.Color.Colormap, tuple, dict
         Colormaps to use for luminance images. If a string must be the name
@@ -161,41 +161,21 @@ def view_multichannel(
     """
     viewer = Viewer()
 
-    n_images = data.shape[channel]
-
-    name = ensure_iterable(name)
-
-    base_colormaps = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
-    if colormap is None:
-        colormap = itertools.cycle(base_colormaps)
-    else:
-        colormap = ensure_iterable(colormap)
-
-    # If one pair of clim values is passed then need to iterate them to
-    # all layers.
-    if contrast_limits is not None and not is_iterable(contrast_limits[0]):
-        contrast_limits = itertools.repeat(contrast_limits)
-    else:
-        contrast_limits = ensure_iterable(contrast_limits)
-
-    zipped_args = zip(range(n_images), colormap, contrast_limits, name)
-    for i, cmap, clims, name in zipped_args:
-        image = data.take(i, axis=channel)
-        layer = viewer.add_image(
-            image,
-            rgb=False,
-            colormap=cmap,
-            contrast_limits=clims,
-            interpolation=interpolation,
-            rendering=rendering,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-        )
+    viewer.add_multichannel(
+        image,
+        axis=-1,
+        colormap=cmap,
+        contrast_limits=clims,
+        interpolation=interpolation,
+        rendering=rendering,
+        name=name,
+        metadata=metadata,
+        scale=scale,
+        translate=translate,
+        opacity=opacity,
+        blending=blending,
+        visible=visible,
+    )
     return viewer
 
 

@@ -434,7 +434,7 @@ class ViewerModel(KeymapMixin):
         self,
         data,
         *,
-        channel=-1,
+        axis=-1,
         colormap=None,
         contrast_limits=None,
         interpolation='nearest',
@@ -453,7 +453,7 @@ class ViewerModel(KeymapMixin):
         ----------
         data : array
             Image data. Can be N dimensional.
-        channel : int
+        axis : int
             Axis to expand colors along.
         colormap : list, str, vispy.Color.Colormap, tuple, dict
             Colormaps to use for luminance images. If a string must be the name
@@ -494,7 +494,7 @@ class ViewerModel(KeymapMixin):
         layers : list of :class:`napari.layers.Image`
             The newly-created image layers.
         """
-        n_images = data.shape[channel]
+        n_images = data.shape[axis]
 
         name = ensure_iterable(name)
 
@@ -514,7 +514,7 @@ class ViewerModel(KeymapMixin):
         layers = []
         zipped_args = zip(range(n_images), colormap, contrast_limits, name)
         for i, cmap, clims, name in zipped_args:
-            image = data.take(i, axis=channel)
+            image = data.take(i, axis=axis)
             layer = self.add_image(
                 image,
                 rgb=False,
