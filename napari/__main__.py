@@ -36,7 +36,8 @@ def main():
         '-D',
         '--use-dask',
         action='store_true',
-        help='Use dask to read in images. This conserves memory. This option does nothing if a single image is given.',
+        help='Use dask to read in images. This conserves memory. This option '
+        'does nothing if a single image is given.',
         default=None,
     )
     parser.add_argument(
@@ -44,7 +45,9 @@ def main():
         '--use-numpy',
         action='store_false',
         dest='use_dask',
-        help='Use NumPy to read in images. This can be more performant than dask if all the images fit in RAM. This option does nothing if only a single image is given.',
+        help='Use NumPy to read in images. This can be more performant than '
+        'dask if all the images fit in RAM. This option does nothing if '
+        'only a single image is given.',
     )
     args = parser.parse_args()
     with gui_qt():
