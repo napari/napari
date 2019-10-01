@@ -254,12 +254,26 @@ def calc_data_range(data):
     values : list of float
         Range of values.
     """
-    min = data.min()
-    max = data.max()
-    if min == max:
-        min = 0
-        max = 1
-    return [float(min), float(max)]
+    if np.prod(data.shape) > 1e6:
+        # If data is very large take the average of the top, bottom, and
+        # middle slices
+        top_plane_idx = np.zeros(data.ndim - 2).astype(int)
+        bottom_plane_idx = np.subtract(data.shape[:-2], 1).astype(int)
+        middle_plane_idx = np.round(np.divide(bottom_plane_idx, 2)).astype(int)
+        top_plane = np.asarray(data[tuple(top_plane_idx)])
+        bottom_plane = np.asarray(data[tuple(bottom_plane_idx)])
+        middle_plane = np.asarray(data[tuple(middle_plane_idx)])
+        reduced_data = np.array([top_plane, bottom_plane, middle_plane])
+    else:
+        reduced_data = data
+
+    min_val = reduced_data.min()
+    max_val = reduced_data.max()
+
+    if min_val == max_val:
+        min_val = 0
+        max_val = 1
+    return [float(min_val), float(max_val)]
 
 
 def compute_max_shape(shapes, max_dims=None):
