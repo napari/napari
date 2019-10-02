@@ -295,6 +295,11 @@ class Vectors(Layer):
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
         vectors = copy(self._data_view[:, :, -2:])
+        if len(vectors) > self._max_vectors_thumbnail:
+            inds = np.random.randint(
+                0, len(vectors), self._max_vectors_thumbnail
+            )
+            vectors = vectors[inds]
         vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
         downsampled = (vectors - offset) * zoom_factor
         downsampled = np.clip(
@@ -303,11 +308,6 @@ class Vectors(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         col = Color(self.edge_color).rgba
-        if len(downsampled) > self._max_vectors_thumbnail:
-            inds = np.random.randint(
-                0, len(downsampled), self._max_vectors_thumbnail
-            )
-            downsampled = downsampled[inds]
         for v in downsampled:
             start = v[0]
             stop = v[1]
