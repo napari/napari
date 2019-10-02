@@ -130,7 +130,8 @@ class VispyBaseLayer(ABC):
 
     def _on_translate_change(self):
         self.translate = [
-            self.layer.translate[d] for d in self.layer.dims.displayed[::-1]
+            self.layer.translate[d] + self.layer.translate_grid[d]
+            for d in self.layer.dims.displayed[::-1]
         ]
         self.layer.position = self._transform_position(self._position)
 

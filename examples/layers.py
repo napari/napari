@@ -5,6 +5,7 @@ using the layers swap method and remove one
 
 from skimage import data
 from skimage.color import rgb2gray
+import numpy as np
 import napari
 
 
@@ -14,9 +15,5 @@ with napari.gui_qt():
     viewer.add_image(data.camera(), name='photographer')
     viewer.add_image(data.coins(), name='coins')
     viewer.add_image(data.moon(), name='moon')
-
-    # remove the coins layer
-    viewer.layers.remove('coins')
-
-    # swap the order of astronaut and moon
-    viewer.layers['astronaut', 'moon'] = viewer.layers['moon', 'astronaut']
+    viewer.add_image(np.random.random((512, 512)), name='random')
+    viewer.add_image(data.binary_blobs(length=512, volume_fraction=0.2, n_dim=2), name='blobs')
