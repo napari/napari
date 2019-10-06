@@ -1195,4 +1195,7 @@ class ViewerModel(KeymapMixin):
             Size of the grid that is being used.
         """
         scene_size, corner = self._scene_shape()
-        layer.translate_grid = np.multiply(scene_size[-2:], position)
+        translate_2d = np.multiply(scene_size[-2:], position)
+        translate = [0] * layer.ndim
+        translate[-2:] = translate_2d
+        layer.translate_grid = translate
