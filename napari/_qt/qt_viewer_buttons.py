@@ -1,5 +1,6 @@
 from qtpy.QtWidgets import QHBoxLayout, QPushButton, QFrame, QCheckBox
 from qtpy.QtCore import Qt
+import numpy as np
 
 
 class QtLayerButtons(QFrame):
@@ -31,6 +32,7 @@ class QtViewerButtons(QFrame):
         self.ndisplayButton = QtNDisplayButton(self.viewer)
         self.rollDimsButton = QtRollDimsButton(self.viewer)
         self.transposeDimsButton = QtTransposeDimsButton(self.viewer)
+        self.gridViewButton = QtGridViewButton(self.viewer)
         self.resetViewButton = QtResetViewButton(self.viewer)
 
         layout = QHBoxLayout()
@@ -39,6 +41,7 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.ndisplayButton)
         layout.addWidget(self.rollDimsButton)
         layout.addWidget(self.transposeDimsButton)
+        layout.addWidget(self.gridViewButton)
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
@@ -134,6 +137,27 @@ class QtConsoleButton(QPushButton):
         self.viewer = viewer
         self.setToolTip('Open IPython terminal')
         self.setProperty('expanded', False)
+
+
+class QtGridViewButton(QCheckBox):
+    def __init__(self, viewer):
+        super().__init__()
+
+        self.viewer = viewer
+        self.setToolTip('Toggle grid view view')
+        self.viewer.events.grid.connect(self._on_grid_change)
+        self.stateChanged.connect(lambda state=self: self.change_grid(state))
+        self._on_grid_change(None)
+
+    def change_grid(self, state):
+        if state == Qt.Checked:
+            self.viewer.stack_view()
+        else:
+            self.viewer.grid_view()
+
+    def _on_grid_change(self, event):
+        with self.viewer.events.grid.blocker():
+            self.setChecked(np.all(self.viewer.grid_size == (1, 1)))
 
 
 class QtNDisplayButton(QCheckBox):

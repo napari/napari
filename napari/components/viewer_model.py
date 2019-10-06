@@ -54,6 +54,7 @@ class ViewerModel(KeymapMixin):
             reset_view=Event,
             active_layer=Event,
             palette=Event,
+            grid=Event,
         )
 
         if order is None:
@@ -76,6 +77,7 @@ class ViewerModel(KeymapMixin):
         self._interactive = True
         self._active_layer = None
         self._grid_size = (1, 1)
+        self.grid_stride = 1
 
         self._palette = None
         self.theme = 'dark'
@@ -89,6 +91,9 @@ class ViewerModel(KeymapMixin):
         self.layers.events.added.connect(self._update_active_layer)
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
+        self.layers.events.added.connect(lambda e: self._update_grid())
+        self.layers.events.removed.connect(lambda e: self._update_grid())
+        self.layers.events.reordered.connect(lambda e: self._update_grid())
 
     @property
     def palette(self):
@@ -137,6 +142,7 @@ class ViewerModel(KeymapMixin):
             return
         self._grid_size = grid_size
         self.reset_view()
+        self.events.grid()
 
     @property
     def status(self):
@@ -258,10 +264,9 @@ class ViewerModel(KeymapMixin):
         """
 
         scene_size, corner = self._scene_shape()
-        if self.dims.ndisplay == 3:
-            grid_size = [1] + list(self.grid_size)
-        else:
-            grid_size = list(self.grid_size)
+        grid_size = list(self.grid_size)
+        if len(scene_size) > len(grid_size):
+            grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
         centroid = np.add(corner, np.divide(size, 2))
 
@@ -1152,20 +1157,32 @@ class ViewerModel(KeymapMixin):
         elif n_column is None:
             n_column = np.ceil(n_grid_squares / n_row).astype(int)
 
+        n_row = max(1, n_row)
+        n_column = max(1, n_column)
+        self.grid_size = (n_row, n_column)
+        self.grid_stride = stride
         for i, layer in enumerate(self.layers):
             adj_i = i // stride
             adj_i = adj_i % (n_row * n_column)
-            i_row = adj_i // n_row
+            i_row = adj_i // n_column
             i_column = adj_i % n_column
-            self.subplot(layer, (i_row, i_column), (n_row, n_column))
+            self._subplot(layer, (i_row, i_column))
 
     def stack_view(self):
         """Arrange the current layers is a stack.
         """
-        for i, layer in enumerate(self.layers):
-            self.subplot(layer, (0, 0), (1, 1))
+        self.grid_view(n_row=1, n_column=1, stride=1)
 
-    def subplot(self, layer, position, size):
+    def _update_grid(self):
+        """Update grid with current grid values.
+        """
+        self.grid_view(
+            n_row=self.grid_size[0],
+            n_column=self.grid_size[1],
+            stride=self.grid_stride,
+        )
+
+    def _subplot(self, layer, position):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -1178,5 +1195,4 @@ class ViewerModel(KeymapMixin):
             Size of the grid that is being used.
         """
         scene_size, corner = self._scene_shape()
-        self.grid_size = size
         layer.translate_grid = np.multiply(scene_size[-2:], position)
