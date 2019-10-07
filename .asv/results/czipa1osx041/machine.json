@@ -1,0 +1,9 @@
+{
+    "arch": "x86_64",
+    "cpu": "Intel(R) Core(TM) i7-7567U CPU @ 3.50GHz",
+    "machine": "czipa1osx041",
+    "num_cpu": "4",
+    "os": "Darwin 18.5.0",
+    "ram": "17179869184",
+    "version": 1
+}

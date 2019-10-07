@@ -1,0 +1,493 @@
+{
+    "benchmark_image_layer.Image2DSuite.mem_data": {
+        "code": "class Image2DSuite:\n    def mem_data(self, n):\n        \"\"\"Memory used by raw image data.\"\"\"\n        return self.data\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.layer = Image(self.data)",
+        "name": "benchmark_image_layer.Image2DSuite.mem_data",
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "timeout": 60.0,
+        "type": "memory",
+        "unit": "bytes",
+        "version": "eebb0aa1b304a68720db17e771d91b38cd398e1a534f31850464d0ad88546573"
+    },
+    "benchmark_image_layer.Image2DSuite.mem_layer": {
+        "code": "class Image2DSuite:\n    def mem_layer(self, n):\n        \"\"\"Memory used by image layer.\"\"\"\n        return Image(self.data)\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.layer = Image(self.data)",
+        "name": "benchmark_image_layer.Image2DSuite.mem_layer",
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "timeout": 60.0,
+        "type": "memory",
+        "unit": "bytes",
+        "version": "02aedd128291b5b512c4827e54b0129a25bcb22ff026d5376ec079cf68316cb6"
+    },
+    "benchmark_image_layer.Image2DSuite.time_create_layer": {
+        "code": "class Image2DSuite:\n    def time_create_layer(self, n):\n        \"\"\"Time to create an image layer.\"\"\"\n        layer = Image(self.data)\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image2DSuite.time_create_layer",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "089b53ff376b5f5eb7d036b9ba30c2da503054491c0660e66c3ae111993694fa",
+        "warmup_time": -1
+    },
+    "benchmark_image_layer.Image2DSuite.time_get_value": {
+        "code": "class Image2DSuite:\n    def time_get_value(self, n):\n        \"\"\"Time to get current value.\"\"\"\n        self.layer.get_value()\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image2DSuite.time_get_value",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "a661bc727f730ce59c3786d1b2eae57ff638a6ccd2d188d7dc16fcdb7d315e09",
+        "warmup_time": -1
+    },
+    "benchmark_image_layer.Image2DSuite.time_set_view_slice": {
+        "code": "class Image2DSuite:\n    def time_set_view_slice(self, n):\n        \"\"\"Time to set view slice.\"\"\"\n        self.layer._set_view_slice()\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image2DSuite.time_set_view_slice",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "2548d14746d64cdbf66dbceaa7df8a6f79c883a36bdc001b4f639fd6ad862347",
+        "warmup_time": -1
+    },
+    "benchmark_image_layer.Image2DSuite.time_update_thumbnail": {
+        "code": "class Image2DSuite:\n    def time_update_thumbnail(self, n):\n        \"\"\"Time to update thumbnail.\"\"\"\n        self.layer._update_thumbnail()\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image2DSuite.time_update_thumbnail",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "38d64a3a119fcd99971a3c93d98850b42e14f4e441e6e7ee5a10071a9c0661c9",
+        "warmup_time": -1
+    },
+    "benchmark_image_layer.Image3DSuite.mem_data": {
+        "code": "class Image3DSuite:\n    def mem_data(self, n):\n        \"\"\"Memory used by raw image data.\"\"\"\n        return self.data\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n, n))\n        self.layer = Image(self.data)",
+        "name": "benchmark_image_layer.Image3DSuite.mem_data",
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024"
+            ]
+        ],
+        "timeout": 60.0,
+        "type": "memory",
+        "unit": "bytes",
+        "version": "52da7af1e643fc54c7f291464001638630d64d8feb20fca952533623b0f7b6e6"
+    },
+    "benchmark_image_layer.Image3DSuite.mem_layer": {
+        "code": "class Image3DSuite:\n    def mem_layer(self, n):\n        \"\"\"Memory used by image layer.\"\"\"\n        return Image(self.data)\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n, n))\n        self.layer = Image(self.data)",
+        "name": "benchmark_image_layer.Image3DSuite.mem_layer",
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024"
+            ]
+        ],
+        "timeout": 60.0,
+        "type": "memory",
+        "unit": "bytes",
+        "version": "6eb0cb3a81c73d7f8c16cbd3e9934d10d031577e68699acdc1558b9b820a012e"
+    },
+    "benchmark_image_layer.Image3DSuite.time_create_layer": {
+        "code": "class Image3DSuite:\n    def time_create_layer(self, n):\n        \"\"\"Time to create an image layer.\"\"\"\n        layer = Image(self.data)\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image3DSuite.time_create_layer",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "d74f03b405c26687e76c61738e00043e730b3cdbce2663abfe02fcdf3e620b1f",
+        "warmup_time": -1
+    },
+    "benchmark_image_layer.Image3DSuite.time_get_value": {
+        "code": "class Image3DSuite:\n    def time_get_value(self, n):\n        \"\"\"Time to get current value.\"\"\"\n        self.layer.get_value()\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image3DSuite.time_get_value",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "50e02ced73ef7133386dda398516056891602d6eef25ef8e7589a59d1ce2e0d4",
+        "warmup_time": -1
+    },
+    "benchmark_image_layer.Image3DSuite.time_set_view_slice": {
+        "code": "class Image3DSuite:\n    def time_set_view_slice(self, n):\n        \"\"\"Time to set view slice.\"\"\"\n        self.layer._set_view_slice()\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image3DSuite.time_set_view_slice",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "a8a1532ddb0551b2792222b815bc54ed89cf61f6fa55d332750cf35f13dd8b3f",
+        "warmup_time": -1
+    },
+    "benchmark_image_layer.Image3DSuite.time_update_thumbnail": {
+        "code": "class Image3DSuite:\n    def time_update_thumbnail(self, n):\n        \"\"\"Time to update thumbnail.\"\"\"\n        self.layer._update_thumbnail()\n\n    def setup(self, n):\n        np.random.seed(0)\n        self.data = np.random.random((n, n, n))\n        self.layer = Image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_image_layer.Image3DSuite.time_update_thumbnail",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "8e4460590bfc514ba13955846837e78f031619d931cb138b5eedac38f1d53a48",
+        "warmup_time": -1
+    },
+    "benchmark_qt_viewer.QtViewerSuite.time_create_viewer": {
+        "code": "class QtViewerSuite:\n    def time_create_viewer(self):\n        \"\"\"Time to create the viewer.\"\"\"\n        self.viewer = napari.Viewer()\n\n    def setup(self):\n        app = QApplication.instance() or QApplication([])\n        self.viewer = None",
+        "min_run_count": 2,
+        "name": "benchmark_qt_viewer.QtViewerSuite.time_create_viewer",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "2e9be7eb604741dc5f71e96b50b97d1e28609afef962c928dae2c84a31bbabcb",
+        "warmup_time": -1
+    },
+    "benchmark_qt_viewer_image.QtViewerAddImageSuite.time_add_image": {
+        "code": "class QtViewerAddImageSuite:\n    def time_add_image(self, n):\n        \"\"\"Time to view an image.\"\"\"\n        self.viewer.add_image(self.data)\n\n    def setup(self, n):\n        app = QApplication.instance() or QApplication([])\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.viewer = napari.Viewer()",
+        "min_run_count": 2,
+        "name": "benchmark_qt_viewer_image.QtViewerAddImageSuite.time_add_image",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "1c8ce877c7f6165170a4063e75593118319dc95362de7254e1bd1e18a94cd76a",
+        "warmup_time": -1
+    },
+    "benchmark_qt_viewer_image.QtViewerEditImageSuite.time_get_value": {
+        "code": "class QtViewerEditImageSuite:\n    def time_get_value(self, n):\n        \"\"\"Time to get current value.\"\"\"\n        self.viewer.layers[0].get_value()\n\n    def setup(self, n):\n        app = QApplication.instance() or QApplication([])\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.viewer = napari.view_image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_qt_viewer_image.QtViewerEditImageSuite.time_get_value",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "6837ced7d28c8011145ec8612cdadfa369575fcba9ffa44c0d306511e4bfeac5",
+        "warmup_time": -1
+    },
+    "benchmark_qt_viewer_image.QtViewerEditImageSuite.time_set_view_slice": {
+        "code": "class QtViewerEditImageSuite:\n    def time_set_view_slice(self, n):\n        \"\"\"Time to set view slice.\"\"\"\n        self.viewer.layers[0]._set_view_slice()\n\n    def setup(self, n):\n        app = QApplication.instance() or QApplication([])\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.viewer = napari.view_image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_qt_viewer_image.QtViewerEditImageSuite.time_set_view_slice",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "388dc1446ba37d9b2ca35038206b41931a89f4c4eaaba30a70a2307e99a60f11",
+        "warmup_time": -1
+    },
+    "benchmark_qt_viewer_image.QtViewerEditImageSuite.time_update_thumbnail": {
+        "code": "class QtViewerEditImageSuite:\n    def time_update_thumbnail(self, n):\n        \"\"\"Time to update thumbnail.\"\"\"\n        self.viewer.layers[0]._update_thumbnail()\n\n    def setup(self, n):\n        app = QApplication.instance() or QApplication([])\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.viewer = napari.view_image(self.data)",
+        "min_run_count": 2,
+        "name": "benchmark_qt_viewer_image.QtViewerEditImageSuite.time_update_thumbnail",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "c42d297c01ee16e3b2da4ba89d9c9cce25a12e99c1d19acd02e562bf6807d749",
+        "warmup_time": -1
+    },
+    "benchmark_qt_viewer_image.QtViewerViewImageSuite.time_view_image": {
+        "code": "class QtViewerViewImageSuite:\n    def time_view_image(self, n):\n        \"\"\"Time to view an image.\"\"\"\n        self.viewer = napari.view_image(self.data)\n\n    def setup(self, n):\n        app = QApplication.instance() or QApplication([])\n        np.random.seed(0)\n        self.data = np.random.random((n, n))\n        self.viewer = None",
+        "min_run_count": 2,
+        "name": "benchmark_qt_viewer_image.QtViewerViewImageSuite.time_view_image",
+        "number": 0,
+        "param_names": [
+            "param1"
+        ],
+        "params": [
+            [
+                "16",
+                "32",
+                "64",
+                "128",
+                "256",
+                "512",
+                "1024",
+                "2048",
+                "4096"
+            ]
+        ],
+        "processes": 2,
+        "repeat": 0,
+        "sample_time": 0.01,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds",
+        "version": "cf6924310ad6d33174ccfcbb50deeaf612625b56642463aee5eed68d995d31c2",
+        "warmup_time": -1
+    },
+    "version": 2
+}
