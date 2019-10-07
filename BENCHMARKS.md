@@ -131,3 +131,26 @@ BENCHMARKS NOT SIGNIFICANTLY CHANGED.
 ```
 In this case, the differences between HEAD and master are not significant
 enough for airspeed velocity to report.
+
+## profiling
+The airspeed velocity tool also supports code profiling using [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile). For detailed instructions on how to use the profiling functionality see the
+[asv profiling documentation](https://asv.readthedocs.io/en/stable/using.html#running-a-benchmark-in-the-profiler).
+
+To profile the `time_create_viewer` benchmark in napari you can run
+
+```
+asv profile benchmark_qt_viewer.QtViewerSuite.time_create_viewer -g snakeviz
+```
+
+or
+
+```
+asv profile "benchmark_image_layer.Image2DSuite.time_create_layer(.*)" -g snakeviz
+```
+to profile a parametrized benchmark.
+
+Note here that we have sent the output of the profiling to [snakeviz](http://jiffyclub.github.io/snakeviz/)
+which you can pip install with
+```
+pip install snakeviz
+```
