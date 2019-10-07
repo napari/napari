@@ -43,23 +43,29 @@ Therefore it is useful to move everything that prepares the benchmark scenario
 into the ``setup`` method. This function is called before calling a ``time_``
 method and its execution time is not factored into the benchmarks.
 
-Take for example the ``TransformSuite`` benchmark:
+Take for example the ``ViewImageSuite`` benchmark:
 
 ```python
 import numpy as np
-from napari import transform
+import napari
+from qtpy.QtWidgets import QApplication
 
-class TransformSuite:
-    """Benchmark for transform routines in napari."""
+
+class ViewImageSuite:
+    """Benchmarks for viewing images in the viewer."""
 
     def setup(self):
-        self.image = np.zeros((2000, 2000))
-        idx = np.arange(500, 1500)
-        self.image[idx[::-1], idx] = 255
-        self.image[idx, idx] = 255
+        app = QApplication.instance() or QApplication([])
+        np.random.seed(0)
+        self.data = np.random.random((512, 512))
+        self.viewer = None
 
-    def time_hough_line(self):
-        result1, result2, result3 = transform.hough_line(self.image)
+    def teardown(self):
+        self.viewer.window.close()
+
+    def time_view_image(self):
+        """Time to view an image."""
+        self.viewer = napari.view_image(self.data)
 ```
 
 Here, the creation of the image is completed in the ``setup`` method, and not
@@ -67,7 +73,7 @@ included in the reported time of the benchmark.
 
 It is also possible to benchmark features such as peak memory usage. To learn
 more about the features of `asv`, please refer to the official
-[airpseed velocity documentation](http://asv.readthedocs.io/en/latest/writing_benchmarks.html).
+[airspeed velocity documentation](http://asv.readthedocs.io/en/latest/writing_benchmarks.html).
 
 ## Testing the benchmarks locally
 

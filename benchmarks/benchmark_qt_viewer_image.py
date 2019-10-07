@@ -4,7 +4,6 @@
 # https://github.com/napari/napari/blob/master/BENCHMARKS.md
 import numpy as np
 import napari
-from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QApplication
 
 
