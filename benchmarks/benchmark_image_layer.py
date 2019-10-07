@@ -6,14 +6,71 @@ import numpy as np
 from napari.layers import Image
 
 
-class ImageSuite:
-    """Benchmarks for the Image layer."""
+class Image2DSuite:
+    """Benchmarks for the Image layer with 2D data."""
 
-    def setup(self):
-        shape = (10, 10)
+    params = [2 ** i for i in range(4, 13)]
+
+    def setup(self, n):
         np.random.seed(0)
-        self.data = np.random.random(shape)
+        self.data = np.random.random((n, n))
+        self.layer = Image(self.data)
 
-    def time_create_layer(self):
+    def time_create_layer(self, n):
         """Time to create an image layer."""
         layer = Image(self.data)
+
+    def time_set_view_slice(self, n):
+        """Time to set view slice."""
+        self.layer._set_view_slice()
+
+    def time_update_thumbnail(self, n):
+        """Time to update thumbnail."""
+        self.layer._update_thumbnail()
+
+    def time_get_value(self, n):
+        """Time to get current value."""
+        self.layer.get_value()
+
+    def mem_layer(self, n):
+        """Memory used by image layer."""
+        return Image(self.data)
+
+    def mem_data(self, n):
+        """Memory used by raw image data."""
+        return self.data
+
+
+class Image3DSuite:
+    """Benchmarks for the Image layer with 3D data."""
+
+    params = [2 ** i for i in range(4, 11)]
+
+    def setup(self, n):
+        np.random.seed(0)
+        self.data = np.random.random((n, n, n))
+        self.layer = Image(self.data)
+
+    def time_create_layer(self, n):
+        """Time to create an image layer."""
+        layer = Image(self.data)
+
+    def time_set_view_slice(self, n):
+        """Time to set view slice."""
+        self.layer._set_view_slice()
+
+    def time_update_thumbnail(self, n):
+        """Time to update thumbnail."""
+        self.layer._update_thumbnail()
+
+    def time_get_value(self, n):
+        """Time to get current value."""
+        self.layer.get_value()
+
+    def mem_layer(self, n):
+        """Memory used by image layer."""
+        return Image(self.data)
+
+    def mem_data(self, n):
+        """Memory used by raw image data."""
+        return self.data
