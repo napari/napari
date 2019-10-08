@@ -108,4 +108,7 @@ venv.bak/
 .idea
 
 # OS stuff
-.DS_store 
+.DS_store
+
+# Benchmarking results
+.asv/
