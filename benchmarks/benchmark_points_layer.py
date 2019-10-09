@@ -3,22 +3,22 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/BENCHMARKS.md
 import numpy as np
-from napari.layers import Image
+from napari.layers import Points
 
 
-class Image2DSuite:
-    """Benchmarks for the Image layer with 2D data."""
+class Points2DSuite:
+    """Benchmarks for the Points layer with 2D data"""
 
-    params = [2 ** i for i in range(4, 13)]
+    params = [2 ** i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
-        self.data = np.random.random((n, n))
-        self.layer = Image(self.data)
+        self.data = np.random.random((n, 2))
+        self.layer = Points(self.data)
 
     def time_create_layer(self, n):
-        """Time to create an image layer."""
-        layer = Image(self.data)
+        """Time to create layer."""
+        layer = Points(self.data)
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -41,19 +41,19 @@ class Image2DSuite:
         return self.data
 
 
-class Image3DSuite:
-    """Benchmarks for the Image layer with 3D data."""
+class Points3DSuite:
+    """Benchmarks for the Points layer with 3D data."""
 
-    params = [2 ** i for i in range(4, 11)]
+    params = [2 ** i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
-        self.data = np.random.random((n, n, n))
-        self.layer = Image(self.data)
+        self.data = np.random.random((n, 3))
+        self.layer = Points(self.data)
 
     def time_create_layer(self, n):
-        """Time to create an image layer."""
-        layer = Image(self.data)
+        """Time to create layer."""
+        layer = Points(self.data)
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -69,7 +69,7 @@ class Image3DSuite:
 
     def mem_layer(self, n):
         """Memory used by layer."""
-        return Image(self.data)
+        return self.layer
 
     def mem_data(self, n):
         """Memory used by raw data."""
