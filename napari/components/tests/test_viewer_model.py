@@ -210,6 +210,34 @@ def test_swappable_dims():
     assert np.all(viewer.layers['Labels']._data_raw == labels_data[0, :, 0, :])
 
 
+def test_grid():
+    "Test grid_view"
+    viewer = ViewerModel()
+
+    np.random.seed(0)
+    # Add image
+    for i in range(6):
+        data = np.random.random((10, 15))
+        viewer.add_image(data)
+    assert np.all(viewer.grid_size == (1, 1))
+    assert viewer.grid_stride == 1
+
+    # enter grid view
+    viewer.grid_view()
+    assert np.all(viewer.grid_size == (3, 3))
+    assert viewer.grid_stride == 1
+
+    # retun to stack view
+    viewer.stack_view()
+    assert np.all(viewer.grid_size == (1, 1))
+    assert viewer.grid_stride == 1
+
+    # reenter grid view
+    viewer.grid_view(n_column=2, n_row=3, stride=-2)
+    assert np.all(viewer.grid_size == (3, 2))
+    assert viewer.grid_stride == -2
+
+
 def test_svg():
     "Test generating svg"
     viewer = ViewerModel()

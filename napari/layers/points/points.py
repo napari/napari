@@ -310,6 +310,7 @@ class Points(Layer):
                 symbol = Symbol(symbol)
         self._symbol = symbol
         self.events.symbol()
+        self.events.highlight()
 
     @property
     def sizes(self) -> Union[int, float, np.ndarray, list]:
@@ -355,6 +356,7 @@ class Points(Layer):
         self._edge_width = edge_width
         self.status = format_float(self.edge_width)
         self.events.edge_width()
+        self.events.highlight()
 
     @property
     def edge_color(self) -> str:
@@ -369,6 +371,7 @@ class Points(Layer):
             for i in self.selected_data:
                 self.edge_colors[i] = edge_color
         self.events.edge_color()
+        self.events.highlight()
 
     @property
     def face_color(self) -> str:
@@ -383,6 +386,7 @@ class Points(Layer):
             for i in self.selected_data:
                 self.face_colors[i] = face_color
         self.events.face_color()
+        self.events.highlight()
 
     @property
     def selected_data(self):
@@ -942,10 +946,10 @@ def points_to_squares(points, sizes):
     """
     rect = np.concatenate(
         [
-            points + np.array([sizes / 2, sizes / 2]).T,
-            points + np.array([sizes / 2, -sizes / 2]).T,
-            points + np.array([-sizes / 2, sizes / 2]).T,
-            points + np.array([-sizes / 2, -sizes / 2]).T,
+            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
         ],
         axis=0,
     )

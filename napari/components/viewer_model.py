@@ -54,6 +54,7 @@ class ViewerModel(KeymapMixin):
             reset_view=Event,
             active_layer=Event,
             palette=Event,
+            grid=Event,
         )
 
         if order is None:
@@ -75,6 +76,8 @@ class ViewerModel(KeymapMixin):
         self._cursor_size = None
         self._interactive = True
         self._active_layer = None
+        self._grid_size = (1, 1)
+        self.grid_stride = 1
 
         self._palette = None
         self.theme = 'dark'
@@ -88,6 +91,9 @@ class ViewerModel(KeymapMixin):
         self.layers.events.added.connect(self._update_active_layer)
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
+        self.layers.events.added.connect(lambda e: self._update_grid())
+        self.layers.events.removed.connect(lambda e: self._update_grid())
+        self.layers.events.reordered.connect(lambda e: self._update_grid())
 
     @property
     def palette(self):
@@ -123,6 +129,20 @@ class ViewerModel(KeymapMixin):
                 f"Theme '{theme}' not found; "
                 f"options are {list(self.themes)}."
             )
+
+    @property
+    def grid_size(self):
+        """tuple: Size of grid
+        """
+        return self._grid_size
+
+    @grid_size.setter
+    def grid_size(self, grid_size):
+        if np.all(self.grid_size == grid_size):
+            return
+        self._grid_size = grid_size
+        self.reset_view()
+        self.events.grid()
 
     @property
     def status(self):
@@ -216,17 +236,39 @@ class ViewerModel(KeymapMixin):
         self._active_layer = active_layer
         self.events.active_layer(item=self._active_layer)
 
+    def _scene_shape(self):
+        """Get shape of currently viewed dimensions.
+
+        Returns
+        ----------
+        centroid : list
+            List of center coordinates of scene, length 2 or 3 if displayed
+            view is 2D or 3D.
+        size : list
+            List of size of scene, length 2 or 3 if displayed view is 2D or 3D.
+        corner : list
+            List of coordinates of top left corner of scene, length 2 or 3 if
+            displayed view is 2D or 3D.
+        """
+        # Scale the camera to the contents in the scene
+        min_shape, max_shape = self._calc_bbox()
+        size = np.subtract(max_shape, min_shape)
+        size = [size[i] for i in self.dims.displayed]
+        corner = [min_shape[i] for i in self.dims.displayed]
+
+        return size, corner
+
     def reset_view(self):
         """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
-        # Scale the camera to the contents in the scene
-        min_shape, max_shape = self._calc_bbox()
-        centroid = np.add(min_shape, max_shape) / 2
-        centroid = [centroid[i] for i in self.dims.displayed]
-        size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in self.dims.displayed]
-        corner = [min_shape[i] for i in self.dims.displayed]
+
+        scene_size, corner = self._scene_shape()
+        grid_size = list(self.grid_size)
+        if len(scene_size) > len(grid_size):
+            grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
+        size = np.multiply(scene_size, grid_size)
+        centroid = np.add(corner, np.divide(size, 2))
 
         if self.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the rect
@@ -1090,3 +1132,79 @@ class ViewerModel(KeymapMixin):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor_size = event.cursor_size
+
+    def grid_view(self, n_row=None, n_column=None, stride=1):
+        """Arrange the current layers is a 2D grid.
+
+        Default behaviour is to make a square 2D grid.
+
+        Parameters
+        ----------
+        n_row : int, optional
+            Number of rows in the grid.
+        n_column : int, optional
+            Number of column in the grid.
+        stride : int, optional
+            Number of layers to place in each grid square before moving on to
+            the next square. The default ordering is to place the most visible
+            layer in the top left corner of the grid. A negative stride will
+            cause the order in which the layers are placed in the grid to be
+            reversed.
+        """
+        n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
+        if n_row is None and n_column is None:
+            n_row = np.ceil(np.sqrt(n_grid_squares)).astype(int)
+            n_column = n_row
+        elif n_row is None:
+            n_row = np.ceil(n_grid_squares / n_column).astype(int)
+        elif n_column is None:
+            n_column = np.ceil(n_grid_squares / n_row).astype(int)
+
+        n_row = max(1, n_row)
+        n_column = max(1, n_column)
+        self.grid_size = (n_row, n_column)
+        self.grid_stride = stride
+        direction = stride > 0
+        abs_stride = abs(stride)
+        for i, layer in enumerate(self.layers):
+            if stride > 0:
+                adj_i = len(self.layers) - i - 1
+            else:
+                adj_i = i
+            adj_i = adj_i // abs(stride)
+            adj_i = adj_i % (n_row * n_column)
+            i_row = adj_i // n_column
+            i_column = adj_i % n_column
+            self._subplot(layer, (i_row, i_column))
+
+    def stack_view(self):
+        """Arrange the current layers is a stack.
+        """
+        self.grid_view(n_row=1, n_column=1, stride=1)
+
+    def _update_grid(self):
+        """Update grid with current grid values.
+        """
+        self.grid_view(
+            n_row=self.grid_size[0],
+            n_column=self.grid_size[1],
+            stride=self.grid_stride,
+        )
+
+    def _subplot(self, layer, position):
+        """Shift a layer to a specified position in a 2D grid.
+
+        Parameters
+        ----------
+        layer : napar.layers.Layer
+            Layer that is to be moved.
+        position : 2-tuple of int
+            New position of layer in grid.
+        size : 2-tuple of int
+            Size of the grid that is being used.
+        """
+        scene_size, corner = self._scene_shape()
+        translate_2d = np.multiply(scene_size[-2:], position)
+        translate = [0] * layer.ndim
+        translate[-2:] = translate_2d
+        layer.translate_grid = translate
