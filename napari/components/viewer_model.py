@@ -1146,7 +1146,10 @@ class ViewerModel(KeymapMixin):
             Number of column in the grid.
         stride : int, optional
             Number of layers to place in each grid square before moving on to
-            the next square.
+            the next square. The default ordering is to place the most visible
+            layer in the top left corner of the grid. A negative stride will
+            cause the order in which the layers are placed in the grid to be
+            reversed.
         """
         n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
         if n_row is None and n_column is None:
