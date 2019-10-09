@@ -15,6 +15,7 @@ def test_random_labels():
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer._data_view.shape == shape[-2:]
+    assert layer.editable == True
 
 
 def test_all_zeros_labels():
@@ -38,6 +39,12 @@ def test_3D_labels():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer._data_view.shape == shape[-2:]
+    assert layer.editable == True
+
+    layer.dims.ndisplay = 3
+    assert layer.dims.ndisplay == 3
+    assert layer.editable == False
+    assert layer.mode == 'pan_zoom'
 
 
 def test_changing_labels():
@@ -96,6 +103,12 @@ def test_changing_modes():
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
     assert layer.interactive == True
+
+    layer.mode = 'paint'
+    assert layer.mode == 'paint'
+    layer.editable = False
+    assert layer.mode == 'pan_zoom'
+    assert layer.editable == False
 
 
 def test_name():
@@ -284,12 +297,17 @@ def test_paint():
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
-    layer.brush_size = 10
+    layer.brush_size = 9
     layer.paint([0, 0], 2)
     assert np.unique(layer.data[:5, :5]) == 2
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
-    layer.brush_size = 20
+    layer.brush_size = 10
+    layer.paint([0, 0], 2)
+    assert np.unique(layer.data[:6, :6]) == 2
+    assert np.unique(layer.data[6:10, 6:10]) == 1
+
+    layer.brush_size = 19
     layer.paint([0, 0], 2)
     assert np.unique(layer.data[:5, :5]) == 2
     assert np.unique(layer.data[5:10, 5:10]) == 2

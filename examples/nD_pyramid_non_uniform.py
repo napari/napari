@@ -22,8 +22,5 @@ pyramid = [
 print('pyramid level shapes: ', [p.shape for p in pyramid])
 
 with napari.gui_qt():
-    # create the viewer
-    viewer = napari.Viewer()
-
     # add image pyramid
-    viewer.add_pyramid(pyramid, clim_range=[0, 255])
+    napari.view_image(pyramid, is_pyramid=True)

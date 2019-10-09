@@ -122,5 +122,5 @@ with napari.gui_qt():
 
     # take screenshot
     screenshot = viewer.screenshot()
-    viewer.add_image(screenshot, multichannel=True, name='screenshot')
+    viewer.add_image(screenshot, rgb=True, name='screenshot')
     # imsave('screenshot.png', screenshot)

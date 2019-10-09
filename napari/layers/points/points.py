@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from ..base import Layer
 from ...util.event import Event
 from ...util.misc import ensure_iterable
+from ...util.status_messages import format_float
 from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
@@ -305,6 +306,7 @@ class Points(Layer):
                 symbol = Symbol(symbol)
         self._symbol = symbol
         self.events.symbol()
+        self.events.highlight()
 
     @property
     def sizes(self) -> Union[int, float, np.ndarray, list]:
@@ -336,6 +338,7 @@ class Points(Layer):
             for i in self.selected_data:
                 self.sizes[i, :] = (self.sizes[i, :] > 0) * size
             self._set_view_slice()
+        self.status = format_float(self.size)
         self.events.size()
 
     @property
@@ -347,7 +350,9 @@ class Points(Layer):
     @edge_width.setter
     def edge_width(self, edge_width: Union[None, float]) -> None:
         self._edge_width = edge_width
+        self.status = format_float(self.edge_width)
         self.events.edge_width()
+        self.events.highlight()
 
     @property
     def edge_color(self) -> str:
@@ -362,6 +367,7 @@ class Points(Layer):
             for i in self.selected_data:
                 self.edge_colors[i] = edge_color
         self.events.edge_color()
+        self.events.highlight()
 
     @property
     def face_color(self) -> str:
@@ -376,6 +382,7 @@ class Points(Layer):
             for i in self.selected_data:
                 self.face_colors[i] = face_color
         self.events.face_color()
+        self.events.highlight()
 
     @property
     def selected_data(self):
@@ -460,6 +467,10 @@ class Points(Layer):
     def mode(self, mode):
         if isinstance(mode, str):
             mode = Mode(mode)
+
+        if not self.editable:
+            mode = Mode.PAN_ZOOM
+
         if mode == self._mode:
             return
         old_mode = self._mode
@@ -487,6 +498,17 @@ class Points(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
+
+    def _set_editable(self, editable=None):
+        """Set editable mode based on layer properties."""
+        if editable is None:
+            if self.dims.ndisplay == 3:
+                self.editable = False
+            else:
+                self.editable = True
+
+        if self.editable == False:
+            self.mode = Mode.PAN_ZOOM
 
     def _slice_data(self, indices):
         """Determines the slice of points given the indices.
@@ -913,10 +935,10 @@ def points_to_squares(points, sizes):
     """
     rect = np.concatenate(
         [
-            points + np.array([sizes / 2, sizes / 2]).T,
-            points + np.array([sizes / 2, -sizes / 2]).T,
-            points + np.array([-sizes / 2, sizes / 2]).T,
-            points + np.array([-sizes / 2, -sizes / 2]).T,
+            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
         ],
         axis=0,
     )

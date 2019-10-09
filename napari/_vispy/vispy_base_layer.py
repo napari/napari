@@ -26,8 +26,6 @@ class VispyBaseLayer(ABC):
         Scale factors for the layer visual in the scenecanvas.
     translate : sequence of float
         Translation values for the layer visual in the scenecanvas.
-    z_index : int
-        Depth of the layer visual relative to other visuals in the scenecanvas.
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
@@ -36,9 +34,6 @@ class VispyBaseLayer(ABC):
     ----------
     _master_transform : vispy.visuals.transforms.STTransform
         Transform positioning the layer visual inside the scenecanvas.
-    _order : int
-        Order in which the visual is drawn in the scenegraph. Lower values
-        are closer to the viewer.
     """
 
     def __init__(self, layer, node):
@@ -84,13 +79,6 @@ class VispyBaseLayer(ABC):
 
     @order.setter
     def order(self, order):
-        # workaround for opacity (see: #22)
-        order = -order
-        if self.layer.dims.ndisplay == 2:
-            self.z_index = order
-        else:
-            self.z_index = 0
-        # end workaround
         self.node.order = order
 
     @property
@@ -110,18 +98,6 @@ class VispyBaseLayer(ABC):
     @translate.setter
     def translate(self, translate):
         self._master_transform.translate = translate
-
-    @property
-    def z_index(self):
-        """int: Depth of the visual in the scenecanvas."""
-        return -self._master_transform.translate[2]
-
-    @z_index.setter
-    def z_index(self, index):
-        tr = self._master_transform
-        tl = tr.translate
-        tl[2] = -index
-        tr.translate = tl
 
     @property
     def scale_factor(self):
@@ -154,7 +130,8 @@ class VispyBaseLayer(ABC):
 
     def _on_translate_change(self):
         self.translate = [
-            self.layer.translate[d] for d in self.layer.dims.displayed[::-1]
+            self.layer.translate[d] + self.layer.translate_grid[d]
+            for d in self.layer.dims.displayed[::-1]
         ]
         self.layer.position = self._transform_position(self._position)
 
@@ -173,10 +150,12 @@ class VispyBaseLayer(ABC):
         """
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
-            position = transform.map(list(position))[
-                : len(self.layer.dims.displayed)
-            ]
-            coords = tuple(position[::-1])
+            # Map and offset position so that pixel center is at 0
+            mapped_position = (
+                transform.map(list(position))[: len(self.layer.dims.displayed)]
+                - 0.5
+            )
+            coords = tuple(mapped_position[::-1])
         else:
             coords = (0,) * len(self.layer.dims.displayed)
         return coords

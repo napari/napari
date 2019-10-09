@@ -10,11 +10,8 @@ import napari
 
 
 with napari.gui_qt():
-    # create the viewer window
-    viewer = napari.Viewer()
-
     # add the image
-    viewer.add_image(rgb2gray(data.astronaut()))
+    viewer = napari.view_image(rgb2gray(data.astronaut()))
     # add the points
     points = np.array([[100, 100], [200, 200], [333, 111]])
     size = np.array([10, 20, 20])

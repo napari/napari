@@ -16,7 +16,34 @@ def test_random_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
-    assert layer.multichannel == False
+    assert layer.rgb == False
+    assert layer.is_pyramid == False
+    assert layer._data_pyramid == None
+    assert layer._data_view.shape == shape[-2:]
+
+
+def test_negative_image():
+    """Test instantiating Image layer with negative data."""
+    shape = (10, 15)
+    np.random.seed(0)
+    # Data between -1.0 and 1.0
+    data = 2 * np.random.random(shape) - 1.0
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.dims.range == [(0, m, 1) for m in shape]
+    assert layer.rgb == False
+    assert layer._data_view.shape == shape[-2:]
+
+    # Data between -10 and 10
+    data = 20 * np.random.random(shape) - 10
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.dims.range == [(0, m, 1) for m in shape]
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -28,7 +55,7 @@ def test_all_zeros_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -41,7 +68,7 @@ def test_integer_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -53,7 +80,7 @@ def test_bool_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -66,7 +93,7 @@ def test_3D_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -79,7 +106,7 @@ def test_3D_image_shape_1():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -92,7 +119,7 @@ def test_4D_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -105,7 +132,7 @@ def test_5D_image_shape_1():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -118,7 +145,7 @@ def test_rgb_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -131,35 +158,58 @@ def test_rgba_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.multichannel == True
+    assert layer.rgb == True
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_negative_rgba_image():
+    """Test instantiating Image layer with negative RGBA data."""
+    shape = (10, 15, 4)
+    np.random.seed(0)
+    # Data between -1.0 and 1.0
+    data = 2 * np.random.random(shape) - 1
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape) - 1
+    assert layer.shape == shape[:-1]
+    assert layer.rgb == True
+    assert layer._data_view.shape == shape[-3:]
+
+    # Data between -10 and 10
+    data = 20 * np.random.random(shape) - 10
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape) - 1
+    assert layer.shape == shape[:-1]
+    assert layer.rgb == True
     assert layer._data_view.shape == shape[-3:]
 
 
 def test_non_rgb_image():
-    """Test forcing Image layer to be 3D and not multichannel."""
+    """Test forcing Image layer to be 3D and not rgb."""
     shape = (10, 15, 3)
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Image(data, multichannel=False)
+    layer = Image(data, rgb=False)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
-def test_non_multichannel_image():
-    """Test forcing Image layer to be 3D and not multichannel."""
-    # If multichannel is set to be True in constructor but the last dim has a
-    # size > 4 then data cannot actually be multichannel
+def test_non_rgb_image():
+    """Test forcing Image layer to be 3D and not rgb."""
+    # If rgb is set to be True in constructor but the last dim has a
+    # size > 4 then data cannot actually be rgb
     shape = (10, 15, 6)
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Image(data, multichannel=True)
+    layer = Image(data, rgb=True)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -176,7 +226,7 @@ def test_changing_image():
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
     assert layer.dims.range == [(0, m, 1) for m in shape_b]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -195,7 +245,7 @@ def test_changing_image_dims():
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
     assert layer.dims.range == [(0, m, 1) for m in shape_b]
-    assert layer.multichannel == False
+    assert layer.rgb == False
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -315,53 +365,42 @@ def test_colormaps():
     assert layer.colormap[1] == cmap
 
 
-def test_clims():
+def test_contrast_limits():
     """Test setting color limits."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.clim[0] >= 0
-    assert layer.clim[1] <= 1
-    assert layer.clim[0] < layer.clim[1]
-    assert layer.clim == layer._clim_range
+    assert layer.contrast_limits[0] >= 0
+    assert layer.contrast_limits[1] <= 1
+    assert layer.contrast_limits[0] < layer.contrast_limits[1]
+    assert layer.contrast_limits == layer._contrast_limits_range
 
-    # Change clim property
-    clim = [0, 2]
-    layer.clim = clim
-    assert layer.clim == clim
-    assert layer._clim_range == clim
+    # Change contrast_limits property
+    contrast_limits = [0, 2]
+    layer.contrast_limits = contrast_limits
+    assert layer.contrast_limits == contrast_limits
+    assert layer._contrast_limits_range == contrast_limits
 
-    # Set clim as keyword argument
-    layer = Image(data, clim=clim)
-    assert layer.clim == clim
-    assert layer._clim_range == clim
+    # Set contrast_limits as keyword argument
+    layer = Image(data, contrast_limits=contrast_limits)
+    assert layer.contrast_limits == contrast_limits
+    assert layer._contrast_limits_range == contrast_limits
 
 
-def test_clim_range():
+def test_contrast_limits_range():
     """Test setting color limits range."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer._clim_range[0] >= 0
-    assert layer._clim_range[1] <= 1
-    assert layer._clim_range[0] < layer._clim_range[1]
+    assert layer._contrast_limits_range[0] >= 0
+    assert layer._contrast_limits_range[1] <= 1
+    assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
 
-    # If all data is the same value the clim_range and clim defaults to [0, 1]
+    # If all data is the same value the contrast_limits_range and contrast_limits defaults to [0, 1]
     data = np.zeros((10, 15))
     layer = Image(data)
-    assert layer._clim_range == [0, 1]
-    assert layer.clim == [0.0, 1.0]
-
-    # Set clim_range as keyword argument
-    data = np.random.random((10, 15))
-    layer = Image(data, clim_range=[0, 2])
-    assert layer._clim_range == [0, 2]
-
-    # Set clim and clim_range as keyword arguments
-    data = np.random.random((10, 15))
-    layer = Image(data, clim=[0.3, 0.6], clim_range=[0, 2])
-    assert layer.clim == [0.3, 0.6]
-    assert layer._clim_range == [0, 2]
+    assert layer._contrast_limits_range == [0, 1]
+    assert layer.contrast_limits == [0.0, 1.0]
 
 
 def test_metadata():

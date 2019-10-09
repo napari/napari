@@ -5,6 +5,7 @@ import re
 import numpy as np
 import inspect
 import itertools
+from scipy import ndimage as ndi
 
 
 def str_to_rgb(arg):
@@ -26,24 +27,14 @@ def ensure_iterable(arg, color=False):
         return itertools.repeat(arg)
 
 
-def has_clims(arg):
-    """Check if a layer has clims.
-    """
-    if hasattr(arg, '_qt_controls'):
-        if hasattr(arg._qt_controls, 'climSlider'):
-            return True
-        else:
-            return False
-    else:
-        return False
-
-
 def is_iterable(arg, color=False):
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable.
     """
-    if type(arg) is str:
+    if arg is None:
+        return False
+    elif type(arg) is str:
         return False
     elif np.isscalar(arg):
         return False
@@ -56,8 +47,8 @@ def is_iterable(arg, color=False):
         return True
 
 
-def is_multichannel(shape):
-    """If last dim is 3 or 4 assume image is multichannel.
+def is_rgb(shape):
+    """If last dim is 3 or 4 assume image is rgb.
     """
     ndim = len(shape)
     last_dim = shape[-1]
@@ -66,6 +57,167 @@ def is_multichannel(shape):
         return True
     else:
         return False
+
+
+def is_pyramid(data):
+    """If data is a list of arrays of decreasing size.
+    """
+    if isinstance(data, list):
+        size = [np.prod(d.shape) for d in data]
+        return np.all(size[:-1] > size[1:])
+    else:
+        return False
+
+
+def trim_pyramid(pyramid):
+    """Trim very small arrays of top of pyramid.
+
+    Parameters
+    ----------
+    pyramid : list of array
+        Pyramid data
+
+    Returns
+    -------
+    trimmed : list of array
+        Trimmed pyramid data
+    """
+    keep = [np.any(np.greater_equal(p.shape, 2 ** 6 - 1)) for p in pyramid]
+    if np.sum(keep) >= 2:
+        return [p for k, p in zip(keep, pyramid) if k]
+    else:
+        return pyramid[:2]
+
+
+def should_be_pyramid(shape):
+    """Check if any data axes needs to be pyramidified
+
+    Parameters
+    ----------
+    shape : tuple of int
+        Shape of data to be tested
+
+    Returns
+    -------
+    pyr_axes : tuple of bool
+        True wherever an axis exceeds the pyramid threshold.
+    """
+    return np.log2(shape) >= 13
+
+
+def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
+    """Check if data is or needs to be a pyramid and make one if needed.
+
+    Parameters
+    ----------
+    data : array or list
+        Data to be checked if pyramid or if needs to be turned into a pyramid.
+    pyramid : bool, optional
+        Value that can force data to be considered as a pyramid or not,
+        otherwise computed.
+    rgb : bool, optional
+        Value that can force data to be considered as a rgb, otherwise
+        computed.
+
+    Returns
+    -------
+    ndim : int
+        Dimensionality of the data.
+    rgb : bool
+        If data is rgb.
+    pyramid : bool
+        If data is a pyramid or a pyramid has been generated.
+    data_pyramid : list or None
+        If None then data is not and does not need to be a pyramid. Otherwise
+        is a list of arrays where each array is a level of the pyramid.
+    """
+    # Determine if data currently is a pyramid
+    currently_pyramid = is_pyramid(data)
+    if currently_pyramid:
+        init_shape = data[0].shape
+    else:
+        init_shape = data.shape
+
+    # Determine if rgb, and determine dimensionality
+    if rgb is False:
+        pass
+    else:
+        # If rgb is True or None then guess if rgb
+        # allowed or not, and if allowed set it to be True
+        rgb = is_rgb(init_shape)
+
+    if rgb:
+        ndim = len(init_shape) - 1
+    else:
+        ndim = len(init_shape)
+
+    if pyramid is False:
+        if currently_pyramid:
+            raise ValueError(
+                """Non pyramided data was requested, but pyramid
+                             data was passed"""
+            )
+        else:
+            data_pyramid = None
+    else:
+        if currently_pyramid:
+            data_pyramid = trim_pyramid(data)
+            pyramid = True
+        else:
+            # Guess if data should be pyramid
+            pyr_axes = should_be_pyramid(data.shape)
+            if np.any(pyr_axes):
+                pyramid = True
+                # Set axes to be downsampled to have a factor of 2
+                downscale = np.ones(len(data.shape))
+                downscale[pyr_axes] = 2
+                largest = np.min(np.array(data.shape)[pyr_axes])
+                # Determine number of downsample steps needed
+                max_layer = np.floor(np.log2(largest) - 9).astype(int)
+                data_pyramid = fast_pyramid(
+                    data, downscale=downscale, max_layer=max_layer
+                )
+                data_pyramid = trim_pyramid(data_pyramid)
+            else:
+                data_pyramid = None
+                pyramid = False
+
+    return ndim, rgb, pyramid, data_pyramid
+
+
+def fast_pyramid(data, downscale=2, max_layer=None):
+    """Compute fast image pyramid.
+
+    In the interest of speed this method subsamples, rather than downsamples,
+    the input image.
+
+    Parameters
+    ----------
+    data : array
+        Data from which pyramid is to be generated.
+    downscale : int or list
+        Factor to downscale each step of the pyramid by. If a list, one value
+        must be provided for every axis of the array.
+    max_layer : int, optional
+        The maximum number of layers of the pyramid to be created.
+
+    Returns
+    -------
+    pyramid : list
+        List of arrays where each array is a level of the generated pyramid.
+    """
+
+    if max_layer is None:
+        max_layer = np.floor(np.log2(np.max(data.shape))).astype(int) + 1
+
+    zoom_factor = np.divide(1, downscale)
+
+    pyramid = [data]
+    for i in range(max_layer - 1):
+        pyramid.append(
+            ndi.zoom(pyramid[i], zoom_factor, prefilter=False, order=0)
+        )
+    return pyramid
 
 
 def increment_unnamed_colormap(name, names):
@@ -102,12 +254,26 @@ def calc_data_range(data):
     values : list of float
         Range of values.
     """
-    min = data.min()
-    max = data.max()
-    if min == max:
-        min = 0
-        max = 1
-    return [float(min), float(max)]
+    if np.prod(data.shape) > 1e6:
+        # If data is very large take the average of the top, bottom, and
+        # middle slices
+        top_plane_idx = np.zeros(data.ndim - 2).astype(int)
+        bottom_plane_idx = np.subtract(data.shape[:-2], 1).astype(int)
+        middle_plane_idx = np.round(np.divide(bottom_plane_idx, 2)).astype(int)
+        top_plane = np.asarray(data[tuple(top_plane_idx)])
+        bottom_plane = np.asarray(data[tuple(bottom_plane_idx)])
+        middle_plane = np.asarray(data[tuple(middle_plane_idx)])
+        reduced_data = np.array([top_plane, bottom_plane, middle_plane])
+    else:
+        reduced_data = data
+
+    min_val = reduced_data.min()
+    max_val = reduced_data.max()
+
+    if min_val == max_val:
+        min_val = 0
+        max_val = 1
+    return [float(min_val), float(max_val)]
 
 
 def compute_max_shape(shapes, max_dims=None):
@@ -292,7 +458,10 @@ class CallDefault(inspect.Parameter):
         formatted = self._name
 
         # Fill in defaults
-        if self._default is not inspect._empty:
+        if (
+            self._default is not inspect._empty
+            or kind == inspect._KEYWORD_ONLY
+        ):
             formatted = '{}={}'.format(formatted, formatted)
 
         if kind == inspect._VAR_POSITIONAL:

@@ -4,6 +4,7 @@ import numpy as np
 from copy import copy
 from ..base import Layer
 from ...util.event import Event
+from ...util.status_messages import format_float
 from .vectors_util import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
 
@@ -62,7 +63,7 @@ class Vectors(Layer):
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
         rectangle in the slice that it starts in.
-    _mesh_vertices : (2N, 3) array
+    _mesh_triangles : (2N, 3) array
         The integer indices of the `_mesh_vertices` that form the two triangles
         for the mesh representation of the vectors.
     _max_vectors_thumbnail : int
@@ -183,6 +184,7 @@ class Vectors(Layer):
 
         self.events.edge_width()
         self._set_view_slice()
+        self.status = format_float(self.edge_width)
 
     @property
     def length(self) -> Union[int, float]:
@@ -204,6 +206,7 @@ class Vectors(Layer):
 
         self.events.length()
         self._set_view_slice()
+        self.status = format_float(self.length)
 
     @property
     def edge_color(self) -> str:
@@ -214,6 +217,7 @@ class Vectors(Layer):
         """str: edge color of all the vectors."""
         self._edge_color = edge_color
         self.events.edge_color()
+        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -263,7 +267,7 @@ class Vectors(Layer):
             self._view_vertices = None
             self._view_faces = None
         else:
-            self._view_vertices = vertices[:, ::-1] + 0.5
+            self._view_vertices = vertices
             self._view_faces = faces
 
         self._update_thumbnail()

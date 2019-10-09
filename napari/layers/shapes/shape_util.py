@@ -1,6 +1,8 @@
+from copy import copy
 import numpy as np
 from ...util import segment_normal
 from vispy.geometry import PolygonData
+from vispy.visuals.tube import _frenet_frames
 
 
 def inside_triangles(triangles):
@@ -384,18 +386,18 @@ def rectangle_to_box(data):
     Parameters
     ----------
     data : np.ndarray
-        4x2 array of corner points to be converted to a box like representation
+        4xD array of corner points to be converted to a box like representation
 
     Returns
     -------
     box : np.ndarray
-        9x2 array of vertices of the interaction box. The first 8 points are
+        9xD array of vertices of the interaction box. The first 8 points are
         the corners and midpoints of the box in clockwise order starting in the
         upper-left corner. The last point is the center of the box
     """
-    if not np.all(data.shape == (4, 2)):
+    if not data.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, 2]`
+            """Data shape does not match expected `[4, D]`
                          shape specifying corners for the rectangle"""
         )
     box = np.array(
@@ -469,7 +471,7 @@ def triangulate_ellipse(corners, num_segments=100):
     Parameters
     ----------
     corners : np.ndarray
-        4x2 array of four bounding corners of the ellipse. The ellipse will
+        4xD array of four bounding corners of the ellipse. The ellipse will
         still be computed properly even if the rectangle determined by the
         corners is not axis aligned
     num_segments : int
@@ -486,9 +488,9 @@ def triangulate_ellipse(corners, num_segments=100):
         Px2 array of the indices of the vertices for the triangles of the
         triangulation. Has length given by `num_segments`
     """
-    if not np.all(corners.shape == (4, 2)):
+    if not corners.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, 2]`
+            """Data shape does not match expected `[4, D]`
                          shape specifying corners for the ellipse"""
         )
 
@@ -500,12 +502,21 @@ def triangulate_ellipse(corners, num_segments=100):
     if len_vec > 0:
         # rotate to be axis aligned
         norm_vec = vec / len_vec
-        transform = np.array(
-            [[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]]
-        )
+        if corners.shape[1] == 2:
+            transform = np.array(
+                [[norm_vec[0], -norm_vec[1]], [norm_vec[1], norm_vec[0]]]
+            )
+        else:
+            transform = np.array(
+                [
+                    [0, 0],
+                    [norm_vec[0], -norm_vec[1]],
+                    [norm_vec[1], norm_vec[0]],
+                ]
+            )
         adjusted = np.matmul(adjusted, transform)
     else:
-        transform = np.eye(2)
+        transform = np.eye(corners.shape[1])
 
     radii = abs(adjusted[0])
     vertices = np.zeros((num_segments + 1, 2), dtype=np.float32)
@@ -548,7 +559,7 @@ def triangulate_face(data):
     return vertices, triangles
 
 
-def triangulate_edge(path, closed=False, limit=3, bevel=False):
+def triangulate_edge(path, closed=False):
     """Determines the triangulation of a path. The resulting `offsets` can
     mulitplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
@@ -559,22 +570,16 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     Parameters
     ----------
     path : np.ndarray
-        Nx2 array of central coordinates of path to be triangulated
+        Nx2 or Nx3 array of central coordinates of path to be triangulated
     closed : bool
-        Bool which determines if the path is closed or not
-    limit : float
-        Miter limit which determines when to switch from a miter join to a
-        bevel join
-    bevel : bool
-        Bool which if True causes a bevel join to always be used. If False
-        a bevel join will only be used when the miter limit is exceeded
+        Bool which determines if the path is closed or not.
 
     Returns
     -------
     centers : np.ndarray
-        Mx2 array central coordinates of path trinagles.
+        Mx2 or Mx3 array central coordinates of path trinagles.
     offsets : np.ndarray
-        Mx2 array of the offests to the central coordinates that need to
+        Mx2 or Mx3 array of the offsets to the central coordinates that need to
         be scaled by the line width and then added to the centers to
         generate the actual vertices of the triangulation
     triangles : np.ndarray
@@ -594,6 +599,53 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
             clean_path = np.concatenate((clean_path, clean_path), axis=0)
     else:
         clean_path = path
+
+    if clean_path.shape[-1] == 2:
+        centers, offsets, triangles = generate_2D_edge_meshes(
+            clean_path, closed=closed
+        )
+    else:
+        centers, offsets, triangles = generate_tube_meshes(
+            clean_path, closed=closed
+        )
+
+    return centers, offsets, triangles
+
+
+def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
+    """Determines the triangulation of a path in 2D. The resulting `offsets`
+    can be mulitplied by a `width` scalar and be added to the resulting
+    `centers` to generate the vertices of the triangles for the triangulation,
+    i.e. `vertices = centers + width*offsets`. Using the `centers` and
+    `offsets` representation thus allows for the computed triangulation to be
+    independent of the line width.
+
+    Parameters
+    ----------
+    path : np.ndarray
+        Nx2 or Nx3 array of central coordinates of path to be triangulated
+    closed : bool
+        Bool which determines if the path is closed or not
+    limit : float
+        Miter limit which determines when to switch from a miter join to a
+        bevel join
+    bevel : bool
+        Bool which if True causes a bevel join to always be used. If False
+        a bevel join will only be used when the miter limit is exceeded
+
+    Returns
+    -------
+    centers : np.ndarray
+        Mx2 or Mx3 array central coordinates of path trinagles.
+    offsets : np.ndarray
+        Mx2 or Mx3 array of the offsets to the central coordinates that need to
+        be scaled by the line width and then added to the centers to
+        generate the actual vertices of the triangulation
+    triangles : np.ndarray
+        Px3 array of the indices of the vertices that will form the
+        triangles of the triangulation
+    """
+    clean_path = np.array(path).astype(float)
 
     if closed:
         if np.all(clean_path[0] == clean_path[-1]) and len(clean_path) > 2:
@@ -730,6 +782,77 @@ def triangulate_edge(path, closed=False, limit=3, bevel=False):
     centers = np.array(central_path)
     offsets = np.array(vertex_offsets)
     triangles = np.array(triangles)
+
+    return centers, offsets, triangles
+
+
+def generate_tube_meshes(path, closed=False, tube_points=10):
+    """Generates list of mesh vertices and triangles from a path
+
+    Adapted from vispy.visuals.TubeVisual
+    https://github.com/vispy/vispy/blob/master/vispy/visuals/tube.py
+
+    Parameters
+    ----------
+    path : (N, 3) array
+        Vertices specifying the path.
+    closed : bool
+        Bool which determines if the path is closed or not.
+    tube_points : int
+        The number of points in the circle-approximating polygon of the
+        tube's cross section.
+
+    Returns
+    ----------
+    centers : (M, 3) array
+        Vertices of all triangles for the lines
+    offsets : (M, D) array
+        offsets of all triangles for the lines
+    triangles : (P, 3) array
+        Vertex indices that form the mesh triangles
+    """
+    points = np.array(path).astype(float)
+
+    if closed and not np.all(points[0] == points[-1]):
+        points = np.concatenate([points, [points[0]]], axis=0)
+
+    tangents, normals, binormals = _frenet_frames(points, closed)
+
+    segments = len(points) - 1
+
+    # get the positions of each vertex
+    grid = np.zeros((len(points), tube_points, 3))
+    grid_off = np.zeros((len(points), tube_points, 3))
+    for i in range(len(points)):
+        pos = points[i]
+        normal = normals[i]
+        binormal = binormals[i]
+
+        # Add a vertex for each point on the circle
+        v = np.arange(tube_points, dtype=np.float) / tube_points * 2 * np.pi
+        cx = -1.0 * np.cos(v)
+        cy = np.sin(v)
+        grid[i] = pos
+        grid_off[i] = cx[:, np.newaxis] * normal + cy[:, np.newaxis] * binormal
+
+    # construct the mesh
+    indices = []
+    for i in range(segments):
+        for j in range(tube_points):
+            ip = (i + 1) % segments if closed else i + 1
+            jp = (j + 1) % tube_points
+
+            index_a = i * tube_points + j
+            index_b = ip * tube_points + j
+            index_c = ip * tube_points + jp
+            index_d = i * tube_points + jp
+
+            indices.append([index_a, index_b, index_d])
+            indices.append([index_b, index_c, index_d])
+    triangles = np.array(indices, dtype=np.uint32)
+
+    centers = grid.reshape(grid.shape[0] * grid.shape[1], 3)
+    offsets = grid_off.reshape(grid_off.shape[0] * grid_off.shape[1], 3)
 
     return centers, offsets, triangles
 

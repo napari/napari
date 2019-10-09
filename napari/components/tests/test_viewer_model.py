@@ -42,7 +42,7 @@ def test_add_pyramid():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer.add_pyramid(data)
+    viewer.add_image(data, is_pyramid=True)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
@@ -82,7 +82,7 @@ def test_add_vectors():
 
 
 def test_add_shapes():
-    """Test adding vectors."""
+    """Test adding shapes."""
     viewer = ViewerModel()
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
@@ -90,6 +90,22 @@ def test_add_shapes():
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
+
+
+def test_add_surface():
+    """Test adding 3D surface."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    viewer.add_surface(data)
+    assert len(viewer.layers) == 1
+    assert np.all(
+        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+    )
+    assert viewer.dims.ndim == 3
 
 
 def test_mix_dims():
@@ -185,17 +201,41 @@ def test_swappable_dims():
 
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
     viewer.add_labels(labels_data)
-    assert np.all(
-        viewer.layers['Labels']._data_labels == labels_data[0, 0, :, :]
-    )
+    assert np.all(viewer.layers['Labels']._data_raw == labels_data[0, 0, :, :])
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == [0, 2, 1, 3]
     assert np.all(viewer.layers['Image']._data_view == image_data[0, :, 0, :])
-    assert np.all(
-        viewer.layers['Labels']._data_labels == labels_data[0, :, 0, :]
-    )
+    assert np.all(viewer.layers['Labels']._data_raw == labels_data[0, :, 0, :])
+
+
+def test_grid():
+    "Test grid_view"
+    viewer = ViewerModel()
+
+    np.random.seed(0)
+    # Add image
+    for i in range(6):
+        data = np.random.random((10, 15))
+        viewer.add_image(data)
+    assert np.all(viewer.grid_size == (1, 1))
+    assert viewer.grid_stride == 1
+
+    # enter grid view
+    viewer.grid_view()
+    assert np.all(viewer.grid_size == (3, 3))
+    assert viewer.grid_stride == 1
+
+    # retun to stack view
+    viewer.stack_view()
+    assert np.all(viewer.grid_size == (1, 1))
+    assert viewer.grid_stride == 1
+
+    # reenter grid view
+    viewer.grid_view(n_column=2, n_row=3, stride=-2)
+    assert np.all(viewer.grid_size == (3, 2))
+    assert viewer.grid_stride == -2
 
 
 def test_svg():

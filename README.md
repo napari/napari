@@ -2,6 +2,7 @@
 
 ### multi-dimensional image viewer for python
 
+[![image.sc forum](https://img.shields.io/badge/dynamic/json.svg?label=forum&url=https%3A%2F%2Fforum.image.sc%2Ftags%2Fnapari.json&query=%24.topic_list.tags.0.topic_count&colorB=brightgreen&suffix=%20topics&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAABPklEQVR42m3SyyqFURTA8Y2BER0TDyExZ+aSPIKUlPIITFzKeQWXwhBlQrmFgUzMMFLKZeguBu5y+//17dP3nc5vuPdee6299gohUYYaDGOyyACq4JmQVoFujOMR77hNfOAGM+hBOQqB9TjHD36xhAa04RCuuXeKOvwHVWIKL9jCK2bRiV284QgL8MwEjAneeo9VNOEaBhzALGtoRy02cIcWhE34jj5YxgW+E5Z4iTPkMYpPLCNY3hdOYEfNbKYdmNngZ1jyEzw7h7AIb3fRTQ95OAZ6yQpGYHMMtOTgouktYwxuXsHgWLLl+4x++Kx1FJrjLTagA77bTPvYgw1rRqY56e+w7GNYsqX6JfPwi7aR+Y5SA+BXtKIRfkfJAYgj14tpOF6+I46c4/cAM3UhM3JxyKsxiOIhH0IO6SH/A1Kb1WBeUjbkAAAAAElFTkSuQmCC)](https://forum.image.sc/tags/napari)
 [![License](https://img.shields.io/pypi/l/napari.svg)](https://github.com/napari/napari/raw/master/LICENSE)
 [![Build Status](https://api.cirrus-ci.com/github/Napari/napari.svg)](https://cirrus-ci.com/napari/napari)
 [![codecov](https://codecov.io/gh/napari/napari/branch/master/graph/badge.svg)](https://codecov.io/gh/napari/napari)
@@ -25,13 +26,7 @@ We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/
 $ pip install napari
 ```
 
-We're working on improving Windows support. For mac0S we also require at least version 10.12.
-
-To install from the master branch on Github use
-
-```sh
-$ pip install git+https://github.com/napari/napari
-```
+We're working on improving our Windows support.
 
 To clone the repository locally and install in editable mode use
 
@@ -45,13 +40,12 @@ For more information see our [installation tutorial](https://napari.github.io/na
 
 ## simple example
 
-From inside an IPython shell or Jupyter notebook you can open up an interactive viewer by calling
+From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt5`) you can open up an interactive viewer by calling
 
 ```python
-%gui qt5
 from skimage import data
 import napari
-viewer = napari.view(data.astronaut(), multichannel=True)
+viewer = napari.view_image(data.astronaut(), rgb=True)
 ```
 
 ![image](resources/screenshot-add-image.png)
@@ -63,119 +57,39 @@ from skimage import data
 import napari
 
 with napari.gui_qt():
-    viewer = napari.view(data.astronaut(), multichannel=True)
+    viewer = napari.view_image(data.astronaut(), rgb=True)
 ```
 
 ## features
 
-Check out the scripts in the `examples` folder to see some of the functionality we're developing!
+Check out the scripts in our `examples` folder to see some of the functionality we're developing!
 
-For example, you can add multiple images in different layers and tweak their opacity on GUI to see blended images
+**napari** supports six main different layer types, `Image`, `Labels`, `Points`, `Vectors`, `Shapes`, and `Surface`, each corresponding to a different data type, visualization, and interactivity. You can add multiple layers of different types into the viewer and then start working with them, adjusting their properties.
 
-```python
-from skimage import data
-from skimage.color import rgb2gray
-import napari
+All our layer types support n-dimensional data and the viewer provides the ability to quickly browse and visualize either 2D or 3D slices of the data.
 
-with napari.gui_qt():
-    # create the viewer with four layers
-    viewer = napari.view(astronaut=rgb2gray(data.astronaut()),
-                         photographer=data.camera(),
-                         coins=data.coins(),
-                         moon=data.moon())
-    # remove a layer
-    viewer.layers.remove('coins')
-    # swap layer order
-    viewer.layers['astronaut', 'moon'] = viewer.layers['moon', 'astronaut']
-```
+**napari** also supports bidirectional communication between the viewer and the Python kernel, which is especially useful when launching from jupyter notebooks or when using our built-in console. Using the console allows you to interactively load and save data from the viewer and control all the features of the viewer programmatically.
 
-![image](resources/screenshot-layers.png)
+You can extend **napari** using custom shortcuts, key bindings, and mouse functions.
 
-You can add points on top of an image
+## tutorials
 
-```python
-import numpy as np
-from skimage import data
-from skimage.color import rgb2gray
-import napari
-
-with napari.gui_qt():
-    # set up viewer
-    viewer = napari.Viewer()
-    viewer.add_image(rgb2gray(data.astronaut()))
-    # create three xy coordinates
-    points = np.array([[100, 100], [200, 200], [333, 111]])
-    # specify three sizes
-    size = np.array([10, 20, 20])
-    # add them to the viewer
-    points = viewer.add_points(points, size=size)
-```
-
-![image](resources/screenshot-add-points.png)
-
-**napari** supports bidirectional communication between the viewer and the Python kernel, which is especially useful in Jupyter notebooks -- in the example above you can retrieve the locations of the points, including any additional ones you have drawn, by calling
-
-```python
->>> points.data
-[[100, 100],
- [200, 200],
- [333, 111]]
-```
-
-You can render and quickly browse slices of multi-dimensional arrays
-
-```python
-
-import numpy as np
-from skimage import data
-import napari
-
-with napari.gui_qt():
-    # create fake 3d data
-    blobs = np.stack([data.binary_blobs(length=128, blob_size_fraction=0.05,
-                                        n_dim=3, volume_fraction=f)
-                     for f in np.linspace(0.05, 0.5, 10)], axis=0)
-    # add image data to the viewer
-    viewer = napari.view(blobs.astype(float))
-
-    # add points to the viewer
-    points = np.array(
-        [
-            [0, 0, 100, 100],
-            [0, 0, 50, 120],
-            [1, 0, 100, 40],
-            [2, 10, 110, 100],
-            [9, 8, 80, 100],
-        ]
-    )
-    viewer.add_points(
-        points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
-    )
-
-```
-
-![image](resources/screenshot-nD-slicing.gif)
-
-You can draw lines and polygons on an image, including selection and adjustment of shapes and vertices, and control over fill and stroke color. Run `examples/add_shapes.py` to generate and interact with the following example.
-
-![image](resources/screenshot-add-shapes.png)
-
-You can also paint pixel-wise labels, useful for creating masks for segmentation, and fill in closed regions using the paint bucket. Run `examples/add_labels.py` to generate and interact with the following example.
-
-![image](resources/screenshot-add-labels.png)
-
-For details checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/)
+For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/). These are still a work in progress, but we'll be updating them regularly.
 
 ## plans
 
 We're working on several features, including
 
-- support for 3D volumetric rendering
-- support for multiple canvases
+- support for multiple linked canvases
+- script & macro generation
 - a plugin ecosystem for integrating image processing and machine learning tools
 
-See [this issue](https://github.com/napari/napari/issues/301) for some of the features on the roadmap for our `0.2` release. Feel free to add comments or ideas!
+See [this issue](https://github.com/napari/napari/issues/420) for some of the features on the roadmap for our `0.3` release. Feel free to add comments or ideas!
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+
+## help
+
+We're a community partner on the [image.sc forum](https://forum.image.sc/tags/napari) and all help and support requests should be posted on the forum with the tag `napari`. We look forward to interacting with you there.

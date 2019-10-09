@@ -18,18 +18,6 @@ def toggle_theme(viewer):
     viewer.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
 
-@Viewer.bind_key('Control-E')
-def roll_dims(viewer):
-    viewer.dims.order = np.roll(viewer.dims.order, 1)
-
-
-@Viewer.bind_key('Control-T')
-def transpose_displayed_dims(viewer):
-    order = copy(viewer.dims.order)
-    order[-2], order[-1] = order[-1], order[-2]
-    viewer.dims.order = order
-
-
 @Viewer.bind_key('Control-Y')
 def toggle_ndisplay(viewer):
     if viewer.dims.ndisplay == 3:
@@ -66,41 +54,18 @@ def increment_dims_right(viewer):
         viewer.dims.set_point(axis, new_point)
 
 
-@Viewer.bind_key('Up')
-def dims_focus_up(viewer):
-    displayed = list(
-        np.nonzero(viewer.window.qt_viewer.dims._displayed_sliders)[0]
-    )
-    if len(displayed) == 0:
-        return
-
-    axis = viewer.window.qt_viewer.dims.last_used
-    if axis is None:
-        viewer.window.qt_viewer.dims.last_used = displayed[-1]
-    else:
-        index = (displayed.index(axis) + 1) % len(displayed)
-        viewer.window.qt_viewer.dims.last_used = displayed[index]
-
-
-@Viewer.bind_key('Down')
-def dims_focus_down(viewer):
-    displayed = list(
-        np.nonzero(viewer.window.qt_viewer.dims._displayed_sliders)[0]
-    )
-    if len(displayed) == 0:
-        return
-
-    axis = viewer.window.qt_viewer.dims.last_used
-
-    if axis is None:
-        viewer.window.qt_viewer.dims.last_used = displayed[0]
-    else:
-        index = (displayed.index(axis) - 1) % len(displayed)
-        viewer.window.qt_viewer.dims.last_used = displayed[index]
-
-
+Viewer.bind_key('Control-E', lambda v: v.dims._roll())
+Viewer.bind_key('Control-T', lambda v: v.dims._transpose())
+Viewer.bind_key('Alt-Up', lambda v: v.window.qt_viewer.dims.focus_up())
+Viewer.bind_key('Alt-Down', lambda v: v.window.qt_viewer.dims.focus_down())
 Viewer.bind_key('Control-Backspace', lambda v: v.layers.remove_selected())
 Viewer.bind_key('Control-A', lambda v: v.layers.select_all())
-Viewer.bind_key('Control-[', lambda v: v.layers.select_previous())
-Viewer.bind_key('Control-]', lambda v: v.layers.select_next())
+Viewer.bind_key(
+    'Control-Shift-Backspace',
+    lambda v: (v.layers.select_all(), v.layers.remove_selected()),
+)
+Viewer.bind_key('Up', lambda v: v.layers.select_next())
+Viewer.bind_key('Down', lambda v: v.layers.select_previous())
+Viewer.bind_key('Shift-Up', lambda v: v.layers.select_next(shift=True))
+Viewer.bind_key('Shift-Down', lambda v: v.layers.select_previous(shift=True))
 Viewer.bind_key('Control-R', lambda v: v.reset_view())

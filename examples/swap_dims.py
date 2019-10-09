@@ -17,7 +17,7 @@ with napari.gui_qt():
         ],
         axis=0,
     )
-    viewer = napari.view(blobs.astype(float))
+    viewer = napari.view_image(blobs.astype(float))
 
     # add the points
     points = np.array(

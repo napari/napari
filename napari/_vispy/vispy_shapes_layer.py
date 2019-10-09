@@ -1,4 +1,5 @@
-from vispy.scene.visuals import Line, Markers, Mesh, Compound
+from vispy.scene.visuals import Line, Mesh, Compound
+from .markers import Markers
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
 
@@ -11,7 +12,7 @@ class VispyShapesLayer(VispyBaseLayer):
         # Lines: The lines of the interaction box used for highlights.
         # Mesh: The mesh of the outlines for each shape used for highlights.
         # Mesh: The actual meshes of the shape faces and edges
-        node = Compound([Markers(), Line(), Mesh(), Mesh()])
+        node = Compound([Mesh(), Mesh(), Line(), Markers()])
 
         super().__init__(layer, node)
 
@@ -30,18 +31,35 @@ class VispyShapesLayer(VispyBaseLayer):
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
 
-        if len(faces) == 0:
-            self.node._subvisuals[3].set_data(vertices=None, faces=None)
-        else:
-            self.node._subvisuals[3].set_data(
-                vertices=vertices[:, ::-1], faces=faces, face_colors=colors
-            )
+        # Note that the indicies of the vertices need to be resversed to
+        # go from numpy style to xyz
+        if vertices is not None:
+            vertices = vertices[:, ::-1] + 0.5
+
+        if len(vertices) == 0 or len(faces) == 0:
+            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            faces = np.array([[0, 1, 2]])
+            colors = np.array([[0, 0, 0, 0]])
+
+        if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
+            vertices = np.pad(vertices, ((0, 0), (0, 1)))
+
+        self.node._subvisuals[0].set_data(
+            vertices=vertices, faces=faces, face_colors=colors
+        )
         self.node.update()
 
     def _on_highlight_change(self):
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
-        self.node._subvisuals[2].set_data(
+
+        if vertices is None or len(vertices) == 0 or len(faces) == 0:
+            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            faces = np.array([[0, 1, 2]])
+        else:
+            vertices = vertices + 0.5
+
+        self.node._subvisuals[1].set_data(
             vertices=vertices, faces=faces, color=self.layer._highlight_color
         )
 
@@ -54,16 +72,31 @@ class VispyShapesLayer(VispyBaseLayer):
             pos,
             width,
         ) = self.layer._compute_vertices_and_box()
-        self.node._subvisuals[0].set_data(
+
+        if vertices is None or len(vertices) == 0:
+            vertices = np.zeros((1, self.layer.dims.ndisplay))
+            size = 0
+        else:
+            vertices = vertices + 0.5
+            size = self.layer._vertex_size
+
+        self.node._subvisuals[3].set_data(
             vertices,
-            size=self.layer._vertex_size,
+            size=size,
             face_color=face_color,
             edge_color=edge_color,
             edge_width=1.5,
             symbol='square',
             scaling=False,
         )
-        self.node._subvisuals[1].set_data(
+
+        if pos is None or len(pos) == 0:
+            pos = np.zeros((1, self.layer.dims.ndisplay))
+            width = 0
+        else:
+            pos = pos + 0.5
+
+        self.node._subvisuals[2].set_data(
             pos=pos, color=edge_color, width=width
         )
 

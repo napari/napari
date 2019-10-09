@@ -146,7 +146,6 @@ class Window:
         """
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
-        self._qt_window.raise_()
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet
