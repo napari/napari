@@ -113,7 +113,7 @@ class Points(Layer):
     """
 
     # The max number of points that will ever be used to render the thumbnail
-    # If more vectors are present then they are randomly subsampled
+    # If more points are present then they are randomly subsampled
     _max_points_thumbnail = 1024
 
     def __init__(
