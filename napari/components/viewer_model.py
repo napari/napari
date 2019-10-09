@@ -1148,7 +1148,7 @@ class ViewerModel(KeymapMixin):
             Number of layers to place in each grid square before moving on to
             the next square.
         """
-        n_grid_squares = np.ceil(len(self.layers) / stride).astype(int)
+        n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
         if n_row is None and n_column is None:
             n_row = np.ceil(np.sqrt(n_grid_squares)).astype(int)
             n_column = n_row
@@ -1161,8 +1161,14 @@ class ViewerModel(KeymapMixin):
         n_column = max(1, n_column)
         self.grid_size = (n_row, n_column)
         self.grid_stride = stride
+        direction = stride > 0
+        abs_stride = abs(stride)
         for i, layer in enumerate(self.layers):
-            adj_i = i // stride
+            if stride > 0:
+                adj_i = len(self.layers) - i - 1
+            else:
+                adj_i = i
+            adj_i = adj_i // abs(stride)
             adj_i = adj_i % (n_row * n_column)
             i_row = adj_i // n_column
             i_column = adj_i % n_column
