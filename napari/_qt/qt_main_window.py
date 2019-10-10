@@ -57,7 +57,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
-        self._add_about_menu()
+        self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
@@ -132,13 +132,12 @@ class Window:
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
 
-    def _add_about_menu(self):
-        about_action = QAction('About', self._qt_window)
-        about_action.setShortcut("Ctrl+A")
+    def _add_help_menu(self):
+        about_action = QAction("napari info", self._qt_window)
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(AboutPage.showAbout)
-        self.about_menu = self.main_menu.addMenu('&About')
-        self.about_menu.addAction(about_action)
+        self.help_menu = self.main_menu.addMenu('&Help')
+        self.help_menu.addAction(about_action)
 
     def resize(self, width, height):
         """Resize the window.
