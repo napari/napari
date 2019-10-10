@@ -6,6 +6,8 @@ wrap.
 from qtpy import API_NAME
 from vispy import app
 
+from napari._qt.qt_about import AboutPage
+
 app.use_app(API_NAME)
 del app
 
@@ -55,6 +57,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_about_menu()
 
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
@@ -128,6 +131,14 @@ class Window:
         exit_action.triggered.connect(self._qt_window.close)
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
+
+    def _add_about_menu(self):
+        about_action = QAction('About', self._qt_window)
+        about_action.setShortcut("Ctrl+A")
+        about_action.setStatusTip('About napari')
+        about_action.triggered.connect(AboutPage.showAbout)
+        self.about_menu = self.main_menu.addMenu('&About')
+        self.about_menu.addAction(about_action)
 
     def resize(self, width, height):
         """Resize the window.
