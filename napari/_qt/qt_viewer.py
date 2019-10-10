@@ -72,6 +72,7 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.canvas.events.ignore_callback_errors = False
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 
@@ -353,8 +354,8 @@ class QtViewer(QSplitter):
     def on_draw(self, event):
         """Called whenever drawn in canvas. Called for all layers, not just top
         """
-        for layer in self.viewer.layers:
-            self.layer_to_visual[layer].on_draw(event)
+        for visual in self.layer_to_visual.values():
+            visual.on_draw(event)
 
     def keyPressEvent(self, event):
         self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
