@@ -59,7 +59,13 @@ class AboutPage(QWidget):
         self.hline_break1.setFrameShadow(QFrame.Sunken)
         self.layout.addWidget(self.hline_break1)
 
-        sys_info_label = QLabel(vispy.sys_info())
+        sys_info_lines = "\n".join(
+            [
+                vispy.sys_info().split("\n")[index]
+                for index in [0, 1, 3, -4, -3]
+            ]
+        )
+        sys_info_label = QLabel(sys_info_lines)
         sys_info_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.layout.addWidget(sys_info_label)
 
@@ -69,7 +75,7 @@ class AboutPage(QWidget):
     def showAbout():
         d = QDialog()
         d.setGeometry(150, 150, 350, 400)
-        d.setFixedSize(450, 700)
+        d.setFixedSize(600, 700)
         AboutPage(d)
         d.setWindowTitle("About")
         d.setWindowModality(Qt.ApplicationModal)
