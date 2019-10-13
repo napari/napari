@@ -146,7 +146,7 @@ QDialog#QtAbout {
   max-height: 300px;
 }
 
-QtAboutPage > QLabel {
+QtAbout > QLabel {
    qproperty-alignment: AlignLeft;
 }
 
