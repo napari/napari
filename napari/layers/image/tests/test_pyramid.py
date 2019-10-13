@@ -1,4 +1,5 @@
 import numpy as np
+from skimage.transform import pyramid_gaussian
 from xml.etree.ElementTree import Element
 from vispy.color import Colormap
 from napari.layers import Image
@@ -28,6 +29,63 @@ def test_infer_pyramid():
     assert layer.is_pyramid == True
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2
+
+
+def test_infer_tuple_pyramid():
+    """Test instantiating Image layer with random 2D pyramid data."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = tuple(np.random.random(s) for s in shapes)
+    layer = Image(data)
+    assert layer.data == data
+    assert layer.is_pyramid == True
+    assert layer.ndim == len(shapes[0])
+    assert layer.shape == shapes[0]
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2
+
+
+def test_forcing_pyramid():
+    """Test instantiating Image layer forcing 2D pyramid data."""
+    shape = (40, 20)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data, is_pyramid=True)
+    assert np.all(layer.data == data)
+    assert layer.is_pyramid == True
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2
+
+
+def test_blocking_pyramid():
+    """Test instantiating Image layer blocking 2D pyramid data."""
+    shape = (40, 20)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data, is_pyramid=False)
+    assert np.all(layer.data == data)
+    assert layer.is_pyramid == False
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb == False
+    assert layer._data_view.ndim == 2
+
+
+def test_pyramid_tuple():
+    """Test instantiating Image layer pyramid tuple."""
+    shape = (40, 20)
+    np.random.seed(0)
+    img = np.random.random(shape)
+    data = tuple(pyramid_gaussian(img, multichannel=False))
+    layer = Image(data)
+    assert layer.data == data
+    assert layer.is_pyramid == True
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
     assert layer.rgb == False
     assert layer._data_view.ndim == 2
 
