@@ -6,7 +6,8 @@ wrap.
 from qtpy import API_NAME
 from vispy import app
 
-from napari._qt.qt_about import AboutPage
+from .qt_about import QtAbout
+from .qt_about_keybindings import QtAboutKeybindings
 
 app.use_app(API_NAME)
 del app
@@ -133,11 +134,21 @@ class Window:
         self.window_menu.addAction(exit_action)
 
     def _add_help_menu(self):
+        self.help_menu = self.main_menu.addMenu('&Help')
+
         about_action = QAction("napari info", self._qt_window)
         about_action.setStatusTip('About napari')
-        about_action.triggered.connect(AboutPage.showAbout)
-        self.help_menu = self.main_menu.addMenu('&Help')
+        about_action.triggered.connect(
+            lambda e: QtAbout.showAbout(self.qt_viewer)
+        )
         self.help_menu.addAction(about_action)
+
+        keybidings_action = QAction("keybindings", self._qt_window)
+        keybidings_action.setStatusTip('About keybindings')
+        keybidings_action.triggered.connect(
+            lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
+        )
+        self.help_menu.addAction(keybidings_action)
 
     def resize(self, width, height):
         """Resize the window.

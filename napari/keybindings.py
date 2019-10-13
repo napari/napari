@@ -5,6 +5,7 @@ from .viewer import Viewer
 
 @Viewer.bind_key('Control-F')
 def toggle_fullscreen(viewer):
+    """Toggle fullscreen mode."""
     if viewer.window._qt_window.isFullScreen():
         viewer.window._qt_window.showNormal()
     else:
@@ -13,6 +14,7 @@ def toggle_fullscreen(viewer):
 
 @Viewer.bind_key('Control-Shift-T')
 def toggle_theme(viewer):
+    """Toggle viewer theme."""
     theme_names = list(viewer.themes.keys())
     cur_theme = theme_names.index(viewer.theme)
     viewer.theme = theme_names[(cur_theme + 1) % len(theme_names)]
@@ -20,6 +22,7 @@ def toggle_theme(viewer):
 
 @Viewer.bind_key('Control-Y')
 def toggle_ndisplay(viewer):
+    """Toggle ndisplay."""
     if viewer.dims.ndisplay == 3:
         viewer.dims.ndisplay = 2
     else:
@@ -28,6 +31,7 @@ def toggle_ndisplay(viewer):
 
 @Viewer.bind_key('Left')
 def increment_dims_left(viewer):
+    """Increment dimensions slider to the left."""
     axis = viewer.window.qt_viewer.dims.last_used
     if axis is not None:
         cur_point = viewer.dims.point[axis]
@@ -42,6 +46,7 @@ def increment_dims_left(viewer):
 
 @Viewer.bind_key('Right')
 def increment_dims_right(viewer):
+    """Increment dimensions slider to the right."""
     axis = viewer.window.qt_viewer.dims.last_used
     if axis is not None:
         cur_point = viewer.dims.point[axis]

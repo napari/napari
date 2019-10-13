@@ -10,9 +10,9 @@ from qtpy.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QFrame
 import napari
 
 
-class AboutPage(QWidget):
+class QtAbout(QWidget):
     def __init__(self, parent):
-        super(AboutPage, self).__init__(parent)
+        super(QtAbout, self).__init__(parent)
 
         self.layout = QVBoxLayout()
 
@@ -72,11 +72,11 @@ class AboutPage(QWidget):
         self.setLayout(self.layout)
 
     @staticmethod
-    def showAbout():
+    def showAbout(qt_viewer):
         d = QDialog()
-        d.setGeometry(150, 150, 350, 400)
-        d.setFixedSize(600, 700)
-        AboutPage(d)
-        d.setWindowTitle("About")
+        d.setObjectName('QtAbout')
+        d.setStyleSheet(qt_viewer.styleSheet())
+        QtAbout(d)
+        d.setWindowTitle('About')
         d.setWindowModality(Qt.ApplicationModal)
         d.exec_()

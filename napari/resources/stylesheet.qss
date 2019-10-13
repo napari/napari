@@ -125,12 +125,45 @@ QtLayerList {
     border: 0px;
 }
 
-
 QLabel {
    background-color: {{ foreground }};
    qproperty-alignment: right;
    padding-top: 1px;
    padding-bottom: 3px;
+}
+
+QDialog#QtAboutKeybindings {
+  min-width: 530px;
+  max-width: 530px;
+  min-height: 700px;
+  max-height: 700px;
+}
+
+QDialog#QtAbout {
+  min-width: 580px;
+  max-width: 580px;
+  min-height: 300px;
+  max-height: 300px;
+}
+
+QtAboutPage > QLabel {
+   qproperty-alignment: AlignLeft;
+}
+
+QtLayerKeybindings > QLabel {
+   qproperty-alignment: AlignLeft;
+}
+
+QtActiveKeybindings > QLabel {
+   qproperty-alignment: AlignLeft;
+}
+
+QTabBar::tab {
+  background-color: {{ foreground }};
+}
+
+QTabBar::tab:selected {
+  background-color: {{ highlight }};
 }
 
 QSplitter {

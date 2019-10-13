@@ -6,6 +6,7 @@ import numpy as np
 import inspect
 import itertools
 from scipy import ndimage as ndi
+from numpydoc.docscrape import FunctionDoc
 
 
 def str_to_rgb(arg):
@@ -527,3 +528,34 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
+
+
+def get_keybindings_summary(keymap):
+    """Get summary of keybindings in keymap.
+
+    Parameters
+    ---------
+    keymap : dict
+        Dictionary of keybindings.
+
+    Returns
+    ---------
+    keybindings_str : str
+        String with summary of all keybindings and their functions.
+    """
+    keybindings_str = ''
+    for key in keymap:
+        func_str = key + ': ' + get_function_summary(keymap[key]) + '\n'
+        keybindings_str += func_str
+
+    return keybindings_str
+
+
+def get_function_summary(func):
+    """Get summary of doc string of function."""
+    doc = FunctionDoc(func)
+    summary = ''
+    summary += doc['Signature']
+    for s in doc['Summary']:
+        summary += '\n\t' + s
+    return summary
