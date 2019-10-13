@@ -367,3 +367,66 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 
     def __setitem__(self, name, val):
         raise TypeError(f'cannot set item {name}')
+
+
+def mouse_press_callbacks(obj, event):
+    """Run mouse press callbacks on either layer or viewer object.
+
+    Parameters
+    ---------
+    obj : napari.components.ViewerModel or napar.layers.Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    for mouse_drag_func in obj.mouse_drag_callbacks:
+        gen = mouse_drag_func(obj, event)
+        if inspect.isgeneratorfunction(mouse_drag_func):
+            try:
+                next(gen)
+                obj._mouse_drag_gen[mouse_drag_func] = gen
+                obj._persisted_mouse_event[gen] = event
+            except StopIteration:
+                pass
+
+
+def mouse_move_callbacks(obj, event):
+    """Run mouse move callbacks on either layer or viewer object.
+
+    Parameters
+    ---------
+    obj : napari.components.ViewerModel or napar.layers.Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    if not event.is_dragging:
+        for mouse_move_func in obj.mouse_move_callbacks:
+            mouse_move_func(obj, event)
+    for func, gen in tuple(obj._mouse_drag_gen.items()):
+        obj._persisted_mouse_event[gen].__wrapped__ = event
+        try:
+            next(gen)
+        except StopIteration:
+            del obj._mouse_drag_gen[func]
+            del obj._persisted_mouse_event[gen]
+
+
+def mouse_release_callbacks(obj, event):
+    """Run mouse release callbacks on either layer or viewer object.
+
+    Parameters
+    ---------
+    obj : napari.components.ViewerModel or napar.layers.Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    for func, gen in tuple(obj._mouse_drag_gen.items()):
+        obj._persisted_mouse_event[gen].__wrapped__ = event
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        del obj._mouse_drag_gen[func]
+        del obj._persisted_mouse_event[gen]

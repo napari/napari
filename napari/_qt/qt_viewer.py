@@ -24,7 +24,13 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
-from ..util.misc import is_rgb, ReadOnlyWrapper
+from ..util.misc import (
+    is_rgb,
+    ReadOnlyWrapper,
+    mouse_press_callbacks,
+    mouse_move_callbacks,
+    mouse_release_callbacks,
+)
 from ..util.keybindings import components_to_key_combo
 from ..util.io import read
 
@@ -296,28 +302,13 @@ class QtViewer(QSplitter):
             return
 
         event = ReadOnlyWrapper(event)
-        for mouse_drag_func in self.viewer.mouse_drag_callbacks:
-            gen = mouse_drag_func(self.viewer, event)
-            if inspect.isgeneratorfunction(mouse_drag_func):
-                try:
-                    next(gen)
-                    self.viewer._mouse_drag_gen[mouse_drag_func] = gen
-                    self.viewer._persisted_mouse_event[gen] = event
-                except StopIteration:
-                    pass
+        mouse_press_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
             self.layer_to_visual[layer].on_mouse_press(event)
-            for mouse_drag_func in layer.mouse_drag_callbacks:
-                gen = mouse_drag_func(layer, event)
-                if inspect.isgeneratorfunction(mouse_drag_func):
-                    try:
-                        next(gen)
-                        layer._mouse_drag_gen[mouse_drag_func] = gen
-                        layer._persisted_mouse_event[gen] = event
-                    except StopIteration:
-                        pass
+            mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -325,54 +316,24 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        if not event.is_dragging:
-            for mouse_move_func in self.viewer.mouse_move_callbacks:
-                mouse_move_func(self.viewer, event)
-        for func, gen in tuple(self.viewer._mouse_drag_gen.items()):
-            self.viewer._persisted_mouse_event[gen].__wrapped__ = event
-            try:
-                next(gen)
-            except StopIteration:
-                del self.viewer._mouse_drag_gen[func]
-                del self.viewer._persisted_mouse_event[gen]
+        mouse_move_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
             self.layer_to_visual[layer].on_mouse_move(event)
-            if not event.is_dragging:
-                for mouse_move_func in layer.mouse_move_callbacks:
-                    mouse_move_func(layer, event)
-            for func, gen in tuple(layer._mouse_drag_gen.items()):
-                layer._persisted_mouse_event[gen].__wrapped__ = event
-                try:
-                    next(gen)
-                except StopIteration:
-                    del layer._mouse_drag_gen[func]
-                    del layer._persisted_mouse_event[gen]
+            mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
-        for func, gen in tuple(self.viewer._mouse_drag_gen.items()):
-            self.viewer._persisted_mouse_event[gen].__wrapped__ = event
-            try:
-                next(gen)
-            except StopIteration:
-                pass
-            del self.viewer._mouse_drag_gen[func]
-            del self.viewer._persisted_mouse_event[gen]
+        mouse_release_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
             self.layer_to_visual[layer].on_mouse_release(event)
-            for func, gen in tuple(layer._mouse_drag_gen.items()):
-                layer._persisted_mouse_event[gen].__wrapped__ = event
-                try:
-                    next(gen)
-                except StopIteration:
-                    pass
-                del layer._mouse_drag_gen[func]
-                del layer._persisted_mouse_event[gen]
+            mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
