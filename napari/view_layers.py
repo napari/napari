@@ -75,7 +75,7 @@ def view_image(
         Whether the layer visual is currently being displayed.
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     tuple of int
         Order in which dimensions are displayed where the last two or last
@@ -169,7 +169,7 @@ def view_multichannel(
         Whether the layer visual is currently being displayed.
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     tuple of int
         Order in which dimensions are displayed where the last two or last
@@ -262,7 +262,7 @@ def view_points(
         Whether the layer visual is currently being displayed.
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     tuple of int
         Order in which dimensions are displayed where the last two or last
@@ -356,7 +356,7 @@ def view_labels(
         Whether the layer visual is currently being displayed.
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     tuple of int
         Order in which dimensions are displayed where the last two or last
@@ -460,7 +460,7 @@ def view_shapes(
         Whether the layer visual is currently being displayed.
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     tuple of int
         Order in which dimensions are displayed where the last two or last
@@ -545,7 +545,7 @@ def view_surface(
         Whether the layer visual is currently being displayed.
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     tuple of int
         Order in which dimensions are displayed where the last two or last
@@ -624,13 +624,13 @@ def view_vectors(
         Whether the layer visual is currently being displayed.
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
-        
+
     Returns
     -------
     viewer : :class:`napari.Viewer`
