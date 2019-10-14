@@ -7,7 +7,9 @@ from .misc import formatdoc
 sep = ' '
 start = 1
 
-numbered_patt = re.compile(r'(?<!\d)(?:\d+|)$')
+# Match integer between square brackets at end of string if after space
+# or at beginning of string or just match end of string
+numbered_patt = re.compile(r'((?<=\A\[)|(?<=\s\[))(?:\d+|)(?=\]$)|$')
 
 
 def _inc_name_count_sub(match):
@@ -16,7 +18,7 @@ def _inc_name_count_sub(match):
     try:
         count = int(count)
     except ValueError:  # not an int
-        count = f'{sep}{start}'
+        count = f'{sep}[{start}]'
     else:
         count = f'{count + 1}'
 
@@ -27,7 +29,7 @@ def _inc_name_count_sub(match):
 def inc_name_count(name):
     """Increase a name's count matching `{numbered_patt}` by ``1``.
 
-    If the name is not already numbered, append '{sep}{start}'.
+    If the name is not already numbered, append '{sep}[{start}]'.
 
     Parameters
     ----------
@@ -39,4 +41,4 @@ def inc_name_count(name):
     incremented_name : str
         Numbered name incremented by ``1``.
     """
-    return numbered_patt.sub(_inc_name_count_sub, name)
+    return numbered_patt.sub(_inc_name_count_sub, name, count=1)

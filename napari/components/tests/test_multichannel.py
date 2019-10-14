@@ -40,9 +40,7 @@ def test_names():
 
     viewer = ViewerModel()
     name = 'example'
-    names = [name] + [
-        name + ' ' + str(i + 1) for i in range(data.shape[-1] - 1)
-    ]
+    names = [name] + [name + f' [{i + 1}]' for i in range(data.shape[-1] - 1)]
     viewer.add_multichannel(data, name=name)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
