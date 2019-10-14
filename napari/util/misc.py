@@ -62,8 +62,11 @@ def is_rgb(shape):
 def is_pyramid(data):
     """If shape of arrays along first axis is strictly decreasing.
     """
-    size = [np.prod(d.shape) for d in data]
-    return np.all(size[:-1] > size[1:])
+    size = np.array([np.prod(d.shape) for d in data])
+    if len(size) > 1:
+        return np.all(size[:-1] > size[1:])
+    else:
+        return False
 
 
 def trim_pyramid(pyramid):
@@ -145,8 +148,8 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
         rgb_guess = is_rgb(init_shape)
         if rgb and rgb_guess is False:
             raise ValueError(
-                """Non rgb or rgba data was passed, but rgb data was
-                requested."""
+                "Non rgb or rgba data was passed, but rgb data was"
+                " requested."
             )
         else:
             rgb = rgb_guess
@@ -159,8 +162,8 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     if pyramid is False:
         if currently_pyramid:
             raise ValueError(
-                """Non pyramided data was requested, but pyramid
-                             data was passed"""
+                "Non pyramided data was requested, but pyramid"
+                " data was passed"
             )
         else:
             data_pyramid = None
@@ -171,7 +174,7 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
         else:
             # Guess if data should be pyramid or if a pyramid was requested
             if pyramid:
-                pyr_axes = [1] * ndim
+                pyr_axes = [True] * ndim
             else:
                 pyr_axes = should_be_pyramid(data.shape)
 

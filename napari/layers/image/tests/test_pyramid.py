@@ -3,6 +3,7 @@ from skimage.transform import pyramid_gaussian
 from xml.etree.ElementTree import Element
 from vispy.color import Colormap
 from napari.layers import Image
+import pytest
 
 
 def test_random_pyramid():
@@ -31,6 +32,15 @@ def test_infer_pyramid():
     assert layer.shape == shapes[0]
     assert layer.rgb == False
     assert layer._data_view.ndim == 2
+
+
+def test_error_pyramid():
+    """Test error on forcing non pyramid."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    with pytest.raises(ValueError):
+        layer = Image(data, is_pyramid=False)
 
 
 def test_infer_tuple_pyramid():

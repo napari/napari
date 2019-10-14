@@ -198,19 +198,15 @@ def test_non_rgb_image():
     assert layer._data_view.shape == shape[-2:]
 
 
-def test_non_rgb_image():
-    """Test forcing Image layer to be 3D and not rgb."""
+def test_error_non_rgb_image():
+    """Test error on trying non rgb as rgb."""
     # If rgb is set to be True in constructor but the last dim has a
     # size > 4 then data cannot actually be rgb
     shape = (10, 15, 6)
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Image(data, rgb=True)
-    assert np.all(layer.data == data)
-    assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.rgb == False
-    assert layer._data_view.shape == shape[-2:]
+    with pytest.raises(ValueError):
+        layer = Image(data, rgb=True)
 
 
 def test_changing_image():
