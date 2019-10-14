@@ -314,7 +314,8 @@ class QtViewer(QSplitter):
         """Called whenever key pressed in canvas.
         """
         if (
-            event.native.isAutoRepeat()
+            not event.native is None
+            and event.native.isAutoRepeat()
             and event.key.name not in ['Up', 'Down', 'Left', 'Right']
         ) or event.key is None:
             # pass is no key is present or if key is held down, unless the
