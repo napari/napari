@@ -28,7 +28,14 @@ if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
 
 from .viewer import Viewer
 from . import keybindings
-from .view_function import view
+from .view_layers import (
+    view_image,
+    view_labels,
+    view_surface,
+    view_shapes,
+    view_points,
+    view_vectors,
+)
 from ._qt import gui_qt
 from ._version import get_versions
 

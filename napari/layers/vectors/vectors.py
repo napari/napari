@@ -4,6 +4,7 @@ import numpy as np
 from copy import copy
 from ..base import Layer
 from ...util.event import Event
+from ...util.status_messages import format_float
 from .vectors_util import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
 
@@ -62,7 +63,7 @@ class Vectors(Layer):
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
         rectangle in the slice that it starts in.
-    _mesh_vertices : (2N, 3) array
+    _mesh_triangles : (2N, 3) array
         The integer indices of the `_mesh_vertices` that form the two triangles
         for the mesh representation of the vectors.
     _max_vectors_thumbnail : int
@@ -183,6 +184,7 @@ class Vectors(Layer):
 
         self.events.edge_width()
         self._set_view_slice()
+        self.status = format_float(self.edge_width)
 
     @property
     def length(self) -> Union[int, float]:
@@ -204,6 +206,7 @@ class Vectors(Layer):
 
         self.events.length()
         self._set_view_slice()
+        self.status = format_float(self.length)
 
     @property
     def edge_color(self) -> str:
@@ -214,6 +217,7 @@ class Vectors(Layer):
         """str: edge color of all the vectors."""
         self._edge_color = edge_color
         self.events.edge_color()
+        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -291,6 +295,11 @@ class Vectors(Layer):
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
         vectors = copy(self._data_view[:, :, -2:])
+        if len(vectors) > self._max_vectors_thumbnail:
+            inds = np.random.randint(
+                0, len(vectors), self._max_vectors_thumbnail
+            )
+            vectors = vectors[inds]
         vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
         downsampled = (vectors - offset) * zoom_factor
         downsampled = np.clip(
@@ -299,11 +308,6 @@ class Vectors(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         col = Color(self.edge_color).rgba
-        if len(downsampled) > self._max_vectors_thumbnail:
-            inds = np.random.randint(
-                0, len(downsampled), self._max_vectors_thumbnail
-            )
-            downsampled = downsampled[inds]
         for v in downsampled:
             start = v[0]
             stop = v[1]

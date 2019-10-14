@@ -6,6 +6,8 @@ wrap.
 from qtpy import API_NAME
 from vispy import app
 
+from napari._qt.qt_about import AboutPage
+
 app.use_app(API_NAME)
 del app
 
@@ -55,6 +57,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
@@ -129,6 +132,13 @@ class Window:
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
 
+    def _add_help_menu(self):
+        about_action = QAction("napari info", self._qt_window)
+        about_action.setStatusTip('About napari')
+        about_action.triggered.connect(AboutPage.showAbout)
+        self.help_menu = self.main_menu.addMenu('&Help')
+        self.help_menu.addAction(about_action)
+
     def resize(self, width, height):
         """Resize the window.
 
@@ -146,7 +156,6 @@ class Window:
         """
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
-        self._qt_window.raise_()
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet

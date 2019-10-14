@@ -17,6 +17,8 @@ def test_random_image():
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer.rgb == False
+    assert layer.is_pyramid == False
+    assert layer._data_pyramid == None
     assert layer._data_view.shape == shape[-2:]
 
 

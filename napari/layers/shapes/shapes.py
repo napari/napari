@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 from ...util.event import Event
 from ...util.misc import ensure_iterable
+from ...util.status_messages import format_float
 from ..base import Layer
 from vispy.color import get_color_names
 from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
@@ -238,6 +239,7 @@ class Shapes(Layer):
         )
 
         self._display_order_stored = []
+        self._ndisplay_stored = self.dims.ndisplay
         self.dims.clip = False
 
         # The following shape properties are for the new shapes that will
@@ -263,7 +265,7 @@ class Shapes(Layer):
         else:
             self._opacity = 0.7
 
-        self._data_view = ShapeList()
+        self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
         self._data_slice_keys = np.empty(
             (0, 2, len(self.dims.not_displayed)), dtype=int
         )
@@ -359,6 +361,7 @@ class Shapes(Layer):
             index = self.selected_data
             for i in index:
                 self._data_view.update_edge_width(i, edge_width)
+        self.status = format_float(self.edge_width)
         self.events.edge_width()
 
     @property
@@ -406,6 +409,7 @@ class Shapes(Layer):
             index = self.selected_data
             for i in index:
                 self._data_view.update_opacity(i, opacity)
+        self.status = format_float(self.opacity)
         self.events.opacity()
 
     @property
@@ -516,6 +520,9 @@ class Shapes(Layer):
         if isinstance(mode, str):
             mode = Mode(mode)
 
+        if not self.editable:
+            mode = Mode.PAN_ZOOM
+
         if mode == self._mode:
             return
         old_mode = self._mode
@@ -561,6 +568,17 @@ class Shapes(Layer):
         if not (mode in draw_modes and old_mode in draw_modes):
             self._finish_drawing()
         self._set_view_slice()
+
+    def _set_editable(self, editable=None):
+        """Set editable mode based on layer properties."""
+        if editable is None:
+            if self.dims.ndisplay == 3:
+                self.editable = False
+            else:
+                self.editable = True
+
+        if self.editable == False:
+            self.mode = Mode.PAN_ZOOM
 
     def add(
         self,
@@ -655,16 +673,23 @@ class Shapes(Layer):
                     opacity=o,
                     z_index=z,
                     dims_order=self.dims.order,
+                    ndisplay=self.dims.ndisplay,
                 )
 
                 # Add shape
                 self._data_view.add(shape)
 
         self._display_order_stored = copy(self.dims.order)
+        self._ndisplay_stored = copy(self.dims.ndisplay)
         self._update_dims()
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
+        if not self.dims.ndisplay == self._ndisplay_stored:
+            self.selected_data = []
+            self._data_view.ndisplay = min(self.dims.ndim, self.dims.ndisplay)
+            self._ndisplay_stored = copy(self.dims.ndisplay)
+            self._clipboard = {}
 
         if not self.dims.order == self._display_order_stored:
             self.selected_data = []
@@ -928,12 +953,12 @@ class Shapes(Layer):
                 for d in self.dims.displayed
             ]
         ).astype(int)
-        zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
+        zoom_factor = np.divide(self._thumbnail_shape[:2], shape[-2:]).min()
 
         colormapped = self._data_view.to_colors(
             colors_shape=self._thumbnail_shape[:2],
             zoom_factor=zoom_factor,
-            offset=offset,
+            offset=offset[-2:],
         )
 
         self.thumbnail = colormapped
@@ -1032,6 +1057,8 @@ class Shapes(Layer):
     def get_value(self):
         """Determine if any shape at given coord using triangle meshes.
 
+        Getting value is not supported yet for 3D meshes
+
         Returns
         ----------
         shape : int | None
@@ -1041,6 +1068,9 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
+        if self.dims.ndisplay == 3:
+            return (None, None)
+
         if self._is_moving:
             return self._moving_value
 
@@ -1089,6 +1119,7 @@ class Shapes(Layer):
             # Check if mouse inside shape
             shape = self._data_view.inside(coord)
             value = (shape, None)
+
         return value
 
     def move_to_front(self):

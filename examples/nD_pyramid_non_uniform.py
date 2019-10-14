@@ -14,7 +14,7 @@ import numpy as np
 astronaut = data.astronaut()
 base = np.tile(astronaut, (3, 3, 1))
 pyramid = list(
-    pyramid_gaussian(base, downscale=2, max_layer=3, rgb=True)
+    pyramid_gaussian(base, downscale=2, max_layer=3, multichannel=True)
 )
 pyramid = [
     np.array([p * (abs(3 - i) + 1) / 4 for i in range(6)]) for p in pyramid
@@ -22,8 +22,5 @@ pyramid = [
 print('pyramid level shapes: ', [p.shape for p in pyramid])
 
 with napari.gui_qt():
-    # create the viewer
-    viewer = napari.Viewer()
-
     # add image pyramid
-    viewer.add_pyramid(pyramid, contrast_limits=[0, 255])
+    napari.view_image(pyramid, is_pyramid=True)
