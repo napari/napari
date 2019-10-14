@@ -1,8 +1,7 @@
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy
+from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollBar
 import numpy as np
 
-from . import QHRangeSlider
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
 
@@ -25,8 +24,6 @@ class QtDims(QWidget):
         List of slider widgets
     """
 
-    SLIDERHEIGHT = 26
-
     # Qt Signals for sending events to Qt thread
     update_ndim = Signal()
     update_axis = Signal(int)
@@ -37,6 +34,8 @@ class QtDims(QWidget):
 
         super().__init__(parent=parent)
 
+        self.SLIDERHEIGHT = 22
+
         # We keep a reference to the view:
         self.dims = dims
 
@@ -45,7 +44,7 @@ class QtDims(QWidget):
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
-        self.last_used = None
+        self._last_used = None
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -101,6 +100,31 @@ class QtDims(QWidget):
         """
         return len(self.sliders)
 
+    @property
+    def last_used(self):
+        """int: Index of slider last used.
+        """
+        return self._last_used
+
+    @last_used.setter
+    def last_used(self, last_used):
+        if last_used == self.last_used:
+            return
+
+        formerly_used = self.last_used
+        if formerly_used is not None:
+            sld = self.sliders[formerly_used]
+            sld.setProperty('last_used', False)
+            sld.style().unpolish(sld)
+            sld.style().polish(sld)
+
+        self._last_used = last_used
+        if last_used is not None:
+            sld = self.sliders[last_used]
+            sld.setProperty('last_used', True)
+            sld.style().unpolish(sld)
+            sld.style().polish(sld)
+
     def _update_slider(self, axis: int):
         """
         Updates position for a given slider.
@@ -118,11 +142,7 @@ class QtDims(QWidget):
 
         mode = self.dims.mode[axis]
         if mode == DimsMode.POINT:
-            slider.collapse()
             slider.setValue(self.dims.point[axis])
-        elif mode == DimsMode.INTERVAL:
-            slider.expand()
-            slider.setValues(self.dims.interval[axis])
         self.last_used = axis
 
     def _update_range(self, axis: int):
@@ -154,7 +174,10 @@ class QtDims(QWidget):
                     self._displayed_sliders[axis] = True
                     self.last_used = axis
                     slider.show()
-                slider.setRange(range)
+                slider.setMinimum(range[0])
+                slider.setMaximum(range[1])
+                slider.setSingleStep(range[2])
+                slider.setPageStep(range[2])
         else:
             self._displayed_sliders[axis] = False
             slider.hide()
@@ -164,7 +187,7 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        for axis, slider in enumerate(self.sliders):
+        for axis, slider in reversed(list(enumerate(self.sliders))):
             if axis in self.dims.displayed:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
@@ -259,51 +282,49 @@ class QtDims(QWidget):
         range = (range[0], range[1] - range[2], range[2])
         point = self.dims.point[axis]
 
-        slider = QHRangeSlider(
-            slider_range=range, values=(point, point), parent=self
-        )
-
-        slider.setFocusPolicy(Qt.StrongFocus)
-
-        # notify of changes while sliding:
-        slider.setEmitWhileMoving(True)
-
-        # allows range slider to collapse to a single knob:
-        slider.collapsable = True
-
-        # and sets it in the correct state:
-        if self.dims.mode[axis] == DimsMode.POINT:
-            slider.collapse()
-        else:
-            slider.expand()
+        slider = QScrollBar(Qt.Horizontal)
+        slider.setFocusPolicy(Qt.NoFocus)
+        slider.setMinimum(range[0])
+        slider.setMaximum(range[1])
+        slider.setSingleStep(range[2])
+        slider.setPageStep(range[2])
+        slider.setValue(point)
 
         # Listener to be used for sending events back to model:
-        def slider_change_listener(min, max):
-            if slider.collapsed:
-                self.dims.set_point(axis, min)
-            elif not slider.collapsed:
-                self.dims.set_interval(axis, (min, max))
+        def slider_change_listener(value):
+            self.dims.set_point(axis, value)
 
         # linking the listener to the slider:
-        slider.rangeChanged.connect(slider_change_listener)
+        slider.valueChanged.connect(slider_change_listener)
 
         def slider_focused_listener():
             self.last_used = self.sliders.index(slider)
 
         # linking focus listener to the last used:
-        slider.focused.connect(slider_focused_listener)
-
-        # Listener to be used for sending events back to model:
-        def collapse_change_listener(collapsed):
-            if collapsed:
-                interval = self.dims.interval[axis]
-                if interval is not None:
-                    min, max = interval
-                    self.dims.set_point(axis, (max + min) / 2)
-            self.dims.set_mode(
-                axis, DimsMode.POINT if collapsed else DimsMode.INTERVAL
-            )
-
-        slider.collapsedChanged.connect(collapse_change_listener)
+        slider.sliderPressed.connect(slider_focused_listener)
 
         return slider
+
+    def focus_up(self):
+        """Shift focused dimension slider to be the next slider above."""
+        displayed = list(np.nonzero(self._displayed_sliders)[0])
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) + 1) % len(displayed)
+            self.last_used = displayed[index]
+
+    def focus_down(self):
+        """Shift focused dimension slider to be the next slider bellow."""
+        displayed = list(np.nonzero(self._displayed_sliders)[0])
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) - 1) % len(displayed)
+            self.last_used = displayed[index]

@@ -21,7 +21,7 @@ def test_specified_multichannel():
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random((5, 10, 15))
-    viewer.add_multichannel(data, channel=0)
+    viewer.add_multichannel(data, axis=0)
     assert len(viewer.layers) == data.shape[0]
     for i in range(data.shape[0]):
         assert np.all(viewer.layers[i].data == data.take(i, axis=0))
@@ -40,9 +40,7 @@ def test_names():
 
     viewer = ViewerModel()
     name = 'example'
-    names = [name] + [
-        name + ' ' + str(i + 1) for i in range(data.shape[-1] - 1)
-    ]
+    names = [name] + [name + f' [{i + 1}]' for i in range(data.shape[-1] - 1)]
     viewer.add_multichannel(data, name=name)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):

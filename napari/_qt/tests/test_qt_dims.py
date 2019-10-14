@@ -72,17 +72,17 @@ def test_slider_values(qtbot):
 
     # Check that values of the dimension slider matches the values of the
     # dims point at initialization
-    assert view.sliders[0].getValues() == [view.dims.point[0]] * 2
+    assert view.sliders[0].value() == view.dims.point[0]
 
     # Check that values of the dimension slider matches the values of the
     # dims point after the point has been moved within the dims
     view.dims.set_point(0, 2)
-    assert view.sliders[0].getValues() == [view.dims.point[0]] * 2
+    assert view.sliders[0].value() == view.dims.point[0]
 
     # Check that values of the dimension slider matches the values of the
     # dims point after the point has been moved within the slider
     view.sliders[0].setValue(1)
-    assert view.sliders[0].getValues() == [view.dims.point[0]] * 2
+    assert view.sliders[0].value() == view.dims.point[0]
 
 
 def test_slider_range(qtbot):
@@ -96,16 +96,22 @@ def test_slider_range(qtbot):
 
     # Check the range of slider matches the values of the range of the dims
     # at initialization
-    assert view.sliders[0].start == view.dims.range[0][0]
-    assert view.sliders[0].end == view.dims.range[0][1] - view.dims.range[0][2]
-    assert view.sliders[0].single_step == view.dims.range[0][2]
+    assert view.sliders[0].minimum() == view.dims.range[0][0]
+    assert (
+        view.sliders[0].maximum()
+        == view.dims.range[0][1] - view.dims.range[0][2]
+    )
+    assert view.sliders[0].singleStep() == view.dims.range[0][2]
 
     # Check the range of slider stays matched to the values of the range of
     # the dims
     view.dims.set_range(0, (1, 5, 2))
-    assert view.sliders[0].start == view.dims.range[0][0]
-    assert view.sliders[0].end == view.dims.range[0][1] - view.dims.range[0][2]
-    assert view.sliders[0].single_step == view.dims.range[0][2]
+    assert view.sliders[0].minimum() == view.dims.range[0][0]
+    assert (
+        view.sliders[0].maximum()
+        == view.dims.range[0][1] - view.dims.range[0][2]
+    )
+    assert view.sliders[0].singleStep() == view.dims.range[0][2]
 
 
 def test_order_when_changing_ndim(qtbot):
@@ -122,22 +128,22 @@ def test_order_when_changing_ndim(qtbot):
     view.dims.set_point(0, 2)
     view.dims.set_point(1, 1)
     for i in range(view.dims.ndim - 2):
-        assert view.sliders[i].getValues() == [view.dims.point[i]] * 2
+        assert view.sliders[i].value() == view.dims.point[i]
 
     # Check the matching dimensions and sliders are preserved when
     # dimensions are added
     view.dims.ndim = 5
     for i in range(view.dims.ndim - 2):
-        assert view.sliders[i].getValues() == [view.dims.point[i]] * 2
+        assert view.sliders[i].value() == view.dims.point[i]
 
     # Check the matching dimensions and sliders are preserved when dims
     # dimensions are removed
     view.dims.ndim = 4
     for i in range(view.dims.ndim - 2):
-        assert view.sliders[i].getValues() == [view.dims.point[i]] * 2
+        assert view.sliders[i].value() == view.dims.point[i]
 
     # Check the matching dimensions and sliders are preserved when dims
     # dimensions are removed
     view.dims.ndim = 3
     for i in range(view.dims.ndim - 2):
-        assert view.sliders[i].getValues() == [view.dims.point[i]] * 2
+        assert view.sliders[i].value() == view.dims.point[i]

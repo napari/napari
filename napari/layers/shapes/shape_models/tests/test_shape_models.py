@@ -28,13 +28,17 @@ def test_rectangle():
 
 def test_nD_rectangle():
     """Test creating Shape with a random nD rectangle."""
-    # Test a single four corner 3D rectangle
+    # Test a single four corner planar 3D rectangle
     np.random.seed(0)
     data = 20 * np.random.random((4, 3))
+    data[:, 0] = 0
     shape = Rectangle(data)
     assert np.all(shape.data == data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 1)
+
+    shape.ndisplay = 3
+    assert shape.data_displayed.shape == (4, 3)
 
 
 def test_polygon():
@@ -50,13 +54,17 @@ def test_polygon():
 
 def test_nD_polygon():
     """Test creating Shape with a random nD polygon."""
-    # Test a single six vertex 3D polygon
+    # Test a single six vertex planar 3D polygon
     np.random.seed(0)
     data = 20 * np.random.random((6, 3))
+    data[:, 0] = 0
     shape = Polygon(data)
     assert np.all(shape.data == data)
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 1)
+
+    shape.ndisplay = 3
+    assert shape.data_displayed.shape == (6, 3)
 
 
 def test_path():
@@ -80,6 +88,9 @@ def test_nD_path():
     assert shape.data_displayed.shape == (6, 2)
     assert shape.slice_key.shape == (2, 1)
 
+    shape.ndisplay = 3
+    assert shape.data_displayed.shape == (6, 3)
+
 
 def test_line():
     """Test creating Shape with a random line."""
@@ -102,6 +113,9 @@ def test_nD_line():
     assert shape.data_displayed.shape == (2, 2)
     assert shape.slice_key.shape == (2, 1)
 
+    shape.ndisplay = 3
+    assert shape.data_displayed.shape == (2, 3)
+
 
 def test_ellipse():
     """Test creating Shape with a random ellipse."""
@@ -123,10 +137,14 @@ def test_ellipse():
 
 def test_nD_ellipse():
     """Test creating Shape with a random nD ellipse."""
-    # Test a single four corner 3D ellipse
+    # Test a single four corner planar 3D ellipse
     np.random.seed(0)
     data = 20 * np.random.random((4, 3))
+    data[:, 0] = 0
     shape = Ellipse(data)
     assert np.all(shape.data == data)
     assert shape.data_displayed.shape == (4, 2)
     assert shape.slice_key.shape == (2, 1)
+
+    shape.ndisplay = 3
+    assert shape.data_displayed.shape == (4, 3)

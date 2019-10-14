@@ -4,8 +4,15 @@ import numpy as np
 class Mesh:
     """Contains meshses of shapes that will ultimately get rendered.
 
+    Parameters
+    ----------
+    ndisplay : int
+        Number of displayed dimensions.
+
     Attributes
     ----------
+    ndisplay : int
+        Number of displayed dimensions.
     vertices : np.ndarray
          Qx2 array of vertices of all triangles for shapes including edges and
          faces
@@ -44,16 +51,17 @@ class Mesh:
 
     _types = ['face', 'edge']
 
-    def __init__(self):
+    def __init__(self, ndisplay=2):
 
+        self._ndisplay = ndisplay
         self.clear()
 
     def clear(self):
         """Resets mesh data
         """
-        self.vertices = np.empty((0, 2))
-        self.vertices_centers = np.empty((0, 2))
-        self.vertices_offsets = np.empty((0, 2))
+        self.vertices = np.empty((0, self.ndisplay))
+        self.vertices_centers = np.empty((0, self.ndisplay))
+        self.vertices_offsets = np.empty((0, self.ndisplay))
         self.vertices_index = np.empty((0, 2), dtype=int)
         self.triangles = np.empty((0, 3), dtype=np.uint32)
         self.triangles_index = np.empty((0, 2), dtype=int)
@@ -63,3 +71,16 @@ class Mesh:
         self.displayed_triangles = np.empty((0, 3), dtype=np.uint32)
         self.displayed_triangles_index = np.empty((0, 2), dtype=int)
         self.displayed_triangles_colors = np.empty((0, 4))
+
+    @property
+    def ndisplay(self):
+        """int: Number of displayed dimensions."""
+        return self._ndisplay
+
+    @ndisplay.setter
+    def ndisplay(self, ndisplay):
+        if self.ndisplay == ndisplay:
+            return
+
+        self._ndisplay = ndisplay
+        self.clear()

@@ -119,7 +119,7 @@ class VispyBaseLayer(ABC):
         self.node.opacity = self.layer.opacity
 
     def _on_blending_change(self):
-        self.node.set_gl_state(self.layer.blending, depth_test=False)
+        self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
     def _on_scale_change(self):
@@ -130,7 +130,8 @@ class VispyBaseLayer(ABC):
 
     def _on_translate_change(self):
         self.translate = [
-            self.layer.translate[d] for d in self.layer.dims.displayed[::-1]
+            self.layer.translate[d] + self.layer.translate_grid[d]
+            for d in self.layer.dims.displayed[::-1]
         ]
         self.layer.position = self._transform_position(self._position)
 

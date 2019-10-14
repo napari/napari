@@ -10,9 +10,9 @@ class Viewer(ViewerModel):
     ----------
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
@@ -23,5 +23,4 @@ class Viewer(ViewerModel):
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
         self.screenshot = self.window.qt_viewer.screenshot
-        self.camera = self.window.qt_viewer.view.camera
         self.update_console = self.window.qt_viewer.console.push

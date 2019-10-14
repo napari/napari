@@ -5,20 +5,16 @@ using the layers swap method and remove one
 
 from skimage import data
 from skimage.color import rgb2gray
-from napari import view, gui_qt
+import numpy as np
+import napari
 
 
-with gui_qt():
+with napari.gui_qt():
     # create the viewer with several image layers
-    viewer = view(
-        astronaut=rgb2gray(data.astronaut()),
-        photographer=data.camera(),
-        coins=data.coins(),
-        moon=data.moon(),
-    )
-
-    # remove the coins layer
-    viewer.layers.remove('coins')
-
-    # swap the order of astronaut and moon
-    viewer.layers['astronaut', 'moon'] = viewer.layers['moon', 'astronaut']
+    viewer = napari.view_image(rgb2gray(data.astronaut()), name='astronaut')
+    viewer.add_image(data.camera(), name='photographer')
+    viewer.add_image(data.coins(), name='coins')
+    viewer.add_image(data.moon(), name='moon')
+    viewer.add_image(np.random.random((512, 512)), name='random')
+    viewer.add_image(data.binary_blobs(length=512, volume_fraction=0.2, n_dim=2), name='blobs')
+    viewer.grid_view()

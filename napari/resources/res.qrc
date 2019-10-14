@@ -2,6 +2,8 @@
 <qresource>
     <file>icons/cursor/cursor_disabled.png</file>
     <file>icons/cursor/cursor_square.png</file>
+    <file>icons/light/2D.svg</file>
+    <file>icons/light/3D.svg</file>
     <file>icons/light/add.svg</file>
     <file>icons/light/console.svg</file>
     <file>icons/light/delete.svg</file>
@@ -10,13 +12,19 @@
     <file>icons/light/drop_down.svg</file>
     <file>icons/light/ellipse.svg</file>
     <file>icons/light/fill.svg</file>
+    <file>icons/light/grid.svg</file>
+    <file>icons/light/home.svg</file>
+    <file>icons/light/left_arrow.svg</file>
     <file>icons/light/line.svg</file>
     <file>icons/light/minus.svg</file>
     <file>icons/light/move_back.svg</file>
     <file>icons/light/move_front.svg</file>
+    <file>icons/light/new_image.svg</file>
     <file>icons/light/new_labels.svg</file>
     <file>icons/light/new_points.svg</file>
     <file>icons/light/new_shapes.svg</file>
+    <file>icons/light/new_surface.svg</file>
+    <file>icons/light/new_vectors.svg</file>
     <file>icons/light/paint.svg</file>
     <file>icons/light/path.svg</file>
     <file>icons/light/picker.svg</file>
@@ -25,12 +33,17 @@
     <file>icons/light/properties_contract.svg</file>
     <file>icons/light/properties_expand.svg</file>
     <file>icons/light/rectangle.svg</file>
+    <file>icons/light/right_arrow.svg</file>
+    <file>icons/light/roll.svg</file>
     <file>icons/light/select.svg</file>
+    <file>icons/light/transpose.svg</file>
     <file>icons/light/vertex_insert.svg</file>
     <file>icons/light/vertex_remove.svg</file>
     <file>icons/light/visibility.svg</file>
     <file>icons/light/visibility_off.svg</file>
     <file>icons/light/zoom.svg</file>
+    <file>icons/dark/2D.svg</file>
+    <file>icons/dark/3D.svg</file>
     <file>icons/dark/add.svg</file>
     <file>icons/dark/console.svg</file>
     <file>icons/dark/delete.svg</file>
@@ -39,14 +52,20 @@
     <file>icons/dark/drop_down.svg</file>
     <file>icons/dark/ellipse.svg</file>
     <file>icons/dark/fill.svg</file>
+    <file>icons/dark/grid.svg</file>
+    <file>icons/dark/home.svg</file>
+    <file>icons/dark/left_arrow.svg</file>
     <file>icons/dark/line.svg</file>
     <file>icons/dark/menu.svg</file>
     <file>icons/dark/minus.svg</file>
     <file>icons/dark/move_back.svg</file>
     <file>icons/dark/move_front.svg</file>
+    <file>icons/dark/new_image.svg</file>
     <file>icons/dark/new_labels.svg</file>
     <file>icons/dark/new_points.svg</file>
     <file>icons/dark/new_shapes.svg</file>
+    <file>icons/dark/new_surface.svg</file>
+    <file>icons/dark/new_vectors.svg</file>
     <file>icons/dark/paint.svg</file>
     <file>icons/dark/path.svg</file>
     <file>icons/dark/picker.svg</file>
@@ -55,7 +74,10 @@
     <file>icons/dark/properties_contract.svg</file>
     <file>icons/dark/properties_expand.svg</file>
     <file>icons/dark/rectangle.svg</file>
+    <file>icons/dark/right_arrow.svg</file>
+    <file>icons/dark/roll.svg</file>
     <file>icons/dark/select.svg</file>
+    <file>icons/dark/transpose.svg</file>
     <file>icons/dark/vertex_insert.svg</file>
     <file>icons/dark/vertex_remove.svg</file>
     <file>icons/dark/visibility.svg</file>
