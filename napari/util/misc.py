@@ -678,6 +678,7 @@ def mouse_release_callbacks(obj, event):
         del obj._mouse_drag_gen[func]
         del obj._persisted_mouse_event[gen]
 
+
 def get_keybindings_summary(keymap):
     """Get summary of keybindings in keymap.
 
