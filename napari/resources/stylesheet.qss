@@ -133,8 +133,8 @@ QLabel {
 }
 
 QDialog#QtAboutKeybindings {
-  min-width: 530px;
-  max-width: 530px;
+  min-width: 500px;
+  max-width: 500px;
   min-height: 300px;
 }
 
@@ -159,6 +159,10 @@ QtActiveKeybindings > QLabel {
 
 QTabBar::tab {
   background-color: {{ foreground }};
+  border: 2px solid {{ background }};
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 4px;
 }
 
 QTabBar::tab:selected {

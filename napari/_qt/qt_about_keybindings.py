@@ -37,7 +37,7 @@ class QtAboutKeybindings(QTabWidget):
         qt_viewer._about_keybindings = QtAboutKeybindings(qt_viewer.viewer, d)
         d.show()
         d.setWindowModality(Qt.NonModal)
-        d.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        d.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         qt_viewer._about_keybindings_dialog = d
 
 
@@ -52,13 +52,18 @@ class QtActiveKeybindings(QScrollArea):
         self.active_label = QLabel()
         self.active_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.active_label.setAlignment(Qt.AlignLeft)
+        self.active_label.setContentsMargins(10, 10, 10, 10)
         self.active_label.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Fixed
+            QSizePolicy.Expanding, QSizePolicy.Expanding
         )
 
         self.update_text(None)
 
         scroll_widget = QWidget()
+        scroll_widget.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding
+        )
+        scroll_widget.setContentsMargins(10, 10, 10, 10)
         scroll_layout = QVBoxLayout()
         scroll_layout.addWidget(self.active_label)
         scroll_layout.addStretch(1)
@@ -95,6 +100,8 @@ class QtLayerKeybindings(QWidget):
 
         layer_label = QLabel(keybindings_str)
         layer_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        layer_label.setAlignment(Qt.AlignLeft)
+        # layer_label.setAlignment(Qt.AlignLeft)
+        layer_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.layout.addWidget(layer_label)
         self.setLayout(self.layout)
