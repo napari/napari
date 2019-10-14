@@ -90,6 +90,10 @@ See [this issue](https://github.com/napari/napari/issues/420) for some of the fe
 
 Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
+## code of conduct
+
+`napari` has a [Code of Conduct](CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+
 ## help
 
 We're a community partner on the [image.sc forum](https://forum.image.sc/tags/napari) and all help and support requests should be posted on the forum with the tag `napari`. We look forward to interacting with you there.
