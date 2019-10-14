@@ -111,13 +111,13 @@ def test_naming():
     layers.append(layer_a)
     layers.append(layer_b)
 
-    assert [l.name for l in layers] == ['img', 'img 1']
+    assert [l.name for l in layers] == ['img', 'img [1]']
 
     layer_b.name = 'chg'
     assert [l.name for l in layers] == ['img', 'chg']
 
     layer_a.name = 'chg'
-    assert [l.name for l in layers] == ['chg 1', 'chg']
+    assert [l.name for l in layers] == ['chg [1]', 'chg']
 
 
 def test_selection():
