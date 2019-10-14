@@ -9,7 +9,7 @@ from dask import delayed
 from dask import array as da
 
 
-def magic_read(filenames, *, use_dask=True, stack=True):
+def magic_read(filenames, *, use_dask=None, stack=True):
     """Dispatch the appropriate reader given some files.
 
     The files are assumed to all have the same shape.
@@ -20,6 +20,8 @@ def magic_read(filenames, *, use_dask=True, stack=True):
         List of filenames or directories to be opened
     use_dask : bool
         Whether to use dask to create a lazy array, rather than NumPy.
+        Default of None will resolve to True if filenames contains more than
+        one image, False otherwise.
     stack : bool
         Whether to stack the images in multiple files into a single array. If
         False, a list of arrays will be returned.
@@ -48,6 +50,9 @@ def magic_read(filenames, *, use_dask=True, stack=True):
             filenames_expanded.extend(dir_contents_files)
         else:
             filenames_expanded.append(filename)
+
+    if use_dask is None:
+        use_dask = len(filenames_expanded) > 1
 
     # then, read in images
     images = []
