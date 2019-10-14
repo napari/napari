@@ -127,7 +127,7 @@ QtLayerList {
 
 QLabel {
    background-color: {{ foreground }};
-   qproperty-alignment: right;
+   qproperty-alignment: AlignLeft;
    padding-top: 1px;
    padding-bottom: 3px;
 }
@@ -135,8 +135,7 @@ QLabel {
 QDialog#QtAboutKeybindings {
   min-width: 530px;
   max-width: 530px;
-  min-height: 700px;
-  max-height: 700px;
+  min-height: 300px;
 }
 
 QDialog#QtAbout {
@@ -150,7 +149,7 @@ QtAbout > QLabel {
    qproperty-alignment: AlignLeft;
 }
 
-QtLayerKeybindings > QLabel {
+QtActiveKeybindings > QLabel {
    qproperty-alignment: AlignLeft;
 }
 

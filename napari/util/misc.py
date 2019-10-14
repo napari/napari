@@ -545,7 +545,7 @@ def get_keybindings_summary(keymap):
     """
     keybindings_str = ''
     for key in keymap:
-        func_str = key + ': ' + get_function_summary(keymap[key]) + '\n'
+        func_str = f'<b> {key}</b>: {get_function_summary(keymap[key])}<br>'
         keybindings_str += func_str
 
     return keybindings_str
@@ -557,5 +557,5 @@ def get_function_summary(func):
     summary = ''
     summary += doc['Signature']
     for s in doc['Summary']:
-        summary += '\n\t' + s
+        summary += '<br>&nbsp;&nbsp;&nbsp;&nbsp;' + s
     return summary

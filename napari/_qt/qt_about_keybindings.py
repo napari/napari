@@ -7,6 +7,8 @@ from qtpy.QtWidgets import (
     QLabel,
     QDialog,
     QFrame,
+    QScrollArea,
+    QSizePolicy,
 )
 import napari
 from ..util.misc import get_keybindings_summary
@@ -31,36 +33,52 @@ class QtAboutKeybindings(QTabWidget):
         d = QDialog()
         d.setObjectName('QtAboutKeybindings')
         d.setStyleSheet(qt_viewer.styleSheet())
-        d.setGeometry(150, 150, 350, 400)
-        d.setFixedSize(600, 700)
-        QtAboutKeybindings(qt_viewer.viewer, d)
         d.setWindowTitle('Keybindings')
-        d.setWindowModality(Qt.ApplicationModal)
-        d.exec_()
+        qt_viewer._about_keybindings = QtAboutKeybindings(qt_viewer.viewer, d)
+        d.show()
+        d.setWindowModality(Qt.NonModal)
+        d.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        qt_viewer._about_keybindings_dialog = d
 
 
-class QtActiveKeybindings(QWidget):
+class QtActiveKeybindings(QScrollArea):
     def __init__(self, viewer):
         super().__init__()
 
-        self.layout = QVBoxLayout()
+        self.viewer = viewer
+        self.setWidgetResizable(True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
+        self.active_label = QLabel()
+        self.active_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.active_label.setAlignment(Qt.AlignLeft)
+        self.active_label.setSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Fixed
+        )
+
+        self.update_text(None)
+
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout()
+        scroll_layout.addWidget(self.active_label)
+        scroll_layout.addStretch(1)
+        scroll_widget.setLayout(scroll_layout)
+        self.setWidget(scroll_widget)
+
+        self.viewer.events.active_layer.connect(self.update_text)
+
+    def update_text(self, event):
         keybindings_str = ''
         # Add class and instance viewer keybindings
-        keybindings_str += get_keybindings_summary(viewer.class_keymap)
-        keybindings_str += get_keybindings_summary(viewer.keymap)
+        keybindings_str += get_keybindings_summary(self.viewer.class_keymap)
+        keybindings_str += get_keybindings_summary(self.viewer.keymap)
 
-        layer = viewer.active_layer
+        layer = self.viewer.active_layer
         if layer is not None:
             # Add class and instance layer keybindings for the active layer
             keybindings_str += get_keybindings_summary(layer.class_keymap)
             keybindings_str += get_keybindings_summary(layer.keymap)
-
-        active_label = QLabel(keybindings_str)
-        active_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        active_label.setAlignment(Qt.AlignLeft)
-        self.layout.addWidget(active_label)
-        self.setLayout(self.layout)
+        self.active_label.setText(keybindings_str)
 
 
 class QtLayerKeybindings(QWidget):
