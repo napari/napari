@@ -14,6 +14,7 @@ def test_random_pyramid():
     layer = Image(data, is_pyramid=True)
     assert layer.data == data
     assert layer.is_pyramid == True
+    assert len(layer._data_pyramid) > 0
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb == False
@@ -28,6 +29,7 @@ def test_infer_pyramid():
     layer = Image(data)
     assert layer.data == data
     assert layer.is_pyramid == True
+    assert len(layer._data_pyramid) > 0
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb == False
@@ -65,6 +67,7 @@ def test_forcing_pyramid():
     layer = Image(data, is_pyramid=True)
     assert np.all(layer.data == data)
     assert layer.is_pyramid == True
+    assert len(layer._data_pyramid) > 0
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.rgb == False
@@ -79,6 +82,7 @@ def test_blocking_pyramid():
     layer = Image(data, is_pyramid=False)
     assert np.all(layer.data == data)
     assert layer.is_pyramid == False
+    assert layer._data_pyramid == None
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.rgb == False
