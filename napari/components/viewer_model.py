@@ -19,7 +19,7 @@ class ViewerModel(KeymapMixin):
     ----------
     title : string
         The title of the viewer window.
-    ndisplay : int
+    ndisplay : {2, 3}
         Number of displayed dimensions.
     order : tuple of int
         Order in which dimensions are displayed where the last two or last
