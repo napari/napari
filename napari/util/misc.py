@@ -372,6 +372,21 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 def mouse_press_callbacks(obj, event):
     """Run mouse press callbacks on either layer or viewer object.
 
+    Note that drag callbacks should have the following form::
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
+
     Parameters
     ---------
     obj : napari.components.ViewerModel or napar.layers.Layer
@@ -379,12 +394,17 @@ def mouse_press_callbacks(obj, event):
     event : Event
         Mouse event
     """
+    # iterate through drag callback functions
     for mouse_drag_func in obj.mouse_drag_callbacks:
+        # exectute function to run press event code
         gen = mouse_drag_func(obj, event)
+        # if function returns a generator then try to iterate it
         if inspect.isgeneratorfunction(mouse_drag_func):
             try:
                 next(gen)
+                # now store iterated genenerator
                 obj._mouse_drag_gen[mouse_drag_func] = gen
+                # and now store event that initially triggered the press
                 obj._persisted_mouse_event[gen] = event
             except StopIteration:
                 pass
@@ -392,6 +412,21 @@ def mouse_press_callbacks(obj, event):
 
 def mouse_move_callbacks(obj, event):
     """Run mouse move callbacks on either layer or viewer object.
+
+    Note that drag callbacks should have the following form::
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
 
     Parameters
     ---------
@@ -401,19 +436,40 @@ def mouse_move_callbacks(obj, event):
         Mouse event
     """
     if not event.is_dragging:
+        # if not dragging simply call the mouse move callbacks
         for mouse_move_func in obj.mouse_move_callbacks:
             mouse_move_func(obj, event)
+
+    # for each drag callback get the current generator
     for func, gen in tuple(obj._mouse_drag_gen.items()):
+        # save the event current event
         obj._persisted_mouse_event[gen].__wrapped__ = event
         try:
+            # try to advance the generator
             next(gen)
         except StopIteration:
+            # If done deleted the generator and stored event
             del obj._mouse_drag_gen[func]
             del obj._persisted_mouse_event[gen]
 
 
 def mouse_release_callbacks(obj, event):
     """Run mouse release callbacks on either layer or viewer object.
+
+    Note that drag callbacks should have the following form::
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
 
     Parameters
     ---------
@@ -425,8 +481,10 @@ def mouse_release_callbacks(obj, event):
     for func, gen in tuple(obj._mouse_drag_gen.items()):
         obj._persisted_mouse_event[gen].__wrapped__ = event
         try:
+            # Run last part of the function to trigger release event
             next(gen)
         except StopIteration:
             pass
+        # Finally delete the generator and stored event
         del obj._mouse_drag_gen[func]
         del obj._persisted_mouse_event[gen]

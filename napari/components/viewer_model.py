@@ -89,7 +89,9 @@ class ViewerModel(KeymapMixin):
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
 
+        # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
+        # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
