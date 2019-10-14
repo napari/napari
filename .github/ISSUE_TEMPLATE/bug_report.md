@@ -24,9 +24,8 @@ Steps to reproduce the behavior:
 
 ## Environment
 
- - napari Version (e.g., 1.0):
- - OS (e.g., Linux):
- - Python version:
+ - Please copy and paste the information at napari info option in help menubar here:
+
  - Any other relevant information:
 
 ## Additional context
