@@ -1,6 +1,7 @@
 import warnings
 from xml.etree.ElementTree import Element
 from base64 import b64encode
+import types
 from imageio import imwrite
 import numpy as np
 from copy import copy
@@ -134,6 +135,9 @@ class Image(Layer):
         blending='translucent',
         visible=True,
     ):
+        if isinstance(data, types.GeneratorType):
+            data = list(data)
+
         ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
             data, pyramid=is_pyramid, rgb=rgb
         )

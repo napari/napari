@@ -60,10 +60,10 @@ def is_rgb(shape):
 
 
 def is_pyramid(data):
-    """If data is a list of arrays of decreasing size.
+    """If shape of arrays along first axis is strictly decreasing.
     """
-    if isinstance(data, list):
-        size = [np.prod(d.shape) for d in data]
+    size = np.array([np.prod(d.shape) for d in data])
+    if len(size) > 1:
         return np.all(size[:-1] > size[1:])
     else:
         return False
@@ -110,7 +110,7 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
 
     Parameters
     ----------
-    data : array or list
+    data : array, list, or tuple
         Data to be checked if pyramid or if needs to be turned into a pyramid.
     pyramid : bool, optional
         Value that can force data to be considered as a pyramid or not,
@@ -134,7 +134,8 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     # Determine if data currently is a pyramid
     currently_pyramid = is_pyramid(data)
     if currently_pyramid:
-        init_shape = data[0].shape
+        shapes = [d.shape for d in data]
+        init_shape = shapes[0]
     else:
         init_shape = data.shape
 
@@ -144,7 +145,14 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     else:
         # If rgb is True or None then guess if rgb
         # allowed or not, and if allowed set it to be True
-        rgb = is_rgb(init_shape)
+        rgb_guess = is_rgb(init_shape)
+        if rgb and rgb_guess is False:
+            raise ValueError(
+                "Non rgb or rgba data was passed, but rgb data was"
+                " requested."
+            )
+        else:
+            rgb = rgb_guess
 
     if rgb:
         ndim = len(init_shape) - 1
@@ -154,8 +162,8 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     if pyramid is False:
         if currently_pyramid:
             raise ValueError(
-                """Non pyramided data was requested, but pyramid
-                             data was passed"""
+                "Non pyramided data was requested, but pyramid"
+                " data was passed"
             )
         else:
             data_pyramid = None
@@ -164,8 +172,12 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
             data_pyramid = trim_pyramid(data)
             pyramid = True
         else:
-            # Guess if data should be pyramid
-            pyr_axes = should_be_pyramid(data.shape)
+            # Guess if data should be pyramid or if a pyramid was requested
+            if pyramid:
+                pyr_axes = [True] * ndim
+            else:
+                pyr_axes = should_be_pyramid(data.shape)
+
             if np.any(pyr_axes):
                 pyramid = True
                 # Set axes to be downsampled to have a factor of 2

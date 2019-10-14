@@ -1,4 +1,5 @@
 import numpy as np
+from skimage.transform import pyramid_gaussian
 from napari.util.misc import (
     is_rgb,
     callsignature,
@@ -82,6 +83,19 @@ def test_is_pyramid():
     assert is_pyramid(data)
 
     data = [np.random.random((10, 15, 6)), np.random.random((10, 7, 3))]
+    assert is_pyramid(data)
+
+    data = tuple(data)
+    assert is_pyramid(data)
+
+    data = tuple(
+        pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
+    )
+    assert is_pyramid(data)
+
+    data = np.asarray(
+        tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
+    )
     assert is_pyramid(data)
 
 
@@ -188,6 +202,13 @@ def test_get_pyramid_and_rgb():
     ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data)
     assert not pyramid
     assert data_pyramid is None
+    assert not rgb
+    assert ndim == 2
+
+    data = np.random.random((80, 40))
+    ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data, pyramid=True)
+    assert pyramid
+    assert data_pyramid[0].shape == (80, 40)
     assert not rgb
     assert ndim == 2
 
