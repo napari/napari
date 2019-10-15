@@ -25,7 +25,13 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
-from ..util.misc import is_rgb
+from ..util.misc import (
+    is_rgb,
+    ReadOnlyWrapper,
+    mouse_press_callbacks,
+    mouse_move_callbacks,
+    mouse_release_callbacks,
+)
 from ..util.keybindings import components_to_key_combo
 from ..util import io
 
@@ -289,26 +295,45 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        layer = self.viewer.active_layer
-        if layer is not None:
-            self.layer_to_visual[layer].on_mouse_move(event)
-
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
+        if event.pos is None:
+            return
+
+        event = ReadOnlyWrapper(event)
+        mouse_press_callbacks(self.viewer, event)
+
         layer = self.viewer.active_layer
         if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
             self.layer_to_visual[layer].on_mouse_press(event)
+            mouse_press_callbacks(layer, event)
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            return
+
+        mouse_move_callbacks(self.viewer, event)
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
+            self.layer_to_visual[layer].on_mouse_move(event)
+            mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
+        mouse_release_callbacks(self.viewer, event)
+
         layer = self.viewer.active_layer
         if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
             self.layer_to_visual[layer].on_mouse_release(event)
+            mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.

@@ -176,6 +176,11 @@ class Layer(KeymapMixin, ABC):
         self.dims.events.order.connect(lambda e: self._update_dims())
         self.dims.events.axis.connect(lambda e: self._set_view_slice())
 
+        self.mouse_move_callbacks = []
+        self.mouse_drag_callbacks = []
+        self._persisted_mouse_event = {}
+        self._mouse_drag_gen = {}
+
     def __str__(self):
         """Return self.name."""
         return self.name

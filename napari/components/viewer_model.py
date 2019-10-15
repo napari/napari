@@ -95,6 +95,13 @@ class ViewerModel(KeymapMixin):
         self.layers.events.removed.connect(lambda e: self._update_grid())
         self.layers.events.reordered.connect(lambda e: self._update_grid())
 
+        # Hold callbacks for when mouse moves with nothing pressed
+        self.mouse_move_callbacks = []
+        # Hold callbacks for when mouse is pressed, dragged, and released
+        self.mouse_drag_callbacks = []
+        self._persisted_mouse_event = {}
+        self._mouse_drag_gen = {}
+
     @property
     def palette(self):
         """dict of str: str : Color palette with which to style the viewer.
