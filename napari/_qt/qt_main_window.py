@@ -123,6 +123,7 @@ class Window:
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_folder)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
