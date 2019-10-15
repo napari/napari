@@ -269,18 +269,19 @@ def calc_data_range(data):
     if np.prod(data.shape) > 1e6:
         # If data is very large take the average of the top, bottom, and
         # middle slices
-        top_plane_idx = np.zeros(data.ndim - 2).astype(int)
-        bottom_plane_idx = np.subtract(data.shape[:-2], 1).astype(int)
-        middle_plane_idx = np.round(np.divide(bottom_plane_idx, 2)).astype(int)
-        top_plane = np.asarray(data[tuple(top_plane_idx)])
-        bottom_plane = np.asarray(data[tuple(bottom_plane_idx)])
-        middle_plane = np.asarray(data[tuple(middle_plane_idx)])
-        reduced_data = np.array([top_plane, bottom_plane, middle_plane])
+        bottom_plane_idx = (0,) * (data.ndim - 2)
+        middle_plane_idx = tuple(s // 2 for s in data.shape[:-2])
+        top_plane_idx = tuple(s - 1 for s in data.shape[:-2])
+        idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
+        reduced_data = [
+            [np.max(data[idx]) for idx in idxs],
+            [np.min(data[idx]) for idx in idxs],
+        ]
     else:
         reduced_data = data
 
-    min_val = reduced_data.min()
-    max_val = reduced_data.max()
+    min_val = np.min(reduced_data)
+    max_val = np.max(reduced_data)
 
     if min_val == max_val:
         min_val = 0
