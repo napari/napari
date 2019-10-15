@@ -648,7 +648,7 @@ class ViewerModel(KeymapMixin):
             data = np.empty([0, ndim])
 
         layer = layers.Points(
-            data,
+            data=data,
             symbol=symbol,
             size=size,
             edge_width=edge_width,
@@ -823,7 +823,7 @@ class ViewerModel(KeymapMixin):
             data = np.empty((0, 0, ndim))
 
         layer = layers.Shapes(
-            data,
+            data=data,
             shape_type=shape_type,
             edge_width=edge_width,
             edge_color=edge_color,
