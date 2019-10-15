@@ -577,7 +577,7 @@ class ViewerModel(KeymapMixin):
 
     def add_points(
         self,
-        data,
+        data=None,
         *,
         symbol='o',
         size=10,
@@ -643,6 +643,10 @@ class ViewerModel(KeymapMixin):
         See vispy's marker visual docs for more details:
         http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
+        if data is None:
+            ndim = max(self.dims.ndim, 2)
+            data = np.empty([0, ndim])
+
         layer = layers.Points(
             data,
             symbol=symbol,
@@ -740,7 +744,7 @@ class ViewerModel(KeymapMixin):
 
     def add_shapes(
         self,
-        data,
+        data=None,
         *,
         shape_type='rectangle',
         edge_width=1,
@@ -814,6 +818,10 @@ class ViewerModel(KeymapMixin):
         layer : :class:`napari.layers.Shapes`
             The newly-created shapes layer.
         """
+        if data is None:
+            ndim = max(self.dims.ndim, 2)
+            data = np.empty((0, 0, ndim))
+
         layer = layers.Shapes(
             data,
             shape_type=shape_type,
@@ -973,18 +981,10 @@ class ViewerModel(KeymapMixin):
         return layer
 
     def _new_points(self):
-        if self.dims.ndim == 0:
-            ndim = 2
-        else:
-            ndim = self.dims.ndim
-        self.add_points(np.empty((0, ndim)))
+        self.add_points()
 
     def _new_shapes(self):
-        if self.dims.ndim == 0:
-            ndim = 2
-        else:
-            ndim = self.dims.ndim
-        layer = self.add_shapes(np.empty((0, 0, ndim)))
+        self.add_shapes()
 
     def _new_labels(self):
         if self.dims.ndim == 0:
