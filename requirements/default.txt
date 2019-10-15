@@ -1,5 +1,6 @@
 dask[array]>=2.1.0
 zarr>=2.3.0
+fsspec>=0.3.3  # required for zarr write to local files
 imageio>=2.5.0
 ipykernel==5.1.1
 numpy>=1.10.0
