@@ -118,7 +118,7 @@ class Points(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
         symbol='o',
         size=10,
@@ -134,7 +134,8 @@ class Points(Layer):
         blending='translucent',
         visible=True,
     ):
-
+        if data is None:
+            data = np.empty([0, 2])
         ndim = data.shape[1]
         super().__init__(
             ndim,
