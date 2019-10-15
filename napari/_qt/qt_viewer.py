@@ -384,7 +384,12 @@ class QtViewer(QSplitter):
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop."""
-        filenames = [url.toString() for url in event.mimeData().urls()]
+        filenames = []
+        for url in event.mimeData().urls():
+            if url.isLocalFile():
+                filenames.append(url.toLocalFile())
+            else:
+                filenames.append(url.toString())
         self._add_files(filenames)
 
 
