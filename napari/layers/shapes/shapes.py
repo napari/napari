@@ -193,7 +193,7 @@ class Shapes(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
         shape_type='rectangle',
         edge_width=1,
@@ -208,7 +208,8 @@ class Shapes(Layer):
         blending='translucent',
         visible=True,
     ):
-
+        if data is None:
+            data = np.empty((0, 0, 2))
         if np.array(data).ndim == 3:
             ndim = np.array(data).shape[2]
         elif len(data) == 0:
