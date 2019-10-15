@@ -109,10 +109,18 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
-        open_images = QAction('Open', self._qt_window)
+        open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open image file(s)')
         open_images.triggered.connect(self.qt_viewer._open_images)
+
+        open_folder = QAction('Open Folder...', self._qt_window)
+        open_folder.setShortcut('Ctrl-Shift-O')
+        open_folder.setStatusTip(
+            'Open a folder of image file(s) or a zarr file'
+        )
+        open_folder.triggered.connect(self.qt_viewer._open_folder)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
 
