@@ -88,6 +88,14 @@ def test_add_empty_points_on_top_of_image():
     assert pts.data.shape == (1, 3)
 
 
+def test_add_empty_shapes_layer():
+    viewer = ViewerModel()
+    image = np.random.random((8, 64, 64))
+    image_layer = viewer.add_image(image)
+    shp = viewer.add_shapes()
+    assert shp.dims.ndim == 3
+
+
 def test_add_vectors():
     """Test adding vectors."""
     viewer = ViewerModel()
