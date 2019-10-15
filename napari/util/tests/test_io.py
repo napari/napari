@@ -88,6 +88,12 @@ def test_many_tiffs(single_tiff):
     assert images.dtype == np.uint8
 
 
+def test_single_filename(single_tiff):
+    image_files = single_tiff[0]
+    images = io.magic_read(image_files)
+    assert images.shape == (2, 15, 10)
+
+
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_zarr(single_tiff):
     image_files = single_tiff * 3

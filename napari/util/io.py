@@ -33,6 +33,8 @@ def magic_read(filenames, *, use_dask=None, stack=True):
     """
     if len(filenames) == 0:
         return None
+    if isinstance(filenames, str):
+        filenames = [filenames]  # ensure list
 
     # replace folders with their contents
     filenames_expanded = []
