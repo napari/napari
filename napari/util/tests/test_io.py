@@ -2,8 +2,17 @@ import os
 import numpy as np
 from dask import array as da
 from skimage.data import data_dir
+from tempfile import TemporaryDirectory
 from napari.util import io
 import pytest
+
+
+try:
+    import zarr
+
+    zarr_available = True
+except ImportError:
+    zarr_available = False
 
 
 @pytest.fixture
@@ -77,3 +86,15 @@ def test_many_tiffs(single_tiff):
     assert isinstance(images, da.Array)
     assert images.shape == (3, 2, 15, 10)
     assert images.dtype == np.uint8
+
+
+@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
+def test_zarr(single_tiff):
+    image_files = single_tiff * 3
+    images = io.magic_read(image_files)
+    with TemporaryDirectory(suffix='.zarr') as fout:
+        images.to_zarr(fout)
+        images_in = io.magic_read([fout])
+        # Note: due to lazy loading, the next line needs to happen within
+        # the context manager. Alternatively, we could convert to NumPy here.
+        np.testing.assert_array_equal(images, images_in)
