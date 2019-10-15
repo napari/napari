@@ -212,13 +212,12 @@ class QtViewer(QSplitter):
 
     def _open_images(self):
         """Add image files from the menubar."""
-        open_dialog = QFileDialog()
-        open_dialog.setWindowTitle('Select file(s) or folder(s)')
-        open_dialog.setDirectory(self._last_visited_dir)
-        open_dialog.setProxyModel(None)
-
-        if open_dialog.exec_() == QFileDialog.Accepted:
-            filenames = open_dialog.selectedFiles()
+        filenames, _ = QFileDialog.getOpenFileNames(
+            parent=self,
+            caption='Select image(s)...',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if filenames is not None:
             self._add_files(filenames)
 
     def _add_files(self, filenames):
