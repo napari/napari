@@ -22,6 +22,12 @@ def irregular_images():
     return image_files
 
 
+@pytest.fixture
+def single_tiff():
+    image_files = [os.path.join(data_dir, 'multipage.tif')]
+    return image_files
+
+
 def test_multi_png_defaults(two_pngs):
     image_files = two_pngs
     images = io.magic_read(image_files)
@@ -55,3 +61,19 @@ def test_irregular_images(irregular_images):
     assert isinstance(images, list)
     assert len(images) == 2
     assert tuple(image.shape for image in images) == ((512, 512), (303, 384))
+
+
+def test_tiff(single_tiff):
+    image_files = single_tiff
+    images = io.magic_read(image_files)
+    assert isinstance(images, np.ndarray)
+    assert images.shape == (2, 15, 10)
+    assert images.dtype == np.uint8
+
+
+def test_many_tiffs(single_tiff):
+    image_files = single_tiff * 3
+    images = io.magic_read(image_files)
+    assert isinstance(images, da.Array)
+    assert images.shape == (3, 2, 15, 10)
+    assert images.dtype == np.uint8
