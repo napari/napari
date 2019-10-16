@@ -980,12 +980,6 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
-    def _new_points(self):
-        self.add_points()
-
-    def _new_shapes(self):
-        self.add_shapes()
-
     def _new_labels(self):
         if self.dims.ndim == 0:
             dims = (512, 512)
