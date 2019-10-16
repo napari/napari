@@ -223,7 +223,18 @@ class QtViewer(QSplitter):
             caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        self._add_files(filenames)
+        if filenames is not None:
+            self._add_files(filenames)
+
+    def _open_folder(self):
+        """Add a folder of files from the menubar."""
+        folder = QFileDialog.getExistingDirectory(
+            parent=self,
+            caption='Select folder...',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if folder is not None:
+            self._add_files([folder])
 
     def _add_files(self, filenames):
         """Add an image layer to the viewer.
@@ -401,13 +412,10 @@ class QtViewer(QSplitter):
         """Add local files and web URLS with drag and drop."""
         filenames = []
         for url in event.mimeData().urls():
-            path = url.toString()
-            if os.path.isfile(path):
-                filenames.append(path)
-            elif os.path.isdir(path) and not path.endswith('.zarr'):
-                filenames = filenames + list(glob(os.path.join(path, '*')))
+            if url.isLocalFile():
+                filenames.append(url.toLocalFile())
             else:
-                filenames.append(path)
+                filenames.append(url.toString())
         self._add_files(filenames)
 
 

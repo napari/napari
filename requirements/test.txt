@@ -1,7 +1,5 @@
-dask[array]
 numpydoc
 pytest
 pytest-faulthandler
 pytest-qt
 xarray
-zarr

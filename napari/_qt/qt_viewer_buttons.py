@@ -82,7 +82,7 @@ class QtNewPointsButton(QPushButton):
 
         self.viewer = viewer
         self.setToolTip('New points layer')
-        self.clicked.connect(lambda: self.viewer._new_points())
+        self.clicked.connect(lambda: self.viewer.add_points())
 
 
 class QtNewShapesButton(QPushButton):
@@ -91,7 +91,7 @@ class QtNewShapesButton(QPushButton):
 
         self.viewer = viewer
         self.setToolTip('New shapes layer')
-        self.clicked.connect(lambda: self.viewer._new_shapes())
+        self.clicked.connect(lambda: self.viewer.add_shapes())
 
 
 class QtNewLabelsButton(QPushButton):

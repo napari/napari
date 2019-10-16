@@ -202,7 +202,7 @@ def view_multichannel(
 
 
 def view_points(
-    data,
+    data=None,
     *,
     symbol='o',
     size=10,
@@ -281,7 +281,7 @@ def view_points(
     """
     viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_points(
-        data,
+        data=data,
         symbol=symbol,
         size=size,
         edge_width=edge_width,
@@ -387,7 +387,7 @@ def view_labels(
 
 
 def view_shapes(
-    data,
+    data=None,
     *,
     shape_type='rectangle',
     edge_width=1,
@@ -474,7 +474,7 @@ def view_shapes(
     """
     viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_shapes(
-        data,
+        data=data,
         shape_type=shape_type,
         edge_width=edge_width,
         edge_color=edge_color,

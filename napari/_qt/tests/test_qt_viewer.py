@@ -196,7 +196,7 @@ def test_new_points(qtbot):
     view = QtViewer(viewer)
     qtbot.addWidget(view)
 
-    viewer._new_points()
+    viewer.add_points()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -213,7 +213,7 @@ def test_new_points(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
-    viewer._new_points()
+    viewer.add_points()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -230,7 +230,7 @@ def test_new_shapes(qtbot):
     view = QtViewer(viewer)
     qtbot.addWidget(view)
 
-    viewer._new_shapes()
+    viewer.add_shapes()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -247,7 +247,7 @@ def test_new_shapes(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
-    viewer._new_shapes()
+    viewer.add_shapes()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
