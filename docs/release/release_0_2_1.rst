@@ -11,55 +11,41 @@ rendering), and the scientific Python stack (numpy, scipy).
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
+
 New Features
 ------------
-- added a code of conduct
-- added grid mode that allows for looking at layers side by side
-- added the ability to bind custom mouse functions
-- added a benchmarking suite
-- added help menu with about dialog and keybindings dialog
+- added a code of conduct (#374)
+- added grid mode that allows for looking at layers side by side (#565)
+- added the ability to bind custom mouse functions (#544)
+- added a benchmarking suite (#573, #577)
+- added help menu with about dialog and keybindings dialog (#580, #583, #591)
 
 
 Improvements
 ------------
-- improved performance of the thumbnail generation for points layers
-- more comprehensive testing of keybindings functionality
-- now use square brackets to indicate auto-incremented names
-- unify file IO and add dask lazy loading of folders
+- improved performance of the thumbnail generation for points layers (#564)
+- more comprehensive testing of keybindings functionality (#583)
+- now use square brackets to indicate auto-incremented names (#589)
+- unify file IO and add dask lazy loading of folders (#590)
 
 
 API Changes
 -----------
-- added the ability to pass viewer keyword arugments to our `view_*` methods
+- added the ability to pass viewer keyword arguments to our `view_*` methods (#584)
+- Allow add_points() to be called without an argument to create empty points layer (#594)
 
 
 Bugfixes
 --------
-- fixed some pyramid data types
+- fixed some pyramid data types (#585)
+- fix points updating (#571)
+- stop vispy error catching (#551)
 
 
 Deprecations
 ------------
 - none
 
-
-Pull Requests
-*************
-- add code of conduct (#374)
-- implement custom mouse function framework (#544)
-- stop vispy error catching (#551)
-- faster points thumbnails (#564)
-- basic grid vs stack views (#565)
-- fix points updateing (#571)
-- add basic benchmarks (#573)
-- add layer model benchmarks (#577)
-- WIP: About Menubar (#580)
-- Test and display keybindings (#583)
-- viewer args to view_* methods (#584)
-- fix pyramid guessing (#585)
-- bracketed numbers for autoincrementing (#589)
-- Further unify IO and use dask for multiple files (#590)
-- Bug Report Issue Template Update (#591)
 
 4 authors added to this release [alphabetical by first name or login]
 ---------------------------------------------------------------------
