@@ -14,3 +14,4 @@ backcall>=0.1.0
 PyOpenGL>=3.1.0
 PySide2>=5.12.3
 wrapt>=1.11.1
+numpydoc>=0.9.1
