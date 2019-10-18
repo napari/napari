@@ -593,7 +593,12 @@ class Text(Layer):
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = []
-            self.data = np.delete(self.data, index, axis=0)
+            coords = self.data[0]
+            text = self.data[1]
+
+            coords = np.delete(coords, index, axis=0)
+            text = [t for i, t in enumerate(text) if i not in index]
+            self.data = (coords, text)
 
     def _move(self, index, coord):
         """Moves points relative drag start location.
@@ -754,7 +759,7 @@ class Text(Layer):
             self._is_selecting = False
             if len(self._data_view) > 0:
                 selection = points_in_box(
-                    self._drag_box, self._data_view, self._sizes_view
+                    self._drag_box, self._data_view, self.font_size
                 )
                 self.selected_data = self._indices_view[selection]
             else:
