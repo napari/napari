@@ -604,10 +604,7 @@ class Annotations(Layer):
                 self._data_view
                 - [self.coordinates[d] for d in self.dims.displayed]
             )
-            in_slice_matches = np.all(
-                distances <= np.expand_dims(self._sizes_view, axis=1) / 2,
-                axis=1,
-            )
+            in_slice_matches = np.all(distances <= 10, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
                 selection = self._indices_view[indices[-1]]

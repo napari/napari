@@ -16,6 +16,6 @@ with napari.gui_qt():
     points = np.array([[100, 100], [200, 200], [333, 111]])
     size = np.array([5, 5, 5])
     annotations = ['hi', 'hola', 'bonjour']
-    annotation_offset = [-20, 0]
+    annotation_offset = [0, 0]
 
     viewer.add_annotations(points, annotations=annotations, annotation_offset=annotation_offset, size=size)

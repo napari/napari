@@ -12,17 +12,17 @@ import numpy as np
 class VispyAnnotationsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
-    _POINTS_NODE_INDEX = 0
-    _HIGHLIGHT_MARKERS_NODE_INDEX = 1
-    _OUTLINE_MARKERS_NODE_INDEX = 2
-    _TEXT_NODE_INDEX = 3
+
+    _OUTLINE_MARKERS_NODE_INDEX = 0
+    _TEXT_NODE_INDEX = 1
+    _HIGHLIGHT_TEXT_NODE_INDEX = 2
 
     def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:
         # Lines: The lines of the interaction box used for highlights.
         # Markers: The the outlines for each point used for highlights.
         # Markers: The actual markers of each point.
-        node = Compound([Markers(), Markers(), Line(), Text()])
+        node = Compound([Line(), Text(), Text()])
 
         super().__init__(layer, node)
 
@@ -46,7 +46,7 @@ class VispyAnnotationsLayer(VispyBaseLayer):
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
-            self.node = Compound([Markers(), Markers(), Line(), Text()])
+            self.node = Compound([Markers(), Line(), Text(), Text()])
         else:
             self.node = Markers()
 
@@ -78,25 +78,25 @@ class VispyAnnotationsLayer(VispyBaseLayer):
             annotations = self.layer._annotations_view
             size = self.layer._sizes_view
 
-        if self.layer.dims.ndisplay == 2:
-            set_data = self.node._subvisuals[self._POINTS_NODE_INDEX].set_data
-        else:
-            set_data = self.node.set_data
+        # if self.layer.dims.ndisplay == 2:
+        #     set_data = self.node._subvisuals[self._POINTS_NODE_INDEX].set_data
+        # else:
+        #     set_data = self.node.set_data
 
-        set_data(
-            data[:, ::-1] + 0.5,
-            size=size,
-            edge_width=self.layer.edge_width,
-            symbol=self.layer.symbol,
-            edge_color=edge_color,
-            face_color=face_color,
-            scaling=True,
-        )
+        # set_data(
+        #     data[:, ::-1] + 0.5,
+        #     size=size,
+        #     edge_width=self.layer.edge_width,
+        #     symbol=self.layer.symbol,
+        #     edge_color=edge_color,
+        #     face_color=face_color,
+        #     scaling=True,
+        # )
 
         # Update the text
         if self.layer.dims.ndisplay == 2:
             annotation_positions = data + self.layer.annotation_offset
-            text_node = self.node._subvisuals[3]
+            text_node = self.node._subvisuals[self._TEXT_NODE_INDEX]
             text_node.text = annotations
             # Text axes are flipped
             text_node.pos = np.flip(annotation_positions, axis=1)
@@ -117,20 +117,24 @@ class VispyAnnotationsLayer(VispyBaseLayer):
                 self.layer.face_colors[i]
                 for i in self.layer._indices_view[self.layer._highlight_index]
             ]
+            annotations = [
+                self.layer._annotations_view[i]
+                for i in self.layer._highlight_index
+            ]
+
         else:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = 0
             face_color = 'white'
+            annotations = []
 
-        self.node._subvisuals[self._HIGHLIGHT_MARKERS_NODE_INDEX].set_data(
-            data[:, ::-1] + 0.5,
-            size=size,
-            edge_width=self._highlight_width,
-            symbol=self.layer.symbol,
-            edge_color=self._highlight_color,
-            face_color=face_color,
-            scaling=True,
-        )
+        highlight_text_node = self.node._subvisuals[
+            self._HIGHLIGHT_TEXT_NODE_INDEX
+        ]
+        highlight_text_node.text = annotations
+        highlight_text_node.pos = np.flip(data, axis=1)
+        highlight_text_node.color = self._highlight_color
+        highlight_text_node.update()
 
         if 0 in self.layer._highlight_box.shape:
             pos = np.zeros((1, 2))
