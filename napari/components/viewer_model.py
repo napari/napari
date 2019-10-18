@@ -582,11 +582,11 @@ class ViewerModel(KeymapMixin):
             layers.append(layer)
         return layers
 
-    def add_annotations(
+    def add_text(
         self,
         data=None,
         *,
-        annotations=None,
+        text=None,
         annotation_offset=None,
         symbol='o',
         size=10,
@@ -656,9 +656,9 @@ class ViewerModel(KeymapMixin):
             ndim = max(self.dims.ndim, 2)
             data = np.empty([0, ndim])
 
-        layer = layers.Annotations(
+        layer = layers.Text(
             data=data,
-            annotations=annotations,
+            annotations=text,
             annotation_offset=annotation_offset,
             symbol=symbol,
             size=size,

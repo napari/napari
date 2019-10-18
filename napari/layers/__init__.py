@@ -7,10 +7,10 @@ to the super constructor.
 
 
 from .base import Layer
-from .annotations import Annotations
 from .image import Image
 from .points import Points
 from .vectors import Vectors
 from .surface import Surface
 from .shapes import Shapes
+from .text import Text
 from .labels import Labels
