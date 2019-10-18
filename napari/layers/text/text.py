@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Tuple
 from xml.etree.ElementTree import Element
 import numpy as np
 import itertools
@@ -124,12 +124,10 @@ class Text(Layer):
         annotation_offset=None,
         text_color='black',
         font_size=12,
-        bold=False,
-        italic=False,
         font='OpenSans',
         anchor_x='center',
         anchor_y='center',
-        method='cpu',
+        render_method='cpu',
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -140,8 +138,8 @@ class Text(Layer):
         visible=True,
     ):
         if data is None:
-            data = np.empty((0, 2))
-        ndim = data.shape[1]
+            data = (np.empty((0, 2)), [])
+        ndim = data[0].shape[1]
         super().__init__(
             ndim,
             name=name,
@@ -157,8 +155,6 @@ class Text(Layer):
             mode=Event,
             text_color=Event,
             font_size=Event,
-            bold=Event,
-            italic=Event,
             n_dimensional=Event,
             highlight=Event,
         )
@@ -167,14 +163,16 @@ class Text(Layer):
         # Save the text data
         self._data = data
         self.dims.clip = False
+        self._coords = data[0]
+        self._text = data[1]
 
         # Save the text style params
         self.text_color = text_color
         self._font_size = font_size
-        self.bold = bold
-        self.italic = italic
         self.anchor_x = anchor_x
         self.anchor_y = anchor_y
+
+        self.render_method = render_method
 
         self._n_dimensional = n_dimensional
 
@@ -184,8 +182,6 @@ class Text(Layer):
         if annotation_offset is None:
             annotation_offset = np.array([0, 0])
         self._annotations = annotations
-
-        self._annotation_offset = annotation_offset
 
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
@@ -228,9 +224,11 @@ class Text(Layer):
         return self._data
 
     @data.setter
-    def data(self, data: np.ndarray):
+    def data(self, data: Tuple[np.ndarray, List[str]]):
         cur_npoints = len(self._data)
         self._data = data
+        self._coords = data[0]
+        self._text = data[1]
 
         # Adjust the size array when the number of points has changed
         if len(data) < cur_npoints:
@@ -256,25 +254,25 @@ class Text(Layer):
         self.events.data()
 
     @property
-    def annotations(self) -> List:
-        return self._annotations
+    def coords(self) -> np.ndarray:
+        return self._coords
 
-    @annotations.setter
-    def annotations(self, annotations):
-        self._annotations = annotations
+    @property
+    def text(self) -> List[str]:
+        return self._text
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        return self.data.shape[1]
+        return self.data[0].shape[1]
 
     def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
-            maxs = np.ones(self.data.shape[1], dtype=int)
-            mins = np.zeros(self.data.shape[1], dtype=int)
+            maxs = np.ones(self.data[0].shape[1], dtype=int)
+            mins = np.zeros(self.data[0].shape[1], dtype=int)
         else:
-            maxs = np.max(self.data, axis=0)
-            mins = np.min(self.data, axis=0)
+            maxs = np.max(self.data[0], axis=0)
+            mins = np.min(self.data[0], axis=0)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -298,24 +296,6 @@ class Text(Layer):
         self._font_size = size
         self.events.font_size()
         self.events.highlight()
-
-    @property
-    def sizes(self) -> Union[int, float, np.ndarray, list]:
-        """(N, D) array: sizes of all N points in D dimensions."""
-        return self._sizes
-
-    @sizes.setter
-    def sizes(self, size: Union[int, float, np.ndarray, list]) -> None:
-        try:
-            self._sizes = np.broadcast_to(size, self.data.shape).copy()
-        except:
-            try:
-                self._sizes = np.broadcast_to(
-                    size, self.data.shape[::-1]
-                ).T.copy()
-            except:
-                raise ValueError("Size is not compatible for broadcasting")
-        self._set_view_slice()
 
     @property
     def text_color(self) -> str:
@@ -443,14 +423,12 @@ class Text(Layer):
 
         Returns
         ----------
-        in_slice_data : (N, 2) array
-            Coordinates of points in the currently viewed slice.
+        in_slice_coords : (N, 2) array
+            Coordinates of text in the currently viewed slice.
+        in_slice_text : (N) List[str]
+            List of the text to display (index-matched to coords)
         slice_indices : list
-            Indices of points in the currently viewed slice.
-        scale : float, (N, ) array
-            If in `n_dimensional` mode then the scale factor of points, where
-            values of 1 corresponds to points located in the slice, and values
-            less than 1 correspond to points located in neighboring slices.
+            Indices of text in the currently viewed slice.
         """
         # Get a list of the data for the points in this slice
         not_disp = list(self.dims.not_displayed)
@@ -458,23 +436,19 @@ class Text(Layer):
         indices = np.array(indices)
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
-                distances = abs(self.data[:, not_disp] - indices[not_disp])
-                sizes = self.sizes[:, not_disp] / 2
+                distances = abs(self.coords[:, not_disp] - indices[not_disp])
                 matches = np.all(distances <= sizes, axis=1)
-                in_slice_data = self.data[np.ix_(matches, disp)]
-                size_match = sizes[matches]
-                size_match[size_match == 0] = 1
-                scale_per_dim = (size_match - distances[matches]) / size_match
-                scale_per_dim[size_match == 0] = 1
-                scale = np.prod(scale_per_dim, axis=1)
-                indices = np.where(matches)[0].astype(int)
-                return in_slice_data, indices, scale
+                in_slice_coords = self.coords[np.ix_(matches, disp)]
+                slice_indices = np.where(matches)[0].astype(int)
+                in_slice_text = [self.text[i] for i in slice_indices]
+                return in_slice_coords, in_slice_text, slice_indices
             else:
-                data = self.data[:, not_disp].astype('int')
+                data = self.coords[:, not_disp].astype('int')
                 matches = np.all(data == indices[not_disp], axis=1)
-                in_slice_data = self.data[np.ix_(matches, disp)]
-                indices = np.where(matches)[0].astype(int)
-                return in_slice_data, indices, 1
+                in_slice_coords = self.coords[np.ix_(matches, disp)]
+                slice_indices = np.where(matches)[0].astype(int)
+                in_slice_text = [self.text[i] for i in slice_indices]
+                return in_slice_coords, in_slice_text, slice_indices
         else:
             return [], [], []
 
@@ -509,20 +483,21 @@ class Text(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        in_slice_data, indices, scale = self._slice_data(self.dims.indices)
+        in_slice_coords, in_slice_text, indices = self._slice_data(
+            self.dims.indices
+        )
 
         # Display points if there are any in this slice
-        if len(in_slice_data) > 0:
+        if len(in_slice_coords) > 0:
             # Update the points node
-            data = np.array(in_slice_data)
+            data = np.array(in_slice_coords)
 
         else:
             # if no points in this slice send dummy data
             data = np.zeros((0, self.dims.ndisplay))
 
         self._data_view = data
-        self._sizes_view = self.font_size
-        self._text_view = [self.annotations[i] for i in indices]
+        self._text_view = in_slice_text
         self._indices_view = indices
         # Make sure if changing planes any selected points not in the current
         # plane are removed
@@ -633,12 +608,12 @@ class Text(Layer):
         if len(index) > 0:
             disp = list(self.dims.displayed)
             if self._drag_start is None:
-                center = self.data[np.ix_(index, disp)].mean(axis=0)
+                center = self.coords[np.ix_(index, disp)].mean(axis=0)
                 self._drag_start = np.array(coord)[disp] - center
-            center = self.data[np.ix_(index, disp)].mean(axis=0)
+            center = self.coords[np.ix_(index, disp)].mean(axis=0)
             shift = np.array(coord)[disp] - center - self._drag_start
-            self.data[np.ix_(index, disp)] = (
-                self.data[np.ix_(index, disp)] + shift
+            self.data[0][np.ix_(index, disp)] = (
+                self.coords[np.ix_(index, disp)] + shift
             )
             self._set_view_slice()
 

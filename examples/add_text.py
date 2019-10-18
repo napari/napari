@@ -19,7 +19,7 @@ with napari.gui_qt():
     font_size = (10, 20, 30)
 
 
-    viewer.add_text(points, text=annotations, font_size=font_size)
+    viewer.add_text((points, annotations), font_size=font_size)
 
     viewer.layers[1].text_color = 'green'
     viewer.layers[1].font_size = 20
