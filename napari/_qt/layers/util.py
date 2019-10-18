@@ -1,4 +1,13 @@
-from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ...layers import (
+    Annotations,
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Vectors,
+)
+from .qt_annotations_layer import QtAnnotationsControls
 from .qt_base_layer import QtLayerControls
 from .qt_image_base_layer import QtBaseImageControls
 from .qt_image_layer import QtImageControls
@@ -10,6 +19,7 @@ from .qt_vectors_layer import QtVectorsControls
 
 
 layer_to_controls = {
+    Annotations: QtAnnotationsControls,
     Image: QtImageControls,
     Labels: QtLabelsControls,
     Points: QtPointsControls,

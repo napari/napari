@@ -7,6 +7,7 @@ to the super constructor.
 
 
 from .base import Layer
+from .annotations import Annotations
 from .image import Image
 from .points import Points
 from .vectors import Vectors

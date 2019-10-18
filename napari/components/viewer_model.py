@@ -582,6 +582,101 @@ class ViewerModel(KeymapMixin):
             layers.append(layer)
         return layers
 
+    def add_annotations(
+        self,
+        data=None,
+        *,
+        annotations=None,
+        annotation_offset=None,
+        symbol='o',
+        size=10,
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        n_dimensional=False,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+    ):
+        """Add an annotations layer to the layers list.
+
+        Parameters
+        ----------
+        data : array (N, D)
+            Coordinates for N points in D dimensions.
+        symbol : str
+            Symbol to be used for the point markers. Must be one of the
+            following: arrow, clobber, cross, diamond, disc, hbar, ring,
+            square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
+        size : float, array
+            Size of the point marker. If given as a scalar, all points are made
+            the same size. If given as an array, size must be the same
+            broadcastable to the same shape as the data.
+        edge_width : float
+            Width of the symbol edge in pixels.
+        edge_color : str
+            Color of the point marker border.
+        face_color : str
+            Color of the point marker body.
+        n_dimensional : bool
+            If True, renders points not just in central plane but also in all
+            n-dimensions according to specified point marker size.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Points`
+            The newly-created points layer.
+
+        Notes
+        -----
+        See vispy's marker visual docs for more details:
+        http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
+        """
+        if data is None:
+            ndim = max(self.dims.ndim, 2)
+            data = np.empty([0, ndim])
+
+        layer = layers.Annotations(
+            data=data,
+            annotations=annotations,
+            annotation_offset=annotation_offset,
+            symbol=symbol,
+            size=size,
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            n_dimensional=n_dimensional,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
+        self.add_layer(layer)
+        return layer
+
     def add_points(
         self,
         data=None,

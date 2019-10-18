@@ -1,4 +1,13 @@
-from ..layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ..layers import (
+    Annotations,
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Vectors,
+)
+from .vispy_annotations_layer import VispyAnnotationsLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
@@ -7,6 +16,7 @@ from .vispy_surface_layer import VispySurfaceLayer
 
 
 layer_to_visual = {
+    Annotations: VispyAnnotationsLayer,
     Image: VispyImageLayer,
     Labels: VispyImageLayer,
     Points: VispyPointsLayer,
