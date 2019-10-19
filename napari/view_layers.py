@@ -20,6 +20,9 @@ def view_image(
     opacity=1,
     blending='translucent',
     visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
 ):
     """Create a viewer and add an image layer.
 
@@ -70,13 +73,21 @@ def view_image(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer()
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_image(
         data,
         rgb=rgb,
@@ -111,6 +122,9 @@ def view_multichannel(
     opacity=1,
     blending='additive',
     visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
 ):
     """Create a viewer and add images layers expanding along one axis.
 
@@ -153,13 +167,21 @@ def view_multichannel(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer()
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
 
     viewer.add_multichannel(
         image,
@@ -180,7 +202,7 @@ def view_multichannel(
 
 
 def view_points(
-    data,
+    data=None,
     *,
     symbol='o',
     size=10,
@@ -195,6 +217,9 @@ def view_points(
     opacity=1,
     blending='translucent',
     visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
 ):
     """Create a viewer and add a points layer.
 
@@ -235,6 +260,14 @@ def view_points(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
 
     Returns
     -------
@@ -246,9 +279,9 @@ def view_points(
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    viewer = Viewer()
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_points(
-        data,
+        data=data,
         symbol=symbol,
         size=size,
         edge_width=edge_width,
@@ -280,6 +313,9 @@ def view_labels(
     opacity=0.7,
     blending='translucent',
     visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -318,13 +354,21 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer()
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_labels(
         data,
         is_pyramid=is_pyramid,
@@ -343,7 +387,7 @@ def view_labels(
 
 
 def view_shapes(
-    data,
+    data=None,
     *,
     shape_type='rectangle',
     edge_width=1,
@@ -357,6 +401,9 @@ def view_shapes(
     opacity=0.7,
     blending='translucent',
     visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
 ):
     """Create a viewer and add a shapes layer.
 
@@ -411,15 +458,23 @@ def view_shapes(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer()
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_shapes(
-        data,
+        data=data,
         shape_type=shape_type,
         edge_width=edge_width,
         edge_color=edge_color,
@@ -448,6 +503,9 @@ def view_surface(
     opacity=1,
     blending='translucent',
     visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
 ):
     """Create a viewer and add a surface layer.
 
@@ -485,13 +543,21 @@ def view_surface(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer()
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_surface(
         data,
         colormap=colormap,
@@ -520,6 +586,9 @@ def view_vectors(
     opacity=0.7,
     blending='translucent',
     visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
 ):
     """Create a viewer and add a vectors layer.
 
@@ -553,13 +622,21 @@ def view_vectors(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer()
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_vectors(
         data,
         edge_width=edge_width,

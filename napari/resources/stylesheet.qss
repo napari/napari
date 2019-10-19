@@ -125,12 +125,48 @@ QtLayerList {
     border: 0px;
 }
 
-
 QLabel {
    background-color: {{ foreground }};
-   qproperty-alignment: right;
+   qproperty-alignment: AlignLeft;
    padding-top: 1px;
    padding-bottom: 3px;
+}
+
+QDialog#QtAboutKeybindings {
+  min-width: 500px;
+  max-width: 500px;
+  min-height: 300px;
+}
+
+QDialog#QtAbout {
+  min-width: 580px;
+  max-width: 580px;
+  min-height: 300px;
+  max-height: 300px;
+}
+
+QtAbout > QLabel {
+   qproperty-alignment: AlignLeft;
+}
+
+QtActiveKeybindings > QLabel {
+   qproperty-alignment: AlignLeft;
+}
+
+QtActiveKeybindings > QLabel {
+   qproperty-alignment: AlignLeft;
+}
+
+QTabBar::tab {
+  background-color: {{ foreground }};
+  border: 2px solid {{ background }};
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 4px;
+}
+
+QTabBar::tab:selected {
+  background-color: {{ highlight }};
 }
 
 QSplitter {
@@ -733,6 +769,36 @@ QtNDisplayButton::indicator:checked {
 }
 
 QtNDisplayButton::indicator:hover {
+  background-color: {{ primary }};
+}
+
+QtGridViewButton {
+  background-color: {{ foreground }};
+  min-width : 28px;
+  max-width : 28px;
+  min-height : 28px;
+  max-height : 28px;
+  border-radius: 3px;
+}
+
+QtGridViewButton::indicator {
+  background-color: {{ foreground }};
+  min-width : 28px;
+  max-width : 28px;
+  min-height : 28px;
+  max-height : 28px;
+  border-radius: 3px;
+}
+
+QtGridViewButton::indicator:unchecked {
+  image: url(":/icons/{{ folder }}/new_image.svg");
+}
+
+QtGridViewButton::indicator:checked {
+  image: url(":/icons/{{ folder }}/grid.svg");
+}
+
+QtGridViewButton::indicator:hover {
   background-color: {{ primary }};
 }
 

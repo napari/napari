@@ -134,6 +134,7 @@ class Layer(KeymapMixin, ABC):
         self._translate = translate or [0] * ndim
         self._scale_view = np.ones(ndim)
         self._translate_view = np.zeros(ndim)
+        self._translate_grid = np.zeros(ndim)
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
         self.is_pyramid = False
@@ -174,6 +175,11 @@ class Layer(KeymapMixin, ABC):
         self.dims.events.ndisplay.connect(lambda e: self._update_dims())
         self.dims.events.order.connect(lambda e: self._update_dims())
         self.dims.events.axis.connect(lambda e: self._set_view_slice())
+
+        self.mouse_move_callbacks = []
+        self.mouse_drag_callbacks = []
+        self._persisted_mouse_event = {}
+        self._mouse_drag_gen = {}
 
     def __str__(self):
         """Return self.name."""
@@ -291,6 +297,18 @@ class Layer(KeymapMixin, ABC):
         self.events.translate()
 
     @property
+    def translate_grid(self):
+        """list: Factors to shift the layer by."""
+        return self._translate_grid
+
+    @translate_grid.setter
+    def translate_grid(self, translate_grid):
+        if np.all(self._translate_grid == translate_grid):
+            return
+        self._translate_grid = translate_grid
+        self.events.translate()
+
+    @property
     def position(self):
         """tuple of int: Cursor position in image of displayed dimensions."""
         return self._position
@@ -338,6 +356,13 @@ class Layer(KeymapMixin, ABC):
             self._translate_view = (0,) * (
                 ndim - len(self._translate_view)
             ) + tuple(self._translate_view)
+
+        if len(self._translate_grid) > ndim:
+            self._translate_grid = self._translate_grid[-ndim:]
+        elif len(self._translate_grid) < ndim:
+            self._translate_grid = (0,) * (
+                ndim - len(self._translate_grid)
+            ) + tuple(self._translate_grid)
 
         self.dims.ndim = ndim
 

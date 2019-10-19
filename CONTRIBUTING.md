@@ -149,6 +149,10 @@ The docs will be built at `docs/build/html`.
 Most web browsers will allow you to preview HTML pages.
 Try entering `file:///absolute/path/to/napari/docs/build/html/index.html` in your address bar.
 
+## Code of conduct
+
+`napari` has a [Code of Conduct](CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+
 ## Questions, comments, and feedback
 
 If you have questions, comments, suggestions for improvement, or any other inquiries

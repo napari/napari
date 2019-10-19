@@ -112,9 +112,13 @@ class Points(Layer):
         None after dragging is done.
     """
 
+    # The max number of points that will ever be used to render the thumbnail
+    # If more points are present then they are randomly subsampled
+    _max_points_thumbnail = 1024
+
     def __init__(
         self,
-        data,
+        data=None,
         *,
         symbol='o',
         size=10,
@@ -130,7 +134,8 @@ class Points(Layer):
         blending='translucent',
         visible=True,
     ):
-
+        if data is None:
+            data = np.empty((0, 2))
         ndim = data.shape[1]
         super().__init__(
             ndim,
@@ -693,8 +698,15 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
+            if len(self._data_view) > self._max_points_thumbnail:
+                inds = np.random.randint(
+                    0, len(self._data_view), self._max_points_thumbnail
+                )
+                points = self._data_view[inds]
+            else:
+                points = self._data_view
             coords = np.floor(
-                (self._data_view[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
+                (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
             ).astype(int)
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)

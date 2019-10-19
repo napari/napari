@@ -108,7 +108,9 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_translate_change(self):
         self.translate = [
-            self.layer.translate[d] + self.layer._translate_view[d]
+            self.layer.translate[d]
+            + self.layer._translate_view[d]
+            + self.layer.translate_grid[d]
             for d in self.layer.dims.displayed[::-1]
         ]
         self.layer.position = self._transform_position(self._position)

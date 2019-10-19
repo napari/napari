@@ -33,6 +33,7 @@ task:
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
         - bash install.sh -b -p $HOME/conda
+        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
         - conda update -yn base conda
         - conda install -y python=$PY_VER
         - rm install.sh
@@ -63,6 +64,7 @@ task:
         - ps: rm opengl.ps1
       conda_script:
         - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
+        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
         - conda update -yn base conda
         - conda install -y python=%PY_VER%
         - pip install setuptools-scm
@@ -75,6 +77,7 @@ task:
       conda_script:
         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
         - bash install.sh -b -p $HOME/conda
+        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
         - conda update -yn base conda
         - conda install -y python=$PY_VER
         - rm install.sh
