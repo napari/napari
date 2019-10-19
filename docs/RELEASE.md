@@ -37,7 +37,7 @@ Now you can build the distribution:
 $ python setup.py sdist bdist_wheel
 ```
 
-[`MANIFEST.in`](MANIFEST.in) determines which non-Python files are included.
+[`MANIFEST.in`](../MANIFEST.in) determines which non-Python files are included.
 Make sure to check that all necessary ones are listed before beginning the release process.
 
 ## uploading to PyPI
