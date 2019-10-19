@@ -7,9 +7,10 @@ from skimage.io.collection import alphanumeric_key
 
 from dask import delayed
 from dask import array as da
+import zarr
 
 
-def magic_read(filenames, *, use_dask=None, stack=True):
+def magic_imread(filenames, *, use_dask=None, stack=True):
     """Dispatch the appropriate reader given some files.
 
     The files are assumed to all have the same shape.
@@ -62,9 +63,19 @@ def magic_read(filenames, *, use_dask=None, stack=True):
     for filename in filenames_expanded:
         ext = os.path.splitext(filename)[-1]
         if ext == '.zarr':
-            image = da.from_zarr(filename)
-            if shape is None:
-                shape = image.shape
+            zr = zarr.open(filename, mode='r')
+            if isinstance(zr, zarr.core.Array):
+                # load zarr array
+                image = da.from_zarr(filename)
+                if shape is None:
+                    shape = image.shape
+            else:
+                # else load zarr all arrays inside file
+                image = [
+                    da.from_zarr(filename, component=c) for c, a in zr.arrays()
+                ]
+                if shape is None:
+                    shape = image[0].shape
         else:
             if shape is None:
                 image = io.imread(filename)
