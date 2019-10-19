@@ -51,18 +51,12 @@ class QtConsole(RichJupyterWidget):
         elif type(shell) == InProcessInteractiveShell:
             # If there is an existing running InProcessInteractiveShell
             # it is likely because multiple viewers have been launched from
-            # the same process. In that case create a new kernel.
-            kernel_manager = QtInProcessKernelManager()
-            kernel_manager.start_kernel(show_banner=False)
-            kernel_manager.kernel.gui = 'qt'
+            # the same process. In that case do not connect the console.
+            self.kernel_client = None
+            self.kernel_manager = None
+            self.shell = None
+            self.push = lambda var: None
 
-            kernel_client = kernel_manager.client()
-            kernel_client.start_channels()
-
-            self.kernel_manager = kernel_manager
-            self.kernel_client = kernel_client
-            self.shell = kernel_manager.kernel.shell
-            self.push = self.shell.push
         elif isinstance(shell, TerminalInteractiveShell):
             # if launching from an ipython terminal then adding a console is
             # not supported. Instead users should use the ipython terminal for

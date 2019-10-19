@@ -25,6 +25,10 @@ def test_viewer(qtbot):
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
 
+    # Run all class keybindings
+    for func in viewer.class_keymap.values():
+        func(viewer)
+
     # Close the viewer
     viewer.window.close()
 
@@ -37,7 +41,7 @@ def test_add_image(qtbot):
 
     np.random.seed(0)
     data = np.random.random((10, 15))
-    viewer.add_image(data)
+    layer = viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
@@ -53,6 +57,10 @@ def test_add_image(qtbot):
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
 
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
+
     # Close the viewer
     viewer.window.close()
 
@@ -65,7 +73,7 @@ def test_add_volume(qtbot):
 
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
-    viewer.add_image(data)
+    layer = viewer.add_image(data)
     viewer.dims.ndisplay = 3
     assert np.all(viewer.layers[0].data == data)
 
@@ -82,6 +90,10 @@ def test_add_volume(qtbot):
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
 
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
+
     # Close the viewer
     viewer.window.close()
 
@@ -95,7 +107,7 @@ def test_add_pyramid(qtbot):
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer.add_image(data, is_pyramid=True)
+    layer = viewer.add_image(data, is_pyramid=True)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
@@ -110,6 +122,10 @@ def test_add_pyramid(qtbot):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
 
     # Close the viewer
     viewer.window.close()
@@ -123,7 +139,7 @@ def test_add_labels(qtbot):
 
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    viewer.add_labels(data)
+    layer = viewer.add_labels(data)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
@@ -138,6 +154,10 @@ def test_add_labels(qtbot):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
 
     # Close the viewer
     viewer.window.close()
@@ -151,7 +171,7 @@ def test_add_points(qtbot):
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
-    viewer.add_points(data)
+    layer = viewer.add_points(data)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
@@ -166,6 +186,10 @@ def test_add_points(qtbot):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
 
     # Close the viewer
     viewer.window.close()
@@ -179,7 +203,7 @@ def test_add_vectors(qtbot):
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 2))
-    viewer.add_vectors(data)
+    layer = viewer.add_vectors(data)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
@@ -194,6 +218,10 @@ def test_add_vectors(qtbot):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
 
     # Close the viewer
     viewer.window.close()
@@ -207,7 +235,7 @@ def test_add_shapes(qtbot):
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
-    viewer.add_shapes(data)
+    layer = viewer.add_shapes(data)
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
@@ -222,6 +250,10 @@ def test_add_shapes(qtbot):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
 
     # Close the viewer
     viewer.window.close()
@@ -238,7 +270,7 @@ def test_add_surface(qtbot):
     faces = np.random.randint(10, size=(6, 3))
     values = np.random.random(10)
     data = (vertices, faces, values)
-    viewer.add_surface(data)
+    layer = viewer.add_surface(data)
     assert np.all(
         [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
     )
@@ -255,6 +287,10 @@ def test_add_surface(qtbot):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
 
     # Close the viewer
     viewer.window.close()
