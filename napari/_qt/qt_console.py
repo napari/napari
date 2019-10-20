@@ -1,6 +1,5 @@
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
-from qtconsole.manager import QtKernelManager
 from qtconsole.client import QtKernelClient
 from IPython import get_ipython
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
