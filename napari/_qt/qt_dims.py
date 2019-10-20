@@ -1,4 +1,4 @@
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt, Signal, QTimer
 from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollBar
 import numpy as np
 
@@ -328,3 +328,40 @@ class QtDims(QWidget):
         else:
             index = (displayed.index(self.last_used) - 1) % len(displayed)
             self.last_used = displayed[index]
+
+    def play_dim(self, axis: int = 0, fps: float = 10):
+        """
+        Animate (play) axis
+
+        Parameters
+        ----------
+        axis: int
+            Index of axis to play
+        fps: float
+            Frames per second for playback (not guaranteed)
+        """
+        # TODO: No access in the GUI yet.  Just keybinding.
+        if axis >= len(self.dims.range):
+            raise IndexError('axis argument out of range')
+
+        range_ = self.dims.range[axis]
+        max_point = int(np.floor(range_[1] - range_[2])) + 1
+
+        def advance():
+            current_point = self.dims.point[axis]
+            self.dims.set_point(axis, (current_point + 1) % (max_point))
+
+        self.play_timer = QTimer()
+        self.play_timer.timeout.connect(advance)
+        self.play_timer.start(1000 / fps)
+
+    def stop(self):
+        """Stop axis animation"""
+        if self.is_playing:
+            self.play_timer.stop()
+            del self.play_timer
+
+    @property
+    def is_playing(self):
+        """Returns True if any axis is currently animated"""
+        return hasattr(self, 'play_timer') and self.play_timer.isActive()

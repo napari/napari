@@ -138,3 +138,13 @@ def toggle_ndisplay(viewer):
         viewer.grid_view()
     else:
         viewer.stack_view()
+
+
+@Viewer.bind_key('Control-Alt-P')
+def play(viewer):
+    """Toggle animation on the first axis"""
+    if viewer.window.qt_viewer.dims.is_playing:
+        viewer.window.qt_viewer.dims.stop()
+    else:
+        # TODO: need to allow control over FPS in gui
+        viewer.window.qt_viewer.dims.play_dim(0, 10)
