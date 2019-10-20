@@ -1,4 +1,4 @@
-from qtpy.QtCore import Qt, Signal, QTimer
+from qtpy.QtCore import Qt, Signal, QTimer, QThread, QEventLoop
 from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollBar
 import numpy as np
 
@@ -344,24 +344,51 @@ class QtDims(QWidget):
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
 
-        range_ = self.dims.range[axis]
-        max_point = int(np.floor(range_[1] - range_[2])) + 1
+        # allow only one axis to be playing at a time
+        # if nothing is playing self.stop() will not do anything
+        self.stop()
 
-        def advance():
-            current_point = self.dims.point[axis]
-            self.dims.set_point(axis, (current_point + 1) % (max_point))
-
-        self.play_timer = QTimer()
-        self.play_timer.timeout.connect(advance)
-        self.play_timer.start(1000 / fps)
+        self.animation_thread = AnimationThread(self.dims, axis, fps)
+        self.animation_thread.start()
 
     def stop(self):
         """Stop axis animation"""
         if self.is_playing:
-            self.play_timer.stop()
-            del self.play_timer
+            self.animation_thread.quit()
+            self.animation_thread.wait()
+            del self.animation_thread
 
     @property
     def is_playing(self):
         """Returns True if any axis is currently animated"""
-        return hasattr(self, 'play_timer') and self.play_timer.isActive()
+        return (
+            hasattr(self, 'animation_thread')
+            # this is repetive, since we delete the thread each time, but safer
+            and self.animation_thread.isRunning()
+        )
+
+
+class AnimationThread(QThread):
+    def __init__(self, dims, axis=0, fps=10):
+        super().__init__()
+        self.dims = dims
+
+        range_ = dims.range[axis]
+        self.max_point = int(np.floor(range_[1] - range_[2])) + 1
+
+        self.axis = axis
+        self.timer = QTimer()
+        self.timer.setInterval(1000 / fps)
+        self.timer.timeout.connect(self.advance)
+        self.timer.moveToThread(self)
+        # this is necessary to avoid a warning in QtDims.stop() on del thread
+        self.finished.connect(self.timer.deleteLater)
+
+    def advance(self):
+        current_point = self.dims.point[self.axis]
+        self.dims.set_point(self.axis, (current_point + 1) % (self.max_point))
+
+    def run(self):
+        self.timer.start()
+        loop = QEventLoop()
+        loop.exec_()
