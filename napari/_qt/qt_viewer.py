@@ -140,6 +140,8 @@ class QtViewer(QSplitter):
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
+        # stop any animations whenever the layers change
+        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
 

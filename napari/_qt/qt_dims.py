@@ -187,9 +187,6 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        # we want to stop any animations that might be occuring before changing sliders
-        self.stop()
-
         for axis, slider in reversed(list(enumerate(self.sliders))):
             if axis in self.dims.displayed:
                 # Displayed dimensions correspond to non displayed sliders
