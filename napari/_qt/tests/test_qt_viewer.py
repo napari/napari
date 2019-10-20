@@ -307,7 +307,10 @@ def test_play_axis(qtbot):
     before = view.dims.dims.point[axis]
     # play for nframes with 10% extra time
     view.dims.play_dim(axis, 1000 / interval)
-    qtbot.wait(interval * (nframes + 0.1))
+    # this wait is a bit risky, since we don't know exactly how much time
+    # it will take to start the thread... this works on my machine, but
+    # if tests fail in the future, reevaluate the interval and the "0.6"
+    qtbot.wait(interval * (nframes + 0.6))
     view.dims.stop()
     # make sure we have advanced nframes
     after = view.dims.dims.point[axis]
