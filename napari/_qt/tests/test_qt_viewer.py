@@ -287,3 +287,31 @@ def test_screenshot(qtbot):
     # Take screenshot
     screenshot = view.screenshot()
     assert screenshot.ndim == 3
+
+
+def test_play_axis(qtbot):
+    """Test that play_axis changes the slice on axis 0."""
+
+    viewer = ViewerModel()
+    view = QtViewer(viewer)
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    data = np.random.random((15, 10, 15))
+    viewer.add_image(data)
+
+    axis = 0
+    interval = 100
+    nframes = 2
+    # get the current slice position on `axis`
+    before = view.dims.dims.point[axis]
+    # play for nframes with 10% extra time
+    view.dims.play_dim(axis, 1000 / interval)
+    qtbot.wait(interval * (nframes + 0.1))
+    view.dims.stop()
+    # make sure we have advanced nframes
+    after = view.dims.dims.point[axis]
+    assert after == before + nframes
+    # make sure the stop button actually worked
+    qtbot.wait(interval * 1.1)
+    assert after == view.dims.dims.point[axis]
