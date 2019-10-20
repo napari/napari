@@ -4,6 +4,7 @@ import numpy as np
 import inspect
 from pathlib import Path
 
+from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import (
     QWidget,
@@ -26,6 +27,7 @@ from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
 from ..util.misc import (
+    str_to_rgb,
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
@@ -284,6 +286,8 @@ class QtViewer(QSplitter):
         themed_stylesheet = template(self.raw_stylesheet, **palette)
         self.console.style_sheet = themed_stylesheet
         self.console.syntax_style = palette['syntax_style']
+        bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
+        self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
