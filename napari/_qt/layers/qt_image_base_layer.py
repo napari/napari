@@ -41,9 +41,9 @@ class QtBaseImageControls(QtLayerControls):
         # gamma slider
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
-        sld.setMinimum(0)
+        sld.setMinimum(2)
         sld.setMaximum(200)
-        sld.setSingleStep(1)
+        sld.setSingleStep(2)
         sld.setValue(100)
         sld.valueChanged[int].connect(self.gamma_slider_changed)
         self.gammaSlider = sld
