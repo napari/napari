@@ -30,10 +30,10 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.contrast_limits.connect(
             lambda e: self._on_contrast_limits_change()
         )
-        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
         self.layer.dims.events.ndisplay.connect(
             lambda e: self._on_display_change()
         )
+        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
 
         self._on_display_change()
 
@@ -68,17 +68,7 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
-        if self.layer.gamma != 1:
-            cmin, cmax = self.layer.contrast_limits
-            data = ((data - cmin) / (cmax - cmin)) ** self.layer.gamma
-            if self.layer.dims.ndisplay == 2:
-                self.node._need_colortransform_update = False
-                self.node.clim = (0, 1)
-                self.node.set_data(data)
-            else:
-                self.node.set_data(data, clim=(0, 1))
-        elif self.layer.dims.ndisplay == 2:
-            self.node.clim = self.layer.contrast_limits
+        if self.layer.dims.ndisplay == 2:
             self.node._need_colortransform_update = True
             self.node.set_data(data)
         else:
@@ -95,6 +85,13 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
+        if self.layer.gamma != 1:
+            # when gamma!=1, we instantiate a new colormap with 256 control points from 0-1
+            # FIXME: this does not with napari.util.colormaps.colormaps.TransFire
+            cmap = cmap.__class__(
+                cmap[np.linspace(0, 1, 256) ** self.layer.gamma]
+            )
+
         # Below is fixed in #1712
         if not self.layer.dims.ndisplay == 2:
             self.node.view_program['texture2D_LUT'] = (
@@ -109,7 +106,7 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_data_change()
 
     def _on_gamma_change(self):
-        self._on_data_change()
+        self._on_colormap_change()
 
     def _on_scale_change(self):
         self.scale = [
