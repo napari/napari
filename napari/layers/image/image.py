@@ -335,6 +335,7 @@ class Image(Layer):
 
     @gamma.setter
     def gamma(self, value):
+        self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()
         self.events.gamma()
