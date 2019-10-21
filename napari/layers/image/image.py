@@ -125,6 +125,7 @@ class Image(Layer):
         is_pyramid=None,
         colormap='gray',
         contrast_limits=None,
+        gamma=1,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -155,6 +156,7 @@ class Image(Layer):
 
         self.events.add(
             contrast_limits=Event,
+            gamma=Event,
             colormap=Event,
             interpolation=Event,
             rendering=Event,
@@ -181,6 +183,7 @@ class Image(Layer):
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
+        self._gamma = gamma
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
@@ -325,6 +328,16 @@ class Image(Layer):
             self._contrast_limits_range[1] = copy(contrast_limits[1])
         self._update_thumbnail()
         self.events.contrast_limits()
+
+    @property
+    def gamma(self):
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        self._gamma = value
+        self._update_thumbnail()
+        self.events.gamma()
 
     @property
     def interpolation(self):
@@ -533,6 +546,7 @@ class Image(Layer):
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
+            downsampled = downsampled ** self.gamma
             colormapped = self.colormap[1].map(downsampled)
             colormapped = colormapped.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity

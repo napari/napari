@@ -30,6 +30,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.contrast_limits.connect(
             lambda e: self._on_contrast_limits_change()
         )
+        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
         self.layer.dims.events.ndisplay.connect(
             lambda e: self._on_display_change()
         )
@@ -67,7 +68,17 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
-        if self.layer.dims.ndisplay == 2:
+        if self.layer.gamma != 1:
+            cmin, cmax = self.layer.contrast_limits
+            data = ((data - cmin) / (cmax - cmin)) ** self.layer.gamma
+            if self.layer.dims.ndisplay == 2:
+                self.node._need_colortransform_update = False
+                self.node.clim = (0, 1)
+                self.node.set_data(data)
+            else:
+                self.node.set_data(data, clim=(0, 1))
+        elif self.layer.dims.ndisplay == 2:
+            self.node.clim = self.layer.contrast_limits
             self.node._need_colortransform_update = True
             self.node.set_data(data)
         else:
@@ -96,6 +107,9 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.clim = self.layer.contrast_limits
         else:
             self._on_data_change()
+
+    def _on_gamma_change(self):
+        self._on_data_change()
 
     def _on_scale_change(self):
         self.scale = [
