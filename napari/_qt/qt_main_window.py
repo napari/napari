@@ -8,6 +8,7 @@ from vispy import app
 
 from .qt_about import QtAbout
 from .qt_about_keybindings import QtAboutKeybindings
+from .qt_open_dialog import QtOpenDialog
 
 app.use_app(API_NAME)
 del app
@@ -110,21 +111,23 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
-        open_images = QAction('Open image(s)...', self._qt_window)
-        open_images.setShortcut('Ctrl+O')
-        open_images.setStatusTip('Open image file(s)')
-        open_images.triggered.connect(self.qt_viewer._open_images)
-
-        open_folder = QAction('Open Folder...', self._qt_window)
-        open_folder.setShortcut('Ctrl-Shift-O')
-        open_folder.setStatusTip(
-            'Open a folder of image file(s) or a zarr file'
+        open_layer = QAction('Open', self._qt_window)
+        open_layer.setShortcut('Ctrl+O')
+        open_layer.setStatusTip('Open')
+        open_layer.triggered.connect(
+            lambda e: QtOpenDialog.showDialog(self.qt_viewer)
         )
-        open_folder.triggered.connect(self.qt_viewer._open_folder)
+
+        # open_folder = QAction('Open Folder...', self._qt_window)
+        # open_folder.setShortcut('Ctrl-Shift-O')
+        # open_folder.setStatusTip(
+        #     'Open a folder of image file(s) or a zarr file'
+        # )
+        # open_folder.triggered.connect(self.qt_viewer._open_folder)
 
         self.file_menu = self.main_menu.addMenu('&File')
-        self.file_menu.addAction(open_images)
-        self.file_menu.addAction(open_folder)
+        self.file_menu.addAction(open_layer)
+        # self.file_menu.addAction(open_folder)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
