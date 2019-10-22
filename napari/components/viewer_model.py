@@ -1068,8 +1068,7 @@ class ViewerModel(KeymapMixin):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             for i in range(2):
-                self.dims.set_range(i, (0, 2, 1))
-                self.dims.set_point(i, 0)
+                self.dims.set_initial_dims(i)
         else:
             layer_range = self._calc_layers_ranges()
             self.dims.ndim = len(layer_range)
