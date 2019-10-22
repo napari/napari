@@ -132,17 +132,61 @@ QLabel {
    padding-bottom: 3px;
 }
 
-QDialog#QtAboutKeybindings {
+QDialog#AboutKeybindings {
   min-width: 500px;
   max-width: 500px;
   min-height: 300px;
 }
 
-QDialog#QtAbout {
+QDialog#About {
   min-width: 580px;
   max-width: 580px;
   min-height: 300px;
   max-height: 300px;
+}
+
+QDialog#OpenDialog {
+  min-width: 700px;
+  max-width: 700px;
+  min-height: 400px;
+  max-height: 400px;
+}
+
+QPushButton#dialog {
+   background-color: {{ foreground }};
+   border-radius: 3px;
+   padding: 5px;
+   margin: 0px;
+}
+
+QPushButton#dialog[highlight=true] {
+   background-color: {{ highlight }};
+}
+
+QPushButton#dialog[highlight=false] {
+   background-color: {{ foreground }};
+}
+
+QPushButton#open {
+   border-radius: 3px;
+   padding: 5px;
+   margin: 0px;
+}
+
+QPushButton#open:enabled[highlight=true] {
+  background-color: {{ highlight }};
+}
+
+QPushButton#open:enabled[highlight=false] {
+  background-color: {{ foreground }};
+}
+
+QPushButton#open:disabled {
+  background-color: {{ background }};
+}
+
+QPlainTextEdit {
+  background-color: {{ console }};
 }
 
 QtAbout > QLabel {

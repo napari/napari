@@ -74,7 +74,7 @@ class QtAbout(QWidget):
     @staticmethod
     def showAbout(qt_viewer):
         d = QDialog()
-        d.setObjectName('QtAbout')
+        d.setObjectName('About')
         d.setStyleSheet(qt_viewer.styleSheet())
         QtAbout(d)
         d.setWindowTitle('About')

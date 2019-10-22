@@ -31,7 +31,7 @@ class QtAboutKeybindings(QTabWidget):
     @staticmethod
     def showAbout(qt_viewer):
         d = QDialog()
-        d.setObjectName('QtAboutKeybindings')
+        d.setObjectName('AboutKeybindings')
         d.setStyleSheet(qt_viewer.styleSheet())
         d.setWindowTitle('Keybindings')
         qt_viewer._about_keybindings = QtAboutKeybindings(qt_viewer.viewer, d)
