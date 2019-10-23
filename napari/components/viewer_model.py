@@ -9,6 +9,7 @@ from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
 from ..util.misc import ensure_iterable, is_iterable
+from ..util import io
 
 
 class ViewerModel(KeymapMixin):
@@ -1210,3 +1211,21 @@ class ViewerModel(KeymapMixin):
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
+
+    def _add_files(self, filenames):
+        """Add an image layer to the viewer.
+
+        Whether the image is rgb is determined by
+        :func:`napari.util.misc.is_rgb`.
+
+        If multiple images are selected, they are stacked along the 0th
+        axis.
+
+        Parameters
+        -------
+        filenames : list
+            List of filenames to be opened
+        """
+        if len(filenames) > 0:
+            image = io.magic_read(filenames)
+            self.add_image(image)

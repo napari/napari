@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
     QSizePolicy,
 )
 from pathlib import Path
+import os.path
 import napari
 from ..util.misc import get_keybindings_summary
 
@@ -118,7 +119,8 @@ class QtOpenDialog(QWidget):
         self.open.setEnabled(len(filenames) > 0)
 
     def _focus_text_out(self, event):
-        QPlainTextEdit.focusOutEvent(self.pathTextBox, event)
+        if event is not None:
+            QPlainTextEdit.focusOutEvent(self.pathTextBox, event)
         self.pathTextBox.setCursorWidth(0)
         filenames = self.get_filenames()
         enabled = len(filenames) > 0
@@ -129,7 +131,8 @@ class QtOpenDialog(QWidget):
         self.selectFiles.style().polish(self.selectFiles)
 
     def _focus_text_in(self, event):
-        QPlainTextEdit.focusInEvent(self.pathTextBox, event)
+        if event is not None:
+            QPlainTextEdit.focusInEvent(self.pathTextBox, event)
         self.pathTextBox.setCursorWidth(self._default_cursor_width)
         self.open.setProperty('highlight', False)
         self.open.style().polish(self.open)
@@ -184,10 +187,9 @@ class QtOpenDialog(QWidget):
 
     def _finish_dialog(self):
         filenames = self.get_filenames()
-        print(filenames)
-
-        # if len(filenames) > 0 :
-        #     self.viewer._add_files(filenames)
+        if len(filenames) > 0:
+            self._last_visited_dir = os.path.dirname(filenames[0])
+            self.viewer._add_files(filenames)
         self.parent().close()
 
 

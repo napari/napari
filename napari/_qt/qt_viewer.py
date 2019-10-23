@@ -35,7 +35,6 @@ from ..util.misc import (
     mouse_release_callbacks,
 )
 from ..util.keybindings import components_to_key_combo
-from ..util import io
 
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -218,25 +217,6 @@ class QtViewer(QSplitter):
         arr = arr[:, :, [2, 1, 0, 3]]
         return arr
 
-    def _add_files(self, filenames):
-        """Add an image layer to the viewer.
-
-        Whether the image is rgb is determined by
-        :func:`napari.util.misc.is_rgb`.
-
-        If multiple images are selected, they are stacked along the 0th
-        axis.
-
-        Parameters
-        -------
-        filenames : list
-            List of filenames to be opened
-        """
-        if len(filenames) > 0:
-            image = io.magic_read(filenames)
-            self.viewer.add_image(image, rgb=is_rgb(image.shape))
-            self._last_visited_dir = os.path.dirname(filenames[0])
-
     def _on_interactive(self, event):
         self.view.interactive = self.viewer.interactive
 
@@ -400,7 +380,7 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self._add_files(filenames)
+        self.viewer._add_files(filenames)
 
 
 def viewbox_key_event(event):
