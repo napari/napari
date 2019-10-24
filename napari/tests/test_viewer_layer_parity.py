@@ -48,6 +48,8 @@ def test_docstring(layer):
     method_params = method_doc['Parameters']
     layer_params = layer_doc['Parameters']
 
+    # Remove path parameter from viewer method if it exists
+    method_params = [m for m in method_params if m.name != 'path']
     try:
         assert len(method_params) == len(layer_params)
         for method_param, layer_param in zip(method_params, layer_params):
@@ -85,11 +87,17 @@ def test_signature(layer):
     name = layer.__name__
     method = getattr(Viewer, f'add_{camel_to_snake(name)}')
 
-    class_signature = inspect.signature(layer.__init__)
-    method_signature = inspect.signature(method)
+    class_parameters = dict(inspect.signature(layer.__init__).parameters)
+    method_parameters = dict(inspect.signature(method).parameters)
+
+    # Remove path and data parameters from viewer method if path exists
+    if 'path' in method_parameters:
+        del method_parameters['path']
+        del method_parameters['data']
+        del class_parameters['data']
 
     fail_msg = f"signatures don't match for class {name}"
-    assert class_signature == method_signature, fail_msg
+    assert class_parameters == method_parameters, fail_msg
 
     code = inspect.getsource(method)
 
