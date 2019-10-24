@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QHBoxLayout
 from .. import QHRangeSlider
-from .qt_base_layer import QtLayerControls
+from .qt_base_layer import QtLayerControls, QtLayerDialog
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 from qtpy.QtGui import QImage, QPixmap
@@ -80,3 +80,19 @@ class QtBaseImageControls(QtLayerControls):
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
+
+
+class QtBaseImageDialog(QtLayerDialog):
+    def __init__(self, layer):
+        super().__init__(layer)
+
+        self.colormapComboBox = QComboBox()
+        for cmap in self.layer._colormaps:
+            self.colormapComboBox.addItem(cmap)
+        self.colormapComboBox._allitems = set(self.layer._colormaps)
+        name = self.parameters['colormap'].default
+        if name not in self.colormapComboBox._allitems:
+            self.colormapComboBox._allitems.add(name)
+            self.colormapComboBox.addItem(name)
+        if name != self.colormapComboBox.currentText():
+            self.colormapComboBox.setCurrentText(name)

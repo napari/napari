@@ -19,6 +19,7 @@ from pathlib import Path
 import os.path
 import napari
 from ..util.misc import get_keybindings_summary
+from .layers.qt_image_layer import QtImageDialog
 
 
 class QtOpenDialog(QWidget):
@@ -31,7 +32,7 @@ class QtOpenDialog(QWidget):
         self.layout = QVBoxLayout()
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(QtLayerOpen(napari.layers.Image), 'Image')
+        self.tabs.addTab(QtImageDialog(napari.layers.Image), 'Image')
         self.tabs.addTab(QtLayerOpen(napari.layers.Labels), 'Labels')
         self.tabs.addTab(QtLayerOpen(napari.layers.Points), 'Labels')
         self.tabs.addTab(QtLayerOpen(napari.layers.Shapes), 'Shapes')
@@ -189,7 +190,8 @@ class QtOpenDialog(QWidget):
         filenames = self.get_filenames()
         if len(filenames) > 0:
             self._last_visited_dir = os.path.dirname(filenames[0])
-            self.viewer._add_files(filenames)
+            arguments = self.tabs.currentWidget().get_arguments()
+            self.viewer._add_files(filenames, arguments=arguments)
         self.parent().close()
 
 

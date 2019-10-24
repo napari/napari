@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
-
+import inspect
 from ...layers.base._constants import Blending
 
 
@@ -71,3 +71,45 @@ class QtLayerControls(QFrame):
                 self.layer.blending, Qt.MatchFixedString
             )
             self.blendComboBox.setCurrentIndex(index)
+
+
+class QtLayerDialog(QFrame):
+    def __init__(self, layer):
+        super().__init__()
+
+        self.layer = layer
+        self.parameters = inspect.signature(self.layer.__init__).parameters
+
+        self.grid_layout = QGridLayout()
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setSpacing(2)
+        self.setLayout(self.grid_layout)
+
+        self.nameTextBox = QLineEdit(self)
+        self.nameTextBox.setText(self.layer._basename())
+        self.nameTextBox.home(False)
+        self.nameTextBox.setToolTip('Layer name')
+        self.nameTextBox.setAcceptDrops(False)
+        self.nameTextBox.editingFinished.connect(self.changeText)
+
+        self.visibleCheckBox = QCheckBox(self)
+        self.visibleCheckBox.setToolTip('Layer visibility')
+        self.visibleCheckBox.setChecked(self.parameters['visible'].default)
+
+    def changeText(self):
+        self.nameTextBox.clearFocus()
+        self.setFocus()
+
+    def _base_arguments(self):
+        """Get keyword arguments for layer creation.
+
+        Returns
+        ---------
+        arguments : dict
+            Keyword arguments for layer creation.
+        """
+        name = self.nameTextBox.text()
+        visible = self.visibleCheckBox.isChecked()
+
+        arguments = {'name': name, 'visible': visible}
+        return arguments

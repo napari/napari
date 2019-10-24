@@ -1212,7 +1212,7 @@ class ViewerModel(KeymapMixin):
         translate[-2:] = translate_2d
         layer.translate_grid = translate
 
-    def _add_files(self, filenames):
+    def _add_files(self, filenames, arguments=None):
         """Add an image layer to the viewer.
 
         Whether the image is rgb is determined by
@@ -1228,4 +1228,7 @@ class ViewerModel(KeymapMixin):
         """
         if len(filenames) > 0:
             image = io.magic_read(filenames)
-            self.add_image(image)
+            if arguments is not None:
+                self.add_image(image, **arguments)
+            else:
+                self.add_image(image)

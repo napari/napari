@@ -2,7 +2,7 @@ from qtpy.QtWidgets import QHBoxLayout
 from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
-from .qt_image_base_layer import QtBaseImageControls
+from .qt_image_base_layer import QtBaseImageControls, QtBaseImageDialog
 from ...layers.image._constants import Interpolation, Rendering
 
 
@@ -74,3 +74,31 @@ class QtImageControls(QtBaseImageControls):
                 self.layer.rendering, Qt.MatchFixedString
             )
             self.renderComboBox.setCurrentIndex(index)
+
+
+class QtImageDialog(QtBaseImageDialog):
+    def __init__(self, layer):
+        super().__init__(layer)
+
+        self.grid_layout.addWidget(QLabel('name:'), 0, 0)
+        self.grid_layout.addWidget(self.nameTextBox, 0, 1)
+        self.grid_layout.addWidget(QLabel('visible:'), 1, 0)
+        self.grid_layout.addWidget(self.visibleCheckBox, 1, 1)
+        self.grid_layout.addWidget(QLabel('colormap:'), 2, 0)
+        self.grid_layout.addWidget(self.colormapComboBox, 2, 1)
+
+    def get_arguments(self):
+        """Get keyword arguments for layer creation.
+
+        Returns
+        ---------
+        arguments : dict
+            Keyword arguments for layer creation.
+        """
+        base_arguments = self._base_arguments()
+        colormap = self.colormapComboBox.currentText()
+
+        arguments = {'colormap': colormap}
+        arguments.update(base_arguments)
+
+        return arguments

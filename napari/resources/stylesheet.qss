@@ -146,8 +146,8 @@ QDialog#About {
 }
 
 QDialog#OpenDialog {
-  min-width: 700px;
-  max-width: 700px;
+  min-width: 360px;
+  max-width: 360px;
   min-height: 400px;
   max-height: 400px;
 }
@@ -190,10 +190,6 @@ QPlainTextEdit {
 }
 
 QtAbout > QLabel {
-   qproperty-alignment: AlignLeft;
-}
-
-QtActiveKeybindings > QLabel {
    qproperty-alignment: AlignLeft;
 }
 
@@ -244,6 +240,195 @@ QtDivider[selected=true] {
 
 QtDivider[selected=false] {
   background-color: {{ background }};
+}
+/* ------------------------------------------------------ */
+
+QtLayerDialog {
+  background-color: {{ foreground }};
+}
+
+QtLayerDialog > QLabel {
+  min-height: 18px;
+  max-height: 18px;
+  min-width: 80px;
+  max-width: 80px;
+  padding: 3px;
+  border: 0px;
+  margin: 0px;
+  background-color: {{ foreground }};
+  qproperty-alignment: AlignLeft;
+}
+
+QtLayerDialog > QComboBox {
+   background-color: {{ primary }};
+   padding-left: 6px;
+   padding-right: 10px;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QtLayerDialog > QComboBox::drop-down {
+   subcontrol-origin: padding;
+   subcontrol-position: top right;
+   width: 30px;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+}
+
+QtLayerDialog > QComboBox::down-arrow {
+   image: url(":/icons/{{ folder }}/drop_down.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayerDialog > QSpinBox {
+   background-color: {{ primary }};
+   border: none;
+   padding-left: 14px;
+   padding-right: 6px;
+   padding-top: 2px;
+   padding-bottom: 3px;
+}
+
+QtLayerDialog > QSpinBox::up-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center right;
+    width: 16px;
+    height: 16px;
+    right: 6px;
+}
+
+QtLayerDialog > QSpinBox::down-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center left;
+    width: 16px;
+    height: 16px;
+    left: 6px;
+}
+
+QtLayerDialog > QSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayerDialog > QSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayerDialog > QDoubleSpinBox {
+   background-color: {{ primary }};
+   border: 0px;
+   padding-left: 14px;
+   padding-right: 6px;
+   padding-top: 2px;
+   padding-bottom: 3px;
+}
+
+QtLayerDialog > QDoubleSpinBox::up-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center right;
+    width: 16px;
+    height: 16px;
+    right: 6px;
+}
+
+QtLayerDialog > QDoubleSpinBox::down-button {
+    background-color: {{ primary }};
+    subcontrol-origin: margin;
+    subcontrol-position: center left;
+    width: 16px;
+    height: 16px;
+    left: 6px;
+}
+
+QtLayerDialog > QDoubleSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayerDialog > QDoubleSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+   width: 14px;
+   height: 14px;
+}
+
+QtLayerDialog > QCheckBox {
+  background-color: {{ foreground }};
+  min-height: 20px;
+  max-height: 20px;
+}
+
+QtLayerDialog > QCheckBox::indicator {
+   border: 3px solid {{ secondary }};
+   border-radius: 4px;
+}
+
+QtLayerDialog > QCheckBox::indicator:checked {
+   background-color: {{ secondary }};
+}
+
+QtLayerDialog > QRadioButton {
+   background-color: {{ primary }};
+   border-radius: 3px;
+}
+
+QtLayerDialog > QRadioButton:disabled {
+  background-color: {{ background }};
+}
+
+QtLayerDialog > QRadioButton::indicator:checked {
+  background-color: {{ secondary }};
+  border-radius: 3px;
+}
+
+QtLayerDialog > QRadioButton::indicator:unchecked:hover {
+  background-color: {{ highlight }};
+  border-radius: 3px;
+}
+
+QtLayerDialog > QPushButton {
+   background-color: {{ primary }};
+   border-radius: 3px;
+}
+
+QtLayerDialog > QPushButton:disabled {
+  background-color: {{ background }};
+}
+
+QtLayerDialog > QPushButton:hover {
+    background-color: {{ highlight }};
+    border-radius: 3px;
+}
+
+QtLayerDialog > QPushButton:pressed {
+  background-color: {{ secondary }};
+  border-radius: 3px;
+}
+
+QtLayerDialog > QLineEdit {
+  background-color: {{ foreground }};
+  border: 2px solid {{ foreground }};
+  border-radius: 3px;
+  padding: 0px;
+  margin: 0px;
+  qproperty-alignment: right;
+}
+
+QtLayerDialog > QLineEdit:focus {
+  border: 2px solid {{ secondary }};
+}
+
+QtLayerDialog > QLineEdit:disabled {
+  background-color: {{ foreground }};
+  border: 2px solid {{ foreground }};
+  border-radius: 3px;
 }
 
 /* ------------------------------------------------------ */
