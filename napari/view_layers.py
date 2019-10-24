@@ -574,3 +574,84 @@ def view_vectors(
         visible=visible,
     )
     return viewer
+
+
+def view_multichannel(
+    data,
+    *,
+    axis=-1,
+    colormap=None,
+    contrast_limits=None,
+    interpolation='nearest',
+    rendering='mip',
+    name=None,
+    metadata=None,
+    scale=None,
+    translate=None,
+    opacity=1,
+    blending='additive',
+    visible=True,
+):
+    """Add image layers to the layers list expanding along axis.
+
+    Parameters
+    ----------
+    data : array
+        Image data. Can be N dimensional.
+    axis : int
+        Axis to expand colors along.
+    colormap : list, str, vispy.Color.Colormap, tuple, dict
+        Colormaps to use for luminance images. If a string must be the name
+        of a supported colormap from vispy or matplotlib. If a tuple the
+        first value must be a string to assign as a name to a colormap and
+        the second item must be a Colormap. If a dict the key must be a
+        string to assign as a name to a colormap and the value must be a
+        Colormap. If a list then must be same length as the axis that is
+        being expanded and then each colormap is applied to each image.
+    contrast_limits : list (2,)
+        Color limits to be used for determining the colormap bounds for
+        luminance images. If not passed is calculated as the min and max of
+        the image. If list of lists then must be same length as the axis
+        that is being expanded and then each colormap is applied to each
+        image.
+    interpolation : str
+        Interpolation mode used by vispy. Must be one of our supported
+        modes.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+
+    Returns
+    -------
+    layers : list of :class:`napari.layers.Image`
+        The newly-created image layers.
+    """
+    viewer = Viewer()
+    viewer.add_multichannel(
+        data,
+        axis=axis,
+        colormap=colormap,
+        contrast_limits=contrast_limits,
+        interpolation=interpolation,
+        name=name,
+        metadata=metadata,
+        scale=scale,
+        translate=translate,
+        opacity=opacity,
+        blending=blending,
+        visible=visible,
+    )
+    return viewer
