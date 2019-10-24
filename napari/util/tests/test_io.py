@@ -109,6 +109,7 @@ def test_single_filename(single_tiff):
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_zarr():
+    np.random.seed(0)
     image = np.random.random((10, 20, 20))
     with TemporaryDirectory(suffix='.zarr') as fout:
         z = zarr.open(fout, 'a', shape=image.shape)
