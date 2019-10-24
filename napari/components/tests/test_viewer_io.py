@@ -118,7 +118,6 @@ def test_add_zarr():
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_zarr_pyramid():
-    np.random.seed(0)
     viewer = ViewerModel()
     pyramid = [
         np.random.random((20, 20)),
