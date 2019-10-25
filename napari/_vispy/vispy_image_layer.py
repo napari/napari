@@ -1,5 +1,6 @@
 from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Volume as VolumeNode
+from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers import Image
@@ -89,10 +90,7 @@ class VispyImageLayer(VispyBaseLayer):
         cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control points from 0-1
-            # FIXME: this does not with napari.util.colormaps.colormaps.TransFire
-            cmap = cmap.__class__(
-                cmap[np.linspace(0, 1, 256) ** self.layer.gamma]
-            )
+            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
 
         # Below is fixed in #1712
         if not self.layer.dims.ndisplay == 2:
