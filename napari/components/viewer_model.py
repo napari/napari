@@ -594,7 +594,6 @@ class ViewerModel(KeymapMixin):
         anchor_x='center',
         anchor_y='center',
         render_method='cpu',
-        n_dimensional=False,
         name=None,
         metadata=None,
         scale=None,
@@ -623,9 +622,6 @@ class ViewerModel(KeymapMixin):
             Color of the point marker border.
         face_color : str
             Color of the point marker body.
-        n_dimensional : bool
-            If True, renders points not just in central plane but also in all
-            n-dimensions according to specified point marker size.
         name : str
             Name of the layer.
         metadata : dict
@@ -666,7 +662,6 @@ class ViewerModel(KeymapMixin):
             anchor_x=anchor_x,
             anchor_y=anchor_y,
             render_method=render_method,
-            n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,
             scale=scale,

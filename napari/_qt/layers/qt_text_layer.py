@@ -23,7 +23,6 @@ class QtTextControls(QtLayerControls):
 
         self.layer.events.mode.connect(self.set_mode)
         self.layer.events.font_size.connect(self._on_size_change)
-        self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.text_color.connect(self._on_text_color_change)
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.events.highlight.connect(self._on_highlight)
@@ -50,14 +49,6 @@ class QtTextControls(QtLayerControls):
         self.textColorSwatch.setObjectName('swatch')
         self.textColorSwatch.setToolTip('Text color swatch')
         self._on_text_color_change(None)
-
-        ndim_cb = QCheckBox()
-        ndim_cb.setToolTip('N-dimensional points')
-        ndim_cb.setChecked(self.layer.n_dimensional)
-        ndim_cb.stateChanged.connect(
-            lambda state=ndim_cb: self.change_ndim(state)
-        )
-        self.ndimCheckBox = ndim_cb
 
         text_box = QLineEdit()
         text_box.returnPressed.connect(
@@ -93,11 +84,9 @@ class QtTextControls(QtLayerControls):
         self.grid_layout.addWidget(QLabel('text color:'), 4, 0, 1, 3)
         self.grid_layout.addWidget(self.colorComboBox, 4, 3, 1, 3)
         self.grid_layout.addWidget(self.textColorSwatch, 4, 6)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 5, 0, 1, 3)
-        self.grid_layout.addWidget(self.ndimCheckBox, 5, 3)
-        self.grid_layout.addWidget(QLabel('text:'), 6, 0, 1, 3)
-        self.grid_layout.addWidget(self.text_box, 6, 3, 1, 6)
-        self.grid_layout.setRowStretch(7, 1)
+        self.grid_layout.addWidget(QLabel('text:'), 5, 0, 1, 3)
+        self.grid_layout.addWidget(self.text_box, 5, 3, 1, 6)
+        self.grid_layout.setRowStretch(6, 1)
         self.grid_layout.setVerticalSpacing(4)
 
     def mouseMoveEvent(self, event):
@@ -122,12 +111,6 @@ class QtTextControls(QtLayerControls):
     def changeSize(self, value):
         self.layer.font_size = value
 
-    def change_ndim(self, state):
-        if state == Qt.Checked:
-            self.layer.n_dimensional = True
-        else:
-            self.layer.n_dimensional = False
-
     def modify_text(self, text):
         if self.layer._mode == Mode.ADD or self.layer._mode == Mode.SELECT:
             self.text_box.clearFocus()
@@ -143,10 +126,6 @@ class QtTextControls(QtLayerControls):
                 for i in selected_data:
                     data[1][i] = text
                 self.layer.data = data
-
-    def _on_n_dim_change(self, event):
-        with self.layer.events.n_dimensional.blocker():
-            self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_size_change(self, event):
         with self.layer.events.font_size.blocker():

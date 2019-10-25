@@ -33,9 +33,6 @@ class Text(Layer):
         Color of the point marker border.
     face_color : str
         Color of the point marker body.
-    n_dimensional : bool
-        If True, renders points not just in central plane but also in all
-        n-dimensions according to specified point marker size.
     name : str
         Name of the layer.
     metadata : dict
@@ -128,7 +125,6 @@ class Text(Layer):
         anchor_x='center',
         anchor_y='center',
         render_method='cpu',
-        n_dimensional=False,
         name=None,
         metadata=None,
         scale=None,
@@ -152,11 +148,7 @@ class Text(Layer):
         )
 
         self.events.add(
-            mode=Event,
-            text_color=Event,
-            font_size=Event,
-            n_dimensional=Event,
-            highlight=Event,
+            mode=Event, text_color=Event, font_size=Event, highlight=Event
         )
         self._colors = get_color_names()
 
@@ -167,7 +159,6 @@ class Text(Layer):
         self._text = data[1]
 
         self._sizes = []
-        self._n_dimensional = n_dimensional
 
         # Save the text style params
         self.text_color = text_color
@@ -179,13 +170,6 @@ class Text(Layer):
         self.new_text = ''
 
         self.render_method = render_method
-
-        # Save the annotations
-        if annotations is None:
-            annotations = []
-        if annotation_offset is None:
-            annotation_offset = np.array([0, 0])
-        self._annotations = annotations
 
         # The following point properties are for the new points that will
         # be added. For any given property, if a list is passed to the
@@ -453,20 +437,12 @@ class Text(Layer):
         disp = list(self.dims.displayed)
         indices = np.array(indices)
         if len(self.data) > 0:
-            if self.n_dimensional is True and self.ndim > 2:
-                distances = abs(self.coords[:, not_disp] - indices[not_disp])
-                matches = np.all(distances <= sizes, axis=1)
-                in_slice_coords = self.coords[np.ix_(matches, disp)]
-                slice_indices = np.where(matches)[0].astype(int)
-                in_slice_text = [self.text[i] for i in slice_indices]
-                return in_slice_coords, in_slice_text, slice_indices
-            else:
-                data = self.coords[:, not_disp].astype('int')
-                matches = np.all(data == indices[not_disp], axis=1)
-                in_slice_coords = self.coords[np.ix_(matches, disp)]
-                slice_indices = np.where(matches)[0].astype(int)
-                in_slice_text = [self.text[i] for i in slice_indices]
-                return in_slice_coords, in_slice_text, slice_indices
+            data = self.coords[:, not_disp].astype('int')
+            matches = np.all(data == indices[not_disp], axis=1)
+            in_slice_coords = self.coords[np.ix_(matches, disp)]
+            slice_indices = np.where(matches)[0].astype(int)
+            in_slice_text = [self.text[i] for i in slice_indices]
+            return in_slice_coords, in_slice_text, slice_indices
         else:
             return [], [], []
 
