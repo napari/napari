@@ -238,6 +238,7 @@ class Text(Layer):
                 else:
                     # Add the default size, with a value for each dimension
                     pass
+        self._update_sizes(self.font_size)
         self._update_dims()
         self.events.data()
 
@@ -398,10 +399,13 @@ class Text(Layer):
 
     @sizes.setter
     def sizes(self, font_size):
+        self._update_sizes(font_size)
 
+    def _update_sizes(self, font_size):
         sizes = [
             (font_size * 2.2, font_size * len(t) * 1.1) for t in self.text
         ]
+
         self._sizes = sizes
 
     def _set_editable(self, editable=None):
