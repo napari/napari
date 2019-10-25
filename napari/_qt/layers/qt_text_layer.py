@@ -107,6 +107,7 @@ class QtTextControls(QtLayerControls):
         mode = event.mode
         if mode == Mode.ADD:
             self.addition_button.setChecked(True)
+            self.text_box.setText('')
         elif mode == Mode.SELECT:
             self.select_button.setChecked(True)
             self._on_highlight(event=None)
@@ -128,20 +129,20 @@ class QtTextControls(QtLayerControls):
             self.layer.n_dimensional = False
 
     def modify_text(self, text):
-        if self.layer._mode == Mode.SELECT:
-            selected_data = self.layer.selected_data
-            data = self.layer.data
-            if len(selected_data) > 0:
-                for i in selected_data:
-                    data[1][i] = text.text()
-            self.layer.data = data
-        if self.layer._mode == Mode.ADD:
+        if self.layer._mode == Mode.ADD or self.layer._mode == Mode.SELECT:
             self.text_box.clearFocus()
             self.sizeSlider.setFocus()
 
     def change_text(self, text):
         if self.layer._mode == Mode.ADD:
             self.layer.new_text = text
+        elif self.layer._mode == Mode.SELECT:
+            selected_data = self.layer.selected_data
+            data = self.layer.data
+            if len(selected_data) > 0:
+                for i in selected_data:
+                    data[1][i] = text
+                self.layer.data = data
 
     def _on_n_dim_change(self, event):
         with self.layer.events.n_dimensional.blocker():
@@ -173,8 +174,6 @@ class QtTextControls(QtLayerControls):
             self.text_box.setText(text)
         elif self.layer._mode == Mode.ADD:
             return
-        else:
-            self.text_box.setText('')
 
 
 class QtPanZoomButton(QRadioButton):
