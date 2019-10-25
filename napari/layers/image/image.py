@@ -533,8 +533,8 @@ class Image(Layer):
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
-            colormapped = self.colormap[1].map(downsampled)
-            colormapped = colormapped.reshape(downsampled.shape + (4,))
+            color_array = self.colormap[1][downsampled.ravel()]
+            colormapped = color_array.rgba.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -584,8 +584,8 @@ class Image(Layer):
         color_range = self.contrast_limits[1] - self.contrast_limits[0]
         if color_range != 0:
             image = image / color_range
-        mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
-        mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
+        mapped_image = self.colormap[1][image.ravel()]
+        mapped_image = mapped_image.RGBA.reshape(image.shape + (4,))
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}
