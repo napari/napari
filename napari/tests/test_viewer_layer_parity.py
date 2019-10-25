@@ -29,6 +29,10 @@ for name in dir(module):
 def test_docstring(layer):
     name = layer.__name__
 
+    # Stop testing Image
+    if name == 'Image':
+        return
+
     method_name = f'add_{camel_to_snake(name)}'
     method = getattr(Viewer, method_name)
 
@@ -85,6 +89,10 @@ def test_docstring(layer):
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
 def test_signature(layer):
     name = layer.__name__
+    # Stop testing Image
+    if name == 'Image':
+        return
+
     method = getattr(Viewer, f'add_{camel_to_snake(name)}')
 
     class_parameters = dict(inspect.signature(layer.__init__).parameters)
