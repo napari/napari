@@ -9,6 +9,7 @@ from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
 from ..util.misc import ensure_iterable, is_iterable
+from ..util import io
 
 
 class ViewerModel(KeymapMixin):
@@ -389,7 +390,7 @@ class ViewerModel(KeymapMixin):
 
     def add_image(
         self,
-        data,
+        data=None,
         *,
         rgb=None,
         is_pyramid=None,
@@ -404,6 +405,7 @@ class ViewerModel(KeymapMixin):
         opacity=1,
         blending='translucent',
         visible=True,
+        path=None,
     ):
         """Add an image layer to the layers list.
 
@@ -454,12 +456,21 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
+        path : str or list of str
+            Path or list of paths to image data.
 
         Returns
         -------
         layer : :class:`napari.layers.Image`
             The newly-created image layer.
         """
+        if data is None and path is None:
+            raise ValueError("One of either data or path must be provided")
+        elif data is not None and path is not None:
+            raise ValueError("Only one of data or path can be provided")
+        elif data is None:
+            data = io.magic_imread(path)
+
         layer = layers.Image(
             data,
             rgb=rgb,
@@ -481,7 +492,7 @@ class ViewerModel(KeymapMixin):
 
     def add_multichannel(
         self,
-        data,
+        data=None,
         *,
         axis=-1,
         colormap=None,
@@ -495,6 +506,7 @@ class ViewerModel(KeymapMixin):
         opacity=1,
         blending='additive',
         visible=True,
+        path=None,
     ):
         """Add image layers to the layers list expanding along axis.
 
@@ -537,12 +549,21 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
+        path : str or list of str
+            Path or list of paths to image data.
 
         Returns
         -------
         layers : list of :class:`napari.layers.Image`
             The newly-created image layers.
         """
+        if data is None and path is None:
+            raise ValueError("One of either data or path must be provided")
+        elif data is not None and path is not None:
+            raise ValueError("Only one of data or path can be provided")
+        elif data is None:
+            data = io.magic_imread(path)
+
         n_images = data.shape[axis]
 
         name = ensure_iterable(name)
@@ -1065,10 +1086,15 @@ class ViewerModel(KeymapMixin):
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
-        layer_range = self._calc_layers_ranges()
-        self.dims.ndim = len(layer_range)
-        for i, r in enumerate(layer_range):
-            self.dims.set_range(i, r)
+        if len(self.layers) == 0:
+            self.dims.ndim = 2
+            for i in range(2):
+                self.dims.set_initial_dims(i)
+        else:
+            layer_range = self._calc_layers_ranges()
+            self.dims.ndim = len(layer_range)
+            for i, r in enumerate(layer_range):
+                self.dims.set_range(i, r)
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.

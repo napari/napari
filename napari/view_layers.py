@@ -5,7 +5,7 @@ from .util.misc import ensure_iterable, is_iterable
 
 
 def view_image(
-    data,
+    data=None,
     *,
     rgb=None,
     is_pyramid=None,
@@ -20,6 +20,7 @@ def view_image(
     opacity=1,
     blending='translucent',
     visible=True,
+    path=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -73,6 +74,8 @@ def view_image(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    path : str or list of str
+        Path or list of paths to image data.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -89,7 +92,7 @@ def view_image(
     """
     viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
     viewer.add_image(
-        data,
+        data=data,
         rgb=rgb,
         is_pyramid=is_pyramid,
         colormap=colormap,
@@ -103,12 +106,13 @@ def view_image(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        path=path,
     )
     return viewer
 
 
 def view_multichannel(
-    data,
+    data=None,
     *,
     axis=-1,
     colormap=None,
@@ -122,6 +126,7 @@ def view_multichannel(
     opacity=1,
     blending='additive',
     visible=True,
+    path=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -167,6 +172,8 @@ def view_multichannel(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    path : str or list of str
+        Path or list of paths to image data.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -184,7 +191,7 @@ def view_multichannel(
     viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
 
     viewer.add_multichannel(
-        image,
+        data=data,
         axis=-1,
         colormap=cmap,
         contrast_limits=clims,
@@ -197,6 +204,7 @@ def view_multichannel(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        path=path,
     )
     return viewer
 
