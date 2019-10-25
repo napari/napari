@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari.components import ViewerModel
 from napari._qt.qt_viewer import QtViewer
@@ -287,6 +288,34 @@ def test_screenshot(qtbot):
     # Take screenshot
     screenshot = view.screenshot()
     assert screenshot.ndim == 3
+
+
+@pytest.mark.parametrize(
+    "dtype", ['int8', 'uint8', 'int16', 'uint16', 'float32']
+)
+def test_qt_viewer_data_integrity(qtbot, dtype):
+    """Test that the viewer doesn't change the underlying array."""
+
+    image = np.random.rand(10, 32, 32)
+    image *= 200 if dtype.endswith('8') else 2 ** 14
+    image = image.astype(dtype)
+    imean = image.mean()
+
+    viewer = ViewerModel()
+    view = QtViewer(viewer)
+    qtbot.addWidget(view)
+
+    viewer.add_image(image.copy())
+    datamean = viewer.layers[0].data.mean()
+    assert datamean == imean
+    # toggle dimensions
+    viewer.dims.ndisplay = 3
+    datamean = viewer.layers[0].data.mean()
+    assert datamean == imean
+    # back to 2D
+    viewer.dims.ndisplay = 2
+    datamean = viewer.layers[0].data.mean()
+    assert datamean == imean
 
 
 def test_play_axis(qtbot):
