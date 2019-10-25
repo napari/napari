@@ -166,17 +166,19 @@ class Text(Layer):
         self._coords = data[0]
         self._text = data[1]
 
+        self._sizes = []
+        self._n_dimensional = n_dimensional
+
         # Save the text style params
         self.text_color = text_color
         self._font_size = font_size
         self.anchor_x = anchor_x
         self.anchor_y = anchor_y
+        self.sizes = font_size
 
         self.new_text = ''
 
         self.render_method = render_method
-
-        self._n_dimensional = n_dimensional
 
         # Save the annotations
         if annotations is None:
@@ -296,6 +298,8 @@ class Text(Layer):
     @font_size.setter
     def font_size(self, size: float):
         self._font_size = size
+        self.sizes = size
+        self._set_view_slice()
         self.events.font_size()
         self.events.highlight()
 
@@ -345,10 +349,10 @@ class Text(Layer):
             box = None
         else:
             data = self._data_view[index]
-            size = self.font_size
+            size = self._sizes_view[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            data = points_to_squares(data, size)
+            data = points_to_squares(data, size, self.scale_factor)
             box = create_box(data)
 
         return box
@@ -403,6 +407,18 @@ class Text(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
+
+    @property
+    def sizes(self):
+        return self._sizes
+
+    @sizes.setter
+    def sizes(self, font_size):
+
+        sizes = [
+            (font_size * 2.2, font_size * len(t) * 1.1) for t in self.text
+        ]
+        self._sizes = sizes
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -463,6 +479,7 @@ class Text(Layer):
             Index of point that is at the current coordinate if any.
         """
         in_slice_data = self._data_view
+        in_slice_sizes = self._sizes_view
 
         # Display points if there are any in this slice
         if len(self._data_view) > 0:
@@ -471,7 +488,10 @@ class Text(Layer):
                 self._data_view
                 - [self.coordinates[d] for d in self.dims.displayed]
             )
-            in_slice_matches = np.all(distances <= 10, axis=1)
+
+            hitbox_half_width = in_slice_sizes / 2 * self.scale_factor
+
+            in_slice_matches = np.all(distances <= hitbox_half_width, axis=1)
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
                 selection = self._indices_view[indices[-1]]
@@ -500,6 +520,7 @@ class Text(Layer):
 
         self._data_view = data
         self._text_view = in_slice_text
+        self._sizes_view = np.asarray([self.sizes[i] for i in indices])
         self._indices_view = indices
         # Make sure if changing planes any selected points not in the current
         # plane are removed
@@ -770,7 +791,10 @@ class Text(Layer):
             self._is_selecting = False
             if len(self._data_view) > 0:
                 selection = points_in_box(
-                    self._drag_box, self._data_view, self.font_size
+                    self._drag_box,
+                    self._data_view,
+                    self._sizes_view,
+                    self.scale_factor,
                 )
                 self.selected_data = self._indices_view[selection]
             else:
@@ -801,7 +825,7 @@ def create_box(data):
     return box
 
 
-def points_to_squares(points, sizes):
+def points_to_squares(points, sizes, scale_factor):
     """Expand points to squares defined by their size
 
     Parameters
@@ -816,19 +840,22 @@ def points_to_squares(points, sizes):
     rect : (4N, 2) array
         Vertices of the expanded points
     """
+    hitbox_half_width = sizes / 2 * scale_factor
+
     rect = np.concatenate(
         [
-            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
+            points + hitbox_half_width,
+            points + np.multiply(hitbox_half_width, [1, -1]),
+            points + np.multiply(hitbox_half_width, [-1, 1]),
+            points - hitbox_half_width,
         ],
         axis=0,
     )
+
     return rect
 
 
-def points_in_box(corners, points, sizes):
+def points_in_box(corners, points, sizes, scale_factor):
     """Determine which points are in an axis aligned box defined by the corners
 
     Parameters
@@ -844,7 +871,7 @@ def points_in_box(corners, points, sizes):
         Indices of points inside the box
     """
     box = create_box(corners)[[0, 2]]
-    rect = points_to_squares(points, sizes)
+    rect = points_to_squares(points, sizes, scale_factor)
     below_top = np.all(box[1] >= rect, axis=1)
     above_bottom = np.all(rect >= box[0], axis=1)
     inside = np.logical_and(below_top, above_bottom)
