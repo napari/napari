@@ -210,4 +210,8 @@ class Window:
     def closeEvent(self, event):
         # Forward close event to the console to trigger proper shutdown
         self.qt_viewer.console.shutdown()
+        # if the viewer.QtDims object is playing an axis, we need to terminate the
+        # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
+        # (calling stop() when no animation is occuring is also not a problem)
+        self.qt_viewer.dims.stop()
         event.accept()
