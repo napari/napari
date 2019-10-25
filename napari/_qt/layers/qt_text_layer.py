@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
+    QApplication,
     QLabel,
     QComboBox,
     QSlider,
@@ -8,11 +9,12 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QRadioButton,
     QPushButton,
+    QLineEdit,
     QFrame,
 )
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
-from ...layers.text._constants import Mode, Symbol
+from ...layers.text._constants import Mode
 
 
 class QtTextControls(QtLayerControls):
@@ -24,6 +26,7 @@ class QtTextControls(QtLayerControls):
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.text_color.connect(self._on_text_color_change)
         self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.highlight.connect(self._on_highlight)
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -56,6 +59,15 @@ class QtTextControls(QtLayerControls):
         )
         self.ndimCheckBox = ndim_cb
 
+        text_box = QLineEdit()
+        text_box.returnPressed.connect(
+            lambda text=text_box: self.modify_text(text)
+        )
+        text_box.textChanged.connect(
+            lambda text=text_box: self.change_text(text)
+        )
+        self.text_box = text_box
+
         self.select_button = QtSelectButton(layer)
         self.addition_button = QtAdditionButton(layer)
         self.panzoom_button = QtPanZoomButton(layer)
@@ -83,7 +95,9 @@ class QtTextControls(QtLayerControls):
         self.grid_layout.addWidget(self.textColorSwatch, 4, 6)
         self.grid_layout.addWidget(QLabel('n-dim:'), 5, 0, 1, 3)
         self.grid_layout.addWidget(self.ndimCheckBox, 5, 3)
-        self.grid_layout.setRowStretch(6, 1)
+        self.grid_layout.addWidget(QLabel('text:'), 6, 0, 1, 3)
+        self.grid_layout.addWidget(self.text_box, 6, 3, 1, 6)
+        self.grid_layout.setRowStretch(7, 1)
         self.grid_layout.setVerticalSpacing(4)
 
     def mouseMoveEvent(self, event):
@@ -95,6 +109,7 @@ class QtTextControls(QtLayerControls):
             self.addition_button.setChecked(True)
         elif mode == Mode.SELECT:
             self.select_button.setChecked(True)
+            self._on_highlight(event=None)
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
         else:
@@ -111,6 +126,22 @@ class QtTextControls(QtLayerControls):
             self.layer.n_dimensional = True
         else:
             self.layer.n_dimensional = False
+
+    def modify_text(self, text):
+        if self.layer._mode == Mode.SELECT:
+            selected_data = self.layer.selected_data
+            data = self.layer.data
+            if len(selected_data) > 0:
+                for i in selected_data:
+                    data[1][i] = text.text()
+            self.layer.data = data
+        if self.layer._mode == Mode.ADD:
+            self.text_box.clearFocus()
+            self.sizeSlider.setFocus()
+
+    def change_text(self, text):
+        if self.layer._mode == Mode.ADD:
+            self.layer.new_text = text
 
     def _on_n_dim_change(self, event):
         with self.layer.events.n_dimensional.blocker():
@@ -134,6 +165,16 @@ class QtTextControls(QtLayerControls):
         self.select_button.setEnabled(self.layer.editable)
         self.addition_button.setEnabled(self.layer.editable)
         self.delete_button.setEnabled(self.layer.editable)
+
+    def _on_highlight(self, event):
+        selected_data = self.layer.selected_data
+        if len(selected_data) == 1:
+            text = self.layer.text[selected_data[0]]
+            self.text_box.setText(text)
+        elif self.layer._mode == Mode.ADD:
+            return
+        else:
+            self.text_box.setText('')
 
 
 class QtPanZoomButton(QRadioButton):

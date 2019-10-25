@@ -9,7 +9,7 @@ from ...util.event import Event
 from ...util.misc import ensure_iterable
 from ...util.status_messages import format_float
 from vispy.color import get_color_names, Color
-from ._constants import Symbol, SYMBOL_ALIAS, Mode
+from ._constants import Mode
 
 
 class Text(Layer):
@@ -171,6 +171,8 @@ class Text(Layer):
         self._font_size = font_size
         self.anchor_x = anchor_x
         self.anchor_y = anchor_y
+
+        self.new_text = ''
 
         self.render_method = render_method
 
@@ -583,7 +585,16 @@ class Text(Layer):
         ----------
         coord : sequence of indices to add point at
         """
-        self.data = np.append(self.data, [coord], axis=0)
+        coords = np.append(self.coords, [coord], axis=0)
+        text = self.text
+
+        new_text = self.new_text
+        if self.new_text == '':
+            new_text = 'EditMe'
+
+        text.append(new_text)
+
+        self.data = (coords, text)
 
     def remove_selected(self):
         """Removes selected points if any."""
