@@ -50,6 +50,8 @@ class Image(Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
+    gamma : float
+        Gamma correction for determining colormap linearity.  Defaults to 1.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
@@ -101,6 +103,8 @@ class Image(Layer):
     contrast_limits_range : list (2,) of float
         Range for the color limits for luminace images. If the image is
         rgb the contrast_limits_range is ignored.
+    gamma : float
+        Gamma correction for determining colormap linearity.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
