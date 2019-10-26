@@ -29,10 +29,9 @@ def make_colorbar(cmap, size=(12, 28), horizontal=True):
         input = np.linspace(0, 1, size[0])
         bar = np.tile(np.expand_dims(input, 1), size[1])
 
-    cbar = cmap.map(bar.reshape(-1)).reshape(tuple(size) + (4,))
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        cbar = img_as_ubyte(cbar)
+    # cmap.__getitem__ returns a vispy.color.ColorArray
+    color_array = cmap[bar.ravel()]
+    # the ColorArray.RGBA method returns a normalized uint8 array
+    cbar = color_array.RGBA.reshape(bar.shape + (4,))
 
     return cbar

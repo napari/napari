@@ -368,7 +368,7 @@ class Labels(Image):
             col = None
         else:
             val = self._raw_to_displayed(np.array([label]))
-            col = self.colormap[1].map(val)[0]
+            col = self.colormap[1][val].rgba[0]
         return col
 
     def _reset_history(self):
