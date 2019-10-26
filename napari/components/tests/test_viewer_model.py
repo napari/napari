@@ -292,3 +292,24 @@ def test_svg():
     # Generate svg
     svg = viewer.to_svg()
     assert type(svg) == str
+
+
+def test_add_remove_layer_dims_change():
+    """Test dims change appropriately when adding and removing layers."""
+    np.random.seed(0)
+    viewer = ViewerModel()
+
+    # Check ndim starts at 2
+    assert viewer.dims.ndim == 2
+
+    # Check ndim increase to 3 when 3D data added
+    data = np.random.random((10, 15, 20))
+    layer = viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
+
+    # Remove layer and check ndim returns to 2
+    viewer.layers.remove(layer)
+    assert len(viewer.layers) == 0
+    assert viewer.dims.ndim == 2

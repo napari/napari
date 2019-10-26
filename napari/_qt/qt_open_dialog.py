@@ -191,7 +191,7 @@ class QtOpenDialog(QWidget):
         if len(filenames) > 0:
             self._last_visited_dir = os.path.dirname(filenames[0])
             arguments = self.tabs.currentWidget().get_arguments()
-            self.viewer._add_files(filenames, arguments=arguments)
+            self.viewer.add_image(path=filenames, **arguments)
         self.parent().close()
 
 

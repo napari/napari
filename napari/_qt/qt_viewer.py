@@ -27,7 +27,6 @@ from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
 from ..util.misc import (
-    is_rgb,
     str_to_rgb,
     ReadOnlyWrapper,
     mouse_press_callbacks,
@@ -380,7 +379,8 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self.viewer._add_files(filenames)
+        if len(filenames) > 0:
+            self.viewer.add_image(path=filenames)
 
 
 def viewbox_key_event(event):
