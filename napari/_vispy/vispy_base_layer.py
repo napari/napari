@@ -108,6 +108,12 @@ class VispyBaseLayer(ABC):
         scale_factor = transform.map([1, 1])[0] - transform.map([0, 0])[0]
         return scale_factor
 
+    @property
+    def dpi(self):
+        """float: Resolution of the visual in dots per inch.
+        """
+        return self.node.transforms.dpi
+
     @abstractmethod
     def _on_data_change(self):
         raise NotImplementedError()
@@ -201,3 +207,4 @@ class VispyBaseLayer(ABC):
         """Called whenever the canvas is drawn.
         """
         self.layer.scale_factor = self.scale_factor
+        self.layer.dpi = self.dpi

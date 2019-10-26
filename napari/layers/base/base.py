@@ -89,6 +89,8 @@ class Layer(KeymapMixin, ABC):
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
+    dpi : float
+        Resolution of the visual in dots per inch
 
     Notes
     -----
@@ -128,6 +130,7 @@ class Layer(KeymapMixin, ABC):
         self._interactive = True
         self._value = None
         self.scale_factor = 1
+        self.dpi = 128
 
         self.dims = Dims(ndim)
         self._scale = scale or [1] * ndim

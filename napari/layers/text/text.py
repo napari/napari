@@ -402,9 +402,10 @@ class Text(Layer):
         self._update_sizes(font_size)
 
     def _update_sizes(self, font_size):
-        sizes = [
-            (font_size * 2.2, font_size * len(t) * 1.1) for t in self.text
-        ]
+        # calculate point size in pixels
+        n_px = font_size / 72 * self.dpi
+
+        sizes = [(1.1 * n_px, 1.1 * len(t) * n_px / 2) for t in self.text]
 
         self._sizes = sizes
 
