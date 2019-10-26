@@ -399,6 +399,23 @@ def test_contrast_limits_range():
     assert layer.contrast_limits == [0.0, 1.0]
 
 
+def test_gamma():
+    """Test setting gamma."""
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer.gamma == 1
+
+    # Change gamma property
+    gamma = 0.7
+    layer.gamma = gamma
+    assert layer.gamma == gamma
+
+    # Set gamma as keyword argument
+    layer = Image(data, gamma=gamma)
+    assert layer.gamma == gamma
+
+
 def test_metadata():
     """Test setting image metadata."""
     np.random.seed(0)
