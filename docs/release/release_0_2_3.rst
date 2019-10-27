@@ -19,6 +19,7 @@ Improvements
 ------------
 - Add the turbo colormap (#599)
 - Move markdown files to docs folder (#602)
+- Standardize usage of cmaps and add cmap tests (#622)
 
 API Changes
 -----------
@@ -29,22 +30,26 @@ Bugfixes
 - Add numpydoc to default dependencies (#598)
 - fix dimensions change when no layers (#603)
 - fix bracket highlighting (#606)
-- fix for data array overwriting during 3D rendering (#613)
+- fix for data overwriting during 3D rendering of float32 array (#613)
+- fix `io.magic_imread()` in `__main__.py` (#626)
+- Include LICENSE file in source distribution (#628)
 
 Deprecations
 ------------
 - None
 
-4 authors added to this release [alphabetical by first name or login]
+5 authors added to this release [alphabetical by first name or login]
 ---------------------------------------------------------------------
+- Hector
 - Juan Nunez-Iglesias
 - Nicholas Sofroniew
 - Talley Lambert
-- wconnell (wconnell)
+- Will Connell
 
 
-3 reviewers added to this release [alphabetical by first name or login]
+4 reviewers added to this release [alphabetical by first name or login]
 -----------------------------------------------------------------------
 - Ahmet Can Solak
 - Juan Nunez-Iglesias
 - Nicholas Sofroniew
+- Talley Lambert
