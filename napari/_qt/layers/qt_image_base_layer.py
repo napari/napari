@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QHBoxLayout
+from qtpy.QtWidgets import QHBoxLayout, QSlider
 from .. import QHRangeSlider
 from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
@@ -14,6 +14,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.contrast_limits.connect(
             lambda e: self.contrast_limits_slider_update()
         )
+        self.layer.events.gamma.connect(lambda e: self.gamma_slider_update())
 
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
@@ -36,6 +37,17 @@ class QtBaseImageControls(QtLayerControls):
             self.contrast_limits_slider_changed
         )
         self.contrast_limits_slider_update()
+
+        # gamma slider
+        sld = QSlider(Qt.Horizontal)
+        sld.setFocusPolicy(Qt.NoFocus)
+        sld.setMinimum(2)
+        sld.setMaximum(200)
+        sld.setSingleStep(2)
+        sld.setValue(100)
+        sld.valueChanged[int].connect(self.gamma_slider_changed)
+        self.gammaSlider = sld
+        self.gamma_slider_update()
 
         self.colorbarLabel = QLabel()
         self.colorbarLabel.setObjectName('colorbar')
@@ -77,6 +89,14 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.blockSignals(True)
         self.contrastLimitsSlider.setValues((slidermin, slidermax))
         self.contrastLimitsSlider.blockSignals(False)
+
+    def gamma_slider_changed(self, value):
+        self.layer.gamma = value / 100
+
+    def gamma_slider_update(self):
+        self.gammaSlider.blockSignals(True)
+        self.gammaSlider.setValue(self.layer.gamma * 100)
+        self.gammaSlider.blockSignals(False)
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
