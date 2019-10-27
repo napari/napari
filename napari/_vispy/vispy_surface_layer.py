@@ -22,20 +22,30 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.layer.events.contrast_limits.connect(
             lambda e: self._on_contrast_limits_change()
         )
-        self.layer.dims.events.ndisplay.connect(
-            lambda e: self._on_display_change()
-        )
-        self.reset()
+
         self._on_display_change()
+        self._on_data_change()
 
     def _on_display_change(self):
-        self.layer._update_dims()
-        self.layer._set_view_slice()
         self.reset()
         for b in range(self.layer.dims.ndisplay):
             self.node.bounds(b)
 
     def _on_data_change(self):
+        # Check if ndisplay has changed current node type needs updating
+        if (
+            (self.node.mesh_data.get_bounds() is None)
+            or (
+                self.layer.dims.ndisplay == 3
+                and not len(self.node.mesh_data.get_bounds()) == 3
+            )
+            or (
+                self.layer.dims.ndisplay == 2
+                and not len(self.node.mesh_data.get_bounds()) == 2
+            )
+        ):
+            self._on_display_change()
+
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = None
             faces = None
@@ -72,4 +82,3 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._reset_base()
         self._on_colormap_change()
         self._on_contrast_limits_change()
-        self._on_data_change()

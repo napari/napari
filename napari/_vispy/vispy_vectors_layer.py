@@ -10,7 +10,8 @@ class VispyVectorsLayer(VispyBaseLayer):
 
         self.layer.events.edge_color.connect(lambda e: self._on_data_change())
 
-        self.reset()
+        self._reset_base()
+        self._on_data_change()
 
     def _on_data_change(self):
         if (
@@ -30,7 +31,3 @@ class VispyVectorsLayer(VispyBaseLayer):
             vertices=vertices, faces=faces, color=self.layer.edge_color
         )
         self.node.update()
-
-    def reset(self):
-        self._reset_base()
-        self._on_data_change()
