@@ -83,3 +83,22 @@ def test_contrast_limits():
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
         assert viewer.layers[i].contrast_limits == clims[i]
+
+
+def test_gamma():
+    """Test adding multichannel image with custom gamma."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((15, 10, 5))
+    gamma = 0.7
+    viewer.add_multichannel(data, gamma=gamma)
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert viewer.layers[i].gamma == gamma
+
+    viewer = ViewerModel()
+    gammas = [0.3, 0.4, 0.5, 0.6, 0.7]
+    viewer.add_multichannel(data, gamma=gammas)
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert viewer.layers[i].gamma == gammas[i]
