@@ -626,10 +626,10 @@ class Points(Layer):
             self.selected_data
         self._selected_box = self.interaction_box(self._selected_view)
 
+        self.events.set_data()
         self._set_highlight(force=True)
         self._update_thumbnail()
         self._update_coordinates()
-        self.events.set_data()
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,

@@ -145,6 +145,9 @@ class Surface(Layer):
         self._faces = data[1]
         self._vertex_values = data[2]
 
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
+
     @property
     def data(self):
         return (self.vertices, self.faces, self.vertex_values)
