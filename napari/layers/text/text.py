@@ -145,8 +145,6 @@ class Text(Layer):
         # Save the text data
         self._data = data
         self.dims.clip = False
-        self._coords = data[0]
-        self._text = data[1]
 
         self._sizes = []
 
@@ -202,19 +200,17 @@ class Text(Layer):
     def data(self, data: Tuple[np.ndarray, List[str]]):
         cur_npoints = len(self._data)
         self._data = data
-        self._coords = data[0]
-        self._text = data[1]
         self._update_sizes(self.font_size)
         self._update_dims()
         self.events.data()
 
     @property
     def coords(self) -> np.ndarray:
-        return self._coords
+        return self._data[0]
 
     @property
     def text(self) -> List[str]:
-        return self._text
+        return self._data[1]
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -361,7 +357,7 @@ class Text(Layer):
 
     @property
     def sizes(self):
-        return self._sizes
+        return np.asarray(self._sizes)
 
     @sizes.setter
     def sizes(self, font_size):
@@ -606,14 +602,9 @@ class Text(Layer):
         """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
             self._clipboard = {
-                'data': deepcopy(self.data[self.selected_data]),
+                'coords': deepcopy(self.coords[self.selected_data]),
+                'text': [self.text[i] for i in self.selected_data],
                 'size': deepcopy(self.sizes[self.selected_data]),
-                'edge_color': deepcopy(
-                    [self.edge_colors[i] for i in self.selected_data]
-                ),
-                'face_color': deepcopy(
-                    [self.face_colors[i] for i in self.selected_data]
-                ),
                 'indices': self.dims.indices,
             }
         else:
@@ -622,32 +613,26 @@ class Text(Layer):
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
         npoints = len(self._data_view)
-        totpoints = len(self.data)
+        totpoints = len(self.text)
 
         if len(self._clipboard.keys()) > 0:
-            not_disp = self.dims.not_displayed
-            data = deepcopy(self._clipboard['data'])
-            offset = [
-                self.dims.indices[i] - self._clipboard['indices'][i]
-                for i in not_disp
-            ]
-            data[:, not_disp] = data[:, not_disp] + np.array(offset)
-            self._data = np.append(self.data, data, axis=0)
+            # not_disp = self.dims.not_displayed
+            coords = deepcopy(self._clipboard['coords'])
+            text = deepcopy(self._clipboard['text'])
+
+            new_coords = np.append(self.coords, coords, axis=0)
+            new_text = self.text + text
+            # offset = [
+            #     self.dims.indices[i] - self._clipboard['indices'][i]
+            #     for i in not_disp
+            # ]
+            # data[:, not_disp] = data[:, not_disp] + np.array(offset)
+            self._data = (new_coords, new_text)
             self._sizes = np.append(
                 self.sizes, deepcopy(self._clipboard['size']), axis=0
             )
-            self.edge_colors = self.edge_colors + deepcopy(
-                self._clipboard['edge_color']
-            )
-            self.face_colors = self.face_colors + deepcopy(
-                self._clipboard['face_color']
-            )
-            self._selected_view = list(
-                range(npoints, npoints + len(self._clipboard['data']))
-            )
-            self._selected_data = list(
-                range(totpoints, totpoints + len(self._clipboard['data']))
-            )
+            self._selected_view = list(range(npoints, npoints + len(text)))
+            self._selected_data = list(range(totpoints, totpoints + len(text)))
             self._set_view_slice()
 
     def to_xml_list(self):
