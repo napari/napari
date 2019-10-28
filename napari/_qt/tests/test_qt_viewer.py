@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from unittest.mock import patch
 
 from napari.components import ViewerModel
 from napari._qt.qt_viewer import QtViewer
@@ -326,24 +327,38 @@ def test_play_axis(qtbot):
     qtbot.addWidget(view)
 
     np.random.seed(0)
-    data = np.random.random((15, 10, 15))
+    nz = 6
+    data = np.random.random((nz, 10, 15))
     viewer.add_image(data)
 
-    axis = 0
-    interval = 100
-    nframes = 2
-    # get the current slice position on `axis`
-    before = view.dims.dims.point[axis]
-    # play for nframes with 10% extra time
-    view.dims.play_dim(axis, 1000 / interval)
-    # this wait is a bit risky, since we don't know exactly how much time
-    # it will take to start the thread... this works on my machine, but
-    # if tests fail in the future, reevaluate the interval and the "0.6"
-    qtbot.wait(interval * (nframes + 0.6))
-    view.dims.stop()
-    # make sure we have advanced nframes
-    after = view.dims.dims.point[axis]
-    assert after == before + nframes
-    # make sure the stop button actually worked
-    qtbot.wait(interval * 1.1)
-    assert after == view.dims.dims.point[axis]
+    dims_model = view.dims.dims
+
+    def fake_draw(axis, frame):
+        # make sure that we never request a frame outside of the bounds of the data
+        assert frame < nz
+        # mocks the dims.set_point() method
+        dims_model._point[axis] = frame
+        # simulates a vispy draw cascade
+        # then resets the view.dims._play_ready attribute
+        view.dims._play_ready = True
+
+    @patch.object(
+        dims_model,
+        'set_point',
+        wraps=dims_model.set_point,
+        side_effect=fake_draw,
+    )
+    def test_play(mock_method, nframes=2, axis=0, interval=100):
+        # reset the current slice position to 0
+        dims_model._point[axis] = 0
+        assert dims_model.point[axis] == 0
+        # play for a litte bit
+        view.dims.play_dim(axis, 1000 / interval)
+        # the 0.5 allows for generous clock jitter...
+        qtbot.wait(interval * (nframes + 0.5))
+        view.dims.stop()
+        assert mock_method.call_count == nframes + 1
+
+    test_play(nframes=nz - 2)
+    # make sure it rolls over ok
+    test_play(nframes=nz + 2)
