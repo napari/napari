@@ -29,6 +29,8 @@ class VispyBaseLayer(ABC):
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
+    dpi : float
+        The resolution of the canvas in dots per inch.
 
     Extended Summary
     ----------

@@ -587,7 +587,6 @@ class ViewerModel(KeymapMixin):
         data=None,
         *,
         text=None,
-        annotation_offset=None,
         text_color='black',
         font_size=12,
         font='OpenSans',
@@ -602,26 +601,26 @@ class ViewerModel(KeymapMixin):
         blending='translucent',
         visible=True,
     ):
-        """Add an annotations layer to the layers list.
+        """Add a text layer to the layers list.
 
         Parameters
         ----------
         data : array (N, D)
             Coordinates for N points in D dimensions.
-        symbol : str
-            Symbol to be used for the point markers. Must be one of the
-            following: arrow, clobber, cross, diamond, disc, hbar, ring,
-            square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-        size : float, array
-            Size of the point marker. If given as a scalar, all points are made
-            the same size. If given as an array, size must be the same
-            broadcastable to the same shape as the data.
-        edge_width : float
-            Width of the symbol edge in pixels.
-        edge_color : str
-            Color of the point marker border.
-        face_color : str
-            Color of the point marker body.
+        text_color : str
+            The color of the text font.
+        font_size : float
+            Size of the text font in points.
+        font : str
+            Text font. OpenSans is the default.
+        anchor_x : str
+            Positioning of the text relative to the coordinate. Default is 'center'.
+        anchor_y : str
+            Positioning of the text relative to the coordinate. Default is 'center'.
+        render_method : str
+            Where the text is rendered. Should be 'cpu' or 'gpu'. The ‘cpu’ method
+            should perform better on remote backends like those based on WebGL.
+            The ‘gpu’ method should produce higher quality results.
         name : str
             Name of the layer.
         metadata : dict
@@ -641,13 +640,13 @@ class ViewerModel(KeymapMixin):
 
         Returns
         -------
-        layer : :class:`napari.layers.Points`
+        layer : :class:`napari.layers.Text`
             The newly-created points layer.
 
         Notes
         -----
-        See vispy's marker visual docs for more details:
-        http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
+        See vispy's text visual docs for more details:
+        http://vispy.org/scene.html#vispy.scene.visuals.Text
         """
         if data is None:
             ndim = max(self.dims.ndim, 2)
@@ -655,8 +654,6 @@ class ViewerModel(KeymapMixin):
 
         layer = layers.Text(
             data=data,
-            annotations=text,
-            annotation_offset=annotation_offset,
             text_color=text_color,
             font=font,
             anchor_x=anchor_x,

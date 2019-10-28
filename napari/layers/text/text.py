@@ -17,22 +17,23 @@ class Text(Layer):
 
     Parameters
     ----------
-    data : array (N, D)
-        Coordinates for N points in D dimensions.
-    symbol : str
-        Symbol to be used for the point markers. Must be one of the
-        following: arrow, clobber, cross, diamond, disc, hbar, ring,
-        square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-    size : float, array
-        Size of the point marker. If given as a scalar, all points are made
-        the same size. If given as an array, size must be the same
-        broadcastable to the same shape as the data.
-    edge_width : float
-        Width of the symbol edge in pixels.
-    edge_color : str
-        Color of the point marker border.
-    face_color : str
-        Color of the point marker body.
+    data : tuple (coords, text)
+        coords contains text coordinates for N points in D dimensions.
+        text contains a list of the strings to be displayed as text.
+    text_color : str
+        The color of the text font.
+    font_size : float
+        Size of the text font in points.
+    font : str
+        Text font. OpenSans is the default.
+    anchor_x : str
+        Positioning of the text relative to the coordinate. Default is 'center'.
+    anchor_y : str
+        Positioning of the text relative to the coordinate. Default is 'center'.
+    render_method : str
+        Where the text is rendered. Should be 'cpu' or 'gpu'. The ‘cpu’ method
+        should perform better on remote backends like those based on WebGL.
+        The ‘gpu’ method should produce higher quality results.
     name : str
         Name of the layer.
     metadata : dict
@@ -52,32 +53,27 @@ class Text(Layer):
 
     Attributes
     ----------
-    data : array (N, D)
-        Coordinates for N points in D dimensions.
-    symbol : str
-        Symbol used for all point markers.
-    size : float
-        Size of the marker for the next point to be added or the currently
-        selected point.
-    edge_width : float
-        Width of the marker edges in pixels for all points
-    edge_color : str
-        Size of the marker edge for the next point to be added or the currently
-        selected point.
-    face_color : str
-        Size of the marker edge for the next point to be added or the currently
-        selected point.
-    edge_colors : list of str (N,)
-        List of edge color strings, one for each point.
-    face_colors : list of str (N,)
-        List of face color strings, one for each point.
-    n_dimensional : bool
-        If True, renders points not just in central plane but also in all
-        n-dimensions according to specified point marker size.
+    data : tuple (coords, text)
+        coords contains text coordinates for N points in D dimensions.
+        text contains a list of the strings to be displayed as text.
+    text_color : str
+        The color of the text font.
+    font_size : float
+        Size of the text font in points.
+    font : str
+        Text font. OpenSans is the default.
+    anchor_x : str
+        Positioning of the text relative to the coordinate. Default is 'center'.
+    anchor_y : str
+        Positioning of the text relative to the coordinate. Default is 'center'.
+    render_method : str
+        Where the text is rendered. Should be 'cpu' or 'gpu'. The ‘cpu’ method
+        should perform better on remote backends like those based on WebGL.
+        The ‘gpu’ method should produce higher quality results.
     selected_data : list
         Integer indices of any selected points.
     sizes : array (N, D)
-        Array of sizes for each point in each dimension. Must have the same
+        Array of sizes for each text in each dimension. Must have the same
         shape as the layer `data`.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -92,9 +88,9 @@ class Text(Layer):
     Extended Summary
     ----------
     _data_view : array (M, 2)
-        2D coordinates of points in the currently viewed slice.
+        data (coords, text) in the currently viewed slice.
     _sizes_view : array (M, )
-        Size of the point markers in the currently viewed slice.
+        Size of the text elements in the currently viewed slice.
     _indices_view : array (M, )
         Integer indices of the points in the currently viewed slice.
     _selected_view :
@@ -109,16 +105,10 @@ class Text(Layer):
         None after dragging is done.
     """
 
-    # The max number of points that will ever be used to render the thumbnail
-    # If more points are present then they are randomly subsampled
-    _max_points_thumbnail = 1024
-
     def __init__(
         self,
         data=None,
         *,
-        annotations=None,
-        annotation_offset=None,
         text_color='black',
         font_size=12,
         font='OpenSans',
@@ -171,11 +161,6 @@ class Text(Layer):
 
         self.render_method = render_method
 
-        # The following point properties are for the new points that will
-        # be added. For any given property, if a list is passed to the
-        # constructor so each point gets its own value then the default
-        # value is used when adding new points
-
         # Indices of selected points
         self._selected_data = []
         self._selected_data_stored = []
@@ -207,8 +192,10 @@ class Text(Layer):
         self._update_dims()
 
     @property
-    def data(self) -> np.ndarray:
-        """(N, D) array: coordinates for N points in D dimensions."""
+    def data(self) -> tuple:
+        """(coords, text) : coords contains text coordinates for N points in D dimensions.
+                            text contains a list of the strings to be displayed as text.
+        """
         return self._data
 
     @data.setter
@@ -217,27 +204,6 @@ class Text(Layer):
         self._data = data
         self._coords = data[0]
         self._text = data[1]
-
-        # Adjust the size array when the number of points has changed
-        if len(data) < cur_npoints:
-            # If there are now less points, remove the sizes and colors of the
-            # extra ones
-            # with self.events.set_data.blocker():
-            #     self.edge_colors = self.edge_colors[: len(data)]
-            #     self.face_colors = self.face_colors[: len(data)]
-            #     self.sizes = self._sizes[: len(data)]
-            pass
-
-        elif len(data) > cur_npoints:
-            # If there are now more points, add the sizes and colors of the
-            # new ones
-            with self.events.set_data.blocker():
-                adding = len(data) - cur_npoints
-                if len(self._sizes) > 0:
-                    pass
-                else:
-                    # Add the default size, with a value for each dimension
-                    pass
         self._update_sizes(self.font_size)
         self._update_dims()
         self.events.data()
@@ -349,9 +315,9 @@ class Text(Layer):
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
-        In ADD mode clicks of the cursor add points at the clicked location.
+        In ADD mode clicks of the cursor add text at the clicked location.
 
-        In SELECT mode the cursor can select points by clicking on them or
+        In SELECT mode the cursor can select text by clicking on them or
         by dragging a box around them. Once selected points can be moved,
         have their properties edited, or be deleted.
         """
@@ -521,7 +487,7 @@ class Text(Layer):
         self.events.set_data()
 
     def _set_highlight(self, force=False):
-        """Render highlights of shapes including boundaries, vertices,
+        """Render highlights of text including boundaries, vertices,
         interaction boxes, and the drag selection box when appropriate
 
         Parameters
@@ -581,7 +547,7 @@ class Text(Layer):
         self.thumbnail = colormapped
 
     def add(self, coord):
-        """Adds point at coordinate.
+        """Adds text at coordinate.
 
         Parameters
         ----------
@@ -590,6 +556,7 @@ class Text(Layer):
         coords = np.append(self.coords, [coord], axis=0)
         text = self.text
 
+        # Set the new text to 'EditMe' if none has been specified
         new_text = self.new_text
         if self.new_text == '':
             new_text = 'EditMe'
