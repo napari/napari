@@ -1,15 +1,12 @@
-from typing import Union
-from xml.etree.ElementTree import Element
+import warnings
 import numpy as np
 from copy import copy
 import vispy.color
 from ..base import Layer
 from ...util.event import Event
-from ..image._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
 from ...util.status_messages import format_float
 from ...util.misc import calc_data_range, increment_unnamed_colormap
-from ...util.colormaps import make_colorbar
-from vispy.color import get_color_names, Color
+from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
 class Surface(Layer):

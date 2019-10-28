@@ -34,7 +34,7 @@ into two statements with the yield keyword::
 
 import re
 import types
-from collections import OrderedDict, UserDict
+from collections import UserDict
 
 from vispy.util import keys
 

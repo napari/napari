@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 from napari.layers import Surface
 
 
