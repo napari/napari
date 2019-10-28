@@ -350,9 +350,10 @@ class QtDims(QWidget):
         self.stop()
 
         point = self.dims.point[axis]
-        self.animation_thread = AnimationThread(point, axis, fps)
+        self.animation_thread = AnimationThread(point + 1, axis, fps)
         # when the thread timer increments, update the current frame
         self.animation_thread.incremented.connect(self._set_frame)
+        self._set_frame(axis, point + 1)
         self.animation_thread.start()
 
     def stop(self):
@@ -361,6 +362,7 @@ class QtDims(QWidget):
             self.animation_thread.quit()
             self.animation_thread.wait()
             del self.animation_thread
+            self.enable_play()
 
     @property
     def is_playing(self):
