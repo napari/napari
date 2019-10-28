@@ -15,8 +15,8 @@ from ...util.misc import (
 )
 from ...util.event import Event
 from ...util.status_messages import format_float
-from ._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
-from ...util.colormaps import make_colorbar
+from ._constants import Rendering, Interpolation
+from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
 class Image(Layer):
@@ -50,6 +50,8 @@ class Image(Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
+    gamma : float
+        Gamma correction for determining colormap linearity.  Defaults to 1.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
@@ -101,6 +103,8 @@ class Image(Layer):
     contrast_limits_range : list (2,) of float
         Range for the color limits for luminace images. If the image is
         rgb the contrast_limits_range is ignored.
+    gamma : float
+        Gamma correction for determining colormap linearity.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
@@ -125,6 +129,7 @@ class Image(Layer):
         is_pyramid=None,
         colormap='gray',
         contrast_limits=None,
+        gamma=1,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -155,6 +160,7 @@ class Image(Layer):
 
         self.events.add(
             contrast_limits=Event,
+            gamma=Event,
             colormap=Event,
             interpolation=Event,
             rendering=Event,
@@ -181,6 +187,7 @@ class Image(Layer):
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
+        self._gamma = gamma
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
@@ -325,6 +332,17 @@ class Image(Layer):
             self._contrast_limits_range[1] = copy(contrast_limits[1])
         self._update_thumbnail()
         self.events.contrast_limits()
+
+    @property
+    def gamma(self):
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        self.status = format_float(value)
+        self._gamma = value
+        self._update_thumbnail()
+        self.events.gamma()
 
     @property
     def interpolation(self):
@@ -535,6 +553,7 @@ class Image(Layer):
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
+            downsampled = downsampled ** self.gamma
             color_array = self.colormap[1][downsampled.ravel()]
             colormapped = color_array.rgba.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity

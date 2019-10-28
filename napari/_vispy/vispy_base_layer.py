@@ -1,6 +1,4 @@
 from vispy.visuals.transforms import STTransform
-from contextlib import contextmanager
-from ..util.event import EmitterGroup, Event
 from abc import ABC, abstractmethod
 
 

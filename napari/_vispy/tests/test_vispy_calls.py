@@ -16,10 +16,8 @@ def test_data_change_ndisplay_image(qtbot):
     layer = viewer.add_image(data)
     visual = view.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change')
-    def test_ndisplay_change(
-        mocked_method, ndisplay=3, wraps=visual._on_data_change
-    ):
+    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
@@ -43,10 +41,8 @@ def test_data_change_ndisplay_labels(qtbot):
 
     visual = view.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change')
-    def test_ndisplay_change(
-        mocked_method, ndisplay=3, wraps=visual._on_data_change
-    ):
+    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
@@ -69,10 +65,8 @@ def test_data_change_ndisplay_points(qtbot):
     layer = viewer.add_points(data)
     visual = view.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change')
-    def test_ndisplay_change(
-        mocked_method, ndisplay=3, wraps=visual._on_data_change
-    ):
+    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 

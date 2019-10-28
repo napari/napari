@@ -1,4 +1,3 @@
-from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QTabWidget,
@@ -6,7 +5,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QDialog,
-    QFrame,
     QScrollArea,
     QSizePolicy,
 )
