@@ -1,7 +1,8 @@
 import numpy as np
 from napari.components import ViewerModel
 
-base_colormaps = ['red', 'green', 'blue', 'cyan', 'yellow', 'magenta']
+base_colormaps = ViewerModel._base_colormaps
+two_colormaps = ViewerModel._two_colormaps
 
 
 def test_multichannel():
@@ -14,6 +15,30 @@ def test_multichannel():
     for i in range(data.shape[-1]):
         assert np.all(viewer.layers[i].data == data.take(i, axis=-1))
         assert viewer.layers[i].colormap[0] == base_colormaps[i]
+
+
+def test_two_channel():
+    """Test adding multichannel image with two channels."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((15, 10, 2))
+    viewer.add_image(data, channel_axis=-1)
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert np.all(viewer.layers[i].data == data.take(i, axis=-1))
+        assert viewer.layers[i].colormap[0] == two_colormaps[i]
+
+
+def test_one_channel():
+    """Test adding multichannel image with one channel."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((15, 10, 1))
+    viewer.add_image(data, channel_axis=-1)
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert np.all(viewer.layers[i].data == data.take(i, axis=-1))
+        assert viewer.layers[i].colormap[0] == two_colormaps[i]
 
 
 def test_specified_multichannel():
@@ -66,6 +91,18 @@ def test_colormaps():
         assert viewer.layers[i].colormap[0] == colormaps[i]
 
 
+def test_split_rgb_image():
+    """Test adding multichannel image with custom colormaps."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((15, 10, 3))
+    colormaps = ['red', 'green', 'blue']
+    viewer.add_image(data, colormap=colormaps, channel_axis=-1)
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert viewer.layers[i].colormap[0] == colormaps[i]
+
+
 def test_contrast_limits():
     """Test adding multichannel image with custom contrast limits."""
     viewer = ViewerModel()
@@ -91,14 +128,48 @@ def test_gamma():
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
     gamma = 0.7
-    viewer.add_multichannel(data, gamma=gamma)
+    viewer.add_image(data, gamma=gamma, channel_axis=-1)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
         assert viewer.layers[i].gamma == gamma
 
     viewer = ViewerModel()
     gammas = [0.3, 0.4, 0.5, 0.6, 0.7]
-    viewer.add_multichannel(data, gamma=gammas)
+    viewer.add_image(data, gamma=gammas, channel_axis=-1)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
         assert viewer.layers[i].gamma == gammas[i]
+
+
+def test_multichannel_pyramid():
+    """Test adding multichannel pyramid."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    shapes = [(40, 20, 4), (20, 10, 4), (10, 5, 4)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    viewer.add_image(data, channel_axis=-1, is_pyramid=True)
+    assert len(viewer.layers) == data[0].shape[-1]
+    for i in range(data[0].shape[-1]):
+        assert np.all(
+            [
+                np.all(l_d == d)
+                for l_d, d in zip(
+                    viewer.layers[i].data,
+                    [data[j].take(i, axis=-1) for j in range(len(data))],
+                )
+            ]
+        )
+        assert viewer.layers[i].colormap[0] == base_colormaps[i]
+
+
+def test_rgb_images():
+    """Test adding multiple rgb images."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((15, 10, 5, 3))
+    viewer.add_image(data, channel_axis=2, rgb=True)
+    assert len(viewer.layers) == data.shape[2]
+    for i in range(data.shape[-1]):
+        assert viewer.layers[i].rgb == True
+        assert viewer.layers[i]._data_view.ndim == 3

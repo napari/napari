@@ -40,6 +40,8 @@ class ViewerModel(KeymapMixin):
     """
 
     themes = palettes
+    _base_colormaps = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+    _two_colormaps = ['green', 'magenta']
 
     def __init__(self, title='napari', ndisplay=2, order=None):
         super().__init__()
@@ -473,7 +475,7 @@ class ViewerModel(KeymapMixin):
         Returns
         -------
         layer : :class:`napari.layers.Image` or list
-            The newly-created image layer or list of image layers
+            The newly-created image layer or list of image layers.
         """
         if data is None and path is None:
             raise ValueError("One of either data or path must be provided")
@@ -507,23 +509,21 @@ class ViewerModel(KeymapMixin):
             self.add_layer(layer)
             return layer
         else:
-            n_images = data.shape[channel_axis]
+            if is_pyramid:
+                n_images = data[0].shape[channel_axis]
+            else:
+                n_images = data.shape[channel_axis]
 
             name = ensure_iterable(name)
 
             if blending is None:
                 blending = 'additive'
 
-            base_colormaps = [
-                'red',
-                'green',
-                'blue',
-                'cyan',
-                'yellow',
-                'magenta',
-            ]
             if colormap is None:
-                colormap = itertools.cycle(base_colormaps)
+                if n_images < 3:
+                    colormap = itertools.cycle(self._two_colormaps)
+                else:
+                    colormap = itertools.cycle(self._base_colormaps)
             else:
                 colormap = ensure_iterable(colormap)
 
@@ -543,7 +543,13 @@ class ViewerModel(KeymapMixin):
                 range(n_images), colormap, contrast_limits, gamma, name
             )
             for i, cmap, clims, _gamma, name in zipped_args:
-                image = data.take(i, axis=channel_axis)
+                if is_pyramid:
+                    image = [
+                        data[j].take(i, axis=channel_axis)
+                        for j in range(len(data))
+                    ]
+                else:
+                    image = data.take(i, axis=channel_axis)
                 layer = layers.Image(
                     image,
                     rgb=rgb,
