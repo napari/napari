@@ -412,7 +412,9 @@ class Image(Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            order = self.dims.displayed_order + (self.dims.ndisplay,)
+            order = self.dims.displayed_order + (
+                max(self.dims.displayed_order) + 1,
+            )
         else:
             order = self.dims.displayed_order
 
