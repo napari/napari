@@ -1,4 +1,3 @@
-import re
 import inspect
 
 from .misc import camel_to_snake, callsignature

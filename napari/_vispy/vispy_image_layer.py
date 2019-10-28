@@ -3,7 +3,6 @@ from vispy.scene.visuals import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers import Image
 
 texture_dtypes = [
     np.dtype(np.int8),

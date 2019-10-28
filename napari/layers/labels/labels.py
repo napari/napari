@@ -1,13 +1,9 @@
-import warnings
-from base64 import b64encode
 from collections import deque
 from copy import copy
 from typing import Union
 
 import numpy as np
 from scipy import ndimage as ndi
-from xml.etree.ElementTree import Element
-from imageio import imwrite
 
 from ..image import Image
 from ...util.colormaps import colormaps
