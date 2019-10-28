@@ -397,6 +397,7 @@ class ViewerModel(KeymapMixin):
         is_pyramid=None,
         colormap=None,
         contrast_limits=None,
+        gamma=1,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -443,6 +444,10 @@ class ViewerModel(KeymapMixin):
             the image. If list of lists then must be same length as the axis
             that is being expanded and then each colormap is applied to each
             image.
+        gamma : list, float
+            Gamma correction for determining colormap linearity.  Defaults to 1.
+            If a list then must be same length as the axis that is being expanded
+            and then each entry in the list is applied to each image.
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
@@ -488,6 +493,7 @@ class ViewerModel(KeymapMixin):
                 is_pyramid=is_pyramid,
                 colormap=colormap,
                 contrast_limits=contrast_limits,
+                gamma=gamma,
                 interpolation=interpolation,
                 rendering=rendering,
                 name=name,
@@ -530,15 +536,20 @@ class ViewerModel(KeymapMixin):
             else:
                 contrast_limits = ensure_iterable(contrast_limits)
 
+            gamma = ensure_iterable(gamma)
+
             layer_list = []
-            zipped_args = zip(range(n_images), colormap, contrast_limits, name)
-            for i, cmap, clims, name in zipped_args:
+            zipped_args = zip(
+                range(n_images), colormap, contrast_limits, gamma, name
+            )
+            for i, cmap, clims, _gamma, name in zipped_args:
                 image = data.take(i, axis=channel_axis)
                 layer = layers.Image(
                     image,
                     rgb=rgb,
                     colormap=cmap,
                     contrast_limits=clims,
+                    gamma=_gamma,
                     interpolation=interpolation,
                     rendering=rendering,
                     name=name,
@@ -824,6 +835,7 @@ class ViewerModel(KeymapMixin):
         *,
         colormap='gray',
         contrast_limits=None,
+        gamma=1,
         name=None,
         metadata=None,
         scale=None,
@@ -852,6 +864,8 @@ class ViewerModel(KeymapMixin):
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image.
+        gamma : float
+            Gamma correction for determining colormap linearity.  Defaults to 1.
         name : str
             Name of the layer.
         metadata : dict
@@ -878,6 +892,7 @@ class ViewerModel(KeymapMixin):
             data,
             colormap=colormap,
             contrast_limits=contrast_limits,
+            gamma=gamma,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -1142,8 +1157,6 @@ class ViewerModel(KeymapMixin):
         n_column = max(1, n_column)
         self.grid_size = (n_row, n_column)
         self.grid_stride = stride
-        direction = stride > 0
-        abs_stride = abs(stride)
         for i, layer in enumerate(self.layers):
             if stride > 0:
                 adj_i = len(self.layers) - i - 1

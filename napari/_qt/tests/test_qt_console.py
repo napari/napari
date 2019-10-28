@@ -1,4 +1,3 @@
-import os
 from napari._qt.qt_console import QtConsole
 
 

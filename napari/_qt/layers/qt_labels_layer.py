@@ -1,7 +1,6 @@
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QVBoxLayout,
     QRadioButton,
     QWidget,
     QPushButton,
@@ -13,7 +12,6 @@ from qtpy.QtWidgets import (
 from qtpy.QtCore import Qt
 
 import numpy as np
-from collections import Iterable
 from .qt_base_layer import QtLayerControls
 from ...layers.labels._constants import Mode
 

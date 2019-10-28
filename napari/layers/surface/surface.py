@@ -1,15 +1,12 @@
-from typing import Union
-from xml.etree.ElementTree import Element
+import warnings
 import numpy as np
 from copy import copy
 import vispy.color
 from ..base import Layer
 from ...util.event import Event
-from ..image._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
 from ...util.status_messages import format_float
 from ...util.misc import calc_data_range, increment_unnamed_colormap
-from ...util.colormaps import make_colorbar
-from vispy.color import get_color_names, Color
+from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
 class Surface(Layer):
@@ -34,6 +31,8 @@ class Surface(Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
+    gamma : float
+        Gamma correction for determining colormap linearity.  Defaults to 1.
     name : str
         Name of the layer.
     metadata : dict
@@ -75,6 +74,8 @@ class Surface(Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
+    gamma : float
+        Gamma correction for determining colormap linearity.
 
     Extended Summary
     ----------
@@ -95,6 +96,7 @@ class Surface(Layer):
         *,
         colormap='gray',
         contrast_limits=None,
+        gamma=1,
         name=None,
         metadata=None,
         scale=None,
@@ -119,6 +121,7 @@ class Surface(Layer):
 
         self.events.add(
             contrast_limits=Event,
+            gamma=Event,
             colormap=Event,
             interpolation=Event,
             rendering=Event,
@@ -126,6 +129,7 @@ class Surface(Layer):
 
         # Save the vector style params
         # Set contrast_limits and colormaps
+        self._gamma = gamma
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
@@ -260,6 +264,17 @@ class Surface(Layer):
             self._contrast_limits_range[1] = copy(contrast_limits[1])
         self._update_thumbnail()
         self.events.contrast_limits()
+
+    @property
+    def gamma(self):
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        self.status = format_float(value)
+        self._gamma = value
+        self._update_thumbnail()
+        self.events.gamma()
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""

@@ -1,8 +1,8 @@
 from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Volume as VolumeNode
+from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers import Image
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -33,6 +33,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.dims.events.ndisplay.connect(
             lambda e: self._on_display_change()
         )
+        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
 
         self._on_display_change()
 
@@ -86,6 +87,10 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
+        if self.layer.gamma != 1:
+            # when gamma!=1, we instantiate a new colormap with 256 control points from 0-1
+            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
+
         # Below is fixed in #1712
         if not self.layer.dims.ndisplay == 2:
             self.node.view_program['texture2D_LUT'] = (
@@ -98,6 +103,9 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.clim = self.layer.contrast_limits
         else:
             self._on_data_change()
+
+    def _on_gamma_change(self):
+        self._on_colormap_change()
 
     def _on_scale_change(self):
         self.scale = [
