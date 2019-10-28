@@ -218,9 +218,9 @@ class Text(Layer):
 
     def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
-        if len(self.data) == 0:
-            maxs = np.ones(self.data[0].shape[1], dtype=int)
-            mins = np.zeros(self.data[0].shape[1], dtype=int)
+        if len(self.coords) == 0:
+            maxs = np.ones(self.coords.shape[1], dtype=int)
+            mins = np.zeros(self.coords.shape[1], dtype=int)
         else:
             maxs = np.max(self.data[0], axis=0)
             mins = np.min(self.data[0], axis=0)
