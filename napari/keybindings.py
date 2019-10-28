@@ -88,10 +88,10 @@ def remove_selected(viewer):
     viewer.layers.remove_selected()
 
 
-# @Viewer.bind_key('Control-A')
-# def remove_selected(viewer):
-#     """Selected all layers."""
-#     viewer.layers.select_all()
+@Viewer.bind_key('Control-A')
+def select_all(viewer):
+    """Selected all layers."""
+    viewer.layers.select_all()
 
 
 @Viewer.bind_key('Control-Shift-Backspace')
@@ -131,10 +131,10 @@ def reset_view(viewer):
     viewer.reset_view()
 
 
-# @Viewer.bind_key('Control-G')
-# def toggle_ndisplay(viewer):
-#     """Toggle grid mode."""
-#     if np.all(viewer.grid_size == (1, 1)):
-#         viewer.grid_view()
-#     else:
-#         viewer.stack_view()
+@Viewer.bind_key('Control-G')
+def toggle_grid(viewer):
+    """Toggle grid mode."""
+    if np.all(viewer.grid_size == (1, 1)):
+        viewer.grid_view()
+    else:
+        viewer.stack_view()

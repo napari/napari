@@ -1210,8 +1210,6 @@ class ViewerModel(KeymapMixin):
         n_column = max(1, n_column)
         self.grid_size = (n_row, n_column)
         self.grid_stride = stride
-        # direction = stride > 0
-        # abs_stride = abs(stride)
         for i, layer in enumerate(self.layers):
             if stride > 0:
                 adj_i = len(self.layers) - i - 1

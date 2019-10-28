@@ -567,8 +567,6 @@ class Points(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        # in_slice_data = self._data_view
-
         # Display points if there are any in this slice
         if len(self._data_view) > 0:
             # Get the point sizes

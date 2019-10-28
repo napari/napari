@@ -656,10 +656,6 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
             segment_normal(full_path[i], full_path[i + 1])
             for i in range(len(clean_path))
         ]
-        # path_length = [
-        #     np.linalg.norm(full_path[i] - full_path[i + 1])
-        #     for i in range(len(clean_path))
-        # ]
         normals = np.array(normals)
         full_path = np.concatenate((clean_path, [clean_path[0]]), axis=0)
         full_normals = np.concatenate((normals, [normals[0]]), axis=0)
@@ -669,10 +665,6 @@ def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
             segment_normal(full_path[i], full_path[i + 1])
             for i in range(len(clean_path))
         ]
-        # path_length = [
-        #     np.linalg.norm(full_path[i] - full_path[i + 1])
-        #     for i in range(len(clean_path))
-        # ]
         normals[-1] = -normals[-1]
         normals = np.array(normals)
         full_path = clean_path

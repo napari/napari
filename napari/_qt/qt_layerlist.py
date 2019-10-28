@@ -284,7 +284,6 @@ class QtLayerList(QScrollArea):
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
         index = self.layers.index(self.drag_name)
-        # layer = self.layers[index]
         if index != insert and index + 1 != insert:
             if insert >= index:
                 insert -= 1
