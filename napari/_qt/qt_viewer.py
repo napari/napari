@@ -79,6 +79,7 @@ class QtViewer(QSplitter):
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.events.ignore_callback_errors = False
+        self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 

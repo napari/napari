@@ -45,6 +45,7 @@ class QtDims(QWidget):
         self._displayed_sliders = []
 
         self._last_used = None
+        self._play_ready = True  # False if currently awaiting a draw event
 
         # Initialises the layout:
         layout = QGridLayout()
@@ -340,7 +341,7 @@ class QtDims(QWidget):
         fps: float
             Frames per second for playback (not guaranteed)
         """
-        # TODO: No access in the GUI yet.  Just keybinding.
+        # TODO: No access in the GUI yet. Just keybinding.
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
 
@@ -348,7 +349,10 @@ class QtDims(QWidget):
         # if nothing is playing self.stop() will not do anything
         self.stop()
 
-        self.animation_thread = AnimationThread(self.dims, axis, fps)
+        point = self.dims.point[axis]
+        self.animation_thread = AnimationThread(point, axis, fps)
+        # when the thread timer increments, update the current frame
+        self.animation_thread.incremented.connect(self._set_frame)
         self.animation_thread.start()
 
     def stop(self):
@@ -367,15 +371,38 @@ class QtDims(QWidget):
             and self.animation_thread.isRunning()
         )
 
+    def _set_frame(self, axis, point):
+        """Safely tries to set `axis` to the requested `point`
+        This function is debounced: if the previous frame has not yet drawn to the canvas,
+        it will simply do nothing.  If the timer plays faster than the canvas can draw,
+        this will drop the intermediate frames, keeping the effective frame rate constant
+        even if the canvas cannot keep up.
+        """
+        if self._play_ready:
+            range_ = self.dims.range[axis]
+            max_point = int(np.floor(range_[1] - range_[2])) + 1
+            # disable additional point advance requests until this one draws
+            self._play_ready = False
+            self.dims.set_point(axis, point % (max_point))
+
+    def enable_play(self, *args):
+        # this is mostly here to connect to the main SceneCanvas.events.draw event
+        # in the qt_viewer
+        self._play_ready = True
+
 
 class AnimationThread(QThread):
-    def __init__(self, dims, axis=0, fps=10):
+    """A thread to keep the animation timer independent of the main event loop.
+    This prevents mouseovers and other events from causing the animation lag"""
+
+    incremented = Signal(int, int)  # signal for each time a frame is requested
+
+    def __init__(self, current, axis, fps=10):
         super().__init__()
-        self.dims = dims
+        # could put some limits on fps here... though the handler in the QtDims
+        # object above is capable of ignoring overly spammy requests.
 
-        range_ = dims.range[axis]
-        self.max_point = int(np.floor(range_[1] - range_[2])) + 1
-
+        self.current = current
         self.axis = axis
         self.timer = QTimer()
         self.timer.setInterval(1000 / fps)
@@ -385,8 +412,8 @@ class AnimationThread(QThread):
         self.finished.connect(self.timer.deleteLater)
 
     def advance(self):
-        current_point = self.dims.point[self.axis]
-        self.dims.set_point(self.axis, (current_point + 1) % (self.max_point))
+        self.current += 1
+        self.incremented.emit(self.axis, self.current)
 
     def run(self):
         self.timer.start()
