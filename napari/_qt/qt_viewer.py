@@ -1,21 +1,11 @@
 import os.path
-from glob import glob
 import numpy as np
 import inspect
 from pathlib import Path
 
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QFrame,
-    QFileDialog,
-    QSplitter,
-)
-from qtpy.QtWidgets import QStackedWidget, QSizePolicy
+from qtpy.QtWidgets import QWidget, QGridLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -351,7 +341,7 @@ class QtViewer(QSplitter):
         """Called whenever key pressed in canvas.
         """
         if (
-            not event.native is None
+            event.native is not None
             and event.native.isAutoRepeat()
             and event.key.name not in ['Up', 'Down', 'Left', 'Right']
         ) or event.key is None:

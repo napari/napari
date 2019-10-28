@@ -1,7 +1,4 @@
-import numpy as np
-import itertools
 from .viewer import Viewer
-from .util.misc import ensure_iterable, is_iterable
 
 
 def view_image(
@@ -202,8 +199,8 @@ def view_multichannel(
     viewer.add_multichannel(
         data=data,
         axis=-1,
-        colormap=cmap,
-        contrast_limits=clims,
+        colormap=colormap,
+        contrast_limits=contrast_limits,
         gamma=gamma,
         interpolation=interpolation,
         rendering=rendering,

@@ -1,12 +1,8 @@
 import numpy as np
-from copy import copy
 from vispy.scene.visuals import Line, Compound
 from .markers import Markers
 from vispy.visuals.transforms import ChainTransform
-
-from ..layers import Points
 from .vispy_base_layer import VispyBaseLayer
-import numpy as np
 
 
 class VispyPointsLayer(VispyBaseLayer):

@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QHBoxLayout, QSlider
+from qtpy.QtWidgets import QSlider
 from .. import QHRangeSlider
 from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt

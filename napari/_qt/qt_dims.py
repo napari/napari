@@ -170,7 +170,7 @@ class QtDims(QWidget):
             else:
                 if (
                     not self._displayed_sliders[axis]
-                    and not axis in self.dims.displayed
+                    and axis not in self.dims.displayed
                 ):
                     self._displayed_sliders[axis] = True
                     self.last_used = axis

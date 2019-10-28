@@ -7,7 +7,6 @@ from qtpy.QtWidgets import (
     QScrollArea,
     QApplication,
     QLineEdit,
-    QFrame,
     QLabel,
     QCheckBox,
     QHBoxLayout,
@@ -205,7 +204,7 @@ class QtLayerList(QScrollArea):
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
-        dropAction = drag.exec_()
+        drag.exec_()
         if self.drag_name is not None:
             index = self.layers.index(self.drag_name)
             layer = self.layers[index]
@@ -285,7 +284,6 @@ class QtLayerList(QScrollArea):
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
         index = self.layers.index(self.drag_name)
-        layer = self.layers[index]
         if index != insert and index + 1 != insert:
             if insert >= index:
                 insert -= 1
