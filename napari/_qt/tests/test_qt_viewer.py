@@ -355,6 +355,11 @@ def test_play_axis(qtbot):
         # play for a litte bit
         view.dims.play_dim(axis, 1000 / interval)
         # the 0.5 allows for generous clock jitter...
+        # in rare cases, this test may fail due to an unexpected
+        # number of frames passing during the qtbot.wait period (see #607)
+        # in most cases simply re-running it is enough to make it pass
+        # but but if it starts to fail in the future this
+        # test may need to be redesigned
         qtbot.wait(interval * (nframes + 0.5))
         view.dims.stop()
         assert mock_method.call_count == nframes + 1
