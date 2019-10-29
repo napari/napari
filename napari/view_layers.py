@@ -45,14 +45,15 @@ def view_image(
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be a pyramid. The first image in the list
         should be the largest.
-    colormap : list, str, vispy.Color.Colormap, tuple, dict
+    colormap : str, vispy.Color.Colormap, tuple, dict, list
         Colormaps to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
         the second item must be a Colormap. If a dict the key must be a
         string to assign as a name to a colormap and the value must be a
         Colormap. If a list then must be same length as the axis that is
-        being expanded and then each colormap is applied to each image.
+        being expanded as channels, and each colormap is applied to each new
+        image layer.
     contrast_limits : list (2,)
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of

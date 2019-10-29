@@ -2,9 +2,11 @@ import numpy as np
 from math import inf
 import itertools
 from xml.etree.ElementTree import Element, tostring
+
 from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
+from ..util import colormaps
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
@@ -40,8 +42,6 @@ class ViewerModel(KeymapMixin):
     """
 
     themes = palettes
-    _base_colormaps = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
-    _two_colormaps = ['green', 'magenta']
 
     def __init__(self, title='napari', ndisplay=2, order=None):
         super().__init__()
@@ -432,14 +432,15 @@ class ViewerModel(KeymapMixin):
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be a pyramid. The first image in the list
             should be the largest.
-        colormap : list, str, vispy.Color.Colormap, tuple, dict
+        colormap : str, vispy.Color.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap. If a list then must be same length as the axis that is
-            being expanded and then each colormap is applied to each image.
+            being expanded as channels, and each colormap is applied to each
+            new image layer.
         contrast_limits : list (2,)
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
@@ -510,9 +511,9 @@ class ViewerModel(KeymapMixin):
             return layer
         else:
             if is_pyramid:
-                n_images = data[0].shape[channel_axis]
+                n_channels = data[0].shape[channel_axis]
             else:
-                n_images = data.shape[channel_axis]
+                n_channels = data.shape[channel_axis]
 
             name = ensure_iterable(name)
 
@@ -520,10 +521,10 @@ class ViewerModel(KeymapMixin):
                 blending = 'additive'
 
             if colormap is None:
-                if n_images < 3:
-                    colormap = itertools.cycle(self._two_colormaps)
+                if n_channels < 3:
+                    colormap = colormaps.MAGENTA_GREEN
                 else:
-                    colormap = itertools.cycle(self._base_colormaps)
+                    colormap = itertools.cycle(colormaps.CYMRGB)
             else:
                 colormap = ensure_iterable(colormap)
 
@@ -540,7 +541,7 @@ class ViewerModel(KeymapMixin):
 
             layer_list = []
             zipped_args = zip(
-                range(n_images), colormap, contrast_limits, gamma, name
+                range(n_channels), colormap, contrast_limits, gamma, name
             )
             for i, cmap, clims, _gamma, name in zipped_args:
                 if is_pyramid:
