@@ -1,8 +1,9 @@
 import numpy as np
 from napari.components import ViewerModel
+from napari.util import colormaps
 
-base_colormaps = ViewerModel._base_colormaps
-two_colormaps = ViewerModel._two_colormaps
+base_colormaps = colormaps.CYMRGB
+two_colormaps = colormaps.MAGENTA_GREEN
 
 
 def test_multichannel():
