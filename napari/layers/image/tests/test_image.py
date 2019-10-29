@@ -455,6 +455,22 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+def test_narrow_thumbnail():
+    """Ensure that the thumbnail generation works for very narrow images.
+
+    See: https://github.com/napari/napari/issues/641 and
+    https://github.com/napari/napari/issues/489
+    """
+    image = np.random.random((1, 2048))
+    layer = Image(image)
+    layer._update_thumbnail()
+    thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
+    middle_row = thumbnail.shape[0] // 2
+    assert np.all(thumbnail[: middle_row - 1] == 0)
+    assert np.all(thumbnail[middle_row + 1 :] == 0)
+    assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0
+
+
 def test_xml_list():
     """Test the xml generation."""
     np.random.seed(0)

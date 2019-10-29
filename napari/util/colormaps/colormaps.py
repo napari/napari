@@ -289,3 +289,10 @@ ALL_COLORMAPS.update(colormaps_3D)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
+
+# curated colormap sets
+# these are selected to look good or at least reasonable when using additive
+# blending of multiple channels.
+MAGENTA_GREEN = ['magenta', 'green']
+RGB = ['red', 'green', 'blue']
+CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
