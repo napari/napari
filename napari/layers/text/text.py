@@ -151,6 +151,7 @@ class Text(Layer):
         # Save the text style params
         self.text_color = text_color
         self._font_size = font_size
+        self.font = font
         self.anchor_x = anchor_x
         self.anchor_y = anchor_y
         self.sizes = font_size
@@ -644,29 +645,26 @@ class Text(Layer):
         Returns
         ----------
         xml : list
-            List of xml elements defining each point according to the
+            List of xml elements defining each text element according to the
             svg specification
         """
         xml_list = []
-        width = str(self.edge_width)
+        font_size = str(self.font_size)
         opacity = str(self.opacity)
-        props = {'stroke-width': width, 'opacity': opacity}
+        props = {
+            'font-family': self.font,
+            'fill': self.text_color,
+            'text-anchor': 'middle',
+            'font-size': font_size,
+            'opacity': opacity,
+        }
 
-        for i, d, s in zip(
-            self._indices_view, self._data_view, self._sizes_view
-        ):
-            d = d[::-1]
-            cx = str(d[0])
-            cy = str(d[1])
-            r = str(s / 2)
-            face_color = (255 * Color(self.face_colors[i]).rgba).astype(np.int)
-            fill = f'rgb{tuple(face_color[:3])}'
-            edge_color = (255 * Color(self.edge_colors[i]).rgba).astype(np.int)
-            stroke = f'rgb{tuple(edge_color[:3])}'
+        for c, t in zip(self._data_view, self._text_view):
+            cx = str(c[1])
+            cy = str(c[0])
 
-            element = Element(
-                'circle', cx=cx, cy=cy, r=r, stroke=stroke, fill=fill, **props
-            )
+            element = Element('text', x=cx, y=cy, **props)
+            element.text = t
             xml_list.append(element)
 
         return xml_list

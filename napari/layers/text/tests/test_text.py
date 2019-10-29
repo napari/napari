@@ -437,13 +437,15 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
-# def test_xml_list():
-#     """Test the xml generation."""
-#     shape = (10, 2)
-#     np.random.seed(0)
-#     data = 20 * np.random.random(shape)
-#     layer = Text(data)
-#     xml = layer.to_xml_list()
-#     assert type(xml) == list
-#     assert len(xml) == shape[0]
-#     assert np.all([type(x) == Element for x in xml])
+def test_xml_list():
+    """Test the xml generation."""
+    shape = (10, 2)
+    np.random.seed(0)
+    coords = 20 * np.random.random(shape)
+    text = shape[0] * ['test']
+    data = (coords, text)
+    layer = Text(data)
+    xml = layer.to_xml_list()
+    assert type(xml) == list
+    assert len(xml) == shape[0]
+    assert np.all([type(x) == Element for x in xml])
