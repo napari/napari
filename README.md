@@ -88,11 +88,11 @@ See [this issue](https://github.com/napari/napari/issues/420) for some of the fe
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](./docs/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## code of conduct
 
-`napari` has a [Code of Conduct](CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](./docs/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
 
 ## help
 

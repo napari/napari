@@ -1,20 +1,11 @@
 import os.path
-from glob import glob
 import numpy as np
 import inspect
 from pathlib import Path
 
+from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QFrame,
-    QFileDialog,
-    QSplitter,
-)
-from qtpy.QtWidgets import QStackedWidget, QSizePolicy
+from qtpy.QtWidgets import QWidget, QGridLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -26,14 +17,13 @@ from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
 from ..util.misc import (
-    is_rgb,
+    str_to_rgb,
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
     mouse_release_callbacks,
 )
 from ..util.keybindings import components_to_key_combo
-from ..util import io
 
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -239,9 +229,6 @@ class QtViewer(QSplitter):
     def _add_files(self, filenames):
         """Add an image layer to the viewer.
 
-        Whether the image is rgb is determined by
-        :func:`napari.util.misc.is_rgb`.
-
         If multiple images are selected, they are stacked along the 0th
         axis.
 
@@ -251,8 +238,7 @@ class QtViewer(QSplitter):
             List of filenames to be opened
         """
         if len(filenames) > 0:
-            image = io.magic_read(filenames)
-            self.viewer.add_image(image, rgb=is_rgb(image.shape))
+            self.viewer.add_image(path=filenames)
             self._last_visited_dir = os.path.dirname(filenames[0])
 
     def _on_interactive(self, event):
@@ -290,6 +276,8 @@ class QtViewer(QSplitter):
         themed_stylesheet = template(self.raw_stylesheet, **palette)
         self.console.style_sheet = themed_stylesheet
         self.console.syntax_style = palette['syntax_style']
+        bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
+        self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
@@ -350,7 +338,7 @@ class QtViewer(QSplitter):
         """Called whenever key pressed in canvas.
         """
         if (
-            not event.native is None
+            event.native is not None
             and event.native.isAutoRepeat()
             and event.key.name not in ['Up', 'Down', 'Left', 'Right']
         ) or event.key is None:

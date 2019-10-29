@@ -37,7 +37,7 @@ Now you can build the distribution:
 $ python setup.py sdist bdist_wheel
 ```
 
-[`MANIFEST.in`](MANIFEST.in) determines which non-Python files are included.
+[`MANIFEST.in`](../MANIFEST.in) determines which non-Python files are included.
 Make sure to check that all necessary ones are listed before beginning the release process.
 
 ## uploading to PyPI
@@ -83,13 +83,13 @@ $ git push upstream --tags
 1. Review and cleanup ``docs/release/release_dev.txt``.
 
 2. Make a list of merges, contributors, and reviewers by running
-   ``python generate_release_notes.py -h`` and following that file's usage. For minor or major releases generate the list to include everything since the last minor or major release.
+   ``python docs/release/generate_release_notes.py -h`` and following that file's usage. For minor or major releases generate the list to include everything since the last minor or major release.
    For other releases generate the list to include
    everything since the last release for which there
    are release notes (which should just be the last release). For example making the release notes
    for the `0.2.0` release can be done as follows:
    ```
-   python generate_release_notes.py v0.1.0 master --version 0.2.0 | tee docs/release/release_0_2.rst
+   python docs/release/generate_release_notes.py v0.1.0 master --version 0.2.0 | tee docs/release/release_0_2.rst
    ```
 
 3. Paste this list at the end of the ``release_dev.txt``.

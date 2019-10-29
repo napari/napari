@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 from napari.layers import Surface
 
 
@@ -31,3 +30,23 @@ def test_random_3D_surface():
 
     layer.dims.ndisplay = 3
     assert layer._data_view.shape[1] == 3
+
+
+def test_surface_gamma():
+    """Test setting gamma."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    assert layer.gamma == 1
+
+    # Change gamma property
+    gamma = 0.7
+    layer.gamma = gamma
+    assert layer.gamma == gamma
+
+    # Set gamma as keyword argument
+    layer = Surface(data, gamma=gamma)
+    assert layer.gamma == gamma

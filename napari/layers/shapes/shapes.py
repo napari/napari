@@ -1,6 +1,5 @@
 import numpy as np
 from copy import copy, deepcopy
-from contextlib import contextmanager
 
 from ...util.event import Event
 from ...util.misc import ensure_iterable
@@ -970,7 +969,6 @@ class Shapes(Layer):
         for index in to_remove:
             self._data_view.remove(index)
         self.selected_data = []
-        coord = [self.coordinates[i] for i in self.dims.displayed]
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -1693,7 +1691,6 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
-        coord = [self.coordinates[i] for i in self.dims.displayed]
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.PAN_ZOOM:

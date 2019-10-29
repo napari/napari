@@ -53,7 +53,7 @@ def main():
     with gui_qt():
         v = Viewer()
         if len(args.images) > 0:
-            images = io.magic_read(
+            images = io.magic_imread(
                 args.images, use_dask=args.use_dask, stack=not args.layers
             )
             if args.layers:
