@@ -586,7 +586,6 @@ class ViewerModel(KeymapMixin):
         self,
         data=None,
         *,
-        text=None,
         text_color='black',
         font_size=12,
         font='OpenSans',
@@ -605,8 +604,9 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        data : array (N, D)
-            Coordinates for N points in D dimensions.
+        data : tuple (coords, text)
+            coords contains text coordinates for N points in D dimensions.
+            text contains a list of the strings to be displayed as text.
         text_color : str
             The color of the text font.
         font_size : float
@@ -641,7 +641,7 @@ class ViewerModel(KeymapMixin):
         Returns
         -------
         layer : :class:`napari.layers.Text`
-            The newly-created points layer.
+            The newly-created text layer.
 
         Notes
         -----
@@ -655,6 +655,7 @@ class ViewerModel(KeymapMixin):
         layer = layers.Text(
             data=data,
             text_color=text_color,
+            font_size=font_size,
             font=font,
             anchor_x=anchor_x,
             anchor_y=anchor_y,
