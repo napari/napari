@@ -81,7 +81,7 @@ def test_docstring(layer):
             ) from e
 
     # check returns section
-    method_returns, = method_doc[
+    (method_returns,) = method_doc[
         'Returns'
     ]  # only one thing should be returned
     description = ' '.join(method_returns[-1])  # join multi-line description
