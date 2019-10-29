@@ -70,6 +70,8 @@ class ViewerModel(KeymapMixin):
 
         self.layers = LayerList()
 
+        self.axis_labels = [''] * ndim  # labels will be empty if data is 2D
+
         self._status = 'Ready'
         self._help = ''
         self._title = title
@@ -407,6 +409,7 @@ class ViewerModel(KeymapMixin):
         blending='translucent',
         visible=True,
         path=None,
+        axis_labels=None,
     ):
         """Add an image layer to the layers list.
 
@@ -461,6 +464,8 @@ class ViewerModel(KeymapMixin):
             Whether the layer visual is currently being displayed.
         path : str or list of str
             Path or list of paths to image data.
+        axis_labels : list of str
+            Labels for each of the axes of the data. Used to label the sliders.
 
         Returns
         -------
@@ -512,6 +517,7 @@ class ViewerModel(KeymapMixin):
         blending='additive',
         visible=True,
         path=None,
+        axis_labels=None,
     ):
         """Add image layers to the layers list expanding along axis.
 
@@ -560,6 +566,8 @@ class ViewerModel(KeymapMixin):
             Whether the layer visual is currently being displayed.
         path : str or list of str
             Path or list of paths to image data.
+        axis_labels : list of str
+            Labels for each of the axes of the data. Used to label the sliders.
 
         Returns
         -------
@@ -613,6 +621,7 @@ class ViewerModel(KeymapMixin):
                 opacity=opacity,
                 blending=blending,
                 visible=visible,
+                axis_labels=axis_labels,
             )
             layers.append(layer)
         return layers
@@ -634,6 +643,7 @@ class ViewerModel(KeymapMixin):
         opacity=1,
         blending='translucent',
         visible=True,
+        axis_labels=None,
     ):
         """Add a points layer to the layers list.
 

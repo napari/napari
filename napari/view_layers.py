@@ -25,6 +25,7 @@ def view_image(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add an image layer.
 
@@ -83,10 +84,12 @@ def view_image(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Labels for each of the axes of the data. Used to label the sliders.
 
     Returns
     -------
@@ -111,6 +114,7 @@ def view_image(
         blending=blending,
         visible=visible,
         path=path,
+        axis_labels=axis_labels,
     )
     return viewer
 
