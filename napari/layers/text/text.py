@@ -87,8 +87,10 @@ class Text(Layer):
 
     Extended Summary
     ----------
-    _data_view : array (M, 2)
-        data (coords, text) in the currently viewed slice.
+    _text_coords_view : array (M, 2)
+        text coords in the currently viewed slice.
+    _text_view : list (M)
+        text in the currently viewed slice
     _sizes_view : array (M, )
         Size of the text elements in the currently viewed slice.
     _indices_view : array (M, )
@@ -177,7 +179,7 @@ class Text(Layer):
         self._drag_start = None
 
         # Nx2 array of points in the currently viewed slice
-        self._data_view = np.empty((0, 2))
+        self._text_coords_view = np.empty((0, 2))
 
         # Full data indices of points located in the currently viewed slice
         self._indices_view = []
@@ -206,7 +208,7 @@ class Text(Layer):
         self.events.data()
 
     @property
-    def coords(self) -> np.ndarray:
+    def text_coords(self) -> np.ndarray:
         return self._data[0]
 
     @property
@@ -219,9 +221,9 @@ class Text(Layer):
 
     def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
-        if len(self.coords) == 0:
-            maxs = np.ones(self.coords.shape[1], dtype=int)
-            mins = np.zeros(self.coords.shape[1], dtype=int)
+        if len(self.text_coords) == 0:
+            maxs = np.ones(self.text_coords.shape[1], dtype=int)
+            mins = np.zeros(self.text_coords.shape[1], dtype=int)
         else:
             maxs = np.max(self.data[0], axis=0)
             mins = np.min(self.data[0], axis=0)
@@ -296,7 +298,7 @@ class Text(Layer):
         if len(index) == 0:
             box = None
         else:
-            data = self._data_view[index]
+            data = self._text_coords_view[index]
             size = self._sizes_view[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
@@ -405,9 +407,9 @@ class Text(Layer):
         disp = list(self.dims.displayed)
         indices = np.array(indices)
         if len(self.data) > 0:
-            data = self.coords[:, not_disp].astype('int')
+            data = self.text_coords[:, not_disp].astype('int')
             matches = np.all(data == indices[not_disp], axis=1)
-            in_slice_coords = self.coords[np.ix_(matches, disp)]
+            in_slice_coords = self.text_coords[np.ix_(matches, disp)]
             slice_indices = np.where(matches)[0].astype(int)
             in_slice_text = [self.text[i] for i in slice_indices]
             return in_slice_coords, in_slice_text, slice_indices
@@ -422,14 +424,14 @@ class Text(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        in_slice_data = self._data_view
+        in_slice_data = self._text_coords_view
         in_slice_sizes = self._sizes_view
 
         # Display points if there are any in this slice
-        if len(self._data_view) > 0:
+        if len(self._text_coords_view) > 0:
             # Get the point sizes
             distances = abs(
-                self._data_view
+                self._text_coords_view
                 - [self.coordinates[d] for d in self.dims.displayed]
             )
 
@@ -462,7 +464,7 @@ class Text(Layer):
             # if no points in this slice send dummy data
             data = np.zeros((0, self.dims.ndisplay))
 
-        self._data_view = data
+        self._text_coords_view = data
         self._text_view = in_slice_text
         self._sizes_view = np.asarray([self.sizes[i] for i in indices])
         self._indices_view = indices
@@ -550,7 +552,7 @@ class Text(Layer):
         ----------
         coord : sequence of indices to add point at
         """
-        coords = np.append(self.coords, [coord], axis=0)
+        coords = np.append(self.text_coords, [coord], axis=0)
         text = self.text
 
         # Set the new text to 'EditMe' if none has been specified
@@ -590,12 +592,12 @@ class Text(Layer):
         if len(index) > 0:
             disp = list(self.dims.displayed)
             if self._drag_start is None:
-                center = self.coords[np.ix_(index, disp)].mean(axis=0)
+                center = self.text_coords[np.ix_(index, disp)].mean(axis=0)
                 self._drag_start = np.array(coord)[disp] - center
-            center = self.coords[np.ix_(index, disp)].mean(axis=0)
+            center = self.text_coords[np.ix_(index, disp)].mean(axis=0)
             shift = np.array(coord)[disp] - center - self._drag_start
             self.data[0][np.ix_(index, disp)] = (
-                self.coords[np.ix_(index, disp)] + shift
+                self.text_coords[np.ix_(index, disp)] + shift
             )
             self._set_view_slice()
 
@@ -603,7 +605,7 @@ class Text(Layer):
         """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
             self._clipboard = {
-                'coords': deepcopy(self.coords[self.selected_data]),
+                'coords': deepcopy(self.text_coords[self.selected_data]),
                 'text': [self.text[i] for i in self.selected_data],
                 'size': deepcopy(self.sizes[self.selected_data]),
                 'indices': self.dims.indices,
@@ -613,7 +615,7 @@ class Text(Layer):
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
-        npoints = len(self._data_view)
+        npoints = len(self._text_coords_view)
         totpoints = len(self.text)
 
         if len(self._clipboard.keys()) > 0:
@@ -621,7 +623,7 @@ class Text(Layer):
             coords = deepcopy(self._clipboard['coords'])
             text = deepcopy(self._clipboard['text'])
 
-            new_coords = np.append(self.coords, coords, axis=0)
+            new_coords = np.append(self.text_coords, coords, axis=0)
             new_text = self.text + text
             # offset = [
             #     self.dims.indices[i] - self._clipboard['indices'][i]
@@ -659,7 +661,7 @@ class Text(Layer):
             'opacity': opacity,
         }
 
-        for c, t in zip(self._data_view, self._text_view):
+        for c, t in zip(self._text_coords_view, self._text_view):
             cx = str(c[1])
             cy = str(c[0])
 
@@ -720,10 +722,10 @@ class Text(Layer):
         self._drag_start = None
         if self._is_selecting:
             self._is_selecting = False
-            if len(self._data_view) > 0:
+            if len(self._text_coords_view) > 0:
                 selection = points_in_box(
                     self._drag_box,
-                    self._data_view,
+                    self._text_coords_view,
                     self._sizes_view,
                     self.scale_factor,
                 )

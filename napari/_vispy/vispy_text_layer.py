@@ -59,12 +59,12 @@ class VispyTextLayer(VispyBaseLayer):
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
-        if len(self.layer._data_view) == 0:
+        if len(self.layer._text_coords_view) == 0:
             data = np.zeros((1, self.layer.dims.ndisplay))
             text = []
 
         else:
-            data = self.layer._data_view
+            data = self.layer._text_coords_view
             text = self.layer._text_view
 
         # Update the text
@@ -85,7 +85,7 @@ class VispyTextLayer(VispyBaseLayer):
 
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
-            data = self.layer._data_view[self.layer._highlight_index]
+            data = self.layer._text_coords_view[self.layer._highlight_index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer.font_size

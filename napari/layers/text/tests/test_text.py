@@ -18,14 +18,14 @@ def test_random_text():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert np.all(layer.coords == coords)
+    assert np.all(layer.text_coords == coords)
     assert np.all(layer.data[0] == coords)
     assert layer.text == text
     assert layer.data[1] == text
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._text_coords_view.ndim == 2
     assert len(layer.text) == shape[0]
-    assert len(layer.coords) == shape[0]
+    assert len(layer.text_coords) == shape[0]
     assert len(layer.selected_data) == 0
 
 
@@ -37,14 +37,14 @@ def test_integer_text():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert np.all(layer.coords == coords)
+    assert np.all(layer.text_coords == coords)
     assert np.all(layer.data[0] == coords)
     assert layer.text == text
     assert layer.data[1] == text
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._text_coords_view.ndim == 2
     assert len(layer.text) == shape[0]
-    assert len(layer.coords) == shape[0]
+    assert len(layer.text_coords) == shape[0]
     assert len(layer.selected_data) == 0
 
 
@@ -56,10 +56,10 @@ def test_negative_text():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert np.all(layer.coords == coords)
+    assert np.all(layer.text_coords == coords)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
-    assert len(layer.coords) == shape[0]
+    assert layer._text_coords_view.ndim == 2
+    assert len(layer.text_coords) == shape[0]
 
 
 def test_empty_text():
@@ -69,10 +69,10 @@ def test_empty_text():
     text = []
     data = (coords, text)
     layer = Text(data)
-    assert np.all(layer.coords == coords)
+    assert np.all(layer.text_coords == coords)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
-    assert len(layer.coords) == 0
+    assert layer._text_coords_view.ndim == 2
+    assert len(layer.text_coords) == 0
     assert len(layer.text) == 0
 
 
@@ -84,14 +84,14 @@ def test_3D_text():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert np.all(layer.coords == coords)
+    assert np.all(layer.text_coords == coords)
     assert np.all(layer.data[0] == coords)
     assert layer.text == text
     assert layer.data[1] == text
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._text_coords_view.ndim == 2
     assert len(layer.text) == shape[0]
-    assert len(layer.coords) == shape[0]
+    assert len(layer.text_coords) == shape[0]
     assert len(layer.selected_data) == 0
 
 
@@ -103,14 +103,14 @@ def test_4D_text():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert np.all(layer.coords == coords)
+    assert np.all(layer.text_coords == coords)
     assert np.all(layer.data[0] == coords)
     assert layer.text == text
     assert layer.data[1] == text
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._text_coords_view.ndim == 2
     assert len(layer.text) == shape[0]
-    assert len(layer.coords) == shape[0]
+    assert len(layer.text_coords) == shape[0]
     assert len(layer.selected_data) == 0
 
 
@@ -127,9 +127,9 @@ def test_changing_text():
     data_b = (coords_b, text_b)
     layer = Text(data_a)
     layer.data = data_b
-    assert np.all(layer.coords == coords_b)
+    assert np.all(layer.text_coords == coords_b)
     assert layer.ndim == shape_b[1]
-    assert layer._data_view.ndim == 2
+    assert layer._text_coords_view.ndim == 2
     assert len(layer.text) == shape_b[0]
 
 
@@ -153,15 +153,15 @@ def test_adding_text():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert len(layer.coords) == shape[0]
+    assert len(layer.text_coords) == shape[0]
 
     coord = [20, 20]
     layer.add(coord)
     n_text = shape[0] + 1
     last_index = n_text - 1
-    assert len(layer.coords) == n_text
+    assert len(layer.text_coords) == n_text
     assert layer.text[last_index] == 'EditMe'
-    assert np.all(layer.coords[last_index] == coord)
+    assert np.all(layer.text_coords[last_index] == coord)
 
 
 def test_adding_points_to_empty():
@@ -171,12 +171,12 @@ def test_adding_points_to_empty():
     text = []
     data = (coords, text)
     layer = Text(data)
-    assert len(layer.coords) == 0
+    assert len(layer.text_coords) == 0
 
     coord = [20, 20]
     layer.add(coord)
-    assert len(layer.coords) == 1
-    assert np.all(layer.coords[0] == coord)
+    assert len(layer.text_coords) == 1
+    assert np.all(layer.text_coords[0] == coord)
     assert layer.text[0] == 'EditMe'
 
 
@@ -191,21 +191,21 @@ def test_removing_selected_text():
 
     # With nothing selected no points should be removed
     layer.remove_selected()
-    assert len(layer.coords) == shape[0]
+    assert len(layer.text_coords) == shape[0]
 
     # Select two points and remove them
     layer.selected_data = [0, 3]
     layer.remove_selected()
-    assert len(layer.coords) == shape[0] - 2
+    assert len(layer.text_coords) == shape[0] - 2
     assert len(layer.text) == shape[0] - 2
     assert len(layer.selected_data) == 0
     keep = [1, 2] + list(range(4, 10))
-    assert np.all(layer.coords == coords[keep])
+    assert np.all(layer.text_coords == coords[keep])
 
     # Select another point and remove it
     layer.selected_data = [4]
     layer.remove_selected()
-    assert len(layer.coords) == shape[0] - 3
+    assert len(layer.text_coords) == shape[0] - 3
 
 
 def test_move():
@@ -222,14 +222,14 @@ def test_move():
     layer._move([0], [0, 0])
     layer._move([0], [10, 10])
     layer._drag_start = None
-    assert np.all(layer.coords[0] == unmoved[0][0] + [10, 10])
-    assert np.all(layer.coords[1:] == unmoved[0][1:])
+    assert np.all(layer.text_coords[0] == unmoved[0][0] + [10, 10])
+    assert np.all(layer.text_coords[1:] == unmoved[0][1:])
     assert np.all(layer.text == unmoved[1])
 
     # Move two points relative to an initial drag start location
     layer._move([1, 2], [2, 2])
     layer._move([1, 2], np.add([2, 2], [-3, 4]))
-    assert np.all(layer.coords[1:2] == unmoved[0][1:2] + [-3, 4])
+    assert np.all(layer.text_coords[1:2] == unmoved[0][1:2] + [-3, 4])
 
 
 def test_changing_modes():
@@ -366,7 +366,7 @@ def test_copy_and_paste():
 
     # Pasting empty clipboard doesn't change data
     layer._paste_data()
-    assert len(layer.coords) == 10
+    assert len(layer.text_coords) == 10
 
     # Copying with nothing selected leave clipboard empty
     layer._copy_data()
@@ -377,13 +377,13 @@ def test_copy_and_paste():
     layer._copy_data()
     layer._paste_data()
     assert len(layer._clipboard.keys()) > 0
-    assert len(layer.coords) == shape[0] + 2
-    assert np.all(layer.coords[:2] == layer.coords[-2:])
+    assert len(layer.text_coords) == shape[0] + 2
+    assert np.all(layer.text_coords[:2] == layer.text_coords[-2:])
 
     # Pasting again adds two more points to data
     layer._paste_data()
-    assert len(layer.coords) == shape[0] + 4
-    assert np.all(layer.coords[:2] == layer.coords[-2:])
+    assert len(layer.text_coords) == shape[0] + 4
+    assert np.all(layer.text_coords[:2] == layer.text_coords[-2:])
 
     # Unselecting everything and copying and pasting will empty the clipboard
     # and add no new data
@@ -391,7 +391,7 @@ def test_copy_and_paste():
     layer._copy_data()
     layer._paste_data()
     assert layer._clipboard == {}
-    assert len(layer.coords) == shape[0] + 4
+    assert len(layer.text_coords) == shape[0] + 4
 
 
 def test_value():
