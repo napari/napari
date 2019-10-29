@@ -69,7 +69,7 @@ def test_docstring(layer):
         raise AssertionError(f"docstrings don't match for class {name}") from e
 
     # check returns section
-    method_returns, = method_doc[
+    (method_returns,) = method_doc[
         'Returns'
     ]  # only one thing should be returned
     description = ' '.join(method_returns[-1])  # join multi-line description

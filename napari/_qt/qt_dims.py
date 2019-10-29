@@ -1,5 +1,11 @@
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollBar
+from qtpy.QtWidgets import (
+    QWidget,
+    QGridLayout,
+    QSizePolicy,
+    QScrollBar,
+    QLabel,
+)
 import numpy as np
 
 from ..components.dims import Dims
@@ -41,6 +47,9 @@ class QtDims(QWidget):
 
         # list of sliders
         self.sliders = []
+
+        self.axis_labels = []
+
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
@@ -87,6 +96,7 @@ class QtDims(QWidget):
 
         self.dims.events.ndisplay.connect(update_display_listener)
         self.dims.events.order.connect(update_display_listener)
+        self.dims.events.axis_labels.connect(update_axis_listener)
         self.update_display.connect(self._update_display)
 
     @property
@@ -169,7 +179,7 @@ class QtDims(QWidget):
             else:
                 if (
                     not self._displayed_sliders[axis]
-                    and not axis in self.dims.displayed
+                    and axis not in self.dims.displayed
                 ):
                     self._displayed_sliders[axis] = True
                     self.last_used = axis
@@ -187,17 +197,21 @@ class QtDims(QWidget):
 
     def _update_display(self):
         """Updates display for all sliders."""
-        for axis, slider in reversed(list(enumerate(self.sliders))):
+        slider_list = reversed(list(enumerate(self.sliders)))
+        label_list = reversed(self.axis_labels)
+        for (axis, slider), label in zip(slider_list, label_list):
             if axis in self.dims.displayed:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.last_used = None
                 slider.hide()
+                label.hide()
             else:
                 # Non displayed dimensions correspond to displayed sliders
                 self._displayed_sliders[axis] = True
                 self.last_used = axis
                 slider.show()
+                label.show()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
@@ -225,8 +239,18 @@ class QtDims(QWidget):
         # add to the beginning of the list
         for slider_num in range(self.nsliders, number_of_sliders):
             dim_axis = number_of_sliders - slider_num - 1
+            axis_label = self._create_axis_label_widget(dim_axis)
             slider = self._create_range_slider_widget(dim_axis)
-            self.layout().addWidget(slider)
+
+            # Hard-coded 1:10 ratio. Can be more dynamic as a function
+            # of the name of the label, but it might be a little bit
+            # over the top.
+            if axis_label.text == '':
+                self.layout().addWidget(slider)
+            else:
+                self.layout().addWidget(axis_label, 0, 0, 1, 1)
+                self.layout().addWidget(slider, 0, 1, 1, 10)
+            self.axis_labels.insert(0, axis_label)
             self.sliders.insert(0, slider)
             self._displayed_sliders.insert(0, True)
             nsliders = np.sum(self._displayed_sliders)
@@ -247,7 +271,8 @@ class QtDims(QWidget):
 
     def _remove_slider(self, index):
         """
-        Remove slider at index
+        Remove slider at index. Should also remove all accompanying widgets,
+        like the axis label.
 
         Parameters
         ----------
@@ -258,7 +283,10 @@ class QtDims(QWidget):
         slider = self.sliders.pop(index)
         self._displayed_sliders.pop(index)
         self.layout().removeWidget(slider)
+        axis_label = self.axis_labels.pop(index)
+        self.layout().removeWidget(axis_label)
         slider.deleteLater()
+        axis_label.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self.last_used = None
@@ -275,19 +303,19 @@ class QtDims(QWidget):
         -------
         slider : range slider
         """
-        range = self.dims.range[axis]
+        _range = self.dims.range[axis]
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
         # shape of the layer as the endpoint is included
-        range = (range[0], range[1] - range[2], range[2])
+        _range = (_range[0], _range[1] - _range[2], _range[2])
         point = self.dims.point[axis]
 
         slider = QScrollBar(Qt.Horizontal)
         slider.setFocusPolicy(Qt.NoFocus)
-        slider.setMinimum(range[0])
-        slider.setMaximum(range[1])
-        slider.setSingleStep(range[2])
-        slider.setPageStep(range[2])
+        slider.setMinimum(_range[0])
+        slider.setMaximum(_range[1])
+        slider.setSingleStep(_range[2])
+        slider.setPageStep(_range[2])
         slider.setValue(point)
 
         # Listener to be used for sending events back to model:
@@ -304,6 +332,22 @@ class QtDims(QWidget):
         slider.sliderPressed.connect(slider_focused_listener)
 
         return slider
+
+    def _create_axis_label_widget(self, axis):
+        """
+        Create the axis label widget which accompanies its slider.
+        # TODO - min and max width, word wrapping, text alignmemt.
+        Parameters
+        ----------
+        axis : axis index
+
+        Returns
+        -------
+        label : QLabel with the given text
+        """
+        label = QLabel()
+        label.setText(self.dims.axis_labels[axis])
+        return label
 
     def focus_up(self):
         """Shift focused dimension slider to be the next slider above."""

@@ -33,6 +33,8 @@ class Dims:
         Flag if to clip indices based on range. Needed for image-like
         layers, but prevents shape-like layers from adding new shapes
         outside their range.
+    axis_labels : list of str
+        Dimension names, displayed next to their corresponding sliders
     order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
@@ -60,6 +62,7 @@ class Dims:
             source=self,
             auto_connect=True,
             axis=None,
+            axis_labels=None,
             ndim=None,
             ndisplay=None,
             order=None,
@@ -73,6 +76,7 @@ class Dims:
         self._mode = []
         self._order = []
         self.clip = True
+        self._axis_labels = []
 
         self._ndisplay = 2
         self.ndim = init_ndim
@@ -81,7 +85,14 @@ class Dims:
         return "~~".join(
             map(
                 str,
-                [self.range, self.point, self.interval, self.mode, self.order],
+                [
+                    self.range,
+                    self.point,
+                    self.interval,
+                    self.mode,
+                    self.order,
+                    self.axis_labels,
+                ],
             )
         )
 
@@ -111,6 +122,26 @@ class Dims:
         return copy(self._mode)
 
     @property
+    def axis_labels(self):
+        """List of labels for each axis."""
+        return copy(self._axis_labels)
+
+    @axis_labels.setter
+    def axis_labels(self, labels):
+        if self._axis_labels == labels:
+            return
+
+        if len(labels) != self.ndim:
+            raise ValueError(
+                f"Number of labels doesn't match number of dimensions. Number"
+                f" of given labels was {len(labels)}, number of dimensions is"
+                f" {self.ndim}. Note: If you wish to keep some of the"
+                "dimensions unlabeled, use '' instead."
+            )
+        self._axis_labels = labels
+        self.events.axis_labels()
+
+    @property
     def order(self):
         """List of int: Display order of dimensions."""
         return self._order
@@ -124,8 +155,7 @@ class Dims:
             raise ValueError(
                 f"Invalid ordering {order} for {self.ndim} dimensions"
             )
-        if np.all(self._order == order):
-            return
+
         self._order = order
         self.events.order()
         self.events.camera()
@@ -159,12 +189,34 @@ class Dims:
             self._point = self._point[-ndim:]
             self._interval = self._interval[-ndim:]
             self._mode = self._mode[-ndim:]
-            order = np.array(self._order[-ndim:])
-            order[np.argsort(order)] = list(range(len(order)))
-            self._order = list(order)
+            self._order = self._order_after_dim_reduction(self._order[-ndim:])
+            self._axis_labels = self._order_after_dim_reduction(
+                self._axis_labels[-ndim:]
+            )
 
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
+
+    def _order_after_dim_reduction(self, arr_to_reorder):
+        """
+        When the user reduces the dimensionality of the array,
+        make sure to preserve the current ordering of the dimensions
+        while throwing away the unneeded dimensions.
+
+        Parameters
+        ----------
+        arr_to_reorder : list-like
+            The data to reorder.
+
+        Returns
+        -------
+        arr : list
+            The original array with the unneeded dimension
+            thrown away.
+        """
+        arr = np.array(arr_to_reorder)
+        arr[np.argsort(arr)] = range(len(arr))
+        return arr.tolist()
 
     @property
     def indices(self):
@@ -244,6 +296,7 @@ class Dims:
             self._mode.insert(axis, DimsMode.POINT)
             cur_order = [o if o < axis else o + 1 for o in self.order]
             self._order = [axis] + cur_order
+            self._axis_labels.insert(axis, '')
         else:
             # Range value is (min, max, step) for the entire slider
             self._range[axis] = (0, 2, 1)
@@ -254,8 +307,9 @@ class Dims:
             self._interval[axis] = (0, 1)
             self._mode[axis] = DimsMode.POINT
             self._order[axis] = axis
+            self._axis_labels[axis] = ''
 
-    def set_range(self, axis: int, range: Sequence[Union[int, float]]):
+    def set_range(self, axis: int, _range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
 
         Parameters
@@ -265,14 +319,9 @@ class Dims:
         range : tuple
             Range specified as (min, max, step)
         """
-        if axis < 0:
-            axis += self.ndim
-        if axis < 0:
-            raise ValueError(
-                f'axis is negative, expected positive, got {axis}'
-            )
-        if self.range[axis] != range:
-            self._range[axis] = range
+        axis = self._assert_axis_inbound(axis)
+        if self.range[axis] != _range:
+            self._range[axis] = _range
             self.events.range(axis=axis)
 
     def set_point(self, axis: int, value: Union[int, float]):
@@ -285,12 +334,7 @@ class Dims:
         value : int or float
             Value of the point
         """
-        if axis < 0:
-            axis += self.ndim
-        if axis < 0:
-            raise ValueError(
-                f'axis is negative, expected positive, got {axis}'
-            )
+        axis = self._assert_axis_inbound(axis)
         if self.point[axis] != value:
             self._point[axis] = value
             self.events.axis(axis=axis)
@@ -305,12 +349,7 @@ class Dims:
         interval : tuple
             INTERVAL specified with (min, max)
         """
-        if axis < 0:
-            axis += self.ndim
-        if axis < 0:
-            raise ValueError(
-                f'axis is negative, expected positive, got {axis}'
-            )
+        axis = self._assert_axis_inbound(axis)
         if self.interval[axis] != interval:
             self._interval[axis] = interval
             self.events.axis(axis=axis)
@@ -325,15 +364,45 @@ class Dims:
         mode : POINT or INTERVAL
             Whether dimension is in the POINT or INTERVAL mode
         """
-        if axis < 0:
-            axis += self.ndim
-        if axis < 0:
-            raise ValueError(
-                f'axis is negative, expected positive, got {axis}'
-            )
+        axis = self._assert_axis_inbound(axis)
         if self.mode[axis] != mode:
             self._mode[axis] = mode
             self.events.axis(axis=axis)
+
+    def set_axis_label(self, axis: int, label: str):
+        """Sets a new axis label for the given axis.
+
+        Parameters
+        ----------
+        axis : int
+            Dimension index
+        label : str
+            Given label
+        """
+        axis = self._assert_axis_inbound(axis)
+        if self.axis_labels[axis] != str(label):
+            self.axis_labels[axis] = str(label)
+            self.events.axis_labels(axis=axis)
+
+    def _assert_axis_inbound(self, axis: int) -> int:
+        """Asserts that a given value of axis is inside
+        the existing axes of the image.
+
+        Raises
+        ------
+        ValueError
+            The given axis index is out of bounds.
+        """
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0:
+            raise ValueError(f'Axis is too negative, got {axis}.')
+        if axis > (self.ndim + 1):
+            raise ValueError(
+                f"Axis is out of bounds. Got {axis} while the number of"
+                f" dimensions is {self.ndim}."
+            )
+        return axis
 
     def _roll(self):
         """Roll order of dimensions for display."""

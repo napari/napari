@@ -104,6 +104,11 @@ def test_indices():
     assert dims.indices == (1, 2) + (slice(None, None, None),) * 2
 
 
+def test_axis_labels():
+    dims = Dims(4)
+    assert dims.axis_labels == [''] * 4
+
+
 def test_order_when_changing_ndim():
     """
     Test order of the dims when changing the number of dimensions.
