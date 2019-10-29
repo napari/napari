@@ -1,6 +1,12 @@
 import numpy as np
+import pytest
 
 from napari import Viewer
+
+
+def test_no_qt_loop():
+    with pytest.raises(RuntimeError):
+        viewer = Viewer()
 
 
 def test_viewer(qtbot):
