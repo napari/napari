@@ -4,6 +4,7 @@ import pytest
 from napari import Viewer
 
 
+@pytest.mark.first
 def test_no_qt_loop():
     with pytest.raises(RuntimeError):
         viewer = Viewer()
