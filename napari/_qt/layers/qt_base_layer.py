@@ -7,7 +7,7 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QCheckBox,
 )
-
+import inspect
 from ...layers.base._constants import Blending
 
 
