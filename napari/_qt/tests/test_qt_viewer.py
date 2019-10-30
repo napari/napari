@@ -331,39 +331,24 @@ def test_play_axis(qtbot):
     data = np.random.random((nz, 10, 15))
     viewer.add_image(data)
 
-    dims_model = view.dims.dims
-
-    def fake_draw(axis, frame):
-        # make sure that we never request a frame outside of the bounds of the data
-        assert frame < nz
-        # mocks the dims.set_point() method
-        dims_model._point[axis] = frame
-        # simulates a vispy draw cascade
-        # then resets the view.dims._play_ready attribute
+    def increment(e):
+        view.dims.counter += 1
+        # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True
 
-    @patch.object(
-        dims_model,
-        'set_point',
-        wraps=dims_model.set_point,
-        side_effect=fake_draw,
-    )
-    def test_play(mock_method, nframes=2, axis=0, interval=100):
-        # reset the current slice position to 0
-        dims_model._point[axis] = 0
-        assert dims_model.point[axis] == 0
-        # play for a litte bit
-        view.dims.play_dim(axis, 1000 / interval)
-        # the 0.5 allows for generous clock jitter...
-        # in rare cases, this test may fail due to an unexpected
-        # number of frames passing during the qtbot.wait period (see #607)
-        # in most cases simply re-running it is enough to make it pass
-        # but if it starts to fail in the future this
-        # test may need to be redesigned
-        qtbot.wait(interval * (nframes + 0.5))
-        view.dims.stop()
-        assert mock_method.call_count == nframes + 1
+    view.dims.dims.events.axis.connect(increment)
 
-    test_play(nframes=nz - 2)
-    # make sure it rolls over ok
-    test_play(nframes=nz + 2)
+    axis, interval, nframes = 0, 50, 5
+    view.dims.counter = 0
+    view.dims.play_dim(axis, 1000 / interval)
+    # the 0.5 allows for a little clock jitter...
+    qtbot.wait(interval * (nframes + 0.5))
+    view.dims.stop()
+    # really don't want this to fail due to timing, so we're only making sure it
+    # advanced about the right amount... precise timing will depend on the machine
+    c = int(view.dims.counter)
+    assert c >= nframes - 1
+    # also make sure that the stop button worked and killed the animation thread
+    qtbot.wait(100)
+    assert view.dims.counter == c
+    assert not hasattr(view.dims, 'animation_thread')
