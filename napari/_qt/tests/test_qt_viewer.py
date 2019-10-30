@@ -339,7 +339,7 @@ def test_play_axis(qtbot):
 
     axis, interval, nframes = 0, 50, 5
     view.dims.counter = 0
-    view.dims.play_dim(axis, 1000 / interval)
+    view.dims.play(axis, 1000 / interval)
     # the 0.5 allows for a little clock jitter...
     qtbot.wait(interval * (nframes + 0.5))
     view.dims.stop()
@@ -353,7 +353,7 @@ def test_play_axis(qtbot):
     assert not hasattr(view.dims, 'animation_thread')
 
     with pytest.raises(IndexError):
-        view.dims.play_dim(4, 20)
+        view.dims.play(4, 20)
         qtbot.wait(20)
         view.dims.stop()
 
@@ -378,23 +378,23 @@ def test_play_axis_with_range(qtbot):
 
     axis, interval, nframes = 0, 50, 5
     view.dims.counter = 0
-    view.dims.play_dim(axis, 1000 / interval, range=[2, 8])
+    view.dims.play(axis, 1000 / interval, range=[2, 8])
     # the 0.5 allows for a little clock jitter...
     qtbot.wait(interval * (nframes + 0.5))
     view.dims.stop()
     assert view.dims.counter >= nframes - 1
 
     with pytest.raises(ValueError):
-        view.dims.play_dim(axis, 20, range=[2, 2])
+        view.dims.play(axis, 20, range=[2, 2])
         qtbot.wait(20)
         view.dims.stop()
 
     with pytest.raises(IndexError):
-        view.dims.play_dim(axis, 20, range=[2, 20])
+        view.dims.play(axis, 20, range=[2, 20])
         qtbot.wait(20)
         view.dims.stop()
 
     with pytest.raises(IndexError):
-        view.dims.play_dim(axis, 20, range=[0, 20])
+        view.dims.play(axis, 20, range=[0, 20])
         qtbot.wait(20)
         view.dims.stop()

@@ -148,4 +148,4 @@ def play(viewer):
     else:
         # TODO: need to allow control over FPS in gui
         axis = viewer.window.qt_viewer.dims.last_used or 0
-        viewer.window.qt_viewer.dims.play_dim(axis, 10)
+        viewer.window.qt_viewer.dims.play(axis, 10)

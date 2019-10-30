@@ -330,7 +330,7 @@ class QtDims(QWidget):
             index = (displayed.index(self.last_used) - 1) % len(displayed)
             self.last_used = displayed[index]
 
-    def play_dim(self, axis: int = 0, fps: float = 10, range=None):
+    def play(self, axis: int = 0, fps: float = 10, range=None):
         """
         Animate (play) axis
 
