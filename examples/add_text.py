@@ -16,10 +16,10 @@ with napari.gui_qt():
     points = np.array([[100, 100], [200, 200], [333, 111]])
     
     annotations = ['hi', 'hola', 'bonjour']
-    font_size = (10, 20, 30)
+    font_size = 10
 
 
-    viewer.add_text((points, annotations), font_size=font_size)
+    viewer.add_text(data=(points, annotations), font_size=font_size, rotation=45)
 
     viewer.layers[1].text_color = 'green'
     viewer.layers[1].font_size = 20

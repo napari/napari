@@ -575,6 +575,7 @@ class ViewerModel(KeymapMixin):
         self,
         data=None,
         *,
+        rotation=0,
         text_color='black',
         font_size=12,
         font='OpenSans',
@@ -596,6 +597,8 @@ class ViewerModel(KeymapMixin):
         data : tuple (coords, text)
             coords contains text coordinates for N points in D dimensions.
             text contains a list of the strings to be displayed as text.
+        rotation : float
+            Angle of the text elements
         text_color : str
             The color of the text font.
         font_size : float
@@ -643,6 +646,7 @@ class ViewerModel(KeymapMixin):
 
         layer = layers.Text(
             data=data,
+            rotation=rotation,
             text_color=text_color,
             font_size=font_size,
             font=font,

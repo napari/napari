@@ -20,6 +20,8 @@ class Text(Layer):
     data : tuple (coords, text)
         coords contains text coordinates for N points in D dimensions.
         text contains a list of the strings to be displayed as text.
+    rotation : float
+        Angle of the text elements
     text_color : str
         The color of the text font.
     font_size : float
@@ -56,6 +58,8 @@ class Text(Layer):
     data : tuple (coords, text)
         coords contains text coordinates for N points in D dimensions.
         text contains a list of the strings to be displayed as text.
+    rotation : float
+        Angle of the text elements
     text_color : str
         The color of the text font.
     font_size : float
@@ -111,6 +115,7 @@ class Text(Layer):
         self,
         data=None,
         *,
+        rotation=0,
         text_color='black',
         font_size=12,
         font='OpenSans',
@@ -140,7 +145,11 @@ class Text(Layer):
         )
 
         self.events.add(
-            mode=Event, text_color=Event, font_size=Event, highlight=Event
+            mode=Event,
+            rotation=Event,
+            text_color=Event,
+            font_size=Event,
+            highlight=Event,
         )
         self._colors = get_color_names()
 
@@ -151,6 +160,7 @@ class Text(Layer):
         self._sizes = []
 
         # Save the text style params
+        self._rotation = rotation
         self.text_color = text_color
         self._font_size = font_size
         self.font = font
@@ -231,15 +241,13 @@ class Text(Layer):
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
     @property
-    def n_dimensional(self) -> str:
-        """bool: renders points as n-dimensionsal."""
-        return self._n_dimensional
+    def rotation(self):
+        return self._rotation
 
-    @n_dimensional.setter
-    def n_dimensional(self, n_dimensional: bool) -> None:
-        self._n_dimensional = n_dimensional
-        self.events.n_dimensional()
-        self._set_view_slice()
+    @rotation.setter
+    def rotation(self, angle):
+        self._rotation = angle
+        self.events.rotation()
 
     @property
     def font_size(self):

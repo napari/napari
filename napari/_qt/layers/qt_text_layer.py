@@ -22,6 +22,7 @@ class QtTextControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self.set_mode)
+        self.layer.events.rotation.connect(self._on_rotation_change)
         self.layer.events.font_size.connect(self._on_size_change)
         self.layer.events.text_color.connect(self._on_text_color_change)
         self.layer.events.editable.connect(self._on_editable_change)
@@ -36,6 +37,18 @@ class QtTextControls(QtLayerControls):
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.sizeSlider = sld
+
+        rot_sld = QSlider(Qt.Horizontal)
+        rot_sld.setFocusPolicy(Qt.NoFocus)
+        rot_sld.setMinimum(-180)
+        rot_sld.setMaximum(180)
+        rot_sld.setSingleStep(1)
+        angle = self.layer.rotation
+        rot_sld.setValue(int(angle))
+        rot_sld.valueChanged[int].connect(
+            lambda value=sld: self.changeRotation(value)
+        )
+        self.rotationSlider = rot_sld
 
         color_comboBox = QComboBox()
         colors = self.layer._colors
@@ -79,14 +92,16 @@ class QtTextControls(QtLayerControls):
         self.grid_layout.addWidget(self.opacitySilder, 1, 3, 1, 4)
         self.grid_layout.addWidget(QLabel('text size:'), 2, 0, 1, 3)
         self.grid_layout.addWidget(self.sizeSlider, 2, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('blending:'), 3, 0, 1, 3)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('text color:'), 4, 0, 1, 3)
-        self.grid_layout.addWidget(self.colorComboBox, 4, 3, 1, 3)
-        self.grid_layout.addWidget(self.textColorSwatch, 4, 6)
-        self.grid_layout.addWidget(QLabel('text:'), 5, 0, 1, 3)
-        self.grid_layout.addWidget(self.text_box, 5, 3, 1, 6)
-        self.grid_layout.setRowStretch(6, 1)
+        self.grid_layout.addWidget(QLabel('text angle:'), 3, 0, 1, 3)
+        self.grid_layout.addWidget(self.rotationSlider, 3, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 3)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('text color:'), 5, 0, 1, 3)
+        self.grid_layout.addWidget(self.colorComboBox, 5, 3, 1, 3)
+        self.grid_layout.addWidget(self.textColorSwatch, 5, 6)
+        self.grid_layout.addWidget(QLabel('text:'), 6, 0, 1, 3)
+        self.grid_layout.addWidget(self.text_box, 6, 3, 1, 6)
+        self.grid_layout.setRowStretch(7, 1)
         self.grid_layout.setVerticalSpacing(4)
 
     def mouseMoveEvent(self, event):
@@ -111,6 +126,9 @@ class QtTextControls(QtLayerControls):
     def changeSize(self, value):
         self.layer.font_size = value
 
+    def changeRotation(self, value):
+        self.layer.rotation = value
+
     def modify_text(self, text):
         if self.layer._mode == Mode.ADD or self.layer._mode == Mode.SELECT:
             self.text_box.clearFocus()
@@ -131,6 +149,11 @@ class QtTextControls(QtLayerControls):
         with self.layer.events.font_size.blocker():
             value = self.layer.font_size
             self.sizeSlider.setValue(int(value))
+
+    def _on_rotation_change(self, event):
+        with self.layer.events.rotation.blocker():
+            value = self.layer.rotation
+            self.rotationSlider.setValue(int(value))
 
     def _on_text_color_change(self, event):
         with self.layer.events.text_color.blocker():

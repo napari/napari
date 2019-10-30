@@ -27,6 +27,7 @@ class VispyTextLayer(VispyBaseLayer):
 
         super().__init__(layer, node)
 
+        self.layer.events.rotation.connect(lambda e: self._on_data_change())
         self.layer.events.font_size.connect(lambda e: self._on_data_change())
         self.layer.events.text_color.connect(lambda e: self._on_data_change())
         self.layer.events.highlight.connect(
@@ -75,6 +76,7 @@ class VispyTextLayer(VispyBaseLayer):
                 text_node,
                 text=text,
                 pos=positions,
+                rotation=self.layer.rotation,
                 color=self.layer.text_color,
                 font_size=self.layer.font_size,
             )
@@ -125,21 +127,23 @@ class VispyTextLayer(VispyBaseLayer):
         self,
         node,
         text=[],
+        rotation=0,
         color='black',
         bold=False,
         italic=False,
         font='OpenSans',
         font_size=12,
         pos=None,
-        rotation=0,
         anchor_x='center',
         anchor_y='center',
         method='cpu',
     ):
         node.text = text
+        node.pos = pos
+        node.rotation = rotation
         node.color = color
         node.font_size = font_size
-        node.pos = pos
+
         node.update()
 
     def reset(self):
