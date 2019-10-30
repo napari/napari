@@ -327,8 +327,7 @@ def test_play_axis(qtbot):
     qtbot.addWidget(view)
 
     np.random.seed(0)
-    nz = 6
-    data = np.random.random((nz, 10, 15))
+    data = np.random.random((10, 10, 15))
     viewer.add_image(data)
 
     def increment(e):
@@ -352,3 +351,50 @@ def test_play_axis(qtbot):
     qtbot.wait(100)
     assert view.dims.counter == c
     assert not hasattr(view.dims, 'animation_thread')
+
+    with pytest.raises(IndexError):
+        view.dims.play_dim(4, 20)
+        qtbot.wait(20)
+        view.dims.stop()
+
+
+def test_play_axis_with_range(qtbot):
+    """Test that play_axis changes the slice on axis 0."""
+
+    viewer = ViewerModel()
+    view = QtViewer(viewer)
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    data = np.random.random((20, 10, 15))
+    viewer.add_image(data, scale=[4, 1, 1])
+
+    def increment(e):
+        view.dims.counter += 1
+        # if we don't "enable play" again, view.dims won't request a new frame
+        view.dims._play_ready = True
+
+    view.dims.dims.events.axis.connect(increment)
+
+    axis, interval, nframes = 0, 50, 5
+    view.dims.counter = 0
+    view.dims.play_dim(axis, 1000 / interval, range=[2, 8])
+    # the 0.5 allows for a little clock jitter...
+    qtbot.wait(interval * (nframes + 0.5))
+    view.dims.stop()
+    assert view.dims.counter >= nframes - 1
+
+    with pytest.raises(ValueError):
+        view.dims.play_dim(axis, 20, range=[2, 2])
+        qtbot.wait(20)
+        view.dims.stop()
+
+    with pytest.raises(IndexError):
+        view.dims.play_dim(axis, 20, range=[2, 20])
+        qtbot.wait(20)
+        view.dims.stop()
+
+    with pytest.raises(IndexError):
+        view.dims.play_dim(axis, 20, range=[0, 20])
+        qtbot.wait(20)
+        view.dims.stop()

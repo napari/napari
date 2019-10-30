@@ -330,7 +330,7 @@ class QtDims(QWidget):
             index = (displayed.index(self.last_used) - 1) % len(displayed)
             self.last_used = displayed[index]
 
-    def play_dim(self, axis: int = 0, fps: float = 10):
+    def play_dim(self, axis: int = 0, fps: float = 10, range=None):
         """
         Animate (play) axis
 
@@ -340,11 +340,33 @@ class QtDims(QWidget):
             Index of axis to play
         fps: float
             Frames per second for playback (not guaranteed)
+        range: tuple | list
+            If specified, will constrain animation to [first, last] frames
+
+        Raises
+        ----------
+        IndexError
+            If ``axis`` requested is out of the range of the dims
+        IndexError
+            If ``range`` is provided and out of the range of the dims
+        ValueError
+            If ``range`` is provided and range[0] >= range[1]
         """
         # TODO: No access in the GUI yet. Just keybinding.
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
 
+        dimsrange = self.dims.range[axis]
+        if range is not None:
+            if range[0] >= range[1]:
+                raise ValueError("animation range min must be <= range max")
+            if range[0] < dimsrange[0]:
+                raise IndexError("animation range min out of range")
+            if range[1] * dimsrange[2] >= dimsrange[1]:
+                raise IndexError("animation range max out of range")
+            self._animation_range = range
+        else:
+            self._animation_range = None
         # allow only one axis to be playing at a time
         # if nothing is playing self.stop() will not do anything
         self.stop()
@@ -373,7 +395,7 @@ class QtDims(QWidget):
             and self.animation_thread.isRunning()
         )
 
-    def _set_frame(self, axis, point):
+    def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`
         This function is debounced: if the previous frame has not yet drawn to the canvas,
         it will simply do nothing.  If the timer plays faster than the canvas can draw,
@@ -382,10 +404,21 @@ class QtDims(QWidget):
         """
         if self._play_ready:
             range_ = self.dims.range[axis]
-            max_point = int(np.floor(range_[1] - range_[2])) + 1
+            if (
+                hasattr(self, '_animation_range')
+                and self._animation_range is not None
+            ):
+                min_point, max_point = self._animation_range
+            else:
+                min_point = 0
+                max_point = int(np.floor(range_[1] - range_[2])) + 1
             # disable additional point advance requests until this one draws
             self._play_ready = False
-            self.dims.set_point(axis, point % (max_point))
+            self.dims.set_point(
+                axis,
+                min_point
+                + ((frame * range_[2]) % (max_point - min_point + 1)),
+            )
 
     def enable_play(self, *args):
         # this is mostly here to connect to the main SceneCanvas.events.draw event
