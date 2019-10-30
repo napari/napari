@@ -3,7 +3,6 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QVBoxLayout,
     QRadioButton,
     QPushButton,
     QLabel,

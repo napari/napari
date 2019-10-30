@@ -2,9 +2,11 @@ import numpy as np
 from math import inf
 import itertools
 from xml.etree.ElementTree import Element, tostring
+
 from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
+from ..util import colormaps
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
@@ -392,10 +394,12 @@ class ViewerModel(KeymapMixin):
         self,
         data=None,
         *,
+        channel_axis=None,
         rgb=None,
         is_pyramid=None,
-        colormap='gray',
+        colormap=None,
         contrast_limits=None,
+        gamma=1,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -403,7 +407,7 @@ class ViewerModel(KeymapMixin):
         scale=None,
         translate=None,
         opacity=1,
-        blending='translucent',
+        blending=None,
         visible=True,
         path=None,
     ):
@@ -416,6 +420,8 @@ class ViewerModel(KeymapMixin):
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
             an image pyramid.
+        channel_axis : int, optional
+            Axis to expand image along.
         rgb : bool
             Whether the image is rgb RGB or RGBA. If not specified by user and
             the last dimension of the data has length 3 or 4 it will be set as
@@ -426,110 +432,25 @@ class ViewerModel(KeymapMixin):
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be a pyramid. The first image in the list
             should be the largest.
-        colormap : str, vispy.Color.Colormap, tuple, dict
-            Colormap to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap.
-        contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image.
-        interpolation : str
-            Interpolation mode used by vispy. Must be one of our supported
-            modes.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-        path : str or list of str
-            Path or list of paths to image data.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Image`
-            The newly-created image layer.
-        """
-        if data is None and path is None:
-            raise ValueError("One of either data or path must be provided")
-        elif data is not None and path is not None:
-            raise ValueError("Only one of data or path can be provided")
-        elif data is None:
-            data = io.magic_imread(path)
-
-        layer = layers.Image(
-            data,
-            rgb=rgb,
-            is_pyramid=is_pyramid,
-            colormap=colormap,
-            contrast_limits=contrast_limits,
-            interpolation=interpolation,
-            rendering=rendering,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-        )
-        self.add_layer(layer)
-        return layer
-
-    def add_multichannel(
-        self,
-        data=None,
-        *,
-        axis=-1,
-        colormap=None,
-        contrast_limits=None,
-        interpolation='nearest',
-        rendering='mip',
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending='additive',
-        visible=True,
-        path=None,
-    ):
-        """Add image layers to the layers list expanding along axis.
-
-        Parameters
-        ----------
-        data : array
-            Image data. Can be N dimensional.
-        axis : int
-            Axis to expand colors along.
-        colormap : list, str, vispy.Color.Colormap, tuple, dict
+        colormap : str, vispy.Color.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap. If a list then must be same length as the axis that is
-            being expanded and then each colormap is applied to each image.
+            being expanded as channels, and each colormap is applied to each
+            new image layer.
         contrast_limits : list (2,)
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image. If list of lists then must be same length as the axis
             that is being expanded and then each colormap is applied to each
             image.
+        gamma : list, float
+            Gamma correction for determining colormap linearity.  Defaults to 1.
+            If a list then must be same length as the axis that is being expanded
+            and then each entry in the list is applied to each image.
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
@@ -554,8 +475,8 @@ class ViewerModel(KeymapMixin):
 
         Returns
         -------
-        layers : list of :class:`napari.layers.Image`
-            The newly-created image layers.
+        layer : :class:`napari.layers.Image` or list
+            The newly-created image layer or list of image layers.
         """
         if data is None and path is None:
             raise ValueError("One of either data or path must be provided")
@@ -564,32 +485,18 @@ class ViewerModel(KeymapMixin):
         elif data is None:
             data = io.magic_imread(path)
 
-        n_images = data.shape[axis]
-
-        name = ensure_iterable(name)
-
-        base_colormaps = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
-        if colormap is None:
-            colormap = itertools.cycle(base_colormaps)
-        else:
-            colormap = ensure_iterable(colormap)
-
-        # If one pair of clim values is passed then need to iterate them to
-        # all layers.
-        if contrast_limits is not None and not is_iterable(contrast_limits[0]):
-            contrast_limits = itertools.repeat(contrast_limits)
-        else:
-            contrast_limits = ensure_iterable(contrast_limits)
-
-        layers = []
-        zipped_args = zip(range(n_images), colormap, contrast_limits, name)
-        for i, cmap, clims, name in zipped_args:
-            image = data.take(i, axis=axis)
-            layer = self.add_image(
-                image,
-                rgb=False,
-                colormap=cmap,
-                contrast_limits=clims,
+        if channel_axis is None:
+            if colormap is None:
+                colormap = 'gray'
+            if blending is None:
+                blending = 'translucent'
+            layer = layers.Image(
+                data,
+                rgb=rgb,
+                is_pyramid=is_pyramid,
+                colormap=colormap,
+                contrast_limits=contrast_limits,
+                gamma=gamma,
                 interpolation=interpolation,
                 rendering=rendering,
                 name=name,
@@ -600,8 +507,69 @@ class ViewerModel(KeymapMixin):
                 blending=blending,
                 visible=visible,
             )
-            layers.append(layer)
-        return layers
+            self.add_layer(layer)
+            return layer
+        else:
+            if is_pyramid:
+                n_channels = data[0].shape[channel_axis]
+            else:
+                n_channels = data.shape[channel_axis]
+
+            name = ensure_iterable(name)
+
+            if blending is None:
+                blending = 'additive'
+
+            if colormap is None:
+                if n_channels < 3:
+                    colormap = colormaps.MAGENTA_GREEN
+                else:
+                    colormap = itertools.cycle(colormaps.CYMRGB)
+            else:
+                colormap = ensure_iterable(colormap)
+
+            # If one pair of clim values is passed then need to iterate them to
+            # all layers.
+            if contrast_limits is not None and not is_iterable(
+                contrast_limits[0]
+            ):
+                contrast_limits = itertools.repeat(contrast_limits)
+            else:
+                contrast_limits = ensure_iterable(contrast_limits)
+
+            gamma = ensure_iterable(gamma)
+
+            layer_list = []
+            zipped_args = zip(
+                range(n_channels), colormap, contrast_limits, gamma, name
+            )
+            for i, cmap, clims, _gamma, name in zipped_args:
+                if is_pyramid:
+                    image = [
+                        data[j].take(i, axis=channel_axis)
+                        for j in range(len(data))
+                    ]
+                else:
+                    image = data.take(i, axis=channel_axis)
+                layer = layers.Image(
+                    image,
+                    rgb=rgb,
+                    colormap=cmap,
+                    contrast_limits=clims,
+                    gamma=_gamma,
+                    interpolation=interpolation,
+                    rendering=rendering,
+                    name=name,
+                    metadata=metadata,
+                    scale=scale,
+                    translate=translate,
+                    opacity=opacity,
+                    blending=blending,
+                    visible=visible,
+                )
+                self.add_layer(layer)
+                layer_list.append(layer)
+            return layer_list
 
     def add_points(
         self,
@@ -874,6 +842,7 @@ class ViewerModel(KeymapMixin):
         *,
         colormap='gray',
         contrast_limits=None,
+        gamma=1,
         name=None,
         metadata=None,
         scale=None,
@@ -902,6 +871,8 @@ class ViewerModel(KeymapMixin):
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
             the image.
+        gamma : float
+            Gamma correction for determining colormap linearity.  Defaults to 1.
         name : str
             Name of the layer.
         metadata : dict
@@ -928,6 +899,7 @@ class ViewerModel(KeymapMixin):
             data,
             colormap=colormap,
             contrast_limits=contrast_limits,
+            gamma=gamma,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -1192,8 +1164,6 @@ class ViewerModel(KeymapMixin):
         n_column = max(1, n_column)
         self.grid_size = (n_row, n_column)
         self.grid_stride = stride
-        direction = stride > 0
-        abs_stride = abs(stride)
         for i, layer in enumerate(self.layers):
             if stride > 0:
                 adj_i = len(self.layers) - i - 1

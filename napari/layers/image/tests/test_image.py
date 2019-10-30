@@ -399,6 +399,23 @@ def test_contrast_limits_range():
     assert layer.contrast_limits == [0.0, 1.0]
 
 
+def test_gamma():
+    """Test setting gamma."""
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer.gamma == 1
+
+    # Change gamma property
+    gamma = 0.7
+    layer.gamma = gamma
+    assert layer.gamma == gamma
+
+    # Set gamma as keyword argument
+    layer = Image(data, gamma=gamma)
+    assert layer.gamma == gamma
+
+
 def test_metadata():
     """Test setting image metadata."""
     np.random.seed(0)
@@ -436,6 +453,22 @@ def test_thumbnail():
     layer = Image(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_narrow_thumbnail():
+    """Ensure that the thumbnail generation works for very narrow images.
+
+    See: https://github.com/napari/napari/issues/641 and
+    https://github.com/napari/napari/issues/489
+    """
+    image = np.random.random((1, 2048))
+    layer = Image(image)
+    layer._update_thumbnail()
+    thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
+    middle_row = thumbnail.shape[0] // 2
+    assert np.all(thumbnail[: middle_row - 1] == 0)
+    assert np.all(thumbnail[middle_row + 1 :] == 0)
+    assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0
 
 
 def test_xml_list():

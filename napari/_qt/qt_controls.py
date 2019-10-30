@@ -1,5 +1,4 @@
 from qtpy.QtWidgets import QStackedWidget, QWidget
-from qtpy.QtCore import QSize
 from .layers import create_qt_controls
 
 

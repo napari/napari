@@ -1,18 +1,13 @@
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
     QSlider,
-    QLineEdit,
     QGridLayout,
     QFrame,
-    QLabel,
-    QVBoxLayout,
-    QCheckBox,
     QComboBox,
-    QHBoxLayout,
-    QPushButton,
+    QLineEdit,
+    QCheckBox,
 )
-import inspect
+
 from ...layers.base._constants import Blending
 
 

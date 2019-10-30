@@ -142,7 +142,7 @@ def test_zarr_pyramid():
 def test_add_multichannel_rgb(rgb_png):
     image_files = rgb_png
     viewer = ViewerModel()
-    viewer.add_multichannel(path=image_files, axis=2)
+    viewer.add_image(path=image_files, channel_axis=2)
     assert len(viewer.layers) == 3
     assert viewer.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)
@@ -152,7 +152,7 @@ def test_add_multichannel_rgb(rgb_png):
 def test_add_multichannel_tiff(single_tiff):
     image_files = single_tiff
     viewer = ViewerModel()
-    viewer.add_multichannel(path=image_files, axis=0)
+    viewer.add_image(path=image_files, channel_axis=0)
     assert len(viewer.layers) == 2
     assert viewer.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)

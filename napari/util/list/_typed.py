@@ -7,7 +7,7 @@ def cpprint(obj):
 
 class TypedList(List):
     """Enforce list elements to be of a specific type and allow indexing with their unique properties.
-    
+
     Parameters
     ----------
     basetype : type
@@ -51,7 +51,7 @@ class TypedList(List):
         self._check(object)
         super().insert(key, object)
 
-    def append(object):
+    def append(self, object):
         self._check(object)
         super().append(object)
 

@@ -1,8 +1,8 @@
 from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Volume as VolumeNode
+from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers import Image
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -30,11 +30,10 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.contrast_limits.connect(
             lambda e: self._on_contrast_limits_change()
         )
-        self.layer.dims.events.ndisplay.connect(
-            lambda e: self._on_display_change()
-        )
+        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
 
         self._on_display_change()
+        self._on_data_change()
 
     def _on_display_change(self):
         parent = self.node.parent
@@ -46,11 +45,19 @@ class VispyImageLayer(VispyBaseLayer):
             self.node = VolumeNode(np.zeros((1, 1, 1)))
 
         self.node.parent = parent
-        self.layer._update_dims()
-        self.layer._set_view_slice()
         self.reset()
 
     def _on_data_change(self):
+        # Check if ndisplay has changed current node type needs updating
+        if (
+            self.layer.dims.ndisplay == 3
+            and not isinstance(self.node, VolumeNode)
+        ) or (
+            self.layer.dims.ndisplay == 2
+            and not isinstance(self.node, ImageNode)
+        ):
+            self._on_display_change()
+
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -86,6 +93,10 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
+        if self.layer.gamma != 1:
+            # when gamma!=1, we instantiate a new colormap with 256 control points from 0-1
+            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
+
         # Below is fixed in #1712
         if not self.layer.dims.ndisplay == 2:
             self.node.view_program['texture2D_LUT'] = (
@@ -98,6 +109,9 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.clim = self.layer.contrast_limits
         else:
             self._on_data_change()
+
+    def _on_gamma_change(self):
+        self._on_colormap_change()
 
     def _on_scale_change(self):
         self.scale = [
@@ -203,5 +217,5 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_interpolation_change()
         self._on_rendering_change()
         self._on_colormap_change()
-        self._on_contrast_limits_change()
-        self._on_data_change()
+        if self.layer.dims.ndisplay == 2:
+            self._on_contrast_limits_change()
