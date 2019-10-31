@@ -1,6 +1,5 @@
 import numpy as np
 from copy import copy, deepcopy
-from contextlib import contextmanager
 
 from ...util.event import Event
 from ...util.misc import ensure_iterable
@@ -193,7 +192,7 @@ class Shapes(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
         shape_type='rectangle',
         edge_width=1,
@@ -208,7 +207,8 @@ class Shapes(Layer):
         blending='translucent',
         visible=True,
     ):
-
+        if data is None:
+            data = np.empty((0, 0, 2))
         if np.array(data).ndim == 3:
             ndim = np.array(data).shape[2]
         elif len(data) == 0:
@@ -969,7 +969,6 @@ class Shapes(Layer):
         for index in to_remove:
             self._data_view.remove(index)
         self.selected_data = []
-        coord = [self.coordinates[i] for i in self.dims.displayed]
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -1692,7 +1691,6 @@ class Shapes(Layer):
         event : Event
             Vispy event
         """
-        coord = [self.coordinates[i] for i in self.dims.displayed]
         shift = 'Shift' in event.modifiers
 
         if self._mode == Mode.PAN_ZOOM:

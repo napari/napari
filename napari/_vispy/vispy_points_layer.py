@@ -1,12 +1,8 @@
 import numpy as np
-from copy import copy
 from vispy.scene.visuals import Line, Compound
 from .markers import Markers
 from vispy.visuals.transforms import ChainTransform
-
-from ..layers import Points
 from .vispy_base_layer import VispyBaseLayer
-import numpy as np
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -30,11 +26,8 @@ class VispyPointsLayer(VispyBaseLayer):
             lambda e: self._on_highlight_change()
         )
 
-        self.layer.dims.events.ndisplay.connect(
-            lambda e: self._on_display_change()
-        )
-
         self._on_display_change()
+        self._on_data_change()
 
     def _on_display_change(self):
         parent = self.node.parent
@@ -47,11 +40,20 @@ class VispyPointsLayer(VispyBaseLayer):
             self.node = Markers()
 
         self.node.parent = parent
-        self.layer._update_dims()
-        self.layer._set_view_slice()
-        self.reset()
+        self._reset_base()
 
     def _on_data_change(self):
+        # Check if ndisplay has changed current node type needs updating
+        if (
+            self.layer.dims.ndisplay == 3
+            and not isinstance(self.node, Markers)
+        ) or (
+            self.layer.dims.ndisplay == 2
+            and not isinstance(self.node, Compound)
+        ):
+            self._on_display_change()
+            self._on_highlight_change()
+
         if len(self.layer._data_view) > 0:
             edge_color = [
                 self.layer.edge_colors[i] for i in self.layer._indices_view
@@ -128,8 +130,3 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node._subvisuals[2].set_data(
             pos=pos[:, ::-1] + 0.5, color=self._highlight_color, width=width
         )
-
-    def reset(self):
-        self._reset_base()
-        self._on_data_change()
-        self._on_highlight_change()

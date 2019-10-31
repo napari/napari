@@ -4,6 +4,11 @@ from xml.etree.ElementTree import Element
 from napari.layers import Points
 
 
+def test_empty_points():
+    pts = Points()
+    assert pts.data.shape == (0, 2)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)

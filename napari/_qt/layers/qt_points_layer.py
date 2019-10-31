@@ -5,7 +5,6 @@ from qtpy.QtWidgets import (
     QSlider,
     QCheckBox,
     QButtonGroup,
-    QVBoxLayout,
     QRadioButton,
     QPushButton,
     QFrame,

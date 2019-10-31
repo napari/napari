@@ -1,4 +1,5 @@
 from vispy.scene.visuals import Mesh as MeshNode
+from vispy.color import Colormap
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
 
@@ -22,20 +23,31 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.layer.events.contrast_limits.connect(
             lambda e: self._on_contrast_limits_change()
         )
-        self.layer.dims.events.ndisplay.connect(
-            lambda e: self._on_display_change()
-        )
-        self.reset()
+        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
+
         self._on_display_change()
+        self._on_data_change()
 
     def _on_display_change(self):
-        self.layer._update_dims()
-        self.layer._set_view_slice()
         self.reset()
         for b in range(self.layer.dims.ndisplay):
             self.node.bounds(b)
 
     def _on_data_change(self):
+        # Check if ndisplay has changed current node type needs updating
+        if (
+            (self.node.mesh_data.get_bounds() is None)
+            or (
+                self.layer.dims.ndisplay == 3
+                and not len(self.node.mesh_data.get_bounds()) == 3
+            )
+            or (
+                self.layer.dims.ndisplay == 2
+                and not len(self.node.mesh_data.get_bounds()) == 2
+            )
+        ):
+            self._on_display_change()
+
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = None
             faces = None
@@ -59,6 +71,9 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
+        if self.layer.gamma != 1:
+            # when gamma!=1, we instantiate a new colormap with 256 control points from 0-1
+            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
         if self.layer.dims.ndisplay == 3:
             self.node.view_program['texture2D_LUT'] = (
                 cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
@@ -68,8 +83,10 @@ class VispySurfaceLayer(VispyBaseLayer):
     def _on_contrast_limits_change(self):
         self.node.clim = self.layer.contrast_limits
 
+    def _on_gamma_change(self):
+        self._on_colormap_change()
+
     def reset(self):
         self._reset_base()
         self._on_colormap_change()
         self._on_contrast_limits_change()
-        self._on_data_change()

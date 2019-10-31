@@ -1,6 +1,7 @@
 import warnings
 from xml.etree.ElementTree import Element
 from base64 import b64encode
+import types
 from imageio import imwrite
 import numpy as np
 from copy import copy
@@ -14,8 +15,8 @@ from ...util.misc import (
 )
 from ...util.event import Event
 from ...util.status_messages import format_float
-from ._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
-from ...util.colormaps import make_colorbar
+from ._constants import Rendering, Interpolation
+from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
 class Image(Layer):
@@ -49,6 +50,8 @@ class Image(Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
+    gamma : float
+        Gamma correction for determining colormap linearity.  Defaults to 1.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
@@ -100,6 +103,8 @@ class Image(Layer):
     contrast_limits_range : list (2,) of float
         Range for the color limits for luminace images. If the image is
         rgb the contrast_limits_range is ignored.
+    gamma : float
+        Gamma correction for determining colormap linearity.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
@@ -124,6 +129,7 @@ class Image(Layer):
         is_pyramid=None,
         colormap='gray',
         contrast_limits=None,
+        gamma=1,
         interpolation='nearest',
         rendering='mip',
         name=None,
@@ -134,6 +140,9 @@ class Image(Layer):
         blending='translucent',
         visible=True,
     ):
+        if isinstance(data, types.GeneratorType):
+            data = list(data)
+
         ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
             data, pyramid=is_pyramid, rgb=rgb
         )
@@ -151,6 +160,7 @@ class Image(Layer):
 
         self.events.add(
             contrast_limits=Event,
+            gamma=Event,
             colormap=Event,
             interpolation=Event,
             rendering=Event,
@@ -177,6 +187,7 @@ class Image(Layer):
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
+        self._gamma = gamma
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
@@ -323,6 +334,17 @@ class Image(Layer):
         self.events.contrast_limits()
 
     @property
+    def gamma(self):
+        return self._gamma
+
+    @gamma.setter
+    def gamma(self, value):
+        self.status = format_float(value)
+        self._gamma = value
+        self._update_thumbnail()
+        self.events.gamma()
+
+    @property
     def interpolation(self):
         """{
             'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
@@ -390,7 +412,9 @@ class Image(Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            order = self.dims.displayed_order + (self.dims.ndisplay,)
+            order = self.dims.displayed_order + (
+                max(self.dims.displayed_order) + 1,
+            )
         else:
             order = self.dims.displayed_order
 
@@ -489,18 +513,21 @@ class Image(Layer):
         if dtype in [np.dtype(np.float16)]:
             image = image.astype(np.float32)
 
-        zoom_factor = np.divide(
+        raw_zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
+        new_shape = np.clip(
+            raw_zoom_factor * np.array(image.shape[:2]),
+            1,  # smallest side should be 1 pixel wide
+            self._thumbnail_shape[:2],
+        )
+        zoom_factor = tuple(new_shape / image.shape[:2])
         if self.rgb:
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 downsampled = ndi.zoom(
-                    image,
-                    (zoom_factor, zoom_factor, 1),
-                    prefilter=False,
-                    order=0,
+                    image, zoom_factor + (1,), prefilter=False, order=0
                 )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)
@@ -529,8 +556,9 @@ class Image(Layer):
             color_range = high - low
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
-            colormapped = self.colormap[1].map(downsampled)
-            colormapped = colormapped.reshape(downsampled.shape + (4,))
+            downsampled = downsampled ** self.gamma
+            color_array = self.colormap[1][downsampled.ravel()]
+            colormapped = color_array.rgba.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -580,8 +608,8 @@ class Image(Layer):
         color_range = self.contrast_limits[1] - self.contrast_limits[0]
         if color_range != 0:
             image = image / color_range
-        mapped_image = (self.colormap[1].map(image) * 255).astype('uint8')
-        mapped_image = mapped_image.reshape(list(self._data_view.shape) + [4])
+        mapped_image = self.colormap[1][image.ravel()]
+        mapped_image = mapped_image.RGBA.reshape(image.shape + (4,))
         image_str = imwrite('<bytes>', mapped_image, format='png')
         image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
         props = {'xlink:href': image_str}

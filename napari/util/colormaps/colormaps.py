@@ -254,7 +254,7 @@ class TransFire(BaseColormap):
 
     def map(self, t):
         if isinstance(t, np.ndarray):
-            return np.dstack(
+            return np.hstack(
                 [np.power(t, 0.5), t, t * t, np.maximum(0, t * 1.05 - 0.05)]
             ).astype(np.float32)
         else:
@@ -273,7 +273,7 @@ class TransGrays(BaseColormap):
 
     def map(self, t):
         if isinstance(t, np.ndarray):
-            return np.dstack([t, t, t, t * 0.5]).astype(np.float32)
+            return np.hstack([t, t, t, t * 0.5]).astype(np.float32)
         else:
             return np.array([t, t, t, t * 0.5], dtype=np.float32)
 
@@ -289,3 +289,10 @@ ALL_COLORMAPS.update(colormaps_3D)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
+
+# curated colormap sets
+# these are selected to look good or at least reasonable when using additive
+# blending of multiple channels.
+MAGENTA_GREEN = ['magenta', 'green']
+RGB = ['red', 'green', 'blue']
+CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']

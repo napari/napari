@@ -6,6 +6,9 @@ wrap.
 from qtpy import API_NAME
 from vispy import app
 
+from .qt_about import QtAbout
+from .qt_about_keybindings import QtAboutKeybindings
+
 app.use_app(API_NAME)
 del app
 
@@ -55,6 +58,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
@@ -106,12 +110,21 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
-        open_images = QAction('Open', self._qt_window)
+        open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open image file(s)')
         open_images.triggered.connect(self.qt_viewer._open_images)
+
+        open_folder = QAction('Open Folder...', self._qt_window)
+        open_folder.setShortcut('Ctrl-Shift-O')
+        open_folder.setStatusTip(
+            'Open a folder of image file(s) or a zarr file'
+        )
+        open_folder.triggered.connect(self.qt_viewer._open_folder)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_folder)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
@@ -128,6 +141,24 @@ class Window:
         exit_action.triggered.connect(self._qt_window.close)
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
+
+    def _add_help_menu(self):
+        self.help_menu = self.main_menu.addMenu('&Help')
+
+        about_action = QAction("napari info", self._qt_window)
+        about_action.setStatusTip('About napari')
+        about_action.triggered.connect(
+            lambda e: QtAbout.showAbout(self.qt_viewer)
+        )
+        self.help_menu.addAction(about_action)
+
+        keybidings_action = QAction("keybindings", self._qt_window)
+        keybidings_action.setShortcut("Ctrl+/")
+        keybidings_action.setStatusTip('About keybindings')
+        keybidings_action.triggered.connect(
+            lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
+        )
+        self.help_menu.addAction(keybidings_action)
 
     def resize(self, width, height):
         """Resize the window.

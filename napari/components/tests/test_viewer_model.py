@@ -70,6 +70,32 @@ def test_add_points():
     assert viewer.dims.ndim == 2
 
 
+def test_add_empty_points_to_empty_viewer():
+    viewer = ViewerModel()
+    pts = viewer.add_points(name='empty points')
+    assert pts.dims.ndim == 2
+    pts.add([1000.0, 27.0])
+    assert pts.data.shape == (1, 2)
+
+
+def test_add_empty_points_on_top_of_image():
+    viewer = ViewerModel()
+    image = np.random.random((8, 64, 64))
+    image_layer = viewer.add_image(image)
+    pts = viewer.add_points()
+    assert pts.dims.ndim == 3
+    pts.add([5.0, 32.0, 61.0])
+    assert pts.data.shape == (1, 3)
+
+
+def test_add_empty_shapes_layer():
+    viewer = ViewerModel()
+    image = np.random.random((8, 64, 64))
+    image_layer = viewer.add_image(image)
+    shp = viewer.add_shapes()
+    assert shp.dims.ndim == 3
+
+
 def test_add_vectors():
     """Test adding vectors."""
     viewer = ViewerModel()
@@ -149,7 +175,7 @@ def test_new_points():
     """Test adding new points layer."""
     # Add labels to empty viewer
     viewer = ViewerModel()
-    viewer._new_points()
+    viewer.add_points()
     assert len(viewer.layers) == 1
     assert len(viewer.layers[0].data) == 0
     assert viewer.dims.ndim == 2
@@ -159,7 +185,7 @@ def test_new_points():
     np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
-    viewer._new_points()
+    viewer.add_points()
     assert len(viewer.layers) == 2
     assert len(viewer.layers[1].data) == 0
     assert viewer.dims.ndim == 2
@@ -169,7 +195,7 @@ def test_new_shapes():
     """Test adding new shapes layer."""
     # Add labels to empty viewer
     viewer = ViewerModel()
-    viewer._new_shapes()
+    viewer.add_shapes()
     assert len(viewer.layers) == 1
     assert len(viewer.layers[0].data) == 0
     assert viewer.dims.ndim == 2
@@ -179,7 +205,7 @@ def test_new_shapes():
     np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
-    viewer._new_shapes()
+    viewer.add_shapes()
     assert len(viewer.layers) == 2
     assert len(viewer.layers[1].data) == 0
     assert viewer.dims.ndim == 2
@@ -266,3 +292,24 @@ def test_svg():
     # Generate svg
     svg = viewer.to_svg()
     assert type(svg) == str
+
+
+def test_add_remove_layer_dims_change():
+    """Test dims change appropriately when adding and removing layers."""
+    np.random.seed(0)
+    viewer = ViewerModel()
+
+    # Check ndim starts at 2
+    assert viewer.dims.ndim == 2
+
+    # Check ndim increase to 3 when 3D data added
+    data = np.random.random((10, 15, 20))
+    layer = viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
+
+    # Remove layer and check ndim returns to 2
+    viewer.layers.remove(layer)
+    assert len(viewer.layers) == 0
+    assert viewer.dims.ndim == 2

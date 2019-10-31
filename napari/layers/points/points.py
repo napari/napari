@@ -3,7 +3,6 @@ from xml.etree.ElementTree import Element
 import numpy as np
 import itertools
 from copy import copy, deepcopy
-from contextlib import contextmanager
 from ..base import Layer
 from ...util.event import Event
 from ...util.misc import ensure_iterable
@@ -118,7 +117,7 @@ class Points(Layer):
 
     def __init__(
         self,
-        data,
+        data=None,
         *,
         symbol='o',
         size=10,
@@ -134,7 +133,8 @@ class Points(Layer):
         blending='translucent',
         visible=True,
     ):
-
+        if data is None:
+            data = np.empty((0, 2))
         ndim = data.shape[1]
         super().__init__(
             ndim,
@@ -321,12 +321,12 @@ class Points(Layer):
     def sizes(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
             self._sizes = np.broadcast_to(size, self.data.shape).copy()
-        except:
+        except Exception:
             try:
                 self._sizes = np.broadcast_to(
                     size, self.data.shape[::-1]
                 ).T.copy()
-            except:
+            except Exception:
                 raise ValueError("Size is not compatible for broadcasting")
         self._set_view_slice()
 
@@ -567,8 +567,6 @@ class Points(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        in_slice_data = self._data_view
-
         # Display points if there are any in this slice
         if len(self._data_view) > 0:
             # Get the point sizes
@@ -625,10 +623,10 @@ class Points(Layer):
             self.selected_data
         self._selected_box = self.interaction_box(self._selected_view)
 
+        self.events.set_data()
         self._set_highlight(force=True)
         self._update_thumbnail()
         self._update_coordinates()
-        self.events.set_data()
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,

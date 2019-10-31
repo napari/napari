@@ -1,7 +1,11 @@
 import numpy as np
-from copy import copy
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
+
+
+def test_empty_shapes():
+    shp = Shapes()
+    assert shp.dims.ndim == 2
 
 
 def test_rectangles():
