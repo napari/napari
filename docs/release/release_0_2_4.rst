@@ -31,7 +31,7 @@ Bugfixes
 
 Deprecations
 ------------
-- drop add_multichannel, now add_image has `channel_axis` keyword arg (#619)
+- napari.Viewer.add_multichannel was removed. Use napari.Viewer.add_image(..., channel_axis=num)   (#619)
 
 
 4 authors added to this release [alphabetical by first name or login]
