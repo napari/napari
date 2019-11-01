@@ -47,7 +47,7 @@ class Viewer(ViewerModel):
         self.update_console = self.window.qt_viewer.console.push
 
     @staticmethod
-    def update_viewer(func):
-        t = QtUpdateUI(func)
+    def update(func, *args, **kwargs):
+        t = QtUpdateUI(func, args, kwargs)
         t.start()
         return t

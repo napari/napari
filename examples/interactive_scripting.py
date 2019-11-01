@@ -9,16 +9,13 @@ with napari.gui_qt():
     viewer = napari.Viewer()
     layer = viewer.add_image(data)
 
-    def layer_update():
+    update_period = 0.1
+
+    def layer_update(update_interval, kwargs):
         # number of times to update
-        number_of_times = 100
 
-        # time between image assignment
-        update_interval = 0.1
-
-        for k in range(number_of_times):
-
-            time.sleep(update_interval)
+        for k in range(kwargs['number_of_times']):  # Usage of keyword arguments
+            time.sleep(update_interval[0])  # Usage of ordinary arguments
 
             dat = np.random.random((512, 512))
             layer.data = dat
@@ -27,4 +24,4 @@ with napari.gui_qt():
             while layer.data.all() != dat.all():
                 layer.data = dat
 
-    update_thread = viewer.update_viewer(layer_update)
+    update_thread = viewer.update(layer_update, update_period, number_of_times=100)
