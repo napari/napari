@@ -1,6 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
-from vispy.color import Colormap
 from napari.layers import Labels
 
 

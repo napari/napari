@@ -12,7 +12,7 @@ from .qt_about_keybindings import QtAboutKeybindings
 app.use_app(API_NAME)
 del app
 
-from qtpy.QtWidgets import (
+from qtpy.QtWidgets import (  # noqa
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -20,9 +20,9 @@ from qtpy.QtWidgets import (
     QAction,
     QShortcut,
 )
-from qtpy.QtGui import QKeySequence
+from qtpy.QtGui import QKeySequence  # noqa
 
-from ..util.theme import template
+from ..util.theme import template  # noqa
 
 
 class Window:

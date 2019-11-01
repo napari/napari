@@ -69,7 +69,7 @@ def test_docstring(layer):
         raise AssertionError(f"docstrings don't match for class {name}") from e
 
     # check returns section
-    method_returns, = method_doc[
+    (method_returns,) = method_doc[
         'Returns'
     ]  # only one thing should be returned
     description = ' '.join(method_returns[-1])  # join multi-line description
@@ -118,6 +118,5 @@ def test_signature(layer):
     try:
         assert args == autogen
     except AssertionError as e:
-        raise SyntaxError(
-            f'arguments improperly passed from convenience method to layer {name}'
-        ) from e
+        msg = f'arguments improperly passed from convenience method to layer {name}'
+        raise SyntaxError(msg) from e

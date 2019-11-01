@@ -54,7 +54,7 @@ def view_image(
         luminance images. If not passed is calculated as the min and max of
         the image.
     gamma : float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
@@ -156,7 +156,7 @@ def view_multichannel(
         that is being expanded and then each colormap is applied to each
         image.
     gamma : list, float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
         If a list then must be same length as the axis that is being expanded
         and then each entry in the list is applied to each image.
     interpolation : str
@@ -544,7 +544,7 @@ def view_surface(
         luminance images. If not passed is calculated as the min and max of
         the image.
     gamma : float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
     name : str
         Name of the layer.
     metadata : dict

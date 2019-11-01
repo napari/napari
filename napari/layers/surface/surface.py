@@ -32,7 +32,7 @@ class Surface(Layer):
         luminance images. If not passed is calculated as the min and max of
         the image.
     gamma : float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
     name : str
         Name of the layer.
     metadata : dict

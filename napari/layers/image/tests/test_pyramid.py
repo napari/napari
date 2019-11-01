@@ -42,7 +42,7 @@ def test_error_pyramid():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     with pytest.raises(ValueError):
-        layer = Image(data, is_pyramid=False)
+        Image(data, is_pyramid=False)
 
 
 def test_infer_tuple_pyramid():

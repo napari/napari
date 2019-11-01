@@ -46,7 +46,7 @@ def test_negative_points():
     assert len(layer.data) == 10
 
 
-def test_empty_points():
+def test_empty_points_array():
     """Test instantiating Points layer with empty array."""
     shape = (0, 2)
     data = np.empty(shape)

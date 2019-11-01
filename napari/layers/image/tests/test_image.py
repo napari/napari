@@ -206,7 +206,7 @@ def test_error_non_rgb_image():
     np.random.seed(0)
     data = np.random.random(shape)
     with pytest.raises(ValueError):
-        layer = Image(data, rgb=True)
+        Image(data, rgb=True)
 
 
 def test_changing_image():
