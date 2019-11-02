@@ -10,3 +10,4 @@ repos:
     rev: '3.7.8'
     hooks:
     - id: flake8
+      pass_filenames: true
