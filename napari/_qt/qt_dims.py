@@ -1,9 +1,10 @@
-from qtpy.QtCore import Qt, Signal, QTimer, QThread, QEventLoop
-from qtpy.QtWidgets import QWidget, QGridLayout, QSizePolicy, QScrollBar
 import numpy as np
+from qtpy.QtCore import QEventLoop, Qt, QThread, QTimer, Signal, Slot
+from qtpy.QtWidgets import QGridLayout, QScrollBar, QSizePolicy, QWidget
 
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
+from ..util.event import Event
 
 
 class QtDims(QWidget):
@@ -356,26 +357,15 @@ class QtDims(QWidget):
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
 
-        dimsrange = self.dims.range[axis]
-        if range is not None:
-            if range[0] >= range[1]:
-                raise ValueError("animation range min must be <= range max")
-            if range[0] < dimsrange[0]:
-                raise IndexError("animation range min out of range")
-            if range[1] * dimsrange[2] >= dimsrange[1]:
-                raise IndexError("animation range max out of range")
-            self._animation_range = range
-        else:
-            self._animation_range = None
         # allow only one axis to be playing at a time
         # if nothing is playing self.stop() will not do anything
         self.stop()
+        if fps == 0:
+            return
 
-        point = self.dims.point[axis]
-        self.animation_thread = AnimationThread(point + 1, axis, fps)
+        self.animation_thread = AnimationThread(self.dims, axis, fps, range)
         # when the thread timer increments, update the current frame
         self.animation_thread.incremented.connect(self._set_frame)
-        self._set_frame(axis, point + 1)
         self.animation_thread.start()
 
     def stop(self):
@@ -403,22 +393,9 @@ class QtDims(QWidget):
         even if the canvas cannot keep up.
         """
         if self._play_ready:
-            range_ = self.dims.range[axis]
-            if (
-                hasattr(self, '_animation_range')
-                and self._animation_range is not None
-            ):
-                min_point, max_point = self._animation_range
-            else:
-                min_point = 0
-                max_point = int(np.floor(range_[1] - range_[2])) + 1
             # disable additional point advance requests until this one draws
             self._play_ready = False
-            self.dims.set_point(
-                axis,
-                min_point
-                + ((frame * range_[2]) % (max_point - min_point + 1)),
-            )
+            self.dims.set_point(axis, frame)
 
     def enable_play(self, *args):
         # this is mostly here to connect to the main SceneCanvas.events.draw event
@@ -432,25 +409,65 @@ class AnimationThread(QThread):
 
     incremented = Signal(int, int)  # signal for each time a frame is requested
 
-    def __init__(self, current, axis, fps=10):
+    def __init__(self, dims, axis, fps=10, animation_range=None):
         super().__init__()
         # could put some limits on fps here... though the handler in the QtDims
         # object above is capable of ignoring overly spammy requests.
 
-        self.current = current
+        self.dims = dims
         self.axis = axis
+
+        self.dimsrange = self.dims.range[axis]
+        if animation_range is not None:
+            if animation_range[0] >= animation_range[1]:
+                raise ValueError("animation range min must be <= range max")
+            if animation_range[0] < self.dimsrange[0]:
+                raise IndexError("animation range min out of range")
+            if animation_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
+                raise IndexError("animation range max out of range")
+        self.animation_range = animation_range
+
+        if self.animation_range is not None:
+            self.min_point, self.max_point = self.animation_range
+        else:
+            self.min_point = 0
+            self.max_point = int(
+                np.floor(self.dimsrange[1] - self.dimsrange[2])
+            )
+        self.max_point += 1  # range is inclusive
+
+        # after dims.set_point is called, it will emit a dims.events.axis()
+        # we use this to update this threads current frame (in case it
+        # was some other event that updated the axis)
+        self.dims.events.axis.connect(self._on_axis_changed)
+        self.current = max(self.dims.point[axis], self.min_point)
+        self.current = min(self.current, self.max_point)
+        self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
         self.timer = QTimer()
-        self.timer.setInterval(1000 / fps)
+        self.timer.setInterval(1000 / abs(fps))
         self.timer.timeout.connect(self.advance)
         self.timer.moveToThread(self)
         # this is necessary to avoid a warning in QtDims.stop() on del thread
         self.finished.connect(self.timer.deleteLater)
 
+    @Slot(Event)
+    def _on_axis_changed(self, event):
+        # slot for external events to update the current frame
+        if event.axis == self.axis and hasattr(event, 'value'):
+            self.current = event.value
+
     def advance(self):
-        self.current += 1
-        self.incremented.emit(self.axis, self.current)
+        self.current += self.step * self.dimsrange[2]
+        if self.current < self.min_point:
+            self.current = self.max_point + self.current - self.min_point
+        elif self.current >= self.max_point:
+            self.current = self.min_point + self.current - self.max_point
+        with self.dims.events.axis.blocker(self._on_axis_changed):
+            self.incremented.emit(self.axis, self.current)
 
     def run(self):
+        # immediately advance one frame
+        self.advance()
         self.timer.start()
         loop = QEventLoop()
         loop.exec_()
