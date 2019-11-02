@@ -412,7 +412,9 @@ class Image(Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            order = self.dims.displayed_order + (self.dims.ndisplay,)
+            order = self.dims.displayed_order + (
+                max(self.dims.displayed_order) + 1,
+            )
         else:
             order = self.dims.displayed_order
 
@@ -511,18 +513,21 @@ class Image(Layer):
         if dtype in [np.dtype(np.float16)]:
             image = image.astype(np.float32)
 
-        zoom_factor = np.divide(
+        raw_zoom_factor = np.divide(
             self._thumbnail_shape[:2], image.shape[:2]
         ).min()
+        new_shape = np.clip(
+            raw_zoom_factor * np.array(image.shape[:2]),
+            1,  # smallest side should be 1 pixel wide
+            self._thumbnail_shape[:2],
+        )
+        zoom_factor = tuple(new_shape / image.shape[:2])
         if self.rgb:
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 downsampled = ndi.zoom(
-                    image,
-                    (zoom_factor, zoom_factor, 1),
-                    prefilter=False,
-                    order=0,
+                    image, zoom_factor + (1,), prefilter=False, order=0
                 )
             if image.shape[2] == 4:  # image is RGBA
                 colormapped = np.copy(downsampled)

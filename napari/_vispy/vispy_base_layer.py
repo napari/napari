@@ -158,10 +158,6 @@ class VispyBaseLayer(ABC):
             coords = (0,) * len(self.layer.dims.displayed)
         return coords
 
-    @abstractmethod
-    def reset(self):
-        raise NotImplementedError()
-
     def _reset_base(self):
         self._on_visible_change()
         self._on_opacity_change()

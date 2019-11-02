@@ -50,23 +50,35 @@ def test_docstring(layer):
 
     # Remove path parameter from viewer method if it exists
     method_params = [m for m in method_params if m.name != 'path']
-    try:
-        assert len(method_params) == len(layer_params)
-        for method_param, layer_param in zip(method_params, layer_params):
-            m_name, m_type, m_description = method_param
+
+    if name == 'Image':
+        # For Image just test arguments that are in layer are in method
+        named_method_params = [m.name for m in method_params]
+        for layer_param in layer_params:
             l_name, l_type, l_description = layer_param
+            assert l_name in named_method_params
+    else:
+        try:
+            assert len(method_params) == len(layer_params)
+            for method_param, layer_param in zip(method_params, layer_params):
+                m_name, m_type, m_description = method_param
+                l_name, l_type, l_description = layer_param
 
-            # descriptions are treated as lists where each line is an element
-            m_description = ' '.join(m_description)
-            l_description = ' '.join(l_description)
+                # descriptions are treated as lists where each line is an element
+                m_description = ' '.join(m_description)
+                l_description = ' '.join(l_description)
 
-            assert m_name == l_name, 'different parameter names or order'
-            assert m_type == l_type, f"type mismatch of parameter '{m_name}'"
-            assert (
-                m_description == l_description
-            ), f"description mismatch of parameter '{m_name}'"
-    except AssertionError as e:
-        raise AssertionError(f"docstrings don't match for class {name}") from e
+                assert m_name == l_name, 'different parameter names or order'
+                assert (
+                    m_type == l_type
+                ), f"type mismatch of parameter '{m_name}'"
+                assert (
+                    m_description == l_description
+                ), f"description mismatch of parameter '{m_name}'"
+        except AssertionError as e:
+            raise AssertionError(
+                f"docstrings don't match for class {name}"
+            ) from e
 
     # check returns section
     (method_returns,) = method_doc[
@@ -75,16 +87,24 @@ def test_docstring(layer):
     description = ' '.join(method_returns[-1])  # join multi-line description
     method_returns = *method_returns[:-1], description
 
-    assert method_returns == (
-        'layer',
-        f':class:`napari.layers.{name}`',
-        f'The newly-created {name.lower()} layer.',
-    ), f"improper 'Returns' section of '{method_name}'"
+    if name == 'Image':
+        assert method_returns == (
+            'layer',
+            f':class:`napari.layers.{name}` or list',
+            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',
+        ), f"improper 'Returns' section of '{method_name}'"
+    else:
+        assert method_returns == (
+            'layer',
+            f':class:`napari.layers.{name}`',
+            f'The newly-created {name.lower()} layer.',
+        ), f"improper 'Returns' section of '{method_name}'"
 
 
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
 def test_signature(layer):
     name = layer.__name__
+
     method = getattr(Viewer, f'add_{camel_to_snake(name)}')
 
     class_parameters = dict(inspect.signature(layer.__init__).parameters)
@@ -97,7 +117,12 @@ def test_signature(layer):
         del class_parameters['data']
 
     fail_msg = f"signatures don't match for class {name}"
-    assert class_parameters == method_parameters, fail_msg
+    if name == 'Image':
+        # If Image just test that class params appear in method
+        for class_param in class_parameters.keys():
+            assert class_param in method_parameters.keys(), fail_msg
+    else:
+        assert class_parameters == method_parameters, fail_msg
 
     code = inspect.getsource(method)
 
