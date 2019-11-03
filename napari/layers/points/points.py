@@ -160,7 +160,7 @@ class Points(Layer):
         self._colors = get_color_names()
 
         # Save the point coordinates
-        self._data = data
+        self._data = np.asarray(data)
         self.dims.clip = False
 
         # Save the point style params
@@ -173,7 +173,7 @@ class Points(Layer):
         # constructor so each point gets its own value then the default
         # value is used when adding new points
         if np.isscalar(size):
-            self._size = size
+            self._size = np.asarray(size)
         else:
             self._size = 10
 
@@ -387,6 +387,18 @@ class Points(Layer):
                 self.face_colors[i] = face_color
         self.events.face_color()
         self.events.highlight()
+
+    @property
+    def properties(self):
+        """dict: Dictionary of layer properties."""
+        layer_properties = {
+            'symbol': self.symbol,
+            'edge_width': self.edge_width,
+            'edge_color': self.edge_colors,
+            'face_color': self.face_colors,
+        }
+        layer_properties.update(self._base_properties)
+        return layer_properties
 
     @property
     def selected_data(self):

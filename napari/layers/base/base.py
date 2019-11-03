@@ -402,6 +402,26 @@ class Layer(KeymapMixin, ABC):
         )
 
     @property
+    def _base_properties(self):
+        """dict: Dictionary of properties on base layer."""
+        base_dict = {
+            'layer_type': type(self).__name__,
+            'name': self.name,
+            'metadata': self.metadata,
+            'scale': list(self.scale),
+            'translate': list(self.translate),
+            'opacity': self.opacity,
+            'blending': self.blending,
+            'visible': self.visible,
+        }
+        return base_dict
+
+    @property
+    def properties(self):
+        """dict: Dictionary of layer properties."""
+        return self._base_properties
+
+    @property
     def thumbnail(self):
         """array: Integer array of thumbnail for the layer"""
         return self._thumbnail

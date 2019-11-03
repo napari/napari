@@ -386,6 +386,21 @@ class Image(Layer):
         self._rendering = rendering
         self.events.rendering()
 
+    @property
+    def properties(self):
+        """dict: Dictionary of layer properties."""
+        layer_properties = {
+            'rgb': self.rgb,
+            'is_pyramid': self.is_pyramid,
+            'colormap': self.colormap[0],
+            'contrast_limits': self.contrast_limits,
+            'interpolation': self.interpolation,
+            'rendering': self.rendering,
+            'gamma': self.gamma,
+        }
+        layer_properties.update(self._base_properties)
+        return layer_properties
+
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
 
