@@ -7,7 +7,7 @@ repos:
       pass_filenames: false
       args: [.]
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: '3.7.8'
+    rev: '3.7.9'
     hooks:
     - id: flake8
       pass_filenames: true
