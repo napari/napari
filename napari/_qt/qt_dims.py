@@ -445,19 +445,19 @@ class AnimationThread(QThread):
         self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
         self.timer = QTimer()
         self.timer.setInterval(1000 / abs(fps))
-        self.timer.timeout.connect(self._advance)
+        self.timer.timeout.connect(self.advance)
         self.timer.moveToThread(self)
         # this is necessary to avoid a warning in QtDims.stop() on del thread
         self.finished.connect(self.timer.deleteLater)
 
     def run(self):
         # immediately advance one frame
-        self._advance()
+        self.advance()
         self.timer.start()
         loop = QEventLoop()
         loop.exec_()
 
-    def _advance(self):
+    def advance(self):
         """Advance the current frame in the animation.
 
         Takes dims scale into account and restricts the animation to the
