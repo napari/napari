@@ -387,10 +387,10 @@ class QtDims(QWidget):
 
     def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`
-        This function is debounced: if the previous frame has not yet drawn to the canvas,
-        it will simply do nothing.  If the timer plays faster than the canvas can draw,
-        this will drop the intermediate frames, keeping the effective frame rate constant
-        even if the canvas cannot keep up.
+        This function is debounced: if the previous frame has not yet drawn to
+        the canvas, it will simply do nothing.  If the timer plays faster than
+        the canvas can draw, this will drop the intermediate frames, keeping
+        the effective frame rate constant even if the canvas cannot keep up.
         """
         if self._play_ready:
             # disable additional point advance requests until this one draws
@@ -398,8 +398,8 @@ class QtDims(QWidget):
             self.dims.set_point(axis, frame)
 
     def enable_play(self, *args):
-        # this is mostly here to connect to the main SceneCanvas.events.draw event
-        # in the qt_viewer
+        # this is mostly here to connect to the main SceneCanvas.events.draw
+        # event in the qt_viewer
         self._play_ready = True
 
 
@@ -445,18 +445,24 @@ class AnimationThread(QThread):
         self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
         self.timer = QTimer()
         self.timer.setInterval(1000 / abs(fps))
-        self.timer.timeout.connect(self.advance)
+        self.timer.timeout.connect(self._advance)
         self.timer.moveToThread(self)
         # this is necessary to avoid a warning in QtDims.stop() on del thread
         self.finished.connect(self.timer.deleteLater)
 
-    @Slot(Event)
-    def _on_axis_changed(self, event):
-        # slot for external events to update the current frame
-        if event.axis == self.axis and hasattr(event, 'value'):
-            self.current = event.value
+    def run(self):
+        # immediately advance one frame
+        self._advance()
+        self.timer.start()
+        loop = QEventLoop()
+        loop.exec_()
 
-    def advance(self):
+    def _advance(self):
+        """Advance the current frame in the animation.
+
+        Takes dims scale into account and restricts the animation to the
+        requested animation_range, if entered.
+        """
         self.current += self.step * self.dimsrange[2]
         if self.current < self.min_point:
             self.current = self.max_point + self.current - self.min_point
@@ -465,9 +471,8 @@ class AnimationThread(QThread):
         with self.dims.events.axis.blocker(self._on_axis_changed):
             self.incremented.emit(self.axis, self.current)
 
-    def run(self):
-        # immediately advance one frame
-        self.advance()
-        self.timer.start()
-        loop = QEventLoop()
-        loop.exec_()
+    @Slot(Event)
+    def _on_axis_changed(self, event):
+        # slot for external events to update the current frame
+        if event.axis == self.axis and hasattr(event, 'value'):
+            self.current = event.value
