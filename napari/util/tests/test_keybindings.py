@@ -61,7 +61,7 @@ def test_bind_key():
     kb = {}
 
     # bind
-    f = lambda: 42  # noqa
+    f = lambda: 42  # noqa: E731
     bind_key(kb, 'A', f)
     assert kb == dict(A=f)
 
@@ -69,13 +69,13 @@ def test_bind_key():
         bind_key(kb, 'B', 'not a callable')
 
     # overwrite
-    l = lambda: 'SPAM'  # noqa
+    spam = lambda: 'SPAM'  # noqa: E731
 
     with pytest.raises(ValueError):
-        bind_key(kb, 'A', l)
+        bind_key(kb, 'A', spam)
 
-    bind_key(kb, 'A', l, overwrite=True)
-    assert kb == dict(A=l)
+    bind_key(kb, 'A', spam, overwrite=True)
+    assert kb == dict(A=spam)
 
     # unbind
     bind_key(kb, 'A', None)
