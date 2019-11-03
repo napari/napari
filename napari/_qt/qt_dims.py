@@ -331,7 +331,7 @@ class QtDims(QWidget):
             index = (displayed.index(self.last_used) - 1) % len(displayed)
             self.last_used = displayed[index]
 
-    def play(self, axis: int = 0, fps: float = 10, range=None):
+    def play(self, axis: int = 0, fps: float = 10, range=None, pingpong=False):
         """
         Animate (play) axis
 
@@ -340,10 +340,15 @@ class QtDims(QWidget):
         axis: int
             Index of axis to play
         fps: float
-            Frames per second for playback (not guaranteed)
+            Frames per second for playback.  Negative values will play in
+            reverse.  fps == 0 will stop the animation. The view is not
+            guaranteed to keep up with the requested fps, and may drop frames
+            at higher fps.
         range: tuple | list
-            If specified, will constrain animation to [first, last] frames
-
+            If specified, will constrain animation to loop [first, last] frames
+        pingong: bool
+            If True, movie will loop back and forth. If False (default) movie
+            will return to the first frame after reaching the last frame.
         Raises
         ----------
         IndexError
@@ -368,7 +373,9 @@ class QtDims(QWidget):
         if not self._displayed_sliders[axis]:
             return
 
-        self.animation_thread = AnimationThread(self.dims, axis, fps, range)
+        self.animation_thread = AnimationThread(
+            self.dims, axis, fps, range, pingpong
+        )
         # when the thread timer increments, update the current frame
         self.animation_thread.incremented.connect(self._set_frame)
         self.animation_thread.start()
@@ -414,7 +421,9 @@ class AnimationThread(QThread):
 
     incremented = Signal(int, int)  # signal for each time a frame is requested
 
-    def __init__(self, dims, axis, fps=10, animation_range=None):
+    def __init__(
+        self, dims, axis, fps=10, animation_range=None, pingpong=False
+    ):
         super().__init__()
         # could put some limits on fps here... though the handler in the QtDims
         # object above is capable of ignoring overly spammy requests.
@@ -431,6 +440,7 @@ class AnimationThread(QThread):
             if animation_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
                 raise IndexError("animation range max out of range")
         self.animation_range = animation_range
+        self.pingpong = pingpong
 
         if self.animation_range is not None:
             self.min_point, self.max_point = self.animation_range
@@ -468,12 +478,21 @@ class AnimationThread(QThread):
         Takes dims scale into account and restricts the animation to the
         requested animation_range, if entered.
         """
-        print('advance')
         self.current += self.step * self.dimsrange[2]
         if self.current < self.min_point:
-            self.current = self.max_point + self.current - self.min_point
+            if self.pingpong:
+                self.step *= -1
+                self.current = self.min_point + self.step * self.dimsrange[2]
+            else:
+                self.current = self.max_point + self.current - self.min_point
         elif self.current >= self.max_point:
-            self.current = self.min_point + self.current - self.max_point
+            if self.pingpong:
+                self.step *= -1
+                self.current = (
+                    self.max_point + 2 * self.step * self.dimsrange[2]
+                )
+            else:
+                self.current = self.min_point + self.current - self.max_point
         with self.dims.events.axis.blocker(self._on_axis_changed):
             self.incremented.emit(self.axis, self.current)
 
