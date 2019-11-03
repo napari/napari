@@ -354,13 +354,18 @@ class QtDims(QWidget):
             If ``range`` is provided and range[0] >= range[1]
         """
         # TODO: No access in the GUI yet. Just keybinding.
-        if axis >= len(self.dims.range):
-            raise IndexError('axis argument out of range')
 
         # allow only one axis to be playing at a time
         # if nothing is playing self.stop() will not do anything
         self.stop()
         if fps == 0:
+            return
+
+        if axis >= len(self.dims.range):
+            raise IndexError('axis argument out of range')
+        # we want to avoid playing a dimension that does not have a slider
+        # (like X or Y, or a third dimension in volume view.)
+        if not self._displayed_sliders[axis]:
             return
 
         self.animation_thread = AnimationThread(self.dims, axis, fps, range)
@@ -463,6 +468,7 @@ class AnimationThread(QThread):
         Takes dims scale into account and restricts the animation to the
         requested animation_range, if entered.
         """
+        print('advance')
         self.current += self.step * self.dimsrange[2]
         if self.current < self.min_point:
             self.current = self.max_point + self.current - self.min_point
