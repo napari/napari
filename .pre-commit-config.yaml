@@ -10,4 +10,5 @@ repos:
     rev: '3.7.9'
     hooks:
     - id: flake8
-      pass_filenames: true
+      args: ['--config=setup.cfg']
+      exclude: vendored,__init__.py,*examples*
