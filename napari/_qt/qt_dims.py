@@ -413,7 +413,6 @@ class QtDims(QWidget):
     def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`.
 
-
         This function is debounced: if the previous frame has not yet drawn to
         the canvas, it will simply do nothing.  If the timer plays faster than
         the canvas can draw, this will drop the intermediate frames, keeping
