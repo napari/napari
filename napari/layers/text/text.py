@@ -75,7 +75,7 @@ class Text(Layer):
         should perform better on remote backends like those based on WebGL.
         The ‘gpu’ method should produce higher quality results.
     selected_data : list
-        Integer indices of any selected points.
+        Integer indices of any selected text.
     sizes : array (N, D)
         Array of sizes for each text in each dimension. Must have the same
         shape as the layer `data`.
@@ -83,10 +83,10 @@ class Text(Layer):
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
-        In ADD mode clicks of the cursor add points at the clicked location.
+        In ADD mode clicks of the cursor add text at the clicked location.
 
-        In SELECT mode the cursor can select points by clicking on them or
-        by dragging a box around them. Once selected points can be moved,
+        In SELECT mode the cursor can select text by clicking on them or
+        by dragging a box around them. Once selected text can be moved,
         have their properties edited, or be deleted.
 
     Extended Summary
@@ -98,12 +98,12 @@ class Text(Layer):
     _sizes_view : array (M, )
         Size of the text elements in the currently viewed slice.
     _indices_view : array (M, )
-        Integer indices of the points in the currently viewed slice.
+        Integer indices of the text in the currently viewed slice.
     _selected_view :
-        Integer indices of selected points in the currently viewed slice within
+        Integer indices of selected text in the currently viewed slice within
         the `_data_view` array.
     _selected_box : array (4, 2) or None
-        Four corners of any box either around currently selected points or
+        Four corners of any box either around currently selected text or
         being created during a drag action. Starting in the top left and
         going clockwise.
     _drag_start : list or None
@@ -172,13 +172,13 @@ class Text(Layer):
 
         self.render_method = render_method
 
-        # Indices of selected points
+        # Indices of selected text
         self._selected_data = []
         self._selected_data_stored = []
         self._selected_data_history = []
-        # Indices of selected points within the currently viewed slice
+        # Indices of selected text within the currently viewed slice
         self._selected_view = []
-        # Index of hovered point
+        # Index of hovered text
         self._value = None
         self._value_stored = None
         self._selected_box = None
@@ -188,10 +188,10 @@ class Text(Layer):
 
         self._drag_start = None
 
-        # Nx2 array of points in the currently viewed slice
+        # Nx2 array of text in the currently viewed slice
         self._text_coords_view = np.empty((0, 2))
 
-        # Full data indices of points located in the currently viewed slice
+        # Full data indices of text located in the currently viewed slice
         self._indices_view = []
 
         self._drag_box = None
@@ -264,7 +264,7 @@ class Text(Layer):
 
     @property
     def text_color(self) -> str:
-        """str: face color of marker for the next added point."""
+        """str: face color of marker for the next added text."""
 
         return self._text_color
 
@@ -276,7 +276,7 @@ class Text(Layer):
 
     @property
     def selected_data(self):
-        """list: list of currently selected points."""
+        """list: list of currently selected text."""
         return self._selected_data
 
     @selected_data.setter
@@ -291,7 +291,7 @@ class Text(Layer):
         self._selected_box = self.interaction_box(self._selected_view)
 
     def interaction_box(self, index):
-        """Create the interaction box around a list of points in view.
+        """Create the interaction box around a list of text in view.
 
         Parameters
         ----------
@@ -326,7 +326,7 @@ class Text(Layer):
         In ADD mode clicks of the cursor add text at the clicked location.
 
         In SELECT mode the cursor can select text by clicking on them or
-        by dragging a box around them. Once selected points can be moved,
+        by dragging a box around them. Once selected text can be moved,
         have their properties edited, or be deleted.
         """
         return str(self._mode)
@@ -395,7 +395,7 @@ class Text(Layer):
             self.mode = Mode.PAN_ZOOM
 
     def _slice_data(self, indices):
-        """Determines the slice of points given the indices.
+        """Determines the slice of text given the indices.
 
         Parameters
         ----------
@@ -411,7 +411,7 @@ class Text(Layer):
         slice_indices : list
             Indices of text in the currently viewed slice.
         """
-        # Get a list of the data for the points in this slice
+        # Get a list of the data for the text in this slice
         not_disp = list(self.dims.not_displayed)
         disp = list(self.dims.displayed)
         indices = np.array(indices)
@@ -426,19 +426,19 @@ class Text(Layer):
             return [], [], []
 
     def get_value(self):
-        """Determine if points at current coordinates.
+        """Determine if text at current coordinates.
 
         Returns
         ----------
         selection : int or None
-            Index of point that is at the current coordinate if any.
+            Index of text that is at the current coordinate if any.
         """
         in_slice_data = self._text_coords_view
         in_slice_sizes = self._sizes_view
 
         # Display text indices if there are any in this slice and 2D display
         if len(self._text_coords_view) > 0 and self.dims.ndisplay != 3:
-            # Get the point sizes
+            # Determine if text under cursor
             distances = abs(
                 self._text_coords_view
                 - [self.coordinates[d] for d in self.dims.displayed]
@@ -463,20 +463,20 @@ class Text(Layer):
             self.dims.indices
         )
 
-        # Display points if there are any in this slice
+        # Display text if there are any in this slice
         if len(in_slice_coords) > 0:
-            # Update the points node
-            data = np.array(in_slice_coords)
+            # Update the text coordinates
+            coords = np.array(in_slice_coords)
 
         else:
-            # if no points in this slice send dummy data
-            data = np.zeros((0, self.dims.ndisplay))
+            # if no text in this slice send dummy data
+            coords = np.zeros((0, self.dims.ndisplay))
 
-        self._text_coords_view = data
+        self._text_coords_view = coords
         self._text_view = in_slice_text
         self._sizes_view = np.asarray([self.sizes[i] for i in indices])
         self._indices_view = indices
-        # Make sure if changing planes any selected points not in the current
+        # Make sure if changing planes any selected text not in the current
         # plane are removed
         selected = []
         for c in self.selected_data:
@@ -502,7 +502,7 @@ class Text(Layer):
         force : bool
             Bool that forces a redraw to occur when `True`
         """
-        # Check if any point ids have changed since last call
+        # Check if any text ids have changed since last call
         if (
             self.selected_data == self._selected_data_stored
             and self._value == self._value_stored
@@ -546,7 +546,7 @@ class Text(Layer):
         self.events.highlight()
 
     def _update_thumbnail(self):
-        """Update thumbnail with current points and colors."""
+        """Update thumbnail with current text """
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
 
@@ -558,7 +558,7 @@ class Text(Layer):
 
         Parameters
         ----------
-        coord : sequence of indices to add point at
+        coord : sequence of indices to add text at
         """
         coords = np.append(self.text_coords, [coord], axis=0)
         text = self.text
@@ -573,7 +573,7 @@ class Text(Layer):
         self.data = (coords, text)
 
     def remove_selected(self):
-        """Removes selected points if any."""
+        """Removes selected text if any."""
         index = copy(self.selected_data)
         index.sort()
         if len(index) > 0:
@@ -588,14 +588,14 @@ class Text(Layer):
             self.data = (coords, text)
 
     def _move(self, index, coord):
-        """Moves points relative drag start location.
+        """Moves text relative drag start location.
 
         Parameters
         ----------
         index : list
-            Integer indices of points to move
+            Integer indices of text to move
         coord : tuple
-            Coordinates to move points to
+            Coordinates to move text to
         """
         if len(index) > 0:
             disp = list(self.dims.displayed)
@@ -610,7 +610,7 @@ class Text(Layer):
             self._set_view_slice()
 
     def _copy_data(self):
-        """Copy selected points to clipboard."""
+        """Copy selected text to clipboard."""
         if len(self.selected_data) > 0:
             self._clipboard = {
                 'coords': deepcopy(self.text_coords[self.selected_data]),
@@ -622,9 +622,9 @@ class Text(Layer):
             self._clipboard = {}
 
     def _paste_data(self):
-        """Paste any point from clipboard and select them."""
-        npoints = len(self._text_coords_view)
-        totpoints = len(self.text)
+        """Paste any text from clipboard and select them."""
+        n_text = len(self._text_coords_view)
+        tot_text = len(self.text)
 
         if len(self._clipboard.keys()) > 0:
             # not_disp = self.dims.not_displayed
@@ -642,14 +642,14 @@ class Text(Layer):
             self._sizes = np.append(
                 self.sizes, deepcopy(self._clipboard['size']), axis=0
             )
-            self._selected_view = list(range(npoints, npoints + len(text)))
-            self._selected_data = list(range(totpoints, totpoints + len(text)))
+            self._selected_view = list(range(n_text, n_text + len(text)))
+            self._selected_data = list(range(tot_text, tot_text + len(text)))
             self._set_view_slice()
 
     def to_xml_list(self):
-        """Convert the points to a list of xml elements according to the svg
-        specification. Z ordering of the points will be taken into account.
-        Each point is represented by a circle. Support for other symbols is
+        """Convert the text to a list of xml elements according to the svg
+        specification. Z ordering of the text will be taken into account.
+        Each text is represented by a circle. Support for other symbols is
         not yet implemented.
 
         Returns
@@ -744,12 +744,12 @@ class Text(Layer):
 
 
 def create_box(data):
-    """Create the axis aligned interaction box of a list of points
+    """Create the axis aligned interaction box of a list of text
 
     Parameters
     ----------
     data : (N, 2) array
-        Points around which the interaction box is created
+        points around which the interaction box is created
 
     Returns
     -------

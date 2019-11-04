@@ -75,7 +75,7 @@ class QtTextControls(QtLayerControls):
         self.select_button = QtSelectButton(layer)
         self.addition_button = QtAdditionButton(layer)
         self.panzoom_button = QtPanZoomButton(layer)
-        self.delete_button = QtDeletePointsButton(layer)
+        self.delete_button = QtDeleteTextButton(layer)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -199,7 +199,7 @@ class QtSelectButton(QRadioButton):
         super().__init__()
 
         self.layer = layer
-        self.setToolTip('Select points')
+        self.setToolTip('Select text')
         self.setChecked(False)
         self.toggled.connect(lambda state=self: self._set_mode(state))
         self.setFixedWidth(28)
@@ -215,7 +215,7 @@ class QtAdditionButton(QRadioButton):
         super().__init__()
 
         self.layer = layer
-        self.setToolTip('Add points')
+        self.setToolTip('Add text')
         self.setChecked(False)
         self.toggled.connect(lambda state=self: self._set_mode(state))
         self.setFixedWidth(28)
@@ -226,12 +226,12 @@ class QtAdditionButton(QRadioButton):
                 self.layer.mode = Mode.ADD
 
 
-class QtDeletePointsButton(QPushButton):
+class QtDeleteTextButton(QPushButton):
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
         self.setFixedWidth(28)
         self.setFixedHeight(28)
-        self.setToolTip('Delete selected points')
+        self.setToolTip('Delete selected text')
         self.clicked.connect(self.layer.remove_selected)
