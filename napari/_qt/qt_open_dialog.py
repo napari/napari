@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QScrollArea,
     QSizePolicy,
+    QLineEdit,
 )
 from pathlib import Path
 import os.path
@@ -31,6 +32,34 @@ class QtOpenDialog(QWidget):
 
         self.layout = QVBoxLayout()
 
+        # Name of file to be loaded
+        self.fileName = QLineEdit()
+        # textbox.setText(layer.name)
+        # textbox.home(False)
+        # textbox.setToolTip('Layer name')
+        # textbox.setAcceptDrops(False)
+        # textbox.setEnabled(True)
+        # textbox.editingFinished.connect(self.changeText)
+        self.layout.addWidget(self.fileName)
+
+        self.selection = QWidget()
+        self.selectionLayout = QHBoxLayout()
+
+        # select folder
+        self.selectFolder = QPushButton('select folder')
+        self.selectFolder.setObjectName('dialog')
+        self.selectFolder.clicked.connect(self._click_select_folder)
+        self.selectionLayout.addWidget(self.selectFolder)
+
+        # select files
+        self.selectFiles = QPushButton('select file(s)')
+        self.selectFiles.setObjectName('dialog')
+        self.selectFiles.setProperty('highlight', True)
+        self.selectFiles.clicked.connect(self._click_select_files)
+        self.selectionLayout.addWidget(self.selectFiles)
+
+        self.layout.addWidget(self.selection)
+
         self.tabs = QTabWidget()
         self.tabs.addTab(QtImageDialog(napari.layers.Image), 'Image')
         self.tabs.addTab(QtLayerOpen(napari.layers.Labels), 'Labels')
@@ -40,35 +69,21 @@ class QtOpenDialog(QWidget):
         self.tabs.addTab(QtLayerOpen(napari.layers.Vectors), 'Vectors')
         self.layout.addWidget(self.tabs)
 
-        # file paths
-        self.pathTextBox = QPlainTextEdit(self)
-        self.pathTextBox.setPlainText("")
-        self.pathTextBox.setToolTip('File paths')
-        self.pathTextBox.setAcceptDrops(False)
-        self.pathTextBox.setEnabled(True)
-        self._default_cursor_width = self.pathTextBox.cursorWidth()
-        self.pathTextBox.clearFocus()
-        self.pathTextBox.textChanged.connect(self._on_text_change)
-        self.pathTextBox.focusOutEvent = self._focus_text_out
-        self.pathTextBox.focusInEvent = self._focus_text_in
-        self.layout.addWidget(self.pathTextBox)
+        # # file paths
+        # self.pathTextBox = QPlainTextEdit(self)
+        # self.pathTextBox.setPlainText("")
+        # self.pathTextBox.setToolTip('File paths')
+        # self.pathTextBox.setAcceptDrops(False)
+        # self.pathTextBox.setEnabled(True)
+        # self._default_cursor_width = self.pathTextBox.cursorWidth()
+        # self.pathTextBox.clearFocus()
+        # self.pathTextBox.textChanged.connect(self._on_text_change)
+        # self.pathTextBox.focusOutEvent = self._focus_text_out
+        # self.pathTextBox.focusInEvent = self._focus_text_in
+        # self.layout.addWidget(self.pathTextBox)
 
         self.fileOpen = QWidget()
         self.fileOpenLayout = QHBoxLayout()
-
-        # select folder
-        self.selectFolder = QPushButton('select folder')
-        self.selectFolder.setObjectName('dialog')
-        self.selectFolder.clicked.connect(self._click_select_folder)
-        self.fileOpenLayout.addWidget(self.selectFolder)
-
-        # select files
-        self.selectFiles = QPushButton('select file(s)')
-        self.selectFiles.setObjectName('dialog')
-        self.selectFiles.setProperty('highlight', True)
-        self.selectFiles.clicked.connect(self._click_select_files)
-        self.fileOpenLayout.addWidget(self.selectFiles)
-
         self.fileOpenLayout.addStretch(1)
 
         # cancel
@@ -86,8 +101,8 @@ class QtOpenDialog(QWidget):
 
         self.fileOpenLayout.addWidget(self.open)
         self.fileOpen.setLayout(self.fileOpenLayout)
-
         self.layout.addWidget(self.fileOpen)
+
         self.setLayout(self.layout)
         self.setFocus()
 
@@ -193,6 +208,25 @@ class QtOpenDialog(QWidget):
             arguments = self.tabs.currentWidget().get_arguments()
             self.viewer.add_image(path=filenames, **arguments)
         self.parent().close()
+
+
+# class QtFileNamesList(QScrollArea):
+#     def __init__(self):
+#         super().__init__()
+#
+#         self.setWidgetResizable(True)
+#         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+#         scrollWidget = QWidget()
+#         self.setWidget(scrollWidget)
+#         self.vbox_layout = QVBoxLayout(scrollWidget)
+#         self.vbox_layout.addWidget(QLineEdit())
+#         self.vbox_layout.addStretch(1)
+#         self.vbox_layout.setContentsMargins(0, 0, 0, 0)
+#         self.vbox_layout.setSpacing(2)
+#
+# class QtFileName(QWidget):
+#     def __init__(self):
+#         super().__init__()
 
 
 class QtLayerOpen(QWidget):
