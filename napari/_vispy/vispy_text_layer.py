@@ -108,6 +108,7 @@ class VispyTextLayer(VispyBaseLayer):
             highlight_text_node,
             text=text,
             pos=np.flip(data, axis=1),
+            rotation=self.layer.rotation,
             color=self._highlight_color,
             font_size=self.layer.font_size,
         )

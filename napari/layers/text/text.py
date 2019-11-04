@@ -248,6 +248,7 @@ class Text(Layer):
     def rotation(self, angle):
         self._rotation = angle
         self.events.rotation()
+        self.events.highlight()
 
     @property
     def font_size(self):
