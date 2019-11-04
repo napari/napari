@@ -10,4 +10,6 @@ repos:
     rev: 3.7.9
     hooks:
     - id: flake8
+      pass_filenames: true
+      # this seems to need to be here in addition to setup.cfg
       exclude: vendored|__init__.py|examples
