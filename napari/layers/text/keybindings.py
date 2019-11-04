@@ -21,13 +21,13 @@ def hold_to_pan_zoom(layer):
 
 @Text.bind_key('P')
 def activate_add_mode(layer):
-    """Activate add points tool."""
+    """Activate add text tool."""
     layer.mode = Mode.ADD
 
 
 @Text.bind_key('S')
 def activate_select_mode(layer):
-    """Activate select points tool."""
+    """Activate select text tool."""
     layer.mode = Mode.SELECT
 
 
@@ -39,21 +39,21 @@ def activate_pan_zoom_mode(layer):
 
 @Text.bind_key('Control-C')
 def copy(layer):
-    """Copy any selected points."""
+    """Copy any selected text."""
     if layer._mode == Mode.SELECT:
         layer._copy_data()
 
 
 @Text.bind_key('Control-V')
 def paste(layer):
-    """Paste any copied points."""
+    """Paste any copied text."""
     if layer._mode == Mode.SELECT:
         layer._paste_data()
 
 
 @Text.bind_key('A')
 def select_all(layer):
-    """Select all points in the current view slice."""
+    """Select all text in the current view slice."""
     if layer._mode == Mode.SELECT:
         layer.selected_data = layer._indices_view[: len(layer._data_view)]
         layer._set_highlight()
@@ -61,6 +61,6 @@ def select_all(layer):
 
 @Text.bind_key('Backspace')
 def delete_selected(layer):
-    """Delet all selected points."""
+    """Delet all selected text."""
     if layer._mode == Mode.SELECT:
         layer.remove_selected()
