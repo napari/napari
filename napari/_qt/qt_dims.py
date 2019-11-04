@@ -5,6 +5,7 @@ from qtpy.QtWidgets import QGridLayout, QScrollBar, QSizePolicy, QWidget
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
 from ..util.event import Event
+from typing import Tuple, Optional
 
 
 class QtDims(QWidget):
@@ -331,7 +332,13 @@ class QtDims(QWidget):
             index = (displayed.index(self.last_used) - 1) % len(displayed)
             self.last_used = displayed[index]
 
-    def play(self, axis: int = 0, fps: float = 10, range=None, pingpong=False):
+    def play(
+        self,
+        axis: int = 0,
+        fps: float = 10,
+        frame_range: Optional[Tuple[int, int]] = None,
+        playback_mode: str = 'loop',
+    ):
         """
         Animate (play) axis
 
@@ -344,22 +351,33 @@ class QtDims(QWidget):
             reverse.  fps == 0 will stop the animation. The view is not
             guaranteed to keep up with the requested fps, and may drop frames
             at higher fps.
-        range: tuple | list
+        frame_range: tuple | list
             If specified, will constrain animation to loop [first, last] frames
-        pingong: bool
-            If True, movie will loop back and forth. If False (default) movie
-            will return to the first frame after reaching the last frame.
+        playback_mode: str
+            Mode for animation playback.  Must be one of the following options:
+                'loop': Movie will return to the first frame after reaching
+                    the last frame, looping until stopped.
+                'once': Animation will stop once movie reaches the max frame
+                    (if fps > 0) or the first frame (if fps < 0).
+                'loop_back_and_forth':  Movie will loop back and forth until
+                    stopped
+
         Raises
         ----------
         IndexError
             If ``axis`` requested is out of the range of the dims
         IndexError
-            If ``range`` is provided and out of the range of the dims
+            If ``frame_range`` is provided and out of the range of the dims
         ValueError
-            If ``range`` is provided and range[0] >= range[1]
+            If ``frame_range`` is provided and range[0] >= range[1]
         """
         # TODO: No access in the GUI yet. Just keybinding.
-
+        _mode = playback_mode.lower()
+        _modes = {'loop', 'once', 'loop_back_and_forth'}
+        if _mode not in _modes:
+            raise ValueError(
+                f'"{_mode}" not a recognized playback_mode: ({_modes})'
+            )
         # allow only one axis to be playing at a time
         # if nothing is playing self.stop() will not do anything
         self.stop()
@@ -374,7 +392,7 @@ class QtDims(QWidget):
             return
 
         self._animation_thread = AnimationThread(
-            self.dims, axis, fps, range, pingpong
+            self.dims, axis, fps, frame_range, _mode
         )
         # when the thread timer increments, update the current frame
         self._animation_thread.incremented.connect(self._set_frame)
@@ -422,7 +440,7 @@ class AnimationThread(QThread):
     incremented = Signal(int, int)  # signal for each time a frame is requested
 
     def __init__(
-        self, dims, axis, fps=10, animation_range=None, pingpong=False
+        self, dims, axis, fps=10, frame_range=None, playback_mode=False
     ):
         super().__init__()
         # could put some limits on fps here... though the handler in the QtDims
@@ -432,18 +450,18 @@ class AnimationThread(QThread):
         self.axis = axis
 
         self.dimsrange = self.dims.range[axis]
-        if animation_range is not None:
-            if animation_range[0] >= animation_range[1]:
-                raise ValueError("animation range min must be <= range max")
-            if animation_range[0] < self.dimsrange[0]:
-                raise IndexError("animation range min out of range")
-            if animation_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
-                raise IndexError("animation range max out of range")
-        self.animation_range = animation_range
-        self.pingpong = pingpong
+        if frame_range is not None:
+            if frame_range[0] >= frame_range[1]:
+                raise ValueError("frame_range[0] must be <= frame_range[1]")
+            if frame_range[0] < self.dimsrange[0]:
+                raise IndexError("frame_range[0] out of range")
+            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
+                raise IndexError("frame_range[1] out of range")
+        self.frame_range = frame_range
+        self.playback_mode = playback_mode
 
-        if self.animation_range is not None:
-            self.min_point, self.max_point = self.animation_range
+        if self.frame_range is not None:
+            self.min_point, self.max_point = self.frame_range
         else:
             self.min_point = 0
             self.max_point = int(
@@ -476,23 +494,27 @@ class AnimationThread(QThread):
         """Advance the current frame in the animation.
 
         Takes dims scale into account and restricts the animation to the
-        requested animation_range, if entered.
+        requested frame_range, if entered.
         """
         self.current += self.step * self.dimsrange[2]
         if self.current < self.min_point:
-            if self.pingpong:
+            if self.playback_mode == 'loop_back_and_forth':
                 self.step *= -1
                 self.current = self.min_point + self.step * self.dimsrange[2]
-            else:
+            elif self.playback_mode == 'loop':
                 self.current = self.max_point + self.current - self.min_point
+            else:  # self.playback_mode == 'once'
+                self.quit()
         elif self.current >= self.max_point:
-            if self.pingpong:
+            if self.playback_mode == 'loop_back_and_forth':
                 self.step *= -1
                 self.current = (
                     self.max_point + 2 * self.step * self.dimsrange[2]
                 )
-            else:
+            elif self.playback_mode == 'loop':
                 self.current = self.min_point + self.current - self.max_point
+            else:  # self.playback_mode == 'once'
+                self.quit()
         with self.dims.events.axis.blocker(self._on_axis_changed):
             self.incremented.emit(self.axis, self.current)
 
