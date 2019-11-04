@@ -436,8 +436,8 @@ class Text(Layer):
         in_slice_data = self._text_coords_view
         in_slice_sizes = self._sizes_view
 
-        # Display points if there are any in this slice
-        if len(self._text_coords_view) > 0:
+        # Display text indices if there are any in this slice and 2D display
+        if len(self._text_coords_view) > 0 and self.dims.ndisplay != 3:
             # Get the point sizes
             distances = abs(
                 self._text_coords_view
@@ -459,7 +459,6 @@ class Text(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-
         in_slice_coords, in_slice_text, indices = self._slice_data(
             self.dims.indices
         )

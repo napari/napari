@@ -48,7 +48,7 @@ class VispyTextLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 2:
             self.node = Compound([Line(), TextNode(), TextNode()])
         else:
-            self.node = Markers()
+            self.node = Compound([Line(), TextNode(), TextNode()])
 
         self.node.parent = parent
         self.layer._update_dims()
@@ -61,25 +61,36 @@ class VispyTextLayer(VispyBaseLayer):
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
         if len(self.layer._text_coords_view) == 0:
-            data = np.zeros((1, self.layer.dims.ndisplay))
+            coords = np.zeros((1, self.layer.dims.ndisplay))
             text = []
 
         else:
-            data = self.layer._text_coords_view
+            coords = self.layer._text_coords_view
             text = self.layer._text_view
 
+        text_node = self.node._subvisuals[self._TEXT_NODE_INDEX]
         # Update the text
         if self.layer.dims.ndisplay == 2:
-            positions = np.flip(data, axis=1)
-            text_node = self.node._subvisuals[self._TEXT_NODE_INDEX]
-            self._update_text_node(
-                text_node,
-                text=text,
-                pos=positions,
-                rotation=self.layer.rotation,
-                color=self.layer.text_color,
-                font_size=self.layer.font_size,
-            )
+            positions = np.flip(coords, axis=1)
+        elif self.layer.dims.ndisplay == 3:
+            raw_positions = np.flip(coords, axis=1)
+            n_positions, position_dims = raw_positions.shape
+
+            if position_dims < 3:
+                padded_positions = np.zeros((n_positions, 3))
+                padded_positions[:, 0:2] = raw_positions
+                positions = padded_positions
+            else:
+                positions = raw_positions
+
+        self._update_text_node(
+            text_node,
+            text=text,
+            pos=positions,
+            rotation=self.layer.rotation,
+            color=self.layer.text_color,
+            font_size=self.layer.font_size,
+        )
 
     def _on_highlight_change(self):
         if self.layer.dims.ndisplay == 3:
