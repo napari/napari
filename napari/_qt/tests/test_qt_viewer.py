@@ -356,7 +356,7 @@ def test_play_forward(qtbot, view):
     """Test that play changes the slice on axis 0."""
     interval, nframes = 50, 5
     endframe = view.start_and_wait(interval, nframes)
-    assert endframe == nframes + 1
+    assert nframes <= endframe <= nframes + 2
     # also make sure that the stop button worked and killed the animation
     # thread
     qtbot.wait(100)
@@ -374,7 +374,7 @@ def test_play_backward(qtbot, view):
     interval, nframes = 50, 5
     nz = view.dims.dims.range[0][1]
     endframe = view.start_and_wait(-interval, nframes)
-    assert endframe == nz - nframes - 1
+    assert nz - nframes - 2 <= endframe <= nz - nframes + 1
 
 
 def test_play_with_range(qtbot, view):
@@ -407,10 +407,10 @@ def test_play_with_loops(qtbot, view, mode):
 
     if mode == 'once':
         # should have stopped at last frame
-        assert endframe == nz
+        assert nz - 1 <= endframe <= nz
     elif mode == 'loop':
         # should have wrapped around to first frame
-        assert extra <= endframe <= extra + 2
+        assert extra - 1 <= endframe <= extra + 2
     else:
         # should have looped back and forth
         assert nz - extra - 1 >= endframe >= nz - extra - 3
