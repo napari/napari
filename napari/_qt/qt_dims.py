@@ -373,28 +373,28 @@ class QtDims(QWidget):
         if not self._displayed_sliders[axis]:
             return
 
-        self.animation_thread = AnimationThread(
+        self._animation_thread = AnimationThread(
             self.dims, axis, fps, range, pingpong
         )
         # when the thread timer increments, update the current frame
-        self.animation_thread.incremented.connect(self._set_frame)
-        self.animation_thread.start()
+        self._animation_thread.incremented.connect(self._set_frame)
+        self._animation_thread.start()
 
     def stop(self):
         """Stop axis animation"""
         if self.is_playing:
-            self.animation_thread.quit()
-            self.animation_thread.wait()
-            del self.animation_thread
+            self._animation_thread.quit()
+            self._animation_thread.wait()
+            del self._animation_thread
             self.enable_play()
 
     @property
     def is_playing(self):
         """Returns True if any axis is currently animated"""
         return (
-            hasattr(self, 'animation_thread')
+            hasattr(self, '_animation_thread')
             # this is repetive, since we delete the thread each time, but safer
-            and self.animation_thread.isRunning()
+            and self._animation_thread.isRunning()
         )
 
     def _set_frame(self, axis, frame):

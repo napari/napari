@@ -357,7 +357,7 @@ def test_play_axis(qtbot, view):
     # thread
     qtbot.wait(100)
     assert view.dims.counter == c
-    assert not hasattr(view.dims, 'animation_thread')
+    assert not hasattr(view.dims, '_animation_thread')
 
     # make sure it plays backwards as well
     view.dims.counter = 0
