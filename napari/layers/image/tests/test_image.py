@@ -16,9 +16,9 @@ def test_random_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
-    assert layer.rgb == False
-    assert layer.is_pyramid == False
-    assert layer._data_pyramid == None
+    assert layer.rgb is False
+    assert layer.is_pyramid is False
+    assert layer._data_pyramid is None
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -33,7 +33,7 @@ def test_negative_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
     # Data between -10 and 10
@@ -43,7 +43,7 @@ def test_negative_image():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -55,7 +55,7 @@ def test_all_zeros_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -68,7 +68,7 @@ def test_integer_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -80,7 +80,7 @@ def test_bool_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -93,7 +93,7 @@ def test_3D_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -106,7 +106,7 @@ def test_3D_image_shape_1():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -119,7 +119,7 @@ def test_4D_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -132,7 +132,7 @@ def test_5D_image_shape_1():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -145,7 +145,7 @@ def test_rgb_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.rgb == True
+    assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -158,7 +158,7 @@ def test_rgba_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.rgb == True
+    assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -172,7 +172,7 @@ def test_negative_rgba_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.rgb == True
+    assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
     # Data between -10 and 10
@@ -181,7 +181,7 @@ def test_negative_rgba_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
     assert layer.shape == shape[:-1]
-    assert layer.rgb == True
+    assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -194,7 +194,7 @@ def test_non_rgb_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -222,7 +222,7 @@ def test_changing_image():
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
     assert layer.dims.range == [(0, m, 1) for m in shape_b]
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -241,7 +241,7 @@ def test_changing_image_dims():
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
     assert layer.dims.range == [(0, m, 1) for m in shape_b]
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -264,16 +264,16 @@ def test_visiblity():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.visible == True
+    assert layer.visible is True
 
     layer.visible = False
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer = Image(data, visible=False)
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer.visible = True
-    assert layer.visible == True
+    assert layer.visible is True
 
 
 def test_opacity():
@@ -392,7 +392,8 @@ def test_contrast_limits_range():
     assert layer._contrast_limits_range[1] <= 1
     assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
 
-    # If all data is the same value the contrast_limits_range and contrast_limits defaults to [0, 1]
+    # If all data is the same value the contrast_limits_range and
+    # contrast_limits defaults to [0, 1]
     data = np.zeros((10, 15))
     layer = Image(data)
     assert layer._contrast_limits_range == [0, 1]

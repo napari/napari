@@ -15,7 +15,7 @@ def test_random_labels():
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer._data_view.shape == shape[-2:]
-    assert layer.editable == True
+    assert layer.editable is True
 
 
 def test_all_zeros_labels():
@@ -39,11 +39,11 @@ def test_3D_labels():
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer._data_view.shape == shape[-2:]
-    assert layer.editable == True
+    assert layer.editable is True
 
     layer.dims.ndisplay = 3
     assert layer.dims.ndisplay == 3
-    assert layer.editable == False
+    assert layer.editable is False
     assert layer.mode == 'pan_zoom'
 
 
@@ -86,29 +86,29 @@ def test_changing_modes():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
     layer.mode = 'fill'
     assert layer.mode == 'fill'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'picker'
     assert layer.mode == 'picker'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
     layer.mode = 'paint'
     assert layer.mode == 'paint'
     layer.editable = False
     assert layer.mode == 'pan_zoom'
-    assert layer.editable == False
+    assert layer.editable is False
 
 
 def test_name():
@@ -130,16 +130,16 @@ def test_visiblity():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.visible == True
+    assert layer.visible is True
 
     layer.visible = False
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer = Labels(data, visible=False)
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer.visible = True
-    assert layer.visible == True
+    assert layer.visible is True
 
 
 def test_opacity():
@@ -246,10 +246,10 @@ def test_contiguous():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.contiguous == True
+    assert layer.contiguous is True
 
     layer.contiguous = False
-    assert layer.contiguous == False
+    assert layer.contiguous is False
 
 
 def test_n_dimensional():
@@ -257,10 +257,10 @@ def test_n_dimensional():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.n_dimensional == False
+    assert layer.n_dimensional is False
 
     layer.n_dimensional = True
-    assert layer.n_dimensional == True
+    assert layer.n_dimensional is True
 
 
 def test_selecting_label():
@@ -269,7 +269,7 @@ def test_selecting_label():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.selected_label == 0
-    assert layer._selected_color == None
+    assert layer._selected_color is None
 
     layer.selected_label = 1
     assert layer.selected_label == 1
@@ -282,7 +282,7 @@ def test_label_color():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     col = layer.get_color(0)
-    assert col == None
+    assert col is None
 
     col = layer.get_color(1)
     assert len(col) == 4

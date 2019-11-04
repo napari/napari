@@ -62,13 +62,13 @@ def test_divider(qtbot):
     assert type(divider) == QtDivider
 
     # Check divider property defaults to False
-    assert divider.property('selected') == False
+    assert divider.property('selected') is False
 
     # Set divider property
     divider.setSelected(True)
-    assert divider.property('selected') == True
+    assert divider.property('selected') is True
     divider.setSelected(False)
-    assert divider.property('selected') == False
+    assert divider.property('selected') is False
 
 
 def test_creating_empty_view(qtbot):
