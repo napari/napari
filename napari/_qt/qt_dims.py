@@ -387,7 +387,7 @@ class QtDims(QWidget):
             return
 
         self._animation_thread = AnimationThread(
-            self.dims, axis, fps, frame_range, playback_mode
+            self.dims, axis, fps, frame_range, playback_mode, parent=self
         )
         # when the thread timer increments, update the current frame
         self._animation_thread.incremented.connect(self._set_frame)
@@ -439,9 +439,15 @@ class AnimationThread(QThread):
     incremented = Signal(int, int)  # signal for each time a frame is requested
 
     def __init__(
-        self, dims, axis, fps=10, frame_range=None, playback_mode='loop'
+        self,
+        dims,
+        axis,
+        fps=10,
+        frame_range=None,
+        playback_mode='loop',
+        parent=None,
     ):
-        super().__init__()
+        super().__init__(parent)
         # could put some limits on fps here... though the handler in the QtDims
         # object above is capable of ignoring overly spammy requests.
 
