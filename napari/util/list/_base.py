@@ -6,7 +6,7 @@ class List(list):
     allowing for an easier time making modifications with reusable components.
 
     It has the following new methods:
-    `__locitem__(key)` : transform a key into the index of its corresponding item
+    `__locitem__(key)` : transform a key into the index of its corresponding item  # noqa
     `__prsitem__(key)` : parse a key such as `0:1` into indices
     `__newlike__(iterable)` : create a new instance given an iterable
 
@@ -115,7 +115,8 @@ class List(list):
         return key
 
     def __newlike__(self, iterable):
-        """Create a new instance from an iterable with the same properties as this one.
+        """Create a new instance from an iterable with the same properties
+        as this one.
 
         Parameters
         ----------

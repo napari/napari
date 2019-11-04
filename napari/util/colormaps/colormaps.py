@@ -121,7 +121,7 @@ def _low_discrepancy(dim, n, seed=0.5):
 
     References
     ----------
-    ..[1]: http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+    ..[1]: http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/  # noqa: E501
     """
     phi1 = 1.6180339887498948482
     phi2 = 1.32471795724474602596
