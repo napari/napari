@@ -328,6 +328,7 @@ def view(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
+    view.dims.counter = 0
 
     def increment(e):
         view.dims.counter += 1
@@ -335,8 +336,6 @@ def view(qtbot):
         view.dims._play_ready = True
 
     view.dims.dims.events.axis.connect(increment)
-    view.dims.counter = 0
-
     return view
 
 
