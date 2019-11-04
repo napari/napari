@@ -2,13 +2,14 @@ from .util import RemoteTopic
 
 
 class DaskRemoteViewer:
-    def __init__(self, viewer, address):
+    def __init__(self, viewer, address, qapp=None):
         super().__init__()
 
+        self.qapp = qapp
         self.viewer = viewer
         self.address = address
 
-        self.title = RemoteTopic('viewer_title', self.address)
+        self.title = RemoteTopic('viewer_title', self.address, qapp=self.qapp)
         self.viewer.events.title.connect(
             lambda e: self.title.put(self.viewer.title)
         )

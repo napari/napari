@@ -56,6 +56,8 @@ class Viewer(ViewerModel):
             self.window = Window(qt_viewer)
             self.screenshot = self.window.qt_viewer.screenshot
             self.update_console = self.window.qt_viewer.console.push
+        else:
+            app = None
 
         if self.address is not None:
-            self.remote = DaskRemoteViewer(self, self.address)
+            self.remote = DaskRemoteViewer(self, self.address, qapp=app)

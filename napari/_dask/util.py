@@ -5,9 +5,10 @@ from ..util.event import EmitterGroup, Event
 
 
 class RemoteTopic:
-    def __init__(self, topic, address):
+    def __init__(self, topic, address, qapp=None):
         super().__init__()
 
+        self.qapp = qapp
         self.address = address
         self.client = Client(self.address)
         self.topic = topic
@@ -34,6 +35,8 @@ class RemoteTopic:
                 print('gotten', value)
                 with self.block_put():
                     self.events.value(value=value)
+                    if self.qapp is not None:
+                        self.qapp.processEvents()
 
     def connect(self):
         # Connect to event loop
