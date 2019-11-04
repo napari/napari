@@ -408,7 +408,7 @@ class QtDims(QWidget):
 
     @property
     def is_playing(self):
-        """Returns True if any axis is currently animated"""
+        """Return True if any axis is currently animated."""
         return (
             hasattr(self, '_animation_thread')
             # this is repetive, since we delete the thread each time, but safer
@@ -416,7 +416,8 @@ class QtDims(QWidget):
         )
 
     def _set_frame(self, axis, frame):
-        """Safely tries to set `axis` to the requested `point`
+        """Safely tries to set `axis` to the requested `point`.
+
         This function is debounced: if the previous frame has not yet drawn to
         the canvas, it will simply do nothing.  If the timer plays faster than
         the canvas can draw, this will drop the intermediate frames, keeping
@@ -435,7 +436,9 @@ class QtDims(QWidget):
 
 class AnimationThread(QThread):
     """A thread to keep the animation timer independent of the main event loop.
-    This prevents mouseovers and other events from causing the animation lag"""
+
+    This prevents mouseovers and other events from causing animation lag.
+    """
 
     incremented = Signal(int, int)  # signal for each time a frame is requested
 
