@@ -12,7 +12,10 @@ from .qt_about_keybindings import QtAboutKeybindings
 app.use_app(API_NAME)
 del app
 
-from qtpy.QtWidgets import (  # noqa
+# these "# noqa" comments are here to skip flake8 linting (E402),
+# these module-level imports have to come after `app.use_app(API)`
+# see discussion on #638
+from qtpy.QtWidgets import (  # noqa: E402
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -20,9 +23,8 @@ from qtpy.QtWidgets import (  # noqa
     QAction,
     QShortcut,
 )
-from qtpy.QtGui import QKeySequence  # noqa
-
-from ..util.theme import template  # noqa
+from qtpy.QtGui import QKeySequence  # noqa: E402
+from ..util.theme import template  # noqa: E402
 
 
 class Window:
