@@ -328,10 +328,12 @@ def view(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
-    view.dims.counter = 0
+    view.dims._frame = 0
+    view.dims._calls = 0
 
     def increment(e):
-        view.dims.counter += 1
+        view.dims._calls += 1
+        view.dims._frame = e.value
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True
 
@@ -339,7 +341,7 @@ def view(qtbot):
     return view
 
 
-def test_play_axis(qtbot, view):
+def test_play_axis_forward(qtbot, view):
     """Test that play_axis changes the slice on axis 0."""
 
     axis, interval, nframes = 0, 50, 5
@@ -347,28 +349,36 @@ def test_play_axis(qtbot, view):
     # the 0.5 allows for a little clock jitter...
     qtbot.wait(interval * (nframes + 0.5))
     view.dims.stop()
+    qtbot.wait(50)
     # really don't want this to fail due to timing, so we're only making sure
     # it advanced about the right amount... precise timing will depend on the
     # machine
-    c = int(view.dims.counter)
+    c = int(view.dims._frame)
     assert c >= nframes - 3
     # also make sure that the stop button worked and killed the animation
     # thread
     qtbot.wait(100)
-    assert view.dims.counter == c
+    assert view.dims._frame == c
     assert not hasattr(view.dims, '_animation_thread')
-
-    # make sure it plays backwards as well
-    view.dims.counter = 0
-    view.dims.play(axis, -1000 / interval)
-    qtbot.wait(interval * (nframes + 0.5))
-    view.dims.stop()
-    assert view.dims.counter >= nframes - 3
 
     with pytest.raises(IndexError):
         view.dims.play(4, 20)
         qtbot.wait(20)
         view.dims.stop()
+
+
+def test_play_axis_backward(qtbot, view):
+    """Test that play_axis changes the slice on axis 0."""
+
+    axis, interval, nframes = 0, 50, 5
+    nz = view.dims.dims.range[0][1]
+
+    # make sure it plays backwards as well
+    view.dims._frame = 0
+    view.dims.play(axis, -1000 / interval)
+    qtbot.wait(interval * (nframes + 0.5))
+    view.dims.stop()
+    assert view.dims._frame <= nz - nframes
 
 
 def test_play_axis_with_range(qtbot, view):
@@ -379,20 +389,17 @@ def test_play_axis_with_range(qtbot, view):
     # the 0.5 allows for a little clock jitter...
     qtbot.wait(interval * (nframes + 0.5))
     view.dims.stop()
-    assert view.dims.counter >= nframes - 3
+    assert view.dims._frame >= nframes - 3
 
     with pytest.raises(ValueError):
+        # frame_range[1] not > frame_range[0]
         view.dims.play(axis, 20, frame_range=[2, 2])
         qtbot.wait(20)
         view.dims.stop()
 
     with pytest.raises(IndexError):
+        # data doesn't have 20 frames
         view.dims.play(axis, 20, frame_range=[2, 20])
-        qtbot.wait(20)
-        view.dims.stop()
-
-    with pytest.raises(IndexError):
-        view.dims.play(axis, 20, frame_range=[0, 20])
         qtbot.wait(20)
         view.dims.stop()
 
@@ -401,15 +408,22 @@ def test_play_axis_with_range(qtbot, view):
 def test_play_axis_with_loops(qtbot, view, mode):
     """Test that play_axis changes the slice on axis 0."""
 
-    axis, interval, nframes = 0, 50, 15
+    axis, interval = 0, 50
+    nz = view.dims.dims.range[0][1]
+    nframes = nz + 2
     view.dims.play(axis, 1000 / interval, playback_mode=mode)
     # the 0.5 allows for a little clock jitter...
     qtbot.wait(interval * (nframes + 0.5))
     view.dims.stop()
     if mode == 'once':
-        assert view.dims.counter <= view.dims.dims.range[0][1]
+        # should have stopped at last frame
+        assert view.dims._frame == nz
+    elif mode == 'loop':
+        # should have wrapped around to first frame
+        assert 2 <= view.dims._frame <= 4
     else:
-        assert view.dims.counter >= nframes - 3
+        # should have looped back and forth
+        assert 6 >= view.dims._frame >= 4
 
 
 def test_play_axis_with_loops_fails(qtbot, view):
