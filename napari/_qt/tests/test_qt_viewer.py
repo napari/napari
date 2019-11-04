@@ -342,7 +342,9 @@ def view(qtbot):
             axis, 1000 / interval, frame_range=frame_range, playback_mode=mode
         )
         # wait for the thread to start before timing...
-        qtbot.waitSignal(view.dims._animation_thread.started, timeout=10000)
+        qtbot.waitSignal(
+            view.dims._animation_thread.timer.timeout, timeout=10000
+        )
         qtbot.wait(abs(interval) * (nframes + 0.5))
         view.dims.stop()
         return view.dims._frame
@@ -354,7 +356,7 @@ def view(qtbot):
 
 def test_play_forward(qtbot, view):
     """Test that play changes the slice on axis 0."""
-    interval, nframes = 50, 5
+    interval, nframes = 75, 5
     endframe = view.start_and_wait(interval, nframes)
     assert nframes <= endframe <= nframes + 2
     # also make sure that the stop button worked and killed the animation
@@ -371,18 +373,19 @@ def test_play_forward(qtbot, view):
 
 def test_play_backward(qtbot, view):
     """Test that play works with a negative fps."""
-    interval, nframes = 50, 5
+    interval, nframes = 75, 5
     nz = view.dims.dims.range[0][1]
     endframe = view.start_and_wait(-interval, nframes)
-    assert nz - nframes - 2 <= endframe <= nz - nframes + 1
+    # assert nz - nframes - 2 <= endframe <= nz - nframes + 1
+    assert nz - nframes - 2 <= endframe <= nz - nframes
 
 
 def test_play_with_range(qtbot, view):
     """Test that play works with frame_range."""
-    interval, nframes = 50, 5
+    interval, nframes = 75, 5
     _range = [2, 9]
     endframe = view.start_and_wait(interval, nframes, frame_range=_range)
-    assert endframe >= _range[0] + nframes
+    assert _range[0] + nframes <= endframe <= _range[0] + nframes + 2
 
     with pytest.raises(ValueError):
         # frame_range[1] not > frame_range[0]
@@ -400,7 +403,7 @@ def test_play_with_range(qtbot, view):
 @pytest.mark.parametrize("mode", ['loop', 'loop_back_and_forth', 'once'])
 def test_play_with_loops(qtbot, view, mode):
     """Test that the various play playback_modes work."""
-    interval = 50
+    interval = 75
     nz = view.dims.dims.range[0][1]
     extra = 2
     endframe = view.start_and_wait(interval, nz + extra, mode=mode)
@@ -410,10 +413,10 @@ def test_play_with_loops(qtbot, view, mode):
         assert nz - 1 <= endframe <= nz
     elif mode == 'loop':
         # should have wrapped around to first frame
-        assert extra - 1 <= endframe <= extra + 2
+        assert extra <= endframe <= extra + 2
     else:
         # should have looped back and forth
-        assert nz - extra - 1 >= endframe >= nz - extra - 3
+        assert nz - extra - 4 <= endframe <= nz - extra - 2
 
 
 def test_play_with_loops_fails(qtbot, view):
