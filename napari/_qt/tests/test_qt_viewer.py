@@ -346,8 +346,9 @@ def view(qtbot):
             view.dims._animation_thread.timer.timeout, timeout=10000
         )
         qtbot.wait(abs(interval) * (nframes + 0.5))
+        _frame = view.dims._frame
         view.dims.stop()
-        return view.dims._frame
+        return _frame
 
     view.dims.dims.events.axis.connect(increment)
     view.start_and_wait = start_and_wait
