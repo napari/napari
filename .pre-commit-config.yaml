@@ -7,8 +7,7 @@ repos:
       pass_filenames: false
       args: [.]
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: '3.7.9'
+    rev: 3.7.9
     hooks:
     - id: flake8
-      args: ['--config=setup.cfg']
-      exclude: vendored,__init__.py,*examples*
+      exclude: vendored|__init__.py|examples
