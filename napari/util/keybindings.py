@@ -3,11 +3,10 @@ e.g. ``a``, ``Control-c``, or ``Control-Alt-Delete``.
 Valid modifiers are Control, Alt, Shift, and Meta.
 
 Letters will always be read as upper-case.
-Due to the native implementation of the key system, Shift pressed in certain
-key combinations may yield inconsistent or unexpected results.
-Therefore, it is not recommended to use Shift with non-letter keys.
-On OSX, Control is swapped with Meta such that pressing Command reads as
-Control.
+Due to the native implementation of the key system, Shift pressed in
+certain key combinations may yield inconsistent or unexpected results.
+Therefore, it is not recommended to use Shift with non-letter keys. On OSX,
+Control is swapped with Meta such that pressing Command reads as Control.
 
 Special keys include Shift, Control, Alt, Meta, Up, Down, Left, Right,
 PageUp, PageDown, Insert, Delete, Home, End, Escape, Backspace, F1,
