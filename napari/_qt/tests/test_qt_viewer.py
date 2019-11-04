@@ -375,23 +375,47 @@ def test_play_axis_with_range(qtbot, view):
     """Test that play_axis changes the slice on axis 0."""
 
     axis, interval, nframes = 0, 50, 5
-    view.dims.play(axis, 1000 / interval, range=[2, 8])
+    view.dims.play(axis, 1000 / interval, frame_range=[2, 8])
     # the 0.5 allows for a little clock jitter...
     qtbot.wait(interval * (nframes + 0.5))
     view.dims.stop()
     assert view.dims.counter >= nframes - 3
 
     with pytest.raises(ValueError):
-        view.dims.play(axis, 20, range=[2, 2])
+        view.dims.play(axis, 20, frame_range=[2, 2])
         qtbot.wait(20)
         view.dims.stop()
 
     with pytest.raises(IndexError):
-        view.dims.play(axis, 20, range=[2, 20])
+        view.dims.play(axis, 20, frame_range=[2, 20])
         qtbot.wait(20)
         view.dims.stop()
 
     with pytest.raises(IndexError):
-        view.dims.play(axis, 20, range=[0, 20])
+        view.dims.play(axis, 20, frame_range=[0, 20])
+        qtbot.wait(20)
+        view.dims.stop()
+
+
+@pytest.mark.parametrize("mode", ['loop', 'loop_back_and_forth', 'once'])
+def test_play_axis_with_loops(qtbot, view, mode):
+    """Test that play_axis changes the slice on axis 0."""
+
+    axis, interval, nframes = 0, 50, 15
+    view.dims.play(axis, 1000 / interval, playback_mode=mode)
+    # the 0.5 allows for a little clock jitter...
+    qtbot.wait(interval * (nframes + 0.5))
+    view.dims.stop()
+    if mode == 'once':
+        assert view.dims.counter <= view.dims.dims.range[0][1]
+    else:
+        assert view.dims.counter >= nframes - 3
+
+
+def test_play_axis_with_loops_fails(qtbot, view):
+    """Test that play_axis changes the slice on axis 0."""
+
+    with pytest.raises(ValueError):
+        view.dims.play(0, 20, playback_mode='enso')
         qtbot.wait(20)
         view.dims.stop()

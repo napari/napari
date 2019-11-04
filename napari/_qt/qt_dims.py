@@ -372,12 +372,7 @@ class QtDims(QWidget):
             If ``frame_range`` is provided and range[0] >= range[1]
         """
         # TODO: No access in the GUI yet. Just keybinding.
-        _mode = playback_mode.lower()
-        _modes = {'loop', 'once', 'loop_back_and_forth'}
-        if _mode not in _modes:
-            raise ValueError(
-                f'"{_mode}" not a recognized playback_mode: ({_modes})'
-            )
+
         # allow only one axis to be playing at a time
         # if nothing is playing self.stop() will not do anything
         self.stop()
@@ -392,7 +387,7 @@ class QtDims(QWidget):
             return
 
         self._animation_thread = AnimationThread(
-            self.dims, axis, fps, frame_range, _mode
+            self.dims, axis, fps, frame_range, playback_mode
         )
         # when the thread timer increments, update the current frame
         self._animation_thread.incremented.connect(self._set_frame)
@@ -437,17 +432,25 @@ class QtDims(QWidget):
 class AnimationThread(QThread):
     """A thread to keep the animation timer independent of the main event loop.
 
-    This prevents mouseovers and other events from causing animation lag.
+    This prevents mouseovers and other events from causing animation lag. See
+    QtDims.play() for public-facing docstring.
     """
 
     incremented = Signal(int, int)  # signal for each time a frame is requested
 
     def __init__(
-        self, dims, axis, fps=10, frame_range=None, playback_mode=False
+        self, dims, axis, fps=10, frame_range=None, playback_mode='loop'
     ):
         super().__init__()
         # could put some limits on fps here... though the handler in the QtDims
         # object above is capable of ignoring overly spammy requests.
+
+        _mode = playback_mode.lower()
+        _modes = {'loop', 'once', 'loop_back_and_forth'}
+        if _mode not in _modes:
+            raise ValueError(
+                f'"{_mode}" not a recognized playback_mode: ({_modes})'
+            )
 
         self.dims = dims
         self.axis = axis
@@ -461,7 +464,7 @@ class AnimationThread(QThread):
             if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
                 raise IndexError("frame_range[1] out of range")
         self.frame_range = frame_range
-        self.playback_mode = playback_mode
+        self.playback_mode = _mode
 
         if self.frame_range is not None:
             self.min_point, self.max_point = self.frame_range
