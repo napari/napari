@@ -34,15 +34,22 @@ def make_thread(
     def go():
         thread.start()
         qtbot.waitUntil(count_reached, timeout=6000)
-        thread.timer.stop()
+        # trying to prevent "carry over" advancing of the current frame in OSX
+        # tests by disconnecting the timer and immediately stopping the thread
+        thread.timer.timeout.disconnect(thread.advance)
+        thread.quit()
+        thread.wait()
         return thread.current
 
     thread.incremented.connect(bump)
     thread.go = go
 
     yield thread
-    thread.quit()
-    thread.wait()
+    try:
+        thread.quit()
+        thread.wait()
+    except Exception:
+        pass
 
 
 # Each tuple represents different arguments we will pass to make_thread
