@@ -52,4 +52,4 @@ class Viewer(ViewerModel):
         t.start()
         return (
             t
-        )  # returns the thread object as it has to live on calling script
+        )  # Returns the thread object as it has to live on calling script
