@@ -8,16 +8,12 @@ from napari.components import ViewerModel
 
 from ...components import Dims
 from ..qt_dims import AnimationThread
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s.%(msecs)03d %(name)-12s %(levelname)-8s %(message)s',
-    datefmt='%H:%M:%S',
-)
-logger = logging.getLogger(__name__)
 
 
+# A lot of this code looks messy and unnecessary (and some of it may be!)
+# most of the weird bits are an attempt to circumvent thread timing
+# non-determinism on Cirrus CI OSX tests.
+# see https://github.com/napari/napari/pull/607 for more info
 @contextmanager
 def make_thread(
     qtbot, nframes=8, fps=20, frame_range=None, playback_mode='loop'
@@ -33,10 +29,17 @@ def make_thread(
     thread._count = 0
     thread.nz = nz
 
+    def disconnect_timer():
+        try:
+            thread.timer.timeout.disconnect(thread.advance)
+        except Exception:
+            pass
+
     def bump(*args):
-        logger.info('bump called')
         if thread._count < nframes:
             thread._count += 1
+        else:
+            disconnect_timer()
 
     def count_reached():
         assert thread._count >= nframes
@@ -44,26 +47,12 @@ def make_thread(
     def go():
         thread.start()
         qtbot.waitUntil(count_reached, timeout=6000)
-        logger.info("COUNT REACHED")
         # trying to prevent "carry over" advancing of the current frame in OSX
         # tests by disconnecting the timer and immediately stopping the thread
-        thread.timer.timeout.disconnect(thread.advance)
-        logger.info("quitting thread...")
-        thread.quit()
-        thread.wait()
-        logger.info("done waiting for thread to finish")
+        disconnect_timer()
         return thread.current
 
     thread.incremented.connect(bump)
-
-    def log(msg):
-        logger.info(msg)
-
-    thread.incremented.connect(lambda: log('thread incremented'))
-    thread.timer.timeout.connect(lambda: log('timer timeout'))
-    thread.started.connect(lambda: log('thread started'))
-    thread.finished.connect(lambda: log('thread finished'))
-
     thread.go = go
 
     yield thread
@@ -93,17 +82,12 @@ CONDITIONS = [
 
 
 @pytest.mark.parametrize("nframes,fps,mode,rng,result", CONDITIONS)
-def test_animation_thread_variants(
-    qtbot, caplog, nframes, fps, mode, rng, result
-):
+def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     """This is mostly testing that AnimationThread.advance works as expected"""
-    caplog.set_level(logging.DEBUG)
     with make_thread(
         qtbot, fps=fps, nframes=nframes, frame_range=rng, playback_mode=mode
     ) as thread:
-        logger.info('calling GO')
         current = thread.go()
-        logger.info(f'GO finished with current = {current}')
     if rng:
         nrange = rng[1] - rng[0] + 1
         assert current == rng[0] + result(nframes, nrange)
@@ -120,7 +104,6 @@ def test_animation_thread_once(qtbot):
     with make_thread(qtbot, nframes=nframes, playback_mode='once') as thread:
         with qtbot.waitSignal(thread.finished, timeout=8000):
             thread.start()
-        logger.info(f'once finished with current = {thread.current}')
     assert thread.current == thread.nz
 
 
