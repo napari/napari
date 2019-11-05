@@ -55,6 +55,7 @@ task:
         # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
         VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
         PYTHON_ARCH: 64
+        PYTEST_ARGS: "-o qt_no_exception_capture=1"
       system_script:
         # install OpenSSL
         - choco install -y openssl.light
@@ -92,7 +93,8 @@ task:
     - python -c "import napari; print(napari.__version__)"
 
   test_script:
-    - pytest -v
+
+    - pytest -v $PYTEST_ARGS
 
 codecov_task:
   auto_cancellation: true
