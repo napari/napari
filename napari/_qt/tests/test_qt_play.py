@@ -34,6 +34,8 @@ def make_thread(
     def go():
         thread.start()
         qtbot.waitUntil(count_reached, timeout=6000)
+        thread.timer.stop()
+        return thread.current
 
     thread.incremented.connect(bump)
     thread.go = go
@@ -67,12 +69,12 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     with make_thread(
         qtbot, fps=fps, nframes=nframes, frame_range=rng, playback_mode=mode
     ) as thread:
-        thread.go()
+        current = thread.go()
     if rng:
         nrange = rng[1] - rng[0] + 1
-        assert thread.current == rng[0] + result(nframes, nrange)
+        assert current == rng[0] + result(nframes, nrange)
     else:
-        assert thread.current == result(nframes, thread.nz)
+        assert current == result(nframes, thread.nz)
 
 
 def test_animation_thread_once(qtbot):
