@@ -50,6 +50,4 @@ class Viewer(ViewerModel):
     def update(func, *args, **kwargs):
         t = QtUpdateUI(func, *args, **kwargs)
         t.start()
-        return (
-            t
-        )  # returns the thread object as it has to live on calling script
+        return t  # returns thread object as it has to live on calling script
