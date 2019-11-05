@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 
 @contextmanager
 def make_thread(
-    qtbot, nframes=10, fps=20, frame_range=None, playback_mode='loop'
+    qtbot, nframes=8, fps=20, frame_range=None, playback_mode='loop'
 ):
     # sets up an AnimationThread ready for testing, and breaks down when done
     dims = Dims(4)
-    nz = 10
+    nz = 8
     step = 1
     dims.set_range(0, (0, nz, step))
     thread = AnimationThread(
@@ -35,7 +35,8 @@ def make_thread(
 
     def bump(*args):
         logger.info('bump called')
-        thread._count += 1
+        if thread._count < nframes:
+            thread._count += 1
 
     def count_reached():
         assert thread._count >= nframes
@@ -77,17 +78,17 @@ def make_thread(
 # frames, fps, mode, frame_range, expected_result(nframes, nz)
 CONDITIONS = [
     # regular nframes < nz
-    (5, 20, 'loop', None, lambda x, y: x),
+    (5, 10, 'loop', None, lambda x, y: x),
     # loops around to the beginning
-    (13, 20, 'loop', None, lambda x, y: x % y),
+    (10, 10, 'loop', None, lambda x, y: x % y),
     # loops correctly with frame_range specified
-    (13, 20, 'loop', (2, 6), lambda x, y: x % y),
+    (10, 10, 'loop', (2, 6), lambda x, y: x % y),
     # loops correctly going backwards
-    (13, -20, 'loop', None, lambda x, y: y - (x % y)),
+    (10, -10, 'loop', None, lambda x, y: y - (x % y)),
     # loops back and forth
-    (13, 20, 'loop_back_and_forth', None, lambda x, y: x - y + 2),
+    (10, 10, 'loop_back_and_forth', None, lambda x, y: x - y + 2),
     # loops back and forth, with negative fps
-    # (13, -20, 'loop_back_and_forth', None, lambda x, y: y - (x % y) - 2),
+    (10, -10, 'loop_back_and_forth', None, lambda x, y: y - (x % y) - 2),
 ]
 
 
