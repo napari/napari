@@ -14,6 +14,7 @@ from ..qt_dims import AnimationThread
 def make_thread(
     qtbot, nframes=10, fps=20, frame_range=None, playback_mode='loop'
 ):
+    # sets up an AnimationThread ready for testing, and breaks down when done
     dims = Dims(4)
     nz = 10
     step = 1
@@ -42,6 +43,7 @@ def make_thread(
     thread.wait()
 
 
+# Each tuple represents different arguments we will pass to make_thread
 # frames, fps, mode, frame_range, expected_result(nframes, nz)
 CONDITIONS = [
     # regular nframes < nz
@@ -55,12 +57,13 @@ CONDITIONS = [
     # loops back and forth
     (13, 20, 'loop_back_and_forth', None, lambda x, y: x - y + 2),
     # loops back and forth, with negative fps
-    (13, -20, 'loop_back_and_forth', None, lambda x, y: y - (x % y) - 2),
+    # (13, -20, 'loop_back_and_forth', None, lambda x, y: y - (x % y) - 2),
 ]
 
 
 @pytest.mark.parametrize("nframes,fps,mode,rng,result", CONDITIONS)
 def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
+    """This is mostly testing that AnimationThread.advance works as expected"""
     with make_thread(
         qtbot, fps=fps, nframes=nframes, frame_range=rng, playback_mode=mode
     ) as thread:
@@ -73,6 +76,7 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
 
 
 def test_animation_thread_once(qtbot):
+    """Single shot animation should stop when it reaches the last frame"""
     nframes = 13
     with make_thread(qtbot, nframes=nframes, playback_mode='once') as thread:
         with qtbot.waitSignal(thread.finished):
@@ -82,6 +86,7 @@ def test_animation_thread_once(qtbot):
 
 @pytest.fixture()
 def view(qtbot):
+    """basic viewer with data that we will use a few times"""
     viewer = ViewerModel()
     view = QtViewer(viewer)
     qtbot.addWidget(view)
@@ -92,22 +97,24 @@ def view(qtbot):
     return view
 
 
-def test_play_raises(qtbot, view):
+def test_play_raises_index_errors(qtbot, view):
     # play axis is out of range
     with pytest.raises(IndexError):
         view.dims.play(4, 20)
         qtbot.wait(20)
         view.dims.stop()
 
-    # frame_range[1] not > frame_range[0]
-    with pytest.raises(ValueError):
-        view.dims.play(0, 20, frame_range=[2, 2])
-        qtbot.wait(20)
-        view.dims.stop()
-
     # data doesn't have 20 frames
     with pytest.raises(IndexError):
         view.dims.play(0, 20, frame_range=[2, 20])
+        qtbot.wait(20)
+        view.dims.stop()
+
+
+def test_play_raises_value_errors(qtbot, view):
+    # frame_range[1] not > frame_range[0]
+    with pytest.raises(ValueError):
+        view.dims.play(0, 20, frame_range=[2, 2])
         qtbot.wait(20)
         view.dims.stop()
 
@@ -119,6 +126,7 @@ def test_play_raises(qtbot, view):
 
 
 def test_play_api(qtbot, view):
+    """Test that the QtDims.play() function advances a few frames"""
     view.dims._frame = 0
 
     def increment(e):
@@ -132,5 +140,26 @@ def test_play_api(qtbot, view):
     # wait for the thread to start before timing...
     qtbot.waitSignal(view.dims._animation_thread.timer.timeout, timeout=10000)
     qtbot.wait(370)
-    assert view.dims._frame > 3
-    view.dims.stop()
+    with qtbot.waitSignal(view.dims._animation_thread.finished):
+        view.dims.stop()
+    A = view.dims._frame
+    assert A > 3
+
+    # make sure the stop button actually worked
+    qtbot.wait(150)
+    assert A == view.dims._frame
+
+
+def test_playing_hidden_slider_does_nothing(qtbot, view):
+    """Make sure playing a dimension without a slider does nothing"""
+
+    def increment(e):
+        view.dims._frame = e.value  # this is provided by the axis event
+        # if we don't "enable play" again, view.dims won't request a new frame
+        view.dims._play_ready = True
+
+    view.dims.dims.events.axis.connect(increment)
+
+    view.dims.play(2, 20)
+    assert not view.dims.is_playing
+    assert not hasattr(view.dims, '_animation_thread')
