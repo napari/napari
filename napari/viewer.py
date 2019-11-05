@@ -48,6 +48,6 @@ class Viewer(ViewerModel):
 
     @staticmethod
     def update(func, *args, **kwargs):
-        t = QtUpdateUI(func, args, kwargs)
+        t = QtUpdateUI(func, *args, **kwargs)
         t.start()
         return t
