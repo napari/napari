@@ -93,7 +93,7 @@ task:
     - python -c "import napari; print(napari.__version__)"
 
   test_script:
-    - pytest -v $PYTEST_ARGS
+    - pytest ${PYTEST_ARGS} -v
 
 codecov_task:
   auto_cancellation: true
