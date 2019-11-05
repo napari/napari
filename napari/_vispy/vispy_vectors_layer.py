@@ -25,7 +25,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             faces = self.layer._view_faces
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
-            vertices = np.pad(vertices, ((0, 0), (0, 1)))
+            vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
         self.node.set_data(
             vertices=vertices, faces=faces, color=self.layer.edge_color
