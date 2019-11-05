@@ -93,7 +93,6 @@ task:
     - python -c "import napari; print(napari.__version__)"
 
   test_script:
-
     - pytest -v $PYTEST_ARGS
 
 codecov_task:
