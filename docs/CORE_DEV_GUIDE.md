@@ -16,18 +16,18 @@ guidelines.
 
 ## All Contributors Are Treated The Same
 
-You now have the ability to push changes directly to the master
-branch, but should never do so; instead, continue making pull requests
-as before and in accordance with the [general contributor guide](CONTRIBUTING.md).
-
-As a core contributor, you gain the ability to merge or approve
+As a core developer, you gain the ability to merge or approve
 other contributors' pull requests.  Much like nuclear launch keys, it
 is a shared power: you must merge *only after* another core has
 approved the pull request, *and* after you yourself have carefully
 reviewed it.  (See `Reviewing` and especially `Merge Only Changes You
 Understand` below.) To ensure a clean git history, use GitHub's
 [Squash and Merge](https://help.github.com/articles/merging-a-pull-request/#merging-a-pull-request-on-github)
-feature to merge, unless you have a good reason not to do so.
+feature to merge, unless you have a very good reason not to do so.
+
+You should continue to make your own pull requests as before and in accordance
+with the [general contributor guide](CONTRIBUTING.md). These pull requests still
+require the approval of another core developer before they can be merged.
 
 ## Reviewing
 
@@ -84,9 +84,6 @@ no longer active, you may take over their branch by submitting a new pull
 request and closing the original. In doing so, ensure you communicate
 that you are not throwing the contributor's work away!
 
-Please add a note to a pull request after you push new changes; GitHub
-does not send out notifications for these.
-
 ### Merge Only Changes You Understand
 
 *Long-term maintainability* is an important concern.  Code doesn't
@@ -95,9 +92,8 @@ developers.  Changes will have to be made in the future, and the
 original contributor may have moved on.
 
 Therefore, *do not merge a code change unless you understand it*. Ask
-for help freely: we have a long history of consulting community
-members, or even external developers, for added insight where needed,
-and see this as a great learning opportunity.
+for help freely: we can consult community members, or even external developers,
+for added insight where needed, and see this as a great learning opportunity.
 
 While we collectively "own" any patches (and bugs!) that become part
 of the code base, you are vouching for changes you merge.  Please take
@@ -115,9 +111,11 @@ resources such as:
    [NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html)
    for docstrings. (NumPy docstrings are a superset of PEP257. You
    should read both.)
+-  We use [`pre-commit`](https://pre-commit.com) hooks for autoformatting
+-  We format our code using [`black`](https://github.com/psf/black)
 -  The napari [tag on forum.image.sc](https://forum.image.sc/tags/napari)
 
-You are not required to monitor all of the social resources.
+You are not required to monitor the social resources.
 
 ## Inviting New Core Members
 

@@ -6,7 +6,7 @@
   dependencies, and sometimes cull existing ones, or make them optional. All
   functions in our API have thorough docstrings clarifying expected inputs and
   outputs.
-- being **highly performant** and **interative**.
+- being **highly performant** and **interactive**.
 - providing a **consistent API**.
 - promoting **education in image processing**, with extensive pedagogical
   documentation.

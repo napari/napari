@@ -21,17 +21,19 @@ in any way.
 A community member can become a contributor by interacting directly with the
 project in concrete ways, such as:
 
-- proposing a change to the code via a GitHub pull request;
+- proposing a change to the code via a GitHub
+  [GitHub pull request](https://github.com/napari/napari/pulls);
 - reporting issues on our
   [GitHub issues page](https://github.com/napari/napari/issues);
 - proposing a change to the documentation, or
   [tutorials](https://github.com/napari/napari-tutorials) via a
   GitHub pull request;
-- discussing the design of the napari or its tutorials on the
-  [image.sc forum](https://forum.image.sc/tags/napari), or in existing issues and pull
-  requests; or
-- reviewing
-  [open pull requests](https://github.com/napari/napari/pulls),
+- discussing the design of the napari or its tutorials on in existing
+  [issues](https://github.com/napari/napari/issues) and
+  [pull requests](https://github.com/napari/napari/pulls);
+- discussing examples or use cases on the
+  [image.sc forum](https://forum.image.sc/tags/napari) under the #napari tag; or
+- reviewing [open pull requests](https://github.com/napari/napari/pulls)
 
 among other possibilities. Any community member can become a contributor, and
 all are encouraged to do so. By contributing to the project, community members
