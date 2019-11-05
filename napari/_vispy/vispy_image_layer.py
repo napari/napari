@@ -78,8 +78,6 @@ class VispyImageLayer(VispyBaseLayer):
             self.node._need_colortransform_update = True
             self.node.set_data(data)
         else:
-            if dtype == 'float32':
-                data = data.copy()
             self.node.set_data(data, clim=self.layer.contrast_limits)
         self.node.update()
 
