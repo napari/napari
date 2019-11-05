@@ -10,10 +10,10 @@ with napari.gui_qt():
     layer = viewer.add_image(data)
 
     def layer_update(*, update_period, num_updates):
-        # number of times to update
 
-        for k in range(num_updates):  # Usage of keyword arguments
-            time.sleep(update_period)  # Usage of ordinary arguments
+        # number of times to update
+        for k in range(num_updates):
+            time.sleep(update_period)
 
             dat = np.random.random((512, 512))
             layer.data = dat
