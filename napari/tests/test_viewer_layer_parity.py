@@ -64,7 +64,8 @@ def test_docstring(layer):
                 m_name, m_type, m_description = method_param
                 l_name, l_type, l_description = layer_param
 
-                # descriptions are treated as lists where each line is an element
+                # descriptions are treated as lists where each line is an
+                # element
                 m_description = ' '.join(m_description)
                 l_description = ' '.join(l_description)
 
@@ -91,7 +92,7 @@ def test_docstring(layer):
         assert method_returns == (
             'layer',
             f':class:`napari.layers.{name}` or list',
-            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',
+            f'The newly-created {name.lower()} layer or list of {name.lower()} layers.',  # noqa: E501
         ), f"improper 'Returns' section of '{method_name}'"
     else:
         assert method_returns == (
@@ -143,6 +144,5 @@ def test_signature(layer):
     try:
         assert args == autogen
     except AssertionError as e:
-        raise SyntaxError(
-            f'arguments improperly passed from convenience method to layer {name}'
-        ) from e
+        msg = f'arguments improperly passed from convenience method to layer {name}'  # noqa: E501
+        raise SyntaxError(msg) from e

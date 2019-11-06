@@ -1,5 +1,3 @@
-from time import sleep
-
 from qtpy.QtWidgets import QApplication
 from ._qt.qt_viewer import QtViewer
 from ._qt.qt_main_window import Window

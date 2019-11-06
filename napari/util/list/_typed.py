@@ -6,7 +6,8 @@ def cpprint(obj):
 
 
 class TypedList(List):
-    """Enforce list elements to be of a specific type and allow indexing with their unique properties.
+    """Enforce list elements to be of a specific type and allow indexing with
+    their unique properties.
 
     Parameters
     ----------

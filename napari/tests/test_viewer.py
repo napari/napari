@@ -45,7 +45,7 @@ def test_no_qt_loop():
     magic.
     """
     with pytest.raises(RuntimeError):
-        viewer = Viewer()
+        _ = Viewer()
 
 
 def test_add_image(qtbot):

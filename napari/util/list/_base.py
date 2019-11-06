@@ -4,12 +4,12 @@ from collections.abc import Iterable
 class List(list):
     """Inheritable list that better connects related/dependent functions,
     allowing for an easier time making modifications with reusable components.
-    
+
     It has the following new methods:
-    `__locitem__(key)` : transform a key into the index of its corresponding item
+    `__locitem__(key)` : transform a key into the index of its corresponding item  # noqa
     `__prsitem__(key)` : parse a key such as `0:1` into indices
     `__newlike__(iterable)` : create a new instance given an iterable
-    
+
     TODO: handle operators (e.g. +, *, etc.)
     """
 
@@ -43,14 +43,14 @@ class List(list):
 
     def __prsitem__(self, key):
         """Parse a key into list indices.
-        
+
         Default implementation handles slices
-        
+
         Parameters
         ----------
         key : any
             Key to parse.
-        
+
         Returns
         -------
         indices : int or iterable of int
@@ -81,19 +81,19 @@ class List(list):
 
     def __locitem__(self, key):
         """Parse a key into a list index.
-        
+
         Default implementation handles integers.
-        
+
         Parameters
         ----------
         key : any
             Key to parse.
-            
+
         Returns
         -------
         index : int
             Location of the object ``key`` is referencing.
-            
+
         Raises
         ------
         IndexError
@@ -115,13 +115,14 @@ class List(list):
         return key
 
     def __newlike__(self, iterable):
-        """Create a new instance from an iterable with the same properties as this one.
-        
+        """Create a new instance from an iterable with the same properties
+        as this one.
+
         Parameters
         ----------
         iterable : iterable
             Elements to make the new list from.
-            
+
         Returns
         -------
         new_list : List
