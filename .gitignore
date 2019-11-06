@@ -34,6 +34,7 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pip-wheel-metadata/
 
 # Unit test / coverage reports
 htmlcov/
@@ -112,3 +113,7 @@ venv.bak/
 
 # Benchmarking results
 .asv/
+
+# VScode
+.vscode/
+
