@@ -16,3 +16,10 @@ class Mode(StringEnum):
     ADD = auto()
     SELECT = auto()
     PAN_ZOOM = auto()
+
+
+TEXT_DEFAULTS = {
+    'render_method': 'gpu',
+    'anchor_x': 'center',
+    'anchor_y': 'center',
+}

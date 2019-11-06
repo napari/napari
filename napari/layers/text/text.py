@@ -9,7 +9,7 @@ from ...util.event import Event
 from ...util.misc import ensure_iterable
 from ...util.status_messages import format_float
 from vispy.color import get_color_names, Color
-from ._constants import Mode
+from ._constants import Mode, TEXT_DEFAULTS
 
 
 class Text(Layer):
@@ -28,14 +28,6 @@ class Text(Layer):
         Size of the text font in points.
     font : str
         Text font. OpenSans is the default.
-    anchor_x : str
-        Positioning of the text relative to the coordinate. Default is 'center'.
-    anchor_y : str
-        Positioning of the text relative to the coordinate. Default is 'center'.
-    render_method : str
-        Where the text is rendered. Should be 'cpu' or 'gpu'. The ‘cpu’ method
-        should perform better on remote backends like those based on WebGL.
-        The ‘gpu’ method should produce higher quality results.
     name : str
         Name of the layer.
     metadata : dict
@@ -73,7 +65,7 @@ class Text(Layer):
     render_method : str
         Where the text is rendered. Should be 'cpu' or 'gpu'. The ‘cpu’ method
         should perform better on remote backends like those based on WebGL.
-        The ‘gpu’ method should produce higher quality results.
+        The ‘gpu’ method should produce higher quality results. Default is 'gpu'.
     selected_data : list
         Integer indices of any selected text.
     sizes : array (N, D)
@@ -119,9 +111,6 @@ class Text(Layer):
         text_color='black',
         font_size=12,
         font='OpenSans',
-        anchor_x='center',
-        anchor_y='center',
-        render_method='cpu',
         name=None,
         metadata=None,
         scale=None,
@@ -164,13 +153,13 @@ class Text(Layer):
         self.text_color = text_color
         self._font_size = font_size
         self.font = font
-        self.anchor_x = anchor_x
-        self.anchor_y = anchor_y
+        self.anchor_x = TEXT_DEFAULTS['anchor_x']
+        self.anchor_y = TEXT_DEFAULTS['anchor_y']
         self.sizes = font_size
 
         self.new_text = ''
 
-        self.render_method = render_method
+        self.render_method = TEXT_DEFAULTS['render_method']
 
         # Indices of selected text
         self._selected_data = []

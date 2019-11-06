@@ -412,6 +412,79 @@ def view_shapes(
     return viewer
 
 
+def view_text(
+    data=None,
+    *,
+    rotation=0,
+    text_color='black',
+    font_size=12,
+    font='OpenSans',
+    name=None,
+    metadata=None,
+    scale=None,
+    translate=None,
+    opacity=1,
+    blending='translucent',
+    visible=True,
+    title='napari',
+    ndisplay=2,
+    order=None,
+):
+    """Create a viewer and add a text layer.
+
+    Parameters
+    ----------
+    data : tuple (coords, text)
+        coords contains text coordinates for N points in D dimensions.
+        text contains a list of the strings to be displayed as text.
+    rotation : float
+        Angle of the text elements
+    text_color : str
+        The color of the text font.
+    font_size : float
+        Size of the text font in points.
+    font : str
+        Text font. OpenSans is the default.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+
+    Returns
+    -------
+    viewer : :class:`napari.Viewer`
+        The newly-created viewer.
+    """
+    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer.add_text(
+        data=data,
+        rotation=rotation,
+        text_color=text_color,
+        font_size=font_size,
+        font=font,
+        name=name,
+        metadata=metadata,
+        scale=scale,
+        translate=translate,
+        opacity=opacity,
+        blending=blending,
+        visible=visible,
+    )
+    return viewer
+
+
 def view_surface(
     data,
     *,

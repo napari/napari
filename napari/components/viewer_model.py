@@ -579,9 +579,6 @@ class ViewerModel(KeymapMixin):
         text_color='black',
         font_size=12,
         font='OpenSans',
-        anchor_x='center',
-        anchor_y='center',
-        render_method='cpu',
         name=None,
         metadata=None,
         scale=None,
@@ -605,14 +602,6 @@ class ViewerModel(KeymapMixin):
             Size of the text font in points.
         font : str
             Text font. OpenSans is the default.
-        anchor_x : str
-            Positioning of the text relative to the coordinate. Default is 'center'.
-        anchor_y : str
-            Positioning of the text relative to the coordinate. Default is 'center'.
-        render_method : str
-            Where the text is rendered. Should be 'cpu' or 'gpu'. The ‘cpu’ method
-            should perform better on remote backends like those based on WebGL.
-            The ‘gpu’ method should produce higher quality results.
         name : str
             Name of the layer.
         metadata : dict
@@ -650,9 +639,6 @@ class ViewerModel(KeymapMixin):
             text_color=text_color,
             font_size=font_size,
             font=font,
-            anchor_x=anchor_x,
-            anchor_y=anchor_y,
-            render_method=render_method,
             name=name,
             metadata=metadata,
             scale=scale,
