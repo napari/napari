@@ -3,11 +3,10 @@ e.g. ``a``, ``Control-c``, or ``Control-Alt-Delete``.
 Valid modifiers are Control, Alt, Shift, and Meta.
 
 Letters will always be read as upper-case.
-Due to the native implementation of the key system, Shift pressed in certain
-key combinations may yield inconsistent or unexpected results.
-Therefore, it is not recommended to use Shift with non-letter keys.
-On OSX, Control is swapped with Meta such that pressing Command reads as
-Control.
+Due to the native implementation of the key system, Shift pressed in
+certain key combinations may yield inconsistent or unexpected results.
+Therefore, it is not recommended to use Shift with non-letter keys. On OSX,
+Control is swapped with Meta such that pressing Command reads as Control.
 
 Special keys include Shift, Control, Alt, Meta, Up, Down, Left, Right,
 PageUp, PageDown, Insert, Delete, Home, End, Escape, Backspace, F1,
@@ -34,7 +33,7 @@ into two statements with the yield keyword::
 
 import re
 import types
-from collections import OrderedDict, UserDict
+from collections import UserDict
 
 from vispy.util import keys
 
@@ -104,11 +103,10 @@ def components_to_key_combo(key, modifiers):
     Control, Alt, Shift, Meta
 
     Letters will always be read as upper-case.
-    Due to the native implementation of the key system, Shift pressed in certain
-    key combinations may yield inconsistent or unexpected results.
-    Therefore, it is not recommended to use Shift with non-letter keys.
-    On OSX, Control is swapped with Meta such that pressing Command reads as
-    Control.
+    Due to the native implementation of the key system, Shift pressed in
+    certain key combinations may yield inconsistent or unexpected results.
+    Therefore, it is not recommended to use Shift with non-letter keys. On OSX,
+    Control is swapped with Meta such that pressing Command reads as Control.
 
     Parameters
     ----------
@@ -153,11 +151,10 @@ def normalize_key_combo(key_combo):
     Control, Alt, Shift, Meta
 
     Letters will always be read as upper-case.
-    Due to the native implementation of the key system, Shift pressed in certain
-    key combinations may yield inconsistent or unexpected results.
-    Therefore, it is not recommended to use Shift with non-letter keys.
-    On OSX, Control is swapped with Meta such that pressing Command reads as
-    Control.
+    Due to the native implementation of the key system, Shift pressed in
+    certain key combinations may yield inconsistent or unexpected results.
+    Therefore, it is not recommended to use Shift with non-letter keys. On OSX,
+    Control is swapped with Meta such that pressing Command reads as Control.
 
     Parameters
     ----------
@@ -211,11 +208,10 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
     Valid modifiers are Control, Alt, Shift, and Meta.
 
     Letters will always be read as upper-case.
-    Due to the native implementation of the key system, Shift pressed in certain
-    key combinations may yield inconsistent or unexpected results.
-    Therefore, it is not recommended to use Shift with non-letter keys.
-    On OSX, Control is swapped with Meta such that pressing Command reads as
-    Control.
+    Due to the native implementation of the key system, Shift pressed in
+    certain key combinations may yield inconsistent or unexpected results.
+    Therefore, it is not recommended to use Shift with non-letter keys. On OSX,
+    Control is swapped with Meta such that pressing Command reads as Control.
 
     Special keys include Shift, Control, Alt, Meta, Up, Down, Left, Right,
     PageUp, PageDown, Insert, Delete, Home, End, Escape, Backspace, F1,
@@ -266,9 +262,9 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
 
 
 class KeybindingDescriptor:
-    """Descriptor which transforms ``func`` into a method with the first argument bound
-    to ``class_keymap`` or ``_keymap`` depending on if it was called
-    from the class or the instance, respectively.
+    """Descriptor which transforms ``func`` into a method with the first
+    argument bound to ``class_keymap`` or ``_keymap`` depending on if it was
+    called from the class or the instance, respectively.
 
     Parameters
     ----------

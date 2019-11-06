@@ -1,6 +1,4 @@
 from vispy.visuals.transforms import STTransform
-from contextlib import contextmanager
-from ..util.event import EmitterGroup, Event
 from abc import ABC, abstractmethod
 
 
@@ -159,10 +157,6 @@ class VispyBaseLayer(ABC):
         else:
             coords = (0,) * len(self.layer.dims.displayed)
         return coords
-
-    @abstractmethod
-    def reset(self):
-        raise NotImplementedError()
 
     def _reset_base(self):
         self._on_visible_change()

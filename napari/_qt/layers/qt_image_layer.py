@@ -1,5 +1,3 @@
-from qtpy.QtWidgets import QHBoxLayout
-from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox
 from .qt_image_base_layer import QtBaseImageControls

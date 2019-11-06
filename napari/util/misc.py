@@ -520,7 +520,8 @@ class CallSignature(inspect.Signature):
             # elif kind == inspect._KEYWORD_ONLY and render_kw_only_separator:
             #     # We have a keyword-only parameter to render and we haven't
             #     # rendered an '*args'-like parameter before, so add a '*'
-            #     # separator to the parameters list ("foo(arg1, *, arg2)" case)
+            #     # separator to the parameters list
+            #     # ("foo(arg1, *, arg2)" case)
             #     result.append('*')
             #     # This condition should be only triggered once, so
             #     # reset the flag

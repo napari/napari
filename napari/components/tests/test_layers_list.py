@@ -127,7 +127,7 @@ def test_selection():
     layers = LayerList()
     layer_a = Image(np.random.random((10, 10)))
     layers.append(layer_a)
-    assert layers[0].selected == True
+    assert layers[0].selected is True
 
     layer_b = Image(np.random.random((15, 15)))
     layers.append(layer_b)
