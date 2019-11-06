@@ -51,7 +51,7 @@ class Image(Layer):
         luminance images. If not passed is calculated as the min and max of
         the image.
     gamma : float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.

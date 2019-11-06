@@ -13,7 +13,10 @@ from .qt_open_dialog import QtOpenDialog
 app.use_app(API_NAME)
 del app
 
-from qtpy.QtWidgets import (
+# these "# noqa" comments are here to skip flake8 linting (E402),
+# these module-level imports have to come after `app.use_app(API)`
+# see discussion on #638
+from qtpy.QtWidgets import (  # noqa: E402
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -21,9 +24,8 @@ from qtpy.QtWidgets import (
     QAction,
     QShortcut,
 )
-from qtpy.QtGui import QKeySequence
-
-from ..util.theme import template
+from qtpy.QtGui import QKeySequence  # noqa: E402
+from ..util.theme import template  # noqa: E402
 
 
 class Window:

@@ -1,4 +1,5 @@
 pytest
 pytest-faulthandler
 pytest-qt
+pytest-ordering
 xarray
