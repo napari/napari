@@ -185,9 +185,6 @@ QPushButton#open:disabled {
   background-color: {{ background }};
 }
 
-QPlainTextEdit {
-  background-color: {{ console }};
-}
 
 QtAbout > QLabel {
    qproperty-alignment: AlignLeft;
@@ -428,6 +425,25 @@ QtLayerDialog > QLineEdit:focus {
 QtLayerDialog > QLineEdit:disabled {
   background-color: {{ foreground }};
   border: 2px solid {{ foreground }};
+  border-radius: 3px;
+}
+
+QtOpenDialog > QLineEdit {
+  background-color: {{ console }};
+  border: 2px solid {{ console }};
+  border-radius: 3px;
+  padding: 0px;
+  margin: 0px;
+  qproperty-alignment: right;
+}
+
+QtOpenDialog > QLineEdit:focus {
+  border: 2px solid {{ foreground }};
+}
+
+QtOpenDialog > QLineEdit:disabled {
+  background-color: {{ console }};
+  border: 2px solid {{ console }};
   border-radius: 3px;
 }
 
