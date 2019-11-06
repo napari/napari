@@ -13,15 +13,18 @@ The version of `napari` is automatically determined by [`versioneer`](https://gi
 from the latest [`git` tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) beginning with `v`.
 Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with the new version number.
 You should include a message with the tag but because we don't generate release notes for now,
-this will be a basic `"Version X.Y.Z"`:
+this will be a basic `"Version X.Y.Zrc1"`:
 ```bash
-$ git tag -a vX.Y.Z -m "Version X.Y.Z" master
+$ git tag -a vX.Y.Zrc1 -m "Version X.Y.Zrc1" master
 ```
 
 If the tag is meant for a previous version of master, simply reference the specific commit:
 ```bash
-$ git tag -a vX.Y.Z -m "Version X.Y.Z" abcde42
+$ git tag -a vX.Y.Zrc1 -m "Version X.Y.Zrc1" abcde42
 ```
+
+Note here how we are using `rc` for release candidate to create a version of our release we can test
+before making the real release.
 
 You can read more on tagging [here](https://git-scm.com/book/en/v2/Git-Basics-Tagging).
 

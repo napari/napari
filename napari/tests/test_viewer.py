@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari import Viewer
 
@@ -37,6 +38,20 @@ def test_viewer(qtbot):
 
     # Close the viewer
     viewer.window.close()
+
+
+@pytest.mark.first  # provided by pytest-ordering
+def test_no_qt_loop():
+    """Test informative error raised when no Qt event loop exists.
+
+    Logically, this test should go at the top of the file. Howveer, that
+    resulted in tests passing when only this file was run, but failing when
+    other tests involving Qt-bot were run before this file. Putting this test
+    second provides a sanity check that pytest-ordering is correctly doing its
+    magic.
+    """
+    with pytest.raises(RuntimeError):
+        _ = Viewer()
 
 
 def test_add_image(qtbot):

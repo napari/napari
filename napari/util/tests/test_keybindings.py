@@ -61,21 +61,24 @@ def test_bind_key():
     kb = {}
 
     # bind
-    f = lambda: 42
-    bind_key(kb, 'A', f)
-    assert kb == dict(A=f)
+    def forty_two():
+        return 42
+
+    bind_key(kb, 'A', forty_two)
+    assert kb == dict(A=forty_two)
 
     with pytest.raises(TypeError):  # must check for callable
         bind_key(kb, 'B', 'not a callable')
 
     # overwrite
-    l = lambda: 'SPAM'
+    def spam():
+        return 'SPAM'
 
     with pytest.raises(ValueError):
-        bind_key(kb, 'A', l)
+        bind_key(kb, 'A', spam)
 
-    bind_key(kb, 'A', l, overwrite=True)
-    assert kb == dict(A=l)
+    bind_key(kb, 'A', spam, overwrite=True)
+    assert kb == dict(A=spam)
 
     # unbind
     bind_key(kb, 'A', None)
