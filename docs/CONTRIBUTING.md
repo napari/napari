@@ -32,16 +32,19 @@ Make the development version available globally:
 $ pip install -e .
 ```
 
-We use [`black`](https://github.com/psf/black) to format our code.
-Please enable autoformatting for the repository with
-[`pre-commit`](https://pre-commit.com):
+We use
+[`pre-commit`](https://pre-commit.com) to run [`black`](https://github.com/psf/black) formatting and [`flake8`](https://github.com/PyCQA/flake8) linting automatically prior to each commit.  Please install it in your environment as follows:
 ```sh
 pre-commit install
 ```
-
-Upon committing, your code will be formatted according to our [`black` configuration](pyproject.toml),
+Upon committing, your code will be formatted according to our [`black` configuration](../pyproject.toml),
 which includes the settings `skip-string-normalization = true` and `max-line-length = 79`.
 To learn more, see [`black`'s documentation](https://black.readthedocs.io/en/stable/).
+
+Code will also be linted to enforce the stylistic and logistical rules specified in our [`flake8` configuration](../setup.cfg), which currently ignores [E203](https://lintlyci.github.io/Flake8Rules/rules/E203.html), [E501](https://lintlyci.github.io/Flake8Rules/rules/E501.html), [W503](https://lintlyci.github.io/Flake8Rules/rules/W503.html) and [C901](https://lintlyci.github.io/Flake8Rules/rules/C901.html).  For information on any specific flake8 error code, see the [Flake8 Rules](https://lintlyci.github.io/Flake8Rules/).  You may also wish to refer to the [PEP 8 style guide](https://www.python.org/dev/peps/pep-0008/).
+
+If you wish to tell the linter to ignore a specific line use the `# noqa` comment along with the specific error code (e.g. `import sys  # noqa: E402`) but please do not ignore errors lightly.
+
 
 ## Building the icons
 
