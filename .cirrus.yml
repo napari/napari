@@ -96,9 +96,9 @@ nix_test_task:
 
 
 win_test_task:
+  name: windows
   auto_cancellation: true
   
-  name: windows
   windows_container:
     image: cirrusci/windowsservercore:2019
     os_version: 2019
@@ -147,9 +147,8 @@ codecov_task:
   auto_cancellation: true
 
   depends_on:
-    - linux
-    - osx
-    - windows
+    - nix_test
+    - win_test
 
   container:
     image: python:3.6
