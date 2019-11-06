@@ -95,8 +95,7 @@ nix_test_task:
     - pytest -v
 
 
-win_test_task:
-  name: windows
+windows_task:
   auto_cancellation: true
   
   windows_container:
@@ -147,8 +146,9 @@ codecov_task:
   auto_cancellation: true
 
   depends_on:
-    - nix_test
-    - win_test
+    - linux
+    - osx
+    - windows
 
   container:
     image: python:3.6
