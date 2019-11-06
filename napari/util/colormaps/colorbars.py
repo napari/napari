@@ -1,6 +1,4 @@
-import warnings
 import numpy as np
-from skimage import img_as_ubyte
 
 
 def make_colorbar(cmap, size=(12, 28), horizontal=True):

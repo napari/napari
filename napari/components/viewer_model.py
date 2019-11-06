@@ -2,9 +2,11 @@ import numpy as np
 from math import inf
 import itertools
 from xml.etree.ElementTree import Element, tostring
+
 from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
+from ..util import colormaps  # noqa F401
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
@@ -534,7 +536,8 @@ class ViewerModel(KeymapMixin):
             the second item must be a Colormap. If a dict the key must be a
             string to assign as a name to a colormap and the value must be a
             Colormap. If a list then must be same length as the axis that is
-            being expanded and then each colormap is applied to each image.
+            being expanded as channels, and each colormap is applied to each
+            new image layer.
         contrast_limits : list (2,)
             Color limits to be used for determining the colormap bounds for
             luminance images. If not passed is calculated as the min and max of
@@ -542,9 +545,9 @@ class ViewerModel(KeymapMixin):
             that is being expanded and then each colormap is applied to each
             image.
         gamma : list, float
-            Gamma correction for determining colormap linearity.  Defaults to 1.
-            If a list then must be same length as the axis that is being expanded
-            and then each entry in the list is applied to each image.
+            Gamma correction for determining colormap linearity. Defaults to 1.
+            If a list then must be same length as the axis that is being
+            expanded and then each entry in the list is applied to each image.
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
@@ -591,8 +594,8 @@ class ViewerModel(KeymapMixin):
         else:
             colormap = ensure_iterable(colormap)
 
-        # If one pair of clim values is passed then need to iterate them to
-        # all layers.
+            # If one pair of clim values is passed then need to iterate them to
+            # all layers.
         if contrast_limits is not None and not is_iterable(contrast_limits[0]):
             contrast_limits = itertools.repeat(contrast_limits)
         else:
@@ -928,7 +931,7 @@ class ViewerModel(KeymapMixin):
             luminance images. If not passed is calculated as the min and max of
             the image.
         gamma : float
-            Gamma correction for determining colormap linearity.  Defaults to 1.
+            Gamma correction for determining colormap linearity. Defaults to 1.
         name : str
             Name of the layer.
         metadata : dict
@@ -1220,8 +1223,6 @@ class ViewerModel(KeymapMixin):
         n_column = max(1, n_column)
         self.grid_size = (n_row, n_column)
         self.grid_stride = stride
-        direction = stride > 0
-        abs_stride = abs(stride)
         for i, layer in enumerate(self.layers):
             if stride > 0:
                 adj_i = len(self.layers) - i - 1

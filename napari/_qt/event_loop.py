@@ -1,4 +1,3 @@
-import os
 import sys
 from contextlib import contextmanager
 
@@ -12,7 +11,7 @@ def gui_qt():
     Notes
     -----
     This context manager is not needed if running napari within an interactive
-    IPython session. In this case, use the %gui=qt magic command, or start
+    IPython session. In this case, use the ``%gui qt`` magic command, or start
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """

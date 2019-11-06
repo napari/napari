@@ -1,15 +1,12 @@
-from typing import Union
-from xml.etree.ElementTree import Element
+import warnings
 import numpy as np
 from copy import copy
 import vispy.color
 from ..base import Layer
 from ...util.event import Event
-from ..image._constants import Rendering, Interpolation, AVAILABLE_COLORMAPS
 from ...util.status_messages import format_float
 from ...util.misc import calc_data_range, increment_unnamed_colormap
-from ...util.colormaps import make_colorbar
-from vispy.color import get_color_names, Color
+from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
 class Surface(Layer):
@@ -35,7 +32,7 @@ class Surface(Layer):
         luminance images. If not passed is calculated as the min and max of
         the image.
     gamma : float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
     name : str
         Name of the layer.
     metadata : dict
@@ -151,6 +148,9 @@ class Surface(Layer):
         self._vertices = data[0]
         self._faces = data[1]
         self._vertex_values = data[2]
+
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
 
     @property
     def data(self):

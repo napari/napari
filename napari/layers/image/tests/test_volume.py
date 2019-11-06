@@ -1,7 +1,5 @@
 import numpy as np
 from napari.layers import Image
-from vispy.color import Colormap
-from napari.util.colormaps.colormaps import TransFire
 
 
 def test_random_volume():
