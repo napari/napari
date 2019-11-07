@@ -23,6 +23,7 @@ def view_image(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add an image layer.
 
@@ -89,17 +90,21 @@ def view_image(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    orider : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_image(
         data=data,
         channel_axis=channel_axis,

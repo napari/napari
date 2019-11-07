@@ -143,7 +143,7 @@ class Dims:
                 "dimensions unlabeled, use '' instead."
             )
         self._axis_labels = labels
-        self.events.axis_labels(axis=list(range(self.ndim)))
+        self.events.axis_labels()
 
     @property
     def order(self):
@@ -300,7 +300,7 @@ class Dims:
             self._mode.insert(axis, DimsMode.POINT)
             cur_order = [o if o < axis else o + 1 for o in self.order]
             self._order = [axis] + cur_order
-            self._axis_labels.insert(axis, '')
+            self._axis_labels.insert(axis, str(len(self._axis_labels)))
         else:
             # Range value is (min, max, step) for the entire slider
             self._range[axis] = (0, 2, 1)
@@ -311,7 +311,7 @@ class Dims:
             self._interval[axis] = (0, 1)
             self._mode[axis] = DimsMode.POINT
             self._order[axis] = axis
-            self._axis_labels[axis] = ''
+            self._axis_labels[axis] = str(len(self._axis_labels))
 
     def set_range(self, axis: int, _range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)

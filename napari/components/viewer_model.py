@@ -71,7 +71,7 @@ class ViewerModel(KeymapMixin):
             ndim = len(order)
 
         if axis_labels is None:
-            axis_labels = list(range(ndim))
+            axis_labels = [str(ax) for ax in range(ndim)]
 
         self.dims = Dims(ndim)
         self.dims.ndisplay = ndisplay

@@ -1,7 +1,8 @@
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QWidget,
-    QGridLayout,
+    QVBoxLayout,
+    QHBoxLayout,
     QSizePolicy,
     QScrollBar,
     QLineEdit,
@@ -49,13 +50,14 @@ class QtDims(QWidget):
         # list of sliders
         self.sliders = []
 
+        self.axis_labels = []
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
         self._last_used = None
 
         # Initialises the layout:
-        layout = QGridLayout()
+        layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
@@ -254,12 +256,14 @@ class QtDims(QWidget):
             # Hard-coded 1:10 ratio. Can be more dynamic as a function
             # of the name of the label, but it might be a little bit
             # over the top.
-            if axis_label.text == '':
-                self.layout().addWidget(slider)
+            current_row = QHBoxLayout()
+            if axis_label.text != '':
+                current_row.addWidget(axis_label, stretch=1)
+                current_row.addWidget(slider, stretch=50)
             else:
-                self.layout().addWidget(axis_label, 0, 0, 1, 1)
-                self.layout().addWidget(slider, 0, 1, 1, 10)
-            self.dims.axis_labels.insert(0, axis_label)
+                current_row.addWidget(slider)
+            self.layout().addLayout(current_row)
+            self.axis_labels.insert(0, axis_label)
             self.sliders.insert(0, slider)
             self._displayed_sliders.insert(0, True)
             nsliders = np.sum(self._displayed_sliders)
@@ -360,7 +364,12 @@ class QtDims(QWidget):
         label.setToolTip('Axis label')
         label.setAcceptDrops(False)
         label.setEnabled(True)
-        label.editingFinished.connect(self.update_axis_labels)
+        # label.setFocusPolicy(Qt.NoFocus)
+
+        def axis_label_change_listener(value):
+            self.dims.axis_labels[axis] = value
+
+        label.editingFinished.connect(axis_label_change_listener)
         return label
 
     def focus_up(self):
