@@ -239,7 +239,7 @@ def test_add_empty_text_to_empty_viewer():
 def test_add_empty_text_on_top_of_image():
     viewer = ViewerModel()
     image = np.random.random((8, 64, 64))
-    image_layer = viewer.add_image(image)
+    viewer.add_image(image)
     txt = viewer.add_text()
     assert txt.dims.ndim == 3
     txt.add([5.0, 32.0, 61.0])

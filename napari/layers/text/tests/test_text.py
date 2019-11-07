@@ -4,12 +4,6 @@ from xml.etree.ElementTree import Element
 from napari.layers import Text
 
 
-def test_empty_text():
-    txt = Text()
-    assert txt.coords.shape == (0, 2)
-    assert txt.text == []
-
-
 def test_random_text():
     """Test instantiating Text layer with random 2D data."""
     shape = (10, 2)
@@ -64,6 +58,10 @@ def test_negative_text():
 
 def test_empty_text():
     """Test instantiating Text layer with empty array."""
+    txt = Text()
+    assert txt.coords.shape == (0, 2)
+    assert txt.text == []
+
     shape = (0, 2)
     coords = np.empty(shape)
     text = []
@@ -241,19 +239,19 @@ def test_changing_modes():
     data = (coords, text)
     layer = Text(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
     layer.mode = 'add'
     assert layer.mode == 'add'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
 
 def test_name():
@@ -281,16 +279,16 @@ def test_visiblity():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert layer.visible == True
+    assert layer.visible is True
 
     layer.visible = False
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer = Text(data, visible=False)
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer.visible = True
-    assert layer.visible == True
+    assert layer.visible is True
 
 
 def test_opacity():
@@ -341,7 +339,7 @@ def test_interaction_box():
     text = shape[0] * ['test']
     data = (coords, text)
     layer = Text(data)
-    assert layer._selected_box == None
+    assert layer._selected_box is None
 
     layer.selected_data = [0]
     assert len(layer._selected_box) == 4
@@ -350,7 +348,7 @@ def test_interaction_box():
     assert len(layer._selected_box) == 4
 
     layer.selected_data = []
-    assert layer._selected_box == None
+    assert layer._selected_box is None
 
 
 def test_copy_and_paste():
@@ -410,7 +408,7 @@ def test_value():
     new_coords = coords + 20
     layer.data = (new_coords, text)
     value = layer.get_value()
-    assert value == None
+    assert value is None
 
 
 def test_message():
