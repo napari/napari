@@ -1,14 +1,10 @@
-from typing import Union, List, Tuple
+from typing import List, Tuple
 from xml.etree.ElementTree import Element
 import numpy as np
-import itertools
 from copy import copy, deepcopy
-from contextlib import contextmanager
 from ..base import Layer
 from ...util.event import Event
-from ...util.misc import ensure_iterable
-from ...util.status_messages import format_float
-from vispy.color import get_color_names, Color
+from vispy.color import get_color_names
 from ._constants import Mode, TEXT_DEFAULTS
 
 
@@ -202,7 +198,6 @@ class Text(Layer):
 
     @data.setter
     def data(self, data: Tuple[np.ndarray, List[str]]):
-        cur_npoints = len(self._data)
         self._data = data
         self._update_sizes(self.font_size)
         self._update_dims()
@@ -387,7 +382,7 @@ class Text(Layer):
             else:
                 self.editable = True
 
-        if self.editable == False:
+        if self.editable is False:
             self.mode = Mode.PAN_ZOOM
 
     def _slice_data(self, indices):
@@ -429,7 +424,6 @@ class Text(Layer):
         selection : int or None
             Index of text that is at the current coordinate if any.
         """
-        in_slice_data = self._text_coords_view
         in_slice_sizes = self._sizes_view
 
         # Display text indices if there are any in this slice and 2D display
@@ -487,10 +481,10 @@ class Text(Layer):
             self.selected_data
         self._selected_box = self.interaction_box(self._selected_view)
 
+        self.events.set_data()
         self._set_highlight(force=True)
         self._update_thumbnail()
         self._update_coordinates()
-        self.events.set_data()
 
     def _set_highlight(self, force=False):
         """Render highlights of text including boundaries, vertices,

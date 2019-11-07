@@ -1,13 +1,9 @@
 import numpy as np
-from copy import copy
 from vispy.scene.visuals import Line, Compound
 from vispy.scene.visuals import Text as TextNode
-from .markers import Markers
 from vispy.visuals.transforms import ChainTransform
 
-from ..layers import Text
 from .vispy_base_layer import VispyBaseLayer
-import numpy as np
 
 
 class VispyTextLayer(VispyBaseLayer):
@@ -15,7 +11,6 @@ class VispyTextLayer(VispyBaseLayer):
     _highlight_width = 1.5
 
     _OUTLINE_MARKERS_NODE_INDEX = 0
-    _TEXT_NODE_INDEX = 1
     _HIGHLIGHT_TEXT_NODE_INDEX = 2
 
     def __init__(self, layer):
@@ -24,6 +19,7 @@ class VispyTextLayer(VispyBaseLayer):
         # Text: The text to be diplayed.
         # Text: Highlighted text to show which text is selected.
         node = Compound([Line(), TextNode(), TextNode()])
+        self._text_node_index = 1
 
         super().__init__(layer, node)
 
@@ -34,11 +30,8 @@ class VispyTextLayer(VispyBaseLayer):
             lambda e: self._on_highlight_change()
         )
 
-        self.layer.dims.events.ndisplay.connect(
-            lambda e: self._on_display_change()
-        )
-
         self._on_display_change()
+        self._on_data_change()
 
     def _on_display_change(self):
         parent = self.node.parent
@@ -47,19 +40,32 @@ class VispyTextLayer(VispyBaseLayer):
 
         if self.layer.dims.ndisplay == 2:
             self.node = Compound([Line(), TextNode(), TextNode()])
+            self._text_node_index = 1
         else:
-            self.node = Compound([Line(), TextNode(), TextNode()])
+            self.node = TextNode()
+            self._text_node_index = 0
 
         self.node.parent = parent
+        self._reset_base()
         self.layer._update_dims()
         self.layer._set_view_slice()
-        self.reset()
 
     def _on_data_change(self):
-
         # Set vispy data, noting that the order of the text needs to be
         # reversed to make the most recently added text appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
+
+        # Check if ndisplay has changed current node type needs updating
+        if (
+            self.layer.dims.ndisplay == 3
+            and not isinstance(self.node, TextNode)
+        ) or (
+            self.layer.dims.ndisplay == 2
+            and not isinstance(self.node, Compound)
+        ):
+            self._on_display_change()
+            self._on_highlight_change()
+
         if len(self.layer._text_coords_view) == 0:
             coords = np.zeros((1, self.layer.dims.ndisplay))
             text = []
@@ -68,7 +74,7 @@ class VispyTextLayer(VispyBaseLayer):
             coords = self.layer._text_coords_view
             text = self.layer._text_view
 
-        text_node = self.node._subvisuals[self._TEXT_NODE_INDEX]
+        text_node = self.node._subvisuals[self._text_node_index]
         # Update the text
         if self.layer.dims.ndisplay == 2:
             positions = np.flip(coords, axis=1)
@@ -98,18 +104,15 @@ class VispyTextLayer(VispyBaseLayer):
 
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected text
-            data = self.layer._text_coords_view[self.layer._highlight_index]
-            if data.ndim == 1:
-                data = np.expand_dims(data, axis=0)
-            size = self.layer.font_size
+            coords = self.layer._text_coords_view[self.layer._highlight_index]
+            if coords.ndim == 1:
+                coords = np.expand_dims(coords, axis=0)
             text = [
                 self.layer._text_view[i] for i in self.layer._highlight_index
             ]
 
         else:
-            data = np.zeros((1, self.layer.dims.ndisplay))
-            size = 0
-            face_color = 'white'
+            coords = np.zeros((1, self.layer.dims.ndisplay))
             text = []
 
         highlight_text_node = self.node._subvisuals[
@@ -118,7 +121,7 @@ class VispyTextLayer(VispyBaseLayer):
         self._update_text_node(
             highlight_text_node,
             text=text,
-            pos=np.flip(data, axis=1),
+            pos=np.flip(coords, axis=1),
             rotation=self.layer.rotation,
             color=self._highlight_color,
             font_size=self.layer.font_size,
@@ -145,8 +148,3 @@ class VispyTextLayer(VispyBaseLayer):
         node.font_size = font_size
 
         node.update()
-
-    def reset(self):
-        self._reset_base()
-        self._on_data_change()
-        self._on_highlight_change()
