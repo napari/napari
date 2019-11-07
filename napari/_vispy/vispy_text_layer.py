@@ -74,7 +74,10 @@ class VispyTextLayer(VispyBaseLayer):
             coords = self.layer._text_coords_view
             text = self.layer._text_view
 
-        text_node = self.node._subvisuals[self._text_node_index]
+        if isinstance(self.node, TextNode):
+            text_node = self.node
+        else:
+            text_node = self.node._subvisuals[self._text_node_index]
         # Update the text
         if self.layer.dims.ndisplay == 2:
             positions = np.flip(coords, axis=1)
