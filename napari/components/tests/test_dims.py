@@ -1,3 +1,5 @@
+import pytest
+
 from napari.components import Dims
 from napari.components.dims_constants import DimsMode
 
@@ -124,3 +126,19 @@ def test_order_when_changing_ndim():
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
     assert dims.point == [3, 0, 0]
+
+
+@pytest.mark.parametrize(
+    "ndim, ax_input, expected", [(2, 1, 1), (2, -1, 1), (4, -3, 1)]
+)
+def test_assert_axis_inbound(ndim, ax_input, expected):
+    dims = Dims(ndim)
+    actual = dims._assert_axis_inbound(ax_input)
+    assert actual == expected
+
+
+@pytest.mark.parametrize("ndim, ax_input", [(2, 2), (2, -3)])
+def test_assert_axis_out_of_bounds(ndim, ax_input):
+    dims = Dims(ndim)
+    with pytest.raises(ValueError):
+        dims._assert_axis_inbound(ax_input)

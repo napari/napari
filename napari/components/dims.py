@@ -388,16 +388,21 @@ class Dims:
         """Asserts that a given value of axis is inside
         the existing axes of the image.
 
+        Returns
+        -------
+        axis : int
+            The axis which was checked for validity
+
         Raises
         ------
         ValueError
-            The given axis index is out of bounds.
+            The given axis index is out of bounds
         """
         if axis < 0:
             axis += self.ndim
         if axis < 0:
             raise ValueError(f'Axis is too negative, got {axis}.')
-        if axis > (self.ndim + 1):
+        if axis > (self.ndim - 1):
             raise ValueError(
                 f"Axis is out of bounds. Got {axis} while the number of"
                 f" dimensions is {self.ndim}."
