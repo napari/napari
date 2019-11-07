@@ -253,7 +253,7 @@ class QtDims(QWidget):
             axis_label = self._create_axis_label_widget(dim_axis)
             slider = self._create_range_slider_widget(dim_axis)
 
-            # Hard-coded 1:10 ratio. Can be more dynamic as a function
+            # Hard-coded 1:50 ratio. Can be more dynamic as a function
             # of the name of the label, but it might be a little bit
             # over the top.
             current_row = QHBoxLayout()

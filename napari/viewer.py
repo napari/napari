@@ -43,7 +43,10 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
         super().__init__(
-            title=title, ndisplay=ndisplay, order=order, axis_labels=None
+            title=title,
+            ndisplay=ndisplay,
+            order=order,
+            axis_labels=axis_labels,
         )
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
