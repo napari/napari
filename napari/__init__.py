@@ -35,6 +35,7 @@ from .view_layers import (
     view_shapes,
     view_points,
     view_vectors,
+    view_text,
 )
 from ._qt import gui_qt
 from ._version import get_versions

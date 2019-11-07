@@ -124,6 +124,52 @@ def test_view_points(qtbot):
     viewer.window.close()
 
 
+def test_view_text(qtbot):
+    """Test adding text to random coords"""
+    # Test 2D
+    n_text = 10
+    n_dims = 2
+    np.random.seed(0)
+    coords = 20 * np.random.random((n_text, n_dims))
+    text = n_text * ['hello']
+    data = (coords, text)
+    viewer = napari.view_text(data)
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    assert np.all(viewer.layers[0].data == data)
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+
+    assert viewer.dims.ndim == n_dims
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Close the viewer
+    viewer.window.close()
+
+    # Test 3D
+    n_text = 10
+    n_dims = 3
+    coords = 20 * np.random.random((n_text, n_dims))
+    text = n_text * ['hello']
+    data = (coords, text)
+    viewer = napari.view_text(data)
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+    viewer.dims.ndisplay = 3
+
+    assert np.all(viewer.layers[0].data == data)
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+
+    assert viewer.dims.ndim == n_dims
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
+
+
 def test_view_vectors(qtbot):
     """Test adding vectors."""
     np.random.seed(0)
