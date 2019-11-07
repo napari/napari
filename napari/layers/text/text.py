@@ -236,6 +236,7 @@ class Text(Layer):
     @rotation.setter
     def rotation(self, angle):
         self._rotation = angle
+        self._set_view_slice()
         self.events.rotation()
         self.events.highlight()
 
@@ -300,7 +301,9 @@ class Text(Layer):
             size = self._sizes_view[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            data = points_to_squares(data, size, self.scale_factor)
+            data = points_to_squares(
+                data, size, self.scale_factor, self.rotation
+            )
             box = create_box(data)
 
         return box
@@ -755,7 +758,7 @@ def create_box(data):
     return box
 
 
-def points_to_squares(points, sizes, scale_factor):
+def points_to_squares(points, sizes, scale_factor, rotation):
     """Expand points to squares defined by their size
 
     Parameters
@@ -764,6 +767,10 @@ def points_to_squares(points, sizes, scale_factor):
         Points to be turned into squares
     sizes : (N,) array
         Size of each point
+    scale_factor : float
+        Viewer scaling of pixels
+    rotation : float
+        Angle the text is rotated
 
     Returns
     -------
@@ -772,14 +779,19 @@ def points_to_squares(points, sizes, scale_factor):
     """
     hitbox_half_width = sizes / 2 * scale_factor
 
+    c0 = [rotate_point(p, rotation) for p in hitbox_half_width]
+    c1 = [
+        rotate_point(p, rotation)
+        for p in np.multiply(hitbox_half_width, [1, -1])
+    ]
+    c2 = [
+        rotate_point(p, rotation)
+        for p in np.multiply(hitbox_half_width, [-1, 1])
+    ]
+    c3 = [rotate_point(p, rotation) for p in -hitbox_half_width]
+
     rect = np.concatenate(
-        [
-            points + hitbox_half_width,
-            points + np.multiply(hitbox_half_width, [1, -1]),
-            points + np.multiply(hitbox_half_width, [-1, 1]),
-            points - hitbox_half_width,
-        ],
-        axis=0,
+        [points + c0, points + c1, points + c2, points + c3], axis=0
     )
 
     return rect
@@ -801,9 +813,36 @@ def points_in_box(corners, points, sizes, scale_factor):
         Indices of points inside the box
     """
     box = create_box(corners)[[0, 2]]
-    rect = points_to_squares(points, sizes, scale_factor)
+    rect = points_to_squares(points, sizes, scale_factor, self.rotation)
     below_top = np.all(box[1] >= rect, axis=1)
     above_bottom = np.all(rect >= box[0], axis=1)
     inside = np.logical_and(below_top, above_bottom)
     inside = np.unique(np.where(inside)[0] % len(points))
     return list(inside)
+
+
+def rotate_point(point, angle):
+    """ Rotate a point around the origin (2D only)
+
+    Parameters
+    ----------
+    point : (1, 2) array
+        Point to be rotated
+    angle : float
+        Angle in degrees for the rotation
+
+    Returns
+    -------
+    rotated_point : (1, 2) array
+        The rotated point
+
+    """
+    angle_rad = np.radians(angle)
+
+    c = np.cos(angle_rad)
+    s = np.sin(angle_rad)
+    rotation_matrix = np.array([[c, -s], [s, c]])
+
+    rotated_point = np.matmul(rotation_matrix, point)
+
+    return rotated_point
