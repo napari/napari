@@ -211,6 +211,39 @@ def test_new_shapes():
     assert viewer.dims.ndim == 2
 
 
+def test_add_text():
+    """Test adding points."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    n_text = 10
+    n_dim = 2
+    coords = 20 * np.random.random((n_text, n_dim))
+    text = n_text * ['hi']
+    data = (coords, text)
+    viewer.add_text(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == n_dim
+
+
+def test_add_empty_text_to_empty_viewer():
+    viewer = ViewerModel()
+    txt = viewer.add_text(name='empty points')
+    assert txt.dims.ndim == 2
+    txt.add([1000.0, 27.0])
+    assert txt.text_coords.shape == (1, 2)
+
+
+def test_add_empty_text_on_top_of_image():
+    viewer = ViewerModel()
+    image = np.random.random((8, 64, 64))
+    image_layer = viewer.add_image(image)
+    txt = viewer.add_text()
+    assert txt.dims.ndim == 3
+    txt.add([5.0, 32.0, 61.0])
+    assert txt.text_coords.shape == (1, 3)
+
+
 def test_swappable_dims():
     """Test swapping dims after adding layers."""
     viewer = ViewerModel()

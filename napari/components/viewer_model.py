@@ -631,7 +631,7 @@ class ViewerModel(KeymapMixin):
         """
         if data is None:
             ndim = max(self.dims.ndim, 2)
-            data = np.empty([0, ndim])
+            data = (np.empty([0, ndim]), [])
 
         layer = layers.Text(
             data=data,
