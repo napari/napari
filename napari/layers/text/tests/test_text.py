@@ -59,7 +59,7 @@ def test_negative_text():
 def test_empty_text():
     """Test instantiating Text layer with empty array."""
     txt = Text()
-    assert txt.coords.shape == (0, 2)
+    assert txt.text_coords.shape == (0, 2)
     assert txt.text == []
 
     shape = (0, 2)
@@ -158,7 +158,7 @@ def test_adding_text():
     n_text = shape[0] + 1
     last_index = n_text - 1
     assert len(layer.text_coords) == n_text
-    assert layer.text[last_index] == 'EditMe'
+    assert layer.text[last_index] == 'edit'
     assert np.all(layer.text_coords[last_index] == coord)
 
 
@@ -175,7 +175,7 @@ def test_adding_points_to_empty():
     layer.add(coord)
     assert len(layer.text_coords) == 1
     assert np.all(layer.text_coords[0] == coord)
-    assert layer.text[0] == 'EditMe'
+    assert layer.text[0] == 'edit'
 
 
 def test_removing_selected_text():

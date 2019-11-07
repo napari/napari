@@ -1,4 +1,4 @@
-from Enum import auto
+from enum import auto
 
 from ...util.misc import StringEnum
 
