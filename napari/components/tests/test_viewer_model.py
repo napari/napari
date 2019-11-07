@@ -244,6 +244,28 @@ def test_add_empty_text_on_top_of_image():
     assert txt.text_coords.shape == (1, 3)
 
 
+def test_new_text():
+    """Test adding new text layer."""
+    # Add text to empty viewer
+    viewer = ViewerModel()
+    viewer.add_text()
+    assert len(viewer.layers) == 1
+    assert len(viewer.layers[0].text_coords) == 0
+    assert len(viewer.layers[0].text) == 0
+    assert viewer.dims.ndim == 2
+
+    # Add text with image already present
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+    viewer.add_text()
+    assert len(viewer.layers) == 2
+    assert len(viewer.layers[1].text_coords) == 0
+    assert len(viewer.layers[1].text) == 0
+    assert viewer.dims.ndim == 2
+
+
 def test_swappable_dims():
     """Test swapping dims after adding layers."""
     viewer = ViewerModel()
