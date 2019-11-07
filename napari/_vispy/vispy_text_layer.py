@@ -136,19 +136,7 @@ class VispyTextLayer(VispyBaseLayer):
         )
 
     def _update_text_node(
-        self,
-        node,
-        text=[],
-        rotation=0,
-        color='black',
-        bold=False,
-        italic=False,
-        font='OpenSans',
-        font_size=12,
-        pos=None,
-        anchor_x='center',
-        anchor_y='center',
-        method='cpu',
+        self, node, text=[], rotation=0, color='black', font_size=12, pos=None
     ):
         node.text = text
         node.pos = pos

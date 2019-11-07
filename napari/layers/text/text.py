@@ -302,9 +302,14 @@ class Text(Layer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             data = points_to_squares(
-                data, size, self.scale_factor, self.rotation
+                data, size, self.scale_factor, -self.rotation
             )
-            box = create_box(data)
+            if len(index) == 1:
+                box = order_rectangle_corners(data)
+                print(data)
+                print(box)
+            else:
+                box = create_box(data)
 
         return box
 
@@ -731,6 +736,7 @@ class Text(Layer):
                     self._text_coords_view,
                     self._sizes_view,
                     self.scale_factor,
+                    -self.rotation,
                 )
                 self.selected_data = self._indices_view[selection]
             else:
@@ -800,7 +806,7 @@ def points_to_squares(points, sizes, scale_factor, rotation):
     return rect
 
 
-def points_in_box(corners, points, sizes, scale_factor):
+def points_in_box(corners, points, sizes, scale_factor, rotation):
     """Determine which points are in an axis aligned box defined by the corners
 
     Parameters
@@ -816,7 +822,7 @@ def points_in_box(corners, points, sizes, scale_factor):
         Indices of points inside the box
     """
     box = create_box(corners)[[0, 2]]
-    rect = points_to_squares(points, sizes, scale_factor, self.rotation)
+    rect = points_to_squares(points, sizes, scale_factor, rotation)
     below_top = np.all(box[1] >= rect, axis=1)
     above_bottom = np.all(rect >= box[0], axis=1)
     inside = np.logical_and(below_top, above_bottom)
@@ -849,3 +855,26 @@ def rotate_point(point, angle):
     rotated_point = np.matmul(rotation_matrix, point)
 
     return rotated_point
+
+
+def order_rectangle_corners(corners):
+    """ Order the coordinates of a rectangle's corners
+
+    Parameters
+    ----------
+    corners : (4, 2) array
+        Coordinates of the corners of the rectangle
+
+    Returns
+    -------
+    ordered_corners : (4, 2) array
+        The ordered rectangle corners
+
+    """
+    x = corners[:, 0] - np.mean(corners[:, 0])
+    y = corners[:, 1] - np.mean(corners[:, 1])
+    angles = np.arctan2(y, x)
+
+    ordered_corners = corners[np.argsort(angles)]
+
+    return ordered_corners
