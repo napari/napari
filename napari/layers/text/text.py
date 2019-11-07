@@ -430,13 +430,16 @@ class Text(Layer):
 
         # Display text indices if there are any in this slice and 2D display
         if len(self._text_coords_view) > 0 and self.dims.ndisplay != 3:
-            # Determine if text under cursor
-            distances = abs(
-                self._text_coords_view
-                - [self.coordinates[d] for d in self.dims.displayed]
-            )
+            curr_coords = [self.coordinates[d] for d in self.dims.displayed]
+            rel_coords = curr_coords - self._text_coords_view
+            rotated_coords = [
+                rotate_point(c, self.rotation) for c in rel_coords
+            ]
+            axis_aligned_coords = rotated_coords + self._text_coords_view
 
+            # Determine if text under cursor
             hitbox_half_width = in_slice_sizes / 2 * self.scale_factor
+            distances = abs(self._text_coords_view - axis_aligned_coords)
 
             in_slice_matches = np.all(distances <= hitbox_half_width, axis=1)
             indices = np.where(in_slice_matches)[0]
