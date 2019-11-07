@@ -1,12 +1,9 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QApplication,
     QLabel,
     QComboBox,
     QSlider,
-    QCheckBox,
     QButtonGroup,
-    QVBoxLayout,
     QRadioButton,
     QPushButton,
     QLineEdit,
@@ -111,11 +108,12 @@ class QtTextControls(QtLayerControls):
         mode = event.mode
         if mode == Mode.ADD:
             self.addition_button.setChecked(True)
-            self.text_box.setText('')
+            self.text_box.setText(self.layer.new_text)
         elif mode == Mode.SELECT:
             self.select_button.setChecked(True)
             self._on_highlight(event=None)
         elif mode == Mode.PAN_ZOOM:
+            self.text_box.setText('')
             self.panzoom_button.setChecked(True)
         else:
             raise ValueError("Mode not recongnized")
@@ -174,6 +172,7 @@ class QtTextControls(QtLayerControls):
         if len(selected_data) == 1:
             text = self.layer.text[selected_data[0]]
             self.text_box.setText(text)
+            self.layer.new_text = text
         elif self.layer._mode == Mode.ADD:
             return
 

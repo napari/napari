@@ -559,7 +559,7 @@ class Text(Layer):
         # Set the new text to 'EditMe' if none has been specified
         new_text = self.new_text
         if self.new_text == '':
-            new_text = 'EditMe'
+            new_text = 'edit'
 
         text.append(new_text)
 
