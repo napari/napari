@@ -28,6 +28,8 @@ class ViewerModel(KeymapMixin):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names
 
     Attributes
     ----------
@@ -43,7 +45,9 @@ class ViewerModel(KeymapMixin):
 
     themes = palettes
 
-    def __init__(self, title='napari', ndisplay=2, order=None):
+    def __init__(
+        self, title='napari', ndisplay=2, order=None, axis_labels=None
+    ):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -66,13 +70,15 @@ class ViewerModel(KeymapMixin):
         else:
             ndim = len(order)
 
+        if axis_labels is None:
+            axis_labels = list(range(ndim))
+
         self.dims = Dims(ndim)
         self.dims.ndisplay = ndisplay
         self.dims.order = order
+        self.dims.axis_labels = axis_labels
 
         self.layers = LayerList()
-
-        self.axis_labels = [''] * ndim  # labels will be empty if data is 2D
 
         self._status = 'Ready'
         self._help = ''
@@ -412,7 +418,6 @@ class ViewerModel(KeymapMixin):
         blending=None,
         visible=True,
         path=None,
-        axis_labels=None,
     ):
         """Add an image layer to the layers list.
 
@@ -511,7 +516,6 @@ class ViewerModel(KeymapMixin):
                 opacity=opacity,
                 blending=blending,
                 visible=visible,
-                axis_labels=axis_labels,
             )
             self.add_layer(layer)
             return layer
@@ -594,7 +598,6 @@ class ViewerModel(KeymapMixin):
         opacity=1,
         blending='translucent',
         visible=True,
-        axis_labels=None,
     ):
         """Add a points layer to the layers list.
 

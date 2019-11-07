@@ -143,7 +143,7 @@ class Dims:
                 "dimensions unlabeled, use '' instead."
             )
         self._axis_labels = labels
-        self.events.axis_labels()
+        self.events.axis_labels(axis=list(range(self.ndim)))
 
     @property
     def order(self):

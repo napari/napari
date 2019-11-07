@@ -23,7 +23,6 @@ def view_image(
     title='napari',
     ndisplay=2,
     order=None,
-    axis_labels=None,
 ):
     """Create a viewer and add an image layer.
 
@@ -142,6 +141,7 @@ def view_points(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a points layer.
 
@@ -186,10 +186,12 @@ def view_points(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order  : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names
 
     Returns
     -------
@@ -201,7 +203,9 @@ def view_points(
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_points(
         data=data,
         symbol=symbol,
@@ -238,6 +242,7 @@ def view_labels(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -280,17 +285,21 @@ def view_labels(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order: tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_labels(
         data,
         is_pyramid=is_pyramid,
@@ -326,6 +335,7 @@ def view_shapes(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a shapes layer.
 
@@ -384,17 +394,21 @@ def view_shapes(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_shapes(
         data=data,
         shape_type=shape_type,
@@ -429,6 +443,7 @@ def view_surface(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a surface layer.
 
@@ -472,17 +487,21 @@ def view_surface(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_surface(
         data,
         colormap=colormap,
@@ -515,6 +534,7 @@ def view_vectors(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a vectors layer.
 
@@ -552,17 +572,21 @@ def view_vectors(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_vectors(
         data,
         edge_width=edge_width,

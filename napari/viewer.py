@@ -17,9 +17,13 @@ class Viewer(ViewerModel):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimensions names
     """
 
-    def __init__(self, title='napari', ndisplay=2, order=None):
+    def __init__(
+        self, title='napari', ndisplay=2, order=None, axis_labels=None
+    ):
         # instance() returns the singleton instance if it exists, or None
         app = QApplication.instance()
         # if None, raise a RuntimeError with the appropriate message
@@ -38,7 +42,9 @@ class Viewer(ViewerModel):
                 " Then, restart IPython."
             )
             raise RuntimeError(message)
-        super().__init__(title=title, ndisplay=ndisplay, order=order)
+        super().__init__(
+            title=title, ndisplay=ndisplay, order=order, axis_labels=None
+        )
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
         self.screenshot = self.window.qt_viewer.screenshot
