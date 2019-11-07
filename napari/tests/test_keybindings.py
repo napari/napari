@@ -30,7 +30,7 @@ def test_viewer_keybindings(qtbot):
         mock_release.method()
 
     @viewer.bind_key('Shift-F')
-    def key_callback(v):
+    def key_shift_callback(v):
         assert viewer == v
 
         # on press
@@ -96,17 +96,14 @@ def test_layer_keybindings(qtbot):
     @layer.bind_key('F')
     def key_callback(l):
         assert layer == l
-
         # on press
         mock_press.method()
-
         yield
-
         # on release
         mock_release.method()
 
     @layer.bind_key('Shift-F')
-    def key_callback(l):
+    def key_shift_callback(l):
         assert layer == l
 
         # on press
