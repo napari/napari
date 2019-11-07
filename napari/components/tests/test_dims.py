@@ -142,3 +142,35 @@ def test_assert_axis_out_of_bounds(ndim, ax_input):
     dims = Dims(ndim)
     with pytest.raises(ValueError):
         dims._assert_axis_inbound(ax_input)
+
+
+@pytest.mark.parametrize(
+    "ndim, propname, propvalue, default, expected",
+    [
+        (3, 'order', range(3), [], range(3)),
+        (
+            3,
+            'axis_labels',
+            None,
+            [str(ax) for ax in range(3)],
+            [str(ax) for ax in range(3)],
+        ),
+        (2, 'order', None, [], []),
+    ],
+)
+def test_assert_valid_init(ndim, propname, propvalue, default, expected):
+    actual = Dims._assert_valid_init(ndim, propname, propvalue, default)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "ndim, propname, propvalue, default",
+    [
+        (3, 'order', range(4), []),
+        (3, 'axis_labels', ('ax',), [str(ax) for ax in range(3)]),
+        (2, 'order', [1], []),
+    ],
+)
+def test_assert_invalid_init_raises(ndim, propname, propvalue, default):
+    with pytest.raises(ValueError):
+        Dims._assert_valid_init(ndim, propname, propvalue, default)

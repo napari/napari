@@ -14,6 +14,14 @@ class Dims:
     ----------
     init_ndim : int, optional
         Initial number of dimensions
+    ndisplay : int, optional
+        Number of displayed dimensions.
+    order : list of int, optional
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
+    axis_labels : list of str, optional
+        Dimension names
 
     Attributes
     ----------
@@ -33,16 +41,8 @@ class Dims:
         Flag if to clip indices based on range. Needed for image-like
         layers, but prevents shape-like layers from adding new shapes
         outside their range.
-    axis_labels : list of str
-        Dimension names, displayed next to their corresponding sliders
-    order : tuple of int
-        Order in which dimensions are displayed where the last two or last
-        three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3.
     ndim : int
         Number of dimensions.
-    ndisplay : int
-        Number of displayed dimensions.
     indices : tuple of slice object
         Tuple of slice objects for slicing arrays on each dimension, one for
         each dimension
@@ -54,7 +54,7 @@ class Dims:
         Order of only displayed dimensions.
     """
 
-    def __init__(self, init_ndim=0):
+    def __init__(self, init_ndim=0, ndisplay=2, order=None, axis_labels=None):
         super().__init__()
 
         # Events:
@@ -69,17 +69,21 @@ class Dims:
             range=None,
             camera=None,
         )
-
         self._range = []
         self._point = []
         self._interval = []
         self._mode = []
-        self._order = []
         self.clip = True
-        self._axis_labels = []
-
-        self._ndisplay = 2
-        self.ndim = init_ndim
+        self._ndisplay = 2 if ndisplay is None else ndisplay
+        final_ndim = 0 if init_ndim is None else init_ndim
+        self._order = self._assert_valid_init(final_ndim, 'order', order, [])
+        self._axis_labels = self._assert_valid_init(
+            final_ndim,
+            'axis_labels',
+            axis_labels,
+            [str(ax) for ax in range(self.ndim)],
+        )
+        self.ndim = final_ndim
 
     def __str__(self):
         return "~~".join(
@@ -408,6 +412,48 @@ class Dims:
                 f" dimensions is {self.ndim}."
             )
         return axis
+
+    @staticmethod
+    def _assert_valid_init(ndim, propname, propvalue, default_value):
+        """Asserts that the given values to __init__ are valid in light of
+        the number of dimensions.
+        The method is static since "self" is not needed and for ease of
+        testing.
+
+        Parameters
+        ----------
+        ndim : int
+            Number of dimensions
+        propname : str
+            Name of property to check
+        propvalue : Any
+            Input value
+        default_value : Any
+            Default of that parameter
+
+        Returns
+        -------
+        value : Any
+            An appropriate value for that parameter
+
+        Raises
+        ------
+        ValueError
+            Input values doesn't match ndim
+        """
+        if propvalue is None:
+            return default_value
+
+        try:
+            proplen = len(propvalue)
+        except TypeError:
+            proplen = propvalue
+        if proplen != ndim:
+            raise ValueError(
+                f"Length of {propname} must be identical to ndim."
+                f" ndim is {ndim} while {propname} is {propvalue}."
+            )
+        return propvalue
 
     def _roll(self):
         """Roll order of dimensions for display."""
