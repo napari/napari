@@ -195,6 +195,42 @@ def test_add_points(qtbot):
     viewer.window.close()
 
 
+def test_add_text(qtbot):
+    """Test adding text."""
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    n_text = 10
+    n_dims = 2
+    coords = 20 * np.random.random((n_text, n_dims))
+    text = n_text * ['hi']
+    data = (coords, text)
+    layer = viewer.add_text(data)
+    assert np.all(viewer.layers[0].data == data)
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+
+    assert viewer.dims.ndim == 2
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Switch to 3D rendering mode and back to 2D rendering mode
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
+
+    # Close the viewer
+    viewer.window.close()
+
+
 def test_add_vectors(qtbot):
     """Test adding vectors."""
     viewer = Viewer()
