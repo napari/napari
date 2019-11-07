@@ -188,6 +188,8 @@ class Text(Layer):
         self._is_selecting = False
         self._clipboard = {}
 
+        self.events.deselect.connect(lambda x: self._finish_drawing())
+
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
@@ -306,8 +308,6 @@ class Text(Layer):
             )
             if len(index) == 1:
                 box = order_rectangle_corners(data)
-                print(data)
-                print(box)
             else:
                 box = create_box(data)
 
@@ -356,8 +356,7 @@ class Text(Layer):
             raise ValueError("Mode not recognized")
 
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
-            self.selected_data = []
-            self._set_highlight()
+            self._finish_drawing()
 
         self.status = str(mode)
         self._mode = mode
@@ -586,6 +585,19 @@ class Text(Layer):
             coords = np.delete(coords, index, axis=0)
             text = [t for i, t in enumerate(text) if i not in index]
             self.data = (coords, text)
+
+    def _finish_drawing(self):
+        """Reset properties used in text drawing."""
+        self.selected_data = []
+        self._selected_view = []
+        self._value = None
+        self._value_stored = None
+        self._selected_box = None
+        self._drag_start = None
+        self._drag_box = None
+        self._drag_box_stored = None
+        self._is_selecting = False
+        self._set_highlight()
 
     def _move(self, index, coord):
         """Moves text relative drag start location.
