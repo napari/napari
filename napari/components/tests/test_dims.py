@@ -108,7 +108,7 @@ def test_indices():
 
 def test_axis_labels():
     dims = Dims(4)
-    assert dims.axis_labels == [''] * 4
+    assert dims.axis_labels == [str(x) for x in reversed(range(4))]
 
 
 def test_order_when_changing_ndim():
@@ -126,6 +126,18 @@ def test_order_when_changing_ndim():
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
     assert dims.point == [3, 0, 0]
+
+
+def test_labels_order_when_changing_dims():
+    dims = Dims(4)
+    dims.axis_labels[-1] = 'abc'
+    print(dims.axis_labels)
+    dims.ndim = 5
+    assert dims.axis_labels == ['4', '3', '2', '1', 'abc']
+
+
+def test_labels_on_init():
+    pass
 
 
 @pytest.mark.parametrize(
