@@ -58,6 +58,7 @@ class ViewerModel(KeymapMixin):
             active_layer=Event,
             palette=Event,
             grid=Event,
+            layers_change=Event,
         )
 
         if order is None:
@@ -1146,6 +1147,7 @@ class ViewerModel(KeymapMixin):
             self.dims.ndim = len(layer_range)
             for i, r in enumerate(layer_range):
                 self.dims.set_range(i, r)
+        self.events.layers_change()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.
