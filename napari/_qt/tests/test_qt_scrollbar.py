@@ -8,4 +8,4 @@ def test_modified_scrollbar_click(qtbot):
     assert w.value() == 0
     qtbot.mousePress(w, Qt.LeftButton, pos=QPoint(50, 5))
     # the normal QScrollBar would have moved to "10"
-    assert w.value() == 50
+    assert w.value() >= 40
