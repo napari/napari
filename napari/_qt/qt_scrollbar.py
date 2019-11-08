@@ -48,7 +48,7 @@ class ModifiedScrollBar(QScrollBar):
                     QStyle.sliderValueFromPosition(
                         self.minimum(),
                         self.maximum(),
-                        pos - sliderMin,
+                        pos - sliderMin - sliderLength // 2,
                         sliderMax - sliderMin,
                         opt.upsideDown,
                     )
