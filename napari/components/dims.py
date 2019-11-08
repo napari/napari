@@ -139,7 +139,7 @@ class Dims:
             raise ValueError(
                 f"Number of labels doesn't match number of dimensions. Number"
                 f" of given labels was {len(labels)}, number of dimensions is"
-                f" {self.ndim}. Note: If you wish to keep some of the"
+                f" {self.ndim}. Note: If you wish to keep some of the "
                 "dimensions unlabeled, use '' instead."
             )
         self._axis_labels = labels
