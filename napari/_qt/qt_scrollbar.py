@@ -57,12 +57,10 @@ class ModifiedScrollBar(QScrollBar):
         if event.buttons() & Qt.LeftButton:
             # dragging with the mouse button down should move the slider
             self._move_to_mouse_position(event)
-            return
         return super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             # clicking the mouse button should move slider to the clicked point
             self._move_to_mouse_position(event)
-            return
         return super().mousePressEvent(event)
