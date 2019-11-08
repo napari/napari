@@ -1,11 +1,13 @@
+from typing import Optional, Tuple
+
 import numpy as np
 from qtpy.QtCore import QEventLoop, Qt, QThread, QTimer, Signal, Slot
-from qtpy.QtWidgets import QGridLayout, QScrollBar, QSizePolicy, QWidget
+from qtpy.QtWidgets import QGridLayout, QSizePolicy, QWidget
 
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
 from ..util.event import Event
-from typing import Tuple, Optional
+from .qt_scrollbar import ModifiedScrollBar
 
 
 class QtDims(QWidget):
@@ -285,7 +287,7 @@ class QtDims(QWidget):
         range = (range[0], range[1] - range[2], range[2])
         point = self.dims.point[axis]
 
-        slider = QScrollBar(Qt.Horizontal)
+        slider = ModifiedScrollBar(Qt.Horizontal)
         slider.setFocusPolicy(Qt.NoFocus)
         slider.setMinimum(range[0])
         slider.setMaximum(range[1])
