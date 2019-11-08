@@ -22,4 +22,4 @@ with napari.gui_qt():
             while layer.data.all() != dat.all():
                 layer.data = dat
 
-    update_thread = viewer.update(layer_update, update_period=0.1, num_updates=100)
+    viewer.update(layer_update, update_period=0.05, num_updates=100)

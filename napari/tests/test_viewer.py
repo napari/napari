@@ -359,17 +359,18 @@ def test_update(qtbot):
     def layer_update(*, update_period, num_updates):
         # number of times to update
 
-        for k in range(num_updates):  # Usage of keyword arguments
-            time.sleep(update_period)  # Usage of ordinary arguments
+        for k in range(num_updates):
+            time.sleep(update_period)
 
             dat = np.random.random((512, 512))
             layer.data = dat
 
             assert layer.data.all() == dat.all()
 
-    update_thread = viewer.update(
-        layer_update, update_period=0.1, num_updates=100
-    )
+    viewer.update(layer_update, update_period=0.01, num_updates=100)
+
+    # if we do not sleep, main thread closes before update thread finishes and many qt components get cleaned
+    time.sleep(3)
 
     # Close the viewer
     viewer.window.close()

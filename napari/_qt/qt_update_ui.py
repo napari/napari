@@ -1,7 +1,7 @@
-from qtpy.QtCore import QThread
+from qtpy.QtCore import QRunnable
 
 
-class QtUpdateUI(QThread):
+class QtUpdateUI(QRunnable):
     """UI Update thread, extended QThread.
 
     Parameters

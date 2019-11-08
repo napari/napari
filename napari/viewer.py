@@ -46,8 +46,7 @@ class Viewer(ViewerModel):
         self.screenshot = self.window.qt_viewer.screenshot
         self.update_console = self.window.qt_viewer.console.push
 
-    @staticmethod
-    def update(func, *args, **kwargs):
+    def update(self, func, *args, **kwargs):
         t = QtUpdateUI(func, *args, **kwargs)
-        t.start()
-        return t  # returns thread object as it has to live on calling script
+        self.window.qt_viewer.pool.start(t)
+        return self.window.qt_viewer.pool  # returns threadpool object
