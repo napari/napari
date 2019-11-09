@@ -18,20 +18,20 @@ New Features
 Improvements
 ************
 
-Bugfixs
-*******
+Bug fixs
+********
 
 API Changes
 ***********
 
 Deprecations
-*************
+************
 
 Build Tools
 ***********
 
 Other Pull Requests
-*************
+*******************
 
 Contributors to this release
 ----------------------------

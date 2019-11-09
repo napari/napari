@@ -92,7 +92,7 @@ $ pip install twine
 
 Upload the release candidate with:
 ```bash
-$ python -m twine upload dist/*
+$ python -m twine upload dist/napari-X.Y.Zrc1.tar.gz
 ```
 
 The release candidate can then be tested with
@@ -120,7 +120,7 @@ For example:
 $ git tag -a vX.Y.Z -m "Version X.Y.Z" master
 $ rm -rf dist build
 $ python setup.py sdist bdist_wheel
-$ python -m twine upload dist/*
+$ python -m twine upload dist/napari-X.Y.Z.tar.gz
 ```
 
 At the very end you should push the new tags to the repo.
