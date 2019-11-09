@@ -447,6 +447,14 @@ QtOpenDialog > QLineEdit:disabled {
   border-radius: 3px;
 }
 
+QtOpenDialog > QListWidget {
+  background-color: {{ console }};
+  border: 2px solid {{ console }};
+  border-radius: 3px;
+  padding: 0px;
+  margin: 0px;
+}
+
 /* ------------------------------------------------------ */
 
 QSlider {
@@ -485,6 +493,20 @@ QScrollBar::handle:vertical {
     background-color: {{ foreground }};
     border: 0px;
     min-height: 10px;
+    border-radius: 3px;
+}
+
+QScrollBar:horizontal {
+    background-color: {{ background }};
+    height: 16px;
+    margin: 4px 1px 4px 1px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: {{ foreground }};
+    border: 0px;
+    min-width: 10px;
     border-radius: 3px;
 }
 

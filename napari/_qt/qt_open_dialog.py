@@ -1,25 +1,21 @@
-from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QTabWidget,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QGridLayout,
     QPushButton,
     QFileDialog,
-    QLabel,
     QDialog,
-    QPlainTextEdit,
-    QFrame,
-    QScrollArea,
     QSizePolicy,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QAbstractItemView,
 )
 from pathlib import Path
 import os.path
 import napari
-from ..util.misc import get_keybindings_summary
 from .layers.qt_image_layer import QtImageDialog
 
 
@@ -39,11 +35,22 @@ class QtOpenDialog(QWidget):
         # textbox.setToolTip('Layer name')
         # textbox.setAcceptDrops(False)
         # textbox.setEnabled(True)
-        # textbox.editingFinished.connect(self.changeText)
+        # self.fileName.editingFinished.connect(self.changeText)
         self.layout.addWidget(self.fileName)
+
+        self.fileList = QListWidget()
+        self.fileList.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.layout.addWidget(self.fileList)
 
         self.selection = QWidget()
         self.selectionLayout = QHBoxLayout()
+        self.selection.setLayout(self.selectionLayout)
+
+        # remove files
+        self.removeFiles = QPushButton('remove files')
+        self.removeFiles.setObjectName('dialog')
+        self.removeFiles.clicked.connect(self._click_remove_files)
+        self.selectionLayout.addWidget(self.removeFiles)
 
         # select folder
         self.selectFolder = QPushButton('select folder')
@@ -119,15 +126,35 @@ class QtOpenDialog(QWidget):
         d.show()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Return and self.open.isEnabled():
+        if event.key() == Qt.Key_Return and self.fileName.hasFocus():
+            self._finish_text()
+            event.accept()
+        elif event.key() == Qt.Key_Return and self.open.isEnabled():
             event.accept()
             self._finish_dialog()
         elif event.key() == Qt.Key_Return:
             event.accept()
             self._click_select_files()
         elif event.key() == Qt.Key_Escape:
-            self.pathTextBox.clearFocus()
             self.setFocus()
+
+    def _finish_text(self):
+        """Add new file from text edit box."""
+        text = self.fileName.text()
+        if len(text) > 0:
+            item = QListWidgetItem()
+            item.setText(text)
+            self.fileList.addItem(item)
+            self.fileName.setText("")
+        else:
+            self.fileName.clearFocus()
+            self.setFocus()
+
+    def _click_remove_files(self):
+        """Remove selected files from list."""
+        selected_items = self.fileList.selectedItems()
+        print(selected_items)
+        # for
 
     def _on_text_change(self):
         """If filenames are present enable open button."""
@@ -135,9 +162,6 @@ class QtOpenDialog(QWidget):
         self.open.setEnabled(len(filenames) > 0)
 
     def _focus_text_out(self, event):
-        if event is not None:
-            QPlainTextEdit.focusOutEvent(self.pathTextBox, event)
-        self.pathTextBox.setCursorWidth(0)
         filenames = self.get_filenames()
         enabled = len(filenames) > 0
         self.open.setEnabled(enabled)
@@ -147,9 +171,6 @@ class QtOpenDialog(QWidget):
         self.selectFiles.style().polish(self.selectFiles)
 
     def _focus_text_in(self, event):
-        if event is not None:
-            QPlainTextEdit.focusInEvent(self.pathTextBox, event)
-        self.pathTextBox.setCursorWidth(self._default_cursor_width)
         self.open.setProperty('highlight', False)
         self.open.style().polish(self.open)
         self.selectFiles.setProperty('highlight', False)
@@ -163,9 +184,10 @@ class QtOpenDialog(QWidget):
         filenames : list of str
             List of filenames
         """
-        raw_filenames = self.pathTextBox.toPlainText()
-        filenames = raw_filenames.splitlines()
-        return [f for f in filenames if len(f) > 0]
+        filenames = []
+        for index in range(self.fileList.count()):
+            filenames.append(self.fileList.item(index).text())
+        return filenames
 
     def _click_select_files(self):
         """Open file using native file open dialog."""
@@ -174,15 +196,15 @@ class QtOpenDialog(QWidget):
             caption='Select file(s)',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if filenames is None:
-            self.pathTextBox.setPlainText("")
-        else:
-            self.pathTextBox.setPlainText("\n".join(filenames))
-        if self.pathTextBox.hasFocus():
-            self.pathTextBox.clearFocus()
-            self.setFocus()
-        else:
-            self._focus_text_out(None)
+        # if filenames is None:
+        #     self.pathTextBox.setPlainText("")
+        # else:
+        #     self.pathTextBox.setPlainText("\n".join(filenames))
+        # if self.pathTextBox.hasFocus():
+        #     self.pathTextBox.clearFocus()
+        #     self.setFocus()
+        # else:
+        #     self._focus_text_out(None)
 
     def _click_select_folder(self):
         """Open folder using native directory open dialog."""
@@ -191,15 +213,16 @@ class QtOpenDialog(QWidget):
             caption='Select folder',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if folder is None:
-            self.pathTextBox.setPlainText("")
-        else:
-            self.pathTextBox.setPlainText(folder)
-        if self.pathTextBox.hasFocus():
-            self.pathTextBox.clearFocus()
-            self.setFocus()
-        else:
-            self._focus_text_out(None)
+        print(folder)
+        # if folder is None:
+        #     self.pathTextBox.setPlainText("")
+        # else:
+        #     self.pathTextBox.setPlainText(folder)
+        # if self.pathTextBox.hasFocus():
+        #     self.pathTextBox.clearFocus()
+        #     self.setFocus()
+        # else:
+        #     self._focus_text_out(None)
 
     def _finish_dialog(self):
         filenames = self.get_filenames()
