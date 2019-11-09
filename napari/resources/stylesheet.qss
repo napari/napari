@@ -451,8 +451,10 @@ QtOpenDialog > QListWidget {
   background-color: {{ console }};
   border: 2px solid {{ console }};
   border-radius: 3px;
-  padding: 0px;
   margin: 0px;
+  padding: 0px;
+  min-height: 72px;
+  max-height: 72px;
 }
 
 /* ------------------------------------------------------ */
