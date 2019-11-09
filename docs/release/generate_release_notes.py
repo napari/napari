@@ -211,8 +211,6 @@ https://github.com/napari/napari
 )
 
 for section, pull_request_dicts in highlights.items():
-    # if not pull_request_dicts:
-    #     continue
     print(f'{section}s\n{"*" * (len(section)+1)}')
     if len(pull_request_dicts.items()) == 0:
         print()
