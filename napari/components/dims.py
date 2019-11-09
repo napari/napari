@@ -56,7 +56,6 @@ class Dims:
 
     def __init__(self, ndim=None, *, ndisplay=2, order=None, axis_labels=None):
         super().__init__()
-        print('aaaaa', ndim, order, axis_labels)
 
         # Events:
         self.events = EmitterGroup(
@@ -87,8 +86,6 @@ class Dims:
             ndim = len(order)
         self.ndim = ndim
 
-        print('bbbbb', ndim, order, axis_labels)
-
         if order is not None:
             if len(order) != ndim:
                 raise ValueError(
@@ -103,7 +100,6 @@ class Dims:
                     f" ndim is {ndim} while axis labels is {axis_labels}."
                 )
             self._axis_labels = axis_labels
-        print('ads', self.ndim, self.order, self.axis_labels)
 
     def __str__(self):
         return "~~".join(
@@ -357,7 +353,7 @@ class Dims:
         axis = self._assert_axis_inbound(axis)
         if self.point[axis] != value:
             self._point[axis] = value
-            self.events.axis(axis=axis)
+            self.events.axis(axis=axis, value=value)
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
         """Sets the interval used for cropping and projecting this dimension
