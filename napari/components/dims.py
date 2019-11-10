@@ -12,8 +12,8 @@ class Dims:
 
     Parameters
     ----------
-    init_ndim : int, optional
-        Initial number of dimensions
+    ndim : int, optional
+        Number of dimensions
     ndisplay : int, optional
         Number of displayed dimensions.
     order : list of int, optional
@@ -54,7 +54,7 @@ class Dims:
         Order of only displayed dimensions.
     """
 
-    def __init__(self, init_ndim=0, ndisplay=2, order=None, axis_labels=None):
+    def __init__(self, ndim=None, *, ndisplay=2, order=None, axis_labels=None):
         super().__init__()
 
         # Events:
@@ -73,17 +73,33 @@ class Dims:
         self._point = []
         self._interval = []
         self._mode = []
+        self._order = []
+        self._axis_labels = []
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay
-        final_ndim = 0 if init_ndim is None else init_ndim
-        self._order = self._assert_valid_init(final_ndim, 'order', order, [])
-        self._axis_labels = self._assert_valid_init(
-            final_ndim,
-            'axis_labels',
-            axis_labels,
-            [str(ax) for ax in range(self.ndim)],
-        )
-        self.ndim = final_ndim
+
+        if ndim is None and order is None and axis_labels is None:
+            ndim = self._ndisplay
+        elif ndim is None and order is None:
+            ndim = len(axis_labels)
+        elif ndim is None and axis_labels is None:
+            ndim = len(order)
+        self.ndim = ndim
+
+        if order is not None:
+            if len(order) != ndim:
+                raise ValueError(
+                    f"Length of order must be identical to ndim."
+                    f" ndim is {ndim} while order is {order}."
+                )
+            self._order = order
+        if axis_labels is not None:
+            if len(axis_labels) != ndim:
+                raise ValueError(
+                    f"Length of axis labels must be identical to ndim."
+                    f" ndim is {ndim} while axis labels is {axis_labels}."
+                )
+            self._axis_labels = axis_labels
 
     def __str__(self):
         return "~~".join(
@@ -143,12 +159,13 @@ class Dims:
                 "dimensions unlabeled, use '' instead."
             )
         self._axis_labels = labels
-        self.events.axis_labels()
+        for axis in range(self.ndim):
+            self.events.axis_labels(axis=axis)
 
     @property
     def order(self):
         """List of int: Display order of dimensions."""
-        return self._order
+        return copy(self._order)
 
     @order.setter
     def order(self, order):
@@ -177,33 +194,46 @@ class Dims:
 
     @ndim.setter
     def ndim(self, ndim):
-        if self.ndim == ndim:
+        cur_ndim = self.ndim
+        if cur_ndim == ndim:
             return
-        elif self.ndim < ndim:
-            # During instatiation, self.ndim is always 0 (since self._points is empty),
-            # but we could've created
-            for i in range(self.ndim, ndim):
-                self.set_initial_dims(0, insert=True)
+        elif ndim > cur_ndim:
+            # Range value is (min, max, step) for the entire slider
+            self._range = [(0, 2, 1)] * (ndim - cur_ndim) + self._range
+            # Point is the slider value if in point mode
+            self._point = [0] * (ndim - cur_ndim) + self._point
+            # Interval value is the (min, max) of the slider selction
+            # if in interval mode
+            self._interval = [(0, 1)] * (ndim - cur_ndim) + self._interval
+            self._mode = [DimsMode.POINT] * (ndim - cur_ndim) + self._mode
+            self._order = list(range(ndim - cur_ndim)) + [
+                o + ndim - cur_ndim for o in self.order
+            ]
+            # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
+            self._axis_labels = [
+                str(i - ndim) for i in range(ndim - cur_ndim)
+            ] + self._axis_labels
+
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
 
             # Notify listeners of which dimensions have been affected
-            for axis_changed in range(ndim - self.ndim):
+            for axis_changed in range(ndim - cur_ndim):
                 self.events.axis(axis=axis_changed)
-        elif self.ndim > ndim:
+        elif ndim < cur_ndim:
             self._range = self._range[-ndim:]
             self._point = self._point[-ndim:]
             self._interval = self._interval[-ndim:]
             self._mode = self._mode[-ndim:]
-            self._order = self._order_after_dim_reduction(self._order[-ndim:])
-            self._axis_labels = self._order_after_dim_reduction(
-                self._axis_labels[-ndim:]
+            self._order = self._reorder_after_dim_reduction(
+                self._order[-ndim:]
             )
+            self._axis_labels = self._axis_labels[-ndim:]
 
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
 
-    def _order_after_dim_reduction(self, arr_to_reorder):
+    def _reorder_after_dim_reduction(self, order):
         """
         When the user reduces the dimensionality of the array,
         make sure to preserve the current ordering of the dimensions
@@ -211,7 +241,7 @@ class Dims:
 
         Parameters
         ----------
-        arr_to_reorder : list-like
+        order : list-like
             The data to reorder.
 
         Returns
@@ -220,7 +250,7 @@ class Dims:
             The original array with the unneeded dimension
             thrown away.
         """
-        arr = np.array(arr_to_reorder)
+        arr = np.array(order)
         arr[np.argsort(arr)] = range(len(arr))
         return arr.tolist()
 
@@ -280,30 +310,9 @@ class Dims:
         order[np.argsort(order)] = list(range(len(order)))
         return tuple(order)
 
-    def set_initial_dims(self, axis, insert=False):
-        """Initializes the dimensions values for a given axis (dimension)
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-        insert : bool
-            Whether to insert the axis or not during initialization
-        """
-        if insert:
-            # Insert default values
-            # Range value is (min, max, step) for the entire slider
-            self._range.insert(axis, (0, 2, 1))
-            # Point is the slider value if in point mode
-            self._point.insert(axis, 0)
-            # Interval value is the (min, max) of the slider selction
-            # if in interval mode
-            self._interval.insert(axis, (0, 1))
-            self._mode.insert(axis, DimsMode.POINT)
-            cur_order = [o if o < axis else o + 1 for o in self.order]
-            self._order = [axis] + cur_order
-            self._axis_labels.insert(axis, str(len(self._axis_labels)))
-        else:
+    def reset(self):
+        """Reset dims values to initial states."""
+        for axis in range(self.ndim):
             # Range value is (min, max, step) for the entire slider
             self._range[axis] = (0, 2, 1)
             # Point is the slider value if in point mode
@@ -313,7 +322,8 @@ class Dims:
             self._interval[axis] = (0, 1)
             self._mode[axis] = DimsMode.POINT
             self._order[axis] = axis
-            self._axis_labels[axis] = str(len(self._axis_labels))
+            # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
+            self._axis_labels[axis] = str(axis - self.ndim)
 
     def set_range(self, axis: int, _range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
@@ -343,7 +353,7 @@ class Dims:
         axis = self._assert_axis_inbound(axis)
         if self.point[axis] != value:
             self._point[axis] = value
-            self.events.axis(axis=axis)
+            self.events.axis(axis=axis, value=value)
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
         """Sets the interval used for cropping and projecting this dimension
@@ -387,7 +397,7 @@ class Dims:
         """
         axis = self._assert_axis_inbound(axis)
         if self.axis_labels[axis] != str(label):
-            self.axis_labels[axis] = str(label)
+            self._axis_labels[axis] = str(label)
             self.events.axis_labels(axis=axis)
 
     def _assert_axis_inbound(self, axis: int) -> int:
@@ -414,48 +424,6 @@ class Dims:
                 f" dimensions is {self.ndim}."
             )
         return axis
-
-    @staticmethod
-    def _assert_valid_init(ndim, propname, propvalue, default_value):
-        """Asserts that the given values to __init__ are valid in light of
-        the number of dimensions.
-        The method is static since "self" is not needed and for ease of
-        testing.
-
-        Parameters
-        ----------
-        ndim : int
-            Number of dimensions
-        propname : str
-            Name of property to check
-        propvalue : Any
-            Input value
-        default_value : Any
-            Default of that parameter
-
-        Returns
-        -------
-        value : Any
-            An appropriate value for that parameter
-
-        Raises
-        ------
-        ValueError
-            Input values doesn't match ndim
-        """
-        if propvalue is None:
-            return default_value
-
-        try:
-            proplen = len(propvalue)
-        except TypeError:
-            proplen = propvalue
-        if proplen != ndim:
-            raise ValueError(
-                f"Length of {propname} must be identical to ndim."
-                f" ndim is {ndim} while {propname} is {propvalue}."
-            )
-        return propvalue
 
     def _roll(self):
         """Roll order of dimensions for display."""
