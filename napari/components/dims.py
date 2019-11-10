@@ -165,7 +165,7 @@ class Dims:
     @property
     def order(self):
         """List of int: Display order of dimensions."""
-        return self._order
+        return copy(self._order)
 
     @order.setter
     def order(self, order):
@@ -397,7 +397,7 @@ class Dims:
         """
         axis = self._assert_axis_inbound(axis)
         if self.axis_labels[axis] != str(label):
-            self.axis_labels[axis] = str(label)
+            self._axis_labels[axis] = str(label)
             self.events.axis_labels(axis=axis)
 
     def _assert_axis_inbound(self, axis: int) -> int:

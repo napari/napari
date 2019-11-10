@@ -103,8 +103,9 @@ class QtDims(QWidget):
         self.dims.events.order.connect(update_display_listener)
         self.update_display.connect(self._update_display)
 
+        # axis labels change listener
         def update_axis_labels_listener(event):
-            self.update_axis_labels.emit(event.axis_labels)
+            self.update_axis_labels.emit(event.axis)
 
         self.dims.events.axis_labels.connect(update_axis_labels_listener)
         self.update_axis_labels.connect(self._update_axis_labels)
@@ -239,8 +240,7 @@ class QtDims(QWidget):
 
     def _update_axis_labels(self, axis):
         """Updates the label for the given axis """
-        # TODO
-        self.dims.axis_labels[axis] = 'dsads'
+        self.axis_labels[axis].setText(self.dims.axis_labels[axis])
 
     def _create_sliders(self, number_of_sliders):
         """
@@ -368,12 +368,14 @@ class QtDims(QWidget):
         label.setToolTip('Axis label')
         label.setAcceptDrops(False)
         label.setEnabled(True)
-        # label.setFocusPolicy(Qt.NoFocus)
 
-        def axis_label_change_listener(value):
-            self.dims.axis_labels[axis] = value
+        def changeText():
+            with self.dims.events.axis_labels.blocker():
+                self.dims.set_axis_label(axis, label.text())
+            label.clearFocus()
+            self.setFocus()
 
-        label.editingFinished.connect(axis_label_change_listener)
+        label.editingFinished.connect(changeText)
         return label
 
     def focus_up(self):
