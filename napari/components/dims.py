@@ -180,6 +180,8 @@ class Dims:
         if self.ndim == ndim:
             return
         elif self.ndim < ndim:
+            # During instatiation, self.ndim is always 0 (since self._points is empty),
+            # but we could've created
             for i in range(self.ndim, ndim):
                 self.set_initial_dims(0, insert=True)
             # Notify listeners that the number of dimensions have changed
