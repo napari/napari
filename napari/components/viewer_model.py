@@ -62,21 +62,12 @@ class ViewerModel(KeymapMixin):
             active_layer=Event,
             palette=Event,
             grid=Event,
+            layers_change=Event,
         )
 
-        if order is None:
-            ndim = ndisplay
-            order = list(range(ndim))
-        else:
-            ndim = len(order)
-
-        if axis_labels is None:
-            axis_labels = [str(ax) for ax in range(ndim)]
-
-        self.dims = Dims(ndim)
-        self.dims.ndisplay = ndisplay
-        self.dims.order = order
-        self.dims.axis_labels = axis_labels
+        self.dims = Dims(
+            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        )
 
         self.layers = LayerList()
 
@@ -1070,13 +1061,13 @@ class ViewerModel(KeymapMixin):
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
             self.dims.ndim = 2
-            for i in range(2):
-                self.dims.set_initial_dims(i)
+            self.dims.reset()
         else:
             layer_range = self._calc_layers_ranges()
             self.dims.ndim = len(layer_range)
             for i, r in enumerate(layer_range):
                 self.dims.set_range(i, r)
+        self.events.layers_change()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.
