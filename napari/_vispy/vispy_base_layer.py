@@ -39,7 +39,7 @@ class VispyBaseLayer(ABC):
 
         self.layer = layer
         self.node = node
-        self._position = (0,) * self.layer.ndim
+        self._position = (0,) * self.layer.dims.ndisplay
         self.camera = None
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
