@@ -99,7 +99,7 @@ class Dims:
                     f"Length of axis labels must be identical to ndim."
                     f" ndim is {ndim} while axis labels is {axis_labels}."
                 )
-            self._axis_labels = axis_labels
+            self._axis_labels = list(axis_labels)
 
     def __str__(self):
         return "~~".join(
@@ -157,7 +157,8 @@ class Dims:
                 f" {self.ndim}. Note: If you wish to keep some of the "
                 "dimensions unlabeled, use '' instead."
             )
-        self._axis_labels = labels
+
+        self._axis_labels = list(labels)
         for axis in range(self.ndim):
             self.events.axis_labels(axis=axis)
 
@@ -208,10 +209,13 @@ class Dims:
             self._order = list(range(ndim - cur_ndim)) + [
                 o + ndim - cur_ndim for o in self.order
             ]
-            # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
-            self._axis_labels = [
-                str(i - ndim) for i in range(ndim - cur_ndim)
-            ] + self._axis_labels
+            # Append new "default" labels to existing ones
+            if self._axis_labels == list(map(str, range(cur_ndim))):
+                self._axis_labels = list(map(str, range(ndim)))
+            else:
+                self._axis_labels = (
+                    list(map(str, range(ndim - cur_ndim))) + self._axis_labels
+                )
 
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()

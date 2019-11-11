@@ -133,7 +133,7 @@ def test_indices():
 
 def test_axis_labels():
     dims = Dims(4)
-    assert dims.axis_labels == ['-4', '-3', '-2', '-1']
+    assert dims.axis_labels == ['0', '1', '2', '3']
 
 
 def test_order_when_changing_ndim():
@@ -147,14 +147,14 @@ def test_order_when_changing_ndim():
     # Test that new dims get appended to the beginning of lists
     assert dims.point == [0, 2, 0, 0, 0]
     assert dims.order == [0, 1, 2, 3, 4]
-    assert dims.axis_labels == ['-5', '-4', '-3', '-2', '-1']
+    assert dims.axis_labels == ['0', '1', '2', '3', '4']
 
     dims.set_point(2, 3)
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
     assert dims.point == [3, 0, 0]
     assert dims.order == [0, 1, 2]
-    assert dims.axis_labels == ['-3', '-2', '-1']
+    assert dims.axis_labels == ['2', '3', '4']
 
 
 @pytest.mark.parametrize(
@@ -173,33 +173,7 @@ def test_assert_axis_out_of_bounds(ndim, ax_input):
         dims._assert_axis_inbound(ax_input)
 
 
-# @pytest.mark.parametrize(
-#     "ndim, propvalue, default, expected",
-#     [
-#         (3, 'order', range(3), [], range(3)),
-#         (
-#             3,
-#             'axis_labels',
-#             None,
-#             [str(ax) for ax in range(3)],
-#             [str(ax) for ax in range(3)],
-#         ),
-#         (2, 'order', None, [], []),
-#     ],
-# )
-# def test_assert_valid_init(ndim, propname, propvalue, default, expected):
-#     actual = Dims._assert_valid_init(ndim, propname, propvalue, default)
-#     assert actual == expected
-#
-#
-# @pytest.mark.parametrize(
-#     "ndim, propname, propvalue, default",
-#     [
-#         (3, 'order', range(4), []),
-#         (3, 'axis_labels', ('ax',), [str(ax) for ax in range(3)]),
-#         (2, 'order', [1], []),
-#     ],
-# )
-# def test_assert_invalid_init_raises(ndim, propname, propvalue, default):
-#     with pytest.raises(ValueError):
-#         Dims._assert_valid_init(ndim, propname, propvalue, default)
+def test_axis_labels_str_to_list():
+    dims = Dims()
+    dims.axis_labels = 'TX'
+    assert dims.axis_labels == ['T', 'X']
