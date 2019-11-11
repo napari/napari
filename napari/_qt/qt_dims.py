@@ -147,8 +147,7 @@ class QtDims(QWidget):
             sld.style().polish(sld)
 
     def _update_slider(self, axis: int):
-        """
-        Updates position for a given slider.
+        """Updates position for a given slider.
 
         Parameters
         ----------
@@ -167,8 +166,7 @@ class QtDims(QWidget):
         self.last_used = axis
 
     def _update_range(self, axis: int):
-        """
-        Updates range for a given slider.
+        """Updates range for a given slider.
 
         Parameters
         ----------
@@ -227,9 +225,7 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _update_nsliders(self):
-        """
-        Updates the number of sliders based on the number of dimensions
-        """
+        """Updates the number of sliders based on the number of dimensions"""
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -242,13 +238,13 @@ class QtDims(QWidget):
         """Updates the label for the given axis """
         self.axis_labels[axis].setText(self.dims.axis_labels[axis])
 
-    def _create_sliders(self, number_of_sliders):
-        """
-        Creates sliders to match new number of dimensions
+    def _create_sliders(self, number_of_sliders: int):
+        """Creates sliders to match new number of dimensions
 
         Parameters
         ----------
-        number_of_sliders : new number of sliders
+        number_of_sliders : int
+            new number of sliders
         """
         # add extra sliders so that number_of_sliders are present
         # add to the beginning of the list
@@ -274,12 +270,12 @@ class QtDims(QWidget):
             self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
-        """
-        Trims number of dimensions to a lower number
+        """Trims number of dimensions to a lower number
 
         Parameters
         ----------
-        number_of_sliders : new number of sliders
+        number_of_sliders : int
+            new number of sliders
         """
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list
@@ -287,8 +283,7 @@ class QtDims(QWidget):
             self._remove_slider(0)
 
     def _remove_slider(self, index):
-        """
-        Remove slider at index. Should also remove all accompanying widgets,
+        """Remove slider at index. Should also remove all accompanying widgets,
         like the axis label.
 
         Parameters
@@ -308,17 +303,17 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self.last_used = None
 
-    def _create_range_slider_widget(self, axis):
-        """
-        Creates a range slider widget for a given axis
+    def _create_range_slider_widget(self, axis: int):
+        """Creates a range slider widget for a given axis
 
         Parameters
         ----------
-        axis : axis index
+        axis : int
+            axis index
 
         Returns
         -------
-        slider : range slider
+            slider : range slider
         """
         _range = self.dims.range[axis]
         # Set the maximum values of the range slider to be one step less than
@@ -351,16 +346,17 @@ class QtDims(QWidget):
         return slider
 
     def _create_axis_label_widget(self, axis):
-        """
-        Create the axis label widget which accompanies its slider.
-        # TODO - min and max width, word wrapping, text alignmemt.
+        """Create the axis label widget which accompanies its slider.
+
         Parameters
         ----------
-        axis : axis index
+        axis : int
+            axis index
 
         Returns
         -------
-        label : QLabel with the given text
+        label : QLabel
+            A label with the given text
         """
         label = QLineEdit()
         label.setText(self.dims.axis_labels[axis])
@@ -409,8 +405,7 @@ class QtDims(QWidget):
         frame_range: Optional[Tuple[int, int]] = None,
         playback_mode: str = 'loop',
     ):
-        """
-        Animate (play) axis
+        """Animate (play) axis
 
         Parameters
         ----------
@@ -433,7 +428,7 @@ class QtDims(QWidget):
                     stopped
 
         Raises
-        ----------
+        -----
         IndexError
             If ``axis`` requested is out of the range of the dims
         IndexError

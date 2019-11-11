@@ -125,8 +125,7 @@ class Dims:
 
     @property
     def point(self):
-        """List of int: value of each dimension if in POINT mode.
-        """
+        """List of int: value of each dimension if in POINT mode."""
         return copy(self._point)
 
     @property
@@ -234,8 +233,7 @@ class Dims:
             self.events.ndim()
 
     def _reorder_after_dim_reduction(self, order):
-        """
-        When the user reduces the dimensionality of the array,
+        """When the user reduces the dimensionality of the array,
         make sure to preserve the current ordering of the dimensions
         while throwing away the unneeded dimensions.
 
