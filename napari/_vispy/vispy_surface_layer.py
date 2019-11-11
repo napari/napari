@@ -1,4 +1,4 @@
-from vispy.scene.visuals import Mesh as MeshNode
+from .mesh import Mesh as MeshNode
 from vispy.color import Colormap
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
