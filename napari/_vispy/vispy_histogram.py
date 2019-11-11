@@ -1,155 +1,101 @@
+from vispy.scene.visuals import Mesh as MeshNode
+from ..components.histogram import Histogram as HistogramModel
 import numpy as np
-from vispy.plot import PlotWidget
-from vispy import scene
-from vispy.scene.cameras import PanZoomCamera
+from abc import ABC, abstractmethod
 
 
-class PanZoom1DCamera(PanZoomCamera):
-    def __init__(self, axis=1, *args, **kwargs):
-        self.axis = axis
-        super().__init__(*args, **kwargs)
+"""Possible Organization
 
-    def zoom(self, factor, center=None):
-        if np.isscalar(factor):
-            factor = [factor, factor]
-        factor[self.axis] = 1
-        return super().zoom(factor, center=center)
-
-    def pan(self, pan):
-        pan[self.axis] = 0
-        self.rect = self.rect + pan
+there is an analysis model (like HistogramModel here) that has a set_data
+method (or setter).  The VispyPlotLayer is (currently) responsible both for
+feeding the analysis model data from some layer and for creating and converting
+the output of the model to some vispy Node that will be plotted in the view
+widget of the NapariPlotWidget.
+"""
 
 
-class NapariPlotWidget(PlotWidget):
-    """Subclassing PlotWidget to tweak look and feel and fix #1742"""
+class VispyPlotLayer(ABC):
+    def __init__(self, layer, node):
+        super().__init__()
+        self.layer = layer
+        self.node = node
 
-    def _configure_2d(self, fg_color=None):
-        if self._configured:
-            return
-
-        if fg_color is None:
-            fg = self._fg
-        else:
-            fg = fg_color
-
-        axis_kwargs = {
-            'text_color': fg,
-            'axis_color': fg,
-            'tick_color': fg,
-            'tick_width': 1,
-            'tick_font_size': 8,
-            'tick_label_margin': 12,
-            'axis_label_margin': 50,
-            'minor_tick_length': 3,
-            'major_tick_length': 6,
-            'axis_width': 1,
-            'axis_font_size': 10,
-        }
-
-        #     c0        c1      c2      c3      c4      c5         c6
-        #  r0 +---------+-------+-------+-------+-------+---------+---------+
-        #     |         |                       | title |         |         |
-        #  r1 |         +-----------------------+-------+---------+         |
-        #     |         |                       | cbar  |         |         |
-        #  r2 |         +-------+-------+-------+-------+---------+         |
-        #     |         | cbar  | ylabel| yaxis |  view | cbar    | padding |
-        #  r3 | padding +-------+-------+-------+-------+---------+         |
-        #     |         |                       | xaxis |         |         |
-        #  r4 |         +-----------------------+-------+---------+         |
-        #     |         |                       | xlabel|         |         |
-        #  r5 |         +-----------------------+-------+---------+         |
-        #     |         |                       | cbar  |         |         |
-        #  r6 |---------+-----------------------+-------+---------+---------|
-        #     |                           padding                           |
-        #     +---------+-----------------------+-------+---------+---------+
-
-        # padding left
-        padding_left = self.grid.add_widget(None, row=0, row_span=5, col=0)
-        padding_left.width_min = 30
-        padding_left.width_max = 60
-
-        # padding right
-        padding_right = self.grid.add_widget(None, row=0, row_span=5, col=6)
-        padding_right.width_min = 10
-        padding_right.width_max = 20
-
-        # # padding bottom
-        # padding_bottom = self.grid.add_widget(None, row=6, col=0, col_span=6)
-        # padding_bottom.height_min = 20
-        # padding_bottom.height_max = 40
-
-        # row 0
-        # title - column 4 to 5
-        self.title_widget = self.grid.add_widget(self.title, row=0, col=4)
-        self.title_widget.height_min = self.title_widget.height_max = (
-            30 if self.title.text else 10
-        )
-
-        # row 1
-        # colorbar - column 4 to 5
-        self.cbar_top = self.grid.add_widget(None, row=1, col=4)
-        self.cbar_top.height_max = 1
-
-        # row 2
-        # colorbar_left - column 1
-        # ylabel - column 2
-        # yaxis - column 3
-        # view - column 4
-        # colorbar_right - column 5
-        self.cbar_left = self.grid.add_widget(None, row=2, col=1)
-        self.cbar_left.width_max = 1
-
-        self.ylabel = scene.Label("", rotation=-90)
-        ylabel_widget = self.grid.add_widget(self.ylabel, row=2, col=2)
-        ylabel_widget.width_max = 1
-
-        self.yaxis = scene.AxisWidget(orientation='left', **axis_kwargs)
-
-        yaxis_widget = self.grid.add_widget(self.yaxis, row=2, col=3)
-        yaxis_widget.width_max = 35
-
-        # row 3
-        # xaxis - column 4
-        self.xaxis = scene.AxisWidget(orientation='bottom', **axis_kwargs)
-        xaxis_widget = self.grid.add_widget(self.xaxis, row=3, col=4)
-        xaxis_widget.height_max = 20
-
-        self.view = self.grid.add_view(
-            row=2, col=4, border_color=None, bgcolor=None
-        )
-        self.view.camera = PanZoom1DCamera()
-        self.camera = self.view.camera
-
-        self.cbar_right = self.grid.add_widget(None, row=2, col=5)
-        self.cbar_right.width_max = 1
-
-        # row 4
-        # xlabel - column 4
-        self.xlabel = scene.Label("")
-        xlabel_widget = self.grid.add_widget(self.xlabel, row=4, col=4)
-        xlabel_widget.height_max = 10
-
-        # row 5
-        self.cbar_bottom = self.grid.add_widget(None, row=5, col=4)
-        self.cbar_bottom.height_max = 1
-
-        self._configured = True
-        self.xaxis.link_view(self.view)
-        self.yaxis.link_view(self.view)
+    @abstractmethod
+    def link_layer(self):
+        raise NotImplementedError()
 
 
-class HistogramScene(scene.SceneCanvas):
-    def __init__(self, data=None, bins=512, *args, **kwargs):
-        super().__init__(*args, bgcolor='k', **kwargs)
-        self.unfreeze()
-        # self.data = data
-        self.plot = self.central_widget.add_widget(
-            NapariPlotWidget(fg_color=(1, 1, 1, 0.3))
-        )
-        self.plot._configure_2d()
-        if data is not None:
-            self.hist = self.plot.histogram(
-                data.ravel(), bins, color=(1, 1, 0.9, 0.5), orientation='h'
+class VispyHistogramLayer(VispyPlotLayer):
+    """
+
+    link: can be data or view
+    """
+
+    def __init__(
+        self,
+        layer=None,
+        link='data',
+        bins=400,
+        color=(1, 1, 1, 0.5),
+        orientation='h',
+    ):
+        node = MeshNode()
+        super().__init__(layer, node)
+
+        self.color = color
+        if link not in ('data', 'view'):
+            raise ValueError('link must be either "data" or "view"')
+        self.link = link
+
+        if not isinstance(orientation, str) or orientation not in ('h', 'v'):
+            raise ValueError(
+                'orientation must be "h" or "v", not %s' % (orientation,)
             )
-            self.hist.order = 10
-        self.plot.view.camera.set_range(margin=0.005)
+        self.orientation = orientation
+        self.link_layer(layer)
+        self.model = HistogramModel(bins=bins)
+        self.model.events.data.connect(self._update_node)
+
+    def update_model(self, *args):
+        if self.link == 'data':
+            self.model.set_data(self.layer.data)
+        elif self.link == 'view':
+            self.model.set_data(self.layer._data_raw)
+
+    def link_layer(self, layer):
+        self.layer = layer
+        if layer is None:
+            return
+        self.layer.events.set_data.disconnect(self.update_model)
+        self.layer.events.data.disconnect(self.update_model)
+
+        if self.link == 'data':
+            self.layer.events.data.connect(self.update_model)
+        elif self.link == 'view':
+            self.layer.events.set_data.connect(self.update_model)
+        self.update_model()
+
+    def _update_node(self, *args):
+        X, Y = (0, 1) if self.orientation == 'h' else (1, 0)
+        data, bin_edges = self.model.counts, self.model.bin_edges
+        # construct our vertices
+        verts = np.zeros((3 * len(bin_edges) - 2, 3), np.float32)
+        verts[:, X] = np.repeat(bin_edges, 3)[1:-1]
+        verts[1::3, Y] = data
+        verts[2::3, Y] = data
+        bin_edges.astype(np.float32)
+        # and now our tris
+        faces = np.zeros((2 * len(bin_edges) - 2, 3), np.uint32)
+        offsets = (
+            3 * np.arange(len(bin_edges) - 1, dtype=np.uint32)[:, np.newaxis]
+        )
+        tri_1 = np.array([0, 2, 1])
+        tri_2 = np.array([2, 0, 3])
+        faces[::2] = tri_1 + offsets
+        faces[1::2] = tri_2 + offsets
+
+        vert_colors = np.tile(np.array([1, 1, 1, 0.6]), (len(verts), 1))
+        vert_colors[verts[:, Y] == 0] = np.array([0.18, 0.10, 0.22, 0.2])
+        self.node.set_data(verts, faces, vertex_colors=vert_colors)
+        # self.node.update()
+        return verts, faces
