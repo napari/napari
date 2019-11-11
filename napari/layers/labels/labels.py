@@ -549,7 +549,6 @@ class Labels(Image):
                 interp_coord = interpolate_coordinates(
                     self._last_cursor_coord, self.coordinates, self.brush_size
                 )
-            self._save_history()
             with self.events.set_data.blocker():
                 for c in interp_coord:
                     self.paint(c, new_label, refresh=False)
