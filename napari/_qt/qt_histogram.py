@@ -1,13 +1,13 @@
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
-from qtpy.QtCore import Qt, QSize, Signal
-from qtpy.QtGui import QGuiApplication
-from .._vispy.vispy_plot import NapariPlotWidget
-from .._vispy.vispy_histogram import VispyHistogramLayer
-from vispy import scene
 import numpy as np
+from qtpy.QtCore import Qt, Signal
+from qtpy.QtGui import QGuiApplication
+from vispy import scene
+
+from .._vispy.vispy_histogram import VispyHistogramLayer
+from .qt_plot_widget import QtPlotWidget
 
 
-class QtHistogramWidget(QWidget):
+class QtHistogramWidget(QtPlotWidget):
 
     clims_updated = Signal(tuple)
     gamma_updated = Signal(float)
@@ -19,46 +19,14 @@ class QtHistogramWidget(QWidget):
         clims=(0, 255),
         gamma=1,
         clim_handle_color=(0.26, 0.28, 0.31, 1),
-        orientation='v',
+        vertical=True,
     ):
-        super().__init__()
+        super().__init__(vertical)
 
         self.hist_layer = VispyHistogramLayer(
-            link='view', orientation=orientation
+            link='view', orientation='v' if vertical else 'h'
         )
         self._viewer = viewer
-        self.orientation = orientation
-
-        self.canvas = scene.SceneCanvas(bgcolor='k', keys=None, vsync=True)
-        self.canvas.events.ignore_callback_errors = False
-        self.canvas.native.setMinimumSize(QSize(300, 100))
-        self.canvas.native.resize(800, 200)
-        self.canvas.connect(self.on_mouse_move)
-        self.canvas.connect(self.on_mouse_press)
-        self.canvas.connect(self.on_mouse_release)
-        self.canvas.connect(self.on_resize)
-        # self.canvas.connect(self.on_key_press)
-        # self.canvas.connect(self.on_key_release)
-        # self.canvas.connect(self.on_draw)
-
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
-        self.layout.setContentsMargins(10, 10, 10, 10)
-        self.layout.addWidget(self.canvas.native)
-        self.canvas.native.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
-        )
-
-        self.plot = self.canvas.central_widget.add_widget(
-            NapariPlotWidget(
-                fg_color=(1, 1, 1, 0.3),
-                show_yaxis=False,
-                lock_axis=(1 if orientation == 'h' else 0),
-            )
-        )
-        self.plot._configure_2d()
-        self.camera = self.plot.view.camera
-        self.camera.set_range(margin=0.005)
 
         self._clims = clims
         self._gamma = gamma
@@ -68,11 +36,14 @@ class QtHistogramWidget(QWidget):
         self.clim_handles = []
         _, y1 = self.range
         for clim in self.clims:
-            line = scene.InfiniteLine(clim, self.clim_handle_color)
+            line = scene.InfiniteLine(
+                clim, self.clim_handle_color, vertical=not vertical
+            )
             self.clim_handles.append(line)
             self.plot.view.add(line)
 
         midpoint = np.array([(np.mean(self.clims), y1 * 2 ** -self.gamma)])
+        self._gamma_handle_position = midpoint[0]
         self.gamma_handle = scene.Markers(pos=midpoint, size=6, edge_width=0)
         self.plot.view.add(self.gamma_handle)
 
@@ -111,54 +82,66 @@ class QtHistogramWidget(QWidget):
             self.autoscale()
             self.update_lut_line()
 
-    def _link_layer(self, layer):
+    def _get_layer_gamma(self, *args):
+        self.blockSignals(True)
+        self.gamma = self.layer.gamma
+        self.blockSignals(False)
 
-        print("qt linking layer")
+    def _set_layer_gamma(self, value):
+        with self.layer.events.gamma.blocker(self._get_layer_gamma):
+            self.layer.gamma = value
+
+    def _get_layer_clims(self, *args):
+        self.blockSignals(True)
+        self.clims = self.layer.contrast_limits
+        self.blockSignals(False)
+
+    def _set_layer_clims(self, value):
+        with self.layer.events.contrast_limits.blocker(self._get_layer_clims):
+            self.layer.contrast_limits = value
+
+    def _link_layer(self, layer):
         self.blockSignals(True)
         self.clims = layer.contrast_limits
         self.gamma = layer.gamma
         self.blockSignals(False)
 
-        def set_self_gamma(x):
-            self.blockSignals(True)
-            self.gamma = layer.gamma
-            self.blockSignals(False)
-
-        def set_layer_gamma(x):
-            with layer.events.gamma.blocker(set_self_gamma):
-                layer.gamma = x
-
-        def set_self_clims(x):
-            self.blockSignals(True)
-            self.clims = layer.contrast_limits
-            self.blockSignals(False)
-
-        def set_layer_clims(x):
-            with layer.events.contrast_limits.blocker(set_self_clims):
-                layer.contrast_limits = x
-
-        self.gamma_updated.connect(set_layer_gamma)
-        layer.events.gamma.connect(set_self_gamma)
-        self.clims_updated.connect(set_layer_clims)
-        layer.events.contrast_limits.connect(set_self_clims)
-
+        self.gamma_updated.connect(self._set_layer_gamma)
+        layer.events.gamma.connect(self._get_layer_gamma)
+        self.clims_updated.connect(self._set_layer_clims)
+        layer.events.contrast_limits.connect(self._get_layer_clims)
         self.hist_layer.link_layer(layer)
 
     def unlink_layer(self):
-        pass
+        self.gamma_updated.disconnect(self._set_layer_gamma)
+        self.layer.events.gamma.disconnect(self._get_layer_gamma)
+        self.clims_updated.disconnect(self._set_layer_clims)
+        self.layer.events.contrast_limits.disconnect(self._get_layer_clims)
 
     def autoscale(self):
         e = self.hist_layer.model.bin_edges
         counts = self.hist_layer.model.counts
-        x = (e[0], e[-1]) if e is not None else None
-        y = (0, counts.max()) if counts is not None else None
+        if self.vertical:
+            y = (e[0], e[-1]) if e is not None else None
+            x = (0, counts.max()) if counts is not None else None
+        else:
+            x = (e[0], e[-1]) if e is not None else None
+            y = (0, counts.max()) if counts is not None else None
         self.camera.set_range(x=x, y=y, margin=0.005)
 
     def update_lut_line(self):
         npoints = 255
+
         y1 = self.range[1] * 0.99
-        X = np.linspace(self.clims[0], self.clims[1], npoints)
-        Y = np.linspace(0, 1, npoints) ** self.gamma * y1
+        if self.vertical:
+            X = np.linspace(0, 1, npoints) ** self.gamma * y1
+            Y = np.linspace(self.clims[0], self.clims[1], npoints)
+            midpoint = np.array([(y1 * 2 ** -self.gamma, np.mean(self.clims))])
+        else:
+            X = np.linspace(self.clims[0], self.clims[1], npoints)
+            Y = np.linspace(0, 1, npoints) ** self.gamma * y1
+            midpoint = np.array([(np.mean(self.clims), y1 * 2 ** -self.gamma)])
+
         if self.lut_line:
             self.lut_line.set_data(
                 (X, Y), color=self.clim_handle_color, marker_size=0
@@ -167,9 +150,8 @@ class QtHistogramWidget(QWidget):
             self.lut_line = self.plot.plot(
                 (X, Y), color=self.clim_handle_color
             )
-
-        midpoint = np.array([(np.mean(self.clims), y1 * 2 ** -self.gamma)])
         self.gamma_handle.set_data(pos=midpoint, size=6, edge_width=0)
+        self._gamma_handle_position = midpoint[0]
 
     @property
     def gamma(self):
@@ -200,22 +182,6 @@ class QtHistogramWidget(QWidget):
         self._clims = value
         self.clims_updated.emit(value)
 
-    @property
-    def domain(self):
-        return self.plot.xaxis.axis.domain
-
-    @property
-    def range(self):
-        return self.plot.yaxis.axis.domain
-
-    def _to_window_coords(self, pos):
-        x, y, _, _ = self.node_tform.imap(pos)
-        return x, y
-
-    def _to_plot_coords(self, pos):
-        x, y, _, _ = self.node_tform.map(pos)
-        return x, y
-
     def on_mouse_press(self, event):
         if event.pos is None:
             return
@@ -225,9 +191,6 @@ class QtHistogramWidget(QWidget):
         if self._clim_handle_grabbed or self._gamma_handle_grabbed:
             # disconnect the pan/zoom mouse events until handle is dropped
             self.camera._viewbox_unset(self.camera.viewbox)
-
-    def on_resize(self, event):
-        self.node_tform = self.plot.node_transform(self.plot.view.scene)
 
     def on_mouse_release(self, event):
         self._clim_handle_grabbed = 0
@@ -242,12 +205,16 @@ class QtHistogramWidget(QWidget):
         position be in window coordinates.
         """
         # checking clim1 first since it's more likely
-        x = event.pos[0]
-        clim1, _ = self._to_window_coords((self.clims[1],))
+        if self.vertical:
+            x = event.pos[1]
+            _, clim1 = self._to_window_coords((0, self.clims[1]))
+            _, clim0 = self._to_window_coords((0, self.clims[0]))
+        else:
+            x = event.pos[0]
+            clim1, _ = self._to_window_coords((self.clims[1],))
+            clim0, _ = self._to_window_coords((self.clims[0],))
         if abs(clim1 - x) < tolerance:
             return 2
-
-        clim0, _ = self._to_window_coords((self.clims[0],))
         if abs(clim0 - x) < tolerance:
             return 1
         return 0
@@ -258,8 +225,9 @@ class QtHistogramWidget(QWidget):
         event is expected to to have an attribute 'pos' giving the mouse
         position be in window coordinates.
         """
-
-        gx, gy = self._to_window_coords(self.gamma_handle._data[0][0])
+        if self._gamma_handle_position is None:
+            return False
+        gx, gy = self._to_window_coords(self._gamma_handle_position)
         x, y = event.pos
         if abs(gx - x) < tolerance and abs(gy - y) < tolerance:
             return True
@@ -274,14 +242,17 @@ class QtHistogramWidget(QWidget):
 
         if self._clim_handle_grabbed:
             newlims = list(self.clims)
-            x = self._to_plot_coords(event.pos)[0]
-            newlims[self._clim_handle_grabbed - 1] = x
+            if self.vertical:
+                c = self._to_plot_coords(event.pos)[1]
+            else:
+                c = self._to_plot_coords(event.pos)[0]
+            newlims[self._clim_handle_grabbed - 1] = c
             self.clims = newlims
             return
 
         if self._gamma_handle_grabbed:
             y0, y1 = self.range
-            y = self._to_plot_coords(event.pos)[1]
+            y = self._to_plot_coords(event.pos)[0 if self.vertical else 1]
             if y < np.maximum(y0, 0) or y > y1:
                 return
             self.gamma = -np.log2(y / y1)
@@ -290,9 +261,17 @@ class QtHistogramWidget(QWidget):
         QGuiApplication.restoreOverrideCursor()
 
         if self._pos_is_clim(event):
-            QGuiApplication.setOverrideCursor(Qt.CursorShape.SplitHCursor)
+            if self.vertical:
+                cursor = Qt.CursorShape.SplitVCursor
+            else:
+                cursor = Qt.CursorShape.SplitHCursor
+            QGuiApplication.setOverrideCursor(cursor)
         elif self._pos_is_gamma(event):
-            QGuiApplication.setOverrideCursor(Qt.CursorShape.SplitVCursor)
+            if self.vertical:
+                cursor = Qt.CursorShape.SplitHCursor
+            else:
+                cursor = Qt.CursorShape.SplitVCursor
+            QGuiApplication.setOverrideCursor(cursor)
         else:
             x, y = self._to_plot_coords(event.pos)
             x1, x2 = self.domain

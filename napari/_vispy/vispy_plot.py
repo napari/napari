@@ -139,14 +139,14 @@ class NapariPlotWidget(PlotWidget):
         self.yaxis = scene.AxisWidget(orientation='left', **self.axis_kwargs)
         self.yaxis_widget = self.grid.add_widget(self.yaxis, row=2, col=3)
         if self.show_yaxis:
-            self.yaxis_widget.width_max = 35
+            self.yaxis_widget.width_max = 30
             self.ylabel_widget = self.grid.add_widget(
                 self.ylabel, row=2, col=2
             )
             self.ylabel_widget.width_max = 10 if self.ylabel.text else 1
             self.padding_left = self.grid.add_widget(None, row=2, col=0)
             self.padding_left.width_min = 1
-            self.padding_left.width_max = 60
+            self.padding_left.width_max = 10
         else:
             self.yaxis.visible = False
             self.yaxis.width_max = 1

@@ -35,7 +35,7 @@ class VispyHistogramLayer(VispyPlotLayer):
         self,
         layer=None,
         link='data',
-        bins=400,
+        bins=256,
         color=(1, 1, 1, 0.5),
         orientation='h',
     ):

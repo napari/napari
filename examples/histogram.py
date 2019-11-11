@@ -13,9 +13,10 @@ with napari.gui_qt():
 %load_ext autoreload
 %autoreload 2
 from napari._qt.qt_histogram import QtHistogramWidget
+import skimage.data as skid
 import napari
 import numpy as np
 v = napari.Viewer()
-v.add_image(np.random.randn(256, 256))
+v.add_image(skid.camera())
 w = QtHistogramWidget(viewer=v)
 w.show()
