@@ -337,7 +337,7 @@ class Dims:
         range : tuple
             Range specified as (min, max, step)
         """
-        axis = self._assert_axis_inbound(axis)
+        axis = self._assert_axis_in_bounds(axis)
         if self.range[axis] != _range:
             self._range[axis] = _range
             self.events.range(axis=axis)
@@ -352,7 +352,7 @@ class Dims:
         value : int or float
             Value of the point
         """
-        axis = self._assert_axis_inbound(axis)
+        axis = self._assert_axis_in_bounds(axis)
         if self.point[axis] != value:
             self._point[axis] = value
             self.events.axis(axis=axis, value=value)
@@ -367,7 +367,7 @@ class Dims:
         interval : tuple
             INTERVAL specified with (min, max)
         """
-        axis = self._assert_axis_inbound(axis)
+        axis = self._assert_axis_in_bounds(axis)
         if self.interval[axis] != interval:
             self._interval[axis] = interval
             self.events.axis(axis=axis)
@@ -382,7 +382,7 @@ class Dims:
         mode : POINT or INTERVAL
             Whether dimension is in the POINT or INTERVAL mode
         """
-        axis = self._assert_axis_inbound(axis)
+        axis = self._assert_axis_in_bounds(axis)
         if self.mode[axis] != mode:
             self._mode[axis] = mode
             self.events.axis(axis=axis)
@@ -397,12 +397,12 @@ class Dims:
         label : str
             Given label
         """
-        axis = self._assert_axis_inbound(axis)
+        axis = self._assert_axis_in_bounds(axis)
         if self.axis_labels[axis] != str(label):
             self._axis_labels[axis] = str(label)
             self.events.axis_labels(axis=axis)
 
-    def _assert_axis_inbound(self, axis: int) -> int:
+    def _assert_axis_in_bounds(self, axis: int) -> int:
         """Asserts that a given value of axis is inside
         the existing axes of the image.
 
@@ -416,16 +416,14 @@ class Dims:
         ValueError
             The given axis index is out of bounds
         """
-        if axis < 0:
-            axis += self.ndim
-        if axis < 0:
-            raise ValueError(f'Axis is too negative, got {axis}.')
-        if axis > (self.ndim - 1):
-            raise ValueError(
-                f"Axis is out of bounds. Got {axis} while the number of"
-                f" dimensions is {self.ndim}."
+        if axis not in range(-self.ndim, self.ndim):
+            msg = (
+                f'Axis {axis} not defined for dimensionality {self.ndim}. '
+                f'Must be in [{-self.ndim}, {self.ndim}).'
             )
-        return axis
+            raise ValueError(msg)
+
+        return axis % self.ndim
 
     def _roll(self):
         """Roll order of dimensions for display."""
