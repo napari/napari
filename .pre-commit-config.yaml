@@ -6,3 +6,10 @@ repos:
       # force black to run on whole repo & keep settings from pyproject.toml
       pass_filenames: false
       args: [.]
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.7.9
+    hooks:
+    - id: flake8
+      pass_filenames: true
+      # this seems to need to be here in addition to setup.cfg
+      exclude: vendored|__init__.py|examples

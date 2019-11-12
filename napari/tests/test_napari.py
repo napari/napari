@@ -43,6 +43,23 @@ def test_view_image(qtbot):
     viewer.window.close()
 
 
+def test_view_multichannel(qtbot):
+    """Test adding image."""
+
+    np.random.seed(0)
+    data = np.random.random((15, 10, 5))
+    viewer = napari.view_image(data, channel_axis=-1)
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert np.all(viewer.layers[i].data == data.take(i, axis=-1))
+
+    # Close the viewer
+    viewer.window.close()
+
+
 def test_view_pyramid(qtbot):
     """Test adding image pyramid."""
     shapes = [(40, 20), (20, 10), (10, 5)]
@@ -169,6 +186,38 @@ def test_view_surface(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
+
+    # Switch to 3D rendering
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    assert np.sum(view.dims._displayed_sliders) == 0
+
+    # Close the viewer
+    viewer.window.close()
+
+
+def test_view_surface_3D_display(qtbot):
+    """Test adding 3D surface."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    viewer = napari.view_surface(data, ndisplay=3)
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    assert np.all(
+        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
+    )
+
+    assert len(viewer.layers) == 1
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+
+    assert viewer.dims.ndim == 3
+    assert viewer.dims.ndisplay == 3
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 0
 
     # Close the viewer
     viewer.window.close()

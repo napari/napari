@@ -1,66 +1,28 @@
 import os
+from glob import glob
 
 import numpy as np
 from skimage import io
+from skimage.io.collection import alphanumeric_key
 
-dask_available = True
-try:
-    from dask import array as da
-except ImportError:
-    dask_available = False
-
-
-def imread(filenames, *, use_dask=None, stack=True):
-    """Read image files and return an array.
-
-    If multiple images are selected, they are stacked along the 0th axis.
-
-    Parameters
-    -------
-    filenames : list
-        List of filenames to be opened
-    use_dask : bool
-        Whether to use dask to create a lazy array, rather than NumPy.
-        Default is None, which is interpreted as "use if available". If set
-        to True and dask is not installed, this function
-    stack : bool
-        Whether to stack the images in multiple files into a single array. If
-        False, a list of arrays will be returned.
-
-    Returns
-    -------
-    image : array
-        Array of images
-    """
-    if dask_available and use_dask is None:
-        use_dask = True
-    if not dask_available and use_dask:
-        raise ValueError('Dask array requested but dask is not installed.')
-    images = [io.imread(filename) for filename in filenames]
-    if len(images) == 1:
-        image = images[0]
-    else:
-        if use_dask:
-            image = da.stack(images)
-        else:
-            image = np.stack(images)
-
-    return image
+from dask import delayed
+from dask import array as da
+import zarr
 
 
-def magic_read(filenames, *, use_dask=None, stack=True):
+def magic_imread(filenames, *, use_dask=None, stack=True):
     """Dispatch the appropriate reader given some files.
 
-    The files are assumed to all have the same type.
+    The files are assumed to all have the same shape.
 
     Parameters
     -------
     filenames : list
-        List of filenames to be opened
+        List of filenames or directories to be opened
     use_dask : bool
         Whether to use dask to create a lazy array, rather than NumPy.
-        Default is None, which is interpreted as "use if available". If set
-        to True and dask is not installed, this function
+        Default of None will resolve to True if filenames contains more than
+        one image, False otherwise.
     stack : bool
         Whether to stack the images in multiple files into a single array. If
         False, a list of arrays will be returned.
@@ -72,17 +34,85 @@ def magic_read(filenames, *, use_dask=None, stack=True):
     """
     if len(filenames) == 0:
         return None
-    ext = os.path.splitext(filenames[0])[-1]
-    if ext == '.zarr':
-        if not dask_available:
-            raise ValueError('Dask is required to open zarr files.')
-        if len(filenames) == 1:
-            return da.from_zarr(filenames[0])
+    if isinstance(filenames, str):
+        filenames = [filenames]  # ensure list
+
+    # replace folders with their contents
+    filenames_expanded = []
+    for filename in filenames:
+        ext = os.path.splitext(filename)[-1]
+        # zarr files are folders, but should be read as 1 file
+        if os.path.isdir(filename) and not ext == '.zarr':
+            dir_contents = sorted(
+                glob(os.path.join(filename, '*.*')), key=alphanumeric_key
+            )
+            # remove subdirectories
+            dir_contents_files = filter(
+                lambda f: not os.path.isdir(f), dir_contents
+            )
+            filenames_expanded.extend(dir_contents_files)
         else:
-            loaded = [da.from_zarr(f) for f in filenames]
-            if stack:
-                return da.stack(loaded)
+            filenames_expanded.append(filename)
+
+    if use_dask is None:
+        use_dask = len(filenames_expanded) > 1
+
+    # then, read in images
+    images = []
+    shape = None
+    for filename in filenames_expanded:
+        ext = os.path.splitext(filename)[-1]
+        if ext == '.zarr':
+            image, zarr_shape = read_zarr_dataset(filename)
+            if shape is None:
+                shape = zarr_shape
+        else:
+            if shape is None:
+                image = io.imread(filename)
+                shape = image.shape
+                dtype = image.dtype
+            if use_dask:
+                image = da.from_delayed(
+                    delayed(io.imread)(filename), shape=shape, dtype=dtype
+                )
+            elif len(images) > 0:  # not read by shape clause
+                image = io.imread(filename)
+        images.append(image)
+    if len(images) == 1:
+        image = images[0]
+    else:
+        if stack:
+            if use_dask:
+                image = da.stack(images)
             else:
-                return loaded
-    else:  # assume proper image extension
-        return imread(filenames, use_dask=use_dask, stack=stack)
+                image = np.stack(images)
+        else:
+            image = images  # return a list
+    return image
+
+
+def read_zarr_dataset(filename):
+    """Read a zarr dataset, including an array or a group of arrays.
+
+    Parameters
+    --------
+    filename : str
+        Path to file ending in '.zarr'. File can contain either an array
+        or a group of arrays in the case of pyramid data.
+    Returns
+    -------
+    image : array-like
+        Array or list of arrays
+    shape : tuple
+        Shape of array or first array in list
+    """
+    zr = zarr.open(filename, mode='r')
+    if isinstance(zr, zarr.core.Array):
+        # load zarr array
+        image = da.from_zarr(filename)
+        shape = image.shape
+    else:
+        # else load zarr all arrays inside file, useful for pyramid data
+        image = [da.from_zarr(filename, component=c) for c, a in zr.arrays()]
+        shape = image[0].shape
+    return image, shape

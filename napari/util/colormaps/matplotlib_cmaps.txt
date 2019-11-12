@@ -4,6 +4,7 @@ inferno
 plasma
 gray
 hsv
+turbo
 twilight
 twilight_shifted
 gist_earth

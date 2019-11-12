@@ -1,6 +1,4 @@
 from vispy.visuals.transforms import STTransform
-from contextlib import contextmanager
-from ..util.event import EmitterGroup, Event
 from abc import ABC, abstractmethod
 
 
@@ -41,7 +39,7 @@ class VispyBaseLayer(ABC):
 
         self.layer = layer
         self.node = node
-        self._position = (0,) * self.layer.ndim
+        self._position = (0,) * self.layer.dims.ndisplay
         self.camera = None
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
@@ -159,10 +157,6 @@ class VispyBaseLayer(ABC):
         else:
             coords = (0,) * len(self.layer.dims.displayed)
         return coords
-
-    @abstractmethod
-    def reset(self):
-        raise NotImplementedError()
 
     def _reset_base(self):
         self._on_visible_change()

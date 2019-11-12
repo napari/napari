@@ -1,21 +1,13 @@
 import os.path
-from glob import glob
 import numpy as np
 import inspect
 from pathlib import Path
 
+from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QFrame,
-    QFileDialog,
-    QSplitter,
-)
-from qtpy.QtWidgets import QStackedWidget, QSizePolicy
+from qtpy.QtWidgets import QWidget, QGridLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
+from qtpy.QtCore import QThreadPool
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
@@ -25,9 +17,14 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
-from ..util.misc import is_rgb
+from ..util.misc import (
+    str_to_rgb,
+    ReadOnlyWrapper,
+    mouse_press_callbacks,
+    mouse_move_callbacks,
+    mouse_release_callbacks,
+)
 from ..util.keybindings import components_to_key_combo
-from ..util import io
 
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -45,6 +42,8 @@ class QtViewer(QSplitter):
 
     def __init__(self, viewer):
         super().__init__()
+
+        self.pool = QThreadPool()
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -72,6 +71,8 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.canvas.events.ignore_callback_errors = False
+        self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 
@@ -131,6 +132,8 @@ class QtViewer(QSplitter):
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
+        # stop any animations whenever the layers change
+        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
 
@@ -216,13 +219,21 @@ class QtViewer(QSplitter):
             caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        self._add_files(filenames)
+        if filenames is not None:
+            self._add_files(filenames)
+
+    def _open_folder(self):
+        """Add a folder of files from the menubar."""
+        folder = QFileDialog.getExistingDirectory(
+            parent=self,
+            caption='Select folder...',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if folder is not None:
+            self._add_files([folder])
 
     def _add_files(self, filenames):
         """Add an image layer to the viewer.
-
-        Whether the image is rgb is determined by
-        :func:`napari.util.misc.is_rgb`.
 
         If multiple images are selected, they are stacked along the 0th
         axis.
@@ -233,8 +244,7 @@ class QtViewer(QSplitter):
             List of filenames to be opened
         """
         if len(filenames) > 0:
-            image = io.magic_read(filenames)
-            self.viewer.add_image(image, rgb=is_rgb(image.shape))
+            self.viewer.add_image(path=filenames)
             self._last_visited_dir = os.path.dirname(filenames[0])
 
     def _on_interactive(self, event):
@@ -258,9 +268,10 @@ class QtViewer(QSplitter):
 
     def _on_reset_view(self, event):
         if isinstance(self.view.camera, ArcballCamera):
-            self.view.camera._quaternion = self.view.camera._quaternion.create_from_axis_angle(
+            quat = self.view.camera._quaternion.create_from_axis_angle(
                 *event.quaternion
             )
+            self.view.camera._quaternion = quat
             self.view.camera.center = event.center
             self.view.camera.scale_factor = event.scale_factor
         else:
@@ -272,6 +283,8 @@ class QtViewer(QSplitter):
         themed_stylesheet = template(self.raw_stylesheet, **palette)
         self.console.style_sheet = themed_stylesheet
         self.console.syntax_style = palette['syntax_style']
+        bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
+        self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
@@ -288,32 +301,52 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        layer = self.viewer.active_layer
-        if layer is not None:
-            self.layer_to_visual[layer].on_mouse_move(event)
-
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
         """
+        if event.pos is None:
+            return
+
+        event = ReadOnlyWrapper(event)
+        mouse_press_callbacks(self.viewer, event)
+
         layer = self.viewer.active_layer
         if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
             self.layer_to_visual[layer].on_mouse_press(event)
+            mouse_press_callbacks(layer, event)
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if event.pos is None:
+            return
+
+        mouse_move_callbacks(self.viewer, event)
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
+            self.layer_to_visual[layer].on_mouse_move(event)
+            mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
         """
+        mouse_release_callbacks(self.viewer, event)
+
         layer = self.viewer.active_layer
         if layer is not None:
+            # Line bellow needed until layer mouse callbacks are refactored
             self.layer_to_visual[layer].on_mouse_release(event)
+            mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
         """
         if (
-            event.native.isAutoRepeat()
+            event.native is not None
+            and event.native.isAutoRepeat()
             and event.key.name not in ['Up', 'Down', 'Left', 'Right']
         ) or event.key is None:
             # pass is no key is present or if key is held down, unless the
@@ -353,8 +386,8 @@ class QtViewer(QSplitter):
     def on_draw(self, event):
         """Called whenever drawn in canvas. Called for all layers, not just top
         """
-        for layer in self.viewer.layers:
-            self.layer_to_visual[layer].on_draw(event)
+        for visual in self.layer_to_visual.values():
+            visual.on_draw(event)
 
     def keyPressEvent(self, event):
         self.canvas._backend._keyEvent(self.canvas.events.key_press, event)
@@ -374,14 +407,16 @@ class QtViewer(QSplitter):
         """Add local files and web URLS with drag and drop."""
         filenames = []
         for url in event.mimeData().urls():
-            path = url.toString()
-            if os.path.isfile(path):
-                filenames.append(path)
-            elif os.path.isdir(path) and not path.endswith('.zarr'):
-                filenames = filenames + list(glob(os.path.join(path, '*')))
+            if url.isLocalFile():
+                filenames.append(url.toLocalFile())
             else:
-                filenames.append(path)
+                filenames.append(url.toString())
         self._add_files(filenames)
+
+    def closeEvent(self, event):
+        if self.pool.activeThreadCount() > 0:
+            self.pool.clear()
+        event.accept()
 
 
 def viewbox_key_event(event):

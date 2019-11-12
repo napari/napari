@@ -147,18 +147,7 @@ class Dims:
             return
         elif self.ndim < ndim:
             for i in range(self.ndim, ndim):
-                # Insert default values for the new axis at the beginning of
-                # the lists
-                # Range value is (min, max, step) for the entire slider
-                self._range.insert(0, (0, 2, 1))
-                # Point is the slider value if in point mode
-                self._point.insert(0, 0)
-                # Interval value is the (min, max) of the slider selction
-                # if in interval mode
-                self._interval.insert(0, (0, 1))
-                self._mode.insert(0, DimsMode.POINT)
-                self._order = [0] + list(np.add(self.order, 1))
-
+                self.set_initial_dims(0, insert=True)
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
 
@@ -233,6 +222,39 @@ class Dims:
         order[np.argsort(order)] = list(range(len(order)))
         return tuple(order)
 
+    def set_initial_dims(self, axis, insert=False):
+        """Initializes the dimensions values for a given axis (dimension)
+
+        Parameters
+        ----------
+        axis : int
+            Dimension index
+        insert : bool
+            Whether to insert the axis or not during initialization
+        """
+        if insert:
+            # Insert default values
+            # Range value is (min, max, step) for the entire slider
+            self._range.insert(axis, (0, 2, 1))
+            # Point is the slider value if in point mode
+            self._point.insert(axis, 0)
+            # Interval value is the (min, max) of the slider selction
+            # if in interval mode
+            self._interval.insert(axis, (0, 1))
+            self._mode.insert(axis, DimsMode.POINT)
+            cur_order = [o if o < axis else o + 1 for o in self.order]
+            self._order = [axis] + cur_order
+        else:
+            # Range value is (min, max, step) for the entire slider
+            self._range[axis] = (0, 2, 1)
+            # Point is the slider value if in point mode
+            self._point[axis] = 0
+            # Interval value is the (min, max) of the slider selction
+            # if in interval mode
+            self._interval[axis] = (0, 1)
+            self._mode[axis] = DimsMode.POINT
+            self._order[axis] = axis
+
     def set_range(self, axis: int, range: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given axis (dimension)
 
@@ -271,7 +293,7 @@ class Dims:
             )
         if self.point[axis] != value:
             self._point[axis] = value
-            self.events.axis(axis=axis)
+            self.events.axis(axis=axis, value=value)
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
         """Sets the interval used for cropping and projecting this dimension

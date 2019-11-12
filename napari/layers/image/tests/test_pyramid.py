@@ -1,7 +1,9 @@
 import numpy as np
+from skimage.transform import pyramid_gaussian
 from xml.etree.ElementTree import Element
 from vispy.color import Colormap
 from napari.layers import Image
+import pytest
 
 
 def test_random_pyramid():
@@ -11,10 +13,11 @@ def test_random_pyramid():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, is_pyramid=True)
     assert layer.data == data
-    assert layer.is_pyramid == True
+    assert layer.is_pyramid is True
+    assert len(layer._data_pyramid) > 0
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
 
@@ -25,10 +28,79 @@ def test_infer_pyramid():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data)
     assert layer.data == data
-    assert layer.is_pyramid == True
+    assert layer.is_pyramid is True
+    assert len(layer._data_pyramid) > 0
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.rgb == False
+    assert layer.rgb is False
+    assert layer._data_view.ndim == 2
+
+
+def test_error_pyramid():
+    """Test error on forcing non pyramid."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    with pytest.raises(ValueError):
+        Image(data, is_pyramid=False)
+
+
+def test_infer_tuple_pyramid():
+    """Test instantiating Image layer with random 2D pyramid data."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = tuple(np.random.random(s) for s in shapes)
+    layer = Image(data)
+    assert layer.data == data
+    assert layer.is_pyramid is True
+    assert layer.ndim == len(shapes[0])
+    assert layer.shape == shapes[0]
+    assert layer.rgb is False
+    assert layer._data_view.ndim == 2
+
+
+def test_forcing_pyramid():
+    """Test instantiating Image layer forcing 2D pyramid data."""
+    shape = (40, 20)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data, is_pyramid=True)
+    assert np.all(layer.data == data)
+    assert layer.is_pyramid is True
+    assert len(layer._data_pyramid) > 0
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb is False
+    assert layer._data_view.ndim == 2
+
+
+def test_blocking_pyramid():
+    """Test instantiating Image layer blocking 2D pyramid data."""
+    shape = (40, 20)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data, is_pyramid=False)
+    assert np.all(layer.data == data)
+    assert layer.is_pyramid is False
+    assert layer._data_pyramid is None
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb is False
+    assert layer._data_view.ndim == 2
+
+
+def test_pyramid_tuple():
+    """Test instantiating Image layer pyramid tuple."""
+    shape = (40, 20)
+    np.random.seed(0)
+    img = np.random.random(shape)
+    data = tuple(pyramid_gaussian(img, multichannel=False))
+    layer = Image(data)
+    assert layer.data == data
+    assert layer.is_pyramid is True
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
 
@@ -41,7 +113,7 @@ def test_3D_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
 
@@ -54,7 +126,7 @@ def test_non_uniform_3D_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
 
@@ -67,7 +139,7 @@ def test_rgb_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
-    assert layer.rgb == True
+    assert layer.rgb is True
     assert layer._data_view.ndim == 3
 
 
@@ -80,7 +152,7 @@ def test_3D_rgb_pyramid():
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
-    assert layer.rgb == True
+    assert layer.rgb is True
     assert layer._data_view.ndim == 3
 
 
@@ -93,7 +165,7 @@ def test_non_rgb_image():
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
-    assert layer.rgb == False
+    assert layer.rgb is False
 
 
 def test_name():
@@ -117,16 +189,16 @@ def test_visiblity():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, is_pyramid=True)
-    assert layer.visible == True
+    assert layer.visible is True
 
     layer.visible = False
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer = Image(data, is_pyramid=True, visible=False)
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer.visible = True
-    assert layer.visible == True
+    assert layer.visible is True
 
 
 def test_opacity():
@@ -251,7 +323,8 @@ def test_contrast_limits_range():
     assert layer._contrast_limits_range[1] <= 1
     assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
 
-    # If all data is the same value the contrast_limits_range and contrast_limits defaults to [0, 1]
+    # If all data is the same value the contrast_limits_range and
+    # contrast_limits defaults to [0, 1]
     shapes = [(40, 20), (20, 10), (10, 5)]
     data = [np.zeros(s) for s in shapes]
     layer = Image(data, is_pyramid=True)
@@ -324,10 +397,10 @@ def test_create_random_pyramid():
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
-    assert layer.is_pyramid == True
+    assert layer.is_pyramid is True
     assert layer._data_pyramid[0].shape == shape
     assert layer._data_pyramid[1].shape == (shape[0] / 2, shape[1])
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.rgb == False
+    assert layer.rgb is False
     assert layer._data_view.ndim == 2

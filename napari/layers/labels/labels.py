@@ -1,13 +1,9 @@
-import warnings
-from base64 import b64encode
 from collections import deque
 from copy import copy
 from typing import Union
 
 import numpy as np
 from scipy import ndimage as ndi
-from xml.etree.ElementTree import Element
-from imageio import imwrite
 
 from ..image import Image
 from ...util.colormaps import colormaps
@@ -334,7 +330,7 @@ class Labels(Image):
             else:
                 self.editable = True
 
-        if self.editable == False:
+        if not self.editable:
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
 
@@ -368,7 +364,7 @@ class Labels(Image):
             col = None
         else:
             val = self._raw_to_displayed(np.array([label]))
-            col = self.colormap[1].map(val)[0]
+            col = self.colormap[1][val].rgba[0]
         return col
 
     def _reset_history(self):

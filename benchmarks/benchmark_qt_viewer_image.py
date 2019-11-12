@@ -70,3 +70,32 @@ class QtViewerEditImageSuite:
     def time_get_value(self, n):
         """Time to get current value."""
         self.viewer.layers[0].get_value()
+
+
+class QtViewerSingleImage:
+    """Benchmarks for editing a single image layer in the viewer."""
+
+    def setup(self):
+        app = QApplication.instance() or QApplication([])
+        np.random.seed(0)
+        self.data = np.random.random((128, 128, 128))
+        self.viewer = napari.view_image(self.data)
+
+    def teardown(self):
+        self.viewer.window.close()
+
+    def time_set_view_slice(self):
+        """Time to set view slice."""
+        self.viewer.layers[0]._set_view_slice()
+
+    def time_update_thumbnail(self):
+        """Time to update thumbnail."""
+        self.viewer.layers[0]._update_thumbnail()
+
+    def time_get_value(self):
+        """Time to get current value."""
+        self.viewer.layers[0].get_value()
+
+    def time_ndisplay(self):
+        """Time to enter 3D rendering."""
+        self.viewer.dims.ndisplay = 3

@@ -1,7 +1,11 @@
 import numpy as np
-from copy import copy
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
+
+
+def test_empty_shapes():
+    shp = Shapes()
+    assert shp.dims.ndim == 2
 
 
 def test_rectangles():
@@ -393,47 +397,47 @@ def test_changing_modes():
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'direct'
     assert layer.mode == 'direct'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'vertex_insert'
     assert layer.mode == 'vertex_insert'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'vertex_remove'
     assert layer.mode == 'vertex_remove'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'add_rectangle'
     assert layer.mode == 'add_rectangle'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'add_ellipse'
     assert layer.mode == 'add_ellipse'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'add_line'
     assert layer.mode == 'add_line'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'add_path'
     assert layer.mode == 'add_path'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'add_polygon'
     assert layer.mode == 'add_polygon'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
 
 def test_name():
@@ -455,16 +459,16 @@ def test_visiblity():
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
-    assert layer.visible == True
+    assert layer.visible is True
 
     layer.visible = False
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer = Shapes(data, visible=False)
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer.visible = True
-    assert layer.visible == True
+    assert layer.visible is True
 
 
 def test_opacity():
@@ -783,7 +787,7 @@ def test_interaction_box():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer._selected_box == None
+    assert layer._selected_box is None
 
     layer.selected_data = [0]
     assert len(layer._selected_box) == 10
@@ -792,7 +796,7 @@ def test_interaction_box():
     assert len(layer._selected_box) == 10
 
     layer.selected_data = []
-    assert layer._selected_box == None
+    assert layer._selected_box is None
 
 
 def test_copy_and_paste():

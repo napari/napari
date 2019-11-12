@@ -2,10 +2,13 @@
 """
 from enum import Enum
 import re
-import numpy as np
 import inspect
 import itertools
 from scipy import ndimage as ndi
+from numpydoc.docscrape import FunctionDoc
+
+import numpy as np
+import wrapt
 
 
 def str_to_rgb(arg):
@@ -60,10 +63,10 @@ def is_rgb(shape):
 
 
 def is_pyramid(data):
-    """If data is a list of arrays of decreasing size.
+    """If shape of arrays along first axis is strictly decreasing.
     """
-    if isinstance(data, list):
-        size = [np.prod(d.shape) for d in data]
+    size = np.array([np.prod(d.shape) for d in data])
+    if len(size) > 1:
         return np.all(size[:-1] > size[1:])
     else:
         return False
@@ -110,7 +113,7 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
 
     Parameters
     ----------
-    data : array or list
+    data : array, list, or tuple
         Data to be checked if pyramid or if needs to be turned into a pyramid.
     pyramid : bool, optional
         Value that can force data to be considered as a pyramid or not,
@@ -134,7 +137,8 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     # Determine if data currently is a pyramid
     currently_pyramid = is_pyramid(data)
     if currently_pyramid:
-        init_shape = data[0].shape
+        shapes = [d.shape for d in data]
+        init_shape = shapes[0]
     else:
         init_shape = data.shape
 
@@ -144,7 +148,14 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     else:
         # If rgb is True or None then guess if rgb
         # allowed or not, and if allowed set it to be True
-        rgb = is_rgb(init_shape)
+        rgb_guess = is_rgb(init_shape)
+        if rgb and rgb_guess is False:
+            raise ValueError(
+                "Non rgb or rgba data was passed, but rgb data was"
+                " requested."
+            )
+        else:
+            rgb = rgb_guess
 
     if rgb:
         ndim = len(init_shape) - 1
@@ -154,8 +165,8 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
     if pyramid is False:
         if currently_pyramid:
             raise ValueError(
-                """Non pyramided data was requested, but pyramid
-                             data was passed"""
+                "Non pyramided data was requested, but pyramid"
+                " data was passed"
             )
         else:
             data_pyramid = None
@@ -164,8 +175,12 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
             data_pyramid = trim_pyramid(data)
             pyramid = True
         else:
-            # Guess if data should be pyramid
-            pyr_axes = should_be_pyramid(data.shape)
+            # Guess if data should be pyramid or if a pyramid was requested
+            if pyramid:
+                pyr_axes = [True] * ndim
+            else:
+                pyr_axes = should_be_pyramid(data.shape)
+
             if np.any(pyr_axes):
                 pyramid = True
                 # Set axes to be downsampled to have a factor of 2
@@ -257,18 +272,19 @@ def calc_data_range(data):
     if np.prod(data.shape) > 1e6:
         # If data is very large take the average of the top, bottom, and
         # middle slices
-        top_plane_idx = np.zeros(data.ndim - 2).astype(int)
-        bottom_plane_idx = np.subtract(data.shape[:-2], 1).astype(int)
-        middle_plane_idx = np.round(np.divide(bottom_plane_idx, 2)).astype(int)
-        top_plane = np.asarray(data[tuple(top_plane_idx)])
-        bottom_plane = np.asarray(data[tuple(bottom_plane_idx)])
-        middle_plane = np.asarray(data[tuple(middle_plane_idx)])
-        reduced_data = np.array([top_plane, bottom_plane, middle_plane])
+        bottom_plane_idx = (0,) * (data.ndim - 2)
+        middle_plane_idx = tuple(s // 2 for s in data.shape[:-2])
+        top_plane_idx = tuple(s - 1 for s in data.shape[:-2])
+        idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
+        reduced_data = [
+            [np.max(data[idx]) for idx in idxs],
+            [np.min(data[idx]) for idx in idxs],
+        ]
     else:
         reduced_data = data
 
-    min_val = reduced_data.min()
-    max_val = reduced_data.max()
+    min_val = np.min(reduced_data)
+    max_val = np.max(reduced_data)
 
     if min_val == max_val:
         min_val = 0
@@ -504,7 +520,8 @@ class CallSignature(inspect.Signature):
             # elif kind == inspect._KEYWORD_ONLY and render_kw_only_separator:
             #     # We have a keyword-only parameter to render and we haven't
             #     # rendered an '*args'-like parameter before, so add a '*'
-            #     # separator to the parameters list ("foo(arg1, *, arg2)" case)
+            #     # separator to the parameters list
+            #     # ("foo(arg1, *, arg2)" case)
             #     result.append('*')
             #     # This condition should be only triggered once, so
             #     # reset the flag
@@ -527,3 +544,169 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
+
+
+class ReadOnlyWrapper(wrapt.ObjectProxy):
+    """
+    Disable item and attribute setting with the exception of  ``__wrapped__``.
+    """
+
+    def __setattr__(self, name, val):
+        if name != '__wrapped__':
+            raise TypeError(f'cannot set attribute {name}')
+        super().__setattr__(name, val)
+
+    def __setitem__(self, name, val):
+        raise TypeError(f'cannot set item {name}')
+
+
+def mouse_press_callbacks(obj, event):
+    """Run mouse press callbacks on either layer or viewer object.
+
+    Note that drag callbacks should have the following form::
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
+
+    Parameters
+    ---------
+    obj : napari.components.ViewerModel or napar.layers.Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    # iterate through drag callback functions
+    for mouse_drag_func in obj.mouse_drag_callbacks:
+        # exectute function to run press event code
+        gen = mouse_drag_func(obj, event)
+        # if function returns a generator then try to iterate it
+        if inspect.isgeneratorfunction(mouse_drag_func):
+            try:
+                next(gen)
+                # now store iterated genenerator
+                obj._mouse_drag_gen[mouse_drag_func] = gen
+                # and now store event that initially triggered the press
+                obj._persisted_mouse_event[gen] = event
+            except StopIteration:
+                pass
+
+
+def mouse_move_callbacks(obj, event):
+    """Run mouse move callbacks on either layer or viewer object.
+
+    Note that drag callbacks should have the following form::
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
+
+    Parameters
+    ---------
+    obj : napari.components.ViewerModel or napar.layers.Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    if not event.is_dragging:
+        # if not dragging simply call the mouse move callbacks
+        for mouse_move_func in obj.mouse_move_callbacks:
+            mouse_move_func(obj, event)
+
+    # for each drag callback get the current generator
+    for func, gen in tuple(obj._mouse_drag_gen.items()):
+        # save the event current event
+        obj._persisted_mouse_event[gen].__wrapped__ = event
+        try:
+            # try to advance the generator
+            next(gen)
+        except StopIteration:
+            # If done deleted the generator and stored event
+            del obj._mouse_drag_gen[func]
+            del obj._persisted_mouse_event[gen]
+
+
+def mouse_release_callbacks(obj, event):
+    """Run mouse release callbacks on either layer or viewer object.
+
+    Note that drag callbacks should have the following form::
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
+
+    Parameters
+    ---------
+    obj : napari.components.ViewerModel or napar.layers.Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    for func, gen in tuple(obj._mouse_drag_gen.items()):
+        obj._persisted_mouse_event[gen].__wrapped__ = event
+        try:
+            # Run last part of the function to trigger release event
+            next(gen)
+        except StopIteration:
+            pass
+        # Finally delete the generator and stored event
+        del obj._mouse_drag_gen[func]
+        del obj._persisted_mouse_event[gen]
+
+
+def get_keybindings_summary(keymap):
+    """Get summary of keybindings in keymap.
+
+    Parameters
+    ---------
+    keymap : dict
+        Dictionary of keybindings.
+
+    Returns
+    ---------
+    keybindings_str : str
+        String with summary of all keybindings and their functions.
+    """
+    keybindings_str = ''
+    for key in keymap:
+        func_str = f'<b> {key}</b>: {get_function_summary(keymap[key])}<br>'
+        keybindings_str += func_str
+
+    return keybindings_str
+
+
+def get_function_summary(func):
+    """Get summary of doc string of function."""
+    doc = FunctionDoc(func)
+    summary = ''
+    summary += doc['Signature']
+    for s in doc['Summary']:
+        summary += '<br>&nbsp;&nbsp;&nbsp;&nbsp;' + s
+    return summary

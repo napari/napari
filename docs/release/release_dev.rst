@@ -12,29 +12,29 @@ For more information, examples, and documentation, please visit our website:
 
 https://github.com/napari/napari
 
-
 New Features
-------------
-
+************
 
 Improvements
-------------
+************
 
-
+Bug fixs
+********
 
 API Changes
------------
-
-
-
-Bugfixes
---------
-
-
+***********
 
 Deprecations
-------------
+************
 
+Build Tools
+***********
+
+Other Pull Requests
+*******************
 
 Contributors to this release
+----------------------------
+
+Reviewers in this release
 ----------------------------

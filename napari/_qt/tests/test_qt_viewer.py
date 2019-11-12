@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari.components import ViewerModel
 from napari._qt.qt_viewer import QtViewer
@@ -196,7 +197,7 @@ def test_new_points(qtbot):
     view = QtViewer(viewer)
     qtbot.addWidget(view)
 
-    viewer._new_points()
+    viewer.add_points()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -213,7 +214,7 @@ def test_new_points(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
-    viewer._new_points()
+    viewer.add_points()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -230,7 +231,7 @@ def test_new_shapes(qtbot):
     view = QtViewer(viewer)
     qtbot.addWidget(view)
 
-    viewer._new_shapes()
+    viewer.add_shapes()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -247,7 +248,7 @@ def test_new_shapes(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 15))
     viewer.add_image(data)
-    viewer._new_shapes()
+    viewer.add_shapes()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
@@ -287,3 +288,31 @@ def test_screenshot(qtbot):
     # Take screenshot
     screenshot = view.screenshot()
     assert screenshot.ndim == 3
+
+
+@pytest.mark.parametrize(
+    "dtype", ['int8', 'uint8', 'int16', 'uint16', 'float32']
+)
+def test_qt_viewer_data_integrity(qtbot, dtype):
+    """Test that the viewer doesn't change the underlying array."""
+
+    image = np.random.rand(10, 32, 32)
+    image *= 200 if dtype.endswith('8') else 2 ** 14
+    image = image.astype(dtype)
+    imean = image.mean()
+
+    viewer = ViewerModel()
+    view = QtViewer(viewer)
+    qtbot.addWidget(view)
+
+    viewer.add_image(image.copy())
+    datamean = viewer.layers[0].data.mean()
+    assert datamean == imean
+    # toggle dimensions
+    viewer.dims.ndisplay = 3
+    datamean = viewer.layers[0].data.mean()
+    assert datamean == imean
+    # back to 2D
+    viewer.dims.ndisplay = 2
+    datamean = viewer.layers[0].data.mean()
+    assert datamean == imean
