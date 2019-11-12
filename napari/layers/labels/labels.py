@@ -459,6 +459,9 @@ class Labels(Image):
             Position of mouse cursor in image coordinates.
         new_label : int
             Value of the new label to be filled in.
+        refresh : bool
+            Whether to refresh view slice or not. Set to False to batch paint
+            calls.
         """
         if refresh is True:
             self._save_history()
@@ -549,9 +552,8 @@ class Labels(Image):
                 interp_coord = interpolate_coordinates(
                     self._last_cursor_coord, self.coordinates, self.brush_size
                 )
-            with self.events.set_data.blocker():
-                for c in interp_coord:
-                    self.paint(c, new_label, refresh=False)
+            for c in interp_coord:
+                self.paint(c, new_label, refresh=False)
             self._set_view_slice()
             self._last_cursor_coord = copy(self.coordinates)
 
