@@ -5,6 +5,7 @@
 import numpy as np
 import napari
 from qtpy.QtWidgets import QApplication
+import collections
 
 
 class QtViewerSingleLabels:
@@ -16,6 +17,12 @@ class QtViewerSingleLabels:
         self.data = np.random.randint(10, size=(512, 512))
         self.viewer = napari.view_labels(self.data)
         self.layer = self.viewer.layers[0]
+        self.layer.brush_size = 10
+        self.layer.mode = 'paint'
+        self.layer.selected_label = 3
+        self.layer._last_cursor_coord = (511, 511)
+        Event = collections.namedtuple('Event', 'is_dragging')
+        self.event = Event(is_dragging=True)
 
     def teardown(self):
         self.viewer.window.close()
@@ -47,3 +54,7 @@ class QtViewerSingleLabels:
             self.layer._value,
             self.layer.selected_label,
         )
+
+    def time_on_mouse_move(self):
+        """Time to drag paint on mouse move."""
+        self.layer.on_mouse_move(self.event)

@@ -545,7 +545,6 @@ class Labels(Image):
             Vispy event
         """
         if self._mode == Mode.PAINT and event.is_dragging:
-            new_label = self.selected_label
             if self._last_cursor_coord is None:
                 interp_coord = [self.coordinates]
             else:
@@ -553,7 +552,7 @@ class Labels(Image):
                     self._last_cursor_coord, self.coordinates, self.brush_size
                 )
             for c in interp_coord:
-                self.paint(c, new_label, refresh=False)
+                self.paint(c, self.selected_label, refresh=False)
             self._set_view_slice()
             self._last_cursor_coord = copy(self.coordinates)
 
