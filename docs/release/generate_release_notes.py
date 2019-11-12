@@ -28,7 +28,6 @@ import os
 import argparse
 from datetime import datetime
 from collections import OrderedDict
-import string
 from warnings import warn
 
 from github import Github
@@ -36,8 +35,6 @@ from github import Github
 try:
     from tqdm import tqdm
 except ImportError:
-    from warnings import warn
-
     warn(
         'tqdm not installed. This script takes approximately 5 minutes '
         'to run. To view live progressbars, please install tqdm. '
@@ -157,7 +154,7 @@ highlights['New Feature'] = {}
 highlights['Improvement'] = {}
 highlights['Bugfix'] = {}
 highlights['API Change'] = {}
-highlights['Deprecations'] = {}
+highlights['Deprecation'] = {}
 highlights['Build Tool'] = {}
 other_pull_requests = {}
 
@@ -188,7 +185,7 @@ for pull in tqdm(
 
 
 # add Other PRs to the ordered dict to make doc generation easier.
-highlights['Pull Request'] = other_pull_requests
+highlights['Other Pull Request'] = other_pull_requests
 
 
 # Now generate the release notes
@@ -214,9 +211,9 @@ https://github.com/napari/napari
 )
 
 for section, pull_request_dicts in highlights.items():
-    if not pull_request_dicts:
-        continue
     print(f'{section}s\n{"*" * (len(section)+1)}')
+    if len(pull_request_dicts.items()) == 0:
+        print()
     for number, pull_request_info in pull_request_dicts.items():
         print(f'- {pull_request_info["summary"]} (#{number})')
 
