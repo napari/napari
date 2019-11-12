@@ -6,9 +6,9 @@ class Histogram:
     """Histogram Model, numpy API with vispy events"""
 
     def __init__(
-        self, data=None, bins=100, range=None, weights=None, density=None
+        self, data=None, bins=None, range=None, weights=None, density=None
     ):
-        self.bins = bins
+        self.bins = bins or 'fd'  # (Freedman Diaconis Estimator)
         self.range = range  # numpy also shadows range, we mimick their API
         self.weights = weights
         self.density = density
@@ -22,7 +22,7 @@ class Histogram:
             self.set_data(data)
 
     def set_data(self, data):
-        print("histogram calculating")
+        print("calculating histogram")
         self.counts, self.bin_edges = np.histogram(
             np.asarray(data).ravel(),
             bins=self.bins,
