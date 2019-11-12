@@ -56,10 +56,10 @@ class VispyPointsLayer(VispyBaseLayer):
 
         if len(self.layer._data_view) > 0:
             edge_color = [
-                self.layer.edge_colors[i] for i in self.layer._indices_view
+                self.layer.edge_color[i] for i in self.layer._indices_view
             ]
             face_color = [
-                self.layer.face_colors[i] for i in self.layer._indices_view
+                self.layer.face_color[i] for i in self.layer._indices_view
             ]
         else:
             edge_color = 'white'
@@ -73,7 +73,7 @@ class VispyPointsLayer(VispyBaseLayer):
             size = [0]
         else:
             data = self.layer._data_view
-            size = self.layer._sizes_view
+            size = self.layer._size_view
 
         if self.layer.dims.ndisplay == 2:
             set_data = self.node._subvisuals[0].set_data
@@ -100,9 +100,9 @@ class VispyPointsLayer(VispyBaseLayer):
             data = self.layer._data_view[self.layer._highlight_index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer._sizes_view[self.layer._highlight_index]
+            size = self.layer._size_view[self.layer._highlight_index]
             face_color = [
-                self.layer.face_colors[i]
+                self.layer.face_color[i]
                 for i in self.layer._indices_view[self.layer._highlight_index]
             ]
         else:
