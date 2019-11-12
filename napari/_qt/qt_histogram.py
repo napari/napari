@@ -4,6 +4,7 @@ from vispy import scene
 
 from .._vispy.vispy_histogram import VispyHistogramLayer
 from .qt_plot_widget import QtPlotWidget
+from ..util.misc import blocked_qt_signals
 
 
 class QtHistogramWidget(QtPlotWidget):
@@ -71,28 +72,25 @@ class QtHistogramWidget(QtPlotWidget):
             self.update_lut_lines()
 
     def _get_layer_gamma(self, *args):
-        self.blockSignals(True)
-        self.gamma = self.layer.gamma
-        self.blockSignals(False)
+        with blocked_qt_signals(self):
+            self.gamma = self.layer.gamma
 
     def _set_layer_gamma(self, value):
         with self.layer.events.gamma.blocker(self._get_layer_gamma):
             self.layer.gamma = value
 
     def _get_layer_clims(self, *args):
-        self.blockSignals(True)
-        self.clims = self.layer.contrast_limits
-        self.blockSignals(False)
+        with blocked_qt_signals(self):
+            self.clims = self.layer.contrast_limits
 
     def _set_layer_clims(self, value):
         with self.layer.events.contrast_limits.blocker(self._get_layer_clims):
             self.layer.contrast_limits = value
 
     def _link_layer(self, layer):
-        self.blockSignals(True)
-        self.clims = layer.contrast_limits
-        self.gamma = layer.gamma
-        self.blockSignals(False)
+        with blocked_qt_signals(self):
+            self.clims = layer.contrast_limits
+            self.gamma = layer.gamma
 
         self.gamma_updated.connect(self._set_layer_gamma)
         layer.events.gamma.connect(self._get_layer_gamma)

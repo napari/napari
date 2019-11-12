@@ -6,6 +6,7 @@ import inspect
 import itertools
 from scipy import ndimage as ndi
 from numpydoc.docscrape import FunctionDoc
+from contextlib import contextmanager
 
 import numpy as np
 import wrapt
@@ -710,3 +711,11 @@ def get_function_summary(func):
     for s in doc['Summary']:
         summary += '<br>&nbsp;&nbsp;&nbsp;&nbsp;' + s
     return summary
+
+
+@contextmanager
+def blocked_qt_signals(obj):
+    """Context manager to temporarily block signals from `obj`"""
+    obj.blockSignals(True)
+    yield
+    obj.blockSignals(False)
