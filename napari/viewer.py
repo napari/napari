@@ -1,4 +1,6 @@
 from qtpy.QtWidgets import QApplication
+
+from napari._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_viewer import QtViewer
 from ._qt.qt_main_window import Window
 from .components import ViewerModel
@@ -43,3 +45,8 @@ class Viewer(ViewerModel):
         self.window = Window(qt_viewer)
         self.screenshot = self.window.qt_viewer.screenshot
         self.update_console = self.window.qt_viewer.console.push
+
+    def update(self, func, *args, **kwargs):
+        t = QtUpdateUI(func, *args, **kwargs)
+        self.window.qt_viewer.pool.start(t)
+        return self.window.qt_viewer.pool  # returns threadpool object
