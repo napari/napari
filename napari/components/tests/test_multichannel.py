@@ -172,5 +172,5 @@ def test_rgb_images():
     viewer.add_image(data, channel_axis=2, rgb=True)
     assert len(viewer.layers) == data.shape[2]
     for i in range(data.shape[-1]):
-        assert viewer.layers[i].rgb == True
+        assert viewer.layers[i].rgb is True
         assert viewer.layers[i]._data_view.ndim == 3

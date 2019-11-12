@@ -29,6 +29,12 @@ def test_viewer(qtbot):
     # Run all class keybindings
     for func in viewer.class_keymap.values():
         func(viewer)
+        # the `play` keybinding calls QtDims.play_dim(), which then creates a new QThread.
+        # we must then run the keybinding a second time, which will call QtDims.stop(),
+        # otherwise the thread will be killed at the end of the test without cleanup,
+        # causing a segmentation fault.  (though the tests still pass)
+        if func.__name__ == 'play':
+            func(viewer)
 
     # Close the viewer
     viewer.window.close()
@@ -45,7 +51,7 @@ def test_no_qt_loop():
     magic.
     """
     with pytest.raises(RuntimeError):
-        viewer = Viewer()
+        _ = Viewer()
 
 
 def test_add_image(qtbot):

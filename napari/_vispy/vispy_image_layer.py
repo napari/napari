@@ -67,7 +67,7 @@ class VispyImageLayer(VispyBaseLayer):
                 )[dtype.kind]
             except KeyError:  # not an int or float
                 raise TypeError(
-                    f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'
+                    f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
                 )
             data = data.astype(dtype)
 
@@ -78,8 +78,6 @@ class VispyImageLayer(VispyBaseLayer):
             self.node._need_colortransform_update = True
             self.node.set_data(data)
         else:
-            if dtype == 'float32':
-                data = data.copy()
             self.node.set_data(data, clim=self.layer.contrast_limits)
         self.node.update()
 
@@ -94,7 +92,8 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
-            # when gamma!=1, we instantiate a new colormap with 256 control points from 0-1
+            # when gamma!=1, we instantiate a new colormap
+            # with 256 control points from 0-1
             cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
 
         # Below is fixed in #1712

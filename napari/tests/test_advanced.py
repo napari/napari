@@ -36,6 +36,34 @@ def test_4D_5D_images(qtbot):
     viewer.window.close()
 
 
+def test_5D_image_3D_rendering(qtbot):
+    """Test 3D rendering of a 5D image."""
+    np.random.seed(0)
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    # add 4D image data
+    data = np.random.random((2, 10, 12, 13, 14))
+    viewer.add_image(data)
+    assert np.all(viewer.layers[0].data == data)
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 5
+    assert viewer.dims.ndisplay == 2
+    assert viewer.layers[0]._data_view.ndim == 2
+    assert view.dims.nsliders == viewer.dims.ndim
+    assert np.sum(view.dims._displayed_sliders) == 3
+
+    # switch to 3D rendering
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    assert viewer.layers[0]._data_view.ndim == 3
+    assert np.sum(view.dims._displayed_sliders) == 2
+
+    # Close the viewer
+    viewer.window.close()
+
+
 def test_change_image_dims(qtbot):
     """Test changing the dims and shape of an image layer in place and checking
     the numbers of sliders and their ranges changes appropriately.

@@ -1,6 +1,4 @@
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
-from .qt_base_layer import QtLayerControls
-from .qt_image_base_layer import QtBaseImageControls
 from .qt_image_layer import QtImageControls
 from .qt_points_layer import QtPointsControls
 from .qt_shapes_layer import QtShapesControls

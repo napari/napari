@@ -523,7 +523,7 @@ class Points(Layer):
             else:
                 self.editable = True
 
-        if self.editable == False:
+        if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
     def _slice_data(self, indices):

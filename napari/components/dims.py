@@ -293,7 +293,7 @@ class Dims:
             )
         if self.point[axis] != value:
             self._point[axis] = value
-            self.events.axis(axis=axis)
+            self.events.axis(axis=axis, value=value)
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
         """Sets the interval used for cropping and projecting this dimension

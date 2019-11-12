@@ -69,6 +69,7 @@ class QtViewer(QSplitter):
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.events.ignore_callback_errors = False
+        self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 
@@ -128,6 +129,8 @@ class QtViewer(QSplitter):
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
+        # stop any animations whenever the layers change
+        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
 
@@ -262,9 +265,10 @@ class QtViewer(QSplitter):
 
     def _on_reset_view(self, event):
         if isinstance(self.view.camera, ArcballCamera):
-            self.view.camera._quaternion = self.view.camera._quaternion.create_from_axis_angle(
+            quat = self.view.camera._quaternion.create_from_axis_angle(
                 *event.quaternion
             )
+            self.view.camera._quaternion = quat
             self.view.camera.center = event.center
             self.view.camera.scale_factor = event.scale_factor
         else:
