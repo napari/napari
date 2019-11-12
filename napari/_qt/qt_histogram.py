@@ -1,6 +1,5 @@
 import numpy as np
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QGuiApplication
 from vispy import scene
 
 from .._vispy.vispy_histogram import VispyHistogramLayer
@@ -32,22 +31,10 @@ class QtHistogramWidget(QtPlotWidget):
         self._clims = clims
         self._gamma = gamma
         self._layer = None
-
         self.clim_handle_color = clim_handle_color
-        self.clim_handles = []
-        _, y1 = self.range
-        for clim in self.clims:
-            line = scene.InfiniteLine(
-                clim, self.clim_handle_color, vertical=not vertical
-            )
-            self.clim_handles.append(line)
-            self.plot.view.add(line)
 
-        midpoint = np.array([(np.mean(self.clims), y1 * 2 ** -self.gamma)])
-        self._gamma_handle_position = midpoint[0]
-        self.gamma_handle = scene.Markers(pos=midpoint, size=6, edge_width=0)
-        self.plot.view.add(self.gamma_handle)
-
+        self._gamma_handle_position = None
+        self.gamma_handle = None
         self.lut_line = None
         self._clim_handle_grabbed = 0
         self._gamma_handle_grabbed = 0
@@ -65,7 +52,7 @@ class QtHistogramWidget(QtPlotWidget):
         self.plot.view.add(self.hist_layer.node)
         self.resize(self.layout.sizeHint())
         self.autoscale()
-        self.update_lut_line()
+        self.update_lut_lines()
 
     @property
     def layer(self):
@@ -81,7 +68,7 @@ class QtHistogramWidget(QtPlotWidget):
         if newlayer is not None:
             self._link_layer(newlayer)
             self.autoscale()
-            self.update_lut_line()
+            self.update_lut_lines()
 
     def _get_layer_gamma(self, *args):
         self.blockSignals(True)
@@ -130,30 +117,6 @@ class QtHistogramWidget(QtPlotWidget):
             y = (0, counts.max()) if counts is not None else None
         self.camera.set_range(x=x, y=y, margin=0.005)
 
-    def update_lut_line(self):
-        npoints = 255
-
-        y1 = self.range[1] * 0.99
-        if self.vertical:
-            X = np.linspace(0, 1, npoints) ** self.gamma * y1
-            Y = np.linspace(self.clims[0], self.clims[1], npoints)
-            midpoint = np.array([(y1 * 2 ** -self.gamma, np.mean(self.clims))])
-        else:
-            X = np.linspace(self.clims[0], self.clims[1], npoints)
-            Y = np.linspace(0, 1, npoints) ** self.gamma * y1
-            midpoint = np.array([(np.mean(self.clims), y1 * 2 ** -self.gamma)])
-
-        if self.lut_line:
-            self.lut_line.set_data(
-                (X, Y), color=self.clim_handle_color, marker_size=0
-            )
-        else:
-            self.lut_line = self.plot.plot(
-                (X, Y), color=self.clim_handle_color
-            )
-        self.gamma_handle.set_data(pos=midpoint, size=6, edge_width=0)
-        self._gamma_handle_position = midpoint[0]
-
     @property
     def gamma(self):
         return self._gamma
@@ -163,7 +126,7 @@ class QtHistogramWidget(QtPlotWidget):
         if not np.isscalar(value):
             raise ValueError('gamma value must be a scalar')
         self._gamma = float(value)
-        self.update_lut_line()
+        self.update_lut_lines()
         self.gamma_updated.emit(value)
 
     @property
@@ -174,14 +137,52 @@ class QtHistogramWidget(QtPlotWidget):
     def clims(self, value):
         if not isinstance(value, (list, tuple, np.ndarray)) or len(value) != 2:
             raise ValueError('clims value must be a 2-item array')
-
-        for i in range(2):
-            if self._clims[i] != value[i]:
-                self.clim_handles[i].set_data(value[i])
-                # self.clim_handles[i].update()
-                self.update_lut_line()
         self._clims = value
+        self.update_lut_lines()
         self.clims_updated.emit(value)
+
+    def update_lut_lines(self, npoints=256):
+        X = np.empty(npoints + 4)
+        Y = np.empty(npoints + 4)
+        y1 = self.range[1] * 0.98
+        if self.vertical:
+            # clims lines
+            X[0:2], Y[0:2] = (y1, y1 / 2), self.clims[0]
+            X[-2:], Y[-2:] = (y1 / 2, 0), self.clims[1]
+            # gamma line
+            X[2:-2] = np.linspace(0, 1, npoints) ** self.gamma * y1
+            Y[2:-2] = np.linspace(self.clims[0], self.clims[1], npoints)
+            midpoint = np.array([(y1 * 2 ** -self.gamma, np.mean(self.clims))])
+        else:
+            # clims lines
+            X[0:2], Y[0:2] = self.clims[0], (y1, y1 / 2)
+            X[-2:], Y[-2:] = self.clims[1], (y1 / 2, 0)
+            # gamma line
+            X[2:-2] = np.linspace(self.clims[0], self.clims[1], npoints)
+            Y[2:-2] = np.linspace(0, 1, npoints) ** self.gamma * y1
+            midpoint = np.array([(np.mean(self.clims), y1 * 2 ** -self.gamma)])
+
+        if self.lut_line:
+            self.lut_line.set_data((X, Y), marker_size=0)
+        else:
+
+            color = np.linspace(0.2, 0.8, npoints + 4).repeat(4).reshape(-1, 4)
+            c1, c2 = [0.4] * 4, [0.7] * 4
+            color[0:3] = [c1, c2, c1]
+            color[-3:] = [c1, c2, c1]
+            self.lut_line = self.plot.plot(
+                (X, Y), marker_size=0, width=1.5, color=color
+            )
+            self.lut_line.order = -1
+
+        self._gamma_handle_position = midpoint[0]
+        gkwargs = {'size': 6, 'edge_width': 0}
+        if self.gamma_handle:
+            self.gamma_handle.set_data(pos=midpoint, **gkwargs)
+        else:
+            self.gamma_handle = scene.Markers(pos=midpoint, **gkwargs)
+            self.gamma_handle.order = -2
+            self.plot.view.add(self.gamma_handle)
 
     def on_mouse_press(self, event):
         if event.pos is None:
@@ -259,23 +260,23 @@ class QtHistogramWidget(QtPlotWidget):
             self.gamma = -np.log2(y / y1)
             return
 
-        QGuiApplication.restoreOverrideCursor()
+        self.unsetCursor()
 
         if self._pos_is_clim(event):
             if self.vertical:
                 cursor = Qt.CursorShape.SplitVCursor
             else:
                 cursor = Qt.CursorShape.SplitHCursor
-            QGuiApplication.setOverrideCursor(cursor)
+            self.setCursor(cursor)
         elif self._pos_is_gamma(event):
             if self.vertical:
                 cursor = Qt.CursorShape.SplitHCursor
             else:
                 cursor = Qt.CursorShape.SplitVCursor
-            QGuiApplication.setOverrideCursor(cursor)
+            self.setCursor(cursor)
         else:
             x, y = self._to_plot_coords(event.pos)
             x1, x2 = self.domain
             y1, y2 = self.range
             if (x1 < x <= x2) and (y1 <= y <= y2):
-                QGuiApplication.setOverrideCursor(Qt.CursorShape.CrossCursor)
+                self.setCursor(Qt.CursorShape.CrossCursor)
