@@ -496,6 +496,26 @@ class Shapes(Layer):
                 self.opacity = opacity
 
     @property
+    def attrs(self):
+        """dict: Dictionary of layer attributes."""
+        layer_attrs = self._base_attrs
+        del layer_attrs['opacity']
+        return layer_attrs
+
+    @property
+    def arrays(self):
+        """dict: Dictionary of layer arrays."""
+        return {
+            'data': self.data,
+            'shape_type': self.shape_types,
+            'z_index': self.z_indices,
+            'opacity': self.opacities,
+            'edge_width': self.edge_widths,
+            'edge_color': self.edge_colors,
+            'face_color': self.face_colors,
+        }
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.

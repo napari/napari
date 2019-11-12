@@ -279,6 +279,17 @@ class Surface(Layer):
         self._update_thumbnail()
         self.events.gamma()
 
+    @property
+    def attrs(self):
+        """dict: Dictionary of layer attributes."""
+        layer_attrs = {
+            'colormap': self.colormap[0],
+            'contrast_limits': self.contrast_limits,
+            'gamma': self.gamma,
+        }
+        layer_attrs.update(self._base_attrs)
+        return layer_attrs
+
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 

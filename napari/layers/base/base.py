@@ -402,8 +402,8 @@ class Layer(KeymapMixin, ABC):
         )
 
     @property
-    def _base_properties(self):
-        """dict: Dictionary of properties on base layer."""
+    def _base_attrs(self):
+        """dict: Dictionary of attributes on base layer."""
         base_dict = {
             'layer_type': type(self).__name__,
             'name': self.name,
@@ -417,9 +417,14 @@ class Layer(KeymapMixin, ABC):
         return base_dict
 
     @property
-    def properties(self):
-        """dict: Dictionary of layer properties."""
-        return self._base_properties
+    def attrs(self):
+        """dict: Dictionary of layer attributes."""
+        return self._base_attrs
+
+    @property
+    def arrays(self):
+        """dict: Dictionary of layer arrays."""
+        return {'data': self.data}
 
     @property
     def thumbnail(self):

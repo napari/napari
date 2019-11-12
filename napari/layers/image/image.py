@@ -387,9 +387,9 @@ class Image(Layer):
         self.events.rendering()
 
     @property
-    def properties(self):
-        """dict: Dictionary of layer properties."""
-        layer_properties = {
+    def attrs(self):
+        """dict: Dictionary of layer attributes."""
+        layer_attrs = {
             'rgb': self.rgb,
             'is_pyramid': self.is_pyramid,
             'colormap': self.colormap[0],
@@ -398,8 +398,8 @@ class Image(Layer):
             'rendering': self.rendering,
             'gamma': self.gamma,
         }
-        layer_properties.update(self._base_properties)
-        return layer_properties
+        layer_attrs.update(self._base_attrs)
+        return layer_attrs
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.

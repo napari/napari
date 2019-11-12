@@ -146,6 +146,17 @@ class Vectors(Layer):
         self._update_dims()
         self.events.data()
 
+    @property
+    def attrs(self):
+        """dict: Dictionary of layer attributes."""
+        layer_attrs = {
+            'edge_color': self.edge_color,
+            'edge_width': self.edge_width,
+            'length': self.length,
+        }
+        layer_attrs.update(self._base_attrs)
+        return layer_attrs
+
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
         return self.data.shape[2]

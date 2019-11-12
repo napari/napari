@@ -389,16 +389,21 @@ class Points(Layer):
         self.events.highlight()
 
     @property
-    def properties(self):
-        """dict: Dictionary of layer properties."""
-        layer_properties = {
-            'symbol': self.symbol,
-            'edge_width': self.edge_width,
+    def attrs(self):
+        """dict: Dictionary of layer attributes."""
+        layer_attrs = {'symbol': self.symbol, 'edge_width': self.edge_width}
+        layer_attrs.update(self._base_attrs)
+        return layer_attrs
+
+    @property
+    def arrays(self):
+        """dict: Dictionary of layer arrays."""
+        return {
+            'data': self.data,
+            'size': self.size,
             'edge_color': self.edge_colors,
             'face_color': self.face_colors,
         }
-        layer_properties.update(self._base_properties)
-        return layer_properties
 
     @property
     def selected_data(self):

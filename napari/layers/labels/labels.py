@@ -245,15 +245,15 @@ class Labels(Image):
         self.events.selected_label()
 
     @property
-    def properties(self):
-        """dict: Dictionary of layer properties."""
-        layer_properties = {
+    def attrs(self):
+        """dict: Dictionary of layer attributes."""
+        layer_attrs = {
             'num_colors': self.num_colors,
             'seed': self.seed,
             'n_dimensional': self.n_dimensional,
         }
-        layer_properties.update(self._base_properties)
-        return layer_properties
+        layer_attrs.update(self._base_attrs)
+        return layer_attrs
 
     @property
     def selected_label(self):
