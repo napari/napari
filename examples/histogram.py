@@ -18,5 +18,6 @@ import napari
 import numpy as np
 v = napari.Viewer()
 v.add_image(skid.camera())
-w = QtHistogramWidget(viewer=v)
+w = QtHistogramWidget(viewer=v, vertical=True)
 w.show()
+w2 = QtHistogramWidget(viewer=v, link='view')

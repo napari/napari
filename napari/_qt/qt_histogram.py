@@ -19,12 +19,13 @@ class QtHistogramWidget(QtPlotWidget):
         clims=(0, 255),
         gamma=1,
         clim_handle_color=(0.26, 0.28, 0.31, 1),
-        vertical=True,
+        vertical=False,
+        link='data',
     ):
         super().__init__(vertical)
 
         self.hist_layer = VispyHistogramLayer(
-            link='view', orientation='v' if vertical else 'h'
+            link=link, orientation='v' if vertical else 'h'
         )
         self._viewer = viewer
 
