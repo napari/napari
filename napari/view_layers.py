@@ -95,7 +95,7 @@ def view_image(
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str
-        Dimension names
+        Dimension names.
 
     Returns
     -------
@@ -196,7 +196,7 @@ def view_points(
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str
-        Dimension names
+        Dimension names.
 
     Returns
     -------
@@ -295,7 +295,7 @@ def view_labels(
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str
-        Dimension names
+        Dimension names.
 
     Returns
     -------
@@ -404,7 +404,7 @@ def view_shapes(
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str
-        Dimension names
+        Dimension names.
 
     Returns
     -------
@@ -497,7 +497,7 @@ def view_surface(
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str
-        Dimension names
+        Dimension names.
 
     Returns
     -------
@@ -582,7 +582,7 @@ def view_vectors(
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str
-        Dimension names
+        Dimension names.
 
     Returns
     -------
