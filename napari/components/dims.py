@@ -7,8 +7,7 @@ from ..util.event import EmitterGroup
 
 
 class Dims:
-    """Dimensions object modeling multi-dimensional slicing, cropping, and
-    displaying in Napari
+    """Dimensions object modeling slicing and displaying.
 
     Parameters
     ----------
@@ -118,8 +117,7 @@ class Dims:
 
     @property
     def range(self):
-        """List of 3-tuple (min, max, step): total range and step size of each
-        dimension.
+        """List of 3-tuple: (min, max, step size) of each dimension.
         """
         return copy(self._range)
 
@@ -130,8 +128,7 @@ class Dims:
 
     @property
     def interval(self):
-        """List of 2-tuple (min, max): Selection range of each dimension if in
-        INTERVAL mode.
+        """List of 2-tuple: (min, max) of each dimension if in INTERVAL mode.
         """
         return copy(self._interval)
 
@@ -183,7 +180,7 @@ class Dims:
 
     @property
     def ndim(self):
-        """Returns the number of dimensions
+        """Returns the number of dimensions.
 
         Returns
         -------
@@ -237,9 +234,7 @@ class Dims:
             self.events.ndim()
 
     def _reorder_after_dim_reduction(self, order):
-        """When the user reduces the dimensionality of the array,
-        make sure to preserve the current ordering of the dimensions
-        while throwing away the unneeded dimensions.
+        """Ensure current dimension order is preserved after dims are dropped.
 
         Parameters
         ----------
@@ -328,14 +323,14 @@ class Dims:
             self._axis_labels[axis] = str(axis - self.ndim)
 
     def set_range(self, axis: int, _range: Sequence[Union[int, float]]):
-        """Sets the range (min, max, step) for a given axis (dimension)
+        """Sets the range (min, max, step) for a given dimension.
 
         Parameters
         ----------
         axis : int
-            Dimension index
+            Dimension index.
         range : tuple
-            Range specified as (min, max, step)
+            Range specified as (min, max, step).
         """
         axis = self._assert_axis_in_bounds(axis)
         if self.range[axis] != _range:
@@ -343,14 +338,14 @@ class Dims:
             self.events.range(axis=axis)
 
     def set_point(self, axis: int, value: Union[int, float]):
-        """Sets the point at which to slice this dimension
+        """Sets the point at which to slice this dimension.
 
         Parameters
         ----------
         axis : int
-            Dimension index
+            Dimension index.
         value : int or float
-            Value of the point
+            Value of the point.
         """
         axis = self._assert_axis_in_bounds(axis)
         if self.point[axis] != value:
@@ -358,14 +353,14 @@ class Dims:
             self.events.axis(axis=axis, value=value)
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
-        """Sets the interval used for cropping and projecting this dimension
+        """Sets the interval used for cropping and projecting this dimension.
 
         Parameters
         ----------
         axis : int
-            Dimension index
+            Dimension index.
         interval : tuple
-            INTERVAL specified with (min, max)
+            INTERVAL specified with (min, max).
         """
         axis = self._assert_axis_in_bounds(axis)
         if self.interval[axis] != interval:
@@ -373,14 +368,14 @@ class Dims:
             self.events.axis(axis=axis)
 
     def set_mode(self, axis: int, mode: DimsMode):
-        """Sets the mode: POINT or INTERVAL
+        """Sets the mode: POINT or INTERVAL.
 
         Parameters
         ----------
         axis : int
-            Dimension index
+            Dimension index.
         mode : POINT or INTERVAL
-            Whether dimension is in the POINT or INTERVAL mode
+            Whether dimension is in the POINT or INTERVAL mode.
         """
         axis = self._assert_axis_in_bounds(axis)
         if self.mode[axis] != mode:
@@ -403,18 +398,17 @@ class Dims:
             self.events.axis_labels(axis=axis)
 
     def _assert_axis_in_bounds(self, axis: int) -> int:
-        """Asserts that a given value of axis is inside
-        the existing axes of the image.
+        """Assert a given value is inside the existing axes of the image.
 
         Returns
         -------
         axis : int
-            The axis which was checked for validity
+            The axis which was checked for validity.
 
         Raises
         ------
         ValueError
-            The given axis index is out of bounds
+            The given axis index is out of bounds.
         """
         if axis not in range(-self.ndim, self.ndim):
             msg = (
