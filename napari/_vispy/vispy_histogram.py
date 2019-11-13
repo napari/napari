@@ -1,7 +1,9 @@
-from vispy.scene.visuals import Mesh as MeshNode
-from ..components.histogram import Histogram as HistogramModel
-import numpy as np
 from abc import ABC, abstractmethod
+
+import numpy as np
+from vispy.scene.visuals import Mesh as MeshNode
+
+from ..components.histogram import Histogram as HistogramModel
 
 
 """Possible Organization
@@ -75,20 +77,18 @@ class VispyHistogramLayer(VispyPlotLayer):
             self.layer.events.set_data.connect(self.update_model)
         self.update_model()
 
-    def _update_node(self, *args):
+    def _update_node(self, event):
+        counts, edges = event.counts, event.edges
         X, Y = (0, 1) if self.orientation == 'h' else (1, 0)
-        data, bin_edges = self.model.counts, self.model.bin_edges
         # construct our vertices
-        verts = np.zeros((3 * len(bin_edges) - 2, 3), np.float32)
-        verts[:, X] = np.repeat(bin_edges, 3)[1:-1]
-        verts[1::3, Y] = data
-        verts[2::3, Y] = data
-        bin_edges.astype(np.float32)
+        verts = np.zeros((3 * len(edges) - 2, 3), np.float32)
+        verts[:, X] = np.repeat(edges, 3)[1:-1]
+        verts[1::3, Y] = counts
+        verts[2::3, Y] = counts
+        edges.astype(np.float32)
         # and now our tris
-        faces = np.zeros((2 * len(bin_edges) - 2, 3), np.uint32)
-        offsets = (
-            3 * np.arange(len(bin_edges) - 1, dtype=np.uint32)[:, np.newaxis]
-        )
+        faces = np.zeros((2 * len(edges) - 2, 3), np.uint32)
+        offsets = 3 * np.arange(len(edges) - 1, dtype=np.uint32)[:, np.newaxis]
         tri_1 = np.array([0, 2, 1])
         tri_2 = np.array([2, 0, 3])
         faces[::2] = tri_1 + offsets

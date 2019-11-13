@@ -1,5 +1,6 @@
 import numpy as np
 from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import QScrollBar
 from vispy import scene
 
 from .._vispy.vispy_histogram import VispyHistogramLayer
@@ -20,23 +21,21 @@ class QtHistogramWidget(QtPlotWidget):
         gamma=1,
         clim_handle_color=(0.26, 0.28, 0.31, 1),
         vertical=False,
-        link='data',
+        link='view',
     ):
-        super().__init__(vertical)
+        super().__init__(viewer=viewer, vertical=vertical)
 
         self.hist_layer = VispyHistogramLayer(
             link=link, orientation='v' if vertical else 'h'
         )
-        self._viewer = viewer
 
         self._clims = clims
         self._gamma = gamma
         self._layer = None
-        self.clim_handle_color = clim_handle_color
 
-        self._gamma_handle_position = None
         self.gamma_handle = None
         self.lut_line = None
+        self._gamma_handle_position = None
         self._clim_handle_grabbed = 0
         self._gamma_handle_grabbed = 0
 
@@ -54,6 +53,18 @@ class QtHistogramWidget(QtPlotWidget):
         self.resize(self.layout.sizeHint())
         self.autoscale()
         self.update_lut_lines()
+
+        slider = QScrollBar(Qt.Vertical)
+        slider.setFocusPolicy(Qt.NoFocus)
+        slider.setMinimum(2)
+        slider.setMaximum(20)
+        slider.setValue(2)
+        slider.valueChanged.connect(self.on_logslider_change)
+        slider.setInvertedAppearance(True)
+        self.layout.insertWidget(0, slider)
+
+    def on_logslider_change(self, value):
+        self.hist_layer.model.pow = np.log(5) / value
 
     @property
     def layer(self):
