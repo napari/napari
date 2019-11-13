@@ -428,7 +428,7 @@ class QtDims(QWidget):
                     stopped
 
         Raises
-        -----
+        ------
         IndexError
             If ``axis`` requested is out of the range of the dims
         IndexError
