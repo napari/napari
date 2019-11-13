@@ -29,7 +29,7 @@ class ViewerModel(KeymapMixin):
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels = list of str
-        Dimension names
+        Dimension names.
 
     Attributes
     ----------
