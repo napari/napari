@@ -22,6 +22,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QLabel,
     QAction,
     QShortcut,
+    QStatusBar,
 )
 from qtpy.QtGui import QKeySequence  # noqa: E402
 from ..util.theme import template  # noqa: E402
@@ -51,7 +52,8 @@ class Window:
         self._qt_window.setCentralWidget(self._qt_center)
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
-        self._status_bar = self._qt_window.statusBar()
+        self._status_bar = QStatusBar()
+        self._qt_window.setStatusBar(self._status_bar)
         self._qt_window.closeEvent = self.closeEvent
         self.close = self._qt_window.close
 

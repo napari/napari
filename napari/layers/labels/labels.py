@@ -459,7 +459,7 @@ class Labels(Image):
 
         self._set_view_slice()
 
-    def paint(self, coord, new_label):
+    def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
         brush shape and size, either only on the visible slice or in all
         n dimensions.
@@ -470,8 +470,12 @@ class Labels(Image):
             Position of mouse cursor in image coordinates.
         new_label : int
             Value of the new label to be filled in.
+        refresh : bool
+            Whether to refresh view slice or not. Set to False to batch paint
+            calls.
         """
-        self._save_history()
+        if refresh is True:
+            self._save_history()
 
         if self.n_dimensional or self.ndim == 2:
             slice_coord = tuple(
@@ -515,7 +519,8 @@ class Labels(Image):
         # update the labels image
         self.data[slice_coord] = new_label
 
-        self._set_view_slice()
+        if refresh is True:
+            self._set_view_slice()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -551,16 +556,14 @@ class Labels(Image):
             Vispy event
         """
         if self._mode == Mode.PAINT and event.is_dragging:
-            new_label = self.selected_label
             if self._last_cursor_coord is None:
                 interp_coord = [self.coordinates]
             else:
                 interp_coord = interpolate_coordinates(
                     self._last_cursor_coord, self.coordinates, self.brush_size
                 )
-            with self.events.set_data.blocker():
-                for c in interp_coord:
-                    self.paint(c, new_label)
+            for c in interp_coord:
+                self.paint(c, self.selected_label, refresh=False)
             self._set_view_slice()
             self._last_cursor_coord = copy(self.coordinates)
 
