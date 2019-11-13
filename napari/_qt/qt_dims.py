@@ -274,8 +274,7 @@ class QtDims(QWidget):
             self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
-        """
-        Trims number of dimensions to a lower number
+        """Trims number of dimensions to a lower number
 
         Parameters
         ----------
@@ -287,9 +286,7 @@ class QtDims(QWidget):
             self._remove_slider(0)
 
     def _remove_slider(self, index):
-        """
-        Remove slider at index. Should also remove all accompanying widgets,
-        like the axis label.
+        """Remove slider at index. Should also remove all accompanying widgets, like the axis label.
 
         Parameters
         ----------
@@ -309,8 +306,7 @@ class QtDims(QWidget):
         self.last_used = None
 
     def _create_range_slider_widget(self, axis):
-        """
-        Creates a range slider widget for a given axis
+        """Creates a range slider widget for a given axis
 
         Parameters
         ----------
@@ -351,9 +347,8 @@ class QtDims(QWidget):
         return slider
 
     def _create_axis_label_widget(self, axis):
-        """
-        Create the axis label widget which accompanies its slider.
-        # TODO - min and max width, word wrapping, text alignmemt.
+        """Create the axis label widget which accompanies its slider.
+
         Parameters
         ----------
         axis : axis index
@@ -409,8 +404,7 @@ class QtDims(QWidget):
         frame_range: Optional[Tuple[int, int]] = None,
         playback_mode: str = 'loop',
     ):
-        """
-        Animate (play) axis
+        """Animate (play) axis
 
         Parameters
         ----------
@@ -433,7 +427,7 @@ class QtDims(QWidget):
                     stopped
 
         Raises
-        ----------
+        ------
         IndexError
             If ``axis`` requested is out of the range of the dims
         IndexError

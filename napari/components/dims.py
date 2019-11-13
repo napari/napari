@@ -234,8 +234,7 @@ class Dims:
             self.events.ndim()
 
     def _reorder_after_dim_reduction(self, order):
-        """
-        When the user reduces the dimensionality of the array,
+        """When the user reduces the dimensionality of the array,
         make sure to preserve the current ordering of the dimensions
         while throwing away the unneeded dimensions.
 
