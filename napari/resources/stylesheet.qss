@@ -925,3 +925,27 @@ QtDeleteShapeButton {
 QtDeletePointsButton {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
+
+/* ------------- QtPlotWidget --------- */ 
+
+QtPlotWidget {
+  background-color: 'black';
+}
+
+QtPlotWidget > QScrollBar:vertical {
+  width: 10px;
+  margin: 0 0 22px 0;
+  background-color: #111111;
+}
+
+QtPlotWidget > QScrollBar::handle:vertical {
+  min-height: 20px;
+}
+
+QtPlotWidget > QScrollBar::add-line:vertical {
+  height: 0px;
+}
+
+QtPlotWidget > QScrollBar::sub-line:vertical {
+  height: 0px;
+}
