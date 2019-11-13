@@ -6,7 +6,7 @@ import numpy as np
 with napari.gui_qt():
     v = napari.Viewer()
     v.add_image(np.random.randn(10, 256, 256))
-    w = QtHistogramWidget(viewer=v)
+    w = QtHistogramWidget(viewer=v, vertical=True)
     w.show()
 
 

@@ -54,13 +54,14 @@ class QtHistogramWidget(QtPlotWidget):
         self.autoscale()
         self.update_lut_lines()
 
-        slider = QScrollBar(Qt.Vertical)
+        slider = QScrollBar(Qt.Vertical if not vertical else Qt.Horizontal)
         slider.setFocusPolicy(Qt.NoFocus)
         slider.setMinimum(2)
         slider.setMaximum(20)
         slider.setValue(2)
         slider.valueChanged.connect(self.on_logslider_change)
-        slider.setInvertedAppearance(True)
+        if not vertical:
+            slider.setInvertedAppearance(True)
         self.layout.insertWidget(0, slider)
 
     def on_logslider_change(self, value):

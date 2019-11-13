@@ -928,6 +928,20 @@ QtDeletePointsButton {
 
 /* ------------- QtPlotWidget --------- */ 
 
+QtPlotWidget > QScrollBar:horizontal {
+    height: 10x;
+    border-radius: 3px;
+    margin: 0 0 0 0;
+    background-color: #111111;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: {{ foreground }};
+    border: 0px;
+    min-width: 20px;
+    border-radius: 3px;
+}
+
 QtPlotWidget {
   background-color: 'black';
 }
@@ -938,14 +952,22 @@ QtPlotWidget > QScrollBar:vertical {
   background-color: #111111;
 }
 
+QtPlotWidget > QScrollBar:horizontal {
+  height: 10px;
+  margin: 0 0 0px 36px;
+  background-color: #111111;
+}
+
 QtPlotWidget > QScrollBar::handle:vertical {
   min-height: 20px;
 }
 
-QtPlotWidget > QScrollBar::add-line:vertical {
-  height: 0px;
+QtPlotWidget > QScrollBar::add-line {
+  height: 0;
+  width: 0;
 }
 
-QtPlotWidget > QScrollBar::sub-line:vertical {
-  height: 0px;
+QtPlotWidget > QScrollBar::sub-line {
+  height: 0;
+  width: 0;
 }
