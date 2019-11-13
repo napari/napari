@@ -6,7 +6,7 @@ from xml.etree.ElementTree import Element, tostring
 from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
-from ..util import colormaps  # noqa F401
+from ..util import colormaps
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
@@ -28,7 +28,7 @@ class ViewerModel(KeymapMixin):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
-    axis_labels : list of str
+    axis_labels = list of str
         Dimension names
 
     Attributes
@@ -471,8 +471,6 @@ class ViewerModel(KeymapMixin):
             Whether the layer visual is currently being displayed.
         path : str or list of str
             Path or list of paths to image data.
-        axis_labels : list of str
-            Labels for each of the axes of the data. Used to label the sliders.
 
         Returns
         -------

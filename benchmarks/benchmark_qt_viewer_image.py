@@ -13,7 +13,7 @@ class QtViewerViewImageSuite:
     params = [2 ** i for i in range(4, 13)]
 
     def setup(self, n):
-        app = QApplication.instance() or QApplication([])  # noqa F841
+        _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
         self.data = np.random.random((n, n))
         self.viewer = None
@@ -32,7 +32,7 @@ class QtViewerAddImageSuite:
     params = [2 ** i for i in range(4, 13)]
 
     def setup(self, n):
-        app = QApplication.instance() or QApplication([])  # noqa F841
+        _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
         self.data = np.random.random((n, n))
         self.viewer = napari.Viewer()
@@ -51,7 +51,7 @@ class QtViewerEditImageSuite:
     params = [2 ** i for i in range(4, 13)]
 
     def setup(self, n):
-        app = QApplication.instance() or QApplication([])  # noqa F841
+        _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
         self.data = np.random.random((n, n))
         self.viewer = napari.view_image(self.data)
@@ -76,7 +76,7 @@ class QtViewerSingleImage:
     """Benchmarks for editing a single image layer in the viewer."""
 
     def setup(self):
-        app = QApplication.instance() or QApplication([])  # noqa F841
+        _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
         self.data = np.random.random((128, 128, 128))
         self.viewer = napari.view_image(self.data)
