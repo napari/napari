@@ -159,14 +159,8 @@ def test_order_when_changing_ndim():
 
 def test_labels_order_when_changing_dims():
     dims = Dims(4)
-    dims.axis_labels[-1] = 'abc'
-    print(dims.axis_labels)
     dims.ndim = 5
-    assert dims.axis_labels == ['4', '3', '2', '1', 'abc']
-
-
-def test_labels_on_init():
-    pass
+    assert dims.axis_labels == ['0', '1', '2', '3', '4']
 
 
 @pytest.mark.parametrize(
