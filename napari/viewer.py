@@ -18,7 +18,7 @@ class Viewer(ViewerModel):
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str
-        Dimension names
+        Dimension names.
     """
 
     def __init__(
