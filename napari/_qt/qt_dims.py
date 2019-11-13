@@ -225,7 +225,7 @@ class QtDims(QWidget):
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _update_nsliders(self):
-        """Updates the number of sliders based on the number of dimensions"""
+        """Updates the number of sliders based on the number of dimensions."""
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
@@ -235,11 +235,11 @@ class QtDims(QWidget):
                 self._update_slider(i)
 
     def _update_axis_labels(self, axis):
-        """Updates the label for the given axis """
+        """Updates the label for the given axis."""
         self.axis_labels[axis].setText(self.dims.axis_labels[axis])
 
     def _create_sliders(self, number_of_sliders: int):
-        """Creates sliders to match new number of dimensions
+        """Creates sliders to match new number of dimensions.
 
         Parameters
         ----------
@@ -283,8 +283,7 @@ class QtDims(QWidget):
             self._remove_slider(0)
 
     def _remove_slider(self, index):
-        """Remove slider at index. Should also remove all accompanying widgets,
-        like the axis label.
+        """Remove slider at index, including all accompanying widgets.
 
         Parameters
         ----------
@@ -304,7 +303,7 @@ class QtDims(QWidget):
         self.last_used = None
 
     def _create_range_slider_widget(self, axis: int):
-        """Creates a range slider widget for a given axis
+        """Creates a range slider widget for a given axis.
 
         Parameters
         ----------
@@ -405,7 +404,7 @@ class QtDims(QWidget):
         frame_range: Optional[Tuple[int, int]] = None,
         playback_mode: str = 'loop',
     ):
-        """Animate (play) axis
+        """Animate (play) axis.
 
         Parameters
         ----------
