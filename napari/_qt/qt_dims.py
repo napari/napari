@@ -270,7 +270,7 @@ class QtDims(QWidget):
             self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
     def _trim_sliders(self, number_of_sliders):
-        """Trims number of dimensions to a lower number
+        """Trims number of dimensions to a lower number.
 
         Parameters
         ----------
