@@ -30,7 +30,7 @@ class QtShapesControls(QtLayerControls):
         sld.setMinimum(0)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        value = self.layer.edge_width
+        value = self.layer.current_edge_width
         if isinstance(value, Iterable):
             if isinstance(value, list):
                 value = np.asarray(value)
@@ -174,37 +174,45 @@ class QtShapesControls(QtLayerControls):
             raise ValueError("Mode not recongnized")
 
     def changeFaceColor(self, text):
-        self.layer.face_color = text
+        self.layer.current_face_color = text
 
     def changeEdgeColor(self, text):
-        self.layer.edge_color = text
+        self.layer.current_edge_color = text
 
     def changeWidth(self, value):
-        self.layer.edge_width = float(value) / 2
+        self.layer.current_edge_width = float(value) / 2
+
+    def changeOpacity(self, value):
+        with self.layer.events.blocker(self._on_opacity_change):
+            self.layer.current_opacity = value / 100
 
     def _on_edge_width_change(self, event):
         with self.layer.events.edge_width.blocker():
-            value = self.layer.edge_width
+            value = self.layer.current_edge_width
             value = np.clip(int(2 * value), 0, 40)
             self.widthSlider.setValue(value)
 
     def _on_edge_color_change(self, event):
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
-                self.layer.edge_color, Qt.MatchFixedString
+                self.layer.current_edge_color, Qt.MatchFixedString
             )
             self.edgeComboBox.setCurrentIndex(index)
-        color = Color(self.layer.edge_color).hex
+        color = Color(self.layer.current_edge_color).hex
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event):
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(
-                self.layer.face_color, Qt.MatchFixedString
+                self.layer.current_face_color, Qt.MatchFixedString
             )
             self.faceComboBox.setCurrentIndex(index)
-        color = Color(self.layer.face_color).hex
+        color = Color(self.layer.current_face_color).hex
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
+
+    def _on_opacity_change(self, event):
+        with self.layer.events.opacity.blocker():
+            self.opacitySilder.setValue(self.layer.current_opacity * 100)
 
     def _on_editable_change(self, event):
         self.select_button.setEnabled(self.layer.editable)
