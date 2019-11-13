@@ -21,7 +21,6 @@ def profile_lines(image, shape_layer):
     shape_layer.status = msg
 
 
-
 with napari.gui_qt():
     np.random.seed(1)
     viewer = napari.Viewer()
