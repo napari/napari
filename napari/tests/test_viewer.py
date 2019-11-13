@@ -386,3 +386,33 @@ def test_screenshot(qtbot):
 
     # Close the viewer
     viewer.window.close()
+
+
+def test_update(qtbot):
+    import time
+
+    data = np.random.random((512, 512))
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    layer = viewer.add_image(data)
+
+    def layer_update(*, update_period, num_updates):
+        # number of times to update
+
+        for k in range(num_updates):
+            time.sleep(update_period)
+
+            dat = np.random.random((512, 512))
+            layer.data = dat
+
+            assert layer.data.all() == dat.all()
+
+    viewer.update(layer_update, update_period=0.01, num_updates=100)
+
+    # if we do not sleep, main thread closes before update thread finishes and many qt components get cleaned
+    time.sleep(3)
+
+    # Close the viewer
+    viewer.window.close()

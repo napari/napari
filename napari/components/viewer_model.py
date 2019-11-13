@@ -28,6 +28,8 @@ class ViewerModel(KeymapMixin):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels = list of str
+        Dimension names.
 
     Attributes
     ----------
@@ -43,7 +45,9 @@ class ViewerModel(KeymapMixin):
 
     themes = palettes
 
-    def __init__(self, title='napari', ndisplay=2, order=None):
+    def __init__(
+        self, title='napari', ndisplay=2, order=None, axis_labels=None
+    ):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -61,15 +65,9 @@ class ViewerModel(KeymapMixin):
             layers_change=Event,
         )
 
-        if order is None:
-            ndim = ndisplay
-            order = list(range(ndim))
-        else:
-            ndim = len(order)
-
-        self.dims = Dims(ndim)
-        self.dims.ndisplay = ndisplay
-        self.dims.order = order
+        self.dims = Dims(
+            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        )
 
         self.layers = LayerList()
 
@@ -1140,8 +1138,7 @@ class ViewerModel(KeymapMixin):
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
             self.dims.ndim = 2
-            for i in range(2):
-                self.dims.set_initial_dims(i)
+            self.dims.reset()
         else:
             layer_range = self._calc_layers_ranges()
             self.dims.ndim = len(layer_range)
