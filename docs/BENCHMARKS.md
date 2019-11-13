@@ -139,13 +139,13 @@ The airspeed velocity tool also supports code profiling using [`cProfile`](https
 To profile the `time_create_viewer` benchmark in napari you can run
 
 ```
-asv profile benchmark_qt_viewer.QtViewerSuite.time_create_viewer -g snakeviz
+asv profile benchmark_qt_viewer.QtViewerSuite.time_create_viewer -g snakeviz --python=same
 ```
 
 or
 
 ```
-asv profile "benchmark_image_layer.Image2DSuite.time_create_layer(.*)" -g snakeviz
+asv profile "benchmark_image_layer.Image2DSuite.time_create_layer(.*)" -g snakeviz --python=same
 ```
 to profile a parametrized benchmark.
 
@@ -154,3 +154,4 @@ which you can pip install with
 ```
 pip install snakeviz
 ```
+and we use `--python=same` to profile against our current python environment.
