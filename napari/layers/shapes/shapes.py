@@ -652,13 +652,13 @@ class Shapes(Layer):
             shapes.
         """
         if edge_width is None:
-            edge_width = self.edge_width
+            edge_width = self.current_edge_width
         if edge_color is None:
-            edge_color = self.edge_color
+            edge_color = self.current_edge_color
         if face_color is None:
-            face_color = self.face_color
+            face_color = self.current_face_color
         if opacity is None:
-            opacity = self.opacity
+            opacity = self.current_opacity
         if self._data_view is not None:
             z_index = z_index or max(self._data_view._z_index, default=-1) + 1
         else:

@@ -300,6 +300,7 @@ def test_changing_shapes():
     data_a = 20 * np.random.random(shape_a)
     data_b = 20 * np.random.random(shape_b)
     layer = Shapes(data_a)
+    assert layer.nshapes == shape_a[0]
     layer.data = data_b
     assert layer.nshapes == shape_b[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data_b)])
@@ -565,27 +566,27 @@ def test_face_color():
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     assert layer.current_face_color == 'white'
-    assert len(layer.face_colors) == shape[0]
-    assert layer.face_colors == ['white'] * shape[0]
+    assert len(layer.face_color) == shape[0]
+    assert layer.face_color == ['white'] * shape[0]
 
     # With no data selected chaning face color has no effect
     layer.current_face_color = 'blue'
     assert layer.current_face_color == 'blue'
-    assert layer.face_colors == ['white'] * shape[0]
+    assert layer.face_color == ['white'] * shape[0]
 
     # Select data and change face color of selection
     layer.selected_data = [0, 1]
     assert layer.current_face_color == 'white'
     layer.current_face_color = 'green'
-    assert layer.face_colors == ['green'] * 2 + ['white'] * (shape[0] - 2)
+    assert layer.face_color == ['green'] * 2 + ['white'] * (shape[0] - 2)
 
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = []
     layer.current_face_color = 'blue'
     layer.add(new_shape)
-    assert len(layer.face_colors) == shape[0] + 1
-    assert layer.face_colors == ['green'] * 2 + ['white'] * (shape[0] - 2) + [
+    assert len(layer.face_color) == shape[0] + 1
+    assert layer.face_color == ['green'] * 2 + ['white'] * (shape[0] - 2) + [
         'blue'
     ]
 
@@ -597,20 +598,20 @@ def test_face_color():
     col_list = ['red', 'green'] * 5
     layer = Shapes(data, face_color=col_list)
     assert layer.current_face_color == 'white'
-    assert layer.face_colors == col_list
+    assert layer.face_color == col_list
 
     # Add new point and test its color
     layer.current_face_color = 'blue'
     layer.add(new_shape)
-    assert len(layer.face_colors) == shape[0] + 1
-    assert layer.face_colors == col_list + ['blue']
+    assert len(layer.face_color) == shape[0] + 1
+    assert layer.face_color == col_list + ['blue']
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.face_colors) == shape[0] - 1
-    assert layer.face_colors == [col_list[1]] + col_list[3:] + ['blue']
+    assert len(layer.face_color) == shape[0] - 1
+    assert layer.face_color == [col_list[1]] + col_list[3:] + ['blue']
 
 
 def test_edge_width():
