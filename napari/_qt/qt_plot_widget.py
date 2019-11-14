@@ -11,10 +11,12 @@ from ..util.theme import template
 
 
 class QtPlotWidget(QWidget):
+    """ kwargs are passed to NapariPlotWidget"""
+
     with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
         raw_stylesheet = f.read()
 
-    def __init__(self, viewer=None, vertical=False, parent=None):
+    def __init__(self, viewer=None, vertical=False, parent=None, **kwargs):
         super().__init__(parent)
 
         self._viewer = viewer
@@ -50,12 +52,7 @@ class QtPlotWidget(QWidget):
         )
 
         self.plot = self.canvas.central_widget.add_widget(
-            NapariPlotWidget(
-                fg_color=(1, 1, 1, 0.3),
-                show_yaxis=vertical,
-                show_xaxis=not vertical,
-                lock_axis=(0 if vertical else 1),
-            )
+            NapariPlotWidget(fg_color=(1, 1, 1, 0.3), **kwargs)
         )
         self.plot._configure_2d()
         self.camera = self.plot.view.camera
@@ -90,3 +87,12 @@ class QtPlotWidget(QWidget):
         # template and apply the primary stylesheet
         themed_stylesheet = template(self.raw_stylesheet, **palette)
         self.setStyleSheet(themed_stylesheet)
+
+    def on_mouse_press(self, event):
+        pass
+
+    def on_mouse_release(self, event):
+        pass
+
+    def on_mouse_move(self, event):
+        pass

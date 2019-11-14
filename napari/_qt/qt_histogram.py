@@ -23,7 +23,14 @@ class QtHistogramWidget(QtPlotWidget):
         vertical=False,
         link='view',
     ):
-        super().__init__(viewer=viewer, vertical=vertical)
+
+        super().__init__(
+            viewer=viewer,
+            vertical=vertical,
+            show_yaxis=vertical,
+            show_xaxis=not vertical,
+            lock_axis=(0 if vertical else 1),
+        )
 
         self.hist_layer = VispyHistogramLayer(
             link=link, orientation='v' if vertical else 'h'
