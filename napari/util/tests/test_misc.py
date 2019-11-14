@@ -97,6 +97,10 @@ def test_is_pyramid():
         tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
     )
     assert is_pyramid(data)
+    
+    s = int(np.sqrt(2**32) + 2)
+    data = [np.zeros((s,) * 2,dtype=np.bool_),np.zeros((s//2,) * 2,dtype=np.bool_),np.zeros((s//4,) * 2,dtype=np.bool_)]
+    assert is_pyramid(data)
 
 
 def test_trim_pyramid():
