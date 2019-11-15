@@ -217,6 +217,13 @@ class Window:
         return dock_widget
 
     def remove_dock_widget(self, widget):
+        """Removes specified dock widget.
+
+        Parameters
+        ----------
+            widget : QWidget | str
+                If widget == 'all', all docked widgets will be removed.
+        """
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):
                 self._qt_window.removeDockWidget(dw)
