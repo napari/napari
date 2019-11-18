@@ -132,6 +132,10 @@ QLabel {
    padding-bottom: 3px;
 }
 
+QStatusBar > QLabel { /* Help QLabel */
+  background-color: {{ background }};
+}
+
 QDialog#QtAboutKeybindings {
   min-width: 500px;
   max-width: 500px;
@@ -925,6 +929,51 @@ QtDeleteShapeButton {
 QtDeletePointsButton {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
+
+/* ------------- QMainWindow --------- */
+/* Styling the QMainWindow is important because
+any QDockWidgets will use the MainWindow styles
+as long as they are docked (though they use the
+style of QDockWidget when undocked) */
+
+QMainWindow {
+  background: {{ background }};
+}
+
+QMainWindow::separator {
+    background: {{ foreground }};
+    width: 2px; /* when vertical */
+    height: 2px; /* when horizontal */
+}
+
+QMainWindow::separator:hover {
+    background: {{ highlight }};
+}
+
+QDockWidget::title {
+  background-color: {{ background }};
+}
+
+QDockWidget::title:hover {
+  background-color: {{ foreground }};
+}
+
+QDockWidget::close-button {
+    subcontrol-position: top left;
+    subcontrol-origin: margin;
+    position: absolute;
+    top: 0px; left: 6px; bottom: 0px;
+    width: 18px;
+}
+
+QDockWidget::float-button {
+    subcontrol-position: top left;
+    subcontrol-origin: margin;
+    position: absolute;
+    top: 0px; left: 24px; bottom: 0px;
+    width: 18px;
+}
+
 
 /* ------------- QtPlotWidget --------- */ 
 
