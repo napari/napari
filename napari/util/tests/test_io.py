@@ -73,6 +73,13 @@ def test_multi_png_defaults(two_pngs):
     assert images.shape == (2, 512, 512)
 
 
+def test_multi_png_pathlib(two_pngs):
+    image_files = [Path(png) for png in two_pngs]
+    images = io.magic_imread(image_files)
+    assert isinstance(images, da.Array)
+    assert images.shape == (2, 512, 512)
+
+
 def test_multi_png_no_dask(two_pngs):
     image_files = two_pngs
     images = io.magic_imread(image_files, use_dask=False)
