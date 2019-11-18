@@ -20,7 +20,9 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     Parameters
     -------
     filenames : list
-        List of filenames or directories to be opened
+        List of filenames or directories to be opened.
+        A list of `pathlib.Path` objects and a single filename or `Path` object
+        are also accepted.
     use_dask : bool
         Whether to use dask to create a lazy array, rather than NumPy.
         Default of None will resolve to True if filenames contains more than
