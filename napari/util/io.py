@@ -1,5 +1,7 @@
 import os
+
 from glob import glob
+from pathlib import Path
 
 import numpy as np
 from skimage import io
@@ -32,6 +34,10 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     image : array-like
         Array or list of images
     """
+    # cast Path to string
+    if isinstance(filenames, Path):
+        filenames = filenames.as_posix()
+
     if len(filenames) == 0:
         return None
     if isinstance(filenames, str):
