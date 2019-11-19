@@ -84,7 +84,7 @@ def test_calc_data_range_fast_big():
     t0 = time.time()
     _ = calc_data_range(data)
     t1 = time.time()
-    assert t1 - t0 < 1
+    assert t1 - t0 < 2
 
 
 def test_is_pyramid():
