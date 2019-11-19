@@ -1,5 +1,5 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox
+from qtpy.QtWidgets import QLabel, QComboBox, QSlider
 from .qt_image_base_layer import QtBaseImageControls
 from ...layers.image._constants import Interpolation, Rendering
 
@@ -10,6 +10,7 @@ class QtImageControls(QtBaseImageControls):
 
         self.layer.events.interpolation.connect(self._on_interpolation_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
+        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
 
         interp_comboBox = QComboBox()
         for interp in Interpolation:
@@ -35,6 +36,17 @@ class QtImageControls(QtBaseImageControls):
         )
         self.renderComboBox = renderComboBox
 
+        sld = QSlider(Qt.Horizontal)
+        sld.setFocusPolicy(Qt.NoFocus)
+        sld.setMinimum(0)
+        sld.setMaximum(100)
+        sld.setSingleStep(1)
+        sld.setValue(self.layer.iso_threshold * 100)
+        sld.valueChanged[int].connect(
+            lambda value=sld: self.changeIsoTheshold(value)
+        )
+        self.isoThesholdSilder = sld
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel('opacity:'), 0, 0, 1, 3)
@@ -43,16 +55,18 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 3, 1, 4)
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0, 1, 3)
         self.grid_layout.addWidget(self.gammaSlider, 2, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0, 1, 3)
-        self.grid_layout.addWidget(self.colormapComboBox, 3, 3, 1, 3)
-        self.grid_layout.addWidget(self.colorbarLabel, 3, 6)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 3)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('rendering:'), 5, 0, 1, 3)
-        self.grid_layout.addWidget(self.renderComboBox, 5, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('interpolation:'), 6, 0, 1, 3)
-        self.grid_layout.addWidget(self.interpComboBox, 6, 3, 1, 4)
-        self.grid_layout.setRowStretch(6, 1)
+        self.grid_layout.addWidget(QLabel('iso threshold:'), 3, 0, 1, 3)
+        self.grid_layout.addWidget(self.isoThesholdSilder, 3, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('colormap:'), 4, 0, 1, 3)
+        self.grid_layout.addWidget(self.colormapComboBox, 4, 3, 1, 3)
+        self.grid_layout.addWidget(self.colorbarLabel, 4, 6)
+        self.grid_layout.addWidget(QLabel('blending:'), 5, 0, 1, 3)
+        self.grid_layout.addWidget(self.blendComboBox, 5, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('rendering:'), 6, 0, 1, 3)
+        self.grid_layout.addWidget(self.renderComboBox, 6, 3, 1, 4)
+        self.grid_layout.addWidget(QLabel('interpolation:'), 7, 0, 1, 3)
+        self.grid_layout.addWidget(self.interpComboBox, 7, 3, 1, 4)
+        self.grid_layout.setRowStretch(7, 1)
         self.grid_layout.setVerticalSpacing(4)
 
     def changeInterpolation(self, text):
@@ -60,6 +74,14 @@ class QtImageControls(QtBaseImageControls):
 
     def changeRendering(self, text):
         self.layer.rendering = text
+
+    def changeIsoTheshold(self, value):
+        with self.layer.events.blocker(self._on_iso_threshold_change):
+            self.layer.iso_threshold = value / 100
+
+    def _on_iso_threshold_change(self, event):
+        with self.layer.events.iso_threshold.blocker():
+            self.isoThesholdSilder.setValue(self.layer.iso_threshold * 100)
 
     def _on_interpolation_change(self, event):
         with self.layer.events.interpolation.blocker():

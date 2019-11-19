@@ -31,6 +31,9 @@ class VispyImageLayer(VispyBaseLayer):
             lambda e: self._on_contrast_limits_change()
         )
         self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
+        self.layer.events.iso_threshold.connect(
+            lambda e: self._on_iso_threshold_change()
+        )
 
         self._on_display_change()
         self._on_data_change()
@@ -86,8 +89,9 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.interpolation = self.layer.interpolation
 
     def _on_rendering_change(self):
-        if not self.layer.dims.ndisplay == 2:
+        if self.layer.dims.ndisplay == 3:
             self.node.method = self.layer.rendering
+            self._on_iso_threshold_change()
 
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
@@ -111,6 +115,10 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_gamma_change(self):
         self._on_colormap_change()
+
+    def _on_iso_threshold_change(self):
+        if self.layer.dims.ndisplay == 3 and self.layer.rendering == 'iso':
+            self.node.threshold = self.layer.iso_threshold
 
     def _on_scale_change(self):
         self.scale = [
@@ -216,5 +224,6 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_interpolation_change()
         self._on_rendering_change()
         self._on_colormap_change()
+        self._on_iso_threshold_change()
         if self.layer.dims.ndisplay == 2:
             self._on_contrast_limits_change()
