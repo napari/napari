@@ -309,7 +309,7 @@ class LabelColormap(BaseColormap):
         self.glsl_map_base = """
         vec4 colormap(float t) {
             if (t == 0) {
-                return vec4(0, 0, 0, 0)
+                return vec4(0, 0, 0, 0);
             }
             float r = 0.1 + 0.9 * fract(sin(13*t + t/$seed));
             float g = 0.1 + 0.9 * fract(tan(37*t + t/$seed));

@@ -224,7 +224,7 @@ class Labels(Image):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self.colormap.update_shader(seed)
+        self.colormap[1].update_shader(seed)
         self._selected_color = self.get_color(self.selected_label)
         self._set_view_slice()
         self.events.selected_label()
@@ -358,7 +358,7 @@ class Labels(Image):
 
     def new_colormap(self):
         self.seed = np.random.rand()
-        self.colormap.update_shader(self.seed)
+        self.colormap[1].update_shader(self.seed)
         self.events.colormap()
 
     def get_color(self, label):
@@ -369,7 +369,7 @@ class Labels(Image):
             val = self._raw_to_displayed(
                 np.array([[label]], dtype=self.data.dtype)
             )
-            col = self.colormap.map(val)[0]
+            col = self.colormap[1].map(val)[0]
         return col
 
     def _reset_history(self):
