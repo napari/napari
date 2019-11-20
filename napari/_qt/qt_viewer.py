@@ -7,6 +7,7 @@ from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QGridLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
+from qtpy.QtCore import QThreadPool
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
@@ -42,6 +43,8 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
 
+        self.pool = QThreadPool()
+
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
         )
@@ -69,6 +72,7 @@ class QtViewer(QSplitter):
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.events.ignore_callback_errors = False
+        self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 
@@ -128,6 +132,8 @@ class QtViewer(QSplitter):
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
+        # stop any animations whenever the layers change
+        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
 
@@ -406,6 +412,11 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
         self._add_files(filenames)
+
+    def closeEvent(self, event):
+        if self.pool.activeThreadCount() > 0:
+            self.pool.clear()
+        event.accept()
 
 
 def viewbox_key_event(event):
