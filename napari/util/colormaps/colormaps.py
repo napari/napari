@@ -325,8 +325,8 @@ class LabelColormap(BaseColormap):
         self.glsl_map = self.glsl_map_base.replace('$seed', f'{seed:.3f}')
 
     def map(self, t):
-        r = 0.1 + 0.9 * np.sin(13 * t + t / self.seed) % 1
-        g = 0.1 + 0.9 * np.tan(37 * t + t / self.seed) % 1
-        b = 0.1 + 0.9 * np.cos(17 * t + t / self.seed) % 1
+        r = 0.1 + 0.9 * (np.sin(13 * t + t / self.seed) % 1)
+        g = 0.1 + 0.9 * (np.tan(37 * t + t / self.seed) % 1)
+        b = 0.1 + 0.9 * (np.cos(17 * t + t / self.seed) % 1)
         colors = np.concatenate((r, g, b, np.ones_like(b)), axis=1)
         return np.where(t == 0, np.zeros_like(colors), colors)
