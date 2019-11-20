@@ -351,10 +351,7 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if raw.dtype in [np.uint32, np.int32]:
-            return raw.view(np.float32)
-        else:
-            return raw.view(np.float64)
+        return raw / raw.max()
 
     def new_colormap(self):
         self.seed = np.random.rand()
