@@ -219,7 +219,7 @@ class QtViewer(QSplitter):
             caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if filenames is not None:
+        if (filenames != []) and (filenames is not None):
             self._add_files(filenames)
 
     def _open_folder(self):
@@ -229,7 +229,7 @@ class QtViewer(QSplitter):
             caption='Select folder...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if folder is not None:
+        if folder not in {'', None}:
             self._add_files([folder])
 
     def _add_files(self, filenames):
