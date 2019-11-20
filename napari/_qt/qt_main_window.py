@@ -209,7 +209,7 @@ class Window:
         if area not in areas:
             raise ValueError(f'side argument must be in {list(areas.keys())}')
 
-        dock_widget = QDockWidget(self._qt_window)
+        dock_widget = QDockWidget(str(name or ''), self._qt_window)
         dock_widget.setAllowedAreas(
             allowed_areas
             or (

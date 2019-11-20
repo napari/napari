@@ -952,6 +952,8 @@ QMainWindow::separator:hover {
 
 QDockWidget::title {
   background-color: {{ background }};
+  text-align: center; /* otherwise text overlaps with the buttons */
+  margin-top:-50px
 }
 
 QDockWidget::title:hover {

@@ -62,7 +62,7 @@ class QtViewer(QSplitter):
 
         if self.console.shell is not None:
             self.viewerButtons.consoleButton.clicked.connect(
-                lambda: self._toggle_console()
+                lambda: self.toggle_console()
             )
         else:
             self.viewerButtons.consoleButton.setEnabled(False)
@@ -283,7 +283,7 @@ class QtViewer(QSplitter):
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
-    def _toggle_console(self):
+    def toggle_console(self):
         """Toggle console visible and not visible."""
         viz = not self.console.isVisible()
         # modulate visibility at the parent widget level as widget is docakable
