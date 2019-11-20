@@ -296,3 +296,35 @@ AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+
+
+# Label colormaps
+
+
+class LabelColormap(BaseColormap):
+    def __init__(self, seed=None):
+        if seed is None:
+            seed = np.random.random()
+        self.seed = seed
+        self.glsl_map_base = """
+        vec4 colormap(float t) {
+            if (t == 0) {
+                return vec4(0, 0, 0, 0)
+            }
+            float r = 0.1 + 0.9 * fract(sin(13*t + t/$seed));
+            float g = 0.1 + 0.9 * fract(tan(37*t + t/$seed));
+            float b = 0.1 + 0.9 * fract(cos(17*t + t/$seed));
+            return vec4(r, g, b, 1.0);
+        }
+        """
+        self.update_shader(seed)
+
+    def update_shader(self, seed):
+        self.seed = seed
+        self.glsl_map = self.glsl_map_base.replace('$seed', f'{seed:.3f}')
+
+    def map(self, t):
+        r = 0.1 + 0.9 * np.sin(13 * t + t / self.seed)
+        g = 0.1 + 0.9 * np.tan(37 * t + t / self.seed) % 1
+        b = 0.1 + 0.9 * np.cos(17 * t + t / self.seed)
+        return np.concatenate((r, g, b, np.ones_like(b)), axis=1)

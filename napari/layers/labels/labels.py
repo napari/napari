@@ -132,7 +132,7 @@ class Labels(Image):
 
         self._seed = seed
         self._num_colors = num_colors
-        colormap = ('random', colormaps.label_colormap(self.num_colors))
+        colormap = ('random', colormaps.LabelColormap(seed))
 
         super().__init__(
             data,
@@ -224,6 +224,7 @@ class Labels(Image):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
+        self.colormap.update_shader(seed)
         self._selected_color = self.get_color(self.selected_label)
         self._set_view_slice()
         self.events.selected_label()
@@ -350,21 +351,25 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        image = np.where(
-            raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
-        )
-        return image
+        if raw.dtype in [np.uint32, np.int32]:
+            return raw.view(np.float32)
+        else:
+            return raw.view(np.float64)
 
     def new_colormap(self):
         self.seed = np.random.rand()
+        self.colormap.update_shader(self.seed)
+        self.events.colormap()
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""
         if label == 0:
             col = None
         else:
-            val = self._raw_to_displayed(np.array([label]))
-            col = self.colormap[1][val].rgba[0]
+            val = self._raw_to_displayed(
+                np.array([[label]], dtype=self.data.dtype)
+            )
+            col = self.colormap.map(val)[0]
         return col
 
     def _reset_history(self):

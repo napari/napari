@@ -6,5 +6,6 @@ from .colormaps import (
     MAGENTA_GREEN,
     RGB,
     CYMRGB,
+    LabelColormap,
 )
 from .colorbars import make_colorbar
