@@ -85,7 +85,8 @@ def view_image(
     visible : bool
         Whether the layer visual is currently being displayed.
     path : str or list of str
-        Path or list of paths to image data.
+        Path or list of paths to image data. Paths can be passed as strings
+        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
