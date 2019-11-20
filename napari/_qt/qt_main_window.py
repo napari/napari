@@ -82,6 +82,12 @@ class Window:
 
         self._update_palette(qt_viewer.viewer.palette)
 
+        if self.qt_viewer.console.shell is not None:
+            self.docked_console = self.add_dock_widget(
+                'bottom', self.qt_viewer.console, name='console'
+            )
+            self.docked_console.setVisible(False)
+
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
@@ -174,7 +180,11 @@ class Window:
         self.help_menu.addAction(keybidings_action)
 
     def add_dock_widget(
-        self, area: str = 'bottom', widget: QWidget = None, allowed_areas=None
+        self,
+        area: str = 'bottom',
+        widget: QWidget = None,
+        allowed_areas=None,
+        name=None,
     ):
         """Convenience method to add a QDockWidget to the main window
 
@@ -187,6 +197,8 @@ class Window:
             If provided, `widget` will be added as QDockWidget's main widget
         allowed_areas : Qt.DockWidgetArea, optional
             Areas, relative to main window, that the new dock is allowed to go.
+        name : str, optional
+            Name of dock widget to appear in window menu.
         """
         areas = {
             'left': Qt.LeftDockWidgetArea,
@@ -214,6 +226,11 @@ class Window:
             dock_widget.setWidget(widget)
             widget.setParent(dock_widget)
         self._qt_window.addDockWidget(areas[area], dock_widget)
+        if name is not None:
+            action = dock_widget.toggleViewAction()
+            action.setStatusTip(name)
+            action.setText(name)
+            self.window_menu.addAction(action)
         return dock_widget
 
     def remove_dock_widget(self, widget):

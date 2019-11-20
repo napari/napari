@@ -61,9 +61,6 @@ class QtViewer(QSplitter):
         self.layer_to_visual = {}
 
         if self.console.shell is not None:
-            self.console.style().unpolish(self.console)
-            self.console.style().polish(self.console)
-            self.console.hide()
             self.viewerButtons.consoleButton.clicked.connect(
                 lambda: self._toggle_console()
             )
@@ -101,8 +98,8 @@ class QtViewer(QSplitter):
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
-        if self.console.shell is not None:
-            self.addWidget(self.console)
+        # if self.console.shell is not None:
+        #     self.addWidget(self.console)
 
         self._last_visited_dir = str(Path.home())
 
@@ -290,7 +287,9 @@ class QtViewer(QSplitter):
 
     def _toggle_console(self):
         """Toggle console visible and not visible."""
-        self.console.setVisible(not self.console.isVisible())
+        viz = not self.console.isVisible()
+        self.console.parentWidget().setVisible(viz)
+        self.console.setVisible(viz)
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.console.isVisible()
         )
