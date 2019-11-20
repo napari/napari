@@ -98,8 +98,6 @@ class QtViewer(QSplitter):
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
-        # if self.console.shell is not None:
-        #     self.addWidget(self.console)
 
         self._last_visited_dir = str(Path.home())
 
@@ -288,8 +286,8 @@ class QtViewer(QSplitter):
     def _toggle_console(self):
         """Toggle console visible and not visible."""
         viz = not self.console.isVisible()
+        # modulate visibility at the parent widget level as widget is docakable
         self.console.parentWidget().setVisible(viz)
-        self.console.setVisible(viz)
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.console.isVisible()
         )
