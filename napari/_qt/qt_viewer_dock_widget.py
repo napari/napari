@@ -1,5 +1,9 @@
-from qtpy.QtWidgets import QDockWidget, QWidget
+from functools import reduce
+from operator import ior
+from typing import List, Optional
+
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QDockWidget, QWidget
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -25,7 +29,7 @@ class QtViewerDockWidget(QDockWidget):
         *,
         name: str = '',
         area: str = 'bottom',
-        allowed_areas=None,
+        allowed_areas: Optional[List[str]] = None,
     ):
         self.viewer = viewer
         super().__init__(name)
@@ -38,19 +42,21 @@ class QtViewerDockWidget(QDockWidget):
             'bottom': Qt.BottomDockWidgetArea,
         }
         if area not in areas:
-            raise ValueError(f'side argument must be in {list(areas.keys())}')
+            raise ValueError(f'area argument must be in {list(areas.keys())}')
         self.area = area
         self.qt_area = areas[area]
 
-        self.setAllowedAreas(
-            allowed_areas
-            or (
-                Qt.LeftDockWidgetArea
-                | Qt.BottomDockWidgetArea
-                | Qt.RightDockWidgetArea
-                | Qt.TopDockWidgetArea
-            )
-        )
+        if allowed_areas:
+            if not isinstance(allowed_areas, (list, tuple)):
+                raise TypeError('`allowed_areas` must be a list or tuple')
+            if not all(area in areas for area in allowed_areas):
+                raise ValueError(
+                    f'all allowed_areas argument must be in {list(areas.keys())}'
+                )
+            allowed_areas = reduce(ior, [areas[a] for a in allowed_areas])
+        else:
+            allowed_areas = Qt.AllDockWidgetAreas
+        self.setAllowedAreas(allowed_areas)
         self.setMinimumHeight(50)
         self.setMinimumWidth(50)
         self.setObjectName(name)
@@ -59,4 +65,7 @@ class QtViewerDockWidget(QDockWidget):
         widget.setParent(self)
 
     def keyPressEvent(self, event):
+        # if you subclass QtViewerDockWidget and override the keyPressEvent
+        # method, be sure to call super().keyPressEvent(event) at the end of
+        # your method to pass uncaught key-combinations to the viewer.
         return self.viewer.keyPressEvent(event)
