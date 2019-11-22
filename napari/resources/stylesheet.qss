@@ -960,18 +960,34 @@ QDockWidget::title:hover {
   background-color: {{ foreground }};
 }
 
-QDockWidget::close-button {
-    subcontrol-position: top left;
+QDockWidget::close-button:vertical {
+    subcontrol-position: top;
     subcontrol-origin: margin;
-    position: absolute;
-    top: 0px; left: 6px; bottom: 0px;
-    width: 18px;
+    position: relative;
+    top: 8px; left: 0;
+    width: 14px;
 }
 
-QDockWidget::float-button {
+QDockWidget::float-button:vertical {
+    subcontrol-position: top;
+    subcontrol-origin: margin;
+    position: relative;
+    top: 24px; left: 0;
+    width: 14px;
+}
+
+QDockWidget::close-button:horizontal {
     subcontrol-position: top left;
     subcontrol-origin: margin;
-    position: absolute;
-    top: 0px; left: 24px; bottom: 0px;
-    width: 18px;
+    position: relative;
+    left: 2px; top: 4;
+    width: 14px;
+}
+
+QDockWidget::float-button:horizontal {
+    subcontrol-position: top left;
+    subcontrol-origin: margin;
+    position: relative;
+    left: 20px; top: 4;
+    width: 14px;
 }
