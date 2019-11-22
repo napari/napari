@@ -190,13 +190,15 @@ class Window:
         ----------
         widget : QWidget
             `widget` will be added as QDockWidget's main widget.
+        name : str, optional
+            Name of dock widget to appear in window menu.
         area : str
             Side of the main window to which the new dock widget will be added.
             Must be in {'left', 'right', 'top', 'bottom'}
-        allowed_areas : Qt.DockWidgetArea, optional
-            Areas, relative to main window, that the new dock is allowed to go.
-        name : str, optional
-            Name of dock widget to appear in window menu.
+        allowed_areas : list[str], optional
+            Areas, relative to main window, that the widget is allowed dock.
+            Each item in list must be in {'left', 'right', 'top', 'bottom'}
+            By default, all areas are allowed.
 
         Returns
         -------
