@@ -10,6 +10,7 @@ from vispy import app
 
 from .qt_about import QtAbout
 from .qt_about_keybindings import QtAboutKeybindings
+from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
 app.use_app(API_NAME)
@@ -20,16 +21,15 @@ del app
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
     QMainWindow,
-    QDockWidget,
     QWidget,
     QHBoxLayout,
+    QDockWidget,
     QLabel,
     QAction,
     QShortcut,
     QStatusBar,
 )
 from qtpy.QtGui import QKeySequence  # noqa: E402
-from qtpy.QtCore import Qt  # noqa: E402
 from ..util.theme import template  # noqa: E402
 
 
@@ -83,10 +83,7 @@ class Window:
         self._update_palette(qt_viewer.viewer.palette)
 
         if self.qt_viewer.console.shell is not None:
-            self.docked_console = self.add_dock_widget(
-                'bottom', self.qt_viewer.console, name='console'
-            )
-            self.docked_console.setVisible(False)
+            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
@@ -181,57 +178,56 @@ class Window:
 
     def add_dock_widget(
         self,
+        widget: QWidget,
+        *,
+        name: str = '',
         area: str = 'bottom',
-        widget: QWidget = None,
         allowed_areas=None,
-        name=None,
     ):
         """Convenience method to add a QDockWidget to the main window
 
         Parameters
         ----------
+        widget : QWidget
+            `widget` will be added as QDockWidget's main widget.
         area : str
             Side of the main window to which the new dock widget will be added.
             Must be in {'left', 'right', 'top', 'bottom'}
-        widget : QWidget, optional
-            If provided, `widget` will be added as QDockWidget's main widget
         allowed_areas : Qt.DockWidgetArea, optional
             Areas, relative to main window, that the new dock is allowed to go.
         name : str, optional
             Name of dock widget to appear in window menu.
+
+        Returns
+        -------
+        dock_widget : QtViewerDockWidget
+            `dock_widget` that can pass viewer events.
         """
-        areas = {
-            'left': Qt.LeftDockWidgetArea,
-            'right': Qt.RightDockWidgetArea,
-            'top': Qt.TopDockWidgetArea,
-            'bottom': Qt.BottomDockWidgetArea,
-        }
-        if area not in areas:
-            raise ValueError(f'side argument must be in {list(areas.keys())}')
 
-        dock_widget = QDockWidget(str(name or ''), self._qt_window)
-        dock_widget.setAllowedAreas(
-            allowed_areas
-            or (
-                Qt.LeftDockWidgetArea
-                | Qt.BottomDockWidgetArea
-                | Qt.RightDockWidgetArea
-                | Qt.TopDockWidgetArea
-            )
+        dock_widget = QtViewerDockWidget(
+            self.qt_viewer,
+            widget,
+            name=name,
+            area=area,
+            allowed_areas=allowed_areas,
         )
-        dock_widget.setMinimumHeight(50)
-        dock_widget.setMinimumWidth(50)
-
-        if isinstance(widget, QWidget):
-            dock_widget.setWidget(widget)
-            widget.setParent(dock_widget)
-        self._qt_window.addDockWidget(areas[area], dock_widget)
-        if name is not None:
-            action = dock_widget.toggleViewAction()
-            action.setStatusTip(name)
-            action.setText(name)
-            self.window_menu.addAction(action)
+        self._add_viewer_dock_widget(dock_widget)
         return dock_widget
+
+    def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
+        """Add a QtViewerDockWidget to the main window
+
+        Parameters
+        ----------
+        dock_widget : QtViewerDockWidget
+            `dock_widget` will be added to the main window.
+        """
+        dock_widget.setParent(self._qt_window)
+        self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
+        action = dock_widget.toggleViewAction()
+        action.setStatusTip(dock_widget.name)
+        action.setText(dock_widget.name)
+        self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget):
         """Removes specified dock widget.

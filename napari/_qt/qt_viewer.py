@@ -29,6 +29,7 @@ from ..util.keybindings import components_to_key_combo
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
+from .qt_viewer_dock_widget import QtViewerDockWidget
 from .._vispy import create_vispy_visual
 
 
@@ -56,6 +57,10 @@ class QtViewer(QSplitter):
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
+        self.dockConsole = QtViewerDockWidget(
+            self, self.console, name='console'
+        )
+        self.dockConsole.setVisible(False)
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -285,11 +290,14 @@ class QtViewer(QSplitter):
 
     def toggle_console(self):
         """Toggle console visible and not visible."""
-        viz = not self.console.isVisible()
-        # modulate visibility at the parent widget level as widget is docakable
-        self.console.parentWidget().setVisible(viz)
+        viz = not self.dockConsole.isVisible()
+        # modulate visibility at the dock widget level as console is docakable
+        self.dockConsole.setVisible(viz)
+        if self.dockConsole.isFloating():
+            self.dockConsole.setFloating(True)
+
         self.viewerButtons.consoleButton.setProperty(
-            'expanded', self.console.isVisible()
+            'expanded', self.dockConsole.isVisible()
         )
         self.viewerButtons.consoleButton.style().unpolish(
             self.viewerButtons.consoleButton
