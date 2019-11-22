@@ -348,6 +348,10 @@ def test_screenshot(qtbot):
     screenshot = viewer.screenshot()
     assert screenshot.ndim == 3
 
+    # Take screenshot with the viewer included
+    screenshot = viewer.screenshot(with_viewer=True)
+    assert screenshot.ndim == 3
+
     # Close the viewer
     viewer.window.close()
 
