@@ -247,6 +247,8 @@ class Window:
         """
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
+        # make sure window is not hidden, e.g. by browser window in Jupyter
+        self._qt_window.raise_()
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet
