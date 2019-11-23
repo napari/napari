@@ -4,7 +4,7 @@ from pathlib import Path
 
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QGridLayout, QFileDialog, QSplitter
+from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy.QtCore import QThreadPool
 from qtpy import API_NAME
@@ -57,6 +57,20 @@ class QtViewer(QSplitter):
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
+
+        layerList = QWidget()
+        layerList.setObjectName('layerList')
+        layerListLayout = QVBoxLayout()
+        layerListLayout.addWidget(self.layerButtons)
+        layerListLayout.addWidget(self.layers)
+        layerListLayout.addWidget(self.viewerButtons)
+        layerList.setLayout(layerListLayout)
+        self.dockLayerList = QtViewerDockWidget(
+            self, layerList, name='layer list', area='left'
+        )
+        self.dockLayerControls = QtViewerDockWidget(
+            self, self.controls, name='layer controls', area='left'
+        )
         self.dockConsole = QtViewerDockWidget(
             self, self.console, name='console'
         )
@@ -89,15 +103,10 @@ class QtViewer(QSplitter):
         self._update_camera()
 
         main_widget = QWidget()
-        main_layout = QGridLayout()
-        main_layout.setContentsMargins(15, 20, 15, 10)
-        main_layout.addWidget(self.canvas.native, 0, 1, 3, 1)
-        main_layout.addWidget(self.dims, 3, 1)
-        main_layout.addWidget(self.controls, 0, 0)
-        main_layout.addWidget(self.layerButtons, 1, 0)
-        main_layout.addWidget(self.layers, 2, 0)
-        main_layout.addWidget(self.viewerButtons, 3, 0)
-        main_layout.setColumnStretch(1, 1)
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(10, 22, 10, 0)
+        main_layout.addWidget(self.canvas.native)
+        main_layout.addWidget(self.dims)
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
 

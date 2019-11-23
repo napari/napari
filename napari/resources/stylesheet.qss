@@ -117,10 +117,20 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
 
-QtLayerList {
+QWidget#layerList {
+  border: 1px solid {{ background }};
     min-width: 240px;
     max-width: 240px;
-    padding: 0px;
+    border-radius: 2px;
+    padding: 4px;
+}
+
+QtLayerList {
+  border: 1px solid {{ background }};
+    min-width: 240px;
+    max-width: 240px;
+    border-radius: 2px;
+    padding: 4px;
     margin: 0px;
     border: 0px;
 }
@@ -433,8 +443,8 @@ QtControls {
     padding: 4px;
     min-height: 210px;
     max-height: 210px;
-    min-width: 220px;
-    max-width: 220px;
+    min-width: 240px;
+    max-width: 240px;
 }
 
 QtLayerControls {
@@ -448,7 +458,7 @@ QtLayerControls > QLabel {
   max-width: 180px;
   padding: 0px;
   border: 0px;
-  margin: 0px;
+  margin: 0px 8px 0px 0px;
   background-color: {{ foreground }};
   qproperty-alignment: AlignLeft;
 }
