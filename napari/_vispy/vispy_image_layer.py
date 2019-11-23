@@ -3,6 +3,7 @@ from vispy.scene.visuals import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
+from ..layers.image._constants import Rendering
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -119,7 +120,10 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_iso_threshold_change(self):
-        if self.layer.dims.ndisplay == 3 and self.layer.rendering == 'iso':
+        rendering = self.layer.rendering
+        if isinstance(rendering, str):
+            rendering = Rendering(rendering)
+        if self.layer.dims.ndisplay == 3 and rendering == Rendering.ISO:
             self.node.threshold = float(self.layer.iso_threshold)
             self.node.shared_program['u_threshold'] = self.node.threshold
 
