@@ -50,21 +50,16 @@ core developer allows contributors to merge approved pull requests, cast votes
 for and against merging a pull-request, and be involved in deciding major
 changes to the API, and thereby more easily carry on with their project related
 activities. Core developers appear as organization members on the napari
-[GitHub organization](https://github.com/orgs/napari/people). Core
+[GitHub organization](https://github.com/orgs/napari/people) and are on our
+[@core-devs](https://github.com/orgs/napari/teams/core-devs) GitHub team. Core
 developers are expected to review code contributions while adhering to the
-[core developer guide](CORE_DEV_GUIDE.md).
+[core developer guide](CORE_DEV_GUIDE.md). New core developers can be nominated
+by any existing core developer, and for details on that process see our core
+developer guide.
 
-New core developers can be nominated by any existing core developer.
-Discussion about new core developer nominations is one of the few activities
-that takes place on the project's private management list. The decision to
-invite a new core developer must be made by “lazy consensus”, meaning unanimous
-agreement by all responding existing core developers. Invitation must take
-place at least one week after initial nomination, to allow existing members
-time to voice any objections.
+## Steering Committee
 
-## Steering Council
-
-The Steering Council (SC) members are core developers who have additional
+The Steering Committee (SC) members are core developers who have additional
 responsibilities to ensure the smooth running of the project. SC members are
 expected to participate in strategic planning, approve changes to the
 governance model, and make decisions about funding granted to the project
@@ -75,8 +70,14 @@ long experience with both the project and the larger ecosystem. When the core
 developer community (including the SC members) fails to reach such a consensus
 in a reasonable timeframe, the SC is the entity that resolves the issue.
 
-The steering council is fixed in size to XXXXX members. This may be expanded in
-the future. The initial steering council of napari consists of XXXXXXXXX.
+The steering committee is currently fixed in size to N members. This number may be increased in
+the future, but will always be an odd number to ensure a simple majority vote outcome
+is always possible. The initial steering committee of napari consists of
+
+- XXXXXXXXX.
+...
+- XXXXXXXXX.
+
 The SC membership is revisited every January. SC members who do
 not actively engage with the SC duties are expected to resign. New members are
 added by nomination by a core developer. Nominees should have demonstrated
@@ -84,14 +85,16 @@ long-term, continued commitment to the project and its [values](VALUES.md). A
 nomination will result in discussion that cannot take more than a month and
 then admission to the SC by consensus.
 
-The napari steering council may be contacted at XXXXXXXX.
+The napari steering committee may be contacted at `napari-steering-committee@googlegroups.com`.
 
 # Decision Making Process
 
 Decisions about the future of the project are made through discussion with all
 members of the community. All non-sensitive project management discussion takes
-place on the project XXXXXX and the [issue tracker](https://github.com/napari/napari/issues)
-Occasionally, sensitive discussion may occur on a private XXXXXXX.
+place on the [issue tracker](https://github.com/napari/napari/issues) and project
+[zulip](https://napari.zulipchat.com/) community chat channel. Occasionally,
+sensitive discussion may occur on a private core developer mailing list
+`napari-core-devs@googlegroups.com` or private chat channel.
 
 Decisions should be made in accordance with the [mission, vision and values](VALUES.md)
 of the napari project.
@@ -120,12 +123,15 @@ are made according to the following rules:
   core developers *and* no disagreement or requested changes by a core developer
   on the issue or pull-request page (lazy consensus).
 
-- **Changes to the API principles** require a [XXXXXX] and follow the
+- **Changes to the API principles** require a dedicated issue on our
+  [issue tracker](https://github.com/napari/napari/issues) and follow the
   decision-making process outlined above.
 
 - **Changes to this governance model or our mission, vision, and values**
-  require a [XXXXXXX] and follow the decision-making process outlined above,
-  *unless* there is unanimous agreement from core developers on the change.
+  require a  dedicated issue on our [issue tracker](https://github.com/napari/napari/issues)
+  and follow the decision-making process outlined above,
+  *unless* there is unanimous agreement from core developers on the change in
+  which case in can move forward faster.
 
 If an objection is raised on a lazy consensus, the proposer can appeal to the
 community and core developers and the change can be approved or rejected by
