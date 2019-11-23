@@ -67,13 +67,13 @@ QtDims > QScrollBar::sub-line:horizontal:pressed {
 }
 
 QtDims > QScrollBar:left-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/left_arrow.svg");
+    image: url(":/icons/{{ folder }}/step_left.svg");
     height: 9px;
     width: 9px;
 }
 
 QtDims > QScrollBar::right-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/right_arrow.svg");
+    image: url(":/icons/{{ folder }}/step_right.svg");
     height: 9px;
     width: 9px;
 }
@@ -990,4 +990,28 @@ QDockWidget::float-button:horizontal {
     position: relative;
     left: 20px; top: 4;
     width: 14px;
+}
+
+QtPlayButton {
+    /* border: none; */
+    border-radius: 3px;
+    min-height: 10px;
+    max-height: 10px;
+    min-width: 10px;
+    max-width: 10px;
+    margin: 0px 2px;
+    padding: 2px;
+}
+
+QtPlayButton[reverse=True] {
+    image: url(":/icons/{{ folder }}/left_arrow.svg");
+}
+
+QtPlayButton[reverse=False] {
+    image: url(":/icons/{{ folder }}/right_arrow.svg");
+}
+
+QtPlayButton[playing=True] {
+    image: url(":/icons/{{ folder }}/new_image.svg");
+    background-color: rgb(153, 18, 31);
 }

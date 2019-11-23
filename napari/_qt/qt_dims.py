@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QSizePolicy,
     QWidget,
     QLineEdit,
+    QPushButton,
 )
 
 from ..components.dims import Dims
@@ -40,6 +41,8 @@ class QtDims(QWidget):
     update_range = Signal(int)
     update_display = Signal()
     update_axis_labels = Signal(int)
+    play_started = Signal(int, int)
+    play_stopped = Signal()
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -54,6 +57,7 @@ class QtDims(QWidget):
         self.sliders = []
 
         self.axis_labels = []
+        self.play_buttons = []
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
@@ -63,6 +67,7 @@ class QtDims(QWidget):
         # Initialises the layout:
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
         self.setLayout(layout)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
@@ -208,19 +213,26 @@ class QtDims(QWidget):
         """Updates display for all sliders."""
         slider_list = reversed(list(enumerate(self.sliders)))
         label_list = reversed(self.axis_labels)
-        for (axis, slider), label in zip(slider_list, label_list):
+        play_buttons = reversed(self.play_buttons)
+        for (axis, slider), label, (rplay, fplay) in zip(
+            slider_list, label_list, play_buttons
+        ):
             if axis in self.dims.displayed:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.last_used = None
                 slider.hide()
                 label.hide()
+                rplay.hide()
+                fplay.hide()
             else:
                 # Non displayed dimensions correspond to displayed sliders
                 self._displayed_sliders[axis] = True
                 self.last_used = axis
                 slider.show()
                 label.show()
+                rplay.show()
+                fplay.show()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
@@ -252,19 +264,25 @@ class QtDims(QWidget):
             dim_axis = number_of_sliders - slider_num - 1
             axis_label = self._create_axis_label_widget(dim_axis)
             slider = self._create_range_slider_widget(dim_axis)
-
+            rbutton, fbutton = self._create_play_button_widgets(dim_axis)
             # Hard-coded 1:50 ratio. Can be more dynamic as a function
             # of the name of the label, but it might be a little bit
             # over the top.
             current_row = QHBoxLayout()
+
             if axis_label.text != '':
-                current_row.addWidget(axis_label, stretch=1)
+                current_row.addWidget(axis_label, stretch=1.5)
+                current_row.addWidget(rbutton, stretch=1)
                 current_row.addWidget(slider, stretch=50)
+                current_row.addWidget(fbutton, stretch=1)
             else:
-                current_row.addWidget(slider)
+                current_row.addWidget(rbutton, stretch=1)
+                current_row.addWidget(slider, stretch=50)
+                current_row.addWidget(fbutton, stretch=1)
             self.layout().addLayout(current_row)
             self.axis_labels.insert(0, axis_label)
             self.sliders.insert(0, slider)
+            self.play_buttons.insert(0, (rbutton, fbutton))
             self._displayed_sliders.insert(0, True)
             nsliders = np.sum(self._displayed_sliders)
             self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
@@ -298,6 +316,9 @@ class QtDims(QWidget):
         self.layout().removeWidget(axis_label)
         slider.deleteLater()
         axis_label.deleteLater()
+        for button in self.play_buttons.pop(index):
+            self.layout().removeWidget(button)
+            button.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self.last_used = None
@@ -372,6 +393,11 @@ class QtDims(QWidget):
 
         label.editingFinished.connect(changeText)
         return label
+
+    def _create_play_button_widgets(self, axis):
+        rbutton = QtPlayButton(self, axis, True)
+        fbutton = QtPlayButton(self, axis)
+        return rbutton, fbutton
 
     def focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
@@ -456,6 +482,7 @@ class QtDims(QWidget):
         # when the thread timer increments, update the current frame
         self._animation_thread.incremented.connect(self._set_frame)
         self._animation_thread.start()
+        self.play_started.emit(axis, fps)
 
     def stop(self):
         """Stop axis animation"""
@@ -464,6 +491,7 @@ class QtDims(QWidget):
             self._animation_thread.wait()
             del self._animation_thread
             self.enable_play()
+            self.play_stopped.emit()
 
     @property
     def is_playing(self):
@@ -491,6 +519,40 @@ class QtDims(QWidget):
         # this is mostly here to connect to the main SceneCanvas.events.draw
         # event in the qt_viewer
         self._play_ready = True
+
+
+class QtPlayButton(QPushButton):
+    def __init__(self, dims, axis, reverse=False, fps=10):
+        super().__init__()
+        self.axis = axis
+        self.reverse = reverse
+        self.fps = fps
+        self.setProperty('reverse', str(reverse))
+        self.setProperty('playing', 'False')
+        self.clicked.connect(self._on_click)
+        self.dims = dims
+        self.setMinimumHeight(16)
+        self.setMaximumHeight(16)
+        dims.play_started.connect(self._handle_start)
+        dims.play_stopped.connect(self._handle_stop)
+
+    def _handle_start(self, axis, fps):
+        if (axis == self.axis) and (fps < 0) == self.reverse:
+            self.setProperty('playing', 'True')
+            self.style().unpolish(self)
+            self.style().polish(self)
+
+    def _handle_stop(self):
+        self.setProperty('playing', 'False')
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    def _on_click(self):
+        if self.dims.is_playing:
+            if self.dims._animation_thread.axis == self.axis:
+                if (self.dims._animation_thread.step == -1) == self.reverse:
+                    return self.dims.stop()
+        self.dims.play(self.axis, self.fps * (-1 if self.reverse else 1))
 
 
 class AnimationThread(QThread):

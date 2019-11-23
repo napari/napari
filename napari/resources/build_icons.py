@@ -51,6 +51,8 @@ icons = [
     'right_arrow',
     'roll',
     'select',
+    'step_left',
+    'step_right',
     'transpose',
     'vertex_insert',
     'vertex_remove',
