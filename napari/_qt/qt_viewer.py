@@ -66,13 +66,25 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.viewerButtons)
         layerList.setLayout(layerListLayout)
         self.dockLayerList = QtViewerDockWidget(
-            self, layerList, name='layer list', area='left'
+            self,
+            layerList,
+            name='layer list',
+            area='left',
+            allowed_areas=['left', 'right'],
         )
         self.dockLayerControls = QtViewerDockWidget(
-            self, self.controls, name='layer controls', area='left'
+            self,
+            self.controls,
+            name='layer controls',
+            area='left',
+            allowed_areas=['left', 'right'],
         )
         self.dockConsole = QtViewerDockWidget(
-            self, self.console, name='console'
+            self,
+            self.console,
+            name='console',
+            area='bottom',
+            allowed_areas=['top', 'bottom'],
         )
         self.dockConsole.setVisible(False)
 
