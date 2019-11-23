@@ -29,6 +29,7 @@ from ..util.keybindings import components_to_key_combo
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
+from .qt_viewer_dock_widget import QtViewerDockWidget
 from .._vispy import create_vispy_visual
 
 
@@ -56,16 +57,17 @@ class QtViewer(QSplitter):
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
+        self.dockConsole = QtViewerDockWidget(
+            self, self.console, name='console'
+        )
+        self.dockConsole.setVisible(False)
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
 
         if self.console.shell is not None:
-            self.console.style().unpolish(self.console)
-            self.console.style().polish(self.console)
-            self.console.hide()
             self.viewerButtons.consoleButton.clicked.connect(
-                lambda: self._toggle_console()
+                lambda: self.toggle_console()
             )
         else:
             self.viewerButtons.consoleButton.setEnabled(False)
@@ -101,8 +103,6 @@ class QtViewer(QSplitter):
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
-        if self.console.shell is not None:
-            self.addWidget(self.console)
 
         self._last_visited_dir = str(Path.home())
 
@@ -288,11 +288,16 @@ class QtViewer(QSplitter):
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
-    def _toggle_console(self):
+    def toggle_console(self):
         """Toggle console visible and not visible."""
-        self.console.setVisible(not self.console.isVisible())
+        viz = not self.dockConsole.isVisible()
+        # modulate visibility at the dock widget level as console is docakable
+        self.dockConsole.setVisible(viz)
+        if self.dockConsole.isFloating():
+            self.dockConsole.setFloating(True)
+
         self.viewerButtons.consoleButton.setProperty(
-            'expanded', self.console.isVisible()
+            'expanded', self.dockConsole.isVisible()
         )
         self.viewerButtons.consoleButton.style().unpolish(
             self.viewerButtons.consoleButton
