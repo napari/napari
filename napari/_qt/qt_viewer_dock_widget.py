@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QDockWidget, QWidget
+from ..util.misc import blocked_qt_signals
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -65,8 +66,9 @@ class QtViewerDockWidget(QDockWidget):
 
         self.setWidget(widget)
         widget.setParent(self)
-        self._initial_features = self.features()
+        self._store_features()
         self.dockLocationChanged.connect(self._set_title_orientation)
+        self.featuresChanged.connect(self._store_features)
 
     def keyPressEvent(self, event):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
@@ -76,7 +78,12 @@ class QtViewerDockWidget(QDockWidget):
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
-            features = self._initial_features
+            self.setFeatures(self._features)
         else:
-            features = self._initial_features | self.DockWidgetVerticalTitleBar
-        self.setFeatures(features)
+            with blocked_qt_signals(self):
+                self.setFeatures(
+                    self._features | self.DockWidgetVerticalTitleBar
+                )
+
+    def _store_features(self):
+        self._features = self.features()
