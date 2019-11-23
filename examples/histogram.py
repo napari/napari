@@ -7,7 +7,8 @@ with napari.gui_qt():
     v = napari.Viewer()
     v.add_image(np.random.randn(10, 256, 256))
     w = QtHistogramWidget(viewer=v)
-    v.window.add_dock_widget('bottom', w)
+    dw = v.window.add_dock_widget(w, area='bottom')
+    dw.setFeatures(dw.DockWidgetClosable | dw.DockWidgetMovable)
     # w2 = QtHistogramWidget(viewer=v, vertical=True)
     # v.window.add_dock_widget('right', w2)
 

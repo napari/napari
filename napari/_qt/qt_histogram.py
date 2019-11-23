@@ -46,14 +46,14 @@ class QtHistogramWidget(QtPlotWidget):
         self._clim_handle_grabbed = 0
         self._gamma_handle_grabbed = 0
 
-        if self._viewer:
+        if self.viewer:
             # viewer takes precedence
-            self.layer = self._viewer.active_layer
+            self.layer = self.viewer.active_layer
 
             def change_layer(event):
                 self.layer = event.item
 
-            self._viewer.events.active_layer.connect(change_layer)
+            self.viewer.events.active_layer.connect(change_layer)
         else:
             self.layer = layer
         self.plot.view.add(self.hist_layer.node)

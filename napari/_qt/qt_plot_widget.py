@@ -19,7 +19,7 @@ class QtPlotWidget(QWidget):
     def __init__(self, viewer=None, vertical=False, parent=None, **kwargs):
         super().__init__(parent)
 
-        self._viewer = viewer
+        self.viewer = viewer
         self.vertical = vertical
 
         self.canvas = scene.SceneCanvas(bgcolor='k', keys=None, vsync=True)
@@ -34,7 +34,7 @@ class QtPlotWidget(QWidget):
         self.canvas.connect(self.on_mouse_press)
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_resize)
-        # self.canvas.connect(self.on_key_press)
+        self.canvas.connect(self.on_key_press)
         # self.canvas.connect(self.on_key_release)
         # self.canvas.connect(self.on_draw)
         self._update_palette(viewer.palette)
@@ -96,3 +96,6 @@ class QtPlotWidget(QWidget):
 
     def on_mouse_move(self, event):
         pass
+
+    def on_key_press(self, event):
+        self.viewer.window.qt_viewer.on_key_press(event)
