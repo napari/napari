@@ -63,55 +63,51 @@ def test_no_qt_loop():
         _ = Viewer()
 
 
-def test_add_image(setup_viewer):
-    """Test adding image."""
+test_data = [
+    ("image", np.random.random((10, 15))),
+    ("labels", np.random.randint(20, size=(10, 15))),
+    ("points", 20 * np.random.random((10, 2))),
+    ("vectors", 20 * np.random.random((10, 2, 2))),
+    ("shapes", 20 * np.random.random((10, 4, 2))),
+]
+
+
+@pytest.mark.parametrize("layer_name, data", test_data)
+def test_all_layer_types(setup_viewer, layer_name, data):
     viewer, view = setup_viewer
-
-    np.random.seed(0)
-    data = np.random.random((10, 15))
-    layer = viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
+    layer = getattr(viewer, "add_" + layer_name)(data)
+    _asserts_per_layer(viewer, view, data)
 
     # Run all class keybindings
     for func in layer.class_keymap.values():
         func(layer)
 
 
-def test_add_volume(setup_viewer):
-    """Test adding volume."""
-    viewer, view = setup_viewer
-
-    np.random.seed(0)
-    data = np.random.random((10, 15, 20))
-    layer = viewer.add_image(data)
-    viewer.dims.ndisplay = 3
+def _asserts_per_layer(viewer, view, data, ndim=2, sliders=0):
     assert np.all(viewer.layers[0].data == data)
 
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 3
+    assert viewer.dims.ndim == ndim
     assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
+    assert np.sum(view.dims._displayed_sliders) == sliders
 
     # Switch to 3D rendering mode and back to 2D rendering mode
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+
+def test_add_volume(setup_viewer):
+    """Test adding volume."""
+    viewer, view = setup_viewer
+
+    data = np.random.random((10, 15, 20))
+    layer = viewer.add_image(data)
+    viewer.dims.ndisplay = 3
+    _asserts_per_layer(viewer, view, data, ndim=3, sliders=0)
 
     # Run all class keybindings
     for func in layer.class_keymap.values():
@@ -126,131 +122,7 @@ def test_add_pyramid(setup_viewer):
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = viewer.add_image(data, is_pyramid=True)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-
-def test_add_labels(setup_viewer):
-    """Test adding labels image."""
-    viewer, view = setup_viewer
-
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = viewer.add_labels(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-
-def test_add_points(setup_viewer):
-    """Test adding points."""
-    viewer, view = setup_viewer
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 2))
-    layer = viewer.add_points(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_vectors(setup_viewer):
-    """Test adding vectors."""
-    viewer, view = setup_viewer
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 2, 2))
-    layer = viewer.add_vectors(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-
-def test_add_shapes(setup_viewer):
-    """Test adding shapes."""
-    viewer, view = setup_viewer
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
-    layer = viewer.add_shapes(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
+    _asserts_per_layer(viewer, view, data)
 
     # Run all class keybindings
     for func in layer.class_keymap.values():
@@ -261,7 +133,6 @@ def test_add_surface(setup_viewer):
     """Test adding 3D surface."""
     viewer, view = setup_viewer
 
-    np.random.seed(0)
     vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
     values = np.random.random(10)
@@ -270,58 +141,23 @@ def test_add_surface(setup_viewer):
     assert np.all(
         [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
     )
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 1
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
+    _asserts_per_layer(viewer, view, data, ndim=3, sliders=1)
 
     # Run all class keybindings
     for func in layer.class_keymap.values():
         func(layer)
 
 
-def test_screenshot(qtbot):
+def test_screenshot(setup_viewer):
     "Test taking a screenshot"
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
-    np.random.seed(0)
-    # Add image
-    data = np.random.random((10, 15))
-    viewer.add_image(data)
-
-    # Add labels
-    data = np.random.randint(20, size=(10, 15))
-    viewer.add_labels(data)
-
-    # Add points
-    data = 20 * np.random.random((10, 2))
-    viewer.add_points(data)
-
-    # Add vectors
-    data = 20 * np.random.random((10, 2, 2))
-    viewer.add_vectors(data)
-
-    # Add shapes
-    data = 20 * np.random.random((10, 4, 2))
-    viewer.add_shapes(data)
+    for layer_type, data in test_data:
+        getattr(viewer, "add_" + layer_type)(data)
 
     # Take screenshot
     screenshot = viewer.screenshot()
     assert screenshot.ndim == 3
-
-    # Close the viewer
-    viewer.window.close()
 
 
 def test_update(setup_viewer):
