@@ -4,11 +4,23 @@ import pytest
 from napari import Viewer
 
 
-def test_viewer(qtbot):
-    """Test instantiating viewer."""
+@pytest.fixture(scope="function")
+def setup_viewer(qtbot):
+    """Instatiates and removes an instance of a Viewer().
+    The use of 'yield' means that when the fixture is called, all
+    code up to it will be run, and when the testing function is
+    done, the code following the yield will be run.
+    """
     viewer = Viewer()
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
+    yield viewer, view
+    viewer.window.close()
+
+
+def test_viewer(setup_viewer):
+    """Test instantiating viewer."""
+    viewer, view = setup_viewer
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -36,9 +48,6 @@ def test_viewer(qtbot):
         if func.__name__ == 'play':
             func(viewer)
 
-    # Close the viewer
-    viewer.window.close()
-
 
 @pytest.mark.first  # provided by pytest-ordering
 def test_no_qt_loop():
@@ -54,11 +63,9 @@ def test_no_qt_loop():
         _ = Viewer()
 
 
-def test_add_image(qtbot):
+def test_add_image(setup_viewer):
     """Test adding image."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -82,15 +89,10 @@ def test_add_image(qtbot):
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_add_volume(qtbot):
+def test_add_volume(setup_viewer):
     """Test adding volume."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
@@ -115,15 +117,10 @@ def test_add_volume(qtbot):
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_add_pyramid(qtbot):
+def test_add_pyramid(setup_viewer):
     """Test adding image pyramid."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
@@ -148,15 +145,10 @@ def test_add_pyramid(qtbot):
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_add_labels(qtbot):
+def test_add_labels(setup_viewer):
     """Test adding labels image."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
@@ -180,15 +172,10 @@ def test_add_labels(qtbot):
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_add_points(qtbot):
+def test_add_points(setup_viewer):
     """Test adding points."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
@@ -216,11 +203,9 @@ def test_add_points(qtbot):
     viewer.window.close()
 
 
-def test_add_vectors(qtbot):
+def test_add_vectors(setup_viewer):
     """Test adding vectors."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 2))
@@ -244,15 +229,10 @@ def test_add_vectors(qtbot):
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_add_shapes(qtbot):
+def test_add_shapes(setup_viewer):
     """Test adding shapes."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
@@ -276,15 +256,10 @@ def test_add_shapes(qtbot):
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_add_surface(qtbot):
+def test_add_surface(setup_viewer):
     """Test adding 3D surface."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     np.random.seed(0)
     vertices = np.random.random((10, 3))
@@ -312,9 +287,6 @@ def test_add_surface(qtbot):
     # Run all class keybindings
     for func in layer.class_keymap.values():
         func(layer)
-
-    # Close the viewer
-    viewer.window.close()
 
 
 def test_screenshot(qtbot):
@@ -352,13 +324,11 @@ def test_screenshot(qtbot):
     viewer.window.close()
 
 
-def test_update(qtbot):
+def test_update(setup_viewer):
     import time
 
     data = np.random.random((512, 512))
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer, view = setup_viewer
 
     layer = viewer.add_image(data)
 
@@ -377,6 +347,3 @@ def test_update(qtbot):
 
     # if we do not sleep, main thread closes before update thread finishes and many qt components get cleaned
     time.sleep(3)
-
-    # Close the viewer
-    viewer.window.close()
