@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtCore import QEventLoop, Qt, QThread, QTimer, Signal, Slot
+from qtpy.QtCore import QEventLoop, Qt, QThread, QTimer, Signal, Slot, QPoint
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
@@ -9,7 +9,13 @@ from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,
     QPushButton,
+    QDialog,
+    QFormLayout,
+    QLabel,
+    QFrame,
+    QSpinBox,
 )
+from qtpy.QtGui import QCursor
 
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
@@ -521,20 +527,99 @@ class QtDims(QWidget):
         self._play_ready = True
 
 
+class ModalPopup(QDialog):
+    """A generic modal popup window.
+
+    The seemingly extra frame here is to allow rounded corners on a truly
+    transparent background
+
+    +-------------------------------
+    | Dialog
+    |  +----------------------------
+    |  | QVBoxLayout
+    |  |  +-------------------------
+    |  |  | QFrame
+    |  |  |  +----------------------
+    |  |  |  | QFormLayout
+    |  |  |  |
+    |  |  |  |  (stuff goes here)
+    """
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setObjectName("QtModalPopup")
+        self.setModal(True)
+        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        self.setLayout(QVBoxLayout())
+
+        self.frame = QFrame()
+        self.layout().addWidget(self.frame)
+        self.layout().setContentsMargins(0, 0, 0, 0)
+
+        self.form_layout = QFormLayout()
+        closebutton = QPushButton("Close")
+        closebutton.clicked.connect(self.close)
+        self.form_layout.addRow(closebutton)
+        self.frame.setLayout(self.form_layout)
+
+    def show_above_mouse(self, *args):
+        pos = QCursor().pos()  # mouse position
+        szhint = self.sizeHint()
+        pos -= QPoint(szhint.width() / 2, szhint.height() + 14)
+        self.move(pos)
+        self.show()
+
+
 class QtPlayButton(QPushButton):
     def __init__(self, dims, axis, reverse=False, fps=10):
         super().__init__()
+        self.dims = dims
         self.axis = axis
         self.reverse = reverse
         self.fps = fps
         self.setProperty('reverse', str(reverse))
         self.setProperty('playing', 'False')
         self.clicked.connect(self._on_click)
-        self.dims = dims
-        self.setMinimumHeight(16)
-        self.setMaximumHeight(16)
+
         dims.play_started.connect(self._handle_start)
         dims.play_stopped.connect(self._handle_stop)
+
+        self.popup = ModalPopup(self)
+        fpsspin = QSpinBox(self.popup)
+        fpsspin.setValue(self.fps)
+        fpsspin.valueChanged.connect(self.set_fps)
+        self.popup.form_layout.insertRow(
+            0, QLabel('frame rate:', parent=self.popup), fpsspin
+        )
+
+        dimsrange = dims.dims.range[axis]
+        print(dimsrange)
+        minspin = QSpinBox(self.popup)
+        minspin.setValue(dimsrange[0])
+        # minspin.valueChanged.connect(self.set_fps)
+        self.popup.form_layout.insertRow(
+            1, QLabel('start frame:', parent=self.popup), minspin
+        )
+
+        maxspin = QSpinBox(self.popup)
+        maxspin.setValue(dimsrange[1] * dimsrange[2])
+        # maxspin.valueChanged.connect(self.set_fps)
+        self.popup.form_layout.insertRow(
+            2, QLabel('end frame:', parent=self.popup), maxspin
+        )
+
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.popup.show_above_mouse)
+
+    def _on_context_menu(self, point):
+        pos = QCursor().pos()  # mouse position
+        szhint = self.popup.sizeHint()
+        pos -= QPoint(szhint.width() / 2, szhint.height() + 14)
+        self.popup.move(pos)
+        self.popup.show()
+
+    def set_fps(self, value):
+        self.fps = int(value)
 
     def _handle_start(self, axis, fps):
         if (axis == self.axis) and (fps < 0) == self.reverse:
@@ -548,6 +633,7 @@ class QtPlayButton(QPushButton):
         self.style().polish(self)
 
     def _on_click(self):
+        print('clicked')
         if self.dims.is_playing:
             if self.dims._animation_thread.axis == self.axis:
                 if (self.dims._animation_thread.step == -1) == self.reverse:

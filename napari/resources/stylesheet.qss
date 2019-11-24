@@ -1015,3 +1015,16 @@ QtPlayButton[playing=True] {
     image: url(":/icons/{{ folder }}/new_image.svg");
     background-color: rgb(153, 18, 31);
 }
+
+#QtModalPopup {
+  background: transparent;
+}
+
+#QtModalPopup > QFrame {
+  background: {{ background }};
+  border: 1px solid {{ secondary }};
+  border-radius: 5px;}
+
+#QtModalPopup > QFrame > QLabel {
+  background: {{ background }};
+}
