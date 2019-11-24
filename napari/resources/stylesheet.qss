@@ -969,12 +969,12 @@ QScrollBar::sub-line:horizontal {
 
 QScrollBar::add-line:vertical {
     height: 13px;
-    subcontrol-position: top;
+    subcontrol-position: bottom;
 }
 
 QScrollBar::sub-line:vertical {
     height: 13px;
-    subcontrol-position: bottom;
+    subcontrol-position: top;
 }
 
 QScrollBar::add-line:horizontal:pressed {
@@ -993,13 +993,12 @@ QScrollBar::right-arrow:horizontal {
     image: url(":/icons/{{ folder }}/right_arrow.svg");
 }
 
-/* I know, it's weird... */
 QScrollBar:up-arrow:vertical {
-    image: url(":/icons/{{ folder }}/down_arrow.svg");
+    image: url(":/icons/{{ folder }}/up_arrow.svg");
 }
 
 QScrollBar::down-arrow:vertical {
-    image: url(":/icons/{{ folder }}/up_arrow.svg");
+    image: url(":/icons/{{ folder }}/down_arrow.svg");
 }
 
 QScrollBar::left-arrow,
