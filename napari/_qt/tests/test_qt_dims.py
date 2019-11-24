@@ -173,4 +173,19 @@ def test_slider_press_updates_last_used(qtbot):
     for i, widg in enumerate(view.slider_widgets):
         widg.slider.sliderPressed.emit()
         assert view.last_used == i
-        assert view.sliders[i].value() == view.dims.point[i]
+
+
+def test_play_button(qtbot):
+    """test that the play button and its popup dialog work"""
+    ndim = 3
+    view = QtDims(Dims(ndim))
+    qtbot.addWidget(view)
+    button = view.slider_widgets[0].play_button
+    button.click()
+    assert view.is_playing
+    button.click()
+    assert not view.is_playing
+
+    assert not button.popup.isVisible()
+    button.customContextMenuRequested.emit((0, 0))
+    assert button.popup.isVisible()
