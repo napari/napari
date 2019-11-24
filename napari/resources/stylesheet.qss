@@ -1010,6 +1010,10 @@ QScrollBar::down-arrow {
     width: 9px;
 }
 
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
 DimSliderWidget > QRangeSlider[last_used=true] {
   qproperty-barColor: {{ secondary }};
   qproperty-handleColor: {{ secondary }};
@@ -1030,8 +1034,12 @@ DimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
     background: {{ secondary }};
 }
 
-QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-    background: none;
+DimSliderWidget > QScrollBar:left-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_left.svg");
+}
+
+DimSliderWidget > QScrollBar::right-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_right.svg");
 }
 
 
