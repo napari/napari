@@ -5,82 +5,6 @@ QRangeSlider {
   qproperty-handleBorderColor: {{ highlight }};
 }
 
-QtDims > QRangeSlider[last_used=true] {
-  qproperty-barColor: {{ secondary }};
-  qproperty-handleColor: {{ secondary }};
-  qproperty-handleBorderColor: {{ secondary }};
-}
-
-QtDims > QRangeSlider[last_used=false] {
-  qproperty-barColor: {{ highlight }};
-  qproperty-handleColor: {{ highlight }};
-  qproperty-handleBorderColor: {{ highlight }};
-}
-
-QtDims > QScrollBar:horizontal {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-    min-height: 14px;
-    max-height: 14px;
-    margin: 0px 16px 0px 16px;
-}
-
-QtDims > QScrollBar::handle:horizontal {
-    background: {{ highlight }};
-    border-radius: 3px;
-    min-width: 26px;
-}
-
-QtDims > QScrollBar::handle[last_used=false]:horizontal {
-    background: {{ highlight }};
-}
-
-QtDims > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ secondary }};
-}
-
-QtDims > QScrollBar::add-line:horizontal {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-    width: 13px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-
-QtDims > QScrollBar::sub-line:horizontal {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-    width: 13px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
-}
-
-QtDims > QScrollBar::add-line:horizontal:pressed {
-    background: {{ highlight }};
-}
-
-QtDims > QScrollBar::sub-line:horizontal:pressed {
-    background: {{ highlight }};
-}
-
-QtDims > QScrollBar:left-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/step_left.svg");
-    height: 9px;
-    width: 9px;
-}
-
-QtDims > QScrollBar::right-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/step_right.svg");
-    height: 9px;
-    width: 9px;
-}
-
-QtDims > QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-    background: none;
-}
 /* ------------------------------------------------------ */
 
 QWidget {
@@ -991,6 +915,86 @@ QDockWidget::float-button:horizontal {
     left: 20px; top: 4;
     width: 14px;
 }
+
+/* ---------------- Dims Sliders ------------------------ */
+
+DimSliderWidget > QRangeSlider[last_used=true] {
+  qproperty-barColor: {{ secondary }};
+  qproperty-handleColor: {{ secondary }};
+  qproperty-handleBorderColor: {{ secondary }};
+}
+
+DimSliderWidget > QRangeSlider[last_used=false] {
+  qproperty-barColor: {{ highlight }};
+  qproperty-handleColor: {{ highlight }};
+  qproperty-handleBorderColor: {{ highlight }};
+}
+
+DimSliderWidget > QScrollBar:horizontal {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    min-height: 14px;
+    max-height: 14px;
+    margin: 0px 16px 0px 16px;
+}
+
+DimSliderWidget > QScrollBar::handle:horizontal {
+    background: {{ highlight }};
+    border-radius: 3px;
+    min-width: 26px;
+}
+
+DimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
+    background: {{ highlight }};
+}
+
+DimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
+    background: {{ secondary }};
+}
+
+DimSliderWidget > QScrollBar::add-line:horizontal {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    width: 13px;
+    subcontrol-position: right;
+    subcontrol-origin: margin;
+}
+
+DimSliderWidget > QScrollBar::sub-line:horizontal {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    width: 13px;
+    subcontrol-position: left;
+    subcontrol-origin: margin;
+}
+
+DimSliderWidget > QScrollBar::add-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+DimSliderWidget > QScrollBar::sub-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+DimSliderWidget > QScrollBar:left-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_left.svg");
+    height: 9px;
+    width: 9px;
+}
+
+DimSliderWidget > QScrollBar::right-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_right.svg");
+    height: 9px;
+    width: 9px;
+}
+
+DimSliderWidget > QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
 
 QtPlayButton {
     /* border: none; */
