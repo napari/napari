@@ -43,6 +43,28 @@ def test_changing_ndim(qtbot):
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
 
 
+def test_changing_focus(qtbot):
+    """Test changing focus updates the dims.last_used prop."""
+    # too-few dims, should have no sliders to update
+    ndim = 2
+    view = QtDims(Dims(ndim))
+    assert view.last_used is None
+    view.focus_down()
+    view.focus_up()
+    assert view.last_used is None
+
+    view.dims.ndim = 5
+    assert view.last_used == 2
+    view.focus_down()
+    assert view.last_used == 1
+    view.focus_up()
+    assert view.last_used == 2
+    view.focus_up()
+    assert view.last_used == 0
+    view.focus_down()
+    assert view.last_used == 2
+
+
 def test_changing_display(qtbot):
     """
     Test changing the displayed property of an axis
