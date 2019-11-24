@@ -993,15 +993,19 @@ QScrollBar::right-arrow:horizontal {
     image: url(":/icons/{{ folder }}/right_arrow.svg");
 }
 
+/* I know, it's weird... */
 QScrollBar:up-arrow:vertical {
-    image: url(":/icons/{{ folder }}/up_arrow.svg");
-}
-
-QScrollBar::down-arrow:vertical {
     image: url(":/icons/{{ folder }}/down_arrow.svg");
 }
 
-QScrollBar:left-arrow, QScrollBar::right-arrow {
+QScrollBar::down-arrow:vertical {
+    image: url(":/icons/{{ folder }}/up_arrow.svg");
+}
+
+QScrollBar::left-arrow,
+QScrollBar::right-arrow,
+QScrollBar::up-arrow,
+QScrollBar::down-arrow {
     height: 9px;
     width: 9px;
 }
