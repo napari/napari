@@ -7,7 +7,6 @@ from qtpy.QtWidgets import (
     QLabel,
     QSpinBox,
 )
-from qtpy.QtGui import QFont, QFontMetrics
 
 from .qt_scrollbar import ModifiedScrollBar
 from .qt_modal import ModalPopup
@@ -25,6 +24,9 @@ class DimSliderWidget(QWidget):
         super().__init__(parent=parent)
         self.axis = axis
         self.dims = parent.dims
+        self.label = None
+        self.slider = None
+        self.play_button = None
         layout = QHBoxLayout()
         self._create_axis_label_widget()
         self._create_range_slider_widget()
@@ -36,25 +38,24 @@ class DimSliderWidget(QWidget):
         layout.setSpacing(3)
         self.setLayout(layout)
 
+        self.dims.events.axis_labels.connect(self._pull_label)
+
     def _create_play_button_widget(self):
         # rbutton = QtPlayButton(self.parent(), self.axis, True)
         self.play_button = QtPlayButton(self.parent(), self.axis)
 
+    def _pull_label(self, event):
+        if event.axis == self.axis:
+            label = self.dims.axis_labels[self.axis]
+            self.label.setText(label)
+            self.label_changed.emit(self.axis, label)
+
     def _update_label(self):
-        """When any of the labels get updated, we want all of the label widths
-        to be updated to the width of the longest label.  This keeps the
-        sliders left-aligned.  This allows the full label to be visible at all
-        times, without setting stretch on the layout.
-        """
         with self.dims.events.axis_labels.blocker():
             self.dims.set_axis_label(self.axis, self.label.text())
-        fm = QFontMetrics(QFont("", 0))
-        labels = self.parent().findChildren(QLineEdit, 'axis_label')
-        maxwidth = max([fm.width(lab.text()) for lab in labels])
-        for labl in labels:
-            labl.setFixedWidth(maxwidth + 10)
         self.label.clearFocus()
         self.parent().setFocus()
+        self.label_changed.emit(self.axis, self.label.text())
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider.
@@ -75,7 +76,6 @@ class DimSliderWidget(QWidget):
         label.setContentsMargins(0, 0, 2, 0)
         label.editingFinished.connect(self._update_label)
         self.label = label
-        self._update_label()
 
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""

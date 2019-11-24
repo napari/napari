@@ -178,12 +178,19 @@ def test_order_when_changing_ndim(qtbot):
 def test_update_dims_labels(qtbot):
     """
     Test that the slider_widget axis labels are updated with the dims model
+    and vice versa.
     """
     ndim = 4
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
     view.dims.axis_labels = list('TZYX')
     assert [w.label.text() for w in view.slider_widgets] == list('TZYX')
+
+    first_label = view.slider_widgets[0].label
+    assert first_label.text() == view.dims.axis_labels[0]
+    first_label.setText('napari')
+    first_label.editingFinished.emit()
+    assert first_label.text() == view.dims.axis_labels[0]
 
 
 def test_slider_press_updates_last_used(qtbot):
