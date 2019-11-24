@@ -1010,6 +1010,11 @@ QScrollBar::down-arrow {
     width: 9px;
 }
 
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background: none;
+}
+
 QtDims > QRangeSlider[last_used=true] {
   qproperty-barColor: {{ secondary }};
   qproperty-handleColor: {{ secondary }};
@@ -1028,8 +1033,4 @@ QtDims > QScrollBar::handle[last_used=false]:horizontal {
 
 QtDims > QScrollBar::handle[last_used=true]:horizontal {
     background: {{ secondary }};
-}
-
-QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-    background: none;
 }
