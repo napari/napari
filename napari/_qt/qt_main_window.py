@@ -30,6 +30,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QStatusBar,
 )
 from qtpy.QtGui import QKeySequence  # noqa: E402
+from .util import QImg2array  # noqa: E402
 from ..util.theme import template  # noqa: E402
 
 
@@ -294,6 +295,18 @@ class Window:
         """Update help message on status bar.
         """
         self._help.setText(event.text)
+
+    def screenshot(self):
+        """Take currently displayed viewer and convert to an image array.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        img = self._qt_window.grab().toImage()
+        return QImg2array(img)
 
     def closeEvent(self, event):
         # Forward close event to the console to trigger proper shutdown

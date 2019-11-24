@@ -916,7 +916,99 @@ QDockWidget::float-button:horizontal {
     width: 14px;
 }
 
-/* ---------------- Dims Sliders ------------------------ */
+/* ------------- QMainWindow --------- */
+
+QScrollBar {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+}
+
+QScrollBar:horizontal {
+    min-height: 14px;
+    max-height: 14px;
+    margin: 0px 16px;
+}
+
+QScrollBar:vertical {
+    /* min-width: 12px; */
+    max-width: 14px;
+    margin: 16px 0px;
+}
+
+QScrollBar::handle {
+    background: {{ highlight }};
+    border-radius: 3px;
+}
+
+QScrollBar::handle:horizontal {
+    min-width: 26px;
+}
+
+QScrollBar::handle:vertical {
+    min-height: 24px;
+}
+
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    subcontrol-origin: margin;
+}
+
+QScrollBar::add-line:horizontal {
+    width: 13px;
+    subcontrol-position: right;
+}
+
+QScrollBar::sub-line:horizontal {
+    width: 13px;
+    subcontrol-position: left;
+}
+
+QScrollBar::add-line:vertical {
+    height: 13px;
+    subcontrol-position: top;
+}
+
+QScrollBar::sub-line:vertical {
+    height: 13px;
+    subcontrol-position: bottom;
+}
+
+QScrollBar::add-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+QScrollBar::sub-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+QScrollBar:left-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/left_arrow.svg");
+}
+
+QScrollBar::right-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/right_arrow.svg");
+}
+
+/* I know, it's weird... */
+QScrollBar:up-arrow:vertical {
+    image: url(":/icons/{{ folder }}/down_arrow.svg");
+}
+
+QScrollBar::down-arrow:vertical {
+    image: url(":/icons/{{ folder }}/up_arrow.svg");
+}
+
+QScrollBar::left-arrow,
+QScrollBar::right-arrow,
+QScrollBar::up-arrow,
+QScrollBar::down-arrow {
+    height: 9px;
+    width: 9px;
+}
 
 DimSliderWidget > QRangeSlider[last_used=true] {
   qproperty-barColor: {{ secondary }};
@@ -930,21 +1022,6 @@ DimSliderWidget > QRangeSlider[last_used=false] {
   qproperty-handleBorderColor: {{ highlight }};
 }
 
-DimSliderWidget > QScrollBar:horizontal {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-    min-height: 14px;
-    max-height: 14px;
-    margin: 0px 16px 0px 16px;
-}
-
-DimSliderWidget > QScrollBar::handle:horizontal {
-    background: {{ highlight }};
-    border-radius: 3px;
-    min-width: 26px;
-}
-
 DimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
     background: {{ highlight }};
 }
@@ -953,45 +1030,7 @@ DimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
     background: {{ secondary }};
 }
 
-DimSliderWidget > QScrollBar::add-line:horizontal {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-    width: 13px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-
-DimSliderWidget > QScrollBar::sub-line:horizontal {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-    width: 13px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
-}
-
-DimSliderWidget > QScrollBar::add-line:horizontal:pressed {
-    background: {{ highlight }};
-}
-
-DimSliderWidget > QScrollBar::sub-line:horizontal:pressed {
-    background: {{ highlight }};
-}
-
-DimSliderWidget > QScrollBar:left-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/step_left.svg");
-    height: 9px;
-    width: 9px;
-}
-
-DimSliderWidget > QScrollBar::right-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/step_right.svg");
-    height: 9px;
-    width: 9px;
-}
-
-DimSliderWidget > QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: none;
 }
 
