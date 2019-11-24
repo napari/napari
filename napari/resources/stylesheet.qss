@@ -1,11 +1,11 @@
+/* ----------------- General ------------------ */
+
 QRangeSlider {
   qproperty-barColor: {{ highlight }};
   qproperty-backgroundColor: {{ foreground }};
   qproperty-handleColor: {{ highlight }};
   qproperty-handleBorderColor: {{ highlight }};
 }
-
-/* ------------------------------------------------------ */
 
 QWidget {
   background-color: {{ background }};
@@ -130,7 +130,7 @@ QtDivider[selected=false] {
   background-color: {{ background }};
 }
 
-/* ------------------------------------------------------ */
+/* --------------------- QSlider ------------------------ */
 
 QSlider {
    background-color: {{ background }};
@@ -154,57 +154,6 @@ QSlider::handle:horizontal {
 QSlider::sub-page:horizontal {
     background: {{ highlight }};
 }
-
-/* ------------------------------------------------------ */
-
-QScrollBar:vertical {
-    background-color: {{ background }};
-    width: 16px;
-    margin: 1px 4px 1px 4px;
-    border-radius: 3px;
-}
-
-QScrollBar::handle:vertical {
-    background-color: {{ foreground }};
-    border: 0px;
-    min-height: 10px;
-    border-radius: 3px;
-}
-
-/* ------------------------------------------------------ */
-
-QRadioButton {
-    background-color: {{ foreground }};
-    border-radius: 3px;
-}
-
-QRadioButton:hover {
-   background-color: {{ primary }};
-}
-
-QRadioButton::indicator {
-    subcontrol-position: center center;
-    subcontrol-origin: content;
-    width: 28px; height: 28px;
-}
-
-QRadioButton::indicator:checked {
-    background-color: {{ highlight }};
-    border-radius: 3px;
-}
-
-QtPanZoomButton::indicator {
-    image: url(":/icons/{{ folder }}/zoom.svg");
-}
-
-QtSelectButton::indicator {
-    image: url(":/icons/{{ folder }}/select.svg");
-}
-
-QtAdditionButton::indicator {
-    image: url(":/icons/{{ folder }}/add.svg");
-}
-
 
 /* ------------------------------------------------------ */
 
@@ -340,16 +289,6 @@ QtLayerWidget > QCheckBox#visibility::indicator:checked {
 
 /* ------------------------------------------------------ */
 
-QtLayerButtons {
-  min-width: 220px;
-  max-width: 220px;
-}
-
-QtViewerButtons {
-  min-width: 220px;
-  max-width: 220px;
-}
-
 QtControls {
     border: 1px solid {{ foreground }};
     background-color: {{ foreground }};
@@ -360,6 +299,19 @@ QtControls {
     min-width: 220px;
     max-width: 220px;
 }
+
+QtColorBox {
+  padding: 0px;
+  border: 0px;
+  margin: 0px;
+  border-radius: 1px;
+  min-height: 24px;
+  max-height: 24px;
+  min-width: 24px;
+  max-width: 24px;
+}
+
+/* ----------------- QtLayerControls -------------------- */
 
 QtLayerControls {
     background-color: {{ foreground }};
@@ -387,17 +339,6 @@ QtLayerControls > QLabel#colorbar {
   min-width: 32px;
   max-width: 32px;
   qproperty-alignment: AlignCenter;
-}
-
-QtColorBox {
-  padding: 0px;
-  border: 0px;
-  margin: 0px;
-  border-radius: 1px;
-  min-height: 24px;
-  max-height: 24px;
-  min-width: 24px;
-  max-width: 24px;
 }
 
 QtLayerControls > QFrame#swatch {
@@ -613,7 +554,49 @@ QtLayerControls > QPushButton:pressed {
   border-radius: 3px;
 }
 
-/* ------------------------------------------------------ */
+/* ----------------- Buttons -------------------- */
+
+QRadioButton {
+    background-color: {{ foreground }};
+    border-radius: 3px;
+}
+
+QRadioButton:hover {
+   background-color: {{ primary }};
+}
+
+QRadioButton::indicator {
+    subcontrol-position: center center;
+    subcontrol-origin: content;
+    width: 28px; height: 28px;
+}
+
+QRadioButton::indicator:checked {
+    background-color: {{ highlight }};
+    border-radius: 3px;
+}
+
+QtPanZoomButton::indicator {
+    image: url(":/icons/{{ folder }}/zoom.svg");
+}
+
+QtSelectButton::indicator {
+    image: url(":/icons/{{ folder }}/select.svg");
+}
+
+QtAdditionButton::indicator {
+    image: url(":/icons/{{ folder }}/add.svg");
+}
+
+QtLayerButtons {
+  min-width: 220px;
+  max-width: 220px;
+}
+
+QtViewerButtons {
+  min-width: 220px;
+  max-width: 220px;
+}
 
 QPushButton {
     background-color: {{ foreground }};
@@ -757,8 +740,6 @@ QtResetViewButton {
    border-radius: 3px;
 }
 
-/* ------------------------------------------------------ */
-
 QtModeButton {
   background-color: {{ foreground }};
   border-radius: 3px;
@@ -874,6 +855,8 @@ QMainWindow::separator:hover {
     background: {{ highlight }};
 }
 
+/* ------------- DockWidgets --------- */
+
 QDockWidget::title {
   background-color: {{ background }};
   text-align: center; /* otherwise text overlaps with the buttons */
@@ -916,7 +899,8 @@ QDockWidget::float-button:horizontal {
     width: 14px;
 }
 
-/* ------------- QMainWindow --------- */
+/* ------------- QScrollBars --------- */
+
 
 QScrollBar {
     border: none;
@@ -1013,6 +997,8 @@ QScrollBar::add-page,
 QScrollBar::sub-page {
     background: none;
 }
+
+/* ------------- DimsSliders --------- */
 
 QtDims > QRangeSlider[last_used=true] {
   qproperty-barColor: {{ secondary }};
