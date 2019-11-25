@@ -65,8 +65,12 @@ class QtViewerDockWidget(QDockWidget):
 
         self.setWidget(widget)
         widget.setParent(self)
-        self._initial_features = self.features()
+        self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
+
+    def setFeatures(self, features):
+        super().setFeatures(features)
+        self._features = self.features()
 
     def keyPressEvent(self, event):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
@@ -76,7 +80,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
-            features = self._initial_features
+            features = self._features
         else:
-            features = self._initial_features | self.DockWidgetVerticalTitleBar
+            features = self._features | self.DockWidgetVerticalTitleBar
         self.setFeatures(features)
