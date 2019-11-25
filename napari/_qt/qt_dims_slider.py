@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QLabel,
     QSpinBox,
+    QComboBox,
 )
 
 from .qt_scrollbar import ModifiedScrollBar
@@ -106,9 +107,38 @@ class DimSliderWidget(QWidget):
         slider.sliderPressed.connect(slider_focused_listener)
         self.slider = slider
 
+    def _update_range(self):
+        """Updates range for slider."""
+        displayed_sliders = self.parent()._displayed_sliders
+
+        _range = self.dims.range[self.axis]
+        _range = (_range[0], _range[1] - _range[2], _range[2])
+        if _range not in (None, (None, None, None)):
+            if _range[1] == 0:
+                displayed_sliders[self.axis] = False
+                self.parent().last_used = None
+                self.slider.hide()
+            else:
+                if (
+                    not displayed_sliders[self.axis]
+                    and self.axis not in self.dims.displayed
+                ):
+                    displayed_sliders[self.axis] = True
+                    self.last_used = self.axis
+                    self.slider.show()
+                self.slider.setMinimum(_range[0])
+                self.slider.setMaximum(_range[1])
+                self.slider.setSingleStep(_range[2])
+                self.slider.setPageStep(_range[2])
+        else:
+            displayed_sliders[self.axis] = False
+            self.slider.hide()
+
 
 class QtPlayButton(QPushButton):
     """Play button, included in the DimSliderWidget, to control playback"""
+
+    play_requested = Signal(int)  # axis, fps
 
     def __init__(self, dims, axis, reverse=False, fps=10):
         super().__init__()
@@ -122,38 +152,66 @@ class QtPlayButton(QPushButton):
         dims.play_started.connect(self._handle_start)
         dims.play_stopped.connect(self._handle_stop)
 
+        # build popup modal form
         self.popup = ModalPopup(self)
-        fpsspin = QSpinBox(self.popup)
-        fpsspin.setValue(self.fps)
-        fpsspin.valueChanged.connect(self.set_fps)
+        self.fpsspin = QSpinBox(self.popup)
+        self.fpsspin.setAlignment(Qt.AlignCenter)
+        self.fpsspin.setValue(self.fps)
+        self.fpsspin.setMaximum(500)
+        self.fpsspin.setMinimum(-500)
+        self.fpsspin.valueChanged.connect(self.set_fps)
         self.popup.form_layout.insertRow(
-            0, QLabel('frame rate:', parent=self.popup), fpsspin
+            0, QLabel('frames per sec:', parent=self.popup), self.fpsspin
         )
 
         dimsrange = dims.dims.range[axis]
         minspin = QSpinBox(self.popup)
+        minspin.setAlignment(Qt.AlignCenter)
         minspin.setValue(dimsrange[0])
-        # minspin.valueChanged.connect(self.set_fps)
+        minspin.valueChanged.connect(self.set_minframe)
         self.popup.form_layout.insertRow(
             1, QLabel('start frame:', parent=self.popup), minspin
         )
 
         maxspin = QSpinBox(self.popup)
+        maxspin.setAlignment(Qt.AlignCenter)
         maxspin.setValue(dimsrange[1] * dimsrange[2])
-        # maxspin.valueChanged.connect(self.set_fps)
+        maxspin.valueChanged.connect(self.set_maxframe)
         self.popup.form_layout.insertRow(
             2, QLabel('end frame:', parent=self.popup), maxspin
         )
 
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.popup.show_above_mouse)
+        mode = QComboBox(self.popup)
+        mode.addItems(['loop', 'back and forth', 'play once'])
+        self.popup.form_layout.insertRow(
+            3, QLabel('play mode:', parent=self.popup), mode
+        )
+
         self.clicked.connect(self._on_click)
 
+    def mouseReleaseEvent(self, event):
+        # using this instead of self.customContextMenuRequested.connect
+        # because the latter was not sending the rightMouseButton
+        # release event.
+        if event.button() == Qt.RightButton:
+            self.popup.show_above_mouse()
+        super().mouseReleaseEvent(event)
+
     def set_fps(self, value):
-        self.fps = int(value)
+        self.dims._fps_dict[self.axis] = value
+        if value != 0:
+            self.fpsspin.setValue(value)
+        if self.dims.is_playing:
+            self.play_requested.emit(self.axis)
+
+    def set_minframe(self, value):
+        self.minframe = int(value)
+
+    def set_maxframe(self, value):
+        self.maxframe = int(value)
 
     def _handle_start(self, axis, fps):
-        if (axis == self.axis) and (fps < 0) == self.reverse:
+        if (axis == self.axis) and fps != 0:
             self.setProperty('playing', 'True')
             self.style().unpolish(self)
             self.style().polish(self)
@@ -166,4 +224,4 @@ class QtPlayButton(QPushButton):
     def _on_click(self):
         if self.property('playing') == "True":
             return self.dims.stop()
-        self.dims.play(self.axis, self.fps * (-1 if self.reverse else 1))
+        self.play_requested.emit(self.axis)

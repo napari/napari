@@ -2,6 +2,7 @@ import numpy as np
 
 from napari.components import Dims
 from napari._qt.qt_dims import QtDims
+from qtpy.QtCore import Qt
 
 
 def test_creating_view(qtbot):
@@ -216,5 +217,5 @@ def test_play_button(qtbot):
     assert not view.is_playing
 
     assert not button.popup.isVisible()
-    button.customContextMenuRequested.emit((0, 0))
+    qtbot.mouseClick(button, Qt.RightButton)
     assert button.popup.isVisible()

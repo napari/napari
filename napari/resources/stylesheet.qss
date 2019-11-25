@@ -1064,4 +1064,52 @@ QtPlayButton[playing=True] {
 
 #QtModalPopup > QFrame > QLabel {
   background: {{ background }};
+  color: #aaaaaa;
+  font-size: 12px;
+}
+
+
+#QtModalPopup > QFrame > QSpinBox {
+  border: none;
+  padding: 0px;
+  min-width: 55px;
+  font-size: 11px;
+}
+
+#QtModalPopup > QFrame > QSpinBox::up-button,
+#QtModalPopup > QFrame > QSpinBox::down-button {
+    background-color: {{ background }};
+    subcontrol-origin: margin;
+    width: 20px;
+    height: 20px;
+}
+
+#QtModalPopup > QFrame > QSpinBox::up-button:pressed,
+#QtModalPopup > QFrame > QSpinBox::down-button:pressed {
+      background-color: {{ highlight }};
+}
+
+#QtModalPopup > QFrame > QSpinBox::up-button {
+    subcontrol-position: center right;
+    right: 0px;
+}
+
+
+#QtModalPopup > QFrame > QSpinBox::down-button {
+    subcontrol-position: center left;
+    left: 0px;
+}
+
+#QtModalPopup > QFrame > QSpinBox::up-arrow,
+#QtModalPopup > QFrame > QSpinBox::down-arrow {
+   width: 10px;
+   height: 10px;
+}
+
+#QtModalPopup > QFrame > QSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+}
+
+#QtModalPopup > QFrame > QSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
 }

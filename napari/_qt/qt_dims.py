@@ -54,6 +54,7 @@ class QtDims(QWidget):
 
         self._last_used = None
         self._play_ready = True  # False if currently awaiting a draw event
+        self._fps_dict = {}  # to store the FPS requested for each axis
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -165,31 +166,7 @@ class QtDims(QWidget):
         if axis >= len(self.slider_widgets):
             return
 
-        slider = self.slider_widgets[axis].slider
-
-        _range = self.dims.range[axis]
-        _range = (_range[0], _range[1] - _range[2], _range[2])
-        if _range not in (None, (None, None, None)):
-            if _range[1] == 0:
-                self._displayed_sliders[axis] = False
-                self.last_used = None
-                slider.hide()
-            else:
-                if (
-                    not self._displayed_sliders[axis]
-                    and axis not in self.dims.displayed
-                ):
-                    self._displayed_sliders[axis] = True
-                    self.last_used = axis
-                    slider.show()
-                slider.setMinimum(_range[0])
-                slider.setMaximum(_range[1])
-                slider.setSingleStep(_range[2])
-                slider.setPageStep(_range[2])
-        else:
-            self._displayed_sliders[axis] = False
-            slider.hide()
-
+        self.slider_widgets[axis]._update_range()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
@@ -251,6 +228,7 @@ class QtDims(QWidget):
             dim_axis = number_of_sliders - slider_num - 1
             slider_widget = DimSliderWidget(dim_axis, self)
             slider_widget.label_changed.connect(self._resize_labels)
+            slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
             self.slider_widgets.insert(0, slider_widget)
             self._displayed_sliders.insert(0, True)
@@ -317,7 +295,7 @@ class QtDims(QWidget):
     def play(
         self,
         axis: int = 0,
-        fps: float = 10,
+        fps: Optional[float] = None,
         frame_range: Optional[Tuple[int, int]] = None,
         playback_mode: str = 'loop',
     ):
@@ -352,13 +330,21 @@ class QtDims(QWidget):
         ValueError
             If ``frame_range`` is provided and range[0] >= range[1]
         """
-        # TODO: No access in the GUI yet. Just keybinding.
-
         # allow only one axis to be playing at a time
         # if nothing is playing self.stop() will not do anything
         self.stop()
+
+        if fps is None:
+            fps = self._fps_dict.get(axis) or 10
+
         if fps == 0:
             return
+
+        # play() is a main front-facing api, so when play() is called
+        # for a particular axis and fps, we store the values and update
+        # listeners (so playbutton will remember the last fps)
+        self._fps_dict[axis] = fps
+        self.slider_widgets[axis].play_button.set_fps(fps)
 
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
@@ -374,6 +360,9 @@ class QtDims(QWidget):
         self._animation_thread.incremented.connect(self._set_frame)
         self._animation_thread.start()
         self.play_started.emit(axis, fps)
+        self._animation_thread.finished.connect(
+            lambda: self.play_stopped.emit()
+        )
 
     def stop(self):
         """Stop axis animation"""
@@ -479,8 +468,16 @@ class AnimationThread(QThread):
         self.finished.connect(self.timer.deleteLater)
 
     def run(self):
-        # immediately advance one frame
-        self.advance()
+        # if playback_mode is once and we are already on the last frame,
+        # return to the first frame... (so the user can keep hitting once)
+        if self.playback_mode == 'once':
+            if self.step > 0 and self.current >= self.max_point:
+                self.incremented.emit(self.axis, self.min_point)
+            elif self.step < 0 and self.current <= self.min_point:
+                self.incremented.emit(self.axis, self.max_point)
+        else:
+            # immediately advance one frame
+            self.advance()
         self.timer.start()
         loop = QEventLoop()
         loop.exec_()
