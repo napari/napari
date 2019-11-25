@@ -3,7 +3,7 @@ from operator import ior
 from typing import List, Optional
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QDockWidget, QWidget
+from qtpy.QtWidgets import QDockWidget, QWidget, QHBoxLayout
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -84,3 +84,23 @@ class QtViewerDockWidget(QDockWidget):
         else:
             features = self._features | self.DockWidgetVerticalTitleBar
         self.setFeatures(features)
+
+
+class QMinimalTitleBar(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QHBoxLayout()
+        # layout.addWidget(QPushButton())
+        self.setLayout(layout)
+        self.setGeometry(0, 0, 50, 50)
+        self.setVisible(True)
+        self.setStyleSheet("QHBoxLayout{background: yellow}")
+        self.setObjectName("QMinimalTitleBar")
+
+
+class QtMinimalDockWidget(QtViewerDockWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        title = QMinimalTitleBar()
+        self.setTitleBarWidget(title)
+        self.setObjectName("QtMinimalDockWidget")

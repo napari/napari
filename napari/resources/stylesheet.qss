@@ -920,6 +920,14 @@ QDockWidget::float-button:horizontal {
     width: 14px;
 }
 
+
+#QMinimalTitleBar {
+  background-color: {{ secondary }};
+  background: {{ highlight }};
+  color: {{ highlight}};
+  max-height: 5px;
+}
+
 /* ------------- QScrollBars --------- */
 
 
