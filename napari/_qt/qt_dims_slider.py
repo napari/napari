@@ -10,10 +10,10 @@ from qtpy.QtWidgets import (
 )
 
 from .qt_scrollbar import ModifiedScrollBar
-from .qt_modal import ModalPopup
+from .qt_modal import QtModalPopup
 
 
-class DimSliderWidget(QWidget):
+class QtDimSliderWidget(QWidget):
     """Compound widget to hold the label, slider and play button for an axis.
 
     These will usually be instantiated in the QtDims._create_sliders method.
@@ -153,7 +153,7 @@ class QtPlayButton(QPushButton):
         dims.play_stopped.connect(self._handle_stop)
 
         # build popup modal form
-        self.popup = ModalPopup(self)
+        self.popup = QtModalPopup(self)
         self.fpsspin = QSpinBox(self.popup)
         self.fpsspin.setAlignment(Qt.AlignCenter)
         self.fpsspin.setValue(self.fps)

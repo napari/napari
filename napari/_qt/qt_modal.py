@@ -9,7 +9,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QCursor
 
 
-class ModalPopup(QDialog):
+class QtModalPopup(QDialog):
     """A generic modal popup window.
 
     The seemingly extra frame here is to allow rounded corners on a truly

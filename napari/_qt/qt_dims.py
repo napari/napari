@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QVBoxLayout, QSizePolicy, QWidget, QLineEdit
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
 from ..util.event import Event
-from .qt_dims_slider import DimSliderWidget
+from .qt_dims_slider import QtDimSliderWidget
 from qtpy.QtGui import QFont, QFontMetrics
 
 
@@ -226,7 +226,7 @@ class QtDims(QWidget):
         # add to the beginning of the list
         for slider_num in range(self.nsliders, number_of_sliders):
             dim_axis = number_of_sliders - slider_num - 1
-            slider_widget = DimSliderWidget(dim_axis, self)
+            slider_widget = QtDimSliderWidget(dim_axis, self)
             slider_widget.label_changed.connect(self._resize_labels)
             slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
