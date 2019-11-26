@@ -119,6 +119,10 @@ def test_is_pyramid():
     )
     assert is_pyramid(data)
 
+    s = 8192
+    data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
+    assert is_pyramid(data)
+
 
 def test_trim_pyramid():
 
