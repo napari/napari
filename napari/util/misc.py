@@ -15,7 +15,7 @@ def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
     """
     return list(
-        map(int, re.match(r"rgb\((\d+),\s*(\d+),\s*(\d+)\)", arg).groups())
+        map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
     )
 
 
@@ -250,9 +250,9 @@ def increment_unnamed_colormap(name, names):
     name : str
         Name of colormap after incrementing.
     """
-    if name == "[unnamed colormap]":
-        past_names = [n for n in names if n.startswith("[unnamed colormap")]
-        name = f"[unnamed colormap {len(past_names)}]"
+    if name == '[unnamed colormap]':
+        past_names = [n for n in names if n.startswith('[unnamed colormap')]
+        name = f'[unnamed colormap {len(past_names)}]'
     return name
 
 
@@ -466,12 +466,12 @@ class StringEnum(Enum):
         return self.value
 
 
-camel_to_snake_pattern = re.compile(r"(.)([A-Z][a-z]+)")
+camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
 
 
 def camel_to_snake(name):
     # https://gist.github.com/jaytaylor/3660565
-    return camel_to_snake_pattern.sub(r"\1_\2", name).lower()
+    return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
 
 
 class CallDefault(inspect.Parameter):
@@ -485,12 +485,12 @@ class CallDefault(inspect.Parameter):
             self._default is not inspect._empty
             or kind == inspect._KEYWORD_ONLY
         ):
-            formatted = "{}={}".format(formatted, formatted)
+            formatted = '{}={}'.format(formatted, formatted)
 
         if kind == inspect._VAR_POSITIONAL:
-            formatted = "*" + formatted
+            formatted = '*' + formatted
         elif kind == inspect._VAR_KEYWORD:
-            formatted = "**" + formatted
+            formatted = '**' + formatted
 
         return formatted
 
@@ -541,11 +541,11 @@ class CallSignature(inspect.Signature):
         #     # flag was not reset to 'False'
         #     result.append('/')
 
-        rendered = "({})".format(", ".join(result))
+        rendered = '({})'.format(', '.join(result))
 
         if self.return_annotation is not inspect._empty:
             anno = inspect.formatannotation(self.return_annotation)
-            rendered += " -> {}".format(anno)
+            rendered += ' -> {}'.format(anno)
 
         return rendered
 
@@ -559,12 +559,12 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
     """
 
     def __setattr__(self, name, val):
-        if name != "__wrapped__":
-            raise TypeError(f"cannot set attribute {name}")
+        if name != '__wrapped__':
+            raise TypeError(f'cannot set attribute {name}')
         super().__setattr__(name, val)
 
     def __setitem__(self, name, val):
-        raise TypeError(f"cannot set item {name}")
+        raise TypeError(f'cannot set item {name}')
 
 
 def mouse_press_callbacks(obj, event):
@@ -701,9 +701,9 @@ def get_keybindings_summary(keymap):
     keybindings_str : str
         String with summary of all keybindings and their functions.
     """
-    keybindings_str = ""
+    keybindings_str = ''
     for key in keymap:
-        func_str = f"<b> {key}</b>: {get_function_summary(keymap[key])}<br>"
+        func_str = f'<b> {key}</b>: {get_function_summary(keymap[key])}<br>'
         keybindings_str += func_str
 
     return keybindings_str
@@ -712,8 +712,8 @@ def get_keybindings_summary(keymap):
 def get_function_summary(func):
     """Get summary of doc string of function."""
     doc = FunctionDoc(func)
-    summary = ""
-    summary += doc["Signature"]
-    for s in doc["Summary"]:
-        summary += "<br>&nbsp;&nbsp;&nbsp;&nbsp;" + s
+    summary = ''
+    summary += doc['Signature']
+    for s in doc['Summary']:
+        summary += '<br>&nbsp;&nbsp;&nbsp;&nbsp;' + s
     return summary
