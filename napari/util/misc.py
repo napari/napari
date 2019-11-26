@@ -65,6 +65,10 @@ def guess_rgb(shape):
 def guess_pyramid(data):
     """If shape of arrays along first axis is strictly decreasing.
     """
+    # If the data has ndim and is not one-dimensional then cannot be pyramid
+    if hasattr(data, 'ndim') and data.ndim > 1:
+        return False
+
     size = np.array([np.prod(d.shape) for d in data])
     if len(size) > 1:
         return bool(np.all(size[:-1] > size[1:]))
