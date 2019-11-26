@@ -1,5 +1,7 @@
 import os
+
 from glob import glob
+from pathlib import Path
 
 import numpy as np
 from skimage import io
@@ -18,7 +20,9 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     Parameters
     -------
     filenames : list
-        List of filenames or directories to be opened
+        List of filenames or directories to be opened.
+        A list of `pathlib.Path` objects and a single filename or `Path` object
+        are also accepted.
     use_dask : bool
         Whether to use dask to create a lazy array, rather than NumPy.
         Default of None will resolve to True if filenames contains more than
@@ -32,6 +36,10 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     image : array-like
         Array or list of images
     """
+    # cast Path to string
+    if isinstance(filenames, Path):
+        filenames = filenames.as_posix()
+
     if len(filenames) == 0:
         return None
     if isinstance(filenames, str):

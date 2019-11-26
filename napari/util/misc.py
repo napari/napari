@@ -65,7 +65,7 @@ def is_rgb(shape):
 def is_pyramid(data):
     """If shape of arrays along first axis is strictly decreasing.
     """
-    size = np.array([np.prod(d.shape, dtype=np.uint64) for d in data])
+    size = np.array([np.prod(d.shape) for d in data])
     if len(size) > 1:
         return np.all(size[:-1] > size[1:])
     else:
@@ -268,7 +268,14 @@ def calc_data_range(data):
     -------
     values : list of float
         Range of values.
+
+    Notes
+    -----
+    If the data type is uint8, no calculation is performed, and 0-255 is
+    returned.
     """
+    if data.dtype == np.uint8:
+        return [0, 255]
     if np.prod(data.shape) > 1e6:
         # If data is very large take the average of the top, bottom, and
         # middle slices
