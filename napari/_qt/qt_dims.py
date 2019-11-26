@@ -54,7 +54,6 @@ class QtDims(QWidget):
 
         self._last_used = None
         self._play_ready = True  # False if currently awaiting a draw event
-        self._fps_dict = {}  # to store the FPS requested for each axis
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -297,7 +296,7 @@ class QtDims(QWidget):
         axis: int = 0,
         fps: Optional[float] = None,
         frame_range: Optional[Tuple[int, int]] = None,
-        playback_mode: str = 'loop',
+        playback_mode: Optional[str] = None,
     ):
         """Animate (play) axis.
 
@@ -333,9 +332,24 @@ class QtDims(QWidget):
         # allow only one axis to be playing at a time
         # if nothing is playing self.stop() will not do anything
         self.stop()
+        if playback_mode:
+            playback_mode = playback_mode.lower()
+            _modes = {'loop', 'once', 'loop_back_and_forth'}
+            if playback_mode not in _modes:
+                raise ValueError(
+                    f'"{playback_mode}" not a recognized playback_mode: ({_modes})'
+                )
 
+        # if the play() function was not called with parameters, we default to
+        # the current values set in the GUI.  This allows the
         if fps is None:
-            fps = self._fps_dict.get(axis) or 10
+            fps = self.slider_widgets[axis].play_button.fps
+        else:
+            self.slider_widgets[axis].play_button.set_fps(fps)
+        if playback_mode is None:
+            playback_mode = self.slider_widgets[axis].play_button.mode
+        else:
+            self.slider_widgets[axis].play_button.set_mode(playback_mode)
 
         if fps == 0:
             return
@@ -343,8 +357,6 @@ class QtDims(QWidget):
         # play() is a main front-facing api, so when play() is called
         # for a particular axis and fps, we store the values and update
         # listeners (so playbutton will remember the last fps)
-        self._fps_dict[axis] = fps
-        self.slider_widgets[axis].play_button.set_fps(fps)
 
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
@@ -360,9 +372,9 @@ class QtDims(QWidget):
         self._animation_thread.incremented.connect(self._set_frame)
         self._animation_thread.start()
         self.play_started.emit(axis, fps)
-        self._animation_thread.finished.connect(
-            lambda: self.play_stopped.emit()
-        )
+        # self._animation_thread.finished.connect(
+        #     lambda: self.play_stopped.emit()
+        # )
 
     def stop(self):
         """Stop axis animation"""
@@ -423,13 +435,6 @@ class AnimationThread(QThread):
         # could put some limits on fps here... though the handler in the QtDims
         # object above is capable of ignoring overly spammy requests.
 
-        _mode = playback_mode.lower()
-        _modes = {'loop', 'once', 'loop_back_and_forth'}
-        if _mode not in _modes:
-            raise ValueError(
-                f'"{_mode}" not a recognized playback_mode: ({_modes})'
-            )
-
         self.dims = dims
         self.axis = axis
 
@@ -442,7 +447,7 @@ class AnimationThread(QThread):
             if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
                 raise IndexError("frame_range[1] out of range")
         self.frame_range = frame_range
-        self.playback_mode = _mode
+        self.playback_mode = playback_mode
 
         if self.frame_range is not None:
             self.min_point, self.max_point = self.frame_range
@@ -471,9 +476,9 @@ class AnimationThread(QThread):
         # if playback_mode is once and we are already on the last frame,
         # return to the first frame... (so the user can keep hitting once)
         if self.playback_mode == 'once':
-            if self.step > 0 and self.current >= self.max_point:
+            if self.step > 0 and self.current >= self.max_point - 1:
                 self.incremented.emit(self.axis, self.min_point)
-            elif self.step < 0 and self.current <= self.min_point:
+            elif self.step < 0 and self.current <= self.min_point + 1:
                 self.incremented.emit(self.axis, self.max_point)
         else:
             # immediately advance one frame
@@ -496,7 +501,8 @@ class AnimationThread(QThread):
             elif self.playback_mode == 'loop':
                 self.current = self.max_point + self.current - self.min_point
             else:  # self.playback_mode == 'once'
-                self.quit()
+                self.parent().stop()
+                # self.quit()
         elif self.current >= self.max_point:
             if self.playback_mode == 'loop_back_and_forth':
                 self.step *= -1
@@ -506,7 +512,7 @@ class AnimationThread(QThread):
             elif self.playback_mode == 'loop':
                 self.current = self.min_point + self.current - self.max_point
             else:  # self.playback_mode == 'once'
-                self.quit()
+                self.parent().stop()
         with self.dims.events.axis.blocker(self._on_axis_changed):
             self.incremented.emit(self.axis, self.current)
 

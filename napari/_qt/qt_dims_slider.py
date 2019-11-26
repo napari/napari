@@ -140,12 +140,13 @@ class QtPlayButton(QPushButton):
 
     play_requested = Signal(int)  # axis, fps
 
-    def __init__(self, dims, axis, reverse=False, fps=10):
+    def __init__(self, dims, axis, reverse=False, fps=10, mode='loop'):
         super().__init__()
         self.dims = dims
         self.axis = axis
         self.reverse = reverse
         self.fps = fps
+        self.mode = mode
         self.setProperty('reverse', str(reverse))  # for styling
         self.setProperty('playing', 'False')  # for styling
 
@@ -164,29 +165,30 @@ class QtPlayButton(QPushButton):
             0, QLabel('frames per sec:', parent=self.popup), self.fpsspin
         )
 
-        dimsrange = dims.dims.range[axis]
-        minspin = QSpinBox(self.popup)
-        minspin.setAlignment(Qt.AlignCenter)
-        minspin.setValue(dimsrange[0])
-        minspin.valueChanged.connect(self.set_minframe)
-        self.popup.form_layout.insertRow(
-            1, QLabel('start frame:', parent=self.popup), minspin
-        )
+        # dimsrange = dims.dims.range[axis]
+        # minspin = QSpinBox(self.popup)
+        # minspin.setAlignment(Qt.AlignCenter)
+        # minspin.setValue(dimsrange[0])
+        # minspin.valueChanged.connect(self.set_minframe)
+        # self.popup.form_layout.insertRow(
+        #     1, QLabel('start frame:', parent=self.popup), minspin
+        # )
 
-        maxspin = QSpinBox(self.popup)
-        maxspin.setAlignment(Qt.AlignCenter)
-        maxspin.setValue(dimsrange[1] * dimsrange[2])
-        maxspin.valueChanged.connect(self.set_maxframe)
-        self.popup.form_layout.insertRow(
-            2, QLabel('end frame:', parent=self.popup), maxspin
-        )
+        # maxspin = QSpinBox(self.popup)
+        # maxspin.setAlignment(Qt.AlignCenter)
+        # maxspin.setValue(dimsrange[1] * dimsrange[2])
+        # maxspin.valueChanged.connect(self.set_maxframe)
+        # self.popup.form_layout.insertRow(
+        #     2, QLabel('end frame:', parent=self.popup), maxspin
+        # )
 
-        mode = QComboBox(self.popup)
-        mode.addItems(['loop', 'back and forth', 'play once'])
+        self.mode_combo = QComboBox(self.popup)
+        self.mode_combo.addItems(['loop', 'back and forth', 'play once'])
         self.popup.form_layout.insertRow(
-            3, QLabel('play mode:', parent=self.popup), mode
+            1, QLabel('play mode:', parent=self.popup), self.mode_combo
         )
-
+        self.mode_combo.currentTextChanged.connect(self.set_mode)
+        self.mode_combo.setCurrentText(self.mode)
         self.clicked.connect(self._on_click)
 
     def mouseReleaseEvent(self, event):
@@ -195,28 +197,38 @@ class QtPlayButton(QPushButton):
         # release event.
         if event.button() == Qt.RightButton:
             self.popup.show_above_mouse()
-        super().mouseReleaseEvent(event)
+        elif event.button() == Qt.LeftButton:
+            self._on_click()
 
     def set_fps(self, value):
-        self.dims._fps_dict[self.axis] = value
+        print('setfps')
         if value != 0:
+            self.fps = value
             self.fpsspin.setValue(value)
         if self.dims.is_playing:
             self.play_requested.emit(self.axis)
 
-    def set_minframe(self, value):
-        self.minframe = int(value)
-
-    def set_maxframe(self, value):
-        self.maxframe = int(value)
+    def set_mode(self, value):
+        self.mode_combo.setCurrentText(value)
+        text = self.mode_combo.currentText()
+        if text.startswith('back'):
+            self.mode = 'loop_back_and_forth'
+        elif text.startswith('play'):
+            self.mode = 'once'
+        else:
+            self.mode = 'loop'
+        if self.dims.is_playing:
+            self.play_requested.emit(self.axis)
 
     def _handle_start(self, axis, fps):
         if (axis == self.axis) and fps != 0:
+            print("START")
             self.setProperty('playing', 'True')
             self.style().unpolish(self)
             self.style().polish(self)
 
     def _handle_stop(self):
+        print("STOP")
         self.setProperty('playing', 'False')
         self.style().unpolish(self)
         self.style().polish(self)
