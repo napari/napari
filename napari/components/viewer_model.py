@@ -470,8 +470,7 @@ class ViewerModel(KeymapMixin):
         visible : bool
             Whether the layer visual is currently being displayed.
         path : str or list of str
-            Path or list of paths to image data. Paths can be passed as strings
-            or `pathlib.Path` instances.
+            Path or list of paths to image data.
 
         Returns
         -------
@@ -546,11 +545,11 @@ class ViewerModel(KeymapMixin):
             for i, cmap, clims, _gamma, name in zipped_args:
                 if is_pyramid:
                     image = [
-                        np.take(data[j], i, axis=channel_axis)
+                        data[j].take(i, axis=channel_axis)
                         for j in range(len(data))
                     ]
                 else:
-                    image = np.take(data, i, axis=channel_axis)
+                    image = data.take(i, axis=channel_axis)
                 layer = layers.Image(
                     image,
                     rgb=rgb,

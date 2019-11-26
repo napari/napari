@@ -1,4 +1,5 @@
 import os.path
+import numpy as np
 import inspect
 from pathlib import Path
 
@@ -25,11 +26,9 @@ from ..util.misc import (
 )
 from ..util.keybindings import components_to_key_combo
 
-from .util import QImg2array
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
-from .qt_viewer_dock_widget import QtViewerDockWidget
 from .._vispy import create_vispy_visual
 
 
@@ -57,17 +56,16 @@ class QtViewer(QSplitter):
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
-        self.dockConsole = QtViewerDockWidget(
-            self, self.console, name='console'
-        )
-        self.dockConsole.setVisible(False)
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
 
         if self.console.shell is not None:
+            self.console.style().unpolish(self.console)
+            self.console.style().polish(self.console)
+            self.console.hide()
             self.viewerButtons.consoleButton.clicked.connect(
-                lambda: self.toggle_console()
+                lambda: self._toggle_console()
             )
         else:
             self.viewerButtons.consoleButton.setEnabled(False)
@@ -103,6 +101,8 @@ class QtViewer(QSplitter):
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
+        if self.console.shell is not None:
+            self.addWidget(self.console)
 
         self._last_visited_dir = str(Path.home())
 
@@ -167,7 +167,7 @@ class QtViewer(QSplitter):
         if self.viewer.dims.ndisplay == 3:
             # Set a 3D camera
             if not isinstance(self.view.camera, ArcballCamera):
-                self.view.camera = ArcballCamera(name="ArcballCamera", fov=0)
+                self.view.camera = ArcballCamera(name="ArcballCamera")
                 # flip y-axis to have correct alignment
                 # self.view.camera.flip = (0, 1, 0)
 
@@ -195,7 +195,22 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         img = self.canvas.native.grabFramebuffer()
-        return QImg2array(img)
+        b = img.constBits()
+        h, w, c = img.height(), img.width(), 4
+
+        # As vispy doesn't use qtpy we need to reconcile the differences
+        # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
+        # a QImage to a numpy array.
+        if API_NAME == 'PySide2':
+            arr = np.array(b).reshape(h, w, c)
+        else:
+            b.setsize(h * w * c)
+            arr = np.frombuffer(b, np.uint8).reshape(h, w, c)
+
+        # Format of QImage is ARGB32_Premultiplied, but color channels are
+        # reversed.
+        arr = arr[:, :, [2, 1, 0, 3]]
+        return arr
 
     def _open_images(self):
         """Add image files from the menubar."""
@@ -204,7 +219,7 @@ class QtViewer(QSplitter):
             caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if (filenames != []) and (filenames is not None):
+        if filenames is not None:
             self._add_files(filenames)
 
     def _open_folder(self):
@@ -214,7 +229,7 @@ class QtViewer(QSplitter):
             caption='Select folder...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if folder not in {'', None}:
+        if folder is not None:
             self._add_files([folder])
 
     def _add_files(self, filenames):
@@ -273,16 +288,11 @@ class QtViewer(QSplitter):
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
-    def toggle_console(self):
+    def _toggle_console(self):
         """Toggle console visible and not visible."""
-        viz = not self.dockConsole.isVisible()
-        # modulate visibility at the dock widget level as console is docakable
-        self.dockConsole.setVisible(viz)
-        if self.dockConsole.isFloating():
-            self.dockConsole.setFloating(True)
-
+        self.console.setVisible(not self.console.isVisible())
         self.viewerButtons.consoleButton.setProperty(
-            'expanded', self.dockConsole.isVisible()
+            'expanded', self.console.isVisible()
         )
         self.viewerButtons.consoleButton.style().unpolish(
             self.viewerButtons.consoleButton

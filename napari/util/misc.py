@@ -268,14 +268,7 @@ def calc_data_range(data):
     -------
     values : list of float
         Range of values.
-
-    Notes
-    -----
-    If the data type is uint8, no calculation is performed, and 0-255 is
-    returned.
     """
-    if data.dtype == np.uint8:
-        return [0, 255]
     if np.prod(data.shape) > 1e6:
         # If data is very large take the average of the top, bottom, and
         # middle slices

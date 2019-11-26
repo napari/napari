@@ -167,7 +167,7 @@ def test_play_api(qtbot, view):
     with qtbot.waitSignal(view.dims._animation_thread.finished, timeout=7000):
         view.dims.stop()
     A = view.dims._frame
-    assert A >= 3
+    assert A > 3
 
     # make sure the stop button actually worked
     qtbot.wait(150)

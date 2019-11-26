@@ -19,12 +19,6 @@ def toggle_theme(viewer):
     viewer.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
 
-@Viewer.bind_key('Control-Shift-C')
-def toggle_console(viewer):
-    """Toggle console."""
-    viewer.window.qt_viewer.toggle_console()
-
-
 @Viewer.bind_key('Control-Y')
 def toggle_ndisplay(viewer):
     """Toggle ndisplay."""

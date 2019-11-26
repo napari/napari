@@ -1,5 +1,4 @@
 import numpy as np
-import dask.array as da
 from napari.components import ViewerModel
 from napari.util import colormaps
 
@@ -175,15 +174,3 @@ def test_rgb_images():
     for i in range(data.shape[-1]):
         assert viewer.layers[i].rgb is True
         assert viewer.layers[i]._data_view.ndim == 3
-
-
-def test_dask_array():
-    """Test adding multichannel dask array."""
-    viewer = ViewerModel()
-    np.random.seed(0)
-    data = da.random.random((2, 10, 10, 5))
-    viewer.add_image(data, channel_axis=0)
-    assert len(viewer.layers) == data.shape[0]
-    for i in range(data.shape[0]):
-        assert viewer.layers[i].data.shape == data.shape[1:]
-        assert isinstance(viewer.layers[i].data, da.Array)
