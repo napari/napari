@@ -144,7 +144,7 @@ class Image(Layer):
             data = list(data)
 
         ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, pyramid=is_pyramid, rgb=rgb
+            data, is_pyramid=is_pyramid, rgb=rgb
         )
 
         super().__init__(
@@ -215,7 +215,7 @@ class Image(Layer):
     @data.setter
     def data(self, data):
         ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, pyramid=self.is_pyramid, rgb=self.rgb
+            data, is_pyramid=self.is_pyramid, rgb=self.rgb
         )
         self.is_pyramid = is_pyramid
         self.rgb = rgb

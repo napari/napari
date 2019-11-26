@@ -24,13 +24,13 @@ def ensure_iterable(arg, color=False):
     can either be a single value or a list. If a color is passed then it
     will be treated specially to determine if it is iterable.
     """
-    if is_iterable(arg, color=color):
+    if guess_iterable(arg, color=color):
         return arg
     else:
         return itertools.repeat(arg)
 
 
-def is_iterable(arg, color=False):
+def guess_iterable(arg, color=False):
     """Determine if a single argument is an iterable. If a color is being
     provided and the argument is a 1-D array of length 3 or 4 then the input
     is taken to not be iterable.
@@ -50,7 +50,7 @@ def is_iterable(arg, color=False):
         return True
 
 
-def is_rgb(shape):
+def guess_rgb(shape):
     """If last dim is 3 or 4 assume image is rgb.
     """
     ndim = len(shape)
@@ -62,12 +62,12 @@ def is_rgb(shape):
         return False
 
 
-def is_pyramid(data):
+def guess_pyramid(data):
     """If shape of arrays along first axis is strictly decreasing.
     """
     size = np.array([np.prod(d.shape) for d in data])
     if len(size) > 1:
-        return np.all(size[:-1] > size[1:])
+        return bool(np.all(size[:-1] > size[1:]))
     else:
         return False
 
@@ -108,14 +108,14 @@ def should_be_pyramid(shape):
     return np.log2(shape) >= 13
 
 
-def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
+def get_pyramid_and_rgb(data, is_pyramid=None, rgb=None):
     """Check if data is or needs to be a pyramid and make one if needed.
 
     Parameters
     ----------
     data : array, list, or tuple
         Data to be checked if pyramid or if needs to be turned into a pyramid.
-    pyramid : bool, optional
+    is_pyramid : bool, optional
         Value that can force data to be considered as a pyramid or not,
         otherwise computed.
     rgb : bool, optional
@@ -128,61 +128,22 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
         Dimensionality of the data.
     rgb : bool
         If data is rgb.
-    pyramid : bool
+    is_pyramid : bool
         If data is a pyramid or a pyramid has been generated.
     data_pyramid : list or None
         If None then data is not and does not need to be a pyramid. Otherwise
         is a list of arrays where each array is a level of the pyramid.
     """
-    # Determine if data currently is a pyramid
-    currently_pyramid = is_pyramid(data)
-    if currently_pyramid:
-        shapes = [d.shape for d in data]
-        init_shape = shapes[0]
-    else:
-        init_shape = data.shape
-
-    # Determine if rgb, and determine dimensionality
-    if rgb is False:
-        pass
-    else:
-        # If rgb is True or None then guess if rgb
-        # allowed or not, and if allowed set it to be True
-        rgb_guess = is_rgb(init_shape)
-        if rgb and rgb_guess is False:
-            raise ValueError(
-                "Non rgb or rgba data was passed, but rgb data was"
-                " requested."
-            )
-        else:
-            rgb = rgb_guess
-
-    if rgb:
-        ndim = len(init_shape) - 1
-    else:
-        ndim = len(init_shape)
-
-    if pyramid is False:
-        if currently_pyramid:
-            raise ValueError(
-                "Non pyramided data was requested, but pyramid"
-                " data was passed"
-            )
-        else:
-            data_pyramid = None
-    else:
-        if currently_pyramid:
-            data_pyramid = trim_pyramid(data)
-            pyramid = True
-        else:
-            # Guess if data should be pyramid or if a pyramid was requested
-            if pyramid:
-                pyr_axes = [True] * ndim
-            else:
-                pyr_axes = should_be_pyramid(data.shape)
-
+    # If is_pyramd status is not set guess if data currently is a pyramid
+    if is_pyramid is None:
+        current_pyramid = guess_pyramid(data)
+        # current_pyramid = False
+        # If not currently a pyramid ask if needs to be
+        if current_pyramid is False:
+            pyr_axes = should_be_pyramid(data.shape)
+            # If needs to be made pyramdial make it so along only the necessary
+            # axes
             if np.any(pyr_axes):
-                pyramid = True
                 # Set axes to be downsampled to have a factor of 2
                 downscale = np.ones(len(data.shape))
                 downscale[pyr_axes] = 2
@@ -192,12 +153,46 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
                 data_pyramid = fast_pyramid(
                     data, downscale=downscale, max_layer=max_layer
                 )
+                is_pyramid = True
                 data_pyramid = trim_pyramid(data_pyramid)
             else:
+                is_pyramid = False
                 data_pyramid = None
-                pyramid = False
+        else:
+            is_pyramid = True
+            data_pyramid = trim_pyramid(data)
+    elif is_pyramid:
+        data_pyramid = trim_pyramid(data)
+    else:
+        data_pyramid = None
 
-    return ndim, rgb, pyramid, data_pyramid
+    if is_pyramid:
+        shapes = [d.shape for d in data_pyramid]
+        data_shape = shapes[0]
+    else:
+        data_shape = data.shape
+
+    # Determine if rgb, and determine dimensionality
+    if rgb is False:
+        pass
+    else:
+        # If rgb is True or None then guess if rgb
+        # allowed or not, and if allowed set it to be True
+        rgb_guess = guess_rgb(data_shape)
+        if rgb and rgb_guess is False:
+            raise ValueError(
+                "Non rgb or rgba data was passed, but rgb data was"
+                " requested."
+            )
+        else:
+            rgb = rgb_guess
+
+    if rgb:
+        ndim = len(data_shape) - 1
+    else:
+        ndim = len(data_shape)
+
+    return ndim, rgb, is_pyramid, data_pyramid
 
 
 def fast_pyramid(data, downscale=2, max_layer=None):

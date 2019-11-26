@@ -10,7 +10,7 @@ from ..util import colormaps
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes
-from ..util.misc import ensure_iterable, is_iterable
+from ..util.misc import ensure_iterable, guess_iterable
 from ..util import io
 
 
@@ -530,7 +530,7 @@ class ViewerModel(KeymapMixin):
 
             # If one pair of clim values is passed then need to iterate them to
             # all layers.
-            if contrast_limits is not None and not is_iterable(
+            if contrast_limits is not None and not guess_iterable(
                 contrast_limits[0]
             ):
                 contrast_limits = itertools.repeat(contrast_limits)

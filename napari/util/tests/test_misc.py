@@ -3,9 +3,9 @@ import numpy as np
 import dask.array as da
 from skimage.transform import pyramid_gaussian
 from napari.util.misc import (
-    is_rgb,
+    guess_rgb,
     callsignature,
-    is_pyramid,
+    guess_pyramid,
     should_be_pyramid,
     get_pyramid_and_rgb,
     fast_pyramid,
@@ -14,18 +14,18 @@ from napari.util.misc import (
 )
 
 
-def test_is_rgb():
+def test_guess_rgb():
     shape = (10, 15)
-    assert not is_rgb(shape)
+    assert not guess_rgb(shape)
 
     shape = (10, 15, 6)
-    assert not is_rgb(shape)
+    assert not guess_rgb(shape)
 
     shape = (10, 15, 3)
-    assert is_rgb(shape)
+    assert guess_rgb(shape)
 
     shape = (10, 15, 4)
-    assert is_rgb(shape)
+    assert guess_rgb(shape)
 
 
 def test_calc_data_range():
@@ -87,37 +87,37 @@ def test_calc_data_range_fast_big():
     assert t1 - t0 < 2
 
 
-def test_is_pyramid():
+def test_guess_pyramid():
     data = np.random.random((10, 15))
-    assert not is_pyramid(data)
+    assert not guess_pyramid(data)
 
     data = np.random.random((10, 15, 6))
-    assert not is_pyramid(data)
+    assert not guess_pyramid(data)
 
     data = [np.random.random((10, 15, 6))]
-    assert not is_pyramid(data)
+    assert not guess_pyramid(data)
 
     data = [np.random.random((10, 15, 6)), np.random.random((10, 15, 6))]
-    assert not is_pyramid(data)
+    assert not guess_pyramid(data)
 
     data = [np.random.random((10, 15, 6)), np.random.random((5, 7, 3))]
-    assert is_pyramid(data)
+    assert guess_pyramid(data)
 
     data = [np.random.random((10, 15, 6)), np.random.random((10, 7, 3))]
-    assert is_pyramid(data)
+    assert guess_pyramid(data)
 
     data = tuple(data)
-    assert is_pyramid(data)
+    assert guess_pyramid(data)
 
     data = tuple(
         pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
     )
-    assert is_pyramid(data)
+    assert guess_pyramid(data)
 
     data = np.asarray(
         tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
     )
-    assert is_pyramid(data)
+    assert guess_pyramid(data)
 
 
 def test_trim_pyramid():
@@ -220,37 +220,32 @@ def test_fast_pyramid():
 
 def test_get_pyramid_and_rgb():
     data = np.random.random((10, 15))
-    ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data)
-    assert not pyramid
+    ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(data)
+    assert not is_pyramid
     assert data_pyramid is None
     assert not rgb
     assert ndim == 2
 
-    data = np.random.random((80, 40))
-    ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data, pyramid=True)
-    assert pyramid
-    assert data_pyramid[0].shape == (80, 40)
-    assert not rgb
-    assert ndim == 2
-
     data = [np.random.random((10, 15, 6)), np.random.random((5, 7, 3))]
-    ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data)
-    assert pyramid
+    ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(data)
+    assert is_pyramid
     assert np.all([np.all(dp == d) for dp, d in zip(data_pyramid, data)])
     assert not rgb
     assert ndim == 3
 
     shape = (20_000, 20)
     data = np.random.random(shape)
-    ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data)
-    assert pyramid
+    ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(data)
+    assert is_pyramid
     assert data_pyramid[0].shape == shape
     assert data_pyramid[1].shape == (shape[0] / 2, shape[1])
     assert not rgb
     assert ndim == 2
 
-    ndim, rgb, pyramid, data_pyramid = get_pyramid_and_rgb(data, pyramid=False)
-    assert not pyramid
+    ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
+        data, is_pyramid=False
+    )
+    assert not is_pyramid
     assert data_pyramid is None
     assert not rgb
     assert ndim == 2

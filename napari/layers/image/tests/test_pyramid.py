@@ -41,7 +41,7 @@ def test_error_pyramid():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         Image(data, is_pyramid=False)
 
 
@@ -59,19 +59,13 @@ def test_infer_tuple_pyramid():
     assert layer._data_view.ndim == 2
 
 
-def test_forcing_pyramid():
-    """Test instantiating Image layer forcing 2D pyramid data."""
+def test_error_forcing_pyramid():
+    """Test error on forcing pyramid."""
     shape = (40, 20)
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Image(data, is_pyramid=True)
-    assert np.all(layer.data == data)
-    assert layer.is_pyramid is True
-    assert len(layer._data_pyramid) > 0
-    assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.rgb is False
-    assert layer._data_view.ndim == 2
+    with pytest.raises(Exception):
+        Image(data, is_pyramid=True)
 
 
 def test_blocking_pyramid():
