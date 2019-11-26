@@ -1,6 +1,4 @@
 import os
-from pathlib import Path
-
 import numpy as np
 from dask import array as da
 from skimage.data import data_dir
@@ -52,29 +50,8 @@ def test_single_png_defaults(single_png):
     assert images.shape == (512, 512)
 
 
-def test_single_png_single_file(single_png):
-    image_files = single_png[0]
-    images = io.magic_imread(image_files)
-    assert isinstance(images, np.ndarray)
-    assert images.shape == (512, 512)
-
-
-def test_single_png_pathlib(single_png):
-    image_files = Path(single_png[0])
-    images = io.magic_imread(image_files)
-    assert isinstance(images, np.ndarray)
-    assert images.shape == (512, 512)
-
-
 def test_multi_png_defaults(two_pngs):
     image_files = two_pngs
-    images = io.magic_imread(image_files)
-    assert isinstance(images, da.Array)
-    assert images.shape == (2, 512, 512)
-
-
-def test_multi_png_pathlib(two_pngs):
-    image_files = [Path(png) for png in two_pngs]
     images = io.magic_imread(image_files)
     assert isinstance(images, da.Array)
     assert images.shape == (2, 512, 512)

@@ -3,15 +3,11 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 # set vispy to use same backend as qtpy
-import os
-
 from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
 from .qt_about_keybindings import QtAboutKeybindings
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import resources_dir
 
 app.use_app(API_NAME)
 del app
@@ -23,14 +19,12 @@ from qtpy.QtWidgets import (  # noqa: E402
     QMainWindow,
     QWidget,
     QHBoxLayout,
-    QDockWidget,
     QLabel,
     QAction,
     QShortcut,
     QStatusBar,
 )
 from qtpy.QtGui import QKeySequence  # noqa: E402
-from .util import QImg2array  # noqa: E402
 from ..util.theme import template  # noqa: E402
 
 
@@ -48,17 +42,13 @@ class Window:
         Contained viewer widget.
     """
 
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
-
     def __init__(self, qt_viewer, *, show=True):
 
         self.qt_viewer = qt_viewer
 
         self._qt_window = QMainWindow()
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
-        self._qt_center = QWidget(self._qt_window)
-
+        self._qt_center = QWidget()
         self._qt_window.setCentralWidget(self._qt_center)
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
@@ -82,9 +72,6 @@ class Window:
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
         self._update_palette(qt_viewer.viewer.palette)
-
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
@@ -177,75 +164,6 @@ class Window:
         )
         self.help_menu.addAction(keybidings_action)
 
-    def add_dock_widget(
-        self,
-        widget: QWidget,
-        *,
-        name: str = '',
-        area: str = 'bottom',
-        allowed_areas=None,
-    ):
-        """Convenience method to add a QDockWidget to the main window
-
-        Parameters
-        ----------
-        widget : QWidget
-            `widget` will be added as QDockWidget's main widget.
-        name : str, optional
-            Name of dock widget to appear in window menu.
-        area : str
-            Side of the main window to which the new dock widget will be added.
-            Must be in {'left', 'right', 'top', 'bottom'}
-        allowed_areas : list[str], optional
-            Areas, relative to main window, that the widget is allowed dock.
-            Each item in list must be in {'left', 'right', 'top', 'bottom'}
-            By default, all areas are allowed.
-
-        Returns
-        -------
-        dock_widget : QtViewerDockWidget
-            `dock_widget` that can pass viewer events.
-        """
-
-        dock_widget = QtViewerDockWidget(
-            self.qt_viewer,
-            widget,
-            name=name,
-            area=area,
-            allowed_areas=allowed_areas,
-        )
-        self._add_viewer_dock_widget(dock_widget)
-        return dock_widget
-
-    def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
-        """Add a QtViewerDockWidget to the main window
-
-        Parameters
-        ----------
-        dock_widget : QtViewerDockWidget
-            `dock_widget` will be added to the main window.
-        """
-        dock_widget.setParent(self._qt_window)
-        self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
-        action = dock_widget.toggleViewAction()
-        action.setStatusTip(dock_widget.name)
-        action.setText(dock_widget.name)
-        self.window_menu.addAction(action)
-
-    def remove_dock_widget(self, widget):
-        """Removes specified dock widget.
-
-        Parameters
-        ----------
-            widget : QWidget | str
-                If widget == 'all', all docked widgets will be removed.
-        """
-        if widget == 'all':
-            for dw in self._qt_window.findChildren(QDockWidget):
-                self._qt_window.removeDockWidget(dw)
-        else:
-            self._qt_window.removeDockWidget(widget)
-
     def resize(self, width, height):
         """Resize the window.
 
@@ -263,8 +181,6 @@ class Window:
         """
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
-        # make sure window is not hidden, e.g. by browser window in Jupyter
-        self._qt_window.raise_()
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet
@@ -279,7 +195,6 @@ class Window:
         self._qt_center.setStyleSheet(
             template('QWidget { background: {{ background }}; }', **palette)
         )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
 
     def _status_changed(self, event):
         """Update status bar.
@@ -295,18 +210,6 @@ class Window:
         """Update help message on status bar.
         """
         self._help.setText(event.text)
-
-    def screenshot(self):
-        """Take currently displayed viewer and convert to an image array.
-
-        Returns
-        -------
-        image : array
-            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
-            upper-left corner of the rendered region.
-        """
-        img = self._qt_window.grab().toImage()
-        return QImg2array(img)
 
     def closeEvent(self, event):
         # Forward close event to the console to trigger proper shutdown

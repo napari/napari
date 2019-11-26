@@ -3,21 +3,18 @@ target-version = ['py36', 'py37']
 skip-string-normalization = true
 line-length = 79
 exclude = '''
-(
-  /(
-      \.eggs
-    | \.git
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | examples
-    | vendored
-  )/
-  | napari/resources/qt.py
-)
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | examples
+  | vendored
+)/
 '''

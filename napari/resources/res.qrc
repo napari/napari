@@ -9,7 +9,6 @@
     <file>icons/light/delete.svg</file>
     <file>icons/light/delete_shape.svg</file>
     <file>icons/light/direct.svg</file>
-    <file>icons/light/down_arrow.svg</file>
     <file>icons/light/drop_down.svg</file>
     <file>icons/light/ellipse.svg</file>
     <file>icons/light/fill.svg</file>
@@ -38,7 +37,6 @@
     <file>icons/light/roll.svg</file>
     <file>icons/light/select.svg</file>
     <file>icons/light/transpose.svg</file>
-    <file>icons/light/up_arrow.svg</file>
     <file>icons/light/vertex_insert.svg</file>
     <file>icons/light/vertex_remove.svg</file>
     <file>icons/light/visibility.svg</file>
@@ -51,7 +49,6 @@
     <file>icons/dark/delete.svg</file>
     <file>icons/dark/delete_shape.svg</file>
     <file>icons/dark/direct.svg</file>
-    <file>icons/dark/down_arrow.svg</file>
     <file>icons/dark/drop_down.svg</file>
     <file>icons/dark/ellipse.svg</file>
     <file>icons/dark/fill.svg</file>
@@ -81,7 +78,6 @@
     <file>icons/dark/roll.svg</file>
     <file>icons/dark/select.svg</file>
     <file>icons/dark/transpose.svg</file>
-    <file>icons/dark/up_arrow.svg</file>
     <file>icons/dark/vertex_insert.svg</file>
     <file>icons/dark/vertex_remove.svg</file>
     <file>icons/dark/visibility.svg</file>

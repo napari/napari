@@ -1,11 +1,87 @@
-/* ----------------- General ------------------ */
-
 QRangeSlider {
   qproperty-barColor: {{ highlight }};
   qproperty-backgroundColor: {{ foreground }};
   qproperty-handleColor: {{ highlight }};
   qproperty-handleBorderColor: {{ highlight }};
 }
+
+QtDims > QRangeSlider[last_used=true] {
+  qproperty-barColor: {{ secondary }};
+  qproperty-handleColor: {{ secondary }};
+  qproperty-handleBorderColor: {{ secondary }};
+}
+
+QtDims > QRangeSlider[last_used=false] {
+  qproperty-barColor: {{ highlight }};
+  qproperty-handleColor: {{ highlight }};
+  qproperty-handleBorderColor: {{ highlight }};
+}
+
+QtDims > QScrollBar:horizontal {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    min-height: 14px;
+    max-height: 14px;
+    margin: 0px 16px 0px 16px;
+}
+
+QtDims > QScrollBar::handle:horizontal {
+    background: {{ highlight }};
+    border-radius: 3px;
+    min-width: 26px;
+}
+
+QtDims > QScrollBar::handle[last_used=false]:horizontal {
+    background: {{ highlight }};
+}
+
+QtDims > QScrollBar::handle[last_used=true]:horizontal {
+    background: {{ secondary }};
+}
+
+QtDims > QScrollBar::add-line:horizontal {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    width: 13px;
+    subcontrol-position: right;
+    subcontrol-origin: margin;
+}
+
+QtDims > QScrollBar::sub-line:horizontal {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    width: 13px;
+    subcontrol-position: left;
+    subcontrol-origin: margin;
+}
+
+QtDims > QScrollBar::add-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+QtDims > QScrollBar::sub-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+QtDims > QScrollBar:left-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/left_arrow.svg");
+    height: 9px;
+    width: 9px;
+}
+
+QtDims > QScrollBar::right-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/right_arrow.svg");
+    height: 9px;
+    width: 9px;
+}
+
+QtDims > QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+/* ------------------------------------------------------ */
 
 QWidget {
   background-color: {{ background }};
@@ -54,10 +130,6 @@ QLabel {
    qproperty-alignment: AlignLeft;
    padding-top: 1px;
    padding-bottom: 3px;
-}
-
-QStatusBar > QLabel { /* Help QLabel */
-  background-color: {{ background }};
 }
 
 QDialog#QtAboutKeybindings {
@@ -130,7 +202,7 @@ QtDivider[selected=false] {
   background-color: {{ background }};
 }
 
-/* --------------------- QSlider ------------------------ */
+/* ------------------------------------------------------ */
 
 QSlider {
    background-color: {{ background }};
@@ -154,6 +226,57 @@ QSlider::handle:horizontal {
 QSlider::sub-page:horizontal {
     background: {{ highlight }};
 }
+
+/* ------------------------------------------------------ */
+
+QScrollBar:vertical {
+    background-color: {{ background }};
+    width: 16px;
+    margin: 1px 4px 1px 4px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: {{ foreground }};
+    border: 0px;
+    min-height: 10px;
+    border-radius: 3px;
+}
+
+/* ------------------------------------------------------ */
+
+QRadioButton {
+    background-color: {{ foreground }};
+    border-radius: 3px;
+}
+
+QRadioButton:hover {
+   background-color: {{ primary }};
+}
+
+QRadioButton::indicator {
+    subcontrol-position: center center;
+    subcontrol-origin: content;
+    width: 28px; height: 28px;
+}
+
+QRadioButton::indicator:checked {
+    background-color: {{ highlight }};
+    border-radius: 3px;
+}
+
+QtPanZoomButton::indicator {
+    image: url(":/icons/{{ folder }}/zoom.svg");
+}
+
+QtSelectButton::indicator {
+    image: url(":/icons/{{ folder }}/select.svg");
+}
+
+QtAdditionButton::indicator {
+    image: url(":/icons/{{ folder }}/add.svg");
+}
+
 
 /* ------------------------------------------------------ */
 
@@ -289,6 +412,16 @@ QtLayerWidget > QCheckBox#visibility::indicator:checked {
 
 /* ------------------------------------------------------ */
 
+QtLayerButtons {
+  min-width: 220px;
+  max-width: 220px;
+}
+
+QtViewerButtons {
+  min-width: 220px;
+  max-width: 220px;
+}
+
 QtControls {
     border: 1px solid {{ foreground }};
     background-color: {{ foreground }};
@@ -299,19 +432,6 @@ QtControls {
     min-width: 220px;
     max-width: 220px;
 }
-
-QtColorBox {
-  padding: 0px;
-  border: 0px;
-  margin: 0px;
-  border-radius: 1px;
-  min-height: 24px;
-  max-height: 24px;
-  min-width: 24px;
-  max-width: 24px;
-}
-
-/* ----------------- QtLayerControls -------------------- */
 
 QtLayerControls {
     background-color: {{ foreground }};
@@ -339,6 +459,17 @@ QtLayerControls > QLabel#colorbar {
   min-width: 32px;
   max-width: 32px;
   qproperty-alignment: AlignCenter;
+}
+
+QtColorBox {
+  padding: 0px;
+  border: 0px;
+  margin: 0px;
+  border-radius: 1px;
+  min-height: 24px;
+  max-height: 24px;
+  min-width: 24px;
+  max-width: 24px;
 }
 
 QtLayerControls > QFrame#swatch {
@@ -554,49 +685,7 @@ QtLayerControls > QPushButton:pressed {
   border-radius: 3px;
 }
 
-/* ----------------- Buttons -------------------- */
-
-QRadioButton {
-    background-color: {{ foreground }};
-    border-radius: 3px;
-}
-
-QRadioButton:hover {
-   background-color: {{ primary }};
-}
-
-QRadioButton::indicator {
-    subcontrol-position: center center;
-    subcontrol-origin: content;
-    width: 28px; height: 28px;
-}
-
-QRadioButton::indicator:checked {
-    background-color: {{ highlight }};
-    border-radius: 3px;
-}
-
-QtPanZoomButton::indicator {
-    image: url(":/icons/{{ folder }}/zoom.svg");
-}
-
-QtSelectButton::indicator {
-    image: url(":/icons/{{ folder }}/select.svg");
-}
-
-QtAdditionButton::indicator {
-    image: url(":/icons/{{ folder }}/add.svg");
-}
-
-QtLayerButtons {
-  min-width: 220px;
-  max-width: 220px;
-}
-
-QtViewerButtons {
-  min-width: 220px;
-  max-width: 220px;
-}
+/* ------------------------------------------------------ */
 
 QPushButton {
     background-color: {{ foreground }};
@@ -740,6 +829,8 @@ QtResetViewButton {
    border-radius: 3px;
 }
 
+/* ------------------------------------------------------ */
+
 QtModeButton {
   background-color: {{ foreground }};
   border-radius: 3px;
@@ -833,189 +924,4 @@ QtDeleteShapeButton {
 
 QtDeletePointsButton {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
-}
-
-/* ------------- QMainWindow --------- */
-/* Styling the QMainWindow is important because
-any QDockWidgets will use the MainWindow styles
-as long as they are docked (though they use the
-style of QDockWidget when undocked) */
-
-QMainWindow {
-  background: {{ background }};
-}
-
-QMainWindow::separator {
-    background: {{ foreground }};
-    width: 2px; /* when vertical */
-    height: 2px; /* when horizontal */
-}
-
-QMainWindow::separator:hover {
-    background: {{ highlight }};
-}
-
-/* ------------- DockWidgets --------- */
-
-QDockWidget::title {
-  background-color: {{ background }};
-  text-align: center; /* otherwise text overlaps with the buttons */
-  margin-top:-50px
-}
-
-QDockWidget::title:hover {
-  background-color: {{ foreground }};
-}
-
-QDockWidget::close-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 8px; left: 0;
-    width: 14px;
-}
-
-QDockWidget::float-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 24px; left: 0;
-    width: 14px;
-}
-
-QDockWidget::close-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 2px; top: 4;
-    width: 14px;
-}
-
-QDockWidget::float-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 20px; top: 4;
-    width: 14px;
-}
-
-/* ------------- QScrollBars --------- */
-
-
-QScrollBar {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-}
-
-QScrollBar:horizontal {
-    min-height: 14px;
-    max-height: 14px;
-    margin: 0px 16px;
-}
-
-QScrollBar:vertical {
-    /* min-width: 12px; */
-    max-width: 14px;
-    margin: 16px 0px;
-}
-
-QScrollBar::handle {
-    background: {{ highlight }};
-    border-radius: 3px;
-}
-
-QScrollBar::handle:horizontal {
-    min-width: 26px;
-}
-
-QScrollBar::handle:vertical {
-    min-height: 24px;
-}
-
-
-QScrollBar::add-line, QScrollBar::sub-line {
-    border: none;
-    border-radius: 3px;
-    background: {{ foreground }};
-    subcontrol-origin: margin;
-}
-
-QScrollBar::add-line:horizontal {
-    width: 13px;
-    subcontrol-position: right;
-}
-
-QScrollBar::sub-line:horizontal {
-    width: 13px;
-    subcontrol-position: left;
-}
-
-QScrollBar::add-line:vertical {
-    height: 13px;
-    subcontrol-position: bottom;
-}
-
-QScrollBar::sub-line:vertical {
-    height: 13px;
-    subcontrol-position: top;
-}
-
-QScrollBar::add-line:horizontal:pressed {
-    background: {{ highlight }};
-}
-
-QScrollBar::sub-line:horizontal:pressed {
-    background: {{ highlight }};
-}
-
-QScrollBar:left-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/left_arrow.svg");
-}
-
-QScrollBar::right-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/right_arrow.svg");
-}
-
-QScrollBar:up-arrow:vertical {
-    image: url(":/icons/{{ folder }}/up_arrow.svg");
-}
-
-QScrollBar::down-arrow:vertical {
-    image: url(":/icons/{{ folder }}/down_arrow.svg");
-}
-
-QScrollBar::left-arrow,
-QScrollBar::right-arrow,
-QScrollBar::up-arrow,
-QScrollBar::down-arrow {
-    height: 9px;
-    width: 9px;
-}
-
-QScrollBar::add-page,
-QScrollBar::sub-page {
-    background: none;
-}
-
-/* ------------- DimsSliders --------- */
-
-QtDims > QRangeSlider[last_used=true] {
-  qproperty-barColor: {{ secondary }};
-  qproperty-handleColor: {{ secondary }};
-  qproperty-handleBorderColor: {{ secondary }};
-}
-
-QtDims > QRangeSlider[last_used=false] {
-  qproperty-barColor: {{ highlight }};
-  qproperty-handleColor: {{ highlight }};
-  qproperty-handleBorderColor: {{ highlight }};
-}
-
-QtDims > QScrollBar::handle[last_used=false]:horizontal {
-    background: {{ highlight }};
-}
-
-QtDims > QScrollBar::handle[last_used=true]:horizontal {
-    background: {{ secondary }};
 }

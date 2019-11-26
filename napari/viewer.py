@@ -52,28 +52,8 @@ class Viewer(ViewerModel):
         )
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
+        self.screenshot = self.window.qt_viewer.screenshot
         self.update_console = self.window.qt_viewer.console.push
-
-    def screenshot(self, with_viewer=False):
-        """Take currently displayed screen and convert to an image array.
-
-        Parameters
-        ----------
-        with_viewer : bool
-            If True includes the napari viewer, otherwise just includes the
-            canvas.
-
-        Returns
-        -------
-        image : array
-            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
-            upper-left corner of the rendered region.
-        """
-        if with_viewer:
-            image = self.window.screenshot()
-        else:
-            image = self.window.qt_viewer.screenshot()
-        return image
 
     def update(self, func, *args, **kwargs):
         t = QtUpdateUI(func, *args, **kwargs)
