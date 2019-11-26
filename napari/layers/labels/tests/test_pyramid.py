@@ -1,5 +1,6 @@
 import numpy as np
 from napari.layers import Labels
+import pytest
 
 
 def test_random_pyramid():
@@ -47,6 +48,7 @@ def test_3D_pyramid():
     assert layer._data_view.ndim == 2
 
 
+@pytest.mark.skip(reason="currently fails as we no longer create pyramids")
 def test_create_random_pyramid():
     """Test instantiating Labels layer with random 2D data."""
     shape = (20_000, 20)

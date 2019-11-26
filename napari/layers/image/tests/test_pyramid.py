@@ -384,6 +384,7 @@ def test_xml_list():
     assert type(xml[0]) == Element
 
 
+@pytest.mark.skip(reason="currently fails as we no longer create pyramids")
 def test_create_random_pyramid():
     """Test instantiating Image layer with random 2D data."""
     shape = (20_000, 20)

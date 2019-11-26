@@ -1,1 +1,1 @@
-from .misc import guess_rgb, segment_normal
+from .misc import segment_normal

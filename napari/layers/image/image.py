@@ -8,11 +8,8 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ...util.misc import (
-    calc_data_range,
-    increment_unnamed_colormap,
-    get_pyramid_and_rgb,
-)
+from ...util.misc import calc_data_range, increment_unnamed_colormap
+from ...util.image_shape import get_pyramid, get_ndim_and_rgb
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Rendering, Interpolation
@@ -71,7 +68,6 @@ class Image(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
 
     Attributes
     ----------
@@ -143,9 +139,15 @@ class Image(Layer):
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
-        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, is_pyramid=is_pyramid, rgb=rgb
+        data_pyramid = get_pyramid(
+            data, is_pyramid=is_pyramid, force_pyramid=False
         )
+        is_pyramid = data_pyramid is not None
+        if is_pyramid:
+            init_shape = data_pyramid[0].shape
+        else:
+            init_shape = data.shape
+        ndim, rgb = get_ndim_and_rgb(init_shape, rgb)
 
         super().__init__(
             ndim,
@@ -214,11 +216,10 @@ class Image(Layer):
 
     @data.setter
     def data(self, data):
-        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, is_pyramid=self.is_pyramid, rgb=self.rgb
+        data_pyramid = get_pyramid(
+            data, is_pyramid=self.is_pyramid, force_pyramid=False
         )
-        self.is_pyramid = is_pyramid
-        self.rgb = rgb
+        self.is_pyramid = data_pyramid is not None
         self._data = data
         self._data_pyramid = data_pyramid
 

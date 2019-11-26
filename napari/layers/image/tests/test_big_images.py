@@ -18,14 +18,12 @@ def test_fast_big_dask_is_pyramid_specified():
     assert layer.data.shape == data.shape
 
 
-@pytest.mark.skip(reason="currently fails because we force axis `pyramid`")
 @pytest.mark.timeout(2)
 def test_fast_big_dask_contrast_limits_specified():
     layer = Image(data, contrast_limits=[0, 1])
     assert layer.data.shape == data.shape
 
 
-@pytest.mark.skip(reason="currently fails because we force axis `pyramid`")
 @pytest.mark.timeout(2)
 def test_fast_big_dask_nothing_specified():
     layer = Image(data)
