@@ -1,11 +1,11 @@
-from .mesh import Mesh as MeshNode
+from vispy.scene.visuals import Mesh
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
 
 
 class VispyVectorsLayer(VispyBaseLayer):
     def __init__(self, layer):
-        node = MeshNode()
+        node = Mesh()
         super().__init__(layer, node)
 
         self.layer.events.edge_color.connect(lambda e: self._on_data_change())
