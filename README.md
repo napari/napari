@@ -40,7 +40,7 @@ For more information see our [installation tutorial](https://napari.github.io/na
 
 ## simple example
 
-From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt5`) you can open up an interactive viewer by calling
+From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt`) you can open up an interactive viewer by calling
 
 ```python
 from skimage import data

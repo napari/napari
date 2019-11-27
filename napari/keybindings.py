@@ -19,6 +19,12 @@ def toggle_theme(viewer):
     viewer.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
 
+@Viewer.bind_key('Control-Shift-C')
+def toggle_console(viewer):
+    """Toggle console."""
+    viewer.window.qt_viewer.toggle_console()
+
+
 @Viewer.bind_key('Control-Y')
 def toggle_ndisplay(viewer):
     """Toggle ndisplay."""
@@ -138,3 +144,14 @@ def toggle_grid(viewer):
         viewer.grid_view()
     else:
         viewer.stack_view()
+
+
+@Viewer.bind_key('Control-Alt-P')
+def play(viewer):
+    """Toggle animation on the first axis"""
+    if viewer.window.qt_viewer.dims.is_playing:
+        viewer.window.qt_viewer.dims.stop()
+    else:
+        # TODO: need to allow control over FPS in gui
+        axis = viewer.window.qt_viewer.dims.last_used or 0
+        viewer.window.qt_viewer.dims.play(axis, 10)
