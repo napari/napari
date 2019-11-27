@@ -480,6 +480,7 @@ class Image(Layer):
                     self._data_pyramid[-1][tuple(indices)]
                 ).transpose(order)
         else:
+            self._scale_view = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
             thumbnail = image
 
