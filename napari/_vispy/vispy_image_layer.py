@@ -16,9 +16,9 @@ texture_dtypes = [
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer, MAX_TEXTURE_SIZE=None):
+    def __init__(self, layer):
         node = ImageNode(None, method='auto')
-        super().__init__(layer, node, MAX_TEXTURE_SIZE)
+        super().__init__(layer, node)
 
         self.layer.events.rendering.connect(
             lambda e: self._on_rendering_change()
@@ -76,15 +76,15 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
-        if self.MAX_TEXTURE_SIZE is not None:
-            if np.any(np.greater(data.shape, self.MAX_TEXTURE_SIZE)):
+        if self.MAX_TEXTURE_SIZE_2D is not None:
+            if np.any(np.greater(data.shape, self.MAX_TEXTURE_SIZE_2D)):
                 warnings.warn(
                     f"data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE"
-                    f"{self.MAX_TEXTURE_SIZE} in at least one axis and will be "
+                    f"{self.MAX_TEXTURE_SIZE_2D} in at least one axis and will be "
                     f"downsampled."
                 )
                 downsample = np.ceil(
-                    np.divide(data.shape, self.MAX_TEXTURE_SIZE)
+                    np.divide(data.shape, self.MAX_TEXTURE_SIZE_2D)
                 ).astype(int)
                 scale = np.ones(self.layer.ndim)
                 for i, d in enumerate(self.layer.dims.displayed):

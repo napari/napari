@@ -6,7 +6,7 @@ import numpy as np
 
 
 class VispyShapesLayer(VispyBaseLayer):
-    def __init__(self, layer, MAX_TEXTURE_SIZE=None):
+    def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:
         # Markers: corresponding to the vertices of the interaction box or the
         # shapes that are used for highlights.
@@ -15,7 +15,7 @@ class VispyShapesLayer(VispyBaseLayer):
         # Mesh: The actual meshes of the shape faces and edges
         node = Compound([Mesh(), Mesh(), Line(), Markers()])
 
-        super().__init__(layer, node, MAX_TEXTURE_SIZE)
+        super().__init__(layer, node)
 
         self.layer.events.edge_width.connect(lambda e: self._on_data_change())
         self.layer.events.edge_color.connect(lambda e: self._on_data_change())

@@ -9,14 +9,14 @@ class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
-    def __init__(self, layer, MAX_TEXTURE_SIZE=None):
+    def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:
         # Lines: The lines of the interaction box used for highlights.
         # Markers: The the outlines for each point used for highlights.
         # Markers: The actual markers of each point.
         node = Compound([Markers(), Markers(), Line()])
 
-        super().__init__(layer, node, MAX_TEXTURE_SIZE)
+        super().__init__(layer, node)
 
         self.layer.events.symbol.connect(lambda e: self._on_data_change())
         self.layer.events.edge_width.connect(lambda e: self._on_data_change())

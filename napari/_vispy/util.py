@@ -16,8 +16,8 @@ layer_to_visual = {
 }
 
 
-def create_vispy_visual(layer, MAX_TEXTURE_SIZE):
-    """
+def create_vispy_visual(layer):
+    """we
     Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -30,6 +30,6 @@ def create_vispy_visual(layer, MAX_TEXTURE_SIZE):
         visual : vispy.scene.visuals.VisualNode
             Vispy visual node
     """
-    visual = layer_to_visual[type(layer)](layer, MAX_TEXTURE_SIZE)
+    visual = layer_to_visual[type(layer)](layer)
 
     return visual

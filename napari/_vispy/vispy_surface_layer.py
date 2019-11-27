@@ -12,10 +12,10 @@ class VispySurfaceLayer(VispyBaseLayer):
     here https://github.com/vispy/vispy/blob/master/vispy/visuals/mesh.py
     """
 
-    def __init__(self, layer, MAX_TEXTURE_SIZE=None):
+    def __init__(self, layer):
         node = MeshNode()
 
-        super().__init__(layer, node, MAX_TEXTURE_SIZE)
+        super().__init__(layer, node)
 
         self.layer.events.colormap.connect(
             lambda e: self._on_colormap_change()

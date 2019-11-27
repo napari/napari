@@ -13,8 +13,6 @@ class VispyBaseLayer(ABC):
         Layer model.
     node : vispy.scene.VisualNode
         Central node with which to interact with the visual.
-    MAX_TEXTURE_SIZE : int
-        Max texture size allowed by the vispy canvas.
 
     Attributes
     ----------
@@ -29,6 +27,10 @@ class VispyBaseLayer(ABC):
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
+    MAX_TEXTURE_SIZE_2D : int
+        Max texture size allowed by the vispy canvas during 2D rendering.
+    MAX_TEXTURE_SIZE_3D : int
+        Max texture size allowed by the vispy canvas during 2D rendering.
 
     Extended Summary
     ----------
@@ -36,12 +38,13 @@ class VispyBaseLayer(ABC):
         Transform positioning the layer visual inside the scenecanvas.
     """
 
-    def __init__(self, layer, node, MAX_TEXTURE_SIZE=None):
+    def __init__(self, layer, node):
         super().__init__()
 
         self.layer = layer
         self.node = node
-        self.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE
+        self.MAX_TEXTURE_SIZE_2D = 10_000
+        self.MAX_TEXTURE_SIZE_3D = 1_000
         self._position = (0,) * self.layer.dims.ndisplay
         self.camera = None
 
