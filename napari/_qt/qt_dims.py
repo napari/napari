@@ -1,14 +1,14 @@
+import warnings
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtCore import QEventLoop, QThread, QTimer, Signal, Slot
-from qtpy.QtWidgets import QVBoxLayout, QSizePolicy, QWidget, QLineEdit
+from qtpy.QtCore import Signal
+from qtpy.QtGui import QFont, QFontMetrics
+from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
-from ..util.event import Event
 from .qt_dims_slider import QtDimSliderWidget
-from qtpy.QtGui import QFont, QFontMetrics
 
 
 class QtDims(QWidget):
@@ -34,8 +34,6 @@ class QtDims(QWidget):
     update_axis = Signal(int)
     update_range = Signal(int)
     update_display = Signal()
-    play_started = Signal(int, int)
-    play_stopped = Signal()
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -54,6 +52,7 @@ class QtDims(QWidget):
 
         self._last_used = None
         self._play_ready = True  # False if currently awaiting a draw event
+        self._animation_thread = None
 
         # Initialises the layout:
         layout = QVBoxLayout()
@@ -225,7 +224,7 @@ class QtDims(QWidget):
         # add to the beginning of the list
         for slider_num in range(self.nsliders, number_of_sliders):
             dim_axis = number_of_sliders - slider_num - 1
-            slider_widget = QtDimSliderWidget(dim_axis, self)
+            slider_widget = QtDimSliderWidget(self, dim_axis)
             slider_widget.label_changed.connect(self._resize_labels)
             slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
@@ -296,7 +295,7 @@ class QtDims(QWidget):
         axis: int = 0,
         fps: Optional[float] = None,
         frame_range: Optional[Tuple[int, int]] = None,
-        playback_mode: Optional[str] = None,
+        loop_mode: Optional[int] = None,
     ):
         """Animate (play) axis.
 
@@ -307,17 +306,17 @@ class QtDims(QWidget):
         fps: float
             Frames per second for playback.  Negative values will play in
             reverse.  fps == 0 will stop the animation. The view is not
-            guaranteed to keep up with the requested fps, and may drop frames
+            guaranteed to keep up with the requested fps, aƒnd may drop frames
             at higher fps.
         frame_range: tuple | list
             If specified, will constrain animation to loop [first, last] frames
-        playback_mode: str
+        loop_mode: str
             Mode for animation playback.  Must be one of the following options:
-                'loop': Movie will return to the first frame after reaching
-                    the last frame, looping until stopped.
-                'once': Animation will stop once movie reaches the max frame
-                    (if fps > 0) or the first frame (if fps < 0).
-                'loop_back_and_forth':  Movie will loop back and forth until
+                0: "play once": Animation will stop once movie reaches the
+                    max frame (if fps > 0) or the first frame (if fps < 0).
+                1: "loop continuous":  Movie will return to the first frame
+                    after reaching the last frame, looping until stopped.
+                2: "loop_back_and_forth":  Movie will loop back and forth until
                     stopped
 
         Raises
@@ -329,67 +328,50 @@ class QtDims(QWidget):
         ValueError
             If ``frame_range`` is provided and range[0] >= range[1]
         """
-        # allow only one axis to be playing at a time
-        # if nothing is playing self.stop() will not do anything
-        self.stop()
-        if playback_mode:
-            playback_mode = playback_mode.lower()
-            _modes = {'loop', 'once', 'loop_back_and_forth'}
-            if playback_mode not in _modes:
+        if loop_mode is not None:
+            _modes = (0, 1, 2)
+            if loop_mode not in _modes:
                 raise ValueError(
-                    f'"{playback_mode}" not a recognized playback_mode: ({_modes})'
+                    f'loop_mode must be one of {_modes}.  Got: {loop_mode}'
                 )
-
-        # if the play() function was not called with parameters, we default to
-        # the current values set in the GUI.  This allows the
-        if fps is None:
-            fps = self.slider_widgets[axis].play_button.fps
-        else:
-            self.slider_widgets[axis].play_button.set_fps(fps)
-        if playback_mode is None:
-            playback_mode = self.slider_widgets[axis].play_button.mode
-        else:
-            self.slider_widgets[axis].play_button.set_mode(playback_mode)
-
-        if fps == 0:
-            return
-
-        # play() is a main front-facing api, so when play() is called
-        # for a particular axis and fps, we store the values and update
-        # listeners (so playbutton will remember the last fps)
-
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
+
+        if self.is_playing:
+            if self._animation_worker.axis == axis:
+                self.slider_widgets[axis]._update_play_settings(
+                    fps, frame_range, loop_mode
+                )
+                return
+            else:
+                self.stop()
+
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)
-        if not self._displayed_sliders[axis]:
-            return
-
-        self._animation_thread = AnimationThread(
-            self.dims, axis, fps, frame_range, playback_mode, parent=self
-        )
-        # when the thread timer increments, update the current frame
-        self._animation_thread.incremented.connect(self._set_frame)
-        self._animation_thread.start()
-        self.play_started.emit(axis, fps)
-        # self._animation_thread.finished.connect(
-        #     lambda: self.play_stopped.emit()
-        # )
+        if self._displayed_sliders[axis]:
+            work = self.slider_widgets[axis]._play(fps, frame_range, loop_mode)
+            if work:
+                self._animation_worker, self._animation_thread = work
+                self._animation_worker.finished.connect(self.stop)
+            else:
+                self._animation_worker, self._animation_thread = None, None
+        else:
+            warnings.warn('Refusing to play a hidden axis')
 
     def stop(self):
         """Stop axis animation"""
         if self.is_playing:
-            self._animation_thread.quit()
+            self._animation_worker.finish()
+        if self._animation_thread:
             self._animation_thread.wait()
-            del self._animation_thread
-            self.enable_play()
-            self.play_stopped.emit()
+            self._animation_thread = None
+        self.enable_play()
 
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
         return (
-            hasattr(self, '_animation_thread')
+            self._animation_thread
             # this is repetive, since we delete the thread each time, but safer
             and self._animation_thread.isRunning()
         )
@@ -411,113 +393,3 @@ class QtDims(QWidget):
         # this is mostly here to connect to the main SceneCanvas.events.draw
         # event in the qt_viewer
         self._play_ready = True
-
-
-class AnimationThread(QThread):
-    """A thread to keep the animation timer independent of the main event loop.
-
-    This prevents mouseovers and other events from causing animation lag. See
-    QtDims.play() for public-facing docstring.
-    """
-
-    incremented = Signal(int, int)  # signal for each time a frame is requested
-
-    def __init__(
-        self,
-        dims,
-        axis,
-        fps=10,
-        frame_range=None,
-        playback_mode='loop',
-        parent=None,
-    ):
-        super().__init__(parent)
-        # could put some limits on fps here... though the handler in the QtDims
-        # object above is capable of ignoring overly spammy requests.
-
-        self.dims = dims
-        self.axis = axis
-
-        self.dimsrange = self.dims.range[axis]
-        if frame_range is not None:
-            if frame_range[0] >= frame_range[1]:
-                raise ValueError("frame_range[0] must be <= frame_range[1]")
-            if frame_range[0] < self.dimsrange[0]:
-                raise IndexError("frame_range[0] out of range")
-            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
-                raise IndexError("frame_range[1] out of range")
-        self.frame_range = frame_range
-        self.playback_mode = playback_mode
-
-        if self.frame_range is not None:
-            self.min_point, self.max_point = self.frame_range
-        else:
-            self.min_point = 0
-            self.max_point = int(
-                np.floor(self.dimsrange[1] - self.dimsrange[2])
-            )
-        self.max_point += 1  # range is inclusive
-
-        # after dims.set_point is called, it will emit a dims.events.axis()
-        # we use this to update this threads current frame (in case it
-        # was some other event that updated the axis)
-        self.dims.events.axis.connect(self._on_axis_changed)
-        self.current = max(self.dims.point[axis], self.min_point)
-        self.current = min(self.current, self.max_point)
-        self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
-        self.timer = QTimer()
-        self.timer.setInterval(1000 / abs(fps))
-        self.timer.timeout.connect(self.advance)
-        self.timer.moveToThread(self)
-        # this is necessary to avoid a warning in QtDims.stop() on del thread
-        self.finished.connect(self.timer.deleteLater)
-
-    def run(self):
-        # if playback_mode is once and we are already on the last frame,
-        # return to the first frame... (so the user can keep hitting once)
-        if self.playback_mode == 'once':
-            if self.step > 0 and self.current >= self.max_point - 1:
-                self.incremented.emit(self.axis, self.min_point)
-            elif self.step < 0 and self.current <= self.min_point + 1:
-                self.incremented.emit(self.axis, self.max_point)
-        else:
-            # immediately advance one frame
-            self.advance()
-        self.timer.start()
-        loop = QEventLoop()
-        loop.exec_()
-
-    def advance(self):
-        """Advance the current frame in the animation.
-
-        Takes dims scale into account and restricts the animation to the
-        requested frame_range, if entered.
-        """
-        self.current += self.step * self.dimsrange[2]
-        if self.current < self.min_point:
-            if self.playback_mode == 'loop_back_and_forth':
-                self.step *= -1
-                self.current = self.min_point + self.step * self.dimsrange[2]
-            elif self.playback_mode == 'loop':
-                self.current = self.max_point + self.current - self.min_point
-            else:  # self.playback_mode == 'once'
-                self.parent().stop()
-                # self.quit()
-        elif self.current >= self.max_point:
-            if self.playback_mode == 'loop_back_and_forth':
-                self.step *= -1
-                self.current = (
-                    self.max_point + 2 * self.step * self.dimsrange[2]
-                )
-            elif self.playback_mode == 'loop':
-                self.current = self.min_point + self.current - self.max_point
-            else:  # self.playback_mode == 'once'
-                self.parent().stop()
-        with self.dims.events.axis.blocker(self._on_axis_changed):
-            self.incremented.emit(self.axis, self.current)
-
-    @Slot(Event)
-    def _on_axis_changed(self, event):
-        # slot for external events to update the current frame
-        if event.axis == self.axis and hasattr(event, 'value'):
-            self.current = event.value
