@@ -76,8 +76,8 @@ QDialog#About {
 QDialog#OpenDialog {
   min-width: 360px;
   max-width: 360px;
-  min-height: 400px;
-  max-height: 400px;
+  min-height: 450px;
+  max-height: 450px;
 }
 
 QPushButton#dialog {
@@ -175,8 +175,8 @@ QtLayerDialog {
 QtLayerDialog > QLabel {
   min-height: 18px;
   max-height: 18px;
-  min-width: 80px;
-  max-width: 80px;
+  min-width: 95px;
+  max-width: 95px;
   padding: 3px;
   border: 0px;
   margin: 0px;
@@ -293,10 +293,23 @@ QtLayerDialog > QCheckBox {
 QtLayerDialog > QCheckBox::indicator {
    border: 3px solid {{ secondary }};
    border-radius: 4px;
+   height: 14px;
+   width: 14px;
+}
+
+QtLayerDialog > QCheckBox::indicator:unchecked {
+  background-color: {{ foreground }};
+  height: 14px;
+}
+
+QtLayerDialog > QCheckBox::indicator:indeterminate {
+  background-color: {{ secondary }};
+  height: 2px;
 }
 
 QtLayerDialog > QCheckBox::indicator:checked {
    background-color: {{ secondary }};
+   height: 14px;
 }
 
 QtLayerDialog > QRadioButton {

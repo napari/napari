@@ -140,7 +140,7 @@ class Window:
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
-        open_layer = QAction('Open advanced', self._qt_window)
+        open_layer = QAction('Advanced open', self._qt_window)
         open_layer.setShortcut('Ctrl+Alt+O')
         open_layer.setStatusTip('Open with advanced options')
         open_layer.triggered.connect(
