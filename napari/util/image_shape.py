@@ -101,7 +101,7 @@ def should_be_pyramid(shape):
     pyr_axes : tuple of bool
         True wherever an axis exceeds the pyramid threshold.
     """
-    return np.log2(shape) >= 13
+    return np.log2(shape) > 13
 
 
 def make_pyramid(data, pyr_axes):
@@ -151,6 +151,12 @@ def get_pyramid(data, is_pyramid=None, force_pyramid=False):
         If None then data is not and does not need to be a pyramid. Otherwise
         is a list of arrays where each array is a level of the pyramid.
     """
+    if np.any(force_pyramid) and is_pyramid is not None:
+        raise ValueError(
+            """To force pyramid generation `is_pyramid` must be
+                            None."""
+        )
+
     if is_pyramid is None:
         # If is_pyramid status is not set, guess if data currently is a pyramid
         is_pyramid = guess_pyramid(data)
