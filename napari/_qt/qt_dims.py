@@ -25,7 +25,7 @@ class QtDims(QWidget):
     ----------
     dims : Dims
         Dims object
-    sliders : list
+    slider_widgets : list[QtDimSliderWidget]
         List of slider widgets
     """
 
