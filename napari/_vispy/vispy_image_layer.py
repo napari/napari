@@ -1,8 +1,10 @@
+import warnings
 from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
+
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -14,9 +16,9 @@ texture_dtypes = [
 
 
 class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer):
+    def __init__(self, layer, MAX_TEXTURE_SIZE=None):
         node = ImageNode(None, method='auto')
-        super().__init__(layer, node)
+        super().__init__(layer, node, MAX_TEXTURE_SIZE)
 
         self.layer.events.rendering.connect(
             lambda e: self._on_rendering_change()
@@ -73,6 +75,24 @@ class VispyImageLayer(VispyBaseLayer):
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
+
+        if self.MAX_TEXTURE_SIZE is not None:
+            if np.any(np.greater(data.shape, self.MAX_TEXTURE_SIZE)):
+                warnings.warn(
+                    f"data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE"
+                    f"{self.MAX_TEXTURE_SIZE} in at least one axis and will be "
+                    f"downsampled."
+                )
+                downsample = np.ceil(
+                    np.divide(data.shape, self.MAX_TEXTURE_SIZE)
+                ).astype(int)
+                scale = np.ones(self.layer.ndim)
+                for i, d in enumerate(self.layer.dims.displayed):
+                    scale[d] = downsample[i]
+                self.layer._scale_view = scale
+                self._on_scale_change()
+                slices = tuple(slice(None, None, ds) for ds in downsample)
+                data = data[slices]
 
         if self.layer.dims.ndisplay == 2:
             self.node._need_colortransform_update = True

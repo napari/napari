@@ -44,6 +44,9 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
 
+        # MAX_TEXTURE_SIZE gets updated after main window is shown
+        self.MAX_TEXTURE_SIZE = None
+
         self.pool = QThreadPool()
 
         QCoreApplication.setAttribute(
@@ -141,7 +144,7 @@ class QtViewer(QSplitter):
         """When a layer is added, set its parent and order."""
         layers = event.source
         layer = event.item
-        vispy_layer = create_vispy_visual(layer)
+        vispy_layer = create_vispy_visual(layer, self.MAX_TEXTURE_SIZE)
         vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers)

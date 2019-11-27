@@ -265,6 +265,10 @@ class Window:
         self._qt_window.show()
         # make sure window is not hidden, e.g. by browser window in Jupyter
         self._qt_window.raise_()
+        # Update to MAX_TEXTURE_SIZE needs to come after window is shown
+        self.qt_viewer.MAX_TEXTURE_SIZE = self.qt_viewer.canvas.context.shared.parser.capabilities[
+            'max_texture_size'
+        ]
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet
