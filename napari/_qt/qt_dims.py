@@ -310,7 +310,7 @@ class QtDims(QWidget):
             at higher fps.
         frame_range: tuple | list
             If specified, will constrain animation to loop [first, last] frames
-        loop_mode: str
+        loop_mode: int
             Mode for animation playback.  Must be one of the following options:
                 0: "play once": Animation will stop once movie reaches the
                     max frame (if fps > 0) or the first frame (if fps < 0).

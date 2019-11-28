@@ -37,27 +37,9 @@ class AnimationWorker(QObject):
         self.loop_mode = slider.loop_mode
         slider.fps_changed.connect(self.set_fps)
         slider.mode_changed.connect(self.set_loop_mode)
+        slider.range_changed.connect(self.set_frame_range)
         self.set_fps(self.slider.fps)
-
-        self.dimsrange = self.dims.range[self.axis]
-        frame_range = slider.frame_range
-        if frame_range is not None:
-            if frame_range[0] >= frame_range[1]:
-                raise ValueError("frame_range[0] must be <= frame_range[1]")
-            if frame_range[0] < self.dimsrange[0]:
-                raise IndexError("frame_range[0] out of range")
-            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
-                raise IndexError("frame_range[1] out of range")
-        self.frame_range = frame_range
-
-        if self.frame_range is not None:
-            self.min_point, self.max_point = self.frame_range
-        else:
-            self.min_point = 0
-            self.max_point = int(
-                np.floor(self.dimsrange[1] - self.dimsrange[2])
-            )
-        self.max_point += 1  # range is inclusive
+        self.set_frame_range(slider.frame_range)
 
         # after dims.set_point is called, it will emit a dims.events.axis()
         # we use this to update this threads current frame (in case it
@@ -82,14 +64,37 @@ class AnimationWorker(QObject):
             self.advance()
         self.started.emit()
 
+    @Slot(int)
     def set_fps(self, fps):
         if fps == 0:
             return self.finish()
         self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
         self.interval = 1000 / abs(fps)
 
+    @Slot(tuple)
+    def set_frame_range(self, frame_range):
+        self.dimsrange = self.dims.range[self.axis]
+
+        if frame_range is not None:
+            if frame_range[0] >= frame_range[1]:
+                raise ValueError("frame_range[0] must be <= frame_range[1]")
+            if frame_range[0] < self.dimsrange[0]:
+                raise IndexError("frame_range[0] out of range")
+            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
+                raise IndexError("frame_range[1] out of range")
+        self.frame_range = frame_range
+
+        if self.frame_range is not None:
+            self.min_point, self.max_point = self.frame_range
+        else:
+            self.min_point = 0
+            self.max_point = int(
+                np.floor(self.dimsrange[1] - self.dimsrange[2])
+            )
+        self.max_point += 1  # range is inclusive
+
+    @Slot(int)
     def set_loop_mode(self, mode):
-        print(f'AnimationWorker is setting loop_mode to {mode}')
         self.loop_mode = mode
 
     def advance(self):
@@ -99,7 +104,6 @@ class AnimationWorker(QObject):
         requested frame_range, if entered.
         """
         self.current += self.step * self.dimsrange[2]
-        print("mode is:", self.loop_mode)
         if self.current < self.min_point:
             if self.loop_mode == 2:  # 'loop_back_and_forth'
                 self.step *= -1
@@ -142,6 +146,7 @@ class QtDimSliderWidget(QWidget):
     label_changed = Signal(int, str)  # axis, label
     fps_changed = Signal(int)
     mode_changed = Signal(int)
+    range_changed = Signal(tuple)
     play_started = Signal()
     play_stopped = Signal()
 
@@ -157,7 +162,7 @@ class QtDimSliderWidget(QWidget):
         self._fps = 10
         self._minframe = None
         self._maxframe = None
-        self._loop_mode = 'loop'
+        self._loop_mode = 1
 
         layout = QHBoxLayout()
         self._create_axis_label_widget()
@@ -295,7 +300,6 @@ class QtDimSliderWidget(QWidget):
 
     @loop_mode.setter
     def loop_mode(self, value):
-        print(f'SliderWidget is setting loop_mode to {value}')
         self._loop_mode = value
         self.play_button.mode_combo.setCurrentIndex(value)
         self.mode_changed.emit(value)
@@ -304,6 +308,7 @@ class QtDimSliderWidget(QWidget):
     def frame_range(self):
         frame_range = (self._minframe, self._maxframe)
         frame_range = frame_range if any(frame_range) else None
+        return frame_range
 
     @frame_range.setter
     def frame_range(self, value):
@@ -312,9 +317,9 @@ class QtDimSliderWidget(QWidget):
         if value and not len(value) == 2:
             raise ValueError('frame_range must have a length of 2')
         self._minframe, self._maxframe = value
+        self.range_changed.emit(tuple(value))
 
     def _update_play_settings(self, fps, frame_range, loop_mode):
-        print('update settings')
         if fps is not None:
             self.fps = fps
         if frame_range is not None:
@@ -335,7 +340,6 @@ class QtDimSliderWidget(QWidget):
         if fps == 0:
             return
 
-        print('creating thread')
         worker, thread = new_worker_qthread(
             AnimationWorker,
             self,
@@ -419,13 +423,11 @@ class QtPlayButton(QPushButton):
         self.play_requested.emit(self.axis)
 
     def _handle_start(self):
-        print("_handle_start called")
         self.setProperty('playing', 'True')
         self.style().unpolish(self)
         self.style().polish(self)
 
     def _handle_stop(self):
-        print("_handle_stop called")
         self.setProperty('playing', 'False')
         self.style().unpolish(self)
         self.style().polish(self)
