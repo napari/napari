@@ -119,6 +119,22 @@ def test_is_pyramid():
     )
     assert is_pyramid(data)
 
+    s = 8192
+    data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
+    t0 = time.time()
+    val = is_pyramid(data)
+    t1 = time.time()
+    assert val
+    assert t1 - t0 < 2
+
+    s = 20_000
+    data = da.ones((s,) * 3)
+    t0 = time.time()
+    val = is_pyramid(data)
+    t1 = time.time()
+    assert val is False
+    assert t1 - t0 < 2
+
 
 def test_trim_pyramid():
 
