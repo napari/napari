@@ -87,9 +87,11 @@ class QtDimSliderWidget(QWidget):
     def _update_label(self):
         with self.dims.events.axis_labels.blocker():
             self.dims.set_axis_label(self.axis, self.label.text())
+        self.label_changed.emit(self.axis, self.label.text())
+
+    def _clear_label_focus(self):
         self.label.clearFocus()
         self.qt_dims.setFocus()
-        self.label_changed.emit(self.axis, self.label.text())
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -102,7 +104,8 @@ class QtDimSliderWidget(QWidget):
         label.setEnabled(True)
         label.setAlignment(Qt.AlignRight)
         label.setContentsMargins(0, 0, 2, 0)
-        label.editingFinished.connect(self._update_label)
+        label.textEdited.connect(self._update_label)
+        label.editingFinished.connect(self._clear_label_focus)
         self.label = label
 
     def _create_range_slider_widget(self):
