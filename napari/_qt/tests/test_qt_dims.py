@@ -213,10 +213,11 @@ def test_play_button(qtbot):
     button = view.slider_widgets[0].play_button
     button.click()
     qtbot.waitSignal(view._animation_thread.started, timeout=5000)
-    qtbot.wait(300)
+    qtbot.wait(200)
     assert view.is_playing
     with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
         button.click()
+    qtbot.wait(200)
     assert not view.is_playing
 
     assert not button.popup.isVisible()
