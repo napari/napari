@@ -13,49 +13,36 @@ https://github.com/napari/napari
 
 New Features
 ************
+- label axes with strings (#644)
+- interactive scripting with `viewer.update`(#650)
+- add dock widget support (#695)
+- dockable console (#714)
 
 Improvements
 ************
+- improve release guide (#668)
+- add logo to repo (#674)
+- improve labels painting speed (#684)
+- add example showing mouse drag callbacks (#690)
+- add main window option to screenshots (#722)
 
 Bugfixs
 *******
-
-API Changes
-***********
-
-Deprecations
-************
-
-Build Tools
-***********
-
-Other Pull Requests
-*******************
-- Labeled axes (#644)
-- Interactive Scripting (#650)
-- release notes 0.2.5 (#667)
-- improve release guide (#668)
 - allow all animation thread tests to be +/- 1 frame (#670)
-- add logo (#674)
 - document qt not qt5 (#677)
 - fix init of _position (#680)
-- Fix 3d display surface (#682)
-- ArcballCamera fov default (#683)
-- improve labels painting speed (#684)
-- Follow Up cleaning for interactive scripting (#688)
-- Add an example showing mouse drag callbacks (#690)
+- fix 3d display surface (#682)
+- set arcballCamera fov default (#683)
+- cleaning for interactive scripting (#688)
 - change no. of pixels calculation from 32 to 64-bit (#692)
-- add_dock_widget method on main Window class (#695)
 - support multichannel dask array (#701)
 - Don't calc_data_range on uint8 data (#705)
-- allows Path in io.magic_imread, fixes #708 (#709)
-- dockable console (#714)
-- Handles empty chosen files and folder (#715)
+- allows Path in io.magic_imread (#709)
+- handles empty chosen files and folder (#715)
 - relax play_api (#717)
 - raise main window when showing (#721)
-- add main window option to screenshots (#722)
-- Fix vertical scrollbars (#728)
-- Revert "change no. of pixels calculation from 32 to 64-bit" (#738)
+- fix vertical scrollbars (#728)
+- revert "change no. of pixels calculation from 32 to 64-bit" (#738)
 - remove vispy backport with 0.6.3 (#739)
 
 7 authors added to this release [alphabetical by first name or login]
@@ -76,4 +63,3 @@ Other Pull Requests
 - Juan Nunez-Iglesias
 - Nicholas Sofroniew
 - Talley Lambert
-
