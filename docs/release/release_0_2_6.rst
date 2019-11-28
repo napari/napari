@@ -44,6 +44,7 @@ Bugfixs
 - fix vertical scrollbars (#728)
 - revert "change no. of pixels calculation from 32 to 64-bit" (#738)
 - remove vispy backport with 0.6.3 (#739)
+- improve pyramid guessing (#740)
 
 7 authors added to this release [alphabetical by first name or login]
 ---------------------------------------------------------------------
