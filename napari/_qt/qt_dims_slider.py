@@ -18,124 +18,6 @@ from .qt_scrollbar import ModifiedScrollBar
 from .util import new_worker_qthread
 
 
-class AnimationWorker(QObject):
-    """A thread to keep the animation timer independent of the main event loop.
-
-    This prevents mouseovers and other events from causing animation lag. See
-    QtDims.play() for public-facing docstring.
-    """
-
-    frame_requested = Signal(int, int)  # axis, point
-    finished = Signal()
-    started = Signal()
-
-    def __init__(self, slider):
-        super().__init__()
-        self.slider = slider
-        self.dims = slider.dims
-        self.axis = slider.axis
-        self.loop_mode = slider.loop_mode
-        slider.fps_changed.connect(self.set_fps)
-        slider.mode_changed.connect(self.set_loop_mode)
-        slider.range_changed.connect(self.set_frame_range)
-        self.set_fps(self.slider.fps)
-        self.set_frame_range(slider.frame_range)
-
-        # after dims.set_point is called, it will emit a dims.events.axis()
-        # we use this to update this threads current frame (in case it
-        # was some other event that updated the axis)
-        self.dims.events.axis.connect(self._on_axis_changed)
-        self.current = max(self.dims.point[self.axis], self.min_point)
-        self.current = min(self.current, self.max_point)
-        self.timer = QTimer()
-
-    @Slot()
-    def work(self):
-        # if loop_mode is once and we are already on the last frame,
-        # return to the first frame... (so the user can keep hitting once)
-        if self.loop_mode == 0:
-            if self.step > 0 and self.current >= self.max_point - 1:
-                self.frame_requested.emit(self.axis, self.min_point)
-            elif self.step < 0 and self.current <= self.min_point + 1:
-                self.frame_requested.emit(self.axis, self.max_point)
-            self.timer.singleShot(self.interval, self.advance)
-        else:
-            # immediately advance one frame
-            self.advance()
-        self.started.emit()
-
-    @Slot(int)
-    def set_fps(self, fps):
-        if fps == 0:
-            return self.finish()
-        self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
-        self.interval = 1000 / abs(fps)
-
-    @Slot(tuple)
-    def set_frame_range(self, frame_range):
-        self.dimsrange = self.dims.range[self.axis]
-
-        if frame_range is not None:
-            if frame_range[0] >= frame_range[1]:
-                raise ValueError("frame_range[0] must be <= frame_range[1]")
-            if frame_range[0] < self.dimsrange[0]:
-                raise IndexError("frame_range[0] out of range")
-            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
-                raise IndexError("frame_range[1] out of range")
-        self.frame_range = frame_range
-
-        if self.frame_range is not None:
-            self.min_point, self.max_point = self.frame_range
-        else:
-            self.min_point = 0
-            self.max_point = int(
-                np.floor(self.dimsrange[1] - self.dimsrange[2])
-            )
-        self.max_point += 1  # range is inclusive
-
-    @Slot(int)
-    def set_loop_mode(self, mode):
-        self.loop_mode = mode
-
-    def advance(self):
-        """Advance the current frame in the animation.
-
-        Takes dims scale into account and restricts the animation to the
-        requested frame_range, if entered.
-        """
-        self.current += self.step * self.dimsrange[2]
-        if self.current < self.min_point:
-            if self.loop_mode == 2:  # 'loop_back_and_forth'
-                self.step *= -1
-                self.current = self.min_point + self.step * self.dimsrange[2]
-            elif self.loop_mode == 1:  # 'loop'
-                self.current = self.max_point + self.current - self.min_point
-            else:  # loop_mode == 'once'
-                return self.finish()
-        elif self.current >= self.max_point:
-            if self.loop_mode == 2:  # 'loop_back_and_forth'
-                self.step *= -1
-                self.current = (
-                    self.max_point + 2 * self.step * self.dimsrange[2]
-                )
-            elif self.loop_mode == 1:  # 'loop'
-                self.current = self.min_point + self.current - self.max_point
-            else:  # loop_mode == 'once'
-                return self.finish()
-        with self.dims.events.axis.blocker(self._on_axis_changed):
-            self.frame_requested.emit(self.axis, self.current)
-        self.timer.singleShot(self.interval, self.advance)
-
-    def finish(self):
-        self.finished.emit()
-
-    @Slot(Event)
-    def _on_axis_changed(self, event):
-        # slot for external events to update the current frame
-        if event.axis == self.axis and hasattr(event, 'value'):
-            self.current = event.value
-
-
 class QtDimSliderWidget(QWidget):
     """Compound widget to hold the label, slider and play button for an axis.
 
@@ -431,3 +313,121 @@ class QtPlayButton(QPushButton):
         self.setProperty('playing', 'False')
         self.style().unpolish(self)
         self.style().polish(self)
+
+
+class AnimationWorker(QObject):
+    """A thread to keep the animation timer independent of the main event loop.
+
+    This prevents mouseovers and other events from causing animation lag. See
+    QtDims.play() for public-facing docstring.
+    """
+
+    frame_requested = Signal(int, int)  # axis, point
+    finished = Signal()
+    started = Signal()
+
+    def __init__(self, slider):
+        super().__init__()
+        self.slider = slider
+        self.dims = slider.dims
+        self.axis = slider.axis
+        self.loop_mode = slider.loop_mode
+        slider.fps_changed.connect(self.set_fps)
+        slider.mode_changed.connect(self.set_loop_mode)
+        slider.range_changed.connect(self.set_frame_range)
+        self.set_fps(self.slider.fps)
+        self.set_frame_range(slider.frame_range)
+
+        # after dims.set_point is called, it will emit a dims.events.axis()
+        # we use this to update this threads current frame (in case it
+        # was some other event that updated the axis)
+        self.dims.events.axis.connect(self._on_axis_changed)
+        self.current = max(self.dims.point[self.axis], self.min_point)
+        self.current = min(self.current, self.max_point)
+        self.timer = QTimer()
+
+    @Slot()
+    def work(self):
+        # if loop_mode is once and we are already on the last frame,
+        # return to the first frame... (so the user can keep hitting once)
+        if self.loop_mode == 0:
+            if self.step > 0 and self.current >= self.max_point - 1:
+                self.frame_requested.emit(self.axis, self.min_point)
+            elif self.step < 0 and self.current <= self.min_point + 1:
+                self.frame_requested.emit(self.axis, self.max_point)
+            self.timer.singleShot(self.interval, self.advance)
+        else:
+            # immediately advance one frame
+            self.advance()
+        self.started.emit()
+
+    @Slot(int)
+    def set_fps(self, fps):
+        if fps == 0:
+            return self.finish()
+        self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
+        self.interval = 1000 / abs(fps)
+
+    @Slot(tuple)
+    def set_frame_range(self, frame_range):
+        self.dimsrange = self.dims.range[self.axis]
+
+        if frame_range is not None:
+            if frame_range[0] >= frame_range[1]:
+                raise ValueError("frame_range[0] must be <= frame_range[1]")
+            if frame_range[0] < self.dimsrange[0]:
+                raise IndexError("frame_range[0] out of range")
+            if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
+                raise IndexError("frame_range[1] out of range")
+        self.frame_range = frame_range
+
+        if self.frame_range is not None:
+            self.min_point, self.max_point = self.frame_range
+        else:
+            self.min_point = 0
+            self.max_point = int(
+                np.floor(self.dimsrange[1] - self.dimsrange[2])
+            )
+        self.max_point += 1  # range is inclusive
+
+    @Slot(int)
+    def set_loop_mode(self, mode):
+        self.loop_mode = mode
+
+    def advance(self):
+        """Advance the current frame in the animation.
+
+        Takes dims scale into account and restricts the animation to the
+        requested frame_range, if entered.
+        """
+        self.current += self.step * self.dimsrange[2]
+        if self.current < self.min_point:
+            if self.loop_mode == 2:  # 'loop_back_and_forth'
+                self.step *= -1
+                self.current = self.min_point + self.step * self.dimsrange[2]
+            elif self.loop_mode == 1:  # 'loop'
+                self.current = self.max_point + self.current - self.min_point
+            else:  # loop_mode == 'once'
+                return self.finish()
+        elif self.current >= self.max_point:
+            if self.loop_mode == 2:  # 'loop_back_and_forth'
+                self.step *= -1
+                self.current = (
+                    self.max_point + 2 * self.step * self.dimsrange[2]
+                )
+            elif self.loop_mode == 1:  # 'loop'
+                self.current = self.min_point + self.current - self.max_point
+            else:  # loop_mode == 'once'
+                return self.finish()
+        with self.dims.events.axis.blocker(self._on_axis_changed):
+            self.frame_requested.emit(self.axis, self.current)
+        self.timer.singleShot(self.interval, self.advance)
+
+    def finish(self):
+        self.finished.emit()
+
+    @Slot(Event)
+    def _on_axis_changed(self, event):
+        # slot for external events to update the current frame
+        if event.axis == self.axis and hasattr(event, 'value'):
+            self.current = event.value

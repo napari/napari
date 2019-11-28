@@ -43,8 +43,7 @@ def new_worker_qthread(
     It follows the pattern described here:
     https://www.qt.io/blog/2010/06/17/youre-doing-it-wrong
 
-    all *args, **kwargs will be passed to the worker class on instantiation.
-
+    all *args, **kwargs will be passed to the Worker class on instantiation.
 
     Parameters
     ----------
@@ -58,6 +57,41 @@ def new_worker_qthread(
         Optional dictionary of {signal: function} to connect to the new worker.
         for instance:  connections = {'incremented': myfunc} will result in:
         worker.incremented.connect(myfunc)
+
+    Examples
+    --------
+    Create some QObject that has a long-running work method:
+
+    >>> class Worker(QObject):
+    ...
+    ...     finished = Signal()
+    ...     increment = Signal(int)
+    ...
+    ...     def __init__(self, argument):
+    ...         super().__init__()
+    ...         self.argument = argument
+    ...
+    ...     @Slot()
+    ...     def work(self):
+    ...         # some long running task...
+    ...         import time
+    ...         for i in range(10):
+    ...             time.sleep(1)
+    ...             self.increment.emit(i)
+    ...         self.finished.emit()
+    ...
+    >>> worker, thread = new_worker_qthread(
+    ...     Worker,
+    ...     'argument',
+    ...     start=True,
+    ...     connections={'increment': print},
+    ... )
+
+
+
+    >>> print([i for i in example_generator(4)])
+    [0, 1, 2, 3]
+
     """
 
     if not isinstance(connections, (dict, type(None))):
