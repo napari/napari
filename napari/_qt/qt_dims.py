@@ -294,8 +294,8 @@ class QtDims(QWidget):
         self,
         axis: int = 0,
         fps: Optional[float] = None,
-        frame_range: Optional[Tuple[int, int]] = None,
         loop_mode: Optional[int] = None,
+        frame_range: Optional[Tuple[int, int]] = None,
     ):
         """Animate (play) axis.
 
@@ -308,8 +308,6 @@ class QtDims(QWidget):
             reverse.  fps == 0 will stop the animation. The view is not
             guaranteed to keep up with the requested fps, aƒnd may drop frames
             at higher fps.
-        frame_range: tuple | list
-            If specified, will constrain animation to loop [first, last] frames
         loop_mode: int
             Mode for animation playback.  Must be one of the following options:
                 0: "play once": Animation will stop once movie reaches the
@@ -318,6 +316,8 @@ class QtDims(QWidget):
                     after reaching the last frame, looping until stopped.
                 2: "loop_back_and_forth":  Movie will loop back and forth until
                     stopped
+        frame_range: tuple | list
+            If specified, will constrain animation to loop [first, last] frames
 
         Raises
         ------
@@ -340,7 +340,7 @@ class QtDims(QWidget):
         if self.is_playing:
             if self._animation_worker.axis == axis:
                 self.slider_widgets[axis]._update_play_settings(
-                    fps, frame_range, loop_mode
+                    fps, loop_mode, frame_range
                 )
                 return
             else:
@@ -349,10 +349,9 @@ class QtDims(QWidget):
         # we want to avoid playing a dimension that does not have a slider
         # (like X or Y, or a third dimension in volume view.)
         if self._displayed_sliders[axis]:
-            work = self.slider_widgets[axis]._play(fps, frame_range, loop_mode)
+            work = self.slider_widgets[axis]._play(fps, loop_mode, frame_range)
             if work:
                 self._animation_worker, self._animation_thread = work
-                self._animation_worker.finished.connect(self.stop)
             else:
                 self._animation_worker, self._animation_thread = None, None
         else:
@@ -360,21 +359,17 @@ class QtDims(QWidget):
 
     def stop(self):
         """Stop axis animation"""
-        if self.is_playing:
-            self._animation_worker.finish()
         if self._animation_thread:
+            self._animation_thread.quit()
             self._animation_thread.wait()
-            self._animation_thread = None
+        self._animation_thread = None
+        self._animation_worker = None
         self.enable_play()
 
     @property
     def is_playing(self):
         """Return True if any axis is currently animated."""
-        return (
-            self._animation_thread
-            # this is repetive, since we delete the thread each time, but safer
-            and self._animation_thread.isRunning()
-        )
+        return self._animation_thread and self._animation_thread.isRunning()
 
     def _set_frame(self, axis, frame):
         """Safely tries to set `axis` to the requested `point`.

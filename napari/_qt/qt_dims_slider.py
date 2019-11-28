@@ -201,22 +201,22 @@ class QtDimSliderWidget(QWidget):
         self._minframe, self._maxframe = value
         self.range_changed.emit(tuple(value))
 
-    def _update_play_settings(self, fps, frame_range, loop_mode):
+    def _update_play_settings(self, fps, loop_mode, frame_range):
         if fps is not None:
             self.fps = fps
-        if frame_range is not None:
-            self.frame_range = frame_range
         if loop_mode is not None:
             self.loop_mode = loop_mode
+        if frame_range is not None:
+            self.frame_range = frame_range
 
     def _play(
         self,
         fps: Optional[float] = None,
-        frame_range: Optional[Tuple[int, int]] = None,
         loop_mode: Optional[str] = None,
+        frame_range: Optional[Tuple[int, int]] = None,
     ):
-        """Animate (play) axis. """
-        self._update_play_settings(fps, frame_range, loop_mode)
+        """Animate (play) axis. Same API as QtDims.play()"""
+        self._update_play_settings(fps, loop_mode, frame_range)
 
         # setting fps to 0 just stops the animation
         if fps == 0:
@@ -228,6 +228,7 @@ class QtDimSliderWidget(QWidget):
             start=True,
             connections={'frame_requested': self.qt_dims._set_frame},
         )
+        worker.finished.connect(self.qt_dims.stop)
         thread.finished.connect(self.play_stopped.emit)
         self.play_started.emit()
         self.worker = worker

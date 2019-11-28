@@ -42,6 +42,8 @@ def new_worker_qthread(
 
     It follows the pattern described here:
     https://www.qt.io/blog/2010/06/17/youre-doing-it-wrong
+    and
+    https://doc.qt.io/qt-5/qthread.html#details
 
     all *args, **kwargs will be passed to the Worker class on instantiation.
 
@@ -100,16 +102,14 @@ def new_worker_qthread(
     thread = QThread()
     worker = Worker(*args, **kwargs)
     worker.moveToThread(thread)
-    # not sure why connect(worker.work) isn't working!
-    # TODO: figure out why the bare functions aren't connecting
-    thread.started.connect(lambda: worker.work())
-    worker.finished.connect(lambda: thread.quit())
-    worker.finished.connect(lambda: worker.deleteLater())
-    thread.finished.connect(lambda: thread.deleteLater())
+    thread.started.connect(worker.work)
+    worker.finished.connect(thread.quit)
+    worker.finished.connect(worker.deleteLater)
+    thread.finished.connect(thread.deleteLater)
 
     if connections:
         [getattr(worker, key).connect(val) for key, val in connections.items()]
 
     if start:
-        thread.start()  # usually need to connect stuff before starting
+        thread.start()  # sometimes need to connect stuff before starting
     return worker, thread
