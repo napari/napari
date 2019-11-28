@@ -26,8 +26,8 @@ Improvements
 - add example showing mouse drag callbacks (#690)
 - add main window option to screenshots (#722)
 
-Bugfixs
-*******
+Bugfixes
+********
 - allow all animation thread tests to be +/- 1 frame (#670)
 - document qt not qt5 (#677)
 - fix init of _position (#680)
@@ -43,7 +43,7 @@ Bugfixs
 - raise main window when showing (#721)
 - fix vertical scrollbars (#728)
 - revert "change no. of pixels calculation from 32 to 64-bit" (#738)
-- remove vispy backport with 0.6.3 (#739)
+- remove vispy backport with 0.6.3, fix segfault in #576 (#739)
 - improve pyramid guessing (#740)
 
 7 authors added to this release [alphabetical by first name or login]
