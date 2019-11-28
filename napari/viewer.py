@@ -1,9 +1,18 @@
+import sys
+from os.path import dirname, join
+
+from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from napari._qt.qt_update_ui import QtUpdateUI
-from ._qt.qt_viewer import QtViewer
+
+from ._version import get_versions
 from ._qt.qt_main_window import Window
+from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
+
+
+version = get_versions()['version']
 
 
 class Viewer(ViewerModel):
@@ -44,6 +53,17 @@ class Viewer(ViewerModel):
                 " Then, restart IPython."
             )
             raise RuntimeError(message)
+
+        logopath = join(dirname(__file__), 'resources', 'logo.png')
+        appicon = QIcon(logopath)
+        app.setWindowIcon(appicon)
+        # register icon with windows
+        if sys.platform.startswith("win32"):
+            import ctypes
+
+            id_ = f"napari.napari.{version}"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(id_)
+
         super().__init__(
             title=title,
             ndisplay=ndisplay,
