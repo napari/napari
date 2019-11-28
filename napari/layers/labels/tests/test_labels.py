@@ -1,6 +1,6 @@
 import numpy as np
 from xml.etree.ElementTree import Element
-from vispy.color import Colormap
+from vispy.color import BaseColormap
 from napari.layers import Labels
 import collections
 
@@ -210,14 +210,14 @@ def test_colormap():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert type(layer.colormap) == tuple
+    assert isinstance(layer.colormap, tuple)
     assert layer.colormap[0] == 'random'
-    assert type(layer.colormap[1]) == Colormap
+    assert isinstance(layer.colormap[1], BaseColormap)
 
     layer.new_colormap()
-    assert type(layer.colormap) == tuple
+    assert isinstance(layer.colormap, tuple)
     assert layer.colormap[0] == 'random'
-    assert type(layer.colormap[1]) == Colormap
+    assert isinstance(layer.colormap[1], BaseColormap)
 
 
 def test_metadata():
