@@ -9,15 +9,10 @@ from napari.components import ViewerModel
 from ...components import Dims
 from ..qt_dims import QtDims
 from ..qt_dims_slider import AnimationWorker
-from ..util import new_worker_qthread
 
 
-# A lot of this code looks messy and unnecessary (and some of it may be!)
-# most of the weird bits are an attempt to circumvent thread timing
-# non-determinism on Cirrus CI OSX tests.
-# see https://github.com/napari/napari/pull/607 for more info
 @contextmanager
-def make_thread(qtbot, nframes=8, fps=20, frame_range=None, loop_mode=1):
+def make_worker(qtbot, nframes=8, fps=20, frame_range=None, loop_mode=1):
     # sets up an AnimationWorker ready for testing, and breaks down when done
     dims = Dims(4)
     qtdims = QtDims(dims)
@@ -27,11 +22,9 @@ def make_thread(qtbot, nframes=8, fps=20, frame_range=None, loop_mode=1):
     slider_widget = qtdims.slider_widgets[0]
     slider_widget.loop_mode = loop_mode
     slider_widget.fps = fps
-    # slider_widget.frame_range = frame_range
+    slider_widget.frame_range = frame_range
 
-    worker, thread = new_worker_qthread(
-        AnimationWorker, slider_widget, start=False
-    )
+    worker = AnimationWorker(slider_widget)
     worker._count = 0
     worker.nz = nz
 
@@ -45,21 +38,14 @@ def make_thread(qtbot, nframes=8, fps=20, frame_range=None, loop_mode=1):
         assert worker._count >= nframes
 
     def go():
-        thread.start()
+        worker.work()
         qtbot.waitUntil(count_reached, timeout=6000)
-        # trying to prevent "carry over" advancing of the current frame in OSX
-        # tests by disconnecting the timer and immediately stopping the thread
         return worker.current
 
     worker.frame_requested.connect(bump)
-    thread.go = go
+    worker.go = go
 
-    yield thread, worker
-    try:
-        thread.quit()
-        thread.wait()
-    except Exception:
-        pass
+    yield worker
 
 
 # Each tuple represents different arguments we will pass to make_thread
@@ -83,10 +69,10 @@ CONDITIONS = [
 @pytest.mark.parametrize("nframes,fps,mode,rng,result", CONDITIONS)
 def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
     """This is mostly testing that AnimationWorker.advance works as expected"""
-    with make_thread(
+    with make_worker(
         qtbot, fps=fps, nframes=nframes, frame_range=rng, loop_mode=mode
-    ) as (thread, worker):
-        current = thread.go()
+    ) as worker:
+        current = worker.go()
     if rng:
         nrange = rng[1] - rng[0] + 1
         expected = rng[0] + result(nframes, nrange)
@@ -101,9 +87,9 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
 def test_animation_thread_once(qtbot):
     """Single shot animation should stop when it reaches the last frame"""
     nframes = 13
-    with make_thread(qtbot, nframes=nframes, loop_mode=0) as (thread, worker):
+    with make_worker(qtbot, nframes=nframes, loop_mode=0) as worker:
         with qtbot.waitSignal(worker.finished, timeout=8000):
-            thread.start()
+            worker.work()
     assert worker.current == worker.nz
 
 

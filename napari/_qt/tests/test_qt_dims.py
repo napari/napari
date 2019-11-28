@@ -211,12 +211,12 @@ def test_play_button(qtbot):
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
     button = view.slider_widgets[0].play_button
-    button.click()
+    qtbot.mouseClick(button, Qt.LeftButton)
     qtbot.waitSignal(view._animation_thread.started, timeout=5000)
     qtbot.wait(200)
     assert view.is_playing
     with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
-        button.click()
+        qtbot.mouseClick(button, Qt.LeftButton)
     qtbot.wait(200)
     assert not view.is_playing
 

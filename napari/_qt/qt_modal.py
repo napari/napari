@@ -35,6 +35,7 @@ class QtModalPopup(QDialog):
         self.setLayout(QVBoxLayout())
 
         self.frame = QFrame()
+        self.frame.setObjectName("QtPopupFrame")
         self.layout().addWidget(self.frame)
         self.layout().setContentsMargins(0, 0, 0, 0)
 

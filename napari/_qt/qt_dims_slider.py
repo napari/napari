@@ -2,14 +2,16 @@ from typing import Optional, Tuple
 
 import numpy as np
 from qtpy.QtCore import Qt, QTimer, Signal, Slot, QObject
+from qtpy.QtWidgets import QApplication
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QSpinBox,
+    QDoubleSpinBox,
     QWidget,
+    QCheckBox,
 )
 
 from ..util.event import Event
@@ -26,7 +28,7 @@ class QtDimSliderWidget(QWidget):
     """
 
     label_changed = Signal(int, str)  # axis, label
-    fps_changed = Signal(int)
+    fps_changed = Signal(float)
     mode_changed = Signal(int)
     range_changed = Signal(tuple)
     play_started = Signal()
@@ -59,25 +61,24 @@ class QtDimSliderWidget(QWidget):
         self.dims.events.axis_labels.connect(self._pull_label)
 
     def _create_play_button_widget(self):
-        # rbutton = QtPlayButton(self.qt_dims, self.axis, True)
+        """Creates the actual play button, which has the modal popup."""
         self.play_button = QtPlayButton(self.qt_dims, self.axis)
         self.play_button.mode_combo.currentIndexChanged.connect(
             lambda x: self.__class__.loop_mode.fset(self, x)
         )
 
-        def fps_listener():
+        def fps_listener(*args):
             fps = self.play_button.fpsspin.value()
+            fps *= -1 if self.play_button.reverse_check.isChecked() else 1
             self.__class__.fps.fset(self, fps)
 
-        # I really don't like the way this works... I would rather connect
-        # the listener to editing changed... but then it ignores the spinbox
-        # buttons.  I tried for a while to fix that but couldn't well ... so
-        # TODO: link listener only to editingFinished and button.clicked
-        self.play_button.fpsspin.valueChanged.connect(fps_listener)
+        self.play_button.fpsspin.editingFinished.connect(fps_listener)
+        self.play_button.reverse_check.stateChanged.connect(fps_listener)
         self.play_stopped.connect(self.play_button._handle_stop)
         self.play_started.connect(self.play_button._handle_start)
 
     def _pull_label(self, event):
+        """updates the label LineEdit from the dims model"""
         if event.axis == self.axis:
             label = self.dims.axis_labels[self.axis]
             self.label.setText(label)
@@ -91,18 +92,12 @@ class QtDimSliderWidget(QWidget):
         self.label_changed.emit(self.axis, self.label.text())
 
     def _create_axis_label_widget(self):
-        """Create the axis label widget which accompanies its slider.
-
-        Returns
-        -------
-        label : QLabel
-            A label with the given text
-        """
+        """Create the axis label widget which accompanies its slider."""
         label = QLineEdit(self)
         label.setObjectName('axis_label')  # needed for _update_label
         label.setText(self.dims.axis_labels[self.axis])
         label.home(False)
-        label.setToolTip('Type to change axis label')
+        label.setToolTip('Edit to change axis label')
         label.setAcceptDrops(False)
         label.setEnabled(True)
         label.setAlignment(Qt.AlignRight)
@@ -173,7 +168,8 @@ class QtDimSliderWidget(QWidget):
     @fps.setter
     def fps(self, value):
         self._fps = value
-        self.play_button.fpsspin.setValue(value)
+        self.play_button.fpsspin.setValue(abs(value))
+        self.play_button.reverse_check.setChecked(value < 0)
         self.fps_changed.emit(value)
 
     @property
@@ -198,6 +194,8 @@ class QtDimSliderWidget(QWidget):
             raise TypeError('frame_range value must be a list or tuple')
         if value and not len(value) == 2:
             raise ValueError('frame_range must have a length of 2')
+        if value is None:
+            value = (None, None)
         self._minframe, self._maxframe = value
         self.range_changed.emit(tuple(value))
 
@@ -215,7 +213,15 @@ class QtDimSliderWidget(QWidget):
         loop_mode: Optional[str] = None,
         frame_range: Optional[Tuple[int, int]] = None,
     ):
-        """Animate (play) axis. Same API as QtDims.play()"""
+        """Animate (play) axis. Same API as QtDims.play()
+
+        Putting the AnimationWorker logic here makes it easier to call
+        QtDims.play(axis), or hit the keybinding, and have each axis remember
+        it's own settings (fps, mode, etc...).
+        """
+
+        # having this here makes sure that using the QtDims.play() API
+        # keeps the play preferences synchronized with the play_button.popup
         self._update_play_settings(fps, loop_mode, frame_range)
 
         # setting fps to 0 just stops the animation
@@ -231,9 +237,30 @@ class QtDimSliderWidget(QWidget):
         worker.finished.connect(self.qt_dims.stop)
         thread.finished.connect(self.play_stopped.emit)
         self.play_started.emit()
-        self.worker = worker
         self.thread = thread
         return worker, thread
+
+
+class QtCustomDoubleSpinBox(QDoubleSpinBox):
+    """ Custom Spinbox that emits an editingFinished event both on the regular
+    editing event, as well as on the valueChanged event IF the left mouse
+    button is down.  On the standard class, the valueChanged event is too
+    spammy for the lineEdit, but the editingFinished does not pay attention
+    to the spinbox buttons.  This allows both events to be listened to."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.valueChanged.connect(self.custom_change_event)
+
+    def custom_change_event(self, value):
+        if QApplication.mouseButtons() & Qt.LeftButton:
+            self.editingFinished.emit()
+
+    def textFromValue(self, value):
+        """This removes the decimal places if the float is an integer"""
+        if value.is_integer():
+            value = int(value)
+        return str(value)
 
 
 class QtPlayButton(QPushButton):
@@ -255,18 +282,27 @@ class QtPlayButton(QPushButton):
         self.setProperty('playing', 'False')  # for styling
 
         # build popup modal form
+
         self.popup = QtModalPopup(self)
-        self.fpsspin = QSpinBox(self.popup)
-        self.fpsspin.setAlignment(Qt.AlignCenter)
-        self.fpsspin.setValue(self.fps)
-        self.fpsspin.setMaximum(500)
-        self.fpsspin.setMinimum(-500)
+        fpsspin = QtCustomDoubleSpinBox(self.popup)
+        fpsspin.setAlignment(Qt.AlignCenter)
+        fpsspin.setValue(self.fps)
+        fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+        fpsspin.setMaximum(500)
+        fpsspin.setMinimum(0)
+
+        revcheck = QCheckBox(self.popup)
+        layout = QHBoxLayout()
+        layout.addWidget(fpsspin)
+        layout.addWidget(revcheck)
         self.popup.form_layout.insertRow(
-            0, QLabel('frames per sec:', parent=self.popup), self.fpsspin
+            0, QLabel('frames per sec:', parent=self.popup), layout
         )
+        self.fpsspin = fpsspin
+        self.reverse_check = revcheck
 
         # dimsrange = dims.dims.range[axis]
-        # minspin = QSpinBox(self.popup)
+        # minspin = QDoubleSpinBox(self.popup)
         # minspin.setAlignment(Qt.AlignCenter)
         # minspin.setValue(dimsrange[0])
         # minspin.valueChanged.connect(self.set_minframe)
@@ -274,7 +310,7 @@ class QtPlayButton(QPushButton):
         #     1, QLabel('start frame:', parent=self.popup), minspin
         # )
 
-        # maxspin = QSpinBox(self.popup)
+        # maxspin = QDoubleSpinBox(self.popup)
         # maxspin.setAlignment(Qt.AlignCenter)
         # maxspin.setValue(dimsrange[1] * dimsrange[2])
         # maxspin.valueChanged.connect(self.set_maxframe)
@@ -288,12 +324,11 @@ class QtPlayButton(QPushButton):
             1, QLabel('play mode:', parent=self.popup), self.mode_combo
         )
         self.mode_combo.setCurrentIndex(self.mode)
-        self.clicked.connect(self._on_click)
 
     def mouseReleaseEvent(self, event):
-        # using this instead of self.customContextMenuRequested.connect
-        # because the latter was not sending the rightMouseButton
-        # release event.
+        # using this instead of self.customContextMenuRequested.connect and
+        # clicked.connect because the latter was not sending the
+        # rightMouseButton release event.
         if event.button() == Qt.RightButton:
             self.popup.show_above_mouse()
         elif event.button() == Qt.LeftButton:
@@ -422,6 +457,8 @@ class AnimationWorker(QObject):
                 return self.finish()
         with self.dims.events.axis.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
+        # using a singleShot timer here instead of timer.start() because
+        # it makes it easier to update the interval using signals/slots
         self.timer.singleShot(self.interval, self.advance)
 
     def finish(self):
