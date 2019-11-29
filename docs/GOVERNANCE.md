@@ -81,11 +81,12 @@ is always possible. The initial steering committee of napari consists of
 The SC membership is revisited every January. SC members who do
 not actively engage with the SC duties are expected to resign. New members are
 added by nomination by a core developer. Nominees should have demonstrated
-long-term, continued commitment to the project and its [values](VALUES.md). A
+long-term, continued commitment to the project and its [mission and values](MISSION_AND_VALUES.md). A
 nomination will result in discussion that cannot take more than a month and
 then admission to the SC by consensus.
 
 The napari steering committee may be contacted at `napari-steering-committee@googlegroups.com`.
+Or our via our [@steering-committee](https://github.com/orgs/napari/teams/core-devs) GitHub team.
 
 # Decision Making Process
 
@@ -96,7 +97,7 @@ place on the [issue tracker](https://github.com/napari/napari/issues) and projec
 sensitive discussion may occur on a private core developer mailing list
 `napari-core-devs@googlegroups.com` or private chat channel.
 
-Decisions should be made in accordance with the [mission, vision and values](VALUES.md)
+Decisions should be made in accordance with the [mission and values](MISSION_AND_VALUES.md)
 of the napari project.
 
 napari uses a “consensus seeking” process for making decisions. The group
