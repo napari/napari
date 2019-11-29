@@ -2,4 +2,5 @@ pytest
 pytest-faulthandler
 pytest-qt
 pytest-ordering
+pytest-timeout
 xarray

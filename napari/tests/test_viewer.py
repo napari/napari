@@ -29,6 +29,12 @@ def test_viewer(qtbot):
     # Run all class keybindings
     for func in viewer.class_keymap.values():
         func(viewer)
+        # the `play` keybinding calls QtDims.play_dim(), which then creates a new QThread.
+        # we must then run the keybinding a second time, which will call QtDims.stop(),
+        # otherwise the thread will be killed at the end of the test without cleanup,
+        # causing a segmentation fault.  (though the tests still pass)
+        if func.__name__ == 'play':
+            func(viewer)
 
     # Close the viewer
     viewer.window.close()
@@ -45,7 +51,7 @@ def test_no_qt_loop():
     magic.
     """
     with pytest.raises(RuntimeError):
-        viewer = Viewer()
+        _ = Viewer()
 
 
 def test_add_image(qtbot):
@@ -341,6 +347,40 @@ def test_screenshot(qtbot):
     # Take screenshot
     screenshot = viewer.screenshot()
     assert screenshot.ndim == 3
+
+    # Take screenshot with the viewer included
+    screenshot = viewer.screenshot(with_viewer=True)
+    assert screenshot.ndim == 3
+
+    # Close the viewer
+    viewer.window.close()
+
+
+def test_update(qtbot):
+    import time
+
+    data = np.random.random((512, 512))
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    layer = viewer.add_image(data)
+
+    def layer_update(*, update_period, num_updates):
+        # number of times to update
+
+        for k in range(num_updates):
+            time.sleep(update_period)
+
+            dat = np.random.random((512, 512))
+            layer.data = dat
+
+            assert layer.data.all() == dat.all()
+
+    viewer.update(layer_update, update_period=0.01, num_updates=100)
+
+    # if we do not sleep, main thread closes before update thread finishes and many qt components get cleaned
+    time.sleep(3)
 
     # Close the viewer
     viewer.window.close()

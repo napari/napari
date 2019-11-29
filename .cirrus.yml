@@ -12,6 +12,21 @@ task:
   test_script:
     - black --check .
 
+nix_test_task:
+  auto_cancellation: true
+
+  name: Flake8 Linting
+  container:
+      image: python:3.6
+
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - pip install `cat requirements/development.txt | grep flake8`
+
+  test_script:
+    - flake8 napari
+
+
 task:
   auto_cancellation: true
 
@@ -42,36 +57,9 @@ task:
       # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
       herbstluftwm_start_background_script: herbstluftwm
 
-    - name: windows
-      windows_container:
-        image: cirrusci/windowsservercore:2019
-        os_version: 2019
-      env:
-        ANACONDA_LOCATION: $USERPROFILE\anaconda
-        PATH: $PATH;$ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION
-        # must set this to its default since it doesn't work in env variables
-        # see https://github.com/cirruslabs/cirrus-ci-docs/issues/423
-        CIRRUS_WORKING_DIR: C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build
-        # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
-        VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
-        PYTHON_ARCH: 64
-      system_script:
-        # install OpenSSL
-        - choco install -y openssl.light
-        # install OpenGL
-        - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
-        - powershell ./opengl.ps1
-        - ps: rm opengl.ps1
-      conda_script:
-        - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
-        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
-        - conda update -yn base conda
-        - conda install -y python=%PY_VER%
-        - pip install setuptools-scm
-
     - name: osx
       osx_instance:
-        image: high-sierra-xcode-9.4.1
+        image: mojave-xcode-10.2
       env:
         PATH: $HOME/conda/bin:$PATH
       conda_script:
@@ -93,6 +81,54 @@ task:
 
   test_script:
     - pytest -v
+
+
+windows_task:
+  auto_cancellation: true
+  
+  windows_container:
+    image: cirrusci/windowsservercore:2019
+    os_version: 2019
+    
+  env:
+    matrix:
+      PY_VER: "3.6"
+      PY_VER: "3.7"
+    ANACONDA_LOCATION: $USERPROFILE\anaconda
+    PATH: $PATH;$ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION
+    # must set this to its default since it doesn't work in env variables
+    # see https://github.com/cirruslabs/cirrus-ci-docs/issues/423
+    CIRRUS_WORKING_DIR: C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build
+    # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
+    VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
+    PYTHON_ARCH: 64
+
+  system_script:
+    # install OpenSSL
+    - choco install -y openssl.light
+    # install OpenGL
+    - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
+    - powershell ./opengl.ps1
+    - ps: rm opengl.ps1
+
+  conda_script:
+    - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
+    - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
+    - conda update -yn base conda
+    - conda install -y python=%PY_VER%
+    - pip install setuptools-scm
+
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - pip install --retries 3 -r requirements.txt
+    - python setup.py develop
+
+  check_script:
+    - pip list
+    - python -c "import napari; print(napari.__version__)"
+
+  test_script:
+    - pytest -v -o qt_no_exception_capture=1
 
 codecov_task:
   auto_cancellation: true
