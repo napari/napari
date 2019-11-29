@@ -77,9 +77,9 @@ You can extend **napari** using custom shortcuts, key bindings, and mouse functi
 
 For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/). These are still a work in progress, but we'll be updating them regularly.
 
-## plans
+## current plans
 
-We're working on several features, including
+Right now we're working on several features, including
 
 - support for multiple linked canvases
 - script & macro generation
@@ -95,14 +95,20 @@ Contributions are encouraged! Please read our [contributing guide](./docs/CONTRI
 
 `napari` has a [Code of Conduct](./docs/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
 
+## mission, values, and governance
+
+You can learn more about the [mission and values](./docs/MISSION_AND_VALUES.md) of napari by reading our guide. It also includes more details on our vision for supporting a plugin ecosystem.
+
+You can also learn more about how the napari project is organized and managed by reading our [governance model](./docs/GOVERNANCE.md).
+
 ## citing napari
 
 If you find `napari` useful please cite this repository using its DOI as follows:
 
-> napari team (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
+> napari contributors (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
 
 Note this DOI will resolve to all versions of napari. To cite a specific version please find the
-DOI of that version on our [zenodo page](https://zenodo.org/record/3555620).
+DOI of that version on our [zenodo page](https://zenodo.org/record/3555620). The DOI of the latest version is in the badge at the top of this page.
 
 ## help
 
