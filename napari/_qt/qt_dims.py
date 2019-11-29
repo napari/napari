@@ -306,7 +306,7 @@ class QtDims(QWidget):
         fps: float
             Frames per second for playback.  Negative values will play in
             reverse.  fps == 0 will stop the animation. The view is not
-            guaranteed to keep up with the requested fps, aƒnd may drop frames
+            guaranteed to keep up with the requested fps, and may drop frames
             at higher fps.
         loop_mode: int
             Mode for animation playback.  Must be one of the following options:

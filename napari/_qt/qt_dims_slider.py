@@ -245,11 +245,17 @@ class QtDimSliderWidget(QWidget):
 
 
 class QtCustomDoubleSpinBox(QDoubleSpinBox):
-    """ Custom Spinbox that emits an editingFinished event both on the regular
-    editing event, as well as on the valueChanged event IF the left mouse
-    button is down.  On the standard class, the valueChanged event is too
-    spammy for the lineEdit, but the editingFinished does not pay attention
-    to the spinbox buttons.  This allows both events to be listened to."""
+    """Custom Spinbox that emits an additional editingFinished signal whenever
+    the valueChanged event is emitted AND the left mouse button is down.
+
+    The original use case here was the FPS spinbox in the play button, where
+    hooking to the actual valueChanged event is undesireable, because if the
+    user clears the LineEdit to type, for example, "0.5", then play back
+    will temporarily pause when "0" is typed (if the animation is currently
+    running).  However, the editingFinished event ignores mouse click events on
+    the spin buttons.  This subclass class triggers an event both during
+    editingFinished and when the user clicks on the spin buttons.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
@@ -304,6 +310,7 @@ class QtPlayButton(QPushButton):
         self.fpsspin = fpsspin
         self.reverse_check = revcheck
 
+        # THIS IS HERE TEMPORARILY UNTIL I CAN ADD FRAME_RANGE TO THE POPUP
         # dimsrange = dims.dims.range[axis]
         # minspin = QDoubleSpinBox(self.popup)
         # minspin.setAlignment(Qt.AlignCenter)
