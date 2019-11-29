@@ -2,7 +2,6 @@ import warnings
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtCore import Signal
 from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
@@ -28,12 +27,6 @@ class QtDims(QWidget):
     slider_widgets : list[QtDimSliderWidget]
         List of slider widgets
     """
-
-    # Qt Signals for sending events to Qt thread
-    update_ndim = Signal()
-    update_axis = Signal(int)
-    update_range = Signal(int)
-    update_display = Signal()
 
     def __init__(self, dims: Dims, parent=None):
 
@@ -63,40 +56,11 @@ class QtDims(QWidget):
 
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
-
-        # The next lines connect events coming from the model to the Qt event
-        # system: We need to go through Qt signals so that these events are run
-        # in the Qt event loop thread. This is all about changing thread
-        # context for thread-safety purposes
-
-        # ndim change listener
-        def update_ndim_listener(event):
-            self.update_ndim.emit()
-
-        self.dims.events.ndim.connect(update_ndim_listener)
-        self.update_ndim.connect(self._update_nsliders)
-
-        # axis change listener
-        def update_axis_listener(event):
-            self.update_axis.emit(event.axis)
-
-        self.dims.events.axis.connect(update_axis_listener)
-        self.update_axis.connect(self._update_slider)
-
-        # range change listener
-        def update_range_listener(event):
-            self.update_range.emit(event.axis)
-
-        self.dims.events.range.connect(update_range_listener)
-        self.update_range.connect(self._update_range)
-
-        # display change listener
-        def update_display_listener(event):
-            self.update_display.emit()
-
-        self.dims.events.ndisplay.connect(update_display_listener)
-        self.dims.events.order.connect(update_display_listener)
-        self.update_display.connect(self._update_display)
+        self.dims.events.ndim.connect(self._update_nsliders)
+        self.dims.events.axis.connect(lambda ev: self._update_slider(ev.axis))
+        self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
+        self.dims.events.ndisplay.connect(self._update_display)
+        self.dims.events.order.connect(self._update_display)
 
     @property
     def nsliders(self):
@@ -168,8 +132,12 @@ class QtDims(QWidget):
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
-    def _update_display(self):
-        """Updates display for all sliders."""
+    def _update_display(self, event=None):
+        """Updates display for all sliders.
+
+        The event parameter is there just to allow easy connection to signals,
+        without using `lambda event:`
+        """
         widgets = reversed(list(enumerate(self.slider_widgets)))
         for (axis, widget) in widgets:
             if axis in self.dims.displayed:
@@ -185,8 +153,12 @@ class QtDims(QWidget):
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
 
-    def _update_nsliders(self):
-        """Updates the number of sliders based on the number of dimensions."""
+    def _update_nsliders(self, event=None):
+        """Updates the number of sliders based on the number of dimensions.
+
+        The event parameter is there just to allow easy connection to signals,
+        without using `lambda event:`
+        """
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
         self._update_display()
