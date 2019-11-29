@@ -1031,6 +1031,7 @@ QtDimSliderWidget > QScrollBar::right-arrow:horizontal {
 
 QtPlayButton {
     /* border: none; */
+    background: {{ foreground }};
     border-radius: 3px;
     min-height: 10px;
     max-height: 10px;
@@ -1050,7 +1051,7 @@ QtPlayButton[reverse=False] {
 
 QtPlayButton[playing=True] {
     image: url(":/icons/{{ folder }}/new_image.svg");
-    background-color: rgb(153, 18, 31);
+    background-color: {{ warning }};
 }
 
 #QtModalPopup {
