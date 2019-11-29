@@ -417,6 +417,23 @@ def test_gamma():
     assert layer.gamma == gamma
 
 
+def test_iso_threshold():
+    """Test setting iso_threshold."""
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer.iso_threshold == 0.5
+
+    # Change iso_threshold property
+    iso_threshold = 0.7
+    layer.iso_threshold = iso_threshold
+    assert layer.iso_threshold == iso_threshold
+
+    # Set iso_threshold as keyword argument
+    layer = Image(data, iso_threshold=iso_threshold)
+    assert layer.iso_threshold == iso_threshold
+
+
 def test_metadata():
     """Test setting image metadata."""
     np.random.seed(0)
