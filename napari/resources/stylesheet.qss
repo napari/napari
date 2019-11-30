@@ -1071,18 +1071,22 @@ QtPlayButton[playing=True] {
 
 
 #QtPopupFrame > QDoubleSpinBox {
+  background-color: {{ foreground }};
   border: none;
   padding: 0px;
-  min-width: 85px;
-  font-size: 11px;
+  width: 115px;
+  font-size: 12px;
+  min-height: 20px;
+  border-radius: 4px;
 }
 
 #QtPopupFrame > QDoubleSpinBox::up-button,
 #QtPopupFrame > QDoubleSpinBox::down-button {
-    background-color: {{ background }};
+    background-color: {{ foreground }};
     subcontrol-origin: margin;
     width: 20px;
     height: 20px;
+    border-radius: 4px;
 }
 
 #QtPopupFrame > QDoubleSpinBox::up-button:pressed,
@@ -1117,24 +1121,26 @@ QtPlayButton[playing=True] {
 #QtPopupFrame > QCheckBox {
   background-color: {{ foreground }};
   border-radius: 3px;
-  min-height: 16px;
-  max-height: 16px;
+  min-height: 20px;
+  max-height: 20px;
 }
 
-
-#QtPopupFrame > QCheckBox:checked {
-   background: {{ secondary }};
-}
 
 #QtPopupFrame > QCheckBox::indicator {
-   image: url(":/icons/{{ folder }}/right_arrow.svg");
-   width: 10px;
-   height: 14px;
-   padding-right: 2px;
-   padding-left: 3px;
+   image: url(":/icons/{{ folder }}/long_right_arrow.svg");
+   width: 20px;
+   height: 20px;
+   padding-right: 4px;
+   padding-left: 6px;
 }
+
 #QtPopupFrame > QCheckBox::indicator:checked {
-   image: url(":/icons/{{ folder }}/left_arrow.svg");
+   image: url(":/icons/{{ folder }}/long_left_arrow.svg");
+}
+
+
+#QtPopupFrame > QCheckBox:pressed {
+   background: {{ secondary }};
 }
 
 #QtPopupFrame > QPushButton {

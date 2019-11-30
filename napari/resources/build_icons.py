@@ -31,6 +31,8 @@ icons = [
     'grid',
     'home',
     'left_arrow',
+    'long_right_arrow',
+    'long_left_arrow',
     'line',
     'minus',
     'move_back',

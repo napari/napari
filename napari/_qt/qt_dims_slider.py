@@ -311,15 +311,15 @@ class QtPlayButton(QPushButton):
         fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
-
-        revcheck = QCheckBox(self.popup)
-        layout = QHBoxLayout()
-        layout.addWidget(fpsspin)
-        layout.addWidget(revcheck)
         self.popup.form_layout.insertRow(
-            0, QLabel('frames per sec:', parent=self.popup), layout
+            0, QLabel('frames per sec:', parent=self.popup), fpsspin
         )
         self.fpsspin = fpsspin
+
+        revcheck = QCheckBox(self.popup)
+        self.popup.form_layout.insertRow(
+            1, QLabel('play direction:', parent=self.popup), revcheck
+        )
         self.reverse_check = revcheck
 
         # THIS IS HERE TEMPORARILY UNTIL I CAN ADD FRAME_RANGE TO THE POPUP
@@ -343,7 +343,7 @@ class QtPlayButton(QPushButton):
         self.mode_combo = QComboBox(self.popup)
         self.mode_combo.addItems(['play once', 'loop', 'back and forth'])
         self.popup.form_layout.insertRow(
-            1, QLabel('play mode:', parent=self.popup), self.mode_combo
+            2, QLabel('play mode:', parent=self.popup), self.mode_combo
         )
         self.mode_combo.setCurrentIndex(self.mode)
 
