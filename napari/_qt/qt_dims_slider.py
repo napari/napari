@@ -347,7 +347,6 @@ class QtPlayButton(QPushButton):
     def _on_click(self):
         if self.property('playing') == "True":
             return self.dims.stop()
-        # TODO: link this to DimSliderWidget not QtDims
         self.play_requested.emit(self.axis)
 
     def _handle_start(self):
