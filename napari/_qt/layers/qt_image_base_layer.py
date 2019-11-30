@@ -2,7 +2,7 @@ from qtpy.QtWidgets import QSlider
 from .. import QHRangeSlider
 from .qt_base_layer import QtLayerControls, QtLayerDialog
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox
+from qtpy.QtWidgets import QLabel, QComboBox, QCheckBox, QDoubleSpinBox
 from qtpy.QtGui import QImage, QPixmap
 
 
@@ -116,3 +116,26 @@ class QtBaseImageDialog(QtLayerDialog):
             self.colormapComboBox.addItem(name)
         if name != self.colormapComboBox.currentText():
             self.colormapComboBox.setCurrentText(name)
+
+        self.colormapCheckBox = QCheckBox(self)
+        self.colormapCheckBox.setToolTip('Set colormap')
+        self.colormapCheckBox.setChecked(False)
+        self.colormapCheckBox.stateChanged.connect(self._on_colormap_change)
+        self.colormapCheckBox.setChecked(False)
+        self._on_colormap_change(None)
+
+        self.gammaSpinBox = QDoubleSpinBox()
+        self.gammaSpinBox.setToolTip('Gamma')
+        self.gammaSpinBox.setKeyboardTracking(False)
+        self.gammaSpinBox.setSingleStep(0.02)
+        self.gammaSpinBox.setMinimum(0.02)
+        self.gammaSpinBox.setMaximum(2)
+        gamma = self.parameters['gamma'].default
+        self.gammaSpinBox.setValue(gamma)
+
+    def _on_colormap_change(self, event):
+        state = self.colormapCheckBox.isChecked()
+        if state:
+            self.colormapComboBox.show()
+        else:
+            self.colormapComboBox.hide()

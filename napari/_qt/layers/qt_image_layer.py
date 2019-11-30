@@ -9,6 +9,7 @@ from qtpy.QtWidgets import (
 )
 from .qt_image_base_layer import QtBaseImageControls, QtBaseImageDialog
 from ...layers.image._constants import Interpolation, Rendering
+from ...layers import Image
 
 
 arg_2_check_state = {
@@ -151,8 +152,8 @@ class QtImageControls(QtBaseImageControls):
 
 
 class QtImageDialog(QtBaseImageDialog):
-    def __init__(self, layer):
-        super().__init__(layer)
+    def __init__(self):
+        super().__init__(Image)
 
         self.channelAxisSpinBox = QSpinBox()
         self.channelAxisSpinBox.setToolTip('Channel axis')
@@ -161,14 +162,14 @@ class QtImageDialog(QtBaseImageDialog):
         self.channelAxisSpinBox.setMinimum(-2147483647)
         self.channelAxisSpinBox.setMaximum(2147483647)
         self.channelAxisSpinBox.setValue(0)
-        self.channelAxisSpinBox.hide()
 
         self.channelAxisCheckBox = QCheckBox(self)
         self.channelAxisCheckBox.setToolTip('Set channel axis')
-        self.channelAxisCheckBox.setChecked(False)
         self.channelAxisCheckBox.stateChanged.connect(
             self._on_channel_axis_change
         )
+        self.channelAxisCheckBox.setChecked(False)
+        self._on_channel_axis_change(None)
 
         self.contrastLimitsLowSpinBox = QDoubleSpinBox()
         self.contrastLimitsLowSpinBox.setToolTip('Contrast limits low value')
@@ -177,7 +178,6 @@ class QtImageDialog(QtBaseImageDialog):
         self.contrastLimitsLowSpinBox.setMinimum(-2147483647)
         self.contrastLimitsLowSpinBox.setMaximum(2147483647)
         self.contrastLimitsLowSpinBox.setValue(0.0)
-        self.contrastLimitsLowSpinBox.hide()
 
         self.contrastLimitsHighSpinBox = QDoubleSpinBox()
         self.contrastLimitsHighSpinBox.setToolTip('Contrast limits high value')
@@ -186,14 +186,14 @@ class QtImageDialog(QtBaseImageDialog):
         self.contrastLimitsHighSpinBox.setMinimum(-2147483647)
         self.contrastLimitsHighSpinBox.setMaximum(2147483647)
         self.contrastLimitsHighSpinBox.setValue(1.0)
-        self.contrastLimitsHighSpinBox.hide()
 
         self.contrastLimitsCheckBox = QCheckBox(self)
         self.contrastLimitsCheckBox.setToolTip('Set contrast limits')
-        self.contrastLimitsCheckBox.setChecked(False)
         self.contrastLimitsCheckBox.stateChanged.connect(
             self._on_contrast_limits_change
         )
+        self.contrastLimitsCheckBox.setChecked(False)
+        self._on_contrast_limits_change(None)
 
         self.pyramidCheckBox = QCheckBox(self)
         self.pyramidCheckBox.setToolTip('Is pyramid')
@@ -206,6 +206,27 @@ class QtImageDialog(QtBaseImageDialog):
         self.rgbCheckBox.setTristate(True)
         state = arg_2_check_state[self.parameters['rgb'].default]
         self.rgbCheckBox.setCheckState(state)
+
+        self.interpComboBox = QComboBox()
+        for mode in Interpolation:
+            self.interpComboBox.addItem(str(mode))
+        name = self.parameters['interpolation'].default
+        self.interpComboBox.setCurrentText(str(name))
+
+        self.renderingComboBox = QComboBox()
+        for mode in Rendering:
+            self.renderingComboBox.addItem(str(mode))
+        name = self.parameters['rendering'].default
+        self.renderingComboBox.setCurrentText(str(name))
+
+        self.isoThresholdSpinBox = QDoubleSpinBox()
+        self.isoThresholdSpinBox.setToolTip('isosurface threshold')
+        self.isoThresholdSpinBox.setKeyboardTracking(False)
+        self.isoThresholdSpinBox.setSingleStep(0.01)
+        self.isoThresholdSpinBox.setMinimum(0)
+        self.isoThresholdSpinBox.setMaximum(1)
+        iso_threshold = self.parameters['iso_threshold'].default
+        self.isoThresholdSpinBox.setValue(iso_threshold)
 
         self.grid_layout.addWidget(QLabel('name:'), 0, 0)
         self.grid_layout.addWidget(self.nameTextBox, 0, 1, 1, 3)
@@ -222,6 +243,28 @@ class QtImageDialog(QtBaseImageDialog):
         self.grid_layout.addWidget(self.contrastLimitsCheckBox, 5, 1)
         self.grid_layout.addWidget(self.contrastLimitsLowSpinBox, 5, 2)
         self.grid_layout.addWidget(self.contrastLimitsHighSpinBox, 5, 3)
+        self.grid_layout.addWidget(QLabel('colormap:'), 6, 0)
+        self.grid_layout.addWidget(self.colormapCheckBox, 6, 1)
+        self.grid_layout.addWidget(self.colormapComboBox, 6, 2, 1, 2)
+        self.grid_layout.addWidget(QLabel('blending:'), 7, 0)
+        self.grid_layout.addWidget(self.blendingCheckBox, 7, 1)
+        self.grid_layout.addWidget(self.blendingComboBox, 7, 2, 1, 2)
+        self.grid_layout.addWidget(QLabel('opacity:'), 8, 0)
+        self.grid_layout.addWidget(self.opacitySpinBox, 8, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('gamma:'), 9, 0)
+        self.grid_layout.addWidget(self.gammaSpinBox, 9, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('interpolation:'), 10, 0)
+        self.grid_layout.addWidget(self.interpComboBox, 10, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('rendering:'), 11, 0)
+        self.grid_layout.addWidget(self.renderingComboBox, 11, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('iso_threshold:'), 12, 0)
+        self.grid_layout.addWidget(self.isoThresholdSpinBox, 12, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('scale:'), 13, 0)
+        self.grid_layout.addWidget(self.scaleTextBox, 13, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('translate:'), 14, 0)
+        self.grid_layout.addWidget(self.translateTextBox, 14, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('metadata:'), 15, 0)
+        self.grid_layout.addWidget(self.metadataTextBox, 15, 1, 1, 3)
 
     def _on_channel_axis_change(self, event):
         state = self.channelAxisCheckBox.isChecked()
@@ -264,11 +307,26 @@ class QtImageDialog(QtBaseImageDialog):
         else:
             contrast_limits = None
 
+        if self.colormapCheckBox.isChecked():
+            colormap = self.colormapCheckBox.text()
+        else:
+            colormap = None
+
+        gamma = self.gammaSpinBox.value()
+        interpolation = self.interpComboBox.currentText()
+        rendering = self.renderingComboBox.currentText()
+        iso_threshold = self.isoThresholdSpinBox.value()
+
         arguments = {
             'is_pyramid': is_pyramid,
             'rgb': rgb,
             'channel_axis': channel_axis,
             'contrast_limits': contrast_limits,
+            'colormap': colormap,
+            'gamma': gamma,
+            'interpolation': interpolation,
+            'rendering': rendering,
+            'iso_threshold': iso_threshold,
         }
         arguments.update(base_arguments)
 

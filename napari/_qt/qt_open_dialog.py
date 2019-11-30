@@ -1,6 +1,6 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QTabWidget,
+    QStackedWidget,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
@@ -12,6 +12,8 @@ from qtpy.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QAbstractItemView,
+    QComboBox,
+    QLabel,
 )
 from pathlib import Path
 import os.path
@@ -24,6 +26,9 @@ class QtOpenDialog(QWidget):
         super(QtOpenDialog, self).__init__(parent)
 
         self.viewer = viewer
+        self._add_methods = {napari.layers.Image: self.viewer.add_image}
+        self.widgets = {'Image': QtImageDialog()}
+
         self._last_visited_dir = str(Path.home())
 
         self.layout = QVBoxLayout()
@@ -64,14 +69,26 @@ class QtOpenDialog(QWidget):
 
         self.layout.addWidget(self.selection)
 
-        self.tabs = QTabWidget()
-        self.tabs.addTab(QtImageDialog(napari.layers.Image), 'Image')
-        self.tabs.addTab(QtLayerOpen(napari.layers.Labels), 'Labels')
-        self.tabs.addTab(QtLayerOpen(napari.layers.Points), 'Labels')
-        self.tabs.addTab(QtLayerOpen(napari.layers.Shapes), 'Shapes')
-        self.tabs.addTab(QtLayerOpen(napari.layers.Surface), 'Surface')
-        self.tabs.addTab(QtLayerOpen(napari.layers.Vectors), 'Vectors')
-        self.layout.addWidget(self.tabs)
+        # layer type selection
+        self.layerTypeComboBox = QComboBox()
+        for name in self.widgets.keys():
+            self.layerTypeComboBox.addItem(name)
+        self.layerTypeComboBox.activated[str].connect(
+            lambda text=self.layerTypeComboBox: self.change_layer_type(text)
+        )
+        self.layerTypeComboBox.setCurrentText(
+            str(napari.layers.Image.__name__)
+        )
+        layer_type_layout = QHBoxLayout()
+        layer_type_layout.addWidget(QLabel('Layer type:'))
+        layer_type_layout.addWidget(self.layerTypeComboBox)
+        layer_type_layout.setSpacing(0)
+        self.layout.addLayout(layer_type_layout)
+
+        self.stack = QStackedWidget()
+        for widget in self.widgets.values():
+            self.stack.addWidget(widget)
+        self.layout.addWidget(self.stack)
 
         self.fileOpen = QWidget()
         self.fileOpenLayout = QHBoxLayout()
@@ -114,10 +131,14 @@ class QtOpenDialog(QWidget):
         if event.key() == Qt.Key_Return and self.fileName.hasFocus():
             self._finish_text()
             event.accept()
-        elif event.key() == Qt.Key_Return and self.open.isEnabled():
+        elif (
+            event.key() == Qt.Key_Return
+            and self.open.isEnabled()
+            and self.hasFocus()
+        ):
             event.accept()
             self._finish_dialog()
-        elif event.key() == Qt.Key_Return:
+        elif event.key() == Qt.Key_Return and self.hasFocus():
             event.accept()
             self._click_select_files()
         elif event.key() == Qt.Key_Escape:
@@ -125,6 +146,9 @@ class QtOpenDialog(QWidget):
             self._refresh_focus()
         elif event.key() == Qt.Key_Backspace:
             self._click_remove_files()
+
+    def change_layer_type(self, text):
+        self.stack.setCurrentWidget(self.widgets[text])
 
     def _finish_text(self):
         """Add new file from text edit box."""
@@ -201,8 +225,10 @@ class QtOpenDialog(QWidget):
         if self.fileList.count() > 0:
             filenames = self.get_filenames()
             self._last_visited_dir = os.path.dirname(filenames[0])
-            arguments = self.tabs.currentWidget().get_arguments()
-            self.viewer.add_image(path=filenames, **arguments)
+            widget = self.stack.currentWidget()
+            arguments = widget.get_arguments()
+            add_method = self._add_methods[widget.layer]
+            add_method(path=filenames, **arguments)
         self.parent().close()
 
     def dragEnterEvent(self, event):
@@ -226,11 +252,3 @@ class QtOpenDialog(QWidget):
                 self.fileList.addItem(item)
         self.fileName.setText("")
         self._refresh_focus()
-
-
-class QtLayerOpen(QWidget):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)

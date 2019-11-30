@@ -74,10 +74,9 @@ QDialog#About {
 }
 
 QDialog#OpenDialog {
-  min-width: 360px;
-  max-width: 360px;
-  min-height: 450px;
-  max-height: 450px;
+  min-width: 330px;
+  min-height: 690px;
+  max-height: 690px;
 }
 
 QPushButton#dialog {
@@ -168,6 +167,29 @@ QtDivider[selected=false] {
 }
 /* ------------------------------------------------------ */
 
+QtOpenDialog > QComboBox {
+   background-color: {{ primary }};
+   padding-left: 6px;
+   padding-right: 10px;
+   padding-top: 1px;
+   padding-bottom: 3px;
+   margin: 0px;
+}
+
+QtOpenDialog > QComboBox::drop-down {
+   subcontrol-origin: padding;
+   subcontrol-position: top right;
+   width: 30px;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+}
+
+QtOpenDialog > QComboBox::down-arrow {
+   image: url(":/icons/{{ folder }}/drop_down.svg");
+   width: 14px;
+   height: 14px;
+}
+
 QtLayerDialog {
   background-color: {{ foreground }};
 }
@@ -176,7 +198,6 @@ QtLayerDialog > QLabel {
   min-height: 18px;
   max-height: 18px;
   min-width: 95px;
-  max-width: 95px;
   padding: 3px;
   border: 0px;
   margin: 0px;
@@ -351,8 +372,8 @@ QtLayerDialog > QPushButton:pressed {
 }
 
 QtLayerDialog > QLineEdit {
-  background-color: {{ foreground }};
-  border: 2px solid {{ foreground }};
+  background-color: {{ primary }};
+  border: 2px solid {{ highlight }};
   border-radius: 3px;
   padding: 0px;
   margin: 0px;
@@ -364,8 +385,8 @@ QtLayerDialog > QLineEdit:focus {
 }
 
 QtLayerDialog > QLineEdit:disabled {
-  background-color: {{ foreground }};
-  border: 2px solid {{ foreground }};
+  background-color: {{ primary }};
+  border: 2px solid {{ highlight }};
   border-radius: 3px;
 }
 

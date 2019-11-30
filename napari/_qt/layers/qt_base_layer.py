@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QComboBox,
     QLineEdit,
     QCheckBox,
+    QDoubleSpinBox,
 )
 import inspect
 from ...layers.base._constants import Blending
@@ -80,7 +81,7 @@ class QtLayerDialog(QFrame):
         self.grid_layout.setSpacing(2)
         self.setLayout(self.grid_layout)
 
-        self.nameTextBox = QLineEdit(self)
+        self.nameTextBox = QLineEdit()
         self.nameTextBox.setText(self.layer._basename())
         self.nameTextBox.home(False)
         self.nameTextBox.setToolTip('Layer name')
@@ -91,9 +92,82 @@ class QtLayerDialog(QFrame):
         self.visibleCheckBox.setToolTip('Layer visibility')
         self.visibleCheckBox.setChecked(self.parameters['visible'].default)
 
+        self.blendingComboBox = QComboBox()
+        for mode in Blending:
+            self.blendingComboBox.addItem(str(mode))
+        name = self.parameters['blending'].default
+        self.blendingComboBox.setCurrentText(str(name))
+
+        self.blendingCheckBox = QCheckBox(self)
+        self.blendingCheckBox.setToolTip('Set blending mode')
+        self.blendingCheckBox.setChecked(False)
+        self.blendingCheckBox.stateChanged.connect(self._on_blending_change)
+        self.blendingCheckBox.setChecked(False)
+        self._on_blending_change(None)
+
+        self.opacitySpinBox = QDoubleSpinBox()
+        self.opacitySpinBox.setToolTip('Opacity')
+        self.opacitySpinBox.setKeyboardTracking(False)
+        self.opacitySpinBox.setSingleStep(0.01)
+        self.opacitySpinBox.setMinimum(0)
+        self.opacitySpinBox.setMaximum(1)
+        opacity = self.parameters['opacity'].default
+        self.opacitySpinBox.setValue(opacity)
+
+        self.scaleTextBox = QLineEdit()
+        self.scaleTextBox.setText("")
+        self.scaleTextBox.home(False)
+        self.scaleTextBox.setToolTip('Layer scale')
+        self.scaleTextBox.setAcceptDrops(False)
+        self.scaleTextBox.editingFinished.connect(self.change_scale)
+
+        self.translateTextBox = QLineEdit()
+        self.translateTextBox.setText("")
+        self.translateTextBox.home(False)
+        self.translateTextBox.setToolTip('Layer translation')
+        self.translateTextBox.setAcceptDrops(False)
+        self.translateTextBox.editingFinished.connect(self.change_translate)
+
+        self.metadataTextBox = QLineEdit()
+        self.metadataTextBox.setText("")
+        self.metadataTextBox.home(False)
+        self.metadataTextBox.setToolTip('Layer metadata')
+        self.metadataTextBox.setAcceptDrops(False)
+        self.metadataTextBox.editingFinished.connect(self.change_metadata)
+
+    def _on_blending_change(self, event):
+        state = self.blendingCheckBox.isChecked()
+        if state:
+            self.blendingComboBox.show()
+        else:
+            self.blendingComboBox.hide()
+
+    def change_scale(self):
+        try:
+            scale = eval(self.scaleTextBox.text())
+            assert isinstance(scale, list) or isinstance(scale, tuple)
+        except (NameError, SyntaxError, AssertionError):
+            self.scaleTextBox.setText("")
+        self.scaleTextBox.clearFocus()
+
+    def change_translate(self):
+        try:
+            translate = eval(self.translateTextBox.text())
+            assert isinstance(translate, list) or isinstance(translate, tuple)
+        except (NameError, SyntaxError, AssertionError):
+            self.translateTextBox.setText("")
+        self.translateTextBox.clearFocus()
+
+    def change_metadata(self):
+        try:
+            metadata = eval(self.metadataTextBox.text())
+            assert isinstance(metadata, dict)
+        except (NameError, SyntaxError, AssertionError):
+            self.metadataTextBox.setText("")
+        self.metadataTextBox.clearFocus()
+
     def changeText(self):
         self.nameTextBox.clearFocus()
-        self.setFocus()
 
     def _base_arguments(self):
         """Get keyword arguments for layer creation.
@@ -106,5 +180,38 @@ class QtLayerDialog(QFrame):
         name = self.nameTextBox.text()
         visible = self.visibleCheckBox.isChecked()
 
-        arguments = {'name': name, 'visible': visible}
+        if self.blendingCheckBox.isChecked():
+            blending = self.blendingCheckBox.text()
+        else:
+            blending = None
+
+        opacity = self.opacitySpinBox.value()
+
+        scale = self.scaleTextBox.text()
+        if scale == "":
+            scale = None
+        else:
+            scale = eval(scale)
+
+        translate = self.translateTextBox.text()
+        if translate == "":
+            translate = None
+        else:
+            translate = eval(translate)
+
+        metadata = self.metadataTextBox.text()
+        if metadata == "":
+            metadata = None
+        else:
+            metadata = eval(metadata)
+
+        arguments = {
+            'name': name,
+            'visible': visible,
+            'blending': blending,
+            'opacity': opacity,
+            'scale': scale,
+            'translate': translate,
+            'metadata': metadata,
+        }
         return arguments
