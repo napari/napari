@@ -312,7 +312,7 @@ class QtPlayButton(QPushButton):
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
         self.popup.form_layout.insertRow(
-            0, QLabel('frames per sec:', parent=self.popup), fpsspin
+            0, QLabel('frames per second:', parent=self.popup), fpsspin
         )
         self.fpsspin = fpsspin
 
