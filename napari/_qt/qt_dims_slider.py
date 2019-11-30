@@ -78,7 +78,7 @@ class QtDimSliderWidget(QWidget):
         self.play_started.connect(self.play_button._handle_start)
 
     def _pull_label(self, event):
-        """updates the label LineEdit from the dims model"""
+        """Updates the label LineEdit from the dims model."""
         if event.axis == self.axis:
             label = self.dims.axis_labels[self.axis]
             self.label.setText(label)
