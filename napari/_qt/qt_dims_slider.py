@@ -104,7 +104,7 @@ class QtDimSliderWidget(QWidget):
         label.setEnabled(True)
         label.setAlignment(Qt.AlignRight)
         label.setContentsMargins(0, 0, 2, 0)
-        label.textEdited.connect(self._update_label)
+        label.textChanged.connect(self._update_label)
         label.editingFinished.connect(self._clear_label_focus)
         self.label = label
 
