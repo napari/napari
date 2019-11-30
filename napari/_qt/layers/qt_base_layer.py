@@ -181,7 +181,7 @@ class QtLayerDialog(QFrame):
         visible = self.visibleCheckBox.isChecked()
 
         if self.blendingCheckBox.isChecked():
-            blending = self.blendingCheckBox.text()
+            blending = self.blendingComboBox.currentText()
         else:
             blending = None
 

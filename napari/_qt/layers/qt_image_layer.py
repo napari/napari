@@ -308,7 +308,7 @@ class QtImageDialog(QtBaseImageDialog):
             contrast_limits = None
 
         if self.colormapCheckBox.isChecked():
-            colormap = self.colormapCheckBox.text()
+            colormap = self.colormapComboBox.currentText()
         else:
             colormap = None
 
