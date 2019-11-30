@@ -6,7 +6,6 @@ import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._constants import Rendering
 
-
 texture_dtypes = [
     np.dtype(np.int8),
     np.dtype(np.uint8),
@@ -83,10 +82,6 @@ class VispyImageLayer(VispyBaseLayer):
             and self.layer.dims.ndisplay == 3
         ):
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
-
-        if self.layer.dims.ndisplay == 2:
-            self.node._need_colortransform_update = True
-            self.node.set_data(data)
 
         # Check if ndisplay has changed current node type needs updating
         if (
