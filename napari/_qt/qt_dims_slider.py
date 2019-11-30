@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..util.event import Event
-from .qt_modal import QtModalPopup
+from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
 from .util import new_worker_qthread
 
@@ -271,6 +271,18 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
             value = int(value)
         return str(value)
 
+    def keyPressEvent(self, event):
+        # this is here to intercept Return/Enter keys when editing the FPS
+        # SpinBox.  We WANT the return key to close the popup normally,
+        # but if the user is editing the FPS spinbox, we simply want to
+        # register the change and lose focus on the lineEdit, in case they
+        # want to make an additional change (without reopening the popup)
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.editingFinished.emit()
+            self.clearFocus()
+            return
+        super().keyPressEvent(event)
+
 
 class QtPlayButton(QPushButton):
     """Play button, included in the DimSliderWidget, to control playback
@@ -292,7 +304,7 @@ class QtPlayButton(QPushButton):
 
         # build popup modal form
 
-        self.popup = QtModalPopup(self)
+        self.popup = QtPopup(self)
         fpsspin = QtCustomDoubleSpinBox(self.popup)
         fpsspin.setAlignment(Qt.AlignCenter)
         fpsspin.setValue(self.fps)
