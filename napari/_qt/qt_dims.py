@@ -243,7 +243,6 @@ class QtDims(QWidget):
             return
 
         if self.last_used is None:
-            # this code may be unreachable?
             self.last_used = displayed[-1]
         else:
             index = (displayed.index(self.last_used) + 1) % len(displayed)
@@ -256,7 +255,6 @@ class QtDims(QWidget):
             return
 
         if self.last_used is None:
-            # this code may be unreachable?
             self.last_used = displayed[-1]
         else:
             index = (displayed.index(self.last_used) - 1) % len(displayed)
