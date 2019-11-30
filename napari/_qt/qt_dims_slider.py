@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 from ..util.event import Event
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
-from .util import new_worker_qthread
+from .util import new_worker_qthread, LoopMode
 
 
 class QtDimSliderWidget(QWidget):
@@ -29,7 +29,7 @@ class QtDimSliderWidget(QWidget):
 
     label_changed = Signal(int, str)  # axis, label
     fps_changed = Signal(float)
-    mode_changed = Signal(int)
+    mode_changed = Signal(str)
     range_changed = Signal(tuple)
     play_started = Signal()
     play_stopped = Signal()
@@ -46,7 +46,7 @@ class QtDimSliderWidget(QWidget):
         self._fps = 10
         self._minframe = None
         self._maxframe = None
-        self._loop_mode = 1
+        self._loop_mode = LoopMode.LOOP
 
         layout = QHBoxLayout()
         self._create_axis_label_widget()
@@ -63,8 +63,8 @@ class QtDimSliderWidget(QWidget):
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""
         self.play_button = QtPlayButton(self.qt_dims, self.axis)
-        self.play_button.mode_combo.currentIndexChanged.connect(
-            lambda x: self.__class__.loop_mode.fset(self, x)
+        self.play_button.mode_combo.activated[str].connect(
+            lambda x: self.__class__.loop_mode.fset(self, LoopMode(x))
         )
 
         def fps_listener(*args):
@@ -182,8 +182,8 @@ class QtDimSliderWidget(QWidget):
     @loop_mode.setter
     def loop_mode(self, value):
         self._loop_mode = value
-        self.play_button.mode_combo.setCurrentIndex(value)
-        self.mode_changed.emit(value)
+        self.play_button.mode_combo.setCurrentText(str(value))
+        self.mode_changed.emit(str(value))
 
     @property
     def frame_range(self):
@@ -292,7 +292,7 @@ class QtPlayButton(QPushButton):
 
     play_requested = Signal(int)  # axis, fps
 
-    def __init__(self, dims, axis, reverse=False, fps=10, mode=1):
+    def __init__(self, dims, axis, reverse=False, fps=10, mode=LoopMode.LOOP):
         super().__init__()
         self.dims = dims
         self.axis = axis
@@ -340,12 +340,13 @@ class QtPlayButton(QPushButton):
         #     2, QLabel('end frame:', parent=self.popup), maxspin
         # )
 
-        self.mode_combo = QComboBox(self.popup)
-        self.mode_combo.addItems(['play once', 'loop', 'back and forth'])
+        mode_combo = QComboBox(self.popup)
+        mode_combo.addItems(list(map(str, LoopMode)))
         self.popup.form_layout.insertRow(
-            2, QLabel('play mode:', parent=self.popup), self.mode_combo
+            2, QLabel('play mode:', parent=self.popup), mode_combo
         )
-        self.mode_combo.setCurrentIndex(self.mode)
+        mode_combo.setCurrentText(str(self.mode))
+        self.mode_combo = mode_combo
 
     def mouseReleaseEvent(self, event):
         # using this instead of self.customContextMenuRequested.connect and
@@ -407,7 +408,7 @@ class AnimationWorker(QObject):
     def work(self):
         # if loop_mode is once and we are already on the last frame,
         # return to the first frame... (so the user can keep hitting once)
-        if self.loop_mode == 0:
+        if self.loop_mode == LoopMode.ONCE:
             if self.step > 0 and self.current >= self.max_point - 1:
                 self.frame_requested.emit(self.axis, self.min_point)
             elif self.step < 0 and self.current <= self.min_point + 1:
@@ -447,9 +448,9 @@ class AnimationWorker(QObject):
             )
         self.max_point += 1  # range is inclusive
 
-    @Slot(int)
+    @Slot(str)
     def set_loop_mode(self, mode):
-        self.loop_mode = mode
+        self.loop_mode = LoopMode(mode)
 
     def advance(self):
         """Advance the current frame in the animation.
@@ -459,20 +460,24 @@ class AnimationWorker(QObject):
         """
         self.current += self.step * self.dimsrange[2]
         if self.current < self.min_point:
-            if self.loop_mode == 2:  # 'loop_back_and_forth'
+            if (
+                self.loop_mode == LoopMode.BACK_AND_FORTH
+            ):  # 'loop_back_and_forth'
                 self.step *= -1
                 self.current = self.min_point + self.step * self.dimsrange[2]
-            elif self.loop_mode == 1:  # 'loop'
+            elif self.loop_mode == LoopMode.LOOP:  # 'loop'
                 self.current = self.max_point + self.current - self.min_point
             else:  # loop_mode == 'once'
                 return self.finish()
         elif self.current >= self.max_point:
-            if self.loop_mode == 2:  # 'loop_back_and_forth'
+            if (
+                self.loop_mode == LoopMode.BACK_AND_FORTH
+            ):  # 'loop_back_and_forth'
                 self.step *= -1
                 self.current = (
                     self.max_point + 2 * self.step * self.dimsrange[2]
                 )
-            elif self.loop_mode == 1:  # 'loop'
+            elif self.loop_mode == LoopMode.LOOP:  # 'loop'
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()

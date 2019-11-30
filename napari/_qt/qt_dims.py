@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
 from .qt_dims_slider import QtDimSliderWidget
+from .util import LoopMode
 
 
 class QtDims(QWidget):
@@ -264,7 +265,7 @@ class QtDims(QWidget):
         self,
         axis: int = 0,
         fps: Optional[float] = None,
-        loop_mode: Optional[int] = None,
+        loop_mode: Optional[str] = None,
         frame_range: Optional[Tuple[int, int]] = None,
     ):
         """Animate (play) axis.
@@ -278,13 +279,13 @@ class QtDims(QWidget):
             reverse.  fps == 0 will stop the animation. The view is not
             guaranteed to keep up with the requested fps, and may drop frames
             at higher fps.
-        loop_mode: int
+        loop_mode: str
             Mode for animation playback.  Must be one of the following options:
-                0: "play once": Animation will stop once movie reaches the
+                "once": Animation will stop once movie reaches the
                     max frame (if fps > 0) or the first frame (if fps < 0).
-                1: "loop continuous":  Movie will return to the first frame
+                "loop":  Movie will return to the first frame
                     after reaching the last frame, looping until stopped.
-                2: "loop_back_and_forth":  Movie will loop back and forth until
+                "back_and_forth":  Movie will loop back and forth until
                     stopped
         frame_range: tuple | list
             If specified, will constrain animation to loop [first, last] frames
@@ -298,12 +299,13 @@ class QtDims(QWidget):
         ValueError
             If ``frame_range`` is provided and range[0] >= range[1]
         """
-        if loop_mode is not None:
-            _modes = (0, 1, 2)
-            if loop_mode not in _modes:
-                raise ValueError(
-                    f'loop_mode must be one of {_modes}.  Got: {loop_mode}'
-                )
+        loop_mode = LoopMode(loop_mode) if loop_mode else None
+        # if loop_mode is not None:
+        #     _modes = (0, 1, 2)
+        #     if loop_mode not in _modes:
+        #         raise ValueError(
+        #             f'loop_mode must be one of {_modes}.  Got: {loop_mode}'
+        #         )
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
 
