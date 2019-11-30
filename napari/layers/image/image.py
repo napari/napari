@@ -52,6 +52,8 @@ class Image(Layer):
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    iso_threshold : float
+        Threshold for isosurface.
     name : str
         Name of the layer.
     metadata : dict
@@ -101,6 +103,8 @@ class Image(Layer):
         rgb the contrast_limits_range is ignored.
     gamma : float
         Gamma correction for determining colormap linearity.
+    iso_threshold : float
+        Threshold for isosurface.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
@@ -128,6 +132,7 @@ class Image(Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
+        iso_threshold=0.5,
         name=None,
         metadata=None,
         scale=None,
@@ -166,6 +171,7 @@ class Image(Layer):
             colormap=Event,
             interpolation=Event,
             rendering=Event,
+            iso_threshold=Event,
         )
 
         # Set data
@@ -190,6 +196,7 @@ class Image(Layer):
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
+        self._iso_threshold = iso_threshold
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
@@ -344,6 +351,18 @@ class Image(Layer):
         self._gamma = value
         self._update_thumbnail()
         self.events.gamma()
+
+    @property
+    def iso_threshold(self):
+        """float: threshold for isosurface."""
+        return self._iso_threshold
+
+    @iso_threshold.setter
+    def iso_threshold(self, value):
+        self.status = format_float(value)
+        self._iso_threshold = value
+        self._update_thumbnail()
+        self.events.iso_threshold()
 
     @property
     def interpolation(self):

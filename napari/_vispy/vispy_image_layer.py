@@ -4,6 +4,7 @@ from vispy.scene.visuals import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
+from ..layers.image._constants import Rendering
 
 
 texture_dtypes = [
@@ -33,33 +34,28 @@ class VispyImageLayer(VispyBaseLayer):
             lambda e: self._on_contrast_limits_change()
         )
         self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
+        self.layer.events.iso_threshold.connect(
+            lambda e: self._on_iso_threshold_change()
+        )
 
         self._on_display_change()
         self._on_data_change()
 
-    def _on_display_change(self):
+    def _on_display_change(self, data=None):
         parent = self.node.parent
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
-            self.node = ImageNode(None, method='auto')
+            self.node = ImageNode(data, method='auto')
         else:
-            self.node = VolumeNode(np.zeros((1, 1, 1)))
+            if data is None:
+                data = np.zeros((1, 1, 1))
+            self.node = VolumeNode(data, clim=self.layer.contrast_limits)
 
         self.node.parent = parent
         self.reset()
 
     def _on_data_change(self):
-        # Check if ndisplay has changed current node type needs updating
-        if (
-            self.layer.dims.ndisplay == 3
-            and not isinstance(self.node, VolumeNode)
-        ) or (
-            self.layer.dims.ndisplay == 2
-            and not isinstance(self.node, ImageNode)
-        ):
-            self._on_display_change()
-
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -76,6 +72,7 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
+        # Check if data exceeds MAX_TEXTURE_SIZE and downsample
         if (
             self.MAX_TEXTURE_SIZE_2D is not None
             and self.layer.dims.ndisplay == 2
@@ -90,8 +87,22 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 2:
             self.node._need_colortransform_update = True
             self.node.set_data(data)
+
+        # Check if ndisplay has changed current node type needs updating
+        if (
+            self.layer.dims.ndisplay == 3
+            and not isinstance(self.node, VolumeNode)
+        ) or (
+            self.layer.dims.ndisplay == 2
+            and not isinstance(self.node, ImageNode)
+        ):
+            self._on_display_change(data)
         else:
-            self.node.set_data(data, clim=self.layer.contrast_limits)
+            if self.layer.dims.ndisplay == 2:
+                self.node._need_colortransform_update = True
+                self.node.set_data(data)
+            else:
+                self.node.set_data(data, clim=self.layer.contrast_limits)
         self.node.update()
 
     def _on_interpolation_change(self):
@@ -99,8 +110,9 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.interpolation = self.layer.interpolation
 
     def _on_rendering_change(self):
-        if not self.layer.dims.ndisplay == 2:
+        if self.layer.dims.ndisplay == 3:
             self.node.method = self.layer.rendering
+            self._on_iso_threshold_change()
 
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
@@ -124,6 +136,14 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_gamma_change(self):
         self._on_colormap_change()
+
+    def _on_iso_threshold_change(self):
+        rendering = self.layer.rendering
+        if isinstance(rendering, str):
+            rendering = Rendering(rendering)
+        if self.layer.dims.ndisplay == 3 and rendering == Rendering.ISO:
+            self.node.threshold = float(self.layer.iso_threshold)
+            self.node.shared_program['u_threshold'] = self.node.threshold
 
     def _on_scale_change(self):
         self.scale = [
@@ -227,8 +247,8 @@ class VispyImageLayer(VispyBaseLayer):
     def reset(self):
         self._reset_base()
         self._on_interpolation_change()
-        self._on_rendering_change()
         self._on_colormap_change()
+        self._on_rendering_change()
         if self.layer.dims.ndisplay == 2:
             self._on_contrast_limits_change()
 

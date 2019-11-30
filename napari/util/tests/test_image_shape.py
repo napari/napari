@@ -14,6 +14,11 @@ from napari.util.image_shape import (
 )
 
 
+data_dask = da.random.random(
+    size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
+)
+
+
 def test_guess_rgb():
     # Test 2D image
     shape = (10, 15)
@@ -118,9 +123,15 @@ def test_guess_pyramid():
     )
     assert guess_pyramid(data)
 
+    # Check for integer overflow with big data
     s = 8192
     data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
     assert guess_pyramid(data)
+
+
+@pytest.mark.timeout(2)
+def test_timing_guess_pyramid_big():
+    assert not guess_pyramid(data_dask)
 
 
 def test_trim_pyramid():

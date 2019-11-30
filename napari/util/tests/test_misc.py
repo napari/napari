@@ -1,7 +1,12 @@
-import time
+import pytest
 import numpy as np
 import dask.array as da
 from napari.util.misc import callsignature, calc_data_range
+
+
+data_dask = da.random.random(
+    size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
+)
 
 
 def test_calc_data_range():
@@ -55,12 +60,10 @@ def test_calc_data_fast_uint8():
     assert calc_data_range(data) == [0, 255]
 
 
+@pytest.mark.timeout(2)
 def test_calc_data_range_fast_big():
-    data = da.random.random(size=(100_000, 1000, 1000), chunks=(1, 1000, 1000))
-    t0 = time.time()
-    _ = calc_data_range(data)
-    t1 = time.time()
-    assert t1 - t0 < 2
+    val = calc_data_range(data_dask)
+    assert len(val) > 0
 
 
 def test_callsignature():
