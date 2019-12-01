@@ -65,7 +65,11 @@ def is_rgb(shape):
 def is_pyramid(data):
     """If shape of arrays along first axis is strictly decreasing.
     """
-    size = np.array([np.prod(d.shape) for d in data])
+    # If the data has ndim and is not one-dimensional then cannot be pyramid
+    if hasattr(data, 'ndim') and data.ndim > 1:
+        return False
+
+    size = np.array([np.prod(d.shape, dtype=np.uint64) for d in data])
     if len(size) > 1:
         return np.all(size[:-1] > size[1:])
     else:
