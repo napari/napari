@@ -145,9 +145,9 @@ asv profile benchmark_qt_viewer.QtViewerSuite.time_create_viewer -g snakeviz --p
 or
 
 ```
-asv profile "benchmark_image_layer.Image2DSuite.time_create_layer(.*)" -g snakeviz --python=same
+asv profile "benchmark_image_layer.Image2DSuite.time_create_layer\(512\)" -g snakeviz --python=same
 ```
-to profile a parametrized benchmark.
+to profile a particular parametrized benchmark.
 
 Note here that we have sent the output of the profiling to [snakeviz](http://jiffyclub.github.io/snakeviz/)
 which you can pip install with
