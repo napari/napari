@@ -1,7 +1,7 @@
 from os.path import dirname, join
 
-from qtpy.QtGui import QIcon, QPixmap
-from qtpy.QtWidgets import QApplication, QSplashScreen
+from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import QApplication
 
 from napari._qt.qt_update_ui import QtUpdateUI
 
@@ -50,8 +50,6 @@ class Viewer(ViewerModel):
             raise RuntimeError(message)
 
         logopath = join(dirname(__file__), 'resources', 'logo.png')
-        splash_screen = QSplashScreen(QPixmap(logopath).scaled(400, 400))
-        splash_screen.show()
         app.setWindowIcon(QIcon(logopath))
 
         super().__init__(
@@ -61,7 +59,6 @@ class Viewer(ViewerModel):
             axis_labels=axis_labels,
         )
         qt_viewer = QtViewer(self)
-        splash_screen.finish(qt_viewer)
         self.window = Window(qt_viewer)
         self.update_console = self.window.qt_viewer.console.push
 

@@ -1,7 +1,9 @@
 import sys
 from contextlib import contextmanager
+from os.path import dirname, join
 
-from qtpy.QtWidgets import QApplication
+from qtpy.QtGui import QPixmap
+from qtpy.QtWidgets import QApplication, QSplashScreen
 
 
 @contextmanager
@@ -16,5 +18,9 @@ def gui_qt():
     ``ipython --gui=qt``.
     """
     app = QApplication.instance() or QApplication(sys.argv)
+    logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
+    splash_screen = QSplashScreen(QPixmap(logopath).scaled(400, 400))
+    splash_screen.show()
     yield
+    splash_screen.close()
     app.exec_()
