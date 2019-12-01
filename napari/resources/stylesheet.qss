@@ -67,14 +67,15 @@ QDialog#QtAboutKeybindings {
 }
 
 QDialog#QtAbout {
-  min-width: 580px;
-  max-width: 580px;
-  min-height: 300px;
-  max-height: 300px;
+  min-width: 620px;
+  max-width: 620px;
+  min-height: 320px;
+  max-height: 320px;
 }
 
 QtAbout > QLabel {
-   qproperty-alignment: AlignLeft;
+  background-color: {{ background }};
+  qproperty-alignment: AlignLeft;
 }
 
 QtActiveKeybindings > QLabel {

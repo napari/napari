@@ -163,6 +163,7 @@ class Window:
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
+        about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
             lambda e: QtAbout.showAbout(self.qt_viewer)
@@ -170,7 +171,7 @@ class Window:
         self.help_menu.addAction(about_action)
 
         keybidings_action = QAction("keybindings", self._qt_window)
-        keybidings_action.setShortcut("Ctrl+/")
+        keybidings_action.setShortcut("Ctrl+Alt+/")
         keybidings_action.setStatusTip('About keybindings')
         keybidings_action.triggered.connect(
             lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
