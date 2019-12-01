@@ -41,20 +41,15 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
 
-QWidget#layerList {
-  border: 1px solid {{ background }};
-    min-width: 228px;
-    border-radius: 2px;
-    padding: 4px;
-}
 
 QtLayerList {
   border: 1px solid {{ background }};
-    min-width: 228px;
+    min-width: 242px;
     border-radius: 2px;
-    padding: 4px;
+    padding: 0px;
     margin: 0px;
     border: 0px;
+    margin-bottom: 4px;
 }
 
 QLabel {
@@ -301,11 +296,14 @@ QtControls {
     border: 1px solid {{ foreground }};
     background-color: {{ foreground }};
     border-radius: 2px;
-    padding: 12px;
+    padding: 10px;
     min-height: 200px;
     max-height: 200px;
-    min-width: 228px;
-    max-width: 228px;
+    min-width: 220px;
+    max-width: 220px;
+    margin-left: 8px;
+    margin-right: 8px;
+    margin-bottom: 4px;
 }
 
 QtControls > QFrame{
@@ -339,8 +337,8 @@ QtLayerControls > QFrame {
 QtLayerControls > QLabel {
   min-height: 18px;
   max-height: 18px;
-  min-width: 100px;
-  max-width: 100px;
+  min-width: 92px;
+  max-width: 92px;
   padding: 0px;
   border: 0px;
   margin: 0px;
@@ -610,13 +608,13 @@ QtAdditionButton::indicator {
 }
 
 QtLayerButtons {
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 242px;
+  max-width: 242px;
 }
 
 QtViewerButtons {
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 242px;
+  max-width: 242px;
 }
 
 QPushButton {
@@ -920,14 +918,6 @@ QDockWidget::float-button:horizontal {
     width: 14px;
 }
 
-
-#QMinimalTitleBar {
-  background-color: {{ secondary }};
-  background: {{ highlight }};
-  color: {{ highlight}};
-  max-height: 5px;
-}
-
 /* ------------- QScrollBars --------- */
 
 
@@ -1047,4 +1037,22 @@ QtDims > QScrollBar::handle[last_used=false]:horizontal {
 
 QtDims > QScrollBar::handle[last_used=true]:horizontal {
     background: {{ secondary }};
+}
+
+#QMinimalTitleBar {
+  background-color: {{ background }};
+  padding-top:3px;
+}
+
+#QMinimalTitleBar:hover {
+  background-color: {{ background_dark2 }};
+}
+
+#QMinimalTitleBarLine {
+  background-color: {{ foreground }};
+}
+
+#QMinimalTitleBar > QPushButton {
+  image: url(":/icons/{{ folder }}/delete_shape.svg");
+  max-width: 12px;
 }

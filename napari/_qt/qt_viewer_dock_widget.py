@@ -3,7 +3,14 @@ from operator import ior
 from typing import List, Optional
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QDockWidget, QWidget, QHBoxLayout
+from qtpy.QtWidgets import (
+    QDockWidget,
+    QWidget,
+    QHBoxLayout,
+    QFrame,
+    QLabel,
+    QPushButton,
+)
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -86,21 +93,63 @@ class QtViewerDockWidget(QDockWidget):
         self.setFeatures(features)
 
 
-class QMinimalTitleBar(QWidget):
+class QMinimalTitleBar(QLabel):
+    """A widget to be used as the titleBar in the QtMinimalDock Widget.
+
+    Keeps vertical size minimal, has a hand cursor and styles (in stylesheet)
+    for hover.
+    """
+
     def __init__(self):
         super().__init__()
-        layout = QHBoxLayout()
-        # layout.addWidget(QPushButton())
-        self.setLayout(layout)
-        self.setGeometry(0, 0, 50, 50)
-        self.setVisible(True)
-        self.setStyleSheet("QHBoxLayout{background: yellow}")
         self.setObjectName("QMinimalTitleBar")
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setSpacing(4)
+
+        line = QFrame(self)
+        line.setFixedHeight(1)
+        line.setObjectName("QMinimalTitleBarLine")
+
+        self.close_button = QPushButton(self)
+        self.close_button.setCursor(Qt.ArrowCursor)
+
+        layout.addWidget(self.close_button)
+        layout.addWidget(line)
+
+        self.setLayout(layout)
+        self.setCursor(Qt.OpenHandCursor)
+
+    def sizeHint(self):
+        # this seems to be the correct way to set the height of the titlebar
+        szh = super().sizeHint()
+        szh.setHeight(18)
+        return szh
 
 
 class QtMinimalDockWidget(QtViewerDockWidget):
+    """A subclass that has a small but visible titlebar for floating and moving
+    the widget.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        title = QMinimalTitleBar()
-        self.setTitleBarWidget(title)
         self.setObjectName("QtMinimalDockWidget")
+
+        self.title = QMinimalTitleBar()
+        self.setTitleBarWidget(self.title)
+
+        self.toggle_visibility = self.toggleViewAction().trigger
+        self.title.close_button.clicked.connect(self.toggle_visibility)
+        # self.topLevelChanged.connect(self._on_top_level_change)
+
+    def _on_top_level_change(self, event):
+        # if connected, this will give a native title bar to floated windows...
+        # however, I haven't yet been able to prevent the "permanent-floating"
+        # problem once a floated window is closed with the native button.
+        # so this is currently unconnected
+        if self.isFloating():
+            self.setTitleBarWidget(None)
+        else:
+            self.setTitleBarWidget(self.title)

@@ -64,6 +64,7 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.layerButtons)
         layerListLayout.addWidget(self.layers)
         layerListLayout.addWidget(self.viewerButtons)
+        layerListLayout.setContentsMargins(8, 4, 8, 4)
         layerList.setLayout(layerListLayout)
         self.dockLayerList = QtMinimalDockWidget(
             self,
@@ -87,6 +88,9 @@ class QtViewer(QSplitter):
             allowed_areas=['top', 'bottom'],
         )
         self.dockConsole.setVisible(False)
+        self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
+        self.dockLayerList.setMaximumWidth(258)
+        self.dockLayerList.setMinimumWidth(258)
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -157,6 +161,13 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    def _constrain_width(self, event):
+        # allow the layer controls to be wider, only if floated
+        if self.dockLayerControls.isFloating():
+            self.controls.setMaximumWidth(700)
+        else:
+            self.controls.setMaximumWidth(220)
 
     def _add_layer(self, event):
         """When a layer is added, set its parent and order."""
