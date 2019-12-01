@@ -1,6 +1,5 @@
 import numpy as np
-from vispy.scene.visuals import Line, Compound
-from .markers import Markers
+from vispy.scene.visuals import Line, Compound, Markers
 from vispy.visuals.transforms import ChainTransform
 from .vispy_base_layer import VispyBaseLayer
 

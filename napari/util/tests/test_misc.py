@@ -1,4 +1,6 @@
+import pytest
 import numpy as np
+import dask.array as da
 from skimage.transform import pyramid_gaussian
 from napari.util.misc import (
     is_rgb,
@@ -9,6 +11,11 @@ from napari.util.misc import (
     fast_pyramid,
     trim_pyramid,
     calc_data_range,
+)
+
+
+data_dask = da.random.random(
+    size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
 )
 
 
@@ -66,6 +73,23 @@ def test_calc_data_range():
     assert np.all(clim == [0, 2])
 
 
+def test_calc_data_fast_uint8():
+    data = da.random.randint(
+        0,
+        100,
+        size=(100_000, 1000, 1000),
+        chunks=(1, 1000, 1000),
+        dtype=np.uint8,
+    )
+    assert calc_data_range(data) == [0, 255]
+
+
+@pytest.mark.timeout(2)
+def test_calc_data_range_fast_big():
+    val = calc_data_range(data_dask)
+    assert len(val) > 0
+
+
 def test_is_pyramid():
     data = np.random.random((10, 15))
     assert not is_pyramid(data)
@@ -97,6 +121,16 @@ def test_is_pyramid():
         tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
     )
     assert is_pyramid(data)
+
+    # Check for integer overflow with big data
+    s = 8192
+    data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
+    assert is_pyramid(data)
+
+
+@pytest.mark.timeout(2)
+def test_timing_is_pyramid_big():
+    assert not is_pyramid(data_dask)
 
 
 def test_trim_pyramid():

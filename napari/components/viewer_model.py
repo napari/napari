@@ -28,6 +28,8 @@ class ViewerModel(KeymapMixin):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels = list of str
+        Dimension names.
 
     Attributes
     ----------
@@ -43,7 +45,9 @@ class ViewerModel(KeymapMixin):
 
     themes = palettes
 
-    def __init__(self, title='napari', ndisplay=2, order=None):
+    def __init__(
+        self, title='napari', ndisplay=2, order=None, axis_labels=None
+    ):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -61,15 +65,9 @@ class ViewerModel(KeymapMixin):
             layers_change=Event,
         )
 
-        if order is None:
-            ndim = ndisplay
-            order = list(range(ndim))
-        else:
-            ndim = len(order)
-
-        self.dims = Dims(ndim)
-        self.dims.ndisplay = ndisplay
-        self.dims.order = order
+        self.dims = Dims(
+            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        )
 
         self.layers = LayerList()
 
@@ -403,6 +401,7 @@ class ViewerModel(KeymapMixin):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
+        iso_threshold=0.5,
         name=None,
         metadata=None,
         scale=None,
@@ -455,6 +454,8 @@ class ViewerModel(KeymapMixin):
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        iso_threshold : float
+            Threshold for isosurface.
         name : str
             Name of the layer.
         metadata : dict
@@ -472,7 +473,8 @@ class ViewerModel(KeymapMixin):
         visible : bool
             Whether the layer visual is currently being displayed.
         path : str or list of str
-            Path or list of paths to image data.
+            Path or list of paths to image data. Paths can be passed as strings
+            or `pathlib.Path` instances.
 
         Returns
         -------
@@ -500,6 +502,7 @@ class ViewerModel(KeymapMixin):
                 gamma=gamma,
                 interpolation=interpolation,
                 rendering=rendering,
+                iso_threshold=iso_threshold,
                 name=name,
                 metadata=metadata,
                 scale=scale,
@@ -547,11 +550,11 @@ class ViewerModel(KeymapMixin):
             for i, cmap, clims, _gamma, name in zipped_args:
                 if is_pyramid:
                     image = [
-                        data[j].take(i, axis=channel_axis)
+                        np.take(data[j], i, axis=channel_axis)
                         for j in range(len(data))
                     ]
                 else:
-                    image = data.take(i, axis=channel_axis)
+                    image = np.take(data, i, axis=channel_axis)
                 layer = layers.Image(
                     image,
                     rgb=rgb,
@@ -1061,8 +1064,7 @@ class ViewerModel(KeymapMixin):
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
             self.dims.ndim = 2
-            for i in range(2):
-                self.dims.set_initial_dims(i)
+            self.dims.reset()
         else:
             layer_range = self._calc_layers_ranges()
             self.dims.ndim = len(layer_range)
