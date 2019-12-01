@@ -169,14 +169,6 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        # keybidings_action = QAction("keybindings", self._qt_window)
-        # keybidings_action.setShortcut("Ctrl+/")
-        # keybidings_action.setStatusTip('About keybindings')
-        # keybidings_action.triggered.connect(
-        #     lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
-        # )
-        # self.help_menu.addAction(keybidings_action)
-
     def add_dock_widget(
         self,
         widget: QWidget,
