@@ -1,105 +1,80 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QTabWidget,
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
-    QDialog,
-    QScrollArea,
-    QSizePolicy,
+    QTextEdit,
+    QComboBox,
 )
 import napari
 from ..util.misc import get_keybindings_summary
 
 
-class QtAboutKeybindings(QTabWidget):
-    def __init__(self, viewer, parent):
-        super(QtAboutKeybindings, self).__init__(parent)
-
-        self.viewer = viewer
-
-        self.addTab(QtActiveKeybindings(self.viewer), 'Currently active')
-        self.addTab(QtLayerKeybindings(napari.layers.Image), 'Image')
-        self.addTab(QtLayerKeybindings(napari.layers.Labels), 'Labels')
-        self.addTab(QtLayerKeybindings(napari.layers.Points), 'Labels')
-        self.addTab(QtLayerKeybindings(napari.layers.Shapes), 'Shapes')
-        self.addTab(QtLayerKeybindings(napari.layers.Surface), 'Surface')
-        self.addTab(QtLayerKeybindings(napari.layers.Vectors), 'Vectors')
-
-    @staticmethod
-    def showAbout(qt_viewer):
-        d = QDialog()
-        d.setObjectName('QtAboutKeybindings')
-        d.setStyleSheet(qt_viewer.styleSheet())
-        d.setWindowTitle('Keybindings')
-        qt_viewer._about_keybindings = QtAboutKeybindings(qt_viewer.viewer, d)
-        d.show()
-        d.setWindowModality(Qt.NonModal)
-        d.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        qt_viewer._about_keybindings_dialog = d
-
-
-class QtActiveKeybindings(QScrollArea):
+class QtAboutKeybindings(QWidget):
     def __init__(self, viewer):
         super().__init__()
 
         self.viewer = viewer
-        self.setWidgetResizable(True)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
 
-        self.active_label = QLabel()
-        self.active_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.active_label.setAlignment(Qt.AlignLeft)
-        self.active_label.setContentsMargins(10, 10, 10, 10)
-        self.active_label.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Expanding
+        # stacked keybindings widgets
+        self.textEditBox = QTextEdit()
+        self.textEditBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.keybindings_strs = {'Currently active': ''}
+        layers = [
+            napari.layers.Image,
+            napari.layers.Labels,
+            napari.layers.Points,
+            napari.layers.Shapes,
+            napari.layers.Surface,
+            napari.layers.Vectors,
+        ]
+        for layer in layers:
+            if len(layer.class_keymap) == 0:
+                text = 'No keybindings'
+            else:
+                text = get_keybindings_summary(layer.class_keymap)
+            self.keybindings_strs[str(layer.__name__)] = text
+
+        # layer type selection
+        self.layerTypeComboBox = QComboBox()
+        for name in self.keybindings_strs.keys():
+            self.layerTypeComboBox.addItem(name)
+        self.layerTypeComboBox.activated[str].connect(
+            lambda text=self.layerTypeComboBox: self.change_layer_type(text)
         )
+        current_layer = 'Currently active'
+        self.layerTypeComboBox.setCurrentText(current_layer)
+        # self.change_layer_type(current_layer)
+        layer_type_layout = QHBoxLayout()
+        layer_type_layout.addWidget(QLabel('Layer type:'))
+        layer_type_layout.addWidget(self.layerTypeComboBox)
+        layer_type_layout.addStretch(1)
+        layer_type_layout.setSpacing(0)
+        self.layout.addLayout(layer_type_layout)
+        self.layout.addWidget(self.textEditBox, 1)
 
-        self.update_text(None)
+        self.viewer.events.active_layer.connect(self.update_active_layer)
+        self.update_active_layer(None)
 
-        scroll_widget = QWidget()
-        scroll_widget.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Expanding
-        )
-        scroll_widget.setContentsMargins(10, 10, 10, 10)
-        scroll_layout = QVBoxLayout()
-        scroll_layout.addWidget(self.active_label)
-        scroll_layout.addStretch(1)
-        scroll_widget.setLayout(scroll_layout)
-        self.setWidget(scroll_widget)
+    def change_layer_type(self, text):
+        self.textEditBox.setText(self.keybindings_strs[text])
 
-        self.viewer.events.active_layer.connect(self.update_text)
-
-    def update_text(self, event):
-        keybindings_str = ''
+    def update_active_layer(self, event):
+        text = ''
         # Add class and instance viewer keybindings
-        keybindings_str += get_keybindings_summary(self.viewer.class_keymap)
-        keybindings_str += get_keybindings_summary(self.viewer.keymap)
+        text += get_keybindings_summary(self.viewer.class_keymap)
+        text += get_keybindings_summary(self.viewer.keymap)
 
         layer = self.viewer.active_layer
         if layer is not None:
             # Add class and instance layer keybindings for the active layer
-            keybindings_str += get_keybindings_summary(layer.class_keymap)
-            keybindings_str += get_keybindings_summary(layer.keymap)
-        self.active_label.setText(keybindings_str)
+            text += get_keybindings_summary(layer.class_keymap)
+            text += get_keybindings_summary(layer.keymap)
 
-
-class QtLayerKeybindings(QWidget):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layout = QVBoxLayout()
-
-        # Add class keybindings for the layer
-        if len(layer.class_keymap) == 0:
-            keybindings_str = 'No keybindings'
-        else:
-            keybindings_str = get_keybindings_summary(layer.class_keymap)
-
-        layer_label = QLabel(keybindings_str)
-        layer_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        # layer_label.setAlignment(Qt.AlignLeft)
-        layer_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.layout.addWidget(layer_label)
-        self.setLayout(self.layout)
+        # Do updates
+        self.keybindings_strs['Currently active'] = text
+        if self.layerTypeComboBox.currentText() == 'Currently active':
+            self.textEditBox.setText(text)

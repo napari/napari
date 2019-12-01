@@ -9,7 +9,6 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
-from .qt_about_keybindings import QtAboutKeybindings
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
@@ -85,6 +84,7 @@ class Window:
 
         if self.qt_viewer.console.shell is not None:
             self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
+        self._add_viewer_dock_widget(self.qt_viewer.dockAboutKeybindings)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
@@ -169,13 +169,13 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        keybidings_action = QAction("keybindings", self._qt_window)
-        keybidings_action.setShortcut("Ctrl+/")
-        keybidings_action.setStatusTip('About keybindings')
-        keybidings_action.triggered.connect(
-            lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
-        )
-        self.help_menu.addAction(keybidings_action)
+        # keybidings_action = QAction("keybindings", self._qt_window)
+        # keybidings_action.setShortcut("Ctrl+/")
+        # keybidings_action.setStatusTip('About keybindings')
+        # keybidings_action.triggered.connect(
+        #     lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
+        # )
+        # self.help_menu.addAction(keybidings_action)
 
     def add_dock_widget(
         self,
@@ -184,6 +184,7 @@ class Window:
         name: str = '',
         area: str = 'bottom',
         allowed_areas=None,
+        shortcut=None,
     ):
         """Convenience method to add a QDockWidget to the main window
 
@@ -200,6 +201,8 @@ class Window:
             Areas, relative to main window, that the widget is allowed dock.
             Each item in list must be in {'left', 'right', 'top', 'bottom'}
             By default, all areas are allowed.
+        shortcut : str, optional
+            Keyboard shortcut to appear in dropdown menu.
 
         Returns
         -------
@@ -213,6 +216,7 @@ class Window:
             name=name,
             area=area,
             allowed_areas=allowed_areas,
+            shortcut=shortcut,
         )
         self._add_viewer_dock_widget(dock_widget)
         return dock_widget
@@ -230,6 +234,8 @@ class Window:
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
+        if dock_widget.shortcut is not None:
+            action.setShortcut(dock_widget.shortcut)
         self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget):
