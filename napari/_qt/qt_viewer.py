@@ -61,7 +61,7 @@ class QtViewer(QSplitter):
             self,
             QtAboutKeybindings(self.viewer),
             name='keybindings',
-            shortcut='Ctrl+/',
+            shortcut='Ctrl+Alt+/',
         )
         self.dockAboutKeybindings.hide()
         self.console = QtConsole({'viewer': self.viewer})
