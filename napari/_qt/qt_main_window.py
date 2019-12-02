@@ -163,6 +163,7 @@ class Window:
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
+        about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
             lambda e: QtAbout.showAbout(self.qt_viewer)
