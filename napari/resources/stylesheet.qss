@@ -168,8 +168,8 @@ QtLayerWidget {
   margin: 0px;
   min-height: 32px;
   max-height: 32px;
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 228px;
+  max-width: 228px;
 }
 
 QtLayerWidget[selected="true"] {
@@ -613,8 +613,8 @@ QtLayerButtons {
 }
 
 QtViewerButtons {
-  min-width: 242px;
-  max-width: 242px;
+  min-width: 238px;
+  max-width: 238px;
 }
 
 QPushButton {
@@ -1015,6 +1015,34 @@ QScrollBar::down-arrow {
 QScrollBar::add-page,
 QScrollBar::sub-page {
     background: none;
+}
+
+/* ------------- Narrow scrollbar example --------- */
+
+QtLayerList {
+  max-width: 8px;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+QtLayerList QScrollBar:vertical {
+    max-width: 8px;
+    margin: 12px 0px;
+}
+
+QtLayerList QScrollBar::add-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar::sub-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar:up-arrow, QtLayerList QScrollBar:down-arrow {
+    height: 4px;
+    width: 4px;
 }
 
 /* ------------- DimsSliders --------- */
