@@ -7,12 +7,12 @@ from qtpy.QtWidgets import QApplication, QSplashScreen
 
 
 @contextmanager
-def gui_qt(splash_screen=True):
+def gui_qt(*, startup_logo=False):
     """Start a Qt event loop in which to run the application.
 
     Parameters
     ----------
-    splash_screen : bool
+    startup_logo : bool
         Show a splash screen with the napari logo during startup.
 
     Notes
@@ -23,11 +23,11 @@ def gui_qt(splash_screen=True):
     ``ipython --gui=qt``.
     """
     app = QApplication.instance() or QApplication(sys.argv)
-    if splash_screen:
+    if startup_logo:
         logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
         splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
         splash_widget.show()
     yield
-    if splash_screen:
+    if startup_logo:
         splash_widget.close()
     app.exec_()
