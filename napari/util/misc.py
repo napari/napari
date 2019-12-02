@@ -9,6 +9,7 @@ from numpydoc.docscrape import FunctionDoc
 
 import numpy as np
 import wrapt
+import sys
 
 
 def str_to_rgb(arg):
@@ -692,6 +693,23 @@ def mouse_release_callbacks(obj, event):
         del obj._persisted_mouse_event[gen]
 
 
+KEY_SYMBOLS = {}
+if sys.platform.startswith('darwin'):
+    KEY_SYMBOLS.update(
+        {
+            'Control': '⌘',
+            'Shift': '⇧',
+            'Alt': '⌥',
+            'Option': '⌥',
+            'Left': '←',
+            'Right': '→',
+            'Up': '↑',
+            'Down': '↓',
+            'Backspace': '⌫',
+        }
+    )
+
+
 def get_keybindings_summary(keymap):
     """Get summary of keybindings in keymap.
 
@@ -705,11 +723,20 @@ def get_keybindings_summary(keymap):
     keybindings_str : str
         String with summary of all keybindings and their functions.
     """
-    keybindings_str = ''
+    col = 'rgb(134, 146, 151)'
+    keybindings_str = '<table border="0" width="100%">'
     for key in keymap:
-        func_str = f'<b> {key}</b>: {get_function_summary(keymap[key])}<br>'
-        keybindings_str += func_str
-
+        keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
+        keycodes = "-".join(
+            [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
+        )
+        keybindings_str += (
+            "<tr><td width='80' style='text-align: right; padding: 4px;'>"
+            f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
+            "<td style='text-align: left; padding: 4px; color: #CCC;'>"
+            f"{get_function_summary(keymap[key])}</td></tr>"
+        )
+    keybindings_str += '</table>'
     return keybindings_str
 
 
@@ -717,7 +744,7 @@ def get_function_summary(func):
     """Get summary of doc string of function."""
     doc = FunctionDoc(func)
     summary = ''
-    summary += doc['Signature']
+    # summary += doc['Signature']
     for s in doc['Summary']:
-        summary += '<br>&nbsp;&nbsp;&nbsp;&nbsp;' + s
-    return summary
+        summary += s
+    return summary.rstrip('.')
