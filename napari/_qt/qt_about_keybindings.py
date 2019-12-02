@@ -3,7 +3,6 @@ from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QLabel,
     QTextEdit,
     QComboBox,
 )
@@ -22,7 +21,8 @@ class QtAboutKeybindings(QWidget):
         # stacked keybindings widgets
         self.textEditBox = QTextEdit()
         self.textEditBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.keybindings_strs = {'Currently active': ''}
+        self.textEditBox.setMinimumWidth(360)
+        self.keybindings_strs = {'All active keybindings': ''}
         layers = [
             napari.layers.Image,
             napari.layers.Labels,
@@ -36,7 +36,7 @@ class QtAboutKeybindings(QWidget):
                 text = 'No keybindings'
             else:
                 text = get_keybindings_summary(layer.class_keymap)
-            self.keybindings_strs[str(layer.__name__)] = text
+            self.keybindings_strs[f"{layer.__name__} layer"] = text
 
         # layer type selection
         self.layerTypeComboBox = QComboBox()
@@ -45,11 +45,11 @@ class QtAboutKeybindings(QWidget):
         self.layerTypeComboBox.activated[str].connect(
             lambda text=self.layerTypeComboBox: self.change_layer_type(text)
         )
-        current_layer = 'Currently active'
+        current_layer = 'All active keybindings'
         self.layerTypeComboBox.setCurrentText(current_layer)
         # self.change_layer_type(current_layer)
         layer_type_layout = QHBoxLayout()
-        layer_type_layout.addWidget(QLabel('Layer type:'))
+        layer_type_layout.setContentsMargins(10, 5, 0, 0)
         layer_type_layout.addWidget(self.layerTypeComboBox)
         layer_type_layout.addStretch(1)
         layer_type_layout.setSpacing(0)
@@ -60,7 +60,7 @@ class QtAboutKeybindings(QWidget):
         self.update_active_layer(None)
 
     def change_layer_type(self, text):
-        self.textEditBox.setText(self.keybindings_strs[text])
+        self.textEditBox.setHtml(self.keybindings_strs[text])
 
     def update_active_layer(self, event):
         text = ''
@@ -75,6 +75,6 @@ class QtAboutKeybindings(QWidget):
             text += get_keybindings_summary(layer.keymap)
 
         # Do updates
-        self.keybindings_strs['Currently active'] = text
-        if self.layerTypeComboBox.currentText() == 'Currently active':
-            self.textEditBox.setText(text)
+        self.keybindings_strs['All active keybindings'] = text
+        if self.layerTypeComboBox.currentText() == 'All active keybindings':
+            self.textEditBox.setHtml(text)
