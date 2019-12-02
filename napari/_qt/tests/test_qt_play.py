@@ -9,10 +9,13 @@ from napari.components import ViewerModel
 from ...components import Dims
 from ..qt_dims import QtDims
 from ..qt_dims_slider import AnimationWorker
+from .._constants import LoopMode
 
 
 @contextmanager
-def make_worker(qtbot, nframes=8, fps=20, frame_range=None, loop_mode=1):
+def make_worker(
+    qtbot, nframes=8, fps=20, frame_range=None, loop_mode=LoopMode.LOOP
+):
     # sets up an AnimationWorker ready for testing, and breaks down when done
     dims = Dims(4)
     qtdims = QtDims(dims)
@@ -52,17 +55,17 @@ def make_worker(qtbot, nframes=8, fps=20, frame_range=None, loop_mode=1):
 # frames, fps, mode, frame_range, expected_result(nframes, nz)
 CONDITIONS = [
     # regular nframes < nz
-    (5, 10, 1, None, lambda x, y: x),
+    (5, 10, LoopMode.LOOP, None, lambda x, y: x),
     # loops around to the beginning
-    (10, 10, 1, None, lambda x, y: x % y),
+    (10, 10, LoopMode.LOOP, None, lambda x, y: x % y),
     # loops correctly with frame_range specified
-    (10, 10, 1, (2, 6), lambda x, y: x % y),
+    (10, 10, LoopMode.LOOP, (2, 6), lambda x, y: x % y),
     # loops correctly going backwards
-    (10, -10, 1, None, lambda x, y: y - (x % y)),
+    (10, -10, LoopMode.LOOP, None, lambda x, y: y - (x % y)),
     # loops back and forth
-    (10, 10, 2, None, lambda x, y: x - y + 2),
+    (10, 10, LoopMode.BACK_AND_FORTH, None, lambda x, y: x - y + 2),
     # loops back and forth, with negative fps
-    (10, -10, 2, None, lambda x, y: y - (x % y) - 2),
+    (10, -10, LoopMode.BACK_AND_FORTH, None, lambda x, y: y - (x % y) - 2),
 ]
 
 
@@ -87,7 +90,9 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
 def test_animation_thread_once(qtbot):
     """Single shot animation should stop when it reaches the last frame"""
     nframes = 13
-    with make_worker(qtbot, nframes=nframes, loop_mode=0) as worker:
+    with make_worker(
+        qtbot, nframes=nframes, loop_mode=LoopMode.ONCE
+    ) as worker:
         with qtbot.waitSignal(worker.finished, timeout=8000):
             worker.work()
     assert worker.current == worker.nz

@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 from ..components.dims import Dims
 from ..components.dims_constants import DimsMode
 from .qt_dims_slider import QtDimSliderWidget
-from .util import LoopMode
+from ._constants import LoopMode
 
 
 class QtDims(QWidget):
@@ -299,13 +299,16 @@ class QtDims(QWidget):
         ValueError
             If ``frame_range`` is provided and range[0] >= range[1]
         """
-        loop_mode = LoopMode(loop_mode) if loop_mode else None
-        # if loop_mode is not None:
-        #     _modes = (0, 1, 2)
-        #     if loop_mode not in _modes:
-        #         raise ValueError(
-        #             f'loop_mode must be one of {_modes}.  Got: {loop_mode}'
-        #         )
+        # doing manual check here to avoid issue in StringEnum
+        # see https://github.com/napari/napari/issues/754
+        if loop_mode is not None:
+            _modes = [str(mode) for mode in LoopMode]
+            if loop_mode not in _modes:
+                raise ValueError(
+                    f'loop_mode must be one of {_modes}.  Got: {loop_mode}'
+                )
+            loop_mode = LoopMode(loop_mode)
+
         if axis >= len(self.dims.range):
             raise IndexError('axis argument out of range')
 

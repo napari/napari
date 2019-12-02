@@ -17,7 +17,8 @@ from qtpy.QtWidgets import (
 from ..util.event import Event
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
-from .util import new_worker_qthread, LoopMode
+from .util import new_worker_qthread
+from ._constants import LoopMode
 
 
 class QtDimSliderWidget(QWidget):
@@ -64,7 +65,9 @@ class QtDimSliderWidget(QWidget):
         """Creates the actual play button, which has the modal popup."""
         self.play_button = QtPlayButton(self.qt_dims, self.axis)
         self.play_button.mode_combo.activated[str].connect(
-            lambda x: self.__class__.loop_mode.fset(self, LoopMode(x))
+            lambda x: self.__class__.loop_mode.fset(
+                self, LoopMode(x.replace(' ', '_'))
+            )
         )
 
         def fps_listener(*args):
@@ -341,7 +344,7 @@ class QtPlayButton(QPushButton):
         # )
 
         mode_combo = QComboBox(self.popup)
-        mode_combo.addItems(list(map(str, LoopMode)))
+        mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
         self.popup.form_layout.insertRow(
             2, QLabel('play mode:', parent=self.popup), mode_combo
         )

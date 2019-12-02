@@ -1,8 +1,6 @@
 import numpy as np
 from qtpy import API_NAME
 from qtpy.QtCore import QObject, QThread
-from ..util.misc import StringEnum
-from enum import auto
 
 
 def QImg2array(img):
@@ -115,22 +113,3 @@ def new_worker_qthread(
     if start:
         thread.start()  # sometimes need to connect stuff before starting
     return worker, thread
-
-
-class LoopMode(StringEnum):
-    """Looping mode for animating an axis.
-
-    LoopMode.OPAQUE
-        Animation will stop once movie reaches the max frame (if fps > 0) or
-        the first frame (if fps < 0).
-    LoopMode.LOOP
-        Movie will return to the first frame after reaching the last frame,
-        looping continuously until stopped.
-    LoopMode.BACK_AND_FORTH
-        Movie will loop continuously until stopped, reversing direction when
-        the maximum or minimum frame has been reached.
-    """
-
-    ONCE = auto()
-    LOOP = auto()
-    BACK_AND_FORTH = auto()
