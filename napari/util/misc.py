@@ -744,7 +744,6 @@ def get_function_summary(func):
     """Get summary of doc string of function."""
     doc = FunctionDoc(func)
     summary = ''
-    # summary += doc['Signature']
     for s in doc['Summary']:
         summary += s
     return summary.rstrip('.')

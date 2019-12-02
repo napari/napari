@@ -6,11 +6,15 @@ from qtpy.QtWidgets import (
     QTextEdit,
     QComboBox,
 )
+from collections import OrderedDict
 import napari
 from ..util.misc import get_keybindings_summary
 
 
 class QtAboutKeybindings(QWidget):
+
+    ALL_ACTIVE_KEYBINDINGS = 'All active keybindings'
+
     def __init__(self, viewer):
         super().__init__()
 
@@ -22,7 +26,9 @@ class QtAboutKeybindings(QWidget):
         self.textEditBox = QTextEdit()
         self.textEditBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.textEditBox.setMinimumWidth(360)
-        self.keybindings_strs = {'All active keybindings': ''}
+        # Can switch to a normal dict when our minimum Python is 3.7
+        self.keybindings_strs = OrderedDict()
+        self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
         layers = [
             napari.layers.Image,
             napari.layers.Labels,
@@ -40,13 +46,12 @@ class QtAboutKeybindings(QWidget):
 
         # layer type selection
         self.layerTypeComboBox = QComboBox()
-        for name in self.keybindings_strs.keys():
+        for name in self.keybindings_strs:
             self.layerTypeComboBox.addItem(name)
         self.layerTypeComboBox.activated[str].connect(
             lambda text=self.layerTypeComboBox: self.change_layer_type(text)
         )
-        current_layer = 'All active keybindings'
-        self.layerTypeComboBox.setCurrentText(current_layer)
+        self.layerTypeComboBox.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
         # self.change_layer_type(current_layer)
         layer_type_layout = QHBoxLayout()
         layer_type_layout.setContentsMargins(10, 5, 0, 0)
@@ -74,7 +79,7 @@ class QtAboutKeybindings(QWidget):
             text += get_keybindings_summary(layer.class_keymap)
             text += get_keybindings_summary(layer.keymap)
 
-        # Do updates
-        self.keybindings_strs['All active keybindings'] = text
-        if self.layerTypeComboBox.currentText() == 'All active keybindings':
+        # Update layer speficic keybindings if all active are displayed
+        self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
+        if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:
             self.textEditBox.setHtml(text)
