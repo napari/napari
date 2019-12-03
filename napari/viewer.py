@@ -1,7 +1,9 @@
+from io import BytesIO
 from os.path import dirname, join
 
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
+from skimage import io
 
 from napari._qt.qt_update_ui import QtUpdateUI
 
@@ -82,6 +84,14 @@ class Viewer(ViewerModel):
         else:
             image = self.window.qt_viewer.screenshot()
         return image
+
+    def _repr_png_(self):
+        """PNG representation of the viewer object for IPython."""
+        image = self.screenshot(with_viewer=True)
+        file_obj = BytesIO()
+        io.imsave(file_obj, image, format='png', check_contrast=False)
+        file_obj.seek(0)
+        return file_obj.read()
 
     def update(self, func, *args, **kwargs):
         t = QtUpdateUI(func, *args, **kwargs)
