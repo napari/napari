@@ -91,4 +91,4 @@ class QtAboutKeybindings(QDialog):
         d.setStyleSheet(qt_viewer.styleSheet())
         d.setWindowTitle('Keybindings')
         d.setWindowModality(Qt.NonModal)
-        d.exec_()
+        d.show()
