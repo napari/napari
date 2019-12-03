@@ -1,12 +1,19 @@
 import sys
 from contextlib import contextmanager
+from os.path import dirname, join
 
-from qtpy.QtWidgets import QApplication
+from qtpy.QtGui import QPixmap
+from qtpy.QtWidgets import QApplication, QSplashScreen
 
 
 @contextmanager
-def gui_qt():
+def gui_qt(*, startup_logo=False):
     """Start a Qt event loop in which to run the application.
+
+    Parameters
+    ----------
+    startup_logo : bool
+        Show a splash screen with the napari logo during startup.
 
     Notes
     -----
@@ -16,5 +23,11 @@ def gui_qt():
     ``ipython --gui=qt``.
     """
     app = QApplication.instance() or QApplication(sys.argv)
+    if startup_logo:
+        logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
+        splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
+        splash_widget.show()
     yield
+    if startup_logo:
+        splash_widget.close()
     app.exec_()
