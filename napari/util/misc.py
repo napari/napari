@@ -717,20 +717,22 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def get_keybindings_summary(keymap):
+def get_keybindings_summary(keymap, col='rgb(134, 142, 147)'):
     """Get summary of keybindings in keymap.
 
     Parameters
     ---------
     keymap : dict
         Dictionary of keybindings.
+    col : str
+        Color string in format rgb(int, int, int) used for highlighting
+        keypress combination.
 
     Returns
     ---------
     keybindings_str : str
         String with summary of all keybindings and their functions.
     """
-    col = 'rgb(134, 146, 151)'
     keybindings_str = '<table border="0" width="100%">'
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]

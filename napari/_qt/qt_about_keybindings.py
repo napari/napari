@@ -20,6 +20,9 @@ class QtAboutKeybindings(QDialog):
 
         self.viewer = viewer
         self.layout = QVBoxLayout()
+
+        self.setWindowTitle('Keybindings')
+        self.setWindowModality(Qt.NonModal)
         self.setLayout(self.layout)
 
         # stacked keybindings widgets
@@ -29,6 +32,7 @@ class QtAboutKeybindings(QDialog):
         # Can switch to a normal dict when our minimum Python is 3.7
         self.keybindings_strs = OrderedDict()
         self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
+        col = self.viewer.palette['secondary']
         layers = [
             napari.layers.Image,
             napari.layers.Labels,
@@ -41,7 +45,7 @@ class QtAboutKeybindings(QDialog):
             if len(layer.class_keymap) == 0:
                 text = 'No keybindings'
             else:
-                text = get_keybindings_summary(layer.class_keymap)
+                text = get_keybindings_summary(layer.class_keymap, col=col)
             self.keybindings_strs[f"{layer.__name__} layer"] = text
 
         # layer type selection
@@ -62,33 +66,33 @@ class QtAboutKeybindings(QDialog):
         self.layout.addWidget(self.textEditBox, 1)
 
         self.viewer.events.active_layer.connect(self.update_active_layer)
+        self.viewer.events.palette.connect(self.update_active_layer)
         self.update_active_layer(None)
 
     def change_layer_type(self, text):
         self.textEditBox.setHtml(self.keybindings_strs[text])
 
     def update_active_layer(self, event):
+        col = self.viewer.palette['secondary']
         text = ''
         # Add class and instance viewer keybindings
-        text += get_keybindings_summary(self.viewer.class_keymap)
-        text += get_keybindings_summary(self.viewer.keymap)
+        text += get_keybindings_summary(self.viewer.class_keymap, col=col)
+        text += get_keybindings_summary(self.viewer.keymap, col=col)
 
         layer = self.viewer.active_layer
         if layer is not None:
             # Add class and instance layer keybindings for the active layer
-            text += get_keybindings_summary(layer.class_keymap)
-            text += get_keybindings_summary(layer.keymap)
+            text += get_keybindings_summary(layer.class_keymap, col=col)
+            text += get_keybindings_summary(layer.keymap, col=col)
 
         # Update layer speficic keybindings if all active are displayed
         self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
         if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:
             self.textEditBox.setHtml(text)
 
-    @staticmethod
-    def showAbout(qt_viewer):
-        d = QtAboutKeybindings(qt_viewer.viewer)
-        d.setObjectName('QtAboutKeybindings')
-        d.setStyleSheet(qt_viewer.styleSheet())
-        d.setWindowTitle('Keybindings')
-        d.setWindowModality(Qt.NonModal)
-        d.show()
+    def toggle_visible(self, event):
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show()
+            self.raise_()

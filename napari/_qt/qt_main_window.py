@@ -9,7 +9,6 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
-from .qt_about_keybindings import QtAboutKeybindings
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
@@ -176,7 +175,7 @@ class Window:
         about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
         about_keybindings.setStatusTip('keybindings')
         about_keybindings.triggered.connect(
-            lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
+            self.qt_viewer.aboutKeybindings.toggle_visible
         )
         self.help_menu.addAction(about_keybindings)
 
