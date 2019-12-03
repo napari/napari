@@ -1,6 +1,6 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QWidget,
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QTextEdit,
@@ -11,7 +11,7 @@ import napari
 from ..util.misc import get_keybindings_summary
 
 
-class QtAboutKeybindings(QWidget):
+class QtAboutKeybindings(QDialog):
 
     ALL_ACTIVE_KEYBINDINGS = 'All active keybindings'
 
@@ -83,3 +83,12 @@ class QtAboutKeybindings(QWidget):
         self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
         if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:
             self.textEditBox.setHtml(text)
+
+    @staticmethod
+    def showAbout(qt_viewer):
+        d = QtAboutKeybindings(qt_viewer.viewer)
+        d.setObjectName('QtAboutKeybindings')
+        d.setStyleSheet(qt_viewer.styleSheet())
+        d.setWindowTitle('Keybindings')
+        d.setWindowModality(Qt.NonModal)
+        d.exec_()

@@ -60,6 +60,13 @@ QStatusBar > QLabel { /* Help QLabel */
   background-color: {{ background }};
 }
 
+QtAboutKeybindings {
+  min-width: 620px;
+  max-width: 620px;
+  min-height: 620px;
+  max-height: 620px;
+}
+
 QDialog#QtAbout {
   min-width: 620px;
   max-width: 620px;

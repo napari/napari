@@ -9,6 +9,7 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
+from .qt_about_keybindings import QtAboutKeybindings
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
@@ -28,6 +29,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QShortcut,
     QStatusBar,
 )
+from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
 from .util import QImg2array  # noqa: E402
 from ..util.theme import template  # noqa: E402
@@ -84,7 +86,6 @@ class Window:
 
         if self.qt_viewer.console.shell is not None:
             self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-        self._add_viewer_dock_widget(self.qt_viewer.dockAboutKeybindings)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
@@ -169,6 +170,15 @@ class Window:
             lambda e: QtAbout.showAbout(self.qt_viewer)
         )
         self.help_menu.addAction(about_action)
+
+        about_keybindings = QAction("keybindings", self._qt_window)
+        about_keybindings.setShortcut("Ctrl+Alt+/")
+        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_keybindings.setStatusTip('keybindings')
+        about_keybindings.triggered.connect(
+            lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
+        )
+        self.help_menu.addAction(about_keybindings)
 
     def add_dock_widget(
         self,

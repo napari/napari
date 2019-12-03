@@ -29,7 +29,6 @@ from .util import QImg2array
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
-from .qt_about_keybindings import QtAboutKeybindings
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .._vispy import create_vispy_visual
 
@@ -57,13 +56,6 @@ class QtViewer(QSplitter):
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
-        self.dockAboutKeybindings = QtViewerDockWidget(
-            self,
-            QtAboutKeybindings(self.viewer),
-            name='keybindings',
-            shortcut='Ctrl+Alt+/',
-        )
-        self.dockAboutKeybindings.hide()
         self.console = QtConsole({'viewer': self.viewer})
         self.dockConsole = QtViewerDockWidget(
             self, self.console, name='console', shortcut='Ctrl+Shift+C'
