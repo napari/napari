@@ -734,7 +734,7 @@ def get_keybindings_summary(keymap):
     keybindings_str = '<table border="0" width="100%">'
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
-        keycodes = "-".join(
+        keycodes = "+".join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
         keybindings_str += (
