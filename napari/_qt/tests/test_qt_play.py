@@ -7,93 +7,81 @@ from napari._qt.qt_viewer import QtViewer
 from napari.components import ViewerModel
 
 from ...components import Dims
-from ..qt_dims import AnimationThread
+from ..qt_dims import QtDims
+from ..qt_dims_slider import AnimationWorker
+from .._constants import LoopMode
 
 
-# A lot of this code looks messy and unnecessary (and some of it may be!)
-# most of the weird bits are an attempt to circumvent thread timing
-# non-determinism on Cirrus CI OSX tests.
-# see https://github.com/napari/napari/pull/607 for more info
 @contextmanager
-def make_thread(
-    qtbot, nframes=8, fps=20, frame_range=None, playback_mode='loop'
+def make_worker(
+    qtbot, nframes=8, fps=20, frame_range=None, loop_mode=LoopMode.LOOP
 ):
-    # sets up an AnimationThread ready for testing, and breaks down when done
+    # sets up an AnimationWorker ready for testing, and breaks down when done
     dims = Dims(4)
+    qtdims = QtDims(dims)
     nz = 8
     step = 1
     dims.set_range(0, (0, nz, step))
-    thread = AnimationThread(
-        dims, 0, fps=fps, frame_range=frame_range, playback_mode=playback_mode
-    )
-    thread._count = 0
-    thread.nz = nz
+    slider_widget = qtdims.slider_widgets[0]
+    slider_widget.loop_mode = loop_mode
+    slider_widget.fps = fps
+    slider_widget.frame_range = frame_range
 
-    def disconnect_timer():
-        try:
-            thread.timer.timeout.disconnect(thread.advance)
-        except Exception:
-            pass
+    worker = AnimationWorker(slider_widget)
+    worker._count = 0
+    worker.nz = nz
 
     def bump(*args):
-        if thread._count < nframes:
-            thread._count += 1
+        if worker._count < nframes:
+            worker._count += 1
         else:
-            disconnect_timer()
+            worker.finish()
 
     def count_reached():
-        assert thread._count >= nframes
+        assert worker._count >= nframes
 
     def go():
-        thread.start()
+        worker.work()
         qtbot.waitUntil(count_reached, timeout=6000)
-        # trying to prevent "carry over" advancing of the current frame in OSX
-        # tests by disconnecting the timer and immediately stopping the thread
-        disconnect_timer()
-        return thread.current
+        return worker.current
 
-    thread.incremented.connect(bump)
-    thread.go = go
+    worker.frame_requested.connect(bump)
+    worker.go = go
 
-    yield thread
-    try:
-        thread.quit()
-        thread.wait()
-    except Exception:
-        pass
+    yield worker
 
 
 # Each tuple represents different arguments we will pass to make_thread
 # frames, fps, mode, frame_range, expected_result(nframes, nz)
 CONDITIONS = [
     # regular nframes < nz
-    (5, 10, 'loop', None, lambda x, y: x),
+    (5, 10, LoopMode.LOOP, None, lambda x, y: x),
     # loops around to the beginning
-    (10, 10, 'loop', None, lambda x, y: x % y),
+    (10, 10, LoopMode.LOOP, None, lambda x, y: x % y),
     # loops correctly with frame_range specified
-    (10, 10, 'loop', (2, 6), lambda x, y: x % y),
+    (10, 10, LoopMode.LOOP, (2, 6), lambda x, y: x % y),
     # loops correctly going backwards
-    (10, -10, 'loop', None, lambda x, y: y - (x % y)),
+    (10, -10, LoopMode.LOOP, None, lambda x, y: y - (x % y)),
     # loops back and forth
-    (10, 10, 'loop_back_and_forth', None, lambda x, y: x - y + 2),
+    (10, 10, LoopMode.BACK_AND_FORTH, None, lambda x, y: x - y + 2),
     # loops back and forth, with negative fps
-    (10, -10, 'loop_back_and_forth', None, lambda x, y: y - (x % y) - 2),
+    (10, -10, LoopMode.BACK_AND_FORTH, None, lambda x, y: y - (x % y) - 2),
 ]
 
 
 @pytest.mark.parametrize("nframes,fps,mode,rng,result", CONDITIONS)
 def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
-    """This is mostly testing that AnimationThread.advance works as expected"""
-    with make_thread(
-        qtbot, fps=fps, nframes=nframes, frame_range=rng, playback_mode=mode
-    ) as thread:
-        current = thread.go()
+    """This is mostly testing that AnimationWorker.advance works as expected"""
+    with make_worker(
+        qtbot, fps=fps, nframes=nframes, frame_range=rng, loop_mode=mode
+    ) as worker:
+        current = worker.go()
     if rng:
         nrange = rng[1] - rng[0] + 1
         expected = rng[0] + result(nframes, nrange)
         assert expected - 1 <= current <= expected + 1
     else:
-        expected = result(nframes, thread.nz)
+        expected = result(nframes, worker.nz)
         # assert current == expected
         # relaxing for CI OSX tests
         assert expected - 1 <= current <= expected + 1
@@ -102,10 +90,12 @@ def test_animation_thread_variants(qtbot, nframes, fps, mode, rng, result):
 def test_animation_thread_once(qtbot):
     """Single shot animation should stop when it reaches the last frame"""
     nframes = 13
-    with make_thread(qtbot, nframes=nframes, playback_mode='once') as thread:
-        with qtbot.waitSignal(thread.finished, timeout=8000):
-            thread.start()
-    assert thread.current == thread.nz
+    with make_worker(
+        qtbot, nframes=nframes, loop_mode=LoopMode.ONCE
+    ) as worker:
+        with qtbot.waitSignal(worker.finished, timeout=8000):
+            worker.work()
+    assert worker.current == worker.nz
 
 
 @pytest.fixture()
@@ -142,9 +132,9 @@ def test_play_raises_value_errors(qtbot, view):
         qtbot.wait(20)
         view.dims.stop()
 
-    # that's not a valid playback_mode
+    # that's not a valid loop_mode
     with pytest.raises(ValueError):
-        view.dims.play(0, 20, playback_mode='enso')
+        view.dims.play(0, 20, loop_mode=5)
         qtbot.wait(20)
         view.dims.stop()
 
@@ -162,7 +152,7 @@ def test_play_api(qtbot, view):
 
     view.dims.play(0, 20)
     # wait for the thread to start before timing...
-    qtbot.waitSignal(view.dims._animation_thread.timer.timeout, timeout=10000)
+    qtbot.waitSignal(view.dims._animation_thread.started, timeout=10000)
     qtbot.wait(370)
     with qtbot.waitSignal(view.dims._animation_thread.finished, timeout=7000):
         view.dims.stop()
@@ -186,4 +176,3 @@ def test_playing_hidden_slider_does_nothing(qtbot, view):
 
     view.dims.play(2, 20)
     assert not view.dims.is_playing
-    assert not hasattr(view.dims, '_animation_thread')
