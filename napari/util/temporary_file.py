@@ -5,7 +5,7 @@ import os
 
 @contextmanager
 def temporary_file(suffix=''):
-    """Yield a writeable temporary filename that is deleted on context exit.
+    """Yield a writable temporary filename that is deleted on context exit.
     Parameters
     ----------
     suffix : string, optional
