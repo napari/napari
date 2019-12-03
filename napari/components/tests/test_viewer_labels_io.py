@@ -12,8 +12,8 @@ def test_open_labels(suffix):
     viewer = ViewerModel()
     blobs = binary_blobs(length=128, volume_fraction=0.1, n_dim=2)
     labeled = ndi.label(blobs)[0].astype(np.uint8)
-    with NamedTemporaryFile(suffix=suffix) as fout:
-        imwrite(fout, labeled, format=suffix)
+    with NamedTemporaryFile(mode='w', suffix=suffix) as fout:
+        imwrite(fout.name, labeled, format=suffix)
         viewer.add_labels(path=fout.name)
         assert len(viewer.layers) == 1
         assert np.all(labeled == viewer.layers[0].data)
