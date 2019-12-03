@@ -693,21 +693,28 @@ def mouse_release_callbacks(obj, event):
         del obj._persisted_mouse_event[gen]
 
 
-KEY_SYMBOLS = {}
+KEY_SYMBOLS = {
+    'Control': 'Ctrl',
+    'Shift': '⇧',
+    'Alt': 'Alt',
+    'Option': 'Opt',
+    'Meta': '⊞',
+    'Left': '←',
+    'Right': '→',
+    'Up': '↑',
+    'Down': '↓',
+    'Backspace': '⌫',
+    'Tab': '↹',
+    'Escape': 'Esc',
+    'Return': '⏎',
+    'Enter': '↵',
+}
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update(
-        {
-            'Control': '⌘',
-            'Shift': '⇧',
-            'Alt': '⌥',
-            'Option': '⌥',
-            'Left': '←',
-            'Right': '→',
-            'Up': '↑',
-            'Down': '↓',
-            'Backspace': '⌫',
-        }
+        {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
     )
+elif sys.platform.startswith('linux'):
+    KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
 def get_keybindings_summary(keymap):
