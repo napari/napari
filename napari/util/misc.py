@@ -1,6 +1,6 @@
 """Miscellaneous utility functions.
 """
-from enum import Enum
+from enum import Enum, EnumMeta
 import re
 import inspect
 import itertools
@@ -451,17 +451,47 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
     return coords
 
 
-class StringEnum(Enum):
+class StringEnumMeta(EnumMeta):
+    def __getitem__(self, item):
+        """ set the item name case to uppercase for name lookup
+        """
+        if isinstance(item, str):
+            item = item.upper()
+
+        return super().__getitem__(item)
+
+    def __call__(
+        cls,
+        value,
+        names=None,
+        *,
+        module=None,
+        qualname=None,
+        type=None,
+        start=1,
+    ):
+        """ set the item value case to lowercase for value lookup
+        """
+        # simple value lookup
+        if names is None:
+            value = value.lower()
+            return super().__call__(value)
+        # otherwise create new Enum class
+        return cls._create_(
+            value,
+            names,
+            module=module,
+            qualname=qualname,
+            type=type,
+            start=start,
+        )
+
+
+class StringEnum(Enum, metaclass=StringEnumMeta):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value
         """
         return name.lower()
-
-    def _missing_(self, value):
-        """ function called with provided value does not match any of the class
-           member values. This function tries again with an upper case string.
-        """
-        return self(value.lower())
 
     def __str__(self):
         """String representation: The string method returns the lowercase
