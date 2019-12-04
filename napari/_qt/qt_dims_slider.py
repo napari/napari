@@ -3,7 +3,6 @@ from typing import Optional, Tuple
 import numpy as np
 from qtpy.QtCore import Qt, QTimer, Signal, Slot, QObject
 from qtpy.QtWidgets import QApplication
-from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -46,7 +45,7 @@ class QtDimSliderWidget(QWidget):
         self.slider = None
         self.play_button = None
         self.slice_label = QLabel(self)
-        self.slice_label.setObjectName('sliceLabel')
+        self.slice_label.setObjectName('slice_label')
 
         self._fps = 10
         self._minframe = None
@@ -169,9 +168,6 @@ class QtDimSliderWidget(QWidget):
                 self.slider.setMaximum(_range[1])
                 self.slider.setSingleStep(_range[2])
                 self.slider.setPageStep(_range[2])
-                fm = QFontMetrics(QFont("", 0))
-                longest = str(_range[1] // _range[2]) * 2 + '   /   '
-                self.slice_label.setFixedWidth(fm.width(longest))
                 self._update_slice_labels()
         else:
             displayed_sliders[self.axis] = False

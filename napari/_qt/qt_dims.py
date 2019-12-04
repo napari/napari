@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 from qtpy.QtGui import QFont, QFontMetrics
-from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
+from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget, QLabel
 
 from ..components.dims import Dims
 from .qt_dims_slider import QtDimSliderWidget
@@ -127,6 +127,7 @@ class QtDims(QWidget):
         self.slider_widgets[axis]._update_range()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+        self._resize_slice_labels()
 
     def _update_display(self, event=None):
         """Updates display for all sliders.
@@ -163,7 +164,7 @@ class QtDims(QWidget):
             if self._displayed_sliders[i]:
                 self._update_slider(i)
 
-    def _resize_labels(self):
+    def _resize_axis_labels(self):
         """When any of the labels get updated, this method updates all label
         widths to the width of the longest label. This keeps the sliders
         left-aligned and allows the full label to be visible at all times,
@@ -180,6 +181,26 @@ class QtDims(QWidget):
         for labl in labels:
             labl.setFixedWidth(newwidth + 10)
 
+    def _resize_slice_labels(self):
+        """When the size of any dimension changes, we want to resize all of the
+        slice labels to width of the longest label, to keep all the sliders
+        right aligned.  The width is determined by the number of digits in the
+        largest dimensions, plus a little padding.
+        """
+        fm = QFontMetrics(QFont("", 0))
+
+        width = 0
+        for axis, slider in enumerate(self.slider_widgets):
+            if not self._displayed_sliders[axis]:
+                continue
+            _range = self.dims.range[axis]
+            longest = str(_range[1] - _range[2] // _range[2]) * 2 + ' / '
+            length = fm.width(longest)
+            if length > width:
+                width = length
+        for labl in self.findChildren(QLabel, 'slice_label'):
+            labl.setMinimumWidth(width + 4)
+
     def _create_sliders(self, number_of_sliders: int):
         """Creates sliders to match new number of dimensions.
 
@@ -193,14 +214,14 @@ class QtDims(QWidget):
         for slider_num in range(self.nsliders, number_of_sliders):
             dim_axis = number_of_sliders - slider_num - 1
             slider_widget = QtDimSliderWidget(self, dim_axis)
-            slider_widget.axis_label_changed.connect(self._resize_labels)
+            slider_widget.axis_label_changed.connect(self._resize_axis_labels)
             slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
             self.slider_widgets.insert(0, slider_widget)
             self._displayed_sliders.insert(0, True)
             nsliders = np.sum(self._displayed_sliders)
             self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
-        self._resize_labels()
+        self._resize_axis_labels()
 
     def _trim_sliders(self, number_of_sliders):
         """Trims number of dimensions to a lower number.

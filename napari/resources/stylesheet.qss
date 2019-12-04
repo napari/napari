@@ -1153,9 +1153,9 @@ QtPlayButton[playing=True] {
    border-radius: 3px;
 }
 
-#sliceLabel {
+#slice_label {
   background-color: {{ background }};
   color: {{ secondary }};
-  padding-top: 3.5px;
-  font-size: 12pt;
+  padding-top: 3px;
+  font-size: 11pt;
 }
