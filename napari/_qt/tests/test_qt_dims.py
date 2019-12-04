@@ -185,9 +185,9 @@ def test_update_dims_labels(qtbot):
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
     view.dims.axis_labels = list('TZYX')
-    assert [w.label.text() for w in view.slider_widgets] == list('TZYX')
+    assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
-    first_label = view.slider_widgets[0].label
+    first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
     first_label.setText('napari')
     # first_label.editingFinished.emit()
