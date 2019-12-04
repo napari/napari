@@ -1,25 +1,27 @@
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtCore import Qt, QTimer, Signal, Slot, QObject
-from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import QObject, Qt, QTimer, Signal, Slot
+from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
+    QApplication,
+    QCheckBox,
     QComboBox,
+    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QDoubleSpinBox,
     QWidget,
-    QCheckBox,
+    QFrame,
 )
 
+from ..components.dims_constants import DimsMode
 from ..util.event import Event
+from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
 from .util import new_worker_qthread
-from ._constants import LoopMode
-from ..components.dims_constants import DimsMode
 
 
 class QtDimSliderWidget(QWidget):
@@ -44,8 +46,29 @@ class QtDimSliderWidget(QWidget):
         self.axis_label = None
         self.slider = None
         self.play_button = None
-        self.slice_label = QLabel(self)
-        self.slice_label.setObjectName('slice_label')
+        self.curslice_label = QLineEdit(self)
+        self.curslice_label.setValidator(QIntValidator(0, 999999))
+
+        def change_slice():
+            # TODO: this code is repeated multiple times... should be moved to
+            # dims model
+            _range = self.dims.range[self.axis]
+            val = int(self.curslice_label.text())
+            max_allowed = (_range[1] - _range[2]) // _range[2]
+            if val > max_allowed:
+                val = max_allowed
+                self.curslice_label.setText(str(val))
+            self.curslice_label.clearFocus()
+            self.qt_dims.setFocus()
+            self.dims.set_point(self.axis, val)
+
+        self.curslice_label.editingFinished.connect(change_slice)
+        self.totslice_label = QLabel(self)
+        self.curslice_label.setObjectName('slice_label')
+        self.totslice_label.setObjectName('slice_label')
+        sep = QFrame(self)
+        sep.setFixedSize(1, 14)
+        sep.setObjectName('slice_label_sep')
 
         self._fps = 10
         self._minframe = None
@@ -60,7 +83,9 @@ class QtDimSliderWidget(QWidget):
         layout.addWidget(self.axis_label)
         layout.addWidget(self.play_button)
         layout.addWidget(self.slider, stretch=1)
-        layout.addWidget(self.slice_label)
+        layout.addWidget(self.curslice_label)
+        layout.addWidget(sep)
+        layout.addWidget(self.totslice_label)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
         self.setLayout(layout)
@@ -182,9 +207,10 @@ class QtDimSliderWidget(QWidget):
     def _update_slice_labels(self):
         _range = self.dims.range[self.axis]
         _range = (_range[0], _range[1] - _range[2], _range[2])
-        self.slice_label.setAlignment(Qt.AlignRight)
-        val = f"{self.dims.point[self.axis]} / {_range[1] // _range[2]}"
-        self.slice_label.setText(val)
+        self.curslice_label.setText(str(self.dims.point[self.axis]))
+        self.totslice_label.setText(str(_range[1] // _range[2]))
+        self.curslice_label.setAlignment(Qt.AlignRight)
+        self.totslice_label.setAlignment(Qt.AlignLeft)
 
     @property
     def fps(self):

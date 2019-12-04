@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 import numpy as np
 from qtpy.QtGui import QFont, QFontMetrics
-from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget, QLabel
+from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ..components.dims import Dims
 from .qt_dims_slider import QtDimSliderWidget
@@ -194,12 +194,12 @@ class QtDims(QWidget):
             if not self._displayed_sliders[axis]:
                 continue
             _range = self.dims.range[axis]
-            longest = str(_range[1] - _range[2] // _range[2]) * 2 + ' / '
+            longest = str(_range[1] - _range[2] // _range[2])
             length = fm.width(longest)
             if length > width:
                 width = length
-        for labl in self.findChildren(QLabel, 'slice_label'):
-            labl.setMinimumWidth(width + 4)
+        for labl in self.findChildren(QWidget, 'slice_label'):
+            labl.setFixedWidth(width + 6)
 
     def _create_sliders(self, number_of_sliders: int):
         """Creates sliders to match new number of dimensions.
