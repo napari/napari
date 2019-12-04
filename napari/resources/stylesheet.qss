@@ -1152,3 +1152,11 @@ QtPlayButton[playing=True] {
    background-color: {{ foreground }};
    border-radius: 3px;
 }
+
+#curSliceLabel, #totSliceLabel {
+  background-color: {{ background }};
+  color: {{ secondary }};
+  padding-top: 3.5px;
+  padding-right: 0px;
+  font-size: 12pt;
+}

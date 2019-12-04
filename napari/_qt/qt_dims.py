@@ -6,7 +6,6 @@ from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ..components.dims import Dims
-from ..components.dims_constants import DimsMode
 from .qt_dims_slider import QtDimSliderWidget
 from ._constants import LoopMode
 
@@ -111,11 +110,7 @@ class QtDims(QWidget):
         if axis >= len(self.slider_widgets):
             return
 
-        slider = self.slider_widgets[axis].slider
-
-        mode = self.dims.mode[axis]
-        if mode == DimsMode.POINT:
-            slider.setValue(self.dims.point[axis])
+        self.slider_widgets[axis]._update_slider()
         self.last_used = axis
 
     def _update_range(self, axis: int):
@@ -198,7 +193,7 @@ class QtDims(QWidget):
         for slider_num in range(self.nsliders, number_of_sliders):
             dim_axis = number_of_sliders - slider_num - 1
             slider_widget = QtDimSliderWidget(self, dim_axis)
-            slider_widget.label_changed.connect(self._resize_labels)
+            slider_widget.axis_label_changed.connect(self._resize_labels)
             slider_widget.play_button.play_requested.connect(self.play)
             self.layout().addWidget(slider_widget)
             self.slider_widgets.insert(0, slider_widget)
