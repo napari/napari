@@ -60,10 +60,9 @@ QStatusBar > QLabel { /* Help QLabel */
   background-color: {{ background }};
 }
 
-QDialog#QtAboutKeybindings {
-  min-width: 500px;
-  max-width: 500px;
-  min-height: 300px;
+QtAboutKeybindings {
+  min-width: 600px;
+  min-height: 605px;
 }
 
 QDialog#QtAbout {
@@ -76,14 +75,6 @@ QDialog#QtAbout {
 QtAbout > QLabel {
   background-color: {{ background }};
   qproperty-alignment: AlignLeft;
-}
-
-QtActiveKeybindings > QLabel {
-   qproperty-alignment: AlignLeft;
-}
-
-QtActiveKeybindings > QLabel {
-   qproperty-alignment: AlignLeft;
 }
 
 QTabBar::tab {
@@ -998,6 +989,32 @@ QScrollBar::add-page,
 QScrollBar::sub-page {
     background: none;
 }
+
+
+/* ------------- QComboBox --------- */
+
+QComboBox {
+   background-color: {{ primary }};
+   padding-left: 6px;
+   padding-right: 10px;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QComboBox::drop-down {
+   subcontrol-origin: padding;
+   subcontrol-position: top right;
+   width: 30px;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+}
+
+QComboBox::down-arrow {
+   image: url(":/icons/{{ folder }}/drop_down.svg");
+   width: 14px;
+   height: 14px;
+}
+
 
 /* ------------- DimsSliders --------- */
 
