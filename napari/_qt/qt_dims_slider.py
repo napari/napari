@@ -47,6 +47,7 @@ class QtDimSliderWidget(QWidget):
         self.slider = None
         self.play_button = None
         self.curslice_label = QLineEdit(self)
+        self.curslice_label.setToolTip(f'Current slice for axis {axis}')
         self.curslice_label.setValidator(QIntValidator(0, 999999))
 
         def change_slice():
@@ -64,6 +65,7 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.editingFinished.connect(change_slice)
         self.totslice_label = QLabel(self)
+        self.totslice_label.setToolTip(f'Total slices for axis {axis}')
         self.curslice_label.setObjectName('slice_label')
         self.totslice_label.setObjectName('slice_label')
         sep = QFrame(self)
