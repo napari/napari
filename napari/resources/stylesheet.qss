@@ -1166,7 +1166,6 @@ QtPlayButton[playing=True] {
   padding-left: 1px;
 }
 
-
 #slice_label_sep{
   background-color: {{ background }};
   border: 1px solid {{ primary }};
