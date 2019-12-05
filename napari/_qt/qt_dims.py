@@ -187,17 +187,15 @@ class QtDims(QWidget):
         right aligned.  The width is determined by the number of digits in the
         largest dimensions, plus a little padding.
         """
-        fm = QFontMetrics(QFont("", 0))
-
         width = 0
-        for axis, slider in enumerate(self.slider_widgets):
-            if not self._displayed_sliders[axis]:
-                continue
-            _range = self.dims.range[axis]
-            longest = str(_range[1] - _range[2] // _range[2])
-            length = fm.width(longest)
-            if length > width:
-                width = length
+        for ax, maxi in enumerate(self.dims.max_indices):
+            if self._displayed_sliders[ax]:
+                length = len(str(int(maxi)))
+                if length > width:
+                    width = length
+        # gui width of a string of length `width`
+        fm = QFontMetrics(QFont("", 0))
+        width = fm.width("8" * width)
         for labl in self.findChildren(QWidget, 'slice_label'):
             labl.setFixedWidth(width + 6)
 

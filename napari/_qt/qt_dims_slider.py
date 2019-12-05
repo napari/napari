@@ -48,14 +48,17 @@ class QtDimSliderWidget(QWidget):
         self.play_button = None
         self.curslice_label = QLineEdit(self)
         self.curslice_label.setToolTip(f'Current slice for axis {axis}')
+        # if we set the QIntValidator to actually reflect the range of the data
+        # then an invalid (i.e. too large) index doesn't actually trigger the
+        # editingFinished event (the user is expected to change the value)...
+        # which is confusing to the user, so instead we use an IntValidator
+        # that makes sure the user can only enter integers, but we do our own
+        # value validation in change_slice
         self.curslice_label.setValidator(QIntValidator(0, 999999))
 
         def change_slice():
-            # TODO: this code is repeated multiple times... should be moved to
-            # dims model
-            _range = self.dims.range[self.axis]
             val = int(self.curslice_label.text())
-            max_allowed = (_range[1] - _range[2]) // _range[2]
+            max_allowed = self.dims.max_indices[self.axis]
             if val > max_allowed:
                 val = max_allowed
                 self.curslice_label.setText(str(val))
@@ -195,6 +198,9 @@ class QtDimSliderWidget(QWidget):
                 self.slider.setMaximum(_range[1])
                 self.slider.setSingleStep(_range[2])
                 self.slider.setPageStep(_range[2])
+                maxi = self.dims.max_indices[self.axis]
+                self.totslice_label.setText(str(int(maxi)))
+                self.totslice_label.setAlignment(Qt.AlignLeft)
                 self._update_slice_labels()
         else:
             displayed_sliders[self.axis] = False
@@ -207,12 +213,11 @@ class QtDimSliderWidget(QWidget):
             self._update_slice_labels()
 
     def _update_slice_labels(self):
-        _range = self.dims.range[self.axis]
-        _range = (_range[0], _range[1] - _range[2], _range[2])
-        self.curslice_label.setText(str(self.dims.point[self.axis]))
-        self.totslice_label.setText(str(_range[1] // _range[2]))
+        step = self.dims.range[self.axis][2]
+        self.curslice_label.setText(
+            str(int(self.dims.point[self.axis] // step))
+        )
         self.curslice_label.setAlignment(Qt.AlignRight)
-        self.totslice_label.setAlignment(Qt.AlignLeft)
 
     @property
     def fps(self):
