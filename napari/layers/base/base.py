@@ -132,7 +132,7 @@ class Layer(KeymapMixin, ABC):
         self.dims = Dims(ndim)
         if scale is None:
             self._scale = [1] * ndim
-        else:
+        else:  # covers list and array-like inputs
             self._scale = list(scale)
         self._translate = translate or [0] * ndim
         self._scale_view = np.ones(ndim)
