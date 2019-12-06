@@ -32,7 +32,7 @@ class QtDimSliderWidget(QWidget):
     """
 
     axis_label_changed = Signal(int, str)  # axis, label
-    fps_changed = Signal(float)
+    fps_changed = Signal(int)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
     play_started = Signal()
