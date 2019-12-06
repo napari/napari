@@ -130,7 +130,10 @@ class Layer(KeymapMixin, ABC):
         self.scale_factor = 1
 
         self.dims = Dims(ndim)
-        self._scale = scale or [1] * ndim
+        if scale is None:
+            self._scale = [1] * ndim
+        else:
+            self._scale = list(scale)
         self._translate = translate or [0] * ndim
         self._scale_view = np.ones(ndim)
         self._translate_view = np.zeros(ndim)
