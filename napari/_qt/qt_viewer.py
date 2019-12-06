@@ -29,7 +29,7 @@ from .util import QImg2array
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
-from .qt_viewer_dock_widget import QtViewerDockWidget, QtMinimalDockWidget
+from .qt_viewer_dock_widget import QtMinimalDockWidget
 from .._vispy import create_vispy_visual
 
 
@@ -80,12 +80,12 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
         )
-        self.dockConsole = QtViewerDockWidget(
+        self.dockConsole = QtMinimalDockWidget(
             self,
             self.console,
             name='console',
             area='bottom',
-            allowed_areas=['top', 'bottom'],
+            # allowed_areas=['top', 'bottom'],
         )
         self.dockConsole.setVisible(False)
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)

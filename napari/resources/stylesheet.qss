@@ -1083,4 +1083,5 @@ QtDims > QScrollBar::handle[last_used=true]:horizontal {
 #QMinimalTitleBar > QPushButton {
   image: url(":/icons/{{ folder }}/delete_shape.svg");
   max-width: 12px;
+  max-height: 12px;
 }

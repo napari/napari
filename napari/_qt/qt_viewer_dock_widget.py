@@ -5,11 +5,12 @@ from typing import List, Optional
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QDockWidget,
-    QWidget,
-    QHBoxLayout,
     QFrame,
+    QHBoxLayout,
     QLabel,
     QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 
@@ -88,6 +89,8 @@ class QtViewerDockWidget(QDockWidget):
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
             features = self._features
+            if features & self.DockWidgetVerticalTitleBar:
+                features = features ^ self.DockWidgetVerticalTitleBar
         else:
             features = self._features | self.DockWidgetVerticalTitleBar
         self.setFeatures(features)
@@ -100,23 +103,36 @@ class QMinimalTitleBar(QLabel):
     for hover.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None, vertical=False):
+        super().__init__(parent)
         self.setObjectName("QMinimalTitleBar")
-
-        layout = QHBoxLayout()
-        layout.setContentsMargins(8, 0, 8, 0)
-        layout.setSpacing(4)
+        self.setProperty('vertical', str(vertical))
+        self.vertical = vertical
 
         line = QFrame(self)
-        line.setFixedHeight(1)
         line.setObjectName("QMinimalTitleBarLine")
 
         self.close_button = QPushButton(self)
         self.close_button.setCursor(Qt.ArrowCursor)
+        self.close_button.clicked.connect(
+            lambda: self.parent().toggleViewAction().trigger()
+        )
 
-        layout.addWidget(self.close_button)
-        layout.addWidget(line)
+        if vertical:
+            layout = QVBoxLayout()
+            layout.setSpacing(4)
+            layout.setContentsMargins(1, 8, 0, 8)
+            line.setFixedWidth(1)
+            layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
+            layout.addWidget(line, 0, Qt.AlignHCenter)
+
+        else:
+            layout = QHBoxLayout()
+            layout.setSpacing(4)
+            layout.setContentsMargins(8, 1, 8, 0)
+            line.setFixedHeight(1)
+            layout.addWidget(self.close_button)
+            layout.addWidget(line)
 
         self.setLayout(layout)
         self.setCursor(Qt.OpenHandCursor)
@@ -124,7 +140,10 @@ class QMinimalTitleBar(QLabel):
     def sizeHint(self):
         # this seems to be the correct way to set the height of the titlebar
         szh = super().sizeHint()
-        szh.setHeight(18)
+        if self.vertical:
+            szh.setWidth(20)
+        else:
+            szh.setHeight(20)
         return szh
 
 
@@ -136,20 +155,25 @@ class QtMinimalDockWidget(QtViewerDockWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setObjectName("QtMinimalDockWidget")
-
-        self.title = QMinimalTitleBar()
+        self.title = QMinimalTitleBar(self)
         self.setTitleBarWidget(self.title)
+        self.visibilityChanged.connect(self._on_visibility_changed)
 
-        self.toggle_visibility = self.toggleViewAction().trigger
-        self.title.close_button.clicked.connect(self.toggle_visibility)
-        # self.topLevelChanged.connect(self._on_top_level_change)
-
-    def _on_top_level_change(self, event):
-        # if connected, this will give a native title bar to floated windows...
-        # however, I haven't yet been able to prevent the "permanent-floating"
-        # problem once a floated window is closed with the native button.
-        # so this is currently unconnected
+    @property
+    def is_vertical(self):
         if self.isFloating():
-            self.setTitleBarWidget(None)
+            return self.size().height() > self.size().width()
         else:
+            return self.parent().dockWidgetArea(self) in (
+                Qt.LeftDockWidgetArea,
+                Qt.RightDockWidgetArea,
+            )
+
+    def _on_visibility_changed(self):
+        self.blockSignals(True)
+        self.setTitleBarWidget(None)
+        if not self.isFloating():
+            v = self.is_vertical
+            self.title = QMinimalTitleBar(self, vertical=not v)
             self.setTitleBarWidget(self.title)
+        self.blockSignals(False)
