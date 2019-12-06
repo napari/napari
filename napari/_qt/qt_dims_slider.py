@@ -32,7 +32,7 @@ class QtDimSliderWidget(QWidget):
     """
 
     axis_label_changed = Signal(int, str)  # axis, label
-    fps_changed = Signal(int)
+    fps_changed = Signal(float)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
     play_started = Signal()
@@ -474,7 +474,7 @@ class AnimationWorker(QObject):
             self.advance()
         self.started.emit()
 
-    @Slot(int)
+    @Slot(float)
     def set_fps(self, fps):
         if fps == 0:
             return self.finish()
