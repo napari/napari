@@ -1,8 +1,10 @@
 import numpy as np
+import napari
 from napari import Viewer
 import dask.array as da
 import zarr
 import xarray as xr
+import pytest
 
 
 def test_dask_2D(qtbot):
@@ -129,3 +131,20 @@ def test_xarray_nD(qtbot):
 
     # Close the viewer
     viewer.window.close()
+
+
+@pytest.mark.parametrize("scale", [
+    (None),
+    ([1, 1]),
+    (np.array([1, 1])),
+    (da.from_array([1, 1], chunks=1)),
+    (da.from_array([1, 1], chunks=2)),
+    (xr.DataArray(np.array([1, 1]))),
+    (xr.DataArray(np.array([1, 1]), dims=('dimension_name'))),
+    ])
+def test_scale_arraytypes(qtbot, scale):
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer = napari.view_image(data, scale=scale)
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
