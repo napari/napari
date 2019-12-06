@@ -20,6 +20,7 @@ def test_qt_viewer(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_add_image(qtbot):
@@ -39,6 +40,7 @@ def test_add_image(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_add_volume(qtbot):
@@ -58,6 +60,7 @@ def test_add_volume(qtbot):
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_add_pyramid(qtbot):
@@ -78,6 +81,7 @@ def test_add_pyramid(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_add_labels(qtbot):
@@ -97,6 +101,7 @@ def test_add_labels(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_add_points(qtbot):
@@ -116,6 +121,7 @@ def test_add_points(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_add_vectors(qtbot):
@@ -135,6 +141,7 @@ def test_add_vectors(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_add_shapes(qtbot):
@@ -154,6 +161,7 @@ def test_add_shapes(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_new_labels(qtbot):
@@ -188,6 +196,7 @@ def test_new_labels(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_new_points(qtbot):
@@ -222,6 +231,7 @@ def test_new_points(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_new_shapes(qtbot):
@@ -256,6 +266,7 @@ def test_new_shapes(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
 
 
 def test_screenshot(qtbot):
@@ -288,6 +299,7 @@ def test_screenshot(qtbot):
     # Take screenshot
     screenshot = view.screenshot()
     assert screenshot.ndim == 3
+    view.shutdown()
 
 
 @pytest.mark.parametrize(
@@ -316,3 +328,4 @@ def test_qt_viewer_data_integrity(qtbot, dtype):
     viewer.dims.ndisplay = 2
     datamean = viewer.layers[0].data.mean()
     assert datamean == imean
+    view.shutdown()

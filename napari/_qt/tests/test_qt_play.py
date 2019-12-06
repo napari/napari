@@ -118,6 +118,10 @@ def view(qtbot):
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
+
+    yield view  # Adding teardown code for fixture
+    print("shutting down QtViewer")
+    view.shutdown()
     return view
 
 
