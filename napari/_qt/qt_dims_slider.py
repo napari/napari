@@ -474,7 +474,7 @@ class AnimationWorker(QObject):
             self.advance()
         self.started.emit()
 
-    @Slot(int)
+    @Slot(float)
     def set_fps(self, fps):
         if fps == 0:
             return self.finish()
