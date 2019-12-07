@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 from pathlib import Path
 import os.path
 import napari
-from .layers.qt_image_layer import QtImageDialog
+from .layers import QtImageDialog, QtLabelsDialog
 
 
 class QtOpenDialog(QDialog):
@@ -25,8 +25,11 @@ class QtOpenDialog(QDialog):
         super().__init__()
 
         self.viewer = viewer
-        self._add_methods = {napari.layers.Image: self.viewer.add_image}
-        self.widgets = {'Image': QtImageDialog()}
+        self._add_methods = {
+            napari.layers.Image: self.viewer.add_image,
+            napari.layers.Labels: self.viewer.add_labels,
+        }
+        self.widgets = {'Image': QtImageDialog(), 'Labels': QtLabelsDialog()}
 
         self._last_visited_dir = str(Path.home())
 
@@ -52,6 +55,7 @@ class QtOpenDialog(QDialog):
         self.removeFiles.setObjectName('dialog')
         self.removeFiles.clicked.connect(self._click_remove_files)
         self.selectionLayout.addWidget(self.removeFiles)
+        self.selectionLayout.addStretch(1)
 
         # select folder
         self.selectFolder = QPushButton('select folder')
@@ -81,6 +85,7 @@ class QtOpenDialog(QDialog):
         layer_type_layout = QHBoxLayout()
         layer_type_layout.addWidget(QLabel('Layer type:'))
         layer_type_layout.addWidget(self.layerTypeComboBox)
+        layer_type_layout.addStretch(1)
         layer_type_layout.setSpacing(0)
         self.layout.addLayout(layer_type_layout)
 

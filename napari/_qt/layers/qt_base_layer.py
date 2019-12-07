@@ -77,8 +77,10 @@ class QtLayerDialog(QFrame):
         self.parameters = inspect.signature(self.layer.__init__).parameters
 
         self.grid_layout = QGridLayout()
-        self.grid_layout.setContentsMargins(0, 0, 0, 0)
-        self.grid_layout.setSpacing(2)
+        self.grid_layout.setContentsMargins(4, 4, 4, 4)
+        self.grid_layout.setColumnStretch(4, 1)
+        self.grid_layout.setVerticalSpacing(1)
+        self.grid_layout.setHorizontalSpacing(2)
         self.setLayout(self.grid_layout)
 
         self.nameTextBox = QLineEdit()
@@ -88,22 +90,15 @@ class QtLayerDialog(QFrame):
         self.nameTextBox.setAcceptDrops(False)
         self.nameTextBox.editingFinished.connect(self.changeText)
 
-        self.visibleCheckBox = QCheckBox(self)
+        self.visibleCheckBox = QCheckBox()
         self.visibleCheckBox.setToolTip('Layer visibility')
         self.visibleCheckBox.setChecked(self.parameters['visible'].default)
 
         self.blendingComboBox = QComboBox()
         for mode in Blending:
             self.blendingComboBox.addItem(str(mode))
-        name = self.parameters['blending'].default
-        self.blendingComboBox.setCurrentText(str(name))
-
-        self.blendingCheckBox = QCheckBox(self)
-        self.blendingCheckBox.setToolTip('Set blending mode')
-        self.blendingCheckBox.setChecked(False)
-        self.blendingCheckBox.stateChanged.connect(self._on_blending_change)
-        self.blendingCheckBox.setChecked(False)
-        self._on_blending_change(None)
+        blending = self.parameters['blending'].default
+        self.blendingComboBox.setCurrentText(str(blending))
 
         self.opacitySpinBox = QDoubleSpinBox()
         self.opacitySpinBox.setToolTip('Opacity')
@@ -134,13 +129,6 @@ class QtLayerDialog(QFrame):
         self.metadataTextBox.setToolTip('Layer metadata')
         self.metadataTextBox.setAcceptDrops(False)
         self.metadataTextBox.editingFinished.connect(self.change_metadata)
-
-    def _on_blending_change(self, event):
-        state = self.blendingCheckBox.isChecked()
-        if state:
-            self.blendingComboBox.show()
-        else:
-            self.blendingComboBox.hide()
 
     def change_scale(self):
         try:
@@ -179,12 +167,7 @@ class QtLayerDialog(QFrame):
         """
         name = self.nameTextBox.text()
         visible = self.visibleCheckBox.isChecked()
-
-        if self.blendingCheckBox.isChecked():
-            blending = self.blendingComboBox.currentText()
-        else:
-            blending = None
-
+        blending = self.blendingComboBox.currentText()
         opacity = self.opacitySpinBox.value()
 
         scale = self.scaleTextBox.text()

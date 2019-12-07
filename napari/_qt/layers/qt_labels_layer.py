@@ -8,12 +8,15 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QLabel,
     QSpinBox,
+    QDoubleSpinBox,
 )
 from qtpy.QtCore import Qt
 
 import numpy as np
-from .qt_base_layer import QtLayerControls
+from .qt_base_layer import QtLayerControls, QtLayerDialog
+from ...layers import Labels
 from ...layers.labels._constants import Mode
+from ..util import check_state_2_arg, arg_2_check_state
 
 
 class QtLabelsControls(QtLayerControls):
@@ -234,3 +237,76 @@ class QtColorBox(QWidget):
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
+
+
+class QtLabelsDialog(QtLayerDialog):
+    def __init__(self):
+        super().__init__(Labels)
+
+        self.pyramidCheckBox = QCheckBox(self)
+        self.pyramidCheckBox.setToolTip('Is pyramid')
+        self.pyramidCheckBox.setTristate(True)
+        state = arg_2_check_state[self.parameters['is_pyramid'].default]
+        self.pyramidCheckBox.setCheckState(state)
+
+        self.seedSpinBox = QDoubleSpinBox()
+        self.seedSpinBox.setToolTip('seed')
+        self.seedSpinBox.setKeyboardTracking(False)
+        self.seedSpinBox.setSingleStep(0.1)
+        self.seedSpinBox.setMinimum(-2147483647)
+        self.seedSpinBox.setMaximum(2147483647)
+        seed = self.parameters['seed'].default
+        self.seedSpinBox.setValue(seed)
+
+        self.numColorsSpinBox = QSpinBox()
+        self.numColorsSpinBox.setToolTip('Number of colors')
+        self.numColorsSpinBox.setKeyboardTracking(False)
+        self.numColorsSpinBox.setSingleStep(1)
+        self.numColorsSpinBox.setMinimum(1)
+        self.numColorsSpinBox.setMaximum(2147483647)
+        num_colors = self.parameters['num_colors'].default
+        self.numColorsSpinBox.setValue(num_colors)
+
+        self.grid_layout.addWidget(QLabel('name:'), 0, 0)
+        self.grid_layout.addWidget(self.nameTextBox, 0, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('visible:'), 1, 0)
+        self.grid_layout.addWidget(self.visibleCheckBox, 1, 1)
+        self.grid_layout.addWidget(QLabel('is_pyramid:'), 2, 0)
+        self.grid_layout.addWidget(self.pyramidCheckBox, 2, 1)
+        self.grid_layout.addWidget(QLabel('num_colors:'), 3, 0)
+        self.grid_layout.addWidget(self.numColorsSpinBox, 3, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('seed:'), 4, 0)
+        self.grid_layout.addWidget(self.seedSpinBox, 4, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('blending:'), 5, 0)
+        self.grid_layout.addWidget(self.blendingComboBox, 5, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('opacity:'), 6, 0)
+        self.grid_layout.addWidget(self.opacitySpinBox, 6, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('scale:'), 7, 0)
+        self.grid_layout.addWidget(self.scaleTextBox, 7, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('translate:'), 8, 0)
+        self.grid_layout.addWidget(self.translateTextBox, 8, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('metadata:'), 9, 0)
+        self.grid_layout.addWidget(self.metadataTextBox, 9, 1, 1, 3)
+        self.grid_layout.setRowStretch(10, 1)
+
+    def get_arguments(self):
+        """Get keyword arguments for layer creation.
+
+        Returns
+        ---------
+        arguments : dict
+            Keyword arguments for layer creation.
+        """
+        base_arguments = self._base_arguments()
+        is_pyramid = check_state_2_arg[self.pyramidCheckBox.checkState()]
+        seed = self.seedSpinBox.value()
+        num_colors = self.numColorsSpinBox.value()
+
+        arguments = {
+            'is_pyramid': is_pyramid,
+            'seed': seed,
+            'num_colors': num_colors,
+        }
+        arguments.update(base_arguments)
+
+        return arguments

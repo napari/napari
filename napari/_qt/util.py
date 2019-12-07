@@ -1,6 +1,6 @@
 import numpy as np
 from qtpy import API_NAME
-from qtpy.QtCore import QObject, QThread
+from qtpy.QtCore import QObject, QThread, Qt
 
 
 def QImg2array(img):
@@ -113,3 +113,17 @@ def new_worker_qthread(
     if start:
         thread.start()  # sometimes need to connect stuff before starting
     return worker, thread
+
+
+arg_2_check_state = {
+    False: Qt.Unchecked,
+    None: Qt.PartiallyChecked,
+    True: Qt.Checked,
+}
+
+
+check_state_2_arg = {
+    Qt.Unchecked: False,
+    Qt.PartiallyChecked: None,
+    Qt.Checked: True,
+}

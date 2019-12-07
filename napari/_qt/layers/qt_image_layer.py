@@ -10,18 +10,7 @@ from qtpy.QtWidgets import (
 from .qt_image_base_layer import QtBaseImageControls, QtBaseImageDialog
 from ...layers.image._constants import Interpolation, Rendering
 from ...layers import Image
-
-
-arg_2_check_state = {
-    False: Qt.Unchecked,
-    None: Qt.PartiallyChecked,
-    True: Qt.Checked,
-}
-check_state_2_arg = {
-    Qt.Unchecked: False,
-    Qt.PartiallyChecked: None,
-    Qt.Checked: True,
-}
+from ..util import check_state_2_arg, arg_2_check_state
 
 
 class QtImageControls(QtBaseImageControls):
@@ -155,6 +144,13 @@ class QtImageDialog(QtBaseImageDialog):
     def __init__(self):
         super().__init__(Image)
 
+        self.blendingCheckBox = QCheckBox()
+        self.blendingCheckBox.setToolTip('Set blending mode')
+        self.blendingCheckBox.setChecked(False)
+        self.blendingCheckBox.stateChanged.connect(self._on_blending_change)
+        self.blendingCheckBox.setChecked(False)
+        self._on_blending_change(None)
+
         self.channelAxisSpinBox = QSpinBox()
         self.channelAxisSpinBox.setToolTip('Channel axis')
         self.channelAxisSpinBox.setKeyboardTracking(False)
@@ -265,6 +261,7 @@ class QtImageDialog(QtBaseImageDialog):
         self.grid_layout.addWidget(self.translateTextBox, 14, 1, 1, 3)
         self.grid_layout.addWidget(QLabel('metadata:'), 15, 0)
         self.grid_layout.addWidget(self.metadataTextBox, 15, 1, 1, 3)
+        self.grid_layout.setRowStretch(16, 1)
 
     def _on_channel_axis_change(self, event):
         state = self.channelAxisCheckBox.isChecked()
@@ -282,6 +279,13 @@ class QtImageDialog(QtBaseImageDialog):
             self.contrastLimitsLowSpinBox.hide()
             self.contrastLimitsHighSpinBox.hide()
 
+    def _on_blending_change(self, event):
+        state = self.blendingCheckBox.isChecked()
+        if state:
+            self.blendingComboBox.show()
+        else:
+            self.blendingComboBox.hide()
+
     def get_arguments(self):
         """Get keyword arguments for layer creation.
 
@@ -293,6 +297,11 @@ class QtImageDialog(QtBaseImageDialog):
         base_arguments = self._base_arguments()
         is_pyramid = check_state_2_arg[self.pyramidCheckBox.checkState()]
         rgb = check_state_2_arg[self.rgbCheckBox.checkState()]
+
+        if self.blendingCheckBox.isChecked():
+            blending = self.blendingComboBox.currentText()
+        else:
+            blending = None
 
         if self.channelAxisCheckBox.isChecked():
             channel_axis = self.channelAxisSpinBox.value()
@@ -317,6 +326,7 @@ class QtImageDialog(QtBaseImageDialog):
         rendering = self.renderingComboBox.currentText()
         iso_threshold = self.isoThresholdSpinBox.value()
 
+        base_arguments['blending'] = blending
         arguments = {
             'is_pyramid': is_pyramid,
             'rgb': rgb,

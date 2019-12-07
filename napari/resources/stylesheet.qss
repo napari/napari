@@ -76,8 +76,7 @@ QtAbout > QLabel {
 
 QtOpenDialog {
   min-width: 400px;
-  min-height: 690px;
-  max-height: 690px;
+  min-height: 720px;
 }
 
 QPushButton#dialog {

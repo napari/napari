@@ -6,7 +6,6 @@ from .qt_labels_layer import QtLabelsControls
 from .qt_surface_layer import QtSurfaceControls
 from .qt_vectors_layer import QtVectorsControls
 
-
 layer_to_controls = {
     Image: QtImageControls,
     Labels: QtLabelsControls,
