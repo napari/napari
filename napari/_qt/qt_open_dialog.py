@@ -7,7 +7,6 @@ from qtpy.QtWidgets import (
     QPushButton,
     QFileDialog,
     QDialog,
-    QSizePolicy,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -21,9 +20,9 @@ import napari
 from .layers.qt_image_layer import QtImageDialog
 
 
-class QtOpenDialog(QWidget):
-    def __init__(self, viewer, parent):
-        super(QtOpenDialog, self).__init__(parent)
+class QtOpenDialog(QDialog):
+    def __init__(self, viewer):
+        super().__init__()
 
         self.viewer = viewer
         self._add_methods = {napari.layers.Image: self.viewer.add_image}
@@ -97,7 +96,7 @@ class QtOpenDialog(QWidget):
         # cancel
         self.cancel = QPushButton('cancel')
         self.cancel.setObjectName('dialog')
-        self.cancel.clicked.connect(parent.close)
+        self.cancel.clicked.connect(self.close)
         self.fileOpenLayout.addWidget(self.cancel)
 
         # open
@@ -116,16 +115,12 @@ class QtOpenDialog(QWidget):
         self.setFocus()
 
     @staticmethod
-    def showDialog(qt_viewer):
-        d = QDialog()
-        d.setObjectName('OpenDialog')
+    def show_dialog(qt_viewer):
+        d = QtOpenDialog(qt_viewer.viewer)
         d.setStyleSheet(qt_viewer.styleSheet())
-        d.setWindowTitle('add layer')
-        qt_viewer._open = QtOpenDialog(qt_viewer.viewer, d)
+        d.setWindowTitle('Add layer')
         d.setWindowModality(Qt.ApplicationModal)
-        d.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        qt_viewer._open_dialog = d
-        d.show()
+        d.exec_()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return and self.fileName.hasFocus():
@@ -229,7 +224,7 @@ class QtOpenDialog(QWidget):
             arguments = widget.get_arguments()
             add_method = self._add_methods[widget.layer]
             add_method(path=filenames, **arguments)
-        self.parent().close()
+        self.close()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():

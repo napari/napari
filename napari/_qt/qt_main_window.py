@@ -144,7 +144,7 @@ class Window:
         open_layer.setShortcut('Ctrl+Alt+O')
         open_layer.setStatusTip('Open with advanced options')
         open_layer.triggered.connect(
-            lambda e: QtOpenDialog.showDialog(self.qt_viewer)
+            lambda e: QtOpenDialog.show_dialog(self.qt_viewer)
         )
 
         self.file_menu = self.main_menu.addMenu('&File')
@@ -175,7 +175,7 @@ class Window:
         about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
-            lambda e: QtAbout.showAbout(self.qt_viewer)
+            lambda e: QtAbout.show_dialog(self.qt_viewer)
         )
         self.help_menu.addAction(about_action)
 

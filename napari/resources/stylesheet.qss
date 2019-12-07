@@ -75,7 +75,7 @@ QtAbout > QLabel {
 }
 
 QtOpenDialog {
-  min-width: 330px;
+  min-width: 400px;
   min-height: 690px;
   max-height: 690px;
 }
