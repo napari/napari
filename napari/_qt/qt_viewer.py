@@ -65,7 +65,7 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.layerButtons)
         layerListLayout.addWidget(self.layers)
         layerListLayout.addWidget(self.viewerButtons)
-        layerListLayout.setContentsMargins(8, 4, 8, 4)
+        layerListLayout.setContentsMargins(8, 4, 8, 6)
         layerList.setLayout(layerListLayout)
         self.dockLayerList = QtMinimalDockWidget(
             self,
@@ -125,7 +125,7 @@ class QtViewer(QSplitter):
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(10, 22, 10, 0)
+        main_layout.setContentsMargins(10, 22, 10, 2)
         main_layout.addWidget(self.canvas.native)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(10)

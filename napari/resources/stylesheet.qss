@@ -41,7 +41,7 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
 
-
+/* ------------- Narrow scrollbar for qtlayer list --------- */
 QtLayerList {
   border: 1px solid {{ background }};
     min-width: 242px;
@@ -50,6 +50,32 @@ QtLayerList {
     margin: 0px;
     border: 0px;
     margin-bottom: 4px;
+}
+
+QtLayerList {
+  max-width: 8px;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+QtLayerList QScrollBar:vertical {
+    max-width: 8px;
+    margin: 12px 0px;
+}
+
+QtLayerList QScrollBar::add-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar::sub-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar:up-arrow, QtLayerList QScrollBar:down-arrow {
+    height: 4px;
+    width: 4px;
 }
 
 QLabel {
