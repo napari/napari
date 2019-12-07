@@ -107,7 +107,7 @@ class QMinimalTitleBar(QLabel):
     for hover.
     """
 
-    def __init__(self, parent=None, vertical=False):
+    def __init__(self, parent, vertical=False):
         super().__init__(parent)
         self.setObjectName("QMinimalTitleBar")
         self.setProperty('vertical', str(vertical))
