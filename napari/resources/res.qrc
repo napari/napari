@@ -16,6 +16,8 @@
     <file>icons/light/grid.svg</file>
     <file>icons/light/home.svg</file>
     <file>icons/light/left_arrow.svg</file>
+    <file>icons/light/long_left_arrow.svg</file>
+    <file>icons/light/long_right_arrow.svg</file>
     <file>icons/light/line.svg</file>
     <file>icons/light/minus.svg</file>
     <file>icons/light/move_back.svg</file>
@@ -37,6 +39,8 @@
     <file>icons/light/right_arrow.svg</file>
     <file>icons/light/roll.svg</file>
     <file>icons/light/select.svg</file>
+    <file>icons/light/step_left.svg</file>
+    <file>icons/light/step_right.svg</file>
     <file>icons/light/transpose.svg</file>
     <file>icons/light/up_arrow.svg</file>
     <file>icons/light/vertex_insert.svg</file>
@@ -58,6 +62,8 @@
     <file>icons/dark/grid.svg</file>
     <file>icons/dark/home.svg</file>
     <file>icons/dark/left_arrow.svg</file>
+    <file>icons/dark/long_left_arrow.svg</file>
+    <file>icons/dark/long_right_arrow.svg</file>
     <file>icons/dark/line.svg</file>
     <file>icons/dark/menu.svg</file>
     <file>icons/dark/minus.svg</file>
@@ -80,6 +86,8 @@
     <file>icons/dark/right_arrow.svg</file>
     <file>icons/dark/roll.svg</file>
     <file>icons/dark/select.svg</file>
+    <file>icons/dark/step_left.svg</file>
+    <file>icons/dark/step_right.svg</file>
     <file>icons/dark/transpose.svg</file>
     <file>icons/dark/up_arrow.svg</file>
     <file>icons/dark/vertex_insert.svg</file>

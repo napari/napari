@@ -1,3 +1,5 @@
+from enum import auto
+
 import pytest
 import numpy as np
 import dask.array as da
@@ -11,6 +13,7 @@ from napari.util.misc import (
     fast_pyramid,
     trim_pyramid,
     calc_data_range,
+    StringEnum,
 )
 
 
@@ -326,3 +329,36 @@ def test_callsignature():
         str(callsignature(lambda a, b=42, *, c, d=5, **kwargs: None))
         == '(a, b=b, c=c, d=d, **kwargs)'
     )
+
+
+def test_string_enum():
+    # Make a test StringEnum
+    class TestEnum(StringEnum):
+        THING = auto()
+        OTHERTHING = auto()
+
+    # test setting by value, correct case
+    assert TestEnum('thing') == TestEnum.THING
+
+    # test setting by value mixed case
+    assert TestEnum('thInG') == TestEnum.THING
+
+    # test setting by name correct case
+    assert TestEnum['THING'] == TestEnum.THING
+
+    # test setting by name mixed case
+    assert TestEnum['tHiNg'] == TestEnum.THING
+
+    # test setting by value with incorrect value
+    with pytest.raises(ValueError):
+        TestEnum('NotAThing')
+
+    # test  setting by name with incorrect name
+    with pytest.raises(KeyError):
+        TestEnum['NotAThing']
+
+    # test creating a StringEnum with the functional API
+    animals = StringEnum('Animal', 'AARDVARK BUFFALO CAT DOG')
+    assert str(animals.AARDVARK) == 'aardvark'
+    assert animals('BUffALO') == animals.BUFFALO
+    assert animals['BUffALO'] == animals.BUFFALO

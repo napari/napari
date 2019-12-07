@@ -99,7 +99,7 @@ Contributions are encouraged! Please read our [contributing guide](./docs/CONTRI
 
 If you find `napari` useful please cite this repository using its DOI as follows:
 
-> napari team (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
+> napari contributors (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
 
 Note this DOI will resolve to all versions of napari. To cite a specific version please find the
 DOI of that version on our [zenodo page](https://zenodo.org/record/3555620).

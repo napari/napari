@@ -30,6 +30,7 @@ from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtMinimalDockWidget
+from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
 
 
@@ -86,11 +87,15 @@ class QtViewer(QSplitter):
             name='console',
             area='bottom',
             # allowed_areas=['top', 'bottom'],
+            shortcut='Ctrl+Shift+C',
         )
         self.dockConsole.setVisible(False)
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
+
+        self.aboutKeybindings = QtAboutKeybindings(self.viewer)
+        self.aboutKeybindings.hide()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -303,6 +308,7 @@ class QtViewer(QSplitter):
         bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
         self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
+        self.aboutKeybindings.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
     def toggle_console(self):

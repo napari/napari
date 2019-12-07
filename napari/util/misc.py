@@ -1,6 +1,6 @@
 """Miscellaneous utility functions.
 """
-from enum import Enum
+from enum import Enum, EnumMeta
 import re
 import inspect
 import itertools
@@ -9,6 +9,7 @@ from numpydoc.docscrape import FunctionDoc
 
 import numpy as np
 import wrapt
+import sys
 
 
 def str_to_rgb(arg):
@@ -451,17 +452,47 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
     return coords
 
 
-class StringEnum(Enum):
+class StringEnumMeta(EnumMeta):
+    def __getitem__(self, item):
+        """ set the item name case to uppercase for name lookup
+        """
+        if isinstance(item, str):
+            item = item.upper()
+
+        return super().__getitem__(item)
+
+    def __call__(
+        cls,
+        value,
+        names=None,
+        *,
+        module=None,
+        qualname=None,
+        type=None,
+        start=1,
+    ):
+        """ set the item value case to lowercase for value lookup
+        """
+        # simple value lookup
+        if names is None:
+            value = value.lower()
+            return super().__call__(value)
+        # otherwise create new Enum class
+        return cls._create_(
+            value,
+            names,
+            module=module,
+            qualname=qualname,
+            type=type,
+            start=start,
+        )
+
+
+class StringEnum(Enum, metaclass=StringEnumMeta):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value
         """
         return name.lower()
-
-    def _missing_(self, value):
-        """ function called with provided value does not match any of the class
-           member values. This function tries again with an upper case string.
-        """
-        return self(value.lower())
 
     def __str__(self):
         """String representation: The string method returns the lowercase
@@ -692,24 +723,59 @@ def mouse_release_callbacks(obj, event):
         del obj._persisted_mouse_event[gen]
 
 
-def get_keybindings_summary(keymap):
+KEY_SYMBOLS = {
+    'Control': 'Ctrl',
+    'Shift': '⇧',
+    'Alt': 'Alt',
+    'Option': 'Opt',
+    'Meta': '⊞',
+    'Left': '←',
+    'Right': '→',
+    'Up': '↑',
+    'Down': '↓',
+    'Backspace': '⌫',
+    'Tab': '↹',
+    'Escape': 'Esc',
+    'Return': '⏎',
+    'Enter': '↵',
+}
+if sys.platform.startswith('darwin'):
+    KEY_SYMBOLS.update(
+        {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
+    )
+elif sys.platform.startswith('linux'):
+    KEY_SYMBOLS.update({'Meta': 'Super'})
+
+
+def get_keybindings_summary(keymap, col='rgb(134, 142, 147)'):
     """Get summary of keybindings in keymap.
 
     Parameters
     ---------
     keymap : dict
         Dictionary of keybindings.
+    col : str
+        Color string in format rgb(int, int, int) used for highlighting
+        keypress combination.
 
     Returns
     ---------
     keybindings_str : str
         String with summary of all keybindings and their functions.
     """
-    keybindings_str = ''
+    keybindings_str = '<table border="0" width="100%">'
     for key in keymap:
-        func_str = f'<b> {key}</b>: {get_function_summary(keymap[key])}<br>'
-        keybindings_str += func_str
-
+        keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
+        keycodes = "+".join(
+            [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
+        )
+        keybindings_str += (
+            "<tr><td width='80' style='text-align: right; padding: 4px;'>"
+            f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
+            "<td style='text-align: left; padding: 4px; color: #CCC;'>"
+            f"{get_function_summary(keymap[key])}</td></tr>"
+        )
+    keybindings_str += '</table>'
     return keybindings_str
 
 
@@ -717,7 +783,6 @@ def get_function_summary(func):
     """Get summary of doc string of function."""
     doc = FunctionDoc(func)
     summary = ''
-    summary += doc['Signature']
     for s in doc['Summary']:
-        summary += '<br>&nbsp;&nbsp;&nbsp;&nbsp;' + s
-    return summary
+        summary += s
+    return summary.rstrip('.')

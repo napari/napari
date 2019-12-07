@@ -30,6 +30,8 @@ class QtViewerDockWidget(QDockWidget):
         Areas, relative to main window, that the widget is allowed dock.
         Each item in list must be in {'left', 'right', 'top', 'bottom'}
         By default, all areas are allowed.
+    shortcut : str, optional
+        Keyboard shortcut to appear in dropdown menu.
     """
 
     def __init__(
@@ -40,6 +42,7 @@ class QtViewerDockWidget(QDockWidget):
         name: str = '',
         area: str = 'bottom',
         allowed_areas: Optional[List[str]] = None,
+        shortcut=None,
     ):
         self.viewer = viewer
         super().__init__(name)
@@ -55,6 +58,7 @@ class QtViewerDockWidget(QDockWidget):
             raise ValueError(f'area argument must be in {list(areas.keys())}')
         self.area = area
         self.qt_area = areas[area]
+        self.shortcut = shortcut
 
         if allowed_areas:
             if not isinstance(allowed_areas, (list, tuple)):
