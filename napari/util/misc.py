@@ -418,39 +418,6 @@ def segment_normal_vector(a, b):
     return unit_norm
 
 
-def interpolate_coordinates(old_coord, new_coord, brush_size):
-    """Interpolates coordinates depending on brush size.
-
-    Useful for ensuring painting is continuous in labels layer.
-
-    Parameters
-    ----------
-    old_coord : np.ndarray, 1x2
-        Last position of cursor.
-    new_coord : np.ndarray, 1x2
-        Current position of cursor.
-    brush_size : float
-        Size of brush, which determines spacing of interploation.
-
-    Returns
-    ----------
-    coords : np.array, Nx2
-        List of coordinates to ensure painting is continous
-    """
-    num_step = round(
-        max(abs(np.array(new_coord) - np.array(old_coord))) / brush_size * 4
-    )
-    coords = [
-        np.linspace(old_coord[i], new_coord[i], num=num_step + 1)
-        for i in range(len(new_coord))
-    ]
-    coords = np.stack(coords).T
-    if len(coords) > 1:
-        coords = coords[1:]
-
-    return coords
-
-
 class StringEnum(Enum):
     def _generate_next_value_(name, start, count, last_values):
         """ autonaming function assigns each value its own name as a value
