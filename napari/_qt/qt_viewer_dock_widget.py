@@ -125,7 +125,7 @@ class QMinimalTitleBar(QLabel):
         if vertical:
             layout = QVBoxLayout()
             layout.setSpacing(4)
-            layout.setContentsMargins(1, 8, 0, 8)
+            layout.setContentsMargins(0, 8, 0, 8)
             line.setFixedWidth(1)
             layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
             layout.addWidget(line, 0, Qt.AlignHCenter)
