@@ -61,16 +61,13 @@ QStatusBar > QLabel { /* Help QLabel */
 }
 
 QtAboutKeybindings {
-  min-width: 500px;
-  max-width: 500px;
-  min-height: 300px;
+  min-width: 600px;
+  min-height: 605px;
 }
 
 QtAbout {
-  min-width: 580px;
-  max-width: 580px;
-  min-height: 300px;
-  max-height: 300px;
+  min-width: 620px;
+  min-height: 430px;
 }
 
 QtAbout > QLabel {

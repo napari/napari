@@ -5,8 +5,8 @@ from qtpy.QtWidgets import QApplication
 
 from napari._qt.qt_update_ui import QtUpdateUI
 
-from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
+from ._qt.qt_main_window import Window
 from .components import ViewerModel
 
 
