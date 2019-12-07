@@ -1,24 +1,27 @@
 from typing import Optional, Tuple
 
 import numpy as np
-from qtpy.QtCore import Qt, QTimer, Signal, Slot, QObject
-from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import QObject, Qt, QTimer, Signal, Slot
+from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
+    QApplication,
+    QCheckBox,
     QComboBox,
+    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QDoubleSpinBox,
     QWidget,
-    QCheckBox,
+    QFrame,
 )
 
+from ..components.dims_constants import DimsMode
 from ..util.event import Event
+from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
 from .util import new_worker_qthread
-from ._constants import LoopMode
 
 
 class QtDimSliderWidget(QWidget):
@@ -28,7 +31,7 @@ class QtDimSliderWidget(QWidget):
     This widget *must* be instantiated with a parent QtDims.
     """
 
-    label_changed = Signal(int, str)  # axis, label
+    axis_label_changed = Signal(int, str)  # axis, label
     fps_changed = Signal(float)
     mode_changed = Signal(str)
     range_changed = Signal(tuple)
@@ -40,9 +43,37 @@ class QtDimSliderWidget(QWidget):
         self.axis = axis
         self.qt_dims = parent
         self.dims = parent.dims
-        self.label = None
+        self.axis_label = None
         self.slider = None
         self.play_button = None
+        self.curslice_label = QLineEdit(self)
+        self.curslice_label.setToolTip(f'Current slice for axis {axis}')
+        # if we set the QIntValidator to actually reflect the range of the data
+        # then an invalid (i.e. too large) index doesn't actually trigger the
+        # editingFinished event (the user is expected to change the value)...
+        # which is confusing to the user, so instead we use an IntValidator
+        # that makes sure the user can only enter integers, but we do our own
+        # value validation in change_slice
+        self.curslice_label.setValidator(QIntValidator(0, 999999))
+
+        def change_slice():
+            val = int(self.curslice_label.text())
+            max_allowed = self.dims.max_indices[self.axis]
+            if val > max_allowed:
+                val = max_allowed
+                self.curslice_label.setText(str(val))
+            self.curslice_label.clearFocus()
+            self.qt_dims.setFocus()
+            self.dims.set_point(self.axis, val)
+
+        self.curslice_label.editingFinished.connect(change_slice)
+        self.totslice_label = QLabel(self)
+        self.totslice_label.setToolTip(f'Total slices for axis {axis}')
+        self.curslice_label.setObjectName('slice_label')
+        self.totslice_label.setObjectName('slice_label')
+        sep = QFrame(self)
+        sep.setFixedSize(1, 14)
+        sep.setObjectName('slice_label_sep')
 
         self._fps = 10
         self._minframe = None
@@ -53,48 +84,17 @@ class QtDimSliderWidget(QWidget):
         self._create_axis_label_widget()
         self._create_range_slider_widget()
         self._create_play_button_widget()
-        layout.addWidget(self.label)
+
+        layout.addWidget(self.axis_label)
         layout.addWidget(self.play_button)
         layout.addWidget(self.slider, stretch=1)
+        layout.addWidget(self.curslice_label)
+        layout.addWidget(sep)
+        layout.addWidget(self.totslice_label)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(3)
+        layout.setSpacing(2)
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
-
-    def _create_play_button_widget(self):
-        """Creates the actual play button, which has the modal popup."""
-        self.play_button = QtPlayButton(self.qt_dims, self.axis)
-        self.play_button.mode_combo.activated[str].connect(
-            lambda x: self.__class__.loop_mode.fset(
-                self, LoopMode(x.replace(' ', '_'))
-            )
-        )
-
-        def fps_listener(*args):
-            fps = self.play_button.fpsspin.value()
-            fps *= -1 if self.play_button.reverse_check.isChecked() else 1
-            self.__class__.fps.fset(self, fps)
-
-        self.play_button.fpsspin.editingFinished.connect(fps_listener)
-        self.play_button.reverse_check.stateChanged.connect(fps_listener)
-        self.play_stopped.connect(self.play_button._handle_stop)
-        self.play_started.connect(self.play_button._handle_start)
-
-    def _pull_label(self, event):
-        """Updates the label LineEdit from the dims model."""
-        if event.axis == self.axis:
-            label = self.dims.axis_labels[self.axis]
-            self.label.setText(label)
-            self.label_changed.emit(self.axis, label)
-
-    def _update_label(self):
-        with self.dims.events.axis_labels.blocker():
-            self.dims.set_axis_label(self.axis, self.label.text())
-        self.label_changed.emit(self.axis, self.label.text())
-
-    def _clear_label_focus(self):
-        self.label.clearFocus()
-        self.qt_dims.setFocus()
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -109,7 +109,7 @@ class QtDimSliderWidget(QWidget):
         label.setContentsMargins(0, 0, 2, 0)
         label.textChanged.connect(self._update_label)
         label.editingFinished.connect(self._clear_label_focus)
-        self.label = label
+        self.axis_label = label
 
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""
@@ -140,6 +140,41 @@ class QtDimSliderWidget(QWidget):
         slider.sliderPressed.connect(slider_focused_listener)
         self.slider = slider
 
+    def _create_play_button_widget(self):
+        """Creates the actual play button, which has the modal popup."""
+        self.play_button = QtPlayButton(self.qt_dims, self.axis)
+        self.play_button.mode_combo.activated[str].connect(
+            lambda x: self.__class__.loop_mode.fset(
+                self, LoopMode(x.replace(' ', '_'))
+            )
+        )
+
+        def fps_listener(*args):
+            fps = self.play_button.fpsspin.value()
+            fps *= -1 if self.play_button.reverse_check.isChecked() else 1
+            self.__class__.fps.fset(self, fps)
+
+        self.play_button.fpsspin.editingFinished.connect(fps_listener)
+        self.play_button.reverse_check.stateChanged.connect(fps_listener)
+        self.play_stopped.connect(self.play_button._handle_stop)
+        self.play_started.connect(self.play_button._handle_start)
+
+    def _pull_label(self, event):
+        """Updates the label LineEdit from the dims model."""
+        if event.axis == self.axis:
+            label = self.dims.axis_labels[self.axis]
+            self.axis_label.setText(label)
+            self.axis_label_changed.emit(self.axis, label)
+
+    def _update_label(self):
+        with self.dims.events.axis_labels.blocker():
+            self.dims.set_axis_label(self.axis, self.axis_label.text())
+        self.axis_label_changed.emit(self.axis, self.axis_label.text())
+
+    def _clear_label_focus(self):
+        self.axis_label.clearFocus()
+        self.qt_dims.setFocus()
+
     def _update_range(self):
         """Updates range for slider."""
         displayed_sliders = self.qt_dims._displayed_sliders
@@ -163,9 +198,26 @@ class QtDimSliderWidget(QWidget):
                 self.slider.setMaximum(_range[1])
                 self.slider.setSingleStep(_range[2])
                 self.slider.setPageStep(_range[2])
+                maxi = self.dims.max_indices[self.axis]
+                self.totslice_label.setText(str(int(maxi)))
+                self.totslice_label.setAlignment(Qt.AlignLeft)
+                self._update_slice_labels()
         else:
             displayed_sliders[self.axis] = False
             self.slider.hide()
+
+    def _update_slider(self):
+        mode = self.dims.mode[self.axis]
+        if mode == DimsMode.POINT:
+            self.slider.setValue(self.dims.point[self.axis])
+            self._update_slice_labels()
+
+    def _update_slice_labels(self):
+        step = self.dims.range[self.axis][2]
+        self.curslice_label.setText(
+            str(int(self.dims.point[self.axis] // step))
+        )
+        self.curslice_label.setAlignment(Qt.AlignRight)
 
     @property
     def fps(self):

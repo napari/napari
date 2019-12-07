@@ -3,6 +3,8 @@ import numpy as np
 from napari.components import Dims
 from napari._qt.qt_dims import QtDims
 from qtpy.QtCore import Qt
+from napari._qt.qt_viewer import QtViewer
+from napari.components import ViewerModel
 
 
 def test_creating_view(qtbot):
@@ -185,9 +187,9 @@ def test_update_dims_labels(qtbot):
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
     view.dims.axis_labels = list('TZYX')
-    assert [w.label.text() for w in view.slider_widgets] == list('TZYX')
+    assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
-    first_label = view.slider_widgets[0].label
+    first_label = view.slider_widgets[0].axis_label
     assert first_label.text() == view.dims.axis_labels[0]
     first_label.setText('napari')
     # first_label.editingFinished.emit()
@@ -223,3 +225,25 @@ def test_play_button(qtbot):
     assert not button.popup.isVisible()
     qtbot.mouseClick(button, Qt.RightButton)
     assert button.popup.isVisible()
+
+
+def test_slice_labels(qtbot):
+    viewer = ViewerModel()
+    view = QtViewer(viewer)
+    qtbot.addWidget(view)
+    np.random.seed(0)
+    data = np.random.random((20, 10, 10))
+    viewer.add_image(data)
+
+    # make sure the totslice_label is showing the correct number
+    assert int(view.dims.slider_widgets[0].totslice_label.text()) == 19
+
+    # make sure setting the dims.point updates the slice label
+    label_edit = view.dims.slider_widgets[0].curslice_label
+    viewer.dims.set_point(0, 15)
+    assert int(label_edit.text()) == 15
+
+    # make sure setting the current slice label updates the model
+    label_edit.setText(str(8))
+    label_edit.editingFinished.emit()
+    assert viewer.dims.point[0] == 8
