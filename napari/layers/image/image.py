@@ -8,15 +8,12 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ...util.misc import (
-    calc_data_range,
-    increment_unnamed_colormap,
-    get_pyramid_and_rgb,
-)
+from ...util.misc import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Rendering, Interpolation
 from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
+from .image_utils import get_pyramid_and_rgb
 
 
 class Image(Layer):
