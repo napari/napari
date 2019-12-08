@@ -103,7 +103,6 @@ class QtPointsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        # self.grid_layout.addWidget(QLabel('controls:'), 0, 0)
         self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
         self.grid_layout.addWidget(self.opacitySilder, 1, 1, 1, 2)

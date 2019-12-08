@@ -86,7 +86,7 @@ class QtViewer(QSplitter):
             self.console,
             name='console',
             area='bottom',
-            # allowed_areas=['top', 'bottom'],
+            allowed_areas=['top', 'bottom'],
             shortcut='Ctrl+Shift+C',
         )
         self.dockConsole.setVisible(False)

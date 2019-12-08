@@ -900,7 +900,7 @@ QMainWindow::separator:hover {
 }
 
 #QtCustomTitleBar:hover {
-  background-color: {{ background_dark2 }};
+  background-color: {{ background_darker }};
 }
 
 #QtCustomTitleBarLine {
