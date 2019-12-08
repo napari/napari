@@ -9,6 +9,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QSpinBox,
     QDoubleSpinBox,
+    QHBoxLayout,
 )
 from qtpy.QtCore import Qt
 
@@ -42,7 +43,6 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setSingleStep(1)
         self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.setMaximum(2147483647)
-        self.selectionSpinBox.setFixedWidth(75)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self._on_selection_change(None)
 
@@ -90,28 +90,34 @@ class QtLabelsControls(QtLayerControls):
         self.panzoom_button.setChecked(True)
         self._on_editable_change(None)
 
+        button_row = QHBoxLayout()
+        button_row.addWidget(self.pick_button)
+        button_row.addWidget(self.fill_button)
+        button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.panzoom_button)
+        button_row.addStretch(1)
+        button_row.setSpacing(4)
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(self.panzoom_button, 0, 6)
-        self.grid_layout.addWidget(self.paint_button, 0, 5)
-        self.grid_layout.addWidget(self.fill_button, 0, 4)
-        self.grid_layout.addWidget(self.pick_button, 0, 3)
-        self.grid_layout.addWidget(QLabel('label:'), 1, 0, 1, 3)
-        self.grid_layout.addWidget(self.selectionSpinBox, 1, 3, 1, 3)
-        self.grid_layout.addWidget(QtColorBox(layer), 1, 6)
-        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0, 1, 3)
-        self.grid_layout.addWidget(self.opacitySilder, 2, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0, 1, 3)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 3)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0, 1, 3)
-        self.grid_layout.addWidget(self.contigCheckBox, 5, 3)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0, 1, 3)
-        self.grid_layout.addWidget(self.ndimCheckBox, 6, 3)
-        self.grid_layout.addWidget(self.colormapUpdate, 0, 0, 1, 3)
+        self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
+        self.grid_layout.addWidget(self.colormapUpdate, 0, 0)
+        self.grid_layout.addWidget(QLabel('label:'), 1, 0)
+        self.grid_layout.addWidget(self.selectionSpinBox, 1, 2)
+        self.grid_layout.addWidget(QtColorBox(layer), 1, 1)
+        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
+        self.grid_layout.addWidget(self.opacitySilder, 2, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
+        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0)
+        self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
+        self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
         self.grid_layout.setRowStretch(7, 1)
-        self.grid_layout.setVerticalSpacing(4)
+        self.grid_layout.setColumnStretch(1, 1)
+        self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
         self.layer.status = str(self.layer.mode)

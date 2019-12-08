@@ -48,6 +48,7 @@ icons = [
     'picker',
     'plus',
     'polygon',
+    'pop_out',
     'properties_contract',
     'properties_expand',
     'rectangle',
