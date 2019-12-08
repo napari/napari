@@ -97,12 +97,6 @@ class QtLabelsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        # self.grid_layout.addWidget(self.panzoom_button, 0, 6)
-        # self.grid_layout.addWidget(self.paint_button, 0, 5)
-        # self.grid_layout.addWidget(self.fill_button, 0, 4)
-        # self.grid_layout.addWidget(self.pick_button, 0, 3)
-        # self.grid_layout.addWidget(self.colormapUpdate, 0, 0, 1, 3)
-        # self.grid_layout.addWidget(QLabel('controls:'), 1, 0)
         self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
         self.grid_layout.addWidget(self.colormapUpdate, 0, 0)
         self.grid_layout.addWidget(QLabel('label:'), 1, 0)

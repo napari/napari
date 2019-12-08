@@ -5,7 +5,7 @@ palettes = {
     'dark': {
         'folder': 'dark',
         'background': 'rgb(38, 41, 48)',
-        'background_dark2': 'rgb(33, 36, 42)',
+        'background_darker': 'rgb(33, 36, 42)',  # 2% darker than background
         'foreground': 'rgb(65, 72, 81)',
         'primary': 'rgb(90, 98, 108)',
         'secondary': 'rgb(134, 142, 147)',
@@ -20,7 +20,7 @@ palettes = {
     'light': {
         'folder': 'light',
         'background': 'rgb(239, 235, 233)',
-        'background_dark2': 'rgb(234, 230, 228)',
+        'background_darker': 'rgb(234, 230, 228)',  # 2% darker than background
         'foreground': 'rgb(214, 208, 206)',
         'primary': 'rgb(188, 184, 181)',
         'secondary': 'rgb(150, 146, 144)',
