@@ -1,20 +1,13 @@
-import os
-
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QPalette
 from qtpy.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from vispy import scene
 
 from .._vispy.vispy_plot import NapariPlotWidget
-from ..resources import resources_dir
-from ..util.theme import template
 
 
 class QtPlotWidget(QWidget):
     """ kwargs are passed to NapariPlotWidget"""
-
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
 
     def __init__(self, viewer=None, vertical=False, parent=None, **kwargs):
         super().__init__(parent)
@@ -37,7 +30,6 @@ class QtPlotWidget(QWidget):
         self.canvas.connect(self.on_key_press)
         # self.canvas.connect(self.on_key_release)
         # self.canvas.connect(self.on_draw)
-        self._update_palette(viewer.palette)
 
         pal = QPalette()
         pal.setColor(QPalette.Background, Qt.black)
@@ -82,11 +74,6 @@ class QtPlotWidget(QWidget):
     def _to_plot_coords(self, pos):
         x, y, _, _ = self.node_tform.map(pos)
         return x, y
-
-    def _update_palette(self, palette):
-        # template and apply the primary stylesheet
-        themed_stylesheet = template(self.raw_stylesheet, **palette)
-        self.setStyleSheet(themed_stylesheet)
 
     def on_mouse_press(self, event):
         pass
