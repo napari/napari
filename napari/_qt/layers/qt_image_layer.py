@@ -64,7 +64,7 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.isoThesholdSilder, 3, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('colormap:'), 4, 0)
         self.grid_layout.addWidget(self.colormapComboBox, 4, 2)
-        self.grid_layout.addWidget(self.colorbarLabel, 5, 1)
+        self.grid_layout.addWidget(self.colorbarLabel, 4, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 5, 0)
         self.grid_layout.addWidget(self.blendComboBox, 5, 1, 1, 2)
         self.grid_layout.addWidget(self.renderLabel, 6, 0)
