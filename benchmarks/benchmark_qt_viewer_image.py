@@ -72,7 +72,7 @@ class QtViewerEditImageSuite:
         self.viewer.layers[0].get_value()
 
 
-class QtViewerSingleImage:
+class QtViewerSingleImageSuite:
     """Benchmarks for editing a single image layer in the viewer."""
 
     def setup(self):
