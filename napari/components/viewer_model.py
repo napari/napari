@@ -401,6 +401,7 @@ class ViewerModel(KeymapMixin):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
+        iso_threshold=0.5,
         name=None,
         metadata=None,
         scale=None,
@@ -453,6 +454,8 @@ class ViewerModel(KeymapMixin):
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        iso_threshold : float
+            Threshold for isosurface.
         name : str
             Name of the layer.
         metadata : dict
@@ -499,6 +502,7 @@ class ViewerModel(KeymapMixin):
                 gamma=gamma,
                 interpolation=interpolation,
                 rendering=rendering,
+                iso_threshold=iso_threshold,
                 name=name,
                 metadata=metadata,
                 scale=scale,
@@ -664,7 +668,7 @@ class ViewerModel(KeymapMixin):
 
     def add_labels(
         self,
-        data,
+        data=None,
         *,
         is_pyramid=None,
         num_colors=50,
@@ -677,6 +681,7 @@ class ViewerModel(KeymapMixin):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        path=None,
     ):
         """Add a labels (or segmentation) layer to the layers list.
 
@@ -715,12 +720,22 @@ class ViewerModel(KeymapMixin):
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
+        path : str or list of str
+            Path or list of paths to image data. Paths can be passed as strings
+            or `pathlib.Path` instances.
 
         Returns
         -------
         layer : :class:`napari.layers.Labels`
             The newly-created labels layer.
         """
+        if data is None and path is None:
+            raise ValueError("One of either data or path must be provided")
+        elif data is not None and path is not None:
+            raise ValueError("Only one of data or path can be provided")
+        elif data is None:
+            data = io.magic_imread(path)
+
         layer = layers.Labels(
             data,
             is_pyramid=is_pyramid,

@@ -1,4 +1,4 @@
-from .mesh import Mesh as MeshNode
+from vispy.scene.visuals import Mesh
 from vispy.color import Colormap
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
@@ -13,7 +13,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     """
 
     def __init__(self, layer):
-        node = MeshNode()
+        node = Mesh()
 
         super().__init__(layer, node)
 

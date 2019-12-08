@@ -1,5 +1,4 @@
 import os.path
-import numpy as np
 import inspect
 from pathlib import Path
 
@@ -26,10 +25,12 @@ from ..util.misc import (
 )
 from ..util.keybindings import components_to_key_combo
 
+from .util import QImg2array
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtViewerDockWidget
+from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
 
 
@@ -58,9 +59,12 @@ class QtViewer(QSplitter):
         self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
         self.dockConsole = QtViewerDockWidget(
-            self, self.console, name='console'
+            self, self.console, name='console', shortcut='Ctrl+Shift+C'
         )
         self.dockConsole.setVisible(False)
+
+        self.aboutKeybindings = QtAboutKeybindings(self.viewer)
+        self.aboutKeybindings.hide()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -195,22 +199,7 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         img = self.canvas.native.grabFramebuffer()
-        b = img.constBits()
-        h, w, c = img.height(), img.width(), 4
-
-        # As vispy doesn't use qtpy we need to reconcile the differences
-        # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
-        # a QImage to a numpy array.
-        if API_NAME == 'PySide2':
-            arr = np.array(b).reshape(h, w, c)
-        else:
-            b.setsize(h * w * c)
-            arr = np.frombuffer(b, np.uint8).reshape(h, w, c)
-
-        # Format of QImage is ARGB32_Premultiplied, but color channels are
-        # reversed.
-        arr = arr[:, :, [2, 1, 0, 3]]
-        return arr
+        return QImg2array(img)
 
     def _open_images(self):
         """Add image files from the menubar."""
@@ -286,6 +275,7 @@ class QtViewer(QSplitter):
         bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
         self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
+        self.aboutKeybindings.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
     def toggle_console(self):

@@ -1,4 +1,6 @@
-import time
+from enum import auto
+
+import pytest
 import numpy as np
 import dask.array as da
 from skimage.transform import pyramid_gaussian
@@ -11,6 +13,12 @@ from napari.util.misc import (
     fast_pyramid,
     trim_pyramid,
     calc_data_range,
+    StringEnum,
+)
+
+
+data_dask = da.random.random(
+    size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
 )
 
 
@@ -79,12 +87,10 @@ def test_calc_data_fast_uint8():
     assert calc_data_range(data) == [0, 255]
 
 
+@pytest.mark.timeout(2)
 def test_calc_data_range_fast_big():
-    data = da.random.random(size=(100_000, 1000, 1000), chunks=(1, 1000, 1000))
-    t0 = time.time()
-    _ = calc_data_range(data)
-    t1 = time.time()
-    assert t1 - t0 < 2
+    val = calc_data_range(data_dask)
+    assert len(val) > 0
 
 
 def test_is_pyramid():
@@ -118,6 +124,16 @@ def test_is_pyramid():
         tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
     )
     assert is_pyramid(data)
+
+    # Check for integer overflow with big data
+    s = 8192
+    data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
+    assert is_pyramid(data)
+
+
+@pytest.mark.timeout(2)
+def test_timing_is_pyramid_big():
+    assert not is_pyramid(data_dask)
 
 
 def test_trim_pyramid():
@@ -313,3 +329,36 @@ def test_callsignature():
         str(callsignature(lambda a, b=42, *, c, d=5, **kwargs: None))
         == '(a, b=b, c=c, d=d, **kwargs)'
     )
+
+
+def test_string_enum():
+    # Make a test StringEnum
+    class TestEnum(StringEnum):
+        THING = auto()
+        OTHERTHING = auto()
+
+    # test setting by value, correct case
+    assert TestEnum('thing') == TestEnum.THING
+
+    # test setting by value mixed case
+    assert TestEnum('thInG') == TestEnum.THING
+
+    # test setting by name correct case
+    assert TestEnum['THING'] == TestEnum.THING
+
+    # test setting by name mixed case
+    assert TestEnum['tHiNg'] == TestEnum.THING
+
+    # test setting by value with incorrect value
+    with pytest.raises(ValueError):
+        TestEnum('NotAThing')
+
+    # test  setting by name with incorrect name
+    with pytest.raises(KeyError):
+        TestEnum['NotAThing']
+
+    # test creating a StringEnum with the functional API
+    animals = StringEnum('Animal', 'AARDVARK BUFFALO CAT DOG')
+    assert str(animals.AARDVARK) == 'aardvark'
+    assert animals('BUffALO') == animals.BUFFALO
+    assert animals['BUffALO'] == animals.BUFFALO

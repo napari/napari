@@ -12,6 +12,7 @@ def view_image(
     gamma=1,
     interpolation='nearest',
     rendering='mip',
+    iso_threshold=0.5,
     name=None,
     metadata=None,
     scale=None,
@@ -68,6 +69,8 @@ def view_image(
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    iso_threshold : float
+        Threshold for isosurface.
     name : str
         Name of the layer.
     metadata : dict
@@ -116,6 +119,7 @@ def view_image(
         gamma=gamma,
         interpolation=interpolation,
         rendering=rendering,
+        iso_threshold=iso_threshold,
         name=name,
         metadata=metadata,
         scale=scale,
@@ -232,7 +236,7 @@ def view_points(
 
 
 def view_labels(
-    data,
+    data=None,
     *,
     is_pyramid=None,
     num_colors=50,
@@ -249,6 +253,7 @@ def view_labels(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    path=None,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -287,6 +292,9 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    path : str or list of str
+        Path or list of paths to image data. Paths can be passed as strings
+        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -307,7 +315,7 @@ def view_labels(
         title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
     )
     viewer.add_labels(
-        data,
+        data=data,
         is_pyramid=is_pyramid,
         num_colors=num_colors,
         seed=seed,
@@ -319,6 +327,7 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        path=path,
     )
     return viewer
 

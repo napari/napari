@@ -9,7 +9,6 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
-from .qt_about_keybindings import QtAboutKeybindings
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
@@ -29,7 +28,9 @@ from qtpy.QtWidgets import (  # noqa: E402
     QShortcut,
     QStatusBar,
 )
+from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
+from .util import QImg2array  # noqa: E402
 from ..util.theme import template  # noqa: E402
 
 
@@ -162,19 +163,21 @@ class Window:
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
+        about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
             lambda e: QtAbout.showAbout(self.qt_viewer)
         )
         self.help_menu.addAction(about_action)
 
-        keybidings_action = QAction("keybindings", self._qt_window)
-        keybidings_action.setShortcut("Ctrl+/")
-        keybidings_action.setStatusTip('About keybindings')
-        keybidings_action.triggered.connect(
-            lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
+        about_keybindings = QAction("keybindings", self._qt_window)
+        about_keybindings.setShortcut("Ctrl+Alt+/")
+        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_keybindings.setStatusTip('keybindings')
+        about_keybindings.triggered.connect(
+            self.qt_viewer.aboutKeybindings.toggle_visible
         )
-        self.help_menu.addAction(keybidings_action)
+        self.help_menu.addAction(about_keybindings)
 
     def add_dock_widget(
         self,
@@ -183,6 +186,7 @@ class Window:
         name: str = '',
         area: str = 'bottom',
         allowed_areas=None,
+        shortcut=None,
     ):
         """Convenience method to add a QDockWidget to the main window
 
@@ -199,6 +203,8 @@ class Window:
             Areas, relative to main window, that the widget is allowed dock.
             Each item in list must be in {'left', 'right', 'top', 'bottom'}
             By default, all areas are allowed.
+        shortcut : str, optional
+            Keyboard shortcut to appear in dropdown menu.
 
         Returns
         -------
@@ -212,6 +218,7 @@ class Window:
             name=name,
             area=area,
             allowed_areas=allowed_areas,
+            shortcut=shortcut,
         )
         self._add_viewer_dock_widget(dock_widget)
         return dock_widget
@@ -229,6 +236,8 @@ class Window:
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
+        if dock_widget.shortcut is not None:
+            action.setShortcut(dock_widget.shortcut)
         self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget):
@@ -294,6 +303,18 @@ class Window:
         """Update help message on status bar.
         """
         self._help.setText(event.text)
+
+    def screenshot(self):
+        """Take currently displayed viewer and convert to an image array.
+
+        Returns
+        -------
+        image : array
+            Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
+            upper-left corner of the rendered region.
+        """
+        img = self._qt_window.grab().toImage()
+        return QImg2array(img)
 
     def closeEvent(self, event):
         # Forward close event to the console to trigger proper shutdown
