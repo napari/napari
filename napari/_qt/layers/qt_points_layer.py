@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QRadioButton,
     QPushButton,
     QFrame,
+    QHBoxLayout,
 )
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
@@ -92,30 +93,37 @@ class QtPointsControls(QtLayerControls):
         self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
 
+        button_row = QHBoxLayout()
+        button_row.addWidget(self.delete_button)
+        button_row.addWidget(self.addition_button)
+        button_row.addWidget(self.select_button)
+        button_row.addWidget(self.panzoom_button)
+        button_row.addStretch(1)
+        button_row.setSpacing(4)
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(self.panzoom_button, 0, 6)
-        self.grid_layout.addWidget(self.select_button, 0, 5)
-        self.grid_layout.addWidget(self.addition_button, 0, 4)
-        self.grid_layout.addWidget(self.delete_button, 0, 3)
-        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0, 1, 3)
-        self.grid_layout.addWidget(self.opacitySilder, 1, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('point size:'), 2, 0, 1, 3)
-        self.grid_layout.addWidget(self.sizeSlider, 2, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('blending:'), 3, 0, 1, 3)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('symbol:'), 4, 0, 1, 3)
-        self.grid_layout.addWidget(self.symbolComboBox, 4, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('face color:'), 5, 0, 1, 3)
-        self.grid_layout.addWidget(self.faceComboBox, 5, 3, 1, 3)
-        self.grid_layout.addWidget(self.faceColorSwatch, 5, 6)
-        self.grid_layout.addWidget(QLabel('edge color:'), 6, 0, 1, 3)
-        self.grid_layout.addWidget(self.edgeComboBox, 6, 3, 1, 3)
-        self.grid_layout.addWidget(self.edgeColorSwatch, 6, 6)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0, 1, 3)
-        self.grid_layout.addWidget(self.ndimCheckBox, 7, 3)
+        # self.grid_layout.addWidget(QLabel('controls:'), 0, 0)
+        self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
+        self.grid_layout.addWidget(self.opacitySilder, 1, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('point size:'), 2, 0)
+        self.grid_layout.addWidget(self.sizeSlider, 2, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
+        self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('symbol:'), 4, 0)
+        self.grid_layout.addWidget(self.symbolComboBox, 4, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('face color:'), 5, 0)
+        self.grid_layout.addWidget(self.faceComboBox, 5, 2)
+        self.grid_layout.addWidget(self.faceColorSwatch, 5, 1)
+        self.grid_layout.addWidget(QLabel('edge color:'), 6, 0)
+        self.grid_layout.addWidget(self.edgeComboBox, 6, 2)
+        self.grid_layout.addWidget(self.edgeColorSwatch, 6, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
+        self.grid_layout.addWidget(self.ndimCheckBox, 7, 1)
         self.grid_layout.setRowStretch(8, 1)
-        self.grid_layout.setVerticalSpacing(4)
+        self.grid_layout.setColumnStretch(1, 1)
+        self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer.mode
