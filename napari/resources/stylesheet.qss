@@ -925,8 +925,7 @@ QMainWindow::separator:hover {
   image: url(":/icons/{{ folder }}/pop_out.svg");
   width: 10px;
   height: 8px;
-  padding: 3 1 3 1;
-  opacity: 0.5;
+  padding: 2 1 2 1;
 }
 
 /* ------------- QScrollBars --------- */
