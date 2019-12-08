@@ -106,13 +106,14 @@ class QtViewerDockWidget(QDockWidget):
 
     @property
     def is_vertical(self):
-        if self.isFloating():
-            return self.size().height() > self.size().width()
-        else:
-            return self.parent().dockWidgetArea(self) in (
-                Qt.LeftDockWidgetArea,
-                Qt.RightDockWidgetArea,
-            )
+        if not self.isFloating():
+            par = self.parent()
+            if par and hasattr(par, 'dockWidgetArea'):
+                return par.dockWidgetArea(self) in (
+                    Qt.LeftDockWidgetArea,
+                    Qt.RightDockWidgetArea,
+                )
+        return self.size().height() > self.size().width()
 
     def _on_visibility_changed(self):
         self.blockSignals(True)
