@@ -29,7 +29,7 @@ from .util import QImg2array
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
-from .qt_viewer_dock_widget import QtMinimalDockWidget
+from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
 
@@ -67,21 +67,21 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.viewerButtons)
         layerListLayout.setContentsMargins(8, 4, 8, 6)
         layerList.setLayout(layerListLayout)
-        self.dockLayerList = QtMinimalDockWidget(
+        self.dockLayerList = QtViewerDockWidget(
             self,
             layerList,
             name='layer list',
             area='left',
             allowed_areas=['left', 'right'],
         )
-        self.dockLayerControls = QtMinimalDockWidget(
+        self.dockLayerControls = QtViewerDockWidget(
             self,
             self.controls,
             name='layer controls',
             area='left',
             allowed_areas=['left', 'right'],
         )
-        self.dockConsole = QtMinimalDockWidget(
+        self.dockConsole = QtViewerDockWidget(
             self,
             self.console,
             name='console',

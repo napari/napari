@@ -80,6 +80,11 @@ class QtViewerDockWidget(QDockWidget):
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
 
+        # custom title bar
+        self.title = QtCustomTitleBar(self)
+        self.setTitleBarWidget(self.title)
+        self.visibilityChanged.connect(self._on_visibility_changed)
+
     def setFeatures(self, features):
         super().setFeatures(features)
         self._features = self.features()
@@ -99,22 +104,47 @@ class QtViewerDockWidget(QDockWidget):
             features = self._features | self.DockWidgetVerticalTitleBar
         self.setFeatures(features)
 
+    @property
+    def is_vertical(self):
+        if self.isFloating():
+            return self.size().height() > self.size().width()
+        else:
+            return self.parent().dockWidgetArea(self) in (
+                Qt.LeftDockWidgetArea,
+                Qt.RightDockWidgetArea,
+            )
 
-class QMinimalTitleBar(QLabel):
-    """A widget to be used as the titleBar in the QtMinimalDock Widget.
+    def _on_visibility_changed(self):
+        self.blockSignals(True)
+        self.setTitleBarWidget(None)
+        if not self.isFloating():
+            self.title = QtCustomTitleBar(self, vertical=not self.is_vertical)
+            self.setTitleBarWidget(self.title)
+        self.blockSignals(False)
+
+
+class QtCustomTitleBar(QLabel):
+    """A widget to be used as the titleBar in the QtViewerDockWidget.
 
     Keeps vertical size minimal, has a hand cursor and styles (in stylesheet)
-    for hover.
+    for hover. Close and float buttons.
+
+    Parameters
+    ----------
+    parent : QDockWidget
+        The QtViewerDockWidget to which this titlebar belongs
+    vertical : bool
+        Whether this titlebar is oriented vertically or not.
     """
 
     def __init__(self, parent, vertical=False):
         super().__init__(parent)
-        self.setObjectName("QMinimalTitleBar")
+        self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))
         self.vertical = vertical
 
         line = QFrame(self)
-        line.setObjectName("QMinimalTitleBarLine")
+        line.setObjectName("QtCustomTitleBarLine")
 
         self.close_button = QPushButton(self)
         self.close_button.setObjectName("QTitleBarCloseButton")
@@ -158,35 +188,3 @@ class QMinimalTitleBar(QLabel):
         else:
             szh.setHeight(20)
         return szh
-
-
-class QtMinimalDockWidget(QtViewerDockWidget):
-    """A subclass that has a small but visible titlebar for floating and moving
-    the widget.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setObjectName("QtMinimalDockWidget")
-        self.title = QMinimalTitleBar(self)
-        self.setTitleBarWidget(self.title)
-        self.visibilityChanged.connect(self._on_visibility_changed)
-
-    @property
-    def is_vertical(self):
-        if self.isFloating():
-            return self.size().height() > self.size().width()
-        else:
-            return self.parent().dockWidgetArea(self) in (
-                Qt.LeftDockWidgetArea,
-                Qt.RightDockWidgetArea,
-            )
-
-    def _on_visibility_changed(self):
-        self.blockSignals(True)
-        self.setTitleBarWidget(None)
-        if not self.isFloating():
-            v = self.is_vertical
-            self.title = QMinimalTitleBar(self, vertical=not v)
-            self.setTitleBarWidget(self.title)
-        self.blockSignals(False)

@@ -894,46 +894,39 @@ QMainWindow::separator:hover {
 
 /* ------------- DockWidgets --------- */
 
-QDockWidget::title {
+#QtCustomTitleBar {
   background-color: {{ background }};
-  text-align: center; /* otherwise text overlaps with the buttons */
-  margin-top:-50px
+  padding-top:3px;
 }
 
-QDockWidget::title:hover {
+#QtCustomTitleBar:hover {
+  background-color: {{ background_dark2 }};
+}
+
+#QtCustomTitleBarLine {
   background-color: {{ foreground }};
 }
 
-QDockWidget::close-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 8px; left: 0;
-    width: 14px;
+#QtCustomTitleBar > QPushButton {
+  background-color: {{ background }};
+  max-width: 12px;
+  max-height: 12px;
 }
 
-QDockWidget::float-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 24px; left: 0;
-    width: 14px;
+#QtCustomTitleBar > QPushButton:hover {
+  background-color: {{ foreground }};
 }
 
-QDockWidget::close-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 2px; top: 4;
-    width: 14px;
+#QTitleBarCloseButton{
+  image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
 
-QDockWidget::float-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 20px; top: 4;
-    width: 14px;
+#QTitleBarFloatButton{
+  image: url(":/icons/{{ folder }}/pop_out.svg");
+  width: 10px;
+  height: 8px;
+  padding: 3 1 3 1;
+  opacity: 0.5;
 }
 
 /* ------------- QScrollBars --------- */
@@ -1231,40 +1224,4 @@ QtPlayButton[playing=True] {
 #slice_label_sep{
   background-color: {{ background }};
   border: 1px solid {{ primary }};
-}
-
-
-#QMinimalTitleBar {
-  background-color: {{ background }};
-  padding-top:3px;
-}
-
-#QMinimalTitleBar:hover {
-  background-color: {{ background_dark2 }};
-}
-
-#QMinimalTitleBarLine {
-  background-color: {{ foreground }};
-}
-
-#QMinimalTitleBar > QPushButton {
-  background-color: {{ background }};
-  max-width: 12px;
-  max-height: 12px;
-}
-
-#QMinimalTitleBar > QPushButton:hover {
-  background-color: {{ foreground }};
-}
-
-#QTitleBarCloseButton{
-  image: url(":/icons/{{ folder }}/delete_shape.svg");
-}
-
-#QTitleBarFloatButton{
-  image: url(":/icons/{{ folder }}/pop_out.svg");
-  width: 10px;
-  height: 8px;
-  padding: 3 1 3 1;
-  opacity: 0.5;
 }
