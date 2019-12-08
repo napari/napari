@@ -79,7 +79,6 @@ class QtViewerDockWidget(QDockWidget):
         widget.setParent(self)
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
-        self.featuresChanged.connect(self._store_features)
 
         # custom title bar
         self.title = QtCustomTitleBar(self)
