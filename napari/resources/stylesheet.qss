@@ -1248,7 +1248,23 @@ QtPlayButton[playing=True] {
 }
 
 #QMinimalTitleBar > QPushButton {
-  image: url(":/icons/{{ folder }}/delete_shape.svg");
+  background-color: {{ background }};
   max-width: 12px;
   max-height: 12px;
+}
+
+#QMinimalTitleBar > QPushButton:hover {
+  background-color: {{ foreground }};
+}
+
+#QTitleBarCloseButton{
+  image: url(":/icons/{{ folder }}/delete_shape.svg");
+}
+
+#QTitleBarFloatButton{
+  image: url(":/icons/{{ folder }}/pop_out.svg");
+  width: 10px;
+  height: 8px;
+  padding: 3 1 3 1;
+  opacity: 0.5;
 }
