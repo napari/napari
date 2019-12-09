@@ -292,7 +292,7 @@ class Points(Layer):
     def n_dimensional(self, n_dimensional: bool) -> None:
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
-        self._set_view_slice()
+        self.set_view_slice()
 
     @property
     def symbol(self) -> str:
@@ -328,7 +328,7 @@ class Points(Layer):
                 ).T.copy()
             except Exception:
                 raise ValueError("Size is not compatible for broadcasting")
-        self._set_view_slice()
+        self.set_view_slice()
 
     @property
     def size(self) -> Union[int, float]:
@@ -341,7 +341,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.sizes[i, :] = (self.sizes[i, :] > 0) * size
-            self._set_view_slice()
+            self.set_view_slice()
         self.status = format_float(self.size)
         self.events.size()
 
@@ -623,10 +623,7 @@ class Points(Layer):
             self.selected_data
         self._selected_box = self.interaction_box(self._selected_view)
 
-        self.events.set_data()
         self._set_highlight(force=True)
-        self._update_thumbnail()
-        self._update_coordinates()
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
@@ -757,7 +754,7 @@ class Points(Layer):
             self.data[np.ix_(index, disp)] = (
                 self.data[np.ix_(index, disp)] + shift
             )
-            self._set_view_slice()
+            self.set_view_slice()
 
     def _copy_data(self):
         """Copy selected points to clipboard."""
@@ -805,7 +802,7 @@ class Points(Layer):
             self._selected_data = list(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
-            self._set_view_slice()
+            self.set_view_slice()
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg

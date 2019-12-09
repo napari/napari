@@ -249,7 +249,7 @@ class Image(Layer):
         if self._data_level == level:
             return
         self._data_level = level
-        self._set_view_slice()
+        self.set_view_slice()
 
     @property
     def level_shapes(self):
@@ -281,7 +281,7 @@ class Image(Layer):
         if np.all(self._top_left == top_left):
             return
         self._top_left = top_left.astype(int)
-        self._set_view_slice()
+        self.set_view_slice()
 
     @property
     def colormap(self):
@@ -513,12 +513,9 @@ class Image(Layer):
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(thumbnail)
 
-        self._update_thumbnail()
-        self._update_coordinates()
         if self.is_pyramid:
             self.events.scale()
             self.events.translate()
-        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""

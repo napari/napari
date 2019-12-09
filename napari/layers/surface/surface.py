@@ -167,7 +167,7 @@ class Surface(Layer):
         self._vertices = vertices
 
         self._update_dims()
-        self._set_view_slice()
+        self.set_view_slice()
         self.events.data()
 
     @property
@@ -180,7 +180,7 @@ class Surface(Layer):
 
         self._vertex_values = vertex_values
 
-        self._set_view_slice()
+        self.set_view_slice()
         self.events.data()
 
     @property
@@ -193,7 +193,7 @@ class Surface(Layer):
 
         self.faces = faces
 
-        self._set_view_slice()
+        self.set_view_slice()
         self.events.data()
 
     def _get_ndim(self):
@@ -300,10 +300,6 @@ class Surface(Layer):
                 self._view_faces = self.faces[matches]
         else:
             self._view_faces = self.faces
-
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current surface."""

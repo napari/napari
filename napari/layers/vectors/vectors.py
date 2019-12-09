@@ -183,7 +183,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.edge_width()
-        self._set_view_slice()
+        self.set_view_slice()
         self.status = format_float(self.edge_width)
 
     @property
@@ -205,7 +205,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.length()
-        self._set_view_slice()
+        self.set_view_slice()
         self.status = format_float(self.length)
 
     @property
@@ -269,10 +269,6 @@ class Vectors(Layer):
         else:
             self._view_vertices = vertices
             self._view_faces = faces
-
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
