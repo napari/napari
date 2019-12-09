@@ -1,1 +1,2 @@
-from .misc import is_rgb, segment_normal
+from .misc import is_rgb
+from napari.layers.layer_utils import segment_normal

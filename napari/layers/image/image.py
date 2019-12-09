@@ -8,11 +8,8 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ...util.misc import (
-    calc_data_range,
-    increment_unnamed_colormap,
-    get_pyramid_and_rgb,
-)
+from ...util.misc import get_pyramid_and_rgb
+from ..layer_utils import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Rendering, Interpolation
