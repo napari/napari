@@ -562,7 +562,6 @@ class Layer(KeymapMixin, ABC):
             isinstance(n, int) for n in self.coordinates
         ):  # fixes bug where any element of self.coordinates is updated to a non-numeric value
             self.coordinates = (0,) * len(self.coordinates)
-        print(self.coordinates)
         full_coord = np.round(
             np.multiply(self.coordinates, full_scale) + full_translate
         ).astype(int)
