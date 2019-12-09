@@ -8,7 +8,7 @@ def read_swc(swc_path):
 
     Parameters
     ----------
-    path : string
+    swc_path : str
         String representing the path to the swc file
     Returns
     -------
@@ -22,9 +22,6 @@ def read_swc(swc_path):
     offset_found = False
     header_length = -1
     offset = np.nan
-    # color = np.nan
-    # cc = np.nan
-    # branch = np.nan
     while in_header:
         line = file.readline().split()
         if 'OFFSET' in line:
@@ -110,6 +107,15 @@ def swc_to_voxel(df, spacing, origin=np.array([0, 0, 0])):
 
 def df_to_graph(df_voxel):
     """Converts dataframe of swc in voxel coordinates into a directed graph
+
+    Parameters
+    ----------
+    df_voxel : :class:`pandas.DataFrame`
+        Indicies, coordinates, and parents of each node in the swc. Coordinates are in voxel units.
+    Returns
+    -------
+    G : :class:`networkx.classes.digraph.DiGraph`
+        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
     """
     G = nx.DiGraph()
 
@@ -133,35 +139,51 @@ def df_to_graph(df_voxel):
     return G
 
 
-def get_sub_neuron(G, start, end):
-    """Returns sub-neuron with node coordinates bounded by start and end"""
-    G_cp = G.copy()  # make copy of input G
+def get_sub_neuron(G, bounding_box):
+    """Returns sub-neuron with node coordinates bounded by start and end
+
+    Parameters
+    ----------
+    G : :class:`networkx.classes.digraph.DiGraph`
+        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
+    bounding_box : tuple or list or None
+        Defines a bounding box around a sub-region around the neuron. Length 2 tuple/list. First element is the coordinate of one corner and second element is the coordinate of the opposite corner. Both coordinates are numpy.array([x,y,z])in voxel units.
+    Returns
+    -------
+    G_sub : :class:`networkx.classes.digraph.DiGraph`
+        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
+    """
+    G_sub = G.copy()  # make copy of input G
+    start = bounding_box[0]
+    end = bounding_box[1]
 
     # remove nodes that are not neighbors of nodes bounded by start and end
-    for node in list(G_cp.nodes):
-        neighbors = list(G_cp.successors(node)) + list(G_cp.predecessors(node))
+    for node in list(G_sub.nodes):
+        neighbors = list(G_sub.successors(node)) + list(
+            G_sub.predecessors(node)
+        )
 
         remove = True
 
         for id in neighbors + [node]:
-            x = G_cp.nodes[id]['x']
-            y = G_cp.nodes[id]['y']
-            z = G_cp.nodes[id]['z']
+            x = G_sub.nodes[id]['x']
+            y = G_sub.nodes[id]['y']
+            z = G_sub.nodes[id]['z']
 
             if x >= start[0] and y >= start[1] and z >= start[2]:
                 if x < end[0] and y < end[1] and z < end[2]:
                     remove = False
 
         if remove:
-            G_cp.remove_node(node)
+            G_sub.remove_node(node)
 
     # set origin to start of bounding box
-    for id in list(G_cp.nodes):
-        G_cp.nodes[id]['x'] = G_cp.nodes[id]['x'] - start[0]
-        G_cp.nodes[id]['y'] = G_cp.nodes[id]['y'] - start[1]
-        G_cp.nodes[id]['z'] = G_cp.nodes[id]['z'] - start[2]
+    for id in list(G_sub.nodes):
+        G_sub.nodes[id]['x'] = G_sub.nodes[id]['x'] - start[0]
+        G_sub.nodes[id]['y'] = G_sub.nodes[id]['y'] - start[1]
+        G_sub.nodes[id]['z'] = G_sub.nodes[id]['z'] - start[2]
 
-    return G_cp
+    return G_sub
 
 
 def graph_to_paths(G):
@@ -191,7 +213,4 @@ def graph_to_paths(G):
 
         paths.append(path)
 
-    if len(paths) == 1:
-        return paths[0]
-    else:
-        return paths
+    return paths
