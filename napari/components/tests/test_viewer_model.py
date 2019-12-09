@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 from napari.components import ViewerModel
 
@@ -118,6 +119,45 @@ def test_add_shapes():
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
+
+
+def test_add_swc():
+    """Test adding swc with and without a bounding_box"""
+    # paths_path_1 = 'napari/components/tests/correct_paths_1.pickle'
+    paths_path_1 = 'correct_paths_1.pickle'
+    # paths_path_2 = 'napari/components/tests/correct_paths_2.pickle'
+    paths_path_2 = 'correct_paths_2.pickle'
+    # swc_path = 'napari/components/tests/2018-08-01_G-002_consensus.swc'
+    swc_path = '2018-08-01_G-002_consensus.swc'
+    spacing = np.array([0.29875923, 0.3044159, 0.98840415])
+    origin = np.array([70093.276, 15071.596, 29306.737])
+
+    # case 1: without bounding_box
+    with open(paths_path_1, 'rb') as f:
+        correct_paths_1 = pickle.load(f)
+    viewer = ViewerModel()
+    viewer.add_swc(swc_path=swc_path, spacing=spacing, origin=origin)
+    paths = viewer.layers[0].data
+    assert len(viewer.layers) == 1
+    assert all([np.array_equal(a, b) for a, b in zip(paths, correct_paths_1)])
+    assert viewer.dims.ndim == 3
+
+    # case 2: with bounding box
+    with open(paths_path_2, 'rb') as f:
+        correct_paths_2 = pickle.load(f)
+    start = np.array([15312, 4400, 6448])
+    end = np.array([15840, 4800, 6656])
+    viewer = ViewerModel()
+    viewer.add_swc(
+        swc_path=swc_path,
+        spacing=spacing,
+        origin=origin,
+        bounding_box=(start, end),
+    )
+    paths = viewer.layers[0].data
+    assert len(viewer.layers) == 1
+    assert all([np.array_equal(a, b) for a, b in zip(paths, correct_paths_2)])
+    assert viewer.dims.ndim == 3
 
 
 def test_add_surface():
