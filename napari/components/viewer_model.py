@@ -926,6 +926,81 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
+    def add_swc(
+        self,
+        swc_path,
+        spacing,
+        origin=np.array([0, 0, 0]),
+        *,
+        edge_width=1,
+        edge_color='black',
+        face_color='white',
+        z_index=0,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=0.7,
+        blending='translucent',
+        visible=True,
+    ):
+        """Add a neuron from a swc file as a path shape layer to the layers list.
+
+        Parameters
+        ----------
+        data : list or array
+            List of shape data, where each element is an (N, D) array of the
+            N vertices of a shape in D dimensions. Can be an 3-dimensional
+            array if each shape has the same number of vertices.
+        shape_type : string or list
+            String of shape shape_type, must be one of "{'line', 'rectangle',
+            'ellipse', 'path', 'polygon'}". If a list is supplied it must be
+            the same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        Returns
+        -------
+        layer : :class:`napari.layers.Shapes`
+            The newly-created shapes layer.
+        """
+
+        # read in the swc file into a dataframe
+        df = layers.swc.read_swc(swc_path=swc_path)
+        # convert from spatial to voxel coordinates
+        df_voxel = layers.swc.swc_to_voxel(
+            df=df, spacing=spacing, origin=origin
+        )
+        # convert from dataframe to networkx graph
+        G = layers.swc.df_to_graph(df_voxel=df_voxel)
+        # # get sub-neuron from consensus neuron
+        # start = np.array([15312,4400,6448])
+        # end = np.array([15840,4800,6656])
+        #
+        # G_comp = layers.swc.get_sub_neuron(G, start, end)
+        # # convert from graph to list of path shape data
+        # paths = layers.swc.graph_to_paths(G=G_comp)
+        # convert from graph to list of path shape data
+        paths = layers.swc.graph_to_paths(G=G)
+        # add data as path shape
+        shape_type = 'path'
+        layer = self.add_shapes(
+            data=paths,
+            shape_type=shape_type,
+            edge_width=edge_width,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_index,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+        )
+
+        return layer
+
     def add_vectors(
         self,
         data,
