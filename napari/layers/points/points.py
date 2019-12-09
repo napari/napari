@@ -135,6 +135,8 @@ class Points(Layer):
     ):
         if data is None:
             data = np.empty((0, 2))
+        else:
+            data = np.atleast_2d(data)
         ndim = data.shape[1]
         super().__init__(
             ndim,
