@@ -21,7 +21,7 @@ def read_swc(swc_path):
     in_header = True
     offset_found = False
     header_length = -1
-    offset = np.nan
+    offset = np.array([0, 0, 0])
     while in_header:
         line = file.readline().split()
         if 'OFFSET' in line:
@@ -147,7 +147,7 @@ def get_sub_neuron(G, bounding_box):
     G : :class:`networkx.classes.digraph.DiGraph`
         Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
     bounding_box : tuple or list or None
-        Defines a bounding box around a sub-region around the neuron. Length 2 tuple/list. First element is the coordinate of one corner and second element is the coordinate of the opposite corner. Both coordinates are numpy.array([x,y,z])in voxel units.
+        Defines a bounding box around a sub-region around the neuron. Length 2 tuple/list. First element is the coordinate of one corner (inclusive) and second element is the coordinate of the opposite corner (exclusive). Both coordinates are numpy.array([x,y,z])in voxel units.
     Returns
     -------
     G_sub : :class:`networkx.classes.digraph.DiGraph`
@@ -187,6 +187,17 @@ def get_sub_neuron(G, bounding_box):
 
 
 def graph_to_paths(G):
+    """Converts neuron represented as a directed graph with no cycles into a list of paths.
+
+    Parameters
+    ----------
+    G : :class:`networkx.classes.digraph.DiGraph`
+        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
+    Returns
+    -------
+    paths : list
+        List of Nx3 numpy.array. Rows of the array are 3D coordinates in voxel units. Each array is one path.
+    """
     G_cp = G.copy()  # make copy of input G
     branches = []
     while len(G_cp.edges) != 0:  # iterate over branches
