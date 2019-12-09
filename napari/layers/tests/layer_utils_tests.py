@@ -2,7 +2,11 @@ import numpy as np
 import pytest
 from dask import array as da
 
-from ..layer_utils import calc_data_range
+from ..layer_utils import (
+    calc_data_range,
+    increment_unnamed_colormap,
+    segment_normal,
+)
 
 
 data_dask = da.random.random(
@@ -65,3 +69,36 @@ def test_calc_data_fast_uint8():
 def test_calc_data_range_fast_big():
     val = calc_data_range(data_dask)
     assert len(val) > 0
+
+
+def test_segment_normal_2d():
+    a = np.array([1, 1])
+    b = np.array([1, 10])
+
+    unit_norm = segment_normal(a, b)
+    assert np.all(unit_norm == np.array([1, 0]))
+
+
+def test_segment_normal_3d():
+    a = np.array([1, 1, 0])
+    b = np.array([1, 10, 0])
+    p = np.array([1, 0, 0])
+
+    unit_norm = segment_normal(a, b, p)
+    assert np.all(unit_norm == np.array([0, 0, -1]))
+
+
+def test_increment_unnamed_colormap():
+    # test that unnamed colormaps are incremented
+    names = [
+        '[unnamed colormap 0',
+        'existing_colormap',
+        'perceptually_uniform',
+        '[unnamed colormap 1]',
+    ]
+    name = '[unnamed colormap]'
+    assert increment_unnamed_colormap(name, names) == '[unnamed colormap 2]'
+
+    # test that named colormaps are not incremented
+    named_colormap = 'perfect_colormap'
+    assert increment_unnamed_colormap(named_colormap, names) == named_colormap

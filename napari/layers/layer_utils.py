@@ -8,7 +8,7 @@ def increment_unnamed_colormap(name, names):
     ----------
     name : str
         Name of colormap to be incremented.
-    names : str
+    names : List[str]
         Names of existing colormaps.
 
     Returns
