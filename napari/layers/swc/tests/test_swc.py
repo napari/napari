@@ -5,7 +5,7 @@ import networkx as nx
 from napari.layers import swc
 
 # read in swc file to dataframe
-swc_path = '2018-08-01_G-002_consensus.swc'
+swc_path = 'napari/layers/swc/tests/2018-08-01_G-002_consensus.swc'
 df = swc.read_swc(swc_path)
 
 # convert swc dataframe from spatial units to voxel units
