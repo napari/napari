@@ -123,12 +123,9 @@ def test_add_shapes():
 
 def test_add_swc():
     """Test adding swc with and without a bounding_box"""
-    # paths_path_1 = 'napari/components/tests/correct_paths_1.pickle'
-    paths_path_1 = 'correct_paths_1.pickle'
-    # paths_path_2 = 'napari/components/tests/correct_paths_2.pickle'
-    paths_path_2 = 'correct_paths_2.pickle'
-    # swc_path = 'napari/components/tests/2018-08-01_G-002_consensus.swc'
-    swc_path = '2018-08-01_G-002_consensus.swc'
+    paths_path_1 = 'napari/components/tests/correct_paths_1.pickle'
+    paths_path_2 = 'napari/components/tests/correct_paths_2.pickle'
+    swc_path = 'napari/components/tests/2018-08-01_G-002_consensus.swc'
     spacing = np.array([0.29875923, 0.3044159, 0.98840415])
     origin = np.array([70093.276, 15071.596, 29306.737])
 
