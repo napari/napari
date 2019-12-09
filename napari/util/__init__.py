@@ -1,1 +1,1 @@
-from .misc import is_rgb, segment_normal
+from .misc import segment_normal
