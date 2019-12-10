@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
+from scipy.interpolate import interp1d
 
 from vispy.geometry.rect import Rect
 from vispy.util.quaternion import Quaternion
@@ -23,7 +24,9 @@ def interpolate(states_dict):
     interpolated = {}
     interpolated["ndisplay"] = interpol_prop_zero(states_dict, "ndisplay")
     interpolated["vis"] = interpol_prop_zero(states_dict, "vis")
-    interpolated["sliders"] = interpol_prop_lin(states_dict, "sliders")
+    interpolated["sliders"] = interpol_prop_lin(states_dict, "sliders").astype(
+        np.uint8
+    )
     cam2, cam3 = interpolate_camera(states_dict)
 
     # camera state is calculated for 2D and 3D camera for whole movie.
@@ -82,7 +85,14 @@ def interpolate_camera(state_dict):
             ]
         )
         rect_interp = [
-            Rect(*x) for x in array_interpol(frames, frames2D, all_rect)
+            Rect(*x)
+            for x in interp1d(
+                frames2D,
+                all_rect,
+                axis=0,
+                bounds_error=False,
+                fill_value=(all_rect[0, :], all_rect[-1, :]),
+            )(frames)
         ]
         camera_states2D = [{"rect": x} for x in rect_interp]
 
@@ -113,7 +123,14 @@ def interpolate_camera(state_dict):
 
         rot_interp = [Quaternion(*x) for x in quat_interpol(frames3D, all_rot)]
         trans_interp = [
-            tuple(x) for x in array_interpol(frames, frames3D, all_trans)
+            tuple(x)
+            for x in interp1d(
+                frames3D,
+                all_trans,
+                axis=0,
+                bounds_error=False,
+                fill_value=(all_trans[0, :], all_trans[-1, :]),
+            )(frames)
         ]
         scales_interp = np.interp(x=frames, xp=frames3D, fp=all_scale)
 
@@ -176,20 +193,9 @@ def interpol_prop_lin(states_dict, prop):
     frames_values = [x["frame"] for x in states_dict if x[prop]]
     values = [x[prop] for x in states_dict if x[prop]]
 
-    value_interp = array_interpol(frames, frames_values, values)
+    value_interp = interp1d(frames_values, np.stack(values), axis=0)(frames)
 
     return value_interp
-
-
-def array_interpol(x, xp, fp_array):
-    """In an array fp_array of size NxM, linearly interpolate
-    each column of the fp_array"""
-
-    fp_array = np.stack(fp_array)
-    array_interp = np.zeros((len(x), len(fp_array[0])))
-    for s in range(len(fp_array[0])):
-        array_interp[:, s] = np.interp(x=x, xp=xp, fp=fp_array[:, s])
-    return array_interp
 
 
 def quat_interpol(frames_rot, rot_states):
