@@ -1,6 +1,7 @@
 import numpy as np
 import imageio
 import copy
+import os
 
 from . import util
 
@@ -271,7 +272,7 @@ class Animate:
         # update view
         self.viewer.window.qt_viewer.view.camera.view_changed()
 
-    def make_movie(self, name="movie.mp4", fps=20):
+    def make_movie(self, name="movie.mp4", fps=20, quality=5):
         """Create a movie based on key-frames selected in napari
 
         Parameters
@@ -281,13 +282,20 @@ class Animate:
             should be either .mp4 or .gif
         fps : int
             frames per second
+        quality: float
+            number from 1 (lowest quality) to 9
+            only applies to mp4
         """
 
         # creat all states
         self.create_steps()
 
         # create imageio writer and add all frames
-        writer = imageio.get_writer(name, fps=fps)
+        _, extension = os.path.splitext(name)
+        if extension == '.mp4':
+            writer = imageio.get_writer(name, fps=fps, quality=quality)
+        else:
+            writer = imageio.get_writer(name, fps=fps)
         for frame in range(len(self.interpolated_states["ndisplay"])):
             self.update_napari_state(frame)
             newim = self.viewer.screenshot()
