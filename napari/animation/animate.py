@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import imageio
 import copy
 
@@ -273,88 +271,25 @@ class Animate:
         # update view
         self.viewer.window.qt_viewer.view.camera.view_changed()
 
-    def create_movie_frame(self):
-        """Create the matplotlib figure, and image object hosting all snapshots"""
-
-        newim = self.viewer.screenshot()
-        sizes = newim.shape
-        height = float(sizes[0])
-        width = float(sizes[1])
-
-        factor = 3
-        fig = plt.figure()
-        fig.set_size_inches(factor * width / height, factor, forward=False)
-        ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])
-        ax.set_axis_off()
-        fig.add_axes(ax)
-
-        self.fig = fig
-        self.ax = ax
-
-        self.implot = plt.imshow(newim, animated=True)
-
-    def movie_init(self):
-        """init function for matplotlib FuncAnimation"""
-
-        newim = self.viewer.screenshot()
-        self.implot.set_data(newim)
-        return self.implot
-
-    def update(self, frame):
-        """Update function matplotlib FuncAnimation
-
-        Parameters
-        -------
-        frame : int
-            frame to visualize
-        """
-
-        self.update_napari_state(frame)
-        newim = self.viewer.screenshot()
-        self.implot.set_data(newim)
-        return self.implot
-
-    def make_movie(self, name="movie.mp4", resolution=600, fps=20):
+    def make_movie(self, name="movie.mp4", fps=20):
         """Create a movie based on key-frames selected in napari
 
         Parameters
         -------
         name : str
             name to use for saving the movie (can also be a path)
-        resolution: int
-            resolution in dpi to save the movie
+            should be either .mp4 or .gif
         fps : int
             frames per second
         """
 
         # creat all states
         self.create_steps()
-        # create movie frame
-        self.create_movie_frame()
-        # animate
-        self.anim = FuncAnimation(
-            self.fig,
-            self.update,
-            frames=np.arange(len(self.states_dict)),
-            init_func=self.movie_init,
-            blit=False,
-        )
-        plt.show()
 
-        self.anim.save(name, dpi=resolution, fps=fps)
-
-    def make_gif(self, name="movie.gif"):
-        """Create a gif based on key-frames selected in napari
-
-        Parameters
-        -------
-        name : str
-            name to use for saving the movie (can also be a path)
-        """
-
-        # create the image stack with all snapshots
-        stack = self.collect_images()
-
-        imageio.mimsave(
-            name, [stack[i, :, :, :] for i in range(stack.shape[0])]
-        )
+        # create imageio writer and add all frames
+        writer = imageio.get_writer(name, fps=fps)
+        for frame in range(len(self.interpolated_states["ndisplay"])):
+            self.update_napari_state(frame)
+            newim = self.viewer.screenshot()
+            writer.append_data(newim)
+        writer.close()
