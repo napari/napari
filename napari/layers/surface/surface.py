@@ -5,7 +5,7 @@ import vispy.color
 from ..base import Layer
 from ...util.event import Event
 from ...util.status_messages import format_float
-from ...util.misc import calc_data_range, increment_unnamed_colormap
+from ..layer_utils import calc_data_range, increment_unnamed_colormap
 from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
