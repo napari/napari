@@ -55,14 +55,9 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_highlight_change()
 
         if len(self.layer._data_view) > 0:
-            edge_color = transform_color(self.layer.edge_colors)
-            face_color = transform_color(self.layer.face_colors)
-            # edge_color = [
-            #     self.layer.edge_colors[i] for i in self.layer._indices_view
-            # ]
-            # face_color = [
-            #     self.layer.face_colors[i] for i in self.layer._indices_view
-            # ]
+            max_len = len(self.layer._indices_view)
+            edge_color = transform_color(self.layer.edge_colors)[:max_len]
+            face_color = transform_color(self.layer.face_colors)[:max_len]
         else:
             edge_color = np.array([1., 1., 1., 1.])  # white
             face_color = np.array([1., 1., 1., 1.])  # white
