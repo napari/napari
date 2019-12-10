@@ -1,4 +1,3 @@
-import copy, re
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
@@ -9,7 +8,7 @@ from vispy.util.quaternion import Quaternion
 
 def interpolate(states_dict):
     """Calculate interpolations for all states
-        
+
     Returns
     -------
     interpolated: dict
@@ -47,11 +46,11 @@ def interpolate(states_dict):
 
 def interpolate_camera(state_dict):
     """Create list of interpolated camera states
-    
+
     Parameters
     -------
     states_dict : state dict as create by naparimovie.create_steps()
-            
+
      Returns
     -------
     camera_states2D: list
@@ -82,7 +81,9 @@ def interpolate_camera(state_dict):
                 if "rect" in x[1].keys()
             ]
         )
-        rect_interp = [Rect(*x) for x in array_interpol(frames, frames2D, all_rect)]
+        rect_interp = [
+            Rect(*x) for x in array_interpol(frames, frames2D, all_rect)
+        ]
         camera_states2D = [{"rect": x} for x in rect_interp]
 
     # Interpolate 3D camera
@@ -91,17 +92,29 @@ def interpolate_camera(state_dict):
     if len(frames3D) > 0:
         # recover rotation, translation, scale and rotation and interpolate
         all_rot = [
-            x[1]["_quaternion"] for x in frames_cam if "_quaternion" in x[1].keys()
+            x[1]["_quaternion"]
+            for x in frames_cam
+            if "_quaternion" in x[1].keys()
         ]
         all_trans = np.array(
-            [x[1]["center"] for x in frames_cam if "_quaternion" in x[1].keys()]
+            [
+                x[1]["center"]
+                for x in frames_cam
+                if "_quaternion" in x[1].keys()
+            ]
         )
         all_scale = np.array(
-            [x[1]["scale_factor"] for x in frames_cam if "_quaternion" in x[1].keys()]
+            [
+                x[1]["scale_factor"]
+                for x in frames_cam
+                if "_quaternion" in x[1].keys()
+            ]
         )
 
         rot_interp = [Quaternion(*x) for x in quat_interpol(frames3D, all_rot)]
-        trans_interp = [tuple(x) for x in array_interpol(frames, frames3D, all_trans)]
+        trans_interp = [
+            tuple(x) for x in array_interpol(frames, frames3D, all_trans)
+        ]
         scales_interp = np.interp(x=frames, xp=frames3D, fp=all_scale)
 
         camera_states3D = [
@@ -116,13 +129,13 @@ def interpol_prop_zero(states_dict, prop):
     """For the property prop of the states_dict,
     interpolate missing frames between key-frames, by degree 0
     interpolation (replicate last state)
-    
+
     Parameters
     -------
     states_dict : state dict as create by naparimovie.create_steps()
     prop : str
         property to interpolate
-            
+
      Returns
     -------
     completed_values: array
@@ -146,13 +159,13 @@ def interpol_prop_zero(states_dict, prop):
 def interpol_prop_lin(states_dict, prop):
     """For the property prop of the states_dict,
     interpolate missing frames between key-frames, by linear interpolation
-    
+
     Parameters
     -------
     states_dict : state dict as create by naparimovie.create_steps()
     prop : str
         property to interpolate
-            
+
      Returns
     -------
     value_interp: array
@@ -182,14 +195,14 @@ def array_interpol(x, xp, fp_array):
 def quat_interpol(frames_rot, rot_states):
     """Interpolate camera rotation state using
     quaternions
-    
+
     Parameters
     -------
     frames_rot : list
         list of frames with camera rotation changes
     rot_states : list
         list of vispy quaternions
-            
+
      Returns
     -------
     all_states: array
@@ -205,7 +218,12 @@ def quat_interpol(frames_rot, rot_states):
 
         q = R.from_quat(
             [
-                [rot_states[i].w, rot_states[i].x, rot_states[i].y, rot_states[i].z],
+                [
+                    rot_states[i].w,
+                    rot_states[i].x,
+                    rot_states[i].y,
+                    rot_states[i].z,
+                ],
                 [
                     rot_states[i + 1].w,
                     rot_states[i + 1].x,

@@ -1,26 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import napari
-from pyquaternion import Quaternion
 from matplotlib.animation import FuncAnimation
 import imageio
 import copy
-import vispy.geometry
 
 from . import util
+
 
 class Movie:
     def __init__(self, myviewer=None, inter_steps=15):
 
         """Standard __init__ method.
-        
+
         Parameters
         ----------
         myviewer : napari viewer
             napari viewer
         inter_steps: int
-            number of steps to interpolate between key frames 
-        
+            number of steps to interpolate between key frames
+
         Attributes
         ----------
         key_frames : list
@@ -30,7 +28,7 @@ class Movie:
                 'camera': camera state
                 'vis': list of booleans, visibility of layers
                 'sliders': list, slider positions
-   
+
         interpolated_states: dict
             dictionary defining interpolated states. Each element is a list of length N
             frames. Keys are:
@@ -38,17 +36,16 @@ class Movie:
                 'camera': camera state
                 'vis': list of booleans, visibility of layers
                 'sliders': list, slider positions
-                
+
         states_dict : list
             list of dictionaries defining napari viewer states for each frame. Same keys as key_frames
-        
+
         current_frame : int
             currently shown key frame
         implot : matplotlib Ax object
             reference to matplotlib image used for movie returned by imshow
         anim : matplotlib FuncAnimation object
             reference to animation object
-            
         """
 
         if myviewer is None:
@@ -66,7 +63,7 @@ class Movie:
 
         # establish key bindings
         self.add_callback()
-        
+
     def finish_movie(self):
         self.release_callbacks()
 
@@ -81,10 +78,10 @@ class Movie:
         self.myviewer.bind_key("b", self.key_back_frame)
 
         self.myviewer.bind_key("w", self.key_interpolframe)
-        
+
     def release_callbacks(self):
         """Release keys"""
-        
+
         self.myviewer.bind_key("f", None)
         self.myviewer.bind_key("r", None)
         self.myviewer.bind_key("d", None)
@@ -93,25 +90,22 @@ class Movie:
         self.myviewer.bind_key("b", None)
 
         self.myviewer.bind_key("w", None)
-        
-    
+
     def get_new_state(self):
         """Capture current napari state
-        
+
         Returns
         -------
         new_state : dict
             description of state
         """
 
-        current_state = copy.deepcopy(
-            self.myviewer.window.qt_viewer.view.camera.get_state()
-        )
-        time = self.myviewer.dims.point[0] if len(self.myviewer.dims.point) == 4 else []
         new_state = {
             "ndisplay": self.myviewer.dims.ndisplay,
             "frame": self.current_frame,
-            "camera": copy.deepcopy(self.myviewer.window.qt_viewer.view.camera.get_state()),
+            "camera": copy.deepcopy(
+                self.myviewer.window.qt_viewer.view.camera.get_state()
+            ),
             "vis": [x.visible for x in self.myviewer.layers],
             "sliders": self.myviewer.dims.point,
         }
@@ -157,7 +151,7 @@ class Movie:
 
     def set_to_keyframe(self, frame):
         """Set the napari viewer to a given key-frame
-        
+
         Parameters
         -------
         frame : int
@@ -167,19 +161,22 @@ class Movie:
         self.current_frame = frame
 
         for i in range(len(self.key_frames[frame]["sliders"])):
-            self.myviewer.dims.set_point(i, self.key_frames[frame]["sliders"][i])
-        
+            self.myviewer.dims.set_point(
+                i, self.key_frames[frame]["sliders"][i]
+            )
+
         # set visibility of layers
         for j in range(len(self.myviewer.layers)):
-            #if self.key_frames[frame]["vis"]:
+            # if self.key_frames[frame]["vis"]:
             self.myviewer.layers[j].visible = self.key_frames[frame]["vis"][j]
-        
+
         # update state
         self.myviewer.dims.ndisplay = self.key_frames[frame]["ndisplay"]
-        self.myviewer.window.qt_viewer.view.camera.set_state(self.key_frames[frame]["camera"])
+        self.myviewer.window.qt_viewer.view.camera.set_state(
+            self.key_frames[frame]["camera"]
+        )
         self.myviewer.window.qt_viewer.view.camera.view_changed()
 
-        
     def create_state_dict(self):
         """Create list of state dictionaries. For key-frames selected interactively,
         add self.inter_steps emtpy frames between key-frames. For key-frames from scripts,
@@ -201,10 +198,13 @@ class Movie:
         states_dict = []
         for ind, x in enumerate(self.key_frames):
             states_dict.append(x)
-            #do not add frames after last key-frame
+            # do not add frames after last key-frame
             if ind < len(self.key_frames) - 1:
-                #do not add frames when switching camera
-                if self.key_frames[ind]['ndisplay'] == self.key_frames[ind+1]['ndisplay']:
+                # do not add frames when switching camera
+                if (
+                    self.key_frames[ind]['ndisplay']
+                    == self.key_frames[ind + 1]['ndisplay']
+                ):
                     for y in range(inter_steps[ind]):
                         states_dict.append(copy.deepcopy(empty))
         for ind, x in enumerate(states_dict):
@@ -228,7 +228,7 @@ class Movie:
 
     def collect_images(self):
         """Collect images corresponding to all interpolated states
-        
+
         Returns
         -------
         image_stack : 3D numpy
@@ -247,29 +247,36 @@ class Movie:
 
     def update_napari_state(self, frame):
         """Set the napari viewer to a given interpolated frame
-        
+
         Parameters
         -------
         frame : int
             frame to visualize
         """
 
-        #set view type 2D/3D and camera state
-        self.myviewer.dims.ndisplay = self.interpolated_states["ndisplay"][frame]
-        self.myviewer.window.qt_viewer.view.camera.set_state(self.interpolated_states["camera"][frame])
-        
-        #assign interpolated visibility state
-        for j in range(len(self.myviewer.layers)):
-            self.myviewer.layers[j].visible = self.interpolated_states["vis"][frame][j]
+        # set view type 2D/3D and camera state
+        self.myviewer.dims.ndisplay = self.interpolated_states["ndisplay"][
+            frame
+        ]
+        self.myviewer.window.qt_viewer.view.camera.set_state(
+            self.interpolated_states["camera"][frame]
+        )
 
-        #adjust slider positions
+        # assign interpolated visibility state
+        for j in range(len(self.myviewer.layers)):
+            self.myviewer.layers[j].visible = self.interpolated_states["vis"][
+                frame
+            ][j]
+
+        # adjust slider positions
         for i in range(self.interpolated_states["sliders"].shape[1]):
-            self.myviewer.dims.set_point(i, self.interpolated_states["sliders"][frame][i])
-            
-        #update view
+            self.myviewer.dims.set_point(
+                i, self.interpolated_states["sliders"][frame][i]
+            )
+
+        # update view
         self.myviewer.window.qt_viewer.view.camera.view_changed()
 
-        
     def create_movie_frame(self):
         """Create the matplotlib figure, and image object hosting all snapshots"""
 
@@ -298,8 +305,8 @@ class Movie:
         return self.implot
 
     def update(self, frame):
-        """Update function matplotlib FuncAnimation 
-        
+        """Update function matplotlib FuncAnimation
+
         Parameters
         -------
         frame : int
@@ -313,7 +320,7 @@ class Movie:
 
     def make_movie(self, name="movie.mp4", resolution=600, fps=20):
         """Create a movie based on key-frames selected in napari
-        
+
         Parameters
         -------
         name : str
@@ -342,7 +349,7 @@ class Movie:
 
     def make_gif(self, name="movie.gif"):
         """Create a gif based on key-frames selected in napari
-        
+
         Parameters
         -------
         name : str
@@ -352,4 +359,6 @@ class Movie:
         # create the image stack with all snapshots
         stack = self.collect_images()
 
-        imageio.mimsave(name, [stack[i, :, :, :] for i in range(stack.shape[0])])
+        imageio.mimsave(
+            name, [stack[i, :, :, :] for i in range(stack.shape[0])]
+        )
