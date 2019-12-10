@@ -36,7 +36,7 @@ from .view_layers import (
     view_points,
     view_vectors,
 )
-from .movie.naparimovie import Movie
+from .animation import Animate
 from ._qt import gui_qt
 from ._version import get_versions
 

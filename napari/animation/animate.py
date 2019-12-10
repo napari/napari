@@ -7,14 +7,14 @@ import copy
 from . import util
 
 
-class Movie:
-    def __init__(self, myviewer=None, inter_steps=15):
+class Animate:
+    def __init__(self, viewer=None, inter_steps=15):
 
         """Standard __init__ method.
 
         Parameters
         ----------
-        myviewer : napari viewer
+        viewer : napari viewer
             napari viewer
         inter_steps: int
             number of steps to interpolate between key frames
@@ -48,12 +48,12 @@ class Movie:
             reference to animation object
         """
 
-        if myviewer is None:
+        if viewer is None:
             raise TypeError(
-                "You need to pass a napari viewer for the myviewer argument"
+                "You need to pass a napari viewer for the viewer argument"
             )
         else:
-            self.myviewer = myviewer
+            self.viewer = viewer
 
         self.key_frames = []
         self.inter_steps = inter_steps
@@ -70,26 +70,26 @@ class Movie:
     def add_callback(self):
         """Bind keys"""
 
-        self.myviewer.bind_key("f", self.capture_keyframe_callback)
-        self.myviewer.bind_key("r", self.replace_keyframe_callback)
-        self.myviewer.bind_key("d", self.delete_keyframe_callback)
+        self.viewer.bind_key("f", self.capture_keyframe_callback)
+        self.viewer.bind_key("r", self.replace_keyframe_callback)
+        self.viewer.bind_key("d", self.delete_keyframe_callback)
 
-        self.myviewer.bind_key("a", self.key_adv_frame)
-        self.myviewer.bind_key("b", self.key_back_frame)
+        self.viewer.bind_key("a", self.key_adv_frame)
+        self.viewer.bind_key("b", self.key_back_frame)
 
-        self.myviewer.bind_key("w", self.key_interpolframe)
+        self.viewer.bind_key("w", self.key_interpolframe)
 
     def release_callbacks(self):
         """Release keys"""
 
-        self.myviewer.bind_key("f", None)
-        self.myviewer.bind_key("r", None)
-        self.myviewer.bind_key("d", None)
+        self.viewer.bind_key("f", None)
+        self.viewer.bind_key("r", None)
+        self.viewer.bind_key("d", None)
 
-        self.myviewer.bind_key("a", None)
-        self.myviewer.bind_key("b", None)
+        self.viewer.bind_key("a", None)
+        self.viewer.bind_key("b", None)
 
-        self.myviewer.bind_key("w", None)
+        self.viewer.bind_key("w", None)
 
     def get_new_state(self):
         """Capture current napari state
@@ -101,13 +101,13 @@ class Movie:
         """
 
         new_state = {
-            "ndisplay": self.myviewer.dims.ndisplay,
+            "ndisplay": self.viewer.dims.ndisplay,
             "frame": self.current_frame,
             "camera": copy.deepcopy(
-                self.myviewer.window.qt_viewer.view.camera.get_state()
+                self.viewer.window.qt_viewer.view.camera.get_state()
             ),
-            "vis": [x.visible for x in self.myviewer.layers],
-            "sliders": self.myviewer.dims.point,
+            "vis": [x.visible for x in self.viewer.layers],
+            "sliders": self.viewer.dims.point,
         }
 
         return new_state
@@ -161,21 +161,19 @@ class Movie:
         self.current_frame = frame
 
         for i in range(len(self.key_frames[frame]["sliders"])):
-            self.myviewer.dims.set_point(
-                i, self.key_frames[frame]["sliders"][i]
-            )
+            self.viewer.dims.set_point(i, self.key_frames[frame]["sliders"][i])
 
         # set visibility of layers
-        for j in range(len(self.myviewer.layers)):
+        for j in range(len(self.viewer.layers)):
             # if self.key_frames[frame]["vis"]:
-            self.myviewer.layers[j].visible = self.key_frames[frame]["vis"][j]
+            self.viewer.layers[j].visible = self.key_frames[frame]["vis"][j]
 
         # update state
-        self.myviewer.dims.ndisplay = self.key_frames[frame]["ndisplay"]
-        self.myviewer.window.qt_viewer.view.camera.set_state(
+        self.viewer.dims.ndisplay = self.key_frames[frame]["ndisplay"]
+        self.viewer.window.qt_viewer.view.camera.set_state(
             self.key_frames[frame]["camera"]
         )
-        self.myviewer.window.qt_viewer.view.camera.view_changed()
+        self.viewer.window.qt_viewer.view.camera.view_changed()
 
     def create_state_dict(self):
         """Create list of state dictionaries. For key-frames selected interactively,
@@ -240,7 +238,7 @@ class Movie:
         for i in range(len(self.states_dict)):
 
             self.update_napari_state(i)
-            images.append(self.myviewer.screenshot())
+            images.append(self.viewer.screenshot())
 
         image_stack = np.stack(images, axis=0)
         return image_stack
@@ -255,32 +253,30 @@ class Movie:
         """
 
         # set view type 2D/3D and camera state
-        self.myviewer.dims.ndisplay = self.interpolated_states["ndisplay"][
-            frame
-        ]
-        self.myviewer.window.qt_viewer.view.camera.set_state(
+        self.viewer.dims.ndisplay = self.interpolated_states["ndisplay"][frame]
+        self.viewer.window.qt_viewer.view.camera.set_state(
             self.interpolated_states["camera"][frame]
         )
 
         # assign interpolated visibility state
-        for j in range(len(self.myviewer.layers)):
-            self.myviewer.layers[j].visible = self.interpolated_states["vis"][
+        for j in range(len(self.viewer.layers)):
+            self.viewer.layers[j].visible = self.interpolated_states["vis"][
                 frame
             ][j]
 
         # adjust slider positions
         for i in range(self.interpolated_states["sliders"].shape[1]):
-            self.myviewer.dims.set_point(
+            self.viewer.dims.set_point(
                 i, self.interpolated_states["sliders"][frame][i]
             )
 
         # update view
-        self.myviewer.window.qt_viewer.view.camera.view_changed()
+        self.viewer.window.qt_viewer.view.camera.view_changed()
 
     def create_movie_frame(self):
         """Create the matplotlib figure, and image object hosting all snapshots"""
 
-        newim = self.myviewer.screenshot()
+        newim = self.viewer.screenshot()
         sizes = newim.shape
         height = float(sizes[0])
         width = float(sizes[1])
@@ -300,7 +296,7 @@ class Movie:
     def movie_init(self):
         """init function for matplotlib FuncAnimation"""
 
-        newim = self.myviewer.screenshot()
+        newim = self.viewer.screenshot()
         self.implot.set_data(newim)
         return self.implot
 
@@ -314,7 +310,7 @@ class Movie:
         """
 
         self.update_napari_state(frame)
-        newim = self.myviewer.screenshot()
+        newim = self.viewer.screenshot()
         self.implot.set_data(newim)
         return self.implot
 
