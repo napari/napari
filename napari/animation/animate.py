@@ -234,7 +234,7 @@ class Animation:
         images = []
         self.create_steps()
 
-        # capture canvas size of frist frame to set size of next ones
+        # capture SceneCanvas size of frist frame to set size of next ones
         self.update_viewer_from_state(0)
         frame_size = self.viewer.window.qt_viewer.canvas.size
 
@@ -277,7 +277,14 @@ class Animation:
         # update view
         self.viewer.window.qt_viewer.view.camera.view_changed()
 
-    def make_movie(self, name="movie.mp4", fps=20, quality=5, format=None):
+    def make_movie(
+        self,
+        name="movie.mp4",
+        fps=20,
+        resolution=1,
+        compression_quality=5,
+        format=None,
+    ):
         """Create a movie based on key-frames
 
         Parameters
@@ -287,7 +294,9 @@ class Animation:
             should be either .mp4 or .gif
         fps : int
             frames per second
-        quality: float
+        resolution : float
+            factor by which to multiply the current windows size
+        compression_quality: float
             number from 1 (lowest quality) to 9
             only applies to mp4
         format: str
@@ -297,7 +306,7 @@ class Animation:
         # creat all states
         self.create_steps()
 
-        # capture canvas size of frist frame to set size of next ones
+        # capture SceneCanvas size of frist frame to set size of next ones
         self.update_viewer_from_state(0)
         frame_size = self.viewer.window.qt_viewer.canvas.size
 
@@ -305,13 +314,23 @@ class Animation:
         _, extension = os.path.splitext(name)
         if extension == '.mp4':
             writer = imageio.get_writer(
-                name, fps=fps, quality=quality, format=format
+                name,
+                fps=fps,
+                quality=compression_quality,
+                format=format,
+                output_params=['-timeout', '3'],
             )
         else:
             writer = imageio.get_writer(name, fps=fps, format=format)
         for frame in range(len(self.interpolated_states["ndisplay"])):
             self.update_viewer_from_state(frame)
-            self.viewer.window.qt_viewer.canvas.size = frame_size
+            self.viewer.window.qt_viewer.canvas.size = (
+                int(frame_size[0] * resolution),
+                int(frame_size[1] * resolution),
+            )
             newim = self.viewer.screenshot()
             writer.append_data(newim)
         writer.close()
+
+        # reset SceneCanvas size
+        self.viewer.window.qt_viewer.canvas.size = frame_size
