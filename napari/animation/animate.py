@@ -6,14 +6,14 @@ import os
 from . import util
 
 
-class Animate:
+class Animation:
     def __init__(self, viewer=None, inter_steps=15):
 
         """Standard __init__ method.
 
         Parameters
         ----------
-        viewer : napari viewer
+        viewer : viewer
             napari viewer
         inter_steps: int
             number of steps to interpolate between key frames
@@ -21,7 +21,7 @@ class Animate:
         Attributes
         ----------
         key_frames : list
-            list of dictionary defining napari viewer states. Dictionaries have keys:
+            list of dictionary defining viewer states. Dictionaries have keys:
                 'frame': int, frame
                 'ndisplay': int, view type (2,3)
                 'camera': camera state
@@ -37,7 +37,7 @@ class Animate:
                 'sliders': list, slider positions
 
         states_dict : list
-            list of dictionaries defining napari viewer states for each frame. Same keys as key_frames
+            list of dictionaries defining viewer states for each frame. Same keys as key_frames
 
         current_frame : int
             currently shown key frame
@@ -91,7 +91,7 @@ class Animate:
         self.viewer.bind_key("w", None)
 
     def get_new_state(self):
-        """Capture current napari state
+        """Capture current viewer state
 
         Returns
         -------
@@ -149,7 +149,7 @@ class Animate:
         self.set_to_keyframe(new_frame)
 
     def set_to_keyframe(self, frame):
-        """Set the napari viewer to a given key-frame
+        """Set the viewer to a given key-frame
 
         Parameters
         -------
@@ -164,7 +164,6 @@ class Animate:
 
         # set visibility of layers
         for j in range(len(self.viewer.layers)):
-            # if self.key_frames[frame]["vis"]:
             self.viewer.layers[j].visible = self.key_frames[frame]["vis"][j]
 
         # update state
@@ -220,7 +219,7 @@ class Animate:
         self.create_steps()
 
         new_frame = (self.current_interpolframe + 1) % len(self.states_dict)
-        self.update_napari_state(new_frame)
+        self.update_viewer_from_state(new_frame)
         self.current_interpolframe = new_frame
 
     def collect_images(self):
@@ -234,16 +233,22 @@ class Animate:
 
         images = []
         self.create_steps()
+
+        # capture canvas size of frist frame to set size of next ones
+        self.update_viewer_from_state(0)
+        frame_size = self.viewer.window.qt_viewer.canvas.size
+
         for i in range(len(self.states_dict)):
 
-            self.update_napari_state(i)
+            self.update_viewer_from_state(i)
+            self.viewer.window.qt_viewer.canvas.size = frame_size
             images.append(self.viewer.screenshot())
 
         image_stack = np.stack(images, axis=0)
         return image_stack
 
-    def update_napari_state(self, frame):
-        """Set the napari viewer to a given interpolated frame
+    def update_viewer_from_state(self, frame):
+        """Set the viewer to a given interpolated frame
 
         Parameters
         -------
@@ -272,8 +277,8 @@ class Animate:
         # update view
         self.viewer.window.qt_viewer.view.camera.view_changed()
 
-    def make_movie(self, name="movie.mp4", fps=20, quality=5):
-        """Create a movie based on key-frames selected in napari
+    def make_movie(self, name="movie.mp4", fps=20, quality=5, format=None):
+        """Create a movie based on key-frames
 
         Parameters
         -------
@@ -285,19 +290,28 @@ class Animate:
         quality: float
             number from 1 (lowest quality) to 9
             only applies to mp4
+        format: str
+            The format to use to write the file. By default imageio selects the appropriate for you based on the filename.
         """
 
         # creat all states
         self.create_steps()
 
+        # capture canvas size of frist frame to set size of next ones
+        self.update_viewer_from_state(0)
+        frame_size = self.viewer.window.qt_viewer.canvas.size
+
         # create imageio writer and add all frames
         _, extension = os.path.splitext(name)
         if extension == '.mp4':
-            writer = imageio.get_writer(name, fps=fps, quality=quality)
+            writer = imageio.get_writer(
+                name, fps=fps, quality=quality, format=format
+            )
         else:
-            writer = imageio.get_writer(name, fps=fps)
+            writer = imageio.get_writer(name, fps=fps, format=format)
         for frame in range(len(self.interpolated_states["ndisplay"])):
-            self.update_napari_state(frame)
+            self.update_viewer_from_state(frame)
+            self.viewer.window.qt_viewer.canvas.size = frame_size
             newim = self.viewer.screenshot()
             writer.append_data(newim)
         writer.close()

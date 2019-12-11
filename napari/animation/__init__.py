@@ -1,1 +1,1 @@
-from .animate import Animate
+from .animate import Animation
