@@ -121,16 +121,8 @@ class QtAboutKeybindings(QDialog):
             Event from the Qt context, by default None.
         """
         col = self.viewer.palette['secondary']
-        text = ''
         # Add class and instance viewer keybindings
-        text += get_keybindings_summary(self.viewer.class_keymap, col=col)
-        text += get_keybindings_summary(self.viewer.keymap, col=col)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            # Add class and instance layer keybindings for the active layer
-            text += get_keybindings_summary(layer.class_keymap, col=col)
-            text += get_keybindings_summary(layer.keymap, col=col)
+        text = get_keybindings_summary(self.viewer.active_keymap, col=col)
 
         # Update layer speficic keybindings if all active are displayed
         self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text

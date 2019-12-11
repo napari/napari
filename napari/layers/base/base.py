@@ -10,14 +10,14 @@ from ._constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
-from ...utils.keybindings import KeymapMixin
+from ...utils.keybindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float
 from ..transforms import ScaleTranslate
 
 
-class Layer(KeymapMixin, ABC):
+class Layer(KeymapProvider, ABC):
     """Base layer class.
 
     Parameters
