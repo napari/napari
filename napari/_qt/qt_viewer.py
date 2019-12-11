@@ -446,6 +446,11 @@ class QtViewer(QSplitter):
             self.pool.clear()
         event.accept()
 
+    def shutdown(self):
+        self.pool.clear()
+        self.canvas.close()
+        self.console.shutdown()
+
 
 def viewbox_key_event(event):
     """ViewBox key event handler
