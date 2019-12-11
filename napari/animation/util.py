@@ -159,14 +159,21 @@ def interpol_prop_zero(states_dict, prop):
         N frames x M property freatures
     """
 
-    frames = [x["frame"] for x in states_dict if x[prop]]
-
+    frames = [x["frame"] for x in states_dict]
+    frames_values = [x["frame"] for x in states_dict if x[prop]]
     values = [x[prop] for x in states_dict if x[prop]]
+
+    if frames_values[0] != 0:
+        frames_values = [0] + frames_values
+        values = [values[0]] + values
+    if frames_values[-1] != frames[-1]:
+        frames_values = frames_values + [frames[-1]]
+        values = values + [values[-1]]
 
     completed_values = np.concatenate(
         [
-            [values[x] for i in range(frames[x], frames[x + 1])]
-            for x in range(len(frames) - 1)
+            [values[x] for i in range(frames_values[x], frames_values[x + 1])]
+            for x in range(len(frames_values) - 1)
         ]
         + [[values[-1]]]
     )
@@ -241,6 +248,7 @@ def quat_interpol(frames_rot, rot_states):
 
         num_frames = frames_rot[i + 1] - frames_rot[i] - 1
         slerp = Slerp([0, num_frames + 1], q)
+
         # do not repeat the point connecting interpolation sequences
         if i == len(frames_rot) - 2:
             times = np.arange(num_frames + 2)
