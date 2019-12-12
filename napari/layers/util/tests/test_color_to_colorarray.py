@@ -1,7 +1,5 @@
 import pytest
-import numpy as np
 
-from vispy.color import ColorArray
 from colors_data import *  # noqa: F403
 from napari.layers.util.standardize_color import transform_color
 
@@ -14,3 +12,9 @@ def test_oned_points(colors, true_colors):
 @pytest.mark.parametrize("colors, true_colors", zip(two_color_options, two_colors_as_colorarray))
 def test_twod_points(colors, true_colors):
     assert true_colors == transform_color(colors)
+
+
+@pytest.mark.parametrize("color", invalid_colors)
+def test_invalid_colors(color):
+    with pytest.raises((ValueError, AttributeError, KeyError)):
+        transform_color(color)

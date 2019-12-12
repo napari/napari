@@ -21,14 +21,6 @@ GREENA = (0.0, GREENV, 0.0, 1.0)
 GREEN = (0.0, GREENV, 0.0)
 GREENF = Color('green').hex
 
-one_point = np.array([[10, 20, 30]])
-one_point_1d = np.array([10, 11])
-all_one_points = [(one_point,), one_point_1d]
-
-two_points = np.array([[10, 10], [20, 20]])
-two_threed_points = np.array([[1, 2, 3], [4, 3, 2]])
-all_two_points = [two_points, two_threed_points]
-
 single_color_options = [
     RED,
     GREENA,
@@ -80,6 +72,7 @@ two_color_options = [
     (GREENA, GREEN),
     ['red', GREENF],
     ('red', 'blue'),
+    ('r' for r in range(2)),
     ColorArray(['red', 'blue']),
     ColorArray([GREEN, RED]),
     # ColorArray([GREENA, RED]),  # doesn't work due to a vispy error
@@ -97,6 +90,7 @@ two_colors_simple = [
     ['green', 'green'],
     ['red', 'green'],
     ['red', 'blue'],
+    ['red', 'red'],
     ['red', 'blue'],
     ['green', 'red'],
     # ['green', 'red'],
@@ -105,3 +99,15 @@ two_colors_simple = [
 ]
 two_colors_as_colorarray = [ColorArray(color) for color in two_colors_simple]
 
+invalid_colors = [
+    'rr',
+    'gf',
+    '#gf9gfg',
+    '#ff00000',
+    (43, 3, 3, 3),
+    (1.0, 1.0, 1.0, 3),
+    (-1, 0.0, 0.0, 0.0),
+    ('a', 1, 1, 1),
+    4,
+    (3,),
+]

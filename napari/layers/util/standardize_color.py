@@ -5,11 +5,17 @@ from vispy.color import Color, ColorArray
 
 
 def transform_color(colors) -> ColorArray:
-    """Receives the user-given colors and transforms them into a numpy array that vispy
-    can easily handle.
+    """Receives the user-given colors and transforms them into a ColorArray.
 
-    The colors input can be a string, array-like, Color and
-    ColorArray instances, or a mix of the above.
+    Parameters
+    --------
+    colors : string, array-like, Color and ColorArray instances, or a mix of the above.
+        The color to interpret
+
+    Raises
+    -----
+    ValueError, AttributeError, KeyError
+        invalid inputs
     """
     colortype = type(colors)
     return color_switch[colortype](colors)
@@ -21,6 +27,7 @@ def handle_str(colors) -> ColorArray:
 
 
 def handle_array_like(colors) -> ColorArray:
+    """Handles all array-like containers of colors, using recursion."""
     if type(colors) is np.ndarray:
         if colors.ndim == 2 and colors.shape[0] == 1:
             colors = colors[0]
@@ -41,6 +48,7 @@ def handle_generator(colors) -> ColorArray:
 
 
 def handle_nested_colors(colors) -> ColorArray:
+    """In case of an array-like container holding colors, unpack it."""
     colors_as_rbga = np.ones((len(colors), 4), dtype=np.float32)
     for idx, color in enumerate(colors):
         colors_as_rbga[idx] = color_switch[type(color)](color).rgba
