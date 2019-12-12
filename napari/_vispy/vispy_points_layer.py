@@ -2,7 +2,7 @@ import numpy as np
 from vispy.scene.visuals import Line, Compound, Markers
 from vispy.visuals.transforms import ChainTransform
 from .vispy_base_layer import VispyBaseLayer
-from .standardize_color import transform_color
+from napari.layers.util.standardize_color import transform_color
 
 
 class VispyPointsLayer(VispyBaseLayer):
