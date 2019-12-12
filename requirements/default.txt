@@ -3,7 +3,7 @@ zarr>=2.3.0
 numcodecs!=0.6.4
 fsspec>=0.3.3
 imageio>=2.5.0
-ipykernel==5.1.1
+ipykernel>=5.1.1
 numpy>=1.10.0
 qtpy>=1.7.0
 qtconsole>=4.5.1

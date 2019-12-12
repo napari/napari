@@ -4,7 +4,7 @@ from pathlib import Path
 
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QGridLayout, QFileDialog, QSplitter
+from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy.QtCore import QThreadPool
 from qtpy import API_NAME
@@ -16,8 +16,8 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
-from ..util.misc import (
-    str_to_rgb,
+from ..util.misc import str_to_rgb
+from ..util.interactions import (
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
@@ -58,10 +58,41 @@ class QtViewer(QSplitter):
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
+
+        layerList = QWidget()
+        layerList.setObjectName('layerList')
+        layerListLayout = QVBoxLayout()
+        layerListLayout.addWidget(self.layerButtons)
+        layerListLayout.addWidget(self.layers)
+        layerListLayout.addWidget(self.viewerButtons)
+        layerListLayout.setContentsMargins(8, 4, 8, 6)
+        layerList.setLayout(layerListLayout)
+        self.dockLayerList = QtViewerDockWidget(
+            self,
+            layerList,
+            name='layer list',
+            area='left',
+            allowed_areas=['left', 'right'],
+        )
+        self.dockLayerControls = QtViewerDockWidget(
+            self,
+            self.controls,
+            name='layer controls',
+            area='left',
+            allowed_areas=['left', 'right'],
+        )
         self.dockConsole = QtViewerDockWidget(
-            self, self.console, name='console', shortcut='Ctrl+Shift+C'
+            self,
+            self.console,
+            name='console',
+            area='bottom',
+            allowed_areas=['top', 'bottom'],
+            shortcut='Ctrl+Shift+C',
         )
         self.dockConsole.setVisible(False)
+        self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
+        self.dockLayerList.setMaximumWidth(258)
+        self.dockLayerList.setMinimumWidth(258)
 
         self.aboutKeybindings = QtAboutKeybindings(self.viewer)
         self.aboutKeybindings.hide()
@@ -93,15 +124,10 @@ class QtViewer(QSplitter):
         self._update_camera()
 
         main_widget = QWidget()
-        main_layout = QGridLayout()
-        main_layout.setContentsMargins(15, 20, 15, 10)
-        main_layout.addWidget(self.canvas.native, 0, 1, 3, 1)
-        main_layout.addWidget(self.dims, 3, 1)
-        main_layout.addWidget(self.controls, 0, 0)
-        main_layout.addWidget(self.layerButtons, 1, 0)
-        main_layout.addWidget(self.layers, 2, 0)
-        main_layout.addWidget(self.viewerButtons, 3, 0)
-        main_layout.setColumnStretch(1, 1)
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(10, 22, 10, 2)
+        main_layout.addWidget(self.canvas.native)
+        main_layout.addWidget(self.dims)
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
 
@@ -140,6 +166,13 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    def _constrain_width(self, event):
+        # allow the layer controls to be wider, only if floated
+        if self.dockLayerControls.isFloating():
+            self.controls.setMaximumWidth(700)
+        else:
+            self.controls.setMaximumWidth(220)
 
     def _add_layer(self, event):
         """When a layer is added, set its parent and order."""
@@ -412,6 +445,11 @@ class QtViewer(QSplitter):
         if self.pool.activeThreadCount() > 0:
             self.pool.clear()
         event.accept()
+
+    def shutdown(self):
+        self.pool.clear()
+        self.canvas.close()
+        self.console.shutdown()
 
 
 def viewbox_key_event(event):

@@ -136,20 +136,24 @@ enough for airspeed velocity to report.
 The airspeed velocity tool also supports code profiling using [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile). For detailed instructions on how to use the profiling functionality see the
 [asv profiling documentation](https://asv.readthedocs.io/en/stable/using.html#running-a-benchmark-in-the-profiler).
 
-To profile the `time_create_viewer` benchmark in napari you can run
+To profile a particular benchmark in napari you can run
 
 ```
 asv profile benchmark_qt_viewer.QtViewerSuite.time_create_viewer -g snakeviz --python=same
 ```
 
-or
+where `benchmark_qt_viewer` is the file name, `QtViewerSuite` is the test suite class name,
+and `time_create_viewer` is the test method.
+
+To profile a particular parameterized benchmark you can run
 
 ```
-asv profile "benchmark_image_layer.Image2DSuite.time_create_layer(.*)" -g snakeviz --python=same
+asv profile "benchmark_image_layer.Image2DSuite.time_create_layer\(512\)" -g snakeviz --python=same
 ```
-to profile a parametrized benchmark.
+where `benchmark_image_layer` is the file name, `Image2DSuite` is the test suite class name,
+and `time_to_create_layer` is the test method and `512` is a valid parameter input to the test method.
 
-Note here that we have sent the output of the profiling to [snakeviz](http://jiffyclub.github.io/snakeviz/)
+Note that we in both these cases we have sent the output of the profiling to [snakeviz](http://jiffyclub.github.io/snakeviz/)
 which you can pip install with
 ```
 pip install snakeviz
