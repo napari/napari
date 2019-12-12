@@ -218,8 +218,8 @@ class Points(Layer):
         self._is_selecting = False
         self._clipboard = {}
 
-        self.edge_colors = self._edge_color
-        self.face_colors = self._face_color
+        self.edge_colors = self._tile_colors(self._edge_color)
+        self.face_colors = self._tile_colors(self._face_color)
         self.sizes = size
 
         # Trigger generation of view slice and thumbnail
@@ -257,8 +257,12 @@ class Points(Layer):
                     # Add the default size, with a value for each dimension
                     new_size = np.repeat(self.size, self._sizes.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
-                self.edge_colors += [self.edge_color for i in range(adding)]
-                self.face_colors += [self.face_color for i in range(adding)]
+                new_edge_colors = np.tile(self.edge_color.rgba, (adding, 1))
+                self.edge_colors = self.edge_colors.extend(
+                    ColorArray(new_edge_colors)
+                )
+                new_face_colors = np.tile(self.face_color.rgba, (adding, 1))
+                self.face_colors = self.face_colors.extend(new_face_colors)
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
         self._update_dims()
         self.events.data()
@@ -704,7 +708,7 @@ class Points(Layer):
             )
             for i, c in enumerate(coords):
                 col = self.face_colors[self._indices_view[i]]
-                colormapped[c[0], c[1], :] = Color(col).rgba
+                colormapped[c[0], c[1], :] = col.rgba
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -723,9 +727,12 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._sizes = np.delete(self._sizes, index, axis=0)
-            for i in index[::-1]:
-                del self.edge_colors[i]
-                del self.face_colors[i]
+            self.edge_colors = ColorArray(
+                np.delete(self.edge_colors.rgba, index, axis=0)
+            )
+            self.face_colors = ColorArray(
+                np.delete(self.face_colors.rgba, index, axis=0)
+            )
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = []
@@ -759,12 +766,8 @@ class Points(Layer):
             self._clipboard = {
                 'data': deepcopy(self.data[self.selected_data]),
                 'size': deepcopy(self.sizes[self.selected_data]),
-                'edge_color': deepcopy(
-                    [self.edge_colors[i] for i in self.selected_data]
-                ),
-                'face_color': deepcopy(
-                    [self.face_colors[i] for i in self.selected_data]
-                ),
+                'edge_color': deepcopy(self.edge_colors[self.selected_data]),
+                'face_color': deepcopy(self.face_colors[self.selected_data]),
                 'indices': self.dims.indices,
             }
         else:
@@ -787,11 +790,11 @@ class Points(Layer):
             self._sizes = np.append(
                 self.sizes, deepcopy(self._clipboard['size']), axis=0
             )
-            self.edge_colors = self.edge_colors + deepcopy(
-                self._clipboard['edge_color']
+            self.edge_colors = self.edge_colors.extend(
+                deepcopy(self._clipboard['edge_color'])
             )
-            self.face_colors = self.face_colors + deepcopy(
-                self._clipboard['face_color']
+            self.face_colors = self.face_colors.extend(
+                deepcopy(self._clipboard['face_color'])
             )
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
@@ -825,9 +828,9 @@ class Points(Layer):
             cx = str(d[0])
             cy = str(d[1])
             r = str(s / 2)
-            face_color = (255 * Color(self.face_colors[i]).rgba).astype(np.int)
+            face_color = (255 * self.face_colors[i].rgba).astype(np.int)
             fill = f'rgb{tuple(face_color[:3])}'
-            edge_color = (255 * Color(self.edge_colors[i]).rgba).astype(np.int)
+            edge_color = (255 * self.edge_colors[i].rgba).astype(np.int)
             stroke = f'rgb{tuple(edge_color[:3])}'
 
             element = Element(
@@ -910,13 +913,48 @@ class Points(Layer):
             )
             transformed = ColorArray(default)
         else:
-            if (len(colors) != 1) and (len(colors) != len(self.data)):
+            if (len(transformed) != 1) and (
+                len(transformed) != len(self.data)
+            ):
                 warnings.warn(
                     f"The provided {color_name} parameter has {len(colors)} entries, "
                     f"while the data contains {len(self.data)} entries. Setting {color_name} to {default}."
                 )
-                transformed = ColorArray("white")
+                transformed = ColorArray(default)
         return transformed
+
+    def _tile_colors(self, colors: ColorArray) -> ColorArray:
+        """Takes an input color array and forces into being the length of self.data.
+        Used when a single color is supplied for many input points, but we need
+        self.face_colors \\ self.edge_colors to have the shape of the actual data.
+
+        Parameters
+        --------
+        color : ColorType
+            The user's input after being normalized by self.transform_color
+
+        Returns
+        -----
+        tiled : ColorArray
+            A tiled version (if needed) of the original input
+        """
+        data_len = len(self.data)
+        if (len(colors) == data_len) or (data_len == 0):
+            return colors
+        # If the user has supplied a list of colors, but its length doesn't
+        # match the length of the data, we warn them and return a single
+        # color for all inputs
+        if len(colors) != 1:
+            warnings.warn(
+                f"The number of supplied colors mismatch the number of given"
+                f" data points. Length of data is {data_len}, while the number of colors"
+                f" is {len(colors)}. Color for all points is resetted to white."
+            )
+            tiled = np.ones((data_len, 4), dtype=np.float32)
+            return tiled
+        # All that's left is to deal with length=1 color inputs
+        tiled = np.tile(colors.rgba.ravel(), (data_len, 1))
+        return ColorArray(tiled)
 
 
 def create_box(data):
