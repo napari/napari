@@ -1,11 +1,11 @@
 from typing import Union, List, Tuple, AnyStr
+import warnings
+
 from xml.etree.ElementTree import Element
 import numpy as np
-import itertools
 from copy import copy, deepcopy
 from ..base import Layer
 from ...util.event import Event
-from ...util.misc import ensure_iterable
 from ...util.status_messages import format_float
 from vispy.color import get_color_names, Color, ColorArray
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
@@ -126,8 +126,8 @@ class Points(Layer):
         symbol='o',
         size=10,
         edge_width=1,
-        edge_color='black',
-        face_color='white',
+        edge_color=ColorArray('black'),
+        face_color=ColorArray('white'),
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -183,15 +183,12 @@ class Points(Layer):
         else:
             self._size = 10
 
-        try:
-            self._edge_color = transform_color(edge_color)
-        except (AttributeError, ValueError, KeyError):
-            self._edge_color = ColorArray('black')
-
-        try:
-            self._face_color = transform_color(face_color)
-        except (AttributeError, ValueError, KeyError):
-            self._face_color = ColorArray('white')
+        self._edge_color = self._transform_color(
+            edge_color, "edge_color", "black"
+        )
+        self._face_color = self._transform_color(
+            face_color, "face_color", "white"
+        )
 
         # Indices of selected points
         self._selected_data = []
@@ -346,7 +343,6 @@ class Points(Layer):
     @property
     def edge_width(self) -> Union[None, int, float]:
         """float: width used for all point markers."""
-
         return self._edge_width
 
     @edge_width.setter
@@ -359,7 +355,6 @@ class Points(Layer):
     @property
     def edge_color(self) -> ColorArray:
         """Edge color of marker for the next added point."""
-
         return self._edge_color
 
     @edge_color.setter
@@ -375,7 +370,6 @@ class Points(Layer):
     @property
     def face_color(self) -> ColorArray:
         """Face color of marker for the next added point."""
-
         return self._face_color
 
     @face_color.setter
@@ -406,13 +400,13 @@ class Points(Layer):
 
         # Update properties based on selected points
         index = self._selected_data
-        edge_colors = list(set([self.edge_colors[i] for i in index]))
+        edge_colors = ColorArray(np.unique(self.edge_colors.rgba, axis=0))
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
                 self.edge_color = edge_color
 
-        face_colors = list(set([self.face_colors[i] for i in index]))
+        face_colors = ColorArray(np.unique(self.face_colors.rgba, axis=0))
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
@@ -902,6 +896,27 @@ class Points(Layer):
             else:
                 self.selected_data = []
             self._set_highlight(force=True)
+
+    def _transform_color(
+        self, colors: ColorType, color_name: str, default: str
+    ) -> ColorArray:
+        """Helper method to return a ColorArray from an arbitrary user input."""
+        try:
+            transformed = transform_color(colors)
+        except (AttributeError, ValueError, KeyError):
+            warnings.warn(
+                f"The provided {color_name} parameter contained illegal values, "
+                f"reseting all {color_name} values to {default}."
+            )
+            transformed = ColorArray(default)
+        else:
+            if (len(colors) != 1) and (len(colors) != len(self.data)):
+                warnings.warn(
+                    f"The provided {color_name} parameter has {len(colors)} entries, "
+                    f"while the data contains {len(self.data)} entries. Setting {color_name} to {default}."
+                )
+                transformed = ColorArray("white")
+        return transformed
 
 
 def create_box(data):

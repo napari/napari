@@ -1,6 +1,8 @@
 import numpy as np
 from vispy.scene.visuals import Line, Compound, Markers
 from vispy.visuals.transforms import ChainTransform
+from vispy.color import ColorArray
+
 from .vispy_base_layer import VispyBaseLayer
 
 
@@ -57,8 +59,8 @@ class VispyPointsLayer(VispyBaseLayer):
             edge_color = self.layer.edge_colors[self.layer._indices_view]
             face_color = self.layer.face_colors[self.layer._indices_view]
         else:
-            edge_color = np.array([1., 1., 1., 1.])  # white
-            face_color = np.array([1., 1., 1., 1.])  # white
+            edge_color = ColorArray("black")
+            face_color = ColorArray("white")
 
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
@@ -96,11 +98,13 @@ class VispyPointsLayer(VispyBaseLayer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._sizes_view[self.layer._highlight_index]
-            face_color = self.layer.face_color[self.layer._indices_view[self.layer._highlight_index]]
+            face_color = self.layer.face_color[
+                self.layer._indices_view[self.layer._highlight_index]
+            ]
         else:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = 0
-            face_color = 'white'
+            face_color = ColorArray('white')
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1] + 0.5,
