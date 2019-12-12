@@ -68,7 +68,7 @@ def space_to_voxel(spatial_coord, spacing, origin=np.array([0, 0, 0])):
     """
 
     voxel_coord = np.round(np.divide(spatial_coord - origin, spacing))
-    voxel_coord = voxel_coord.astype(int)
+    voxel_coord = voxel_coord.astype(np.int64)
     return voxel_coord
 
 
@@ -91,7 +91,7 @@ def swc_to_voxel(df, spacing, origin=np.array([0, 0, 0])):
     x = []
     y = []
     z = []
-    df_voxel = df
+    df_voxel = df.copy()
     for index, row in df_voxel.iterrows():
         vox = space_to_voxel(row[['x', 'y', 'z']].to_numpy(), spacing, origin)
         x.append(vox[0])
