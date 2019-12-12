@@ -225,7 +225,7 @@ class Labels(Image):
     def seed(self, seed):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
-        self.set_view_slice()
+        self.refresh()
         self.events.selected_label()
 
     @property
@@ -240,7 +240,7 @@ class Labels(Image):
             self._colormap_name,
             colormaps.label_colormap(num_colors),
         )
-        self.set_view_slice()
+        self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
@@ -320,7 +320,7 @@ class Labels(Image):
         self._mode = mode
 
         self.events.mode(mode=mode)
-        self.set_view_slice()
+        self.refresh()
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -392,7 +392,7 @@ class Labels(Image):
         after.append(self.data[self.dims.indices].copy())
         self.data[self.dims.indices] = prev
 
-        self.set_view_slice()
+        self.refresh()
 
     def undo(self):
         self._load_history(self._undo_history, self._redo_history)
@@ -446,7 +446,7 @@ class Labels(Image):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.dims.indices)] = labels
 
-        self.set_view_slice()
+        self.refresh()
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
@@ -509,7 +509,7 @@ class Labels(Image):
         self.data[slice_coord] = new_label
 
         if refresh is True:
-            self.set_view_slice()
+            self.refresh()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -553,7 +553,7 @@ class Labels(Image):
                 )
             for c in interp_coord:
                 self.paint(c, self.selected_label, refresh=False)
-            self.set_view_slice()
+            self.refresh()
             self._last_cursor_coord = copy(self.coordinates)
 
     def on_mouse_release(self, event):

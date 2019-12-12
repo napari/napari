@@ -249,7 +249,7 @@ class Image(Layer):
         if self._data_level == level:
             return
         self._data_level = level
-        self.set_view_slice()
+        self.refresh()
 
     @property
     def level_shapes(self):
@@ -281,7 +281,7 @@ class Image(Layer):
         if np.all(self._top_left == top_left):
             return
         self._top_left = top_left.astype(int)
-        self.set_view_slice()
+        self.refresh()
 
     @property
     def colormap(self):

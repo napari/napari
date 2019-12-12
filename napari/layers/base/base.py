@@ -139,7 +139,6 @@ class Layer(KeymapMixin, ABC):
         self._position = (0,) * self.dims.ndisplay
         self.is_pyramid = False
         self._editable = True
-        self._editable_history = True
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -171,10 +170,10 @@ class Layer(KeymapMixin, ABC):
 
         self.events.data.connect(lambda e: self._set_editable())
         self.dims.events.ndisplay.connect(lambda e: self._set_editable())
-        self.dims.events.order.connect(lambda e: self.set_view_slice())
+        self.dims.events.order.connect(lambda e: self.refresh())
         self.dims.events.ndisplay.connect(lambda e: self._update_dims())
         self.dims.events.order.connect(lambda e: self._update_dims())
-        self.dims.events.axis.connect(lambda e: self.set_view_slice())
+        self.dims.events.axis.connect(lambda e: self.refresh())
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
@@ -260,7 +259,7 @@ class Layer(KeymapMixin, ABC):
     @visible.setter
     def visible(self, visibility):
         self._visible = visibility
-        self.set_view_slice()
+        self.refresh()
         self.events.visible()
         if self.visible:
             self.editable = self._set_editable()
@@ -375,7 +374,7 @@ class Layer(KeymapMixin, ABC):
         for i, r in enumerate(curr_range):
             self.dims.set_range(i, r)
 
-        self.set_view_slice()
+        self.refresh()
         self._update_coordinates()
 
     @property
@@ -542,7 +541,7 @@ class Layer(KeymapMixin, ABC):
         yield
         self._update_properties = True
 
-    def set_view_slice(self):
+    def refresh(self):
         if self.visible:
             self._set_view_slice()
             self._update_thumbnail()

@@ -183,7 +183,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.edge_width()
-        self.set_view_slice()
+        self.refresh()
         self.status = format_float(self.edge_width)
 
     @property
@@ -205,7 +205,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.length()
-        self.set_view_slice()
+        self.refresh()
         self.status = format_float(self.length)
 
     @property

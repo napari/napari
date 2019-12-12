@@ -167,7 +167,7 @@ class Surface(Layer):
         self._vertices = vertices
 
         self._update_dims()
-        self.set_view_slice()
+        self.refresh()
         self.events.data()
 
     @property
@@ -180,7 +180,7 @@ class Surface(Layer):
 
         self._vertex_values = vertex_values
 
-        self.set_view_slice()
+        self.refresh()
         self.events.data()
 
     @property
@@ -193,7 +193,7 @@ class Surface(Layer):
 
         self.faces = faces
 
-        self.set_view_slice()
+        self.refresh()
         self.events.data()
 
     def _get_ndim(self):
