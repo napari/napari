@@ -14,9 +14,6 @@ def test_big_2D_image(qtbot):
     visual = view.layer_to_visual[layer]
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_2D is not None:
-        print(
-            'aasdfasdf', visual.MAX_TEXTURE_SIZE_2D, visual.MAX_TEXTURE_SIZE_3D
-        )
         ds = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
         assert np.all(layer._scale_view == ds)
 

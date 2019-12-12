@@ -249,12 +249,14 @@ class VispyImageLayer(VispyBaseLayer):
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
+
         Parameters
         ----------
         data : array
             Data to be downsampled if needed.
         MAX_TEXTURE_SIZE : int
             Maximum allowed texture size.
+
         Returns
         -------
         data : array

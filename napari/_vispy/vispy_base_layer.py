@@ -210,6 +210,7 @@ class VispyBaseLayer(ABC):
 
 def get_max_texture_sizes():
     """Get maximum texture sizes for 2D and 3D rendering.
+
     Returns
     -------
     MAX_TEXTURE_SIZE_2D : int or None
@@ -222,8 +223,8 @@ def get_max_texture_sizes():
     MAX_TEXTURE_SIZE_2D = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
     if MAX_TEXTURE_SIZE_2D == ():
         MAX_TEXTURE_SIZE_2D = None
-    # vispy doesn't seem to expose this so hard coding for now ....
     # MAX_TEXTURE_SIZE_3D = gl.glGetParameter(gl.GL_MAX_3D_TEXTURE_SIZE)
+    # vispy doesn't seem to expose GL_MAX_3D_TEXTURE_SIZE so hard coding
     MAX_TEXTURE_SIZE_3D = 2048
     if MAX_TEXTURE_SIZE_3D == ():
         MAX_TEXTURE_SIZE_3D = None
