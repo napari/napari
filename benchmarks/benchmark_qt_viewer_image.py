@@ -72,17 +72,22 @@ class QtViewerEditImageSuite:
         self.viewer.layers[0].get_value()
 
 
-class QtViewerSingleImage:
+class QtViewerSingleImageSuite:
     """Benchmarks for editing a single image layer in the viewer."""
 
     def setup(self):
         _ = QApplication.instance() or QApplication([])
         np.random.seed(0)
         self.data = np.random.random((128, 128, 128))
+        self.new_data = np.random.random((128, 128, 128))
         self.viewer = napari.view_image(self.data)
 
     def teardown(self):
         self.viewer.window.close()
+
+    def time_set_data(self):
+        """Time to set view slice."""
+        self.viewer.layers[0].data = self.new_data
 
     def time_set_view_slice(self):
         """Time to set view slice."""

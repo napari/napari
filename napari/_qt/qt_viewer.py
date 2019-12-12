@@ -16,8 +16,8 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
 from ..util.theme import template
-from ..util.misc import (
-    str_to_rgb,
+from ..util.misc import str_to_rgb
+from ..util.interactions import (
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
@@ -445,6 +445,11 @@ class QtViewer(QSplitter):
         if self.pool.activeThreadCount() > 0:
             self.pool.clear()
         event.accept()
+
+    def shutdown(self):
+        self.pool.clear()
+        self.canvas.close()
+        self.console.shutdown()
 
 
 def viewbox_key_event(event):
