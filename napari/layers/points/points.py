@@ -559,7 +559,7 @@ class Points(Layer):
         else:
             return [], [], []
 
-    def get_value(self):
+    def _get_value(self):
         """Determine if points at current coordinates.
 
         Returns

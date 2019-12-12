@@ -1048,7 +1048,7 @@ class Shapes(Layer):
 
         return data_full
 
-    def get_value(self):
+    def _get_value(self):
         """Determine if any shape at given coord using triangle meshes.
 
         Getting value is not supported yet for 3D meshes

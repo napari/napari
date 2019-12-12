@@ -576,7 +576,7 @@ class Image(Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def get_value(self):
+    def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 

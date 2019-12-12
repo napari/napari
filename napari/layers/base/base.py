@@ -538,8 +538,21 @@ class Layer(KeymapMixin, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_value(self):
+    def _get_value(self):
         raise NotImplementedError()
+
+    def get_value(self):
+        """Value of data at current coordinates.
+
+        Returns
+        -------
+        value : tuple, None
+            Value of the data at the coordinates.
+        """
+        if self.visible:
+            return self._get_value()
+        else:
+            return None
 
     @contextmanager
     def block_update_properties(self):

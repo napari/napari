@@ -343,7 +343,7 @@ class Vectors(Layer):
 
         return xml_list
 
-    def get_value(self):
+    def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
