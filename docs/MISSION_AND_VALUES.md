@@ -1,10 +1,26 @@
 # Mission and Values
 
 This document is meant to help guide decisions about the future of `napari`, be it in terms of
-whether to accept new functionality, changes to the styling of the code or GUI, or whether to take on new dependencies,
-among other things. It serves as a point of reference for [core developers](CORE_DEV_GUIDE.md)
-actively working on the project, and an introduction for newcomers who want to learn a little more
-about where the project is going and what the teams values are. You can also learn more about how the project is managed by looking at our [governance model](GOVERNANCE).
+whether to accept new functionality, changes to the styling of the code or graphical user interface (GUI),
+or whether to take on new dependencies, among other things. It serves as a point of reference for [core developers](CORE_DEV_GUIDE.md) actively working on the project, and an introduction for
+newcomers who want to learn a little more about where the project is going and what the team's
+values are. You can also learn more about how the project is managed by looking at our [governance model](GOVERNANCE).
+
+## Our founding principles
+
+The original napari team came together around a shared vision for a Python based image viewer that was
+
+- n-dimensional first
+
+- native (no browser required)
+
+- blazing fast (GPU-powered)
+
+- native 2D and 3D viewing
+
+- with minimal new windows and pop-ups, choosing layering instead
+
+As the project has grown we've turned these original principles into the mission statement and set of values that we described below.
 
 ## Our mission
 
@@ -18,7 +34,7 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - being **interactive** and **highly performant** in order to support very large data sets.
 
-- providing a **consistent and stable API** to enable plugin developers to build on top of napari without their code constantly breaking and to enable advanced users to build out sophisticated Python workflows.
+- providing a **consistent and stable API** to enable plugin developers to build on top of napari without their code constantly breaking and to enable advanced users to build out sophisticated Python workflows. Right now we are still making breaking changes with minor version numbers `0.x` and do not have a deprecation policy, but we will work to add one soon.  
 
 - **ensuring correctness**. We strive for complete test coverage of both the code and GUI, with all code reviewed by a core developer before being included in the repository.
 
@@ -41,15 +57,16 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - We value **education and documentation**. All functions should have docstrings, preferably with examples, and major functionality should be explained in our [tutorials](https://github.com/napari/napari-tutorials). Core developers can take an active role in finishing documentation examples.
 
-- We **don’t do magic**. We support NumPy array like objects and we prefer to educate users rather than make decisions on their behalf. This does not preclude the use of sensible defaults.
+- We **minimize magic** and always provide a way for users to opt out of magical behaviour and guessing by providing
+explicit ways to control functionality. We support NumPy array like objects and we prefer to educate users rather than make decisions on their behalf. This does not preclude the use of sensible defaults.
 
 ## Our vision for plugins
 
-As noted above, napari aims to support a plugin ecosystem for scientific image analysis. Right now there has been little development of the plugin infrastructure (though see [#263](https://github.com/napari/napari/pull/263)), and this section will likely be significantly updated over the coming months as more work is done there, but we can layout here some of our motivation and vision for the plugin ecosystem.
+As noted above, napari aims to support a plugin ecosystem for scientific image analysis. Right now there has been little development of the plugin infrastructure (though see [#263](https://github.com/napari/napari/pull/263)), and this section will likely be significantly updated over the coming months as more work is done there, but we lay out here some of our motivation and vision for the plugin ecosystem.
 
-Image analysis is heterogenous and often highly specialized within different domains of science. napari alone will not try to meet all the image analysis needs of the scientific community, but instead try and be a foundational visualization tool that provides access to domain specific analysis through community developed plugins.
+Image analysis is heterogenous and often highly specialized within different domains of science. napari alone will not try to meet all the image analysis needs of the scientific community, but instead try to be a foundational visualization tool that provides access to domain specific analysis through community developed plugins.
 
-We want to make it as easy as possible for developers to build plugins for napari, with as little to no specific napari code in your plugin as possible. Philosophically a napari plugin without napari should just be Python, and they should always be importable and runnable as such. We are looking into using minimal typing and function annotations that don't change the runtime of your functions, but lets napari know how to interpret the inputs and outputs of your functions and integrate then with our GUI code. We are also planning to leverage git for versioning and installation of plugins.
+We want to make it as easy as possible for developers to build plugins for napari, with as little to no specific napari code in your plugin as possible. Philosophically a napari plugin without napari should just be Python, and they should always be importable and runnable as such. We are looking into using minimal typing and function annotations that don't change the runtime of your functions, but lets napari know how to interpret the inputs and outputs of your functions and integrate them with our GUI code. We are also planning to leverage git for versioning and installation of plugins.
 
 As noted above, we'll be beginning to actively work on the plugin infrastructure over coming months and would love to get the input of the community. You can follow and contribute to our discussions and progress using the [`plugin` label on our repository](https://github.com/napari/napari/labels/plugins).
 

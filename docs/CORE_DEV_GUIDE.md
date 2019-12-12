@@ -6,17 +6,17 @@ to join us.  Thank you for your numerous contributions to the project
 so far.
 
 You can see a list of all the current core developers on our
-[@core-devs](https://github.com/orgs/napari/teams/core-devs)
+[@napari/core-devs](https://github.com/orgs/napari/teams/core-devs)
 GitHub team. You should now be on that list too.
 
 This document offers guidelines for your new role.  First and
 foremost, you should familiarize yourself with the project's
 [mission and values](MISSION_AND_VALUES.md).  When in
-doubt, always refer back here.
+doubt, always refer back there.
 
 As a core team member, you gain the responsibility of shepherding
 other contributors through the review process; here are some
-guidelines.
+guidelines for how to do that.
 
 ## All Contributors Are Treated The Same
 
@@ -25,11 +25,24 @@ other contributors' pull requests.  Much like nuclear launch keys, it
 is a shared power: you must merge *only after* another core has
 approved the pull request, *and* after you yourself have carefully
 reviewed it.  (See `Reviewing` and especially `Merge Only Changes You
-Understand` below.) To ensure a clean git history, use GitHub's
-[Squash and Merge](https://help.github.com/articles/merging-a-pull-request/#merging-a-pull-request-on-github)
-feature to merge, unless you have a very good reason not to do so.
+Understand` below.) It should also be considered best practice to leave a
+reasonable (24hr) time window after approval before merge to ensure that other
+core developers have a reasonable chance to weigh in.
 
-You should continue to make your own pull requests as before and in accordance
+We are also an international community, with contributors from many different time zones,
+some of whom will only contribute during their working hours, others who might only be able
+to contribute during nights and weekends. It is important to be respectful of other peoples
+schedules and working habits, even if it slows the project down slightly - we are in this
+for the long run. In the same vein you also shouldn't feel pressured to be constantly
+available or online, and users or contributors who are overly demanding and unreasonable   
+to the point of harassment will be directed to our [Code of Conduct](CODE_OF_CONDUCT.md).
+We value sustainable development practices over mad rushes.
+
+When merging, use GitHub's
+[Squash and Merge](https://help.github.com/articles/merging-a-pull-request/#merging-a-pull-request-on-github)
+to ensure a clean git history.
+
+You should also continue to make your own pull requests as before and in accordance
 with the [general contributor guide](CONTRIBUTING.md). These pull requests still
 require the approval of another core developer before they can be merged.
 
@@ -48,8 +61,8 @@ often need more handholding, having little to no git
 experience. Repeat yourself liberally, and, if you don’t recognize a
 contributor, point them to our development guide, or other GitHub
 workflow tutorials around the web. Do not assume that they know how
-GitHub works (e.g., many don't realize that adding a commit
-automatically updates a pull request). Gentle, polite, kind
+GitHub works (many don't realize that adding a commit
+automatically updates a pull request for example). Gentle, polite, kind
 encouragement can make the difference between a new core developer and
 an abandoned pull request.
 
@@ -62,9 +75,9 @@ community broadly, and core features should be domain agnostic and general purpo
 Custom functionality is meant to be provided through our plugin ecosystem. If in doubt
 consult back with our [mission and values](MISSION_AND_VALUES.md).
 
-2. **Performance and benchmarks:** As `napari` targets scientific applications which often involve
+2. **Performance and benchmarks:** As `napari` targets scientific applications that often involve
 large multidimensional datasets, high performance is a key value of `napari`. While
-every new feature won't scale equally to all sizes of data keeping in mind performance
+every new feature won't scale equally to all sizes of data, keeping in mind performance
 and our [benchmarks](BENCHMARKS.md) during a review may be important, and you may
 need to ask for benchmarks to be run and reported or new benchmarks to be added.
 
@@ -72,20 +85,22 @@ need to ask for benchmarks to be run and reported or new benchmarks to be added.
 extensive use of our APIs. The foundation of a healthy plugin ecosystem will be
 a fully capable and stable set of APIs and so as the `napari` matures it will
 very important to ensure our APIs are stable. For now, while the project is still
-in an earlier stage spending the extra time to consider names of public facing
+in an earlier stage, spending the extra time to consider names of public facing
 variables and methods, along side function signatures, could save us considerable
-trouble in the future.
+trouble in the future. Right now we are still making breaking changes with minor
+version numbers `0.x` and do not have a deprecation policy, but we will work to add one soon.
 
 4. **Documentation and tutorials:** All new methods should have appropriate doc
 strings following [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
 [NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html).
-For any major new features accompanying changes should be made to our
+For any major new features, accompanying changes should be made to our
 [tutorials repository](https://github.com/napari/napari-tutorials), that not only
 illustrates the new feature, but explains it.
 
 5. **Implementations and algorithms:** You should understand the code being modified
 or added before approving it.  (See `Merge Only Changes You Understand` below.)
-Implementations should do what they claim, and be simple, readable, and efficient.
+Implementations should do what they claim and be simple, readable, and efficient
+in that order.
 
 6. **Tests:** All contributions *must* be tested, and each added line of code
 should be covered by at least one test. Good tests not only execute the code,
@@ -103,8 +118,9 @@ Unless you know that a contributor is experienced with git, don’t
 ask for a rebase when merge conflicts arise. Instead, rebase the
 branch yourself, force-push to their branch, and advise the contributor to force-pull.  If the contributor is
 no longer active, you may take over their branch by submitting a new pull
-request and closing the original. In doing so, ensure you communicate
-that you are not throwing the contributor's work away!
+request and closing the original, including a reference to the original pull
+request. In doing so, ensure you communicate that you are not throwing the
+contributor's work away!
 
 ### Merge Only Changes You Understand
 
@@ -134,16 +150,19 @@ resources such as:
 -  [PEP8](https://www.python.org/dev/peps/pep-0008/) for Python style.
 -  [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
    [NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html)
-   for docstrings. (NumPy docstrings are a superset of PEP257. You
-   should read both.)
--  We use [`pre-commit`](https://pre-commit.com) hooks for autoformatting.
--  We format our code using [`black`](https://github.com/psf/black).
--  We use [`flake8`](https://github.com/PyCQA/flake8) linting.
--  The napari [tag on forum.image.sc](https://forum.image.sc/tags/napari).
--  [#napari](https://twitter.com/search?q=%23napari&f=live) on twitter.
--  Our [zulip](https://napari.zulipchat.com/) community chat channel.
+   for docstring conventions.
+-  [`pre-commit`](https://pre-commit.com) hooks for autoformatting.
+-  [`black`](https://github.com/psf/black) autoformatting.
+-  [`flake8`](https://github.com/PyCQA/flake8) linting.
+-  [#napari on image.sc](https://forum.image.sc/tags/napari).
+-  [#napari](https://twitter.com/search?q=%23napari&f=live) and [@napari_imaging](https://twitter.com/napari_imaging) on twitter.
+-  [napari zulip](https://napari.zulipchat.com/) community chat channel.
 
 You are not required to monitor the social resources.
+
+Where possible we prefer to point people towards asynchronous forms of communication
+like forum posts and github issues instead of realtime chat options as they are easier
+for a global community to consume.
 
 We also have a private mailing list for core developers
 `napari-core-devs@googlegroups.com` which is sparingly used for discussions
@@ -160,10 +179,8 @@ community values. After nomination voting will happen on a private mailing list.
 While it is expected that most votes will be unanimous, a two-thirds majority of
 the cast votes is enough.
 
-Core developers that have not contributed to the project (commits, GitHub comments,
-or meeting discussions) in the past 6 months will be asked if they want to
-become emeritus core developers and recant their commit and voting rights until
-they become active again.
+Core developers can choose to become emeritus core developers and suspend
+their approval and voting rights until they become active again.
 
 ## Contribute To This Guide!
 

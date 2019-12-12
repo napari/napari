@@ -51,42 +51,49 @@ for and against merging a pull-request, and be involved in deciding major
 changes to the API, and thereby more easily carry on with their project related
 activities. Core developers appear as organization members on the napari
 [GitHub organization](https://github.com/orgs/napari/people) and are on our
-[@core-devs](https://github.com/orgs/napari/teams/core-devs) GitHub team. Core
+[@napari/core-devs](https://github.com/orgs/napari/teams/core-devs) GitHub team. Core
 developers are expected to review code contributions while adhering to the
 [core developer guide](CORE_DEV_GUIDE.md). New core developers can be nominated
 by any existing core developer, and for details on that process see our core
 developer guide.
 
-## Steering Committee
+## Steering Council
 
-The Steering Committee (SC) members are core developers who have additional
+The Steering Council (SC) members are core developers who have additional
 responsibilities to ensure the smooth running of the project. SC members are
 expected to participate in strategic planning, approve changes to the
 governance model, and make decisions about funding granted to the project
-itself. (Funding to community members is theirs to pursue and manage.) The
+itself. (Funding to community members is theirs to pursue and manage). The
 purpose of the SC is to ensure smooth progress from the big-picture
 perspective. Changes that impact the full project require analysis informed by
 long experience with both the project and the larger ecosystem. When the core
 developer community (including the SC members) fails to reach such a consensus
 in a reasonable timeframe, the SC is the entity that resolves the issue.
 
-The steering committee is currently fixed in size to N members. This number may be increased in
-the future, but will always be an odd number to ensure a simple majority vote outcome
-is always possible. The initial steering committee of napari consists of
+Members of the steering council also have the "owner" role within the [napari GitHub organization](https://github.com/napari/)
+and are ultimately responsible for managing the napari GitHub account and [@napari_imaging](https://twitter.com/napari_imaging)
+twitter account.
 
-- XXXXXXXXX.
-...
-- XXXXXXXXX.
+The steering council is currently fixed in size to three members. This number may be increased in
+the future, but will always be an odd number to ensure a simple majority vote outcome
+is always possible. The initial steering council of napari consists of
+
+* [Juan Nunez-Iglesias](https://github.com/jni)
+
+* [Loic Royer](https://github.com/royerloic)
+
+* [Nicholas Sofroniew](https://github.com/sofroniewn)
 
 The SC membership is revisited every January. SC members who do
 not actively engage with the SC duties are expected to resign. New members are
 added by nomination by a core developer. Nominees should have demonstrated
 long-term, continued commitment to the project and its [mission and values](MISSION_AND_VALUES.md). A
 nomination will result in discussion that cannot take more than a month and
-then admission to the SC by consensus.
+then admission to the SC by consensus. During that time deadlocked votes of the SC will
+be postponed until the new member has joined and another vote can be held.
 
-The napari steering committee may be contacted at `napari-steering-committee@googlegroups.com`.
-Or our via our [@steering-committee](https://github.com/orgs/napari/teams/core-devs) GitHub team.
+The napari steering council may be contacted at `napari-steering-council@googlegroups.com`.
+Or via the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) GitHub team.
 
 # Decision Making Process
 
@@ -120,9 +127,11 @@ are made according to the following rules:
   to give their opinion on the pull request if they’re not confident others
   would agree.
 
-- **Code changes and major documentation changes** require agreement by *two*
-  core developers *and* no disagreement or requested changes by a core developer
-  on the issue or pull-request page (lazy consensus).
+- **Code changes and major documentation changes** require agreement by *one*
+  core developer *and* no disagreement or requested changes by a core developer
+  on the issue or pull-request page (lazy consensus). For all changes of this type,
+  core developers are expected to give “reasonable time” after approval and before
+  merging for others to weigh in on the pull request in its final state.
 
 - **Changes to the API principles** require a dedicated issue on our
   [issue tracker](https://github.com/napari/napari/issues) and follow the
