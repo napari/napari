@@ -41,7 +41,8 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 ## Our values
 
-- We are **inclusive**. We welcome and mentor newcomers who are making their first contribution and strive to grow our most dedicated contributors into [core developers](CORE_DEV_GUIDE.md).
+- We are **inclusive**. We welcome and mentor newcomers who are making their first contribution and strive to grow our most dedicated contributors into [core developers](CORE_DEV_GUIDE.md). We have a [Code of Conduct](CODE_OF_CONDUCT.md) to make napari
+a welcoming place for all.
 
 - We are **community-driven**. We respond to feature requests and proposals on our [issue tracker](https://github.com/napari/napari/issues), making decisions that are driven by our users’ requirements, not by the whims of the core team.
 
