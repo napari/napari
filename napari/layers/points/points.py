@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Tuple, AnyStr
 from xml.etree.ElementTree import Element
 import numpy as np
 import itertools
@@ -7,8 +7,12 @@ from ..base import Layer
 from ...util.event import Event
 from ...util.misc import ensure_iterable
 from ...util.status_messages import format_float
-from vispy.color import get_color_names, Color
+from vispy.color import get_color_names, Color, ColorArray
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
+from ..util.standardize_color import transform_color
+
+
+ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
 
 
 class Points(Layer):
@@ -28,9 +32,9 @@ class Points(Layer):
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str
+    edge_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
         Color of the point marker border.
-    face_color : str
+    face_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
         Color of the point marker body.
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
@@ -63,16 +67,16 @@ class Points(Layer):
         selected point.
     edge_width : float
         Width of the marker edges in pixels for all points
-    edge_color : str
-        Size of the marker edge for the next point to be added or the currently
+    edge_color : vispy.color.ColorArray
+        Color of the marker edge for the next point to be added or the currently
         selected point.
-    face_color : str
-        Size of the marker edge for the next point to be added or the currently
+    face_color : vispy.color.ColorArray
+        Color of the marker body for the next point to be added or the currently
         selected point.
-    edge_colors : list of str (N,)
-        List of edge color strings, one for each point.
-    face_colors : list of str (N,)
-        List of face color strings, one for each point.
+    edge_colors : vispy.color.ColorArray
+        Array of edge colors, one for each point.
+    face_colors : vispy.color.ColorArray
+        Array of face colors, one for each point.
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
@@ -179,15 +183,15 @@ class Points(Layer):
         else:
             self._size = 10
 
-        if type(edge_color) is str:
-            self._edge_color = edge_color
-        else:
-            self._edge_color = 'black'
+        try:
+            self._edge_color = transform_color(edge_color)
+        except (AttributeError, ValueError, KeyError):
+            self._edge_color = ColorArray('black')
 
-        if type(face_color) is str:
-            self._face_color = face_color
-        else:
-            self._face_color = 'white'
+        try:
+            self._face_color = transform_color(face_color)
+        except (AttributeError, ValueError, KeyError):
+            self._face_color = ColorArray('white')
 
         # Indices of selected points
         self._selected_data = []
@@ -217,16 +221,8 @@ class Points(Layer):
         self._is_selecting = False
         self._clipboard = {}
 
-        self.edge_colors = list(
-            itertools.islice(
-                ensure_iterable(edge_color, color=True), 0, len(self.data)
-            )
-        )
-        self.face_colors = list(
-            itertools.islice(
-                ensure_iterable(face_color, color=True), 0, len(self.data)
-            )
-        )
+        self.edge_colors = self._edge_color
+        self.face_colors = self._face_color
         self.sizes = size
 
         # Trigger generation of view slice and thumbnail
@@ -361,32 +357,34 @@ class Points(Layer):
         self.events.highlight()
 
     @property
-    def edge_color(self) -> str:
-        """str: edge color of marker for the next added point."""
+    def edge_color(self) -> ColorArray:
+        """Edge color of marker for the next added point."""
 
         return self._edge_color
 
     @edge_color.setter
-    def edge_color(self, edge_color: str) -> None:
-        self._edge_color = edge_color
+    def edge_color(self, edge_color: ColorType) -> None:
+        self._edge_color = transform_color(edge_color)
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.edge_colors[i] = edge_color
+            cur_colors: np.ndarray = self.edge_colors.rgba
+            cur_colors[self.selected_data] = self._edge_color.rgba
+            self.edge_colors = ColorArray(cur_colors)
         self.events.edge_color()
         self.events.highlight()
 
     @property
-    def face_color(self) -> str:
-        """str: face color of marker for the next added point."""
+    def face_color(self) -> ColorArray:
+        """Face color of marker for the next added point."""
 
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color: str) -> None:
-        self._face_color = face_color
+    def face_color(self, face_color: ColorType) -> None:
+        self._face_color = transform_color(face_color)
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.face_colors[i] = face_color
+            cur_colors: np.ndarray = self.face_colors.rgba
+            cur_colors[self.selected_data] = self._face_color.rgba
+            self.face_colors = ColorArray(cur_colors)
         self.events.face_color()
         self.events.highlight()
 

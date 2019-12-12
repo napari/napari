@@ -2,7 +2,6 @@ import numpy as np
 from vispy.scene.visuals import Line, Compound, Markers
 from vispy.visuals.transforms import ChainTransform
 from .vispy_base_layer import VispyBaseLayer
-from napari.layers.util.standardize_color import transform_color
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -55,9 +54,8 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_highlight_change()
 
         if len(self.layer._data_view) > 0:
-            max_len = len(self.layer._indices_view)
-            edge_color = transform_color(self.layer.edge_colors)[:max_len]
-            face_color = transform_color(self.layer.face_colors)[:max_len]
+            edge_color = self.layer.edge_colors[self.layer._indices_view]
+            face_color = self.layer.face_colors[self.layer._indices_view]
         else:
             edge_color = np.array([1., 1., 1., 1.])  # white
             face_color = np.array([1., 1., 1., 1.])  # white
@@ -98,10 +96,7 @@ class VispyPointsLayer(VispyBaseLayer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._sizes_view[self.layer._highlight_index]
-            face_color = [
-                self.layer.face_colors[i]
-                for i in self.layer._indices_view[self.layer._highlight_index]
-            ]
+            face_color = self.layer.face_color[self.layer._indices_view[self.layer._highlight_index]]
         else:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = 0
