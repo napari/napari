@@ -1,3 +1,6 @@
+import numpy as np
+
+
 one_point = np.array([[10, 20, 30]])
 one_point_1d = np.array([10, 11])
 all_one_points = [(one_point,), one_point_1d]

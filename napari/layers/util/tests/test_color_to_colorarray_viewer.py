@@ -3,7 +3,8 @@ import numpy as np
 
 from napari import Viewer
 from vispy.color import ColorArray
-from colors_data import *  # noqa: F403
+from colors_data import single_color_options, two_color_options
+from points_data import all_one_points, all_two_points
 
 
 @pytest.fixture(scope="function")
@@ -20,6 +21,7 @@ def setup_viewer(qtbot):
     viewer.window.close()
 
 
+@pytest.mark.skip()
 @pytest.mark.parametrize("points", all_one_points)
 @pytest.mark.parametrize("colors", single_color_options)
 def test_oned_points(setup_viewer, points, colors):
@@ -36,6 +38,7 @@ def test_oned_points(setup_viewer, points, colors):
     assert true_color == viewer.layers[0].face_colors
 
 
+@pytest.mark.skip()
 @pytest.mark.parametrize("points", all_two_points)
 @pytest.mark.parametrize("colors", two_color_options)
 def test_twod_points(setup_viewer, points, colors):
