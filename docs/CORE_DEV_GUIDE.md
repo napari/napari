@@ -104,15 +104,15 @@ in that order.
 
 6. **Tests:** All contributions *must* be tested, and each added line of code
 should be covered by at least one test. Good tests not only execute the code,
-but explores corner cases.  It can be tempting not to review tests, but please
+but explore corner cases.  It can be tempting not to review tests, but please
 do so.
 
 Other changes may be *nitpicky*: spelling mistakes, formatting,
-etc. Do not insist contributors make these changes, and instead you can
-make the changes by [pushing to their branch](https://help.github.com/articles/committing-changes-to-a-pull-request-branch-created-from-a-fork/), or using GitHub’s [suggestion](https://help.github.com/articles/commenting-on-a-pull-request/) [feature]
-(https://help.github.com/articles/incorporating-feedback-in-your-pull-request/).
-(The latter is preferred because it gives the contributor a choice in
-whether to accept the changes.)
+etc. Do not insist contributors make these changes, but instead you should offer
+to make these changes by [pushing to their branch](https://help.github.com/articles/committing-changes-to-a-pull-request-branch-created-from-a-fork/), or using GitHub’s [suggestion](https://help.github.com/articles/commenting-on-a-pull-request/)
+[feature](https://help.github.com/articles/incorporating-feedback-in-your-pull-request/), and
+be prepared to make them yourself if needed. Using the suggestion feature is preferred because
+it gives the contributor a choice in whether to accept the changes.
 
 Unless you know that a contributor is experienced with git, don’t
 ask for a rebase when merge conflicts arise. Instead, rebase the
