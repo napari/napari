@@ -703,8 +703,6 @@ class Shapes(Layer):
             self.selected_data = []
         self._data_view.slice_key = slice_key
 
-        self._set_highlight(force=True)
-
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
         If a single index is passed then the boudning box will be inherited

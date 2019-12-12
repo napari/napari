@@ -187,6 +187,7 @@ class Image(Layer):
             )
         else:
             self._data_view = np.zeros((1,) * self.dims.ndisplay)
+        self._data_raw = self._data_view
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps

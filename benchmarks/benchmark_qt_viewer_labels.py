@@ -31,6 +31,10 @@ class QtViewerSingleLabelsSuite:
         """Time to set view slice."""
         self.layer._set_view_slice()
 
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
+
     def time_update_thumbnail(self):
         """Time to update thumbnail."""
         self.layer._update_thumbnail()

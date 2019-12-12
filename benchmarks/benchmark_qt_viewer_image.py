@@ -59,6 +59,10 @@ class QtViewerEditImageSuite:
     def teardown(self, n):
         self.viewer.window.close()
 
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
+
     def time_set_view_slice(self, n):
         """Time to set view slice."""
         self.viewer.layers[0]._set_view_slice()
@@ -88,6 +92,10 @@ class QtViewerSingleImageSuite:
     def time_set_data(self):
         """Time to set view slice."""
         self.viewer.layers[0].data = self.new_data
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self):
         """Time to set view slice."""

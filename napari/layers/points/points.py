@@ -623,8 +623,6 @@ class Points(Layer):
             self.selected_data
         self._selected_box = self.interaction_box(self._selected_view)
 
-        self._set_highlight(force=True)
-
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
         interaction boxes, and the drag selection box when appropriate

@@ -547,12 +547,25 @@ class Layer(KeymapMixin, ABC):
         yield
         self._update_properties = True
 
+    def _set_highlight(self, force=False):
+        """Render layer highlights when appropriate.
+
+        Parameters
+        ----------
+        force : bool
+            Bool that forces a redraw to occur when `True`.
+        """
+        pass
+
     def refresh(self):
+        """Refresh all layer data based on current view slice.
+        """
         if self.visible:
             self._set_view_slice()
+            self.events.set_data()
             self._update_thumbnail()
             self._update_coordinates()
-            self.events.set_data()
+            self._set_highlight(force=True)
 
     def _update_coordinates(self):
         """Insert the cursor position into the correct position in the
