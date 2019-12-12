@@ -71,8 +71,8 @@ developer community (including the SC members) fails to reach such a consensus
 in a reasonable timeframe, the SC is the entity that resolves the issue.
 
 Members of the steering council also have the "owner" role within the [napari GitHub organization](https://github.com/napari/)
-and are ultimately responsible for managing the napari GitHub account and [@napari_imaging](https://twitter.com/napari_imaging)
-twitter account.
+and are ultimately responsible for managing the napari GitHub account, the [@napari_imaging](https://twitter.com/napari_imaging)
+twitter account, the [napari website](http://napari.org), and other similar napari owned resources.
 
 The steering council is currently fixed in size to three members. This number may be increased in
 the future, but will always be an odd number to ensure a simple majority vote outcome
