@@ -223,10 +223,10 @@ def get_max_texture_sizes():
     MAX_TEXTURE_SIZE_2D = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
     if MAX_TEXTURE_SIZE_2D == ():
         MAX_TEXTURE_SIZE_2D = None
+    # vispy doesn't expose GL_MAX_3D_TEXTURE_SIZE so hard coding
     # MAX_TEXTURE_SIZE_3D = gl.glGetParameter(gl.GL_MAX_3D_TEXTURE_SIZE)
-    # vispy doesn't seem to expose GL_MAX_3D_TEXTURE_SIZE so hard coding
+    # if MAX_TEXTURE_SIZE_3D == ():
+    #    MAX_TEXTURE_SIZE_3D = None
     MAX_TEXTURE_SIZE_3D = 2048
-    if MAX_TEXTURE_SIZE_3D == ():
-        MAX_TEXTURE_SIZE_3D = None
 
     return MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D
