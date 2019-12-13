@@ -62,7 +62,7 @@ class Viewer(ViewerModel):
         self.window = Window(qt_viewer)
         self.update_console = self.window.qt_viewer.console.push
 
-    def screenshot(self, with_viewer=False):
+    def screenshot(self, with_viewer=False, max_shape=None):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -70,6 +70,8 @@ class Viewer(ViewerModel):
         with_viewer : bool
             If True includes the napari viewer, otherwise just includes the
             canvas.
+        max_shape : int
+            Size to which to rescale the size of the larger axis.
 
         Returns
         -------
@@ -77,10 +79,28 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
+        canvas_size = self.window.qt_viewer.canvas.size
+        if max_shape:
+            if canvas_size[0] > canvas_size[1]:
+                new_shape = (
+                    max_shape,
+                    int(canvas_size[1] * max_shape / canvas_size[0]),
+                )
+            else:
+                new_shape = (
+                    int(canvas_size[0] * max_shape / canvas_size[1]),
+                    max_shape,
+                )
+            self.window.qt_viewer.canvas.size = new_shape
+
         if with_viewer:
             image = self.window.screenshot()
         else:
             image = self.window.qt_viewer.screenshot()
+
+        # restore shape
+        self.window.qt_viewer.canvas.size = canvas_size
+
         return image
 
     def update(self, func, *args, **kwargs):

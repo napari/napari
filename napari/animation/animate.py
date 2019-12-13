@@ -221,7 +221,7 @@ class Animation:
         self.update_viewer_from_state(new_frame)
         self.current_interpolframe = new_frame
 
-    def frame_generator(self, frame=None):
+    def frame_generator(self, frame=None, max_shape=None):
         """Generator of frames of the animation
 
         Parameters
@@ -239,14 +239,14 @@ class Animation:
         if frame is not None:
             self.update_viewer_from_state(frame)
             self.viewer.window.qt_viewer.canvas.size = frame_size
-            image = self.viewer.screenshot()
+            image = self.viewer.screenshot(max_shape=max_shape)
             while True:
                 yield image
         else:
             for i in range(len(self.states_dict)):
                 self.update_viewer_from_state(i)
                 self.viewer.window.qt_viewer.canvas.size = frame_size
-                yield self.viewer.screenshot()
+                yield self.viewer.screenshot(max_shape=max_shape)
 
     def update_viewer_from_state(self, frame):
         """Set the viewer to a given interpolated frame
@@ -282,7 +282,8 @@ class Animation:
         self,
         name="movie.mp4",
         fps=20,
-        resolution=1,
+        with_viewer=False,
+        max_shape=None,
         compression_quality=5,
         format=None,
     ):
@@ -295,8 +296,8 @@ class Animation:
             should be either .mp4 or .gif
         fps : int
             frames per second
-        resolution : float
-            factor by which to multiply the current windows size
+        max_shape : int
+            Size to which to rescale the size of the larger axis.
         compression_quality: float
             number from 1 (lowest quality) to 9
             only applies to mp4
@@ -307,9 +308,13 @@ class Animation:
         # creat all states
         self.create_steps()
 
+        # if no size if is given, capture of frame to set the size
+        if max_shape is None:
+            screenshot = self.viewer.screenshot()
+            max_shape = max(screenshot)
+
         # capture SceneCanvas size of frist frame to set size of next ones
-        self.update_viewer_from_state(0)
-        frame_size = self.viewer.window.qt_viewer.canvas.size
+        frame_gen = self.frame_generator(max_shape=max_shape)
 
         # create imageio writer and add all frames
         _, extension = os.path.splitext(name)
@@ -324,14 +329,6 @@ class Animation:
         else:
             writer = imageio.get_writer(name, fps=fps, format=format)
         for frame in range(len(self.interpolated_states["ndisplay"])):
-            self.update_viewer_from_state(frame)
-            self.viewer.window.qt_viewer.canvas.size = (
-                int(frame_size[0] * resolution),
-                int(frame_size[1] * resolution),
-            )
-            newim = self.viewer.screenshot()
+            newim = next(frame_gen)
             writer.append_data(newim)
         writer.close()
-
-        # reset SceneCanvas size
-        self.viewer.window.qt_viewer.canvas.size = frame_size
