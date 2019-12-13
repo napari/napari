@@ -1,4 +1,3 @@
-import numpy as np
 import imageio
 import copy
 import os
@@ -222,30 +221,32 @@ class Animation:
         self.update_viewer_from_state(new_frame)
         self.current_interpolframe = new_frame
 
-    def collect_images(self):
-        """Collect images corresponding to all interpolated states
+    def frame_generator(self, frame=None):
+        """Generator of frames of the animation
 
-        Returns
+        Parameters
         -------
-        image_stack : 3D numpy
-            stack of all snapshots
+        frame : int
+            specific frame to return
+
         """
 
-        images = []
         self.create_steps()
-
         # capture SceneCanvas size of frist frame to set size of next ones
         self.update_viewer_from_state(0)
         frame_size = self.viewer.window.qt_viewer.canvas.size
 
-        for i in range(len(self.states_dict)):
-
-            self.update_viewer_from_state(i)
+        if frame is not None:
+            self.update_viewer_from_state(frame)
             self.viewer.window.qt_viewer.canvas.size = frame_size
-            images.append(self.viewer.screenshot())
-
-        image_stack = np.stack(images, axis=0)
-        return image_stack
+            image = self.viewer.screenshot()
+            while True:
+                yield image
+        else:
+            for i in range(len(self.states_dict)):
+                self.update_viewer_from_state(i)
+                self.viewer.window.qt_viewer.canvas.size = frame_size
+                yield self.viewer.screenshot()
 
     def update_viewer_from_state(self, frame):
         """Set the viewer to a given interpolated frame
