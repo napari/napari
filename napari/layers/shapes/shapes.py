@@ -763,7 +763,9 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
-        if self._value[0] is not None or len(self.selected_data) > 0:
+        if self._value is not None and (
+            self._value[0] is not None or len(self.selected_data) > 0
+        ):
             if len(self.selected_data) > 0:
                 index = copy(self.selected_data)
                 if self._value[0] is not None:

@@ -117,6 +117,8 @@ class Vectors(Layer):
         # Data containing vectors in the currently viewed slice
         self._data_view = np.empty((0, 2, 2))
         self._displayed_stored = []
+        self._view_vertices = []
+        self._view_faces = []
 
         # length attribute
         self._length = length
@@ -264,8 +266,8 @@ class Vectors(Layer):
             self._data_view = self.data[:, :, disp]
 
         if len(faces) == 0:
-            self._view_vertices = None
-            self._view_faces = None
+            self._view_vertices = []
+            self._view_faces = []
         else:
             self._view_vertices = vertices
             self._view_faces = faces

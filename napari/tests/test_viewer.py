@@ -75,6 +75,22 @@ def test_add_layer(qtbot, layer_class, data, ndim):
     viewer.window.close()
 
 
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_add_layer_invisble(qtbot, layer_class, data, ndim):
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+    layer = add_layer_by_type(viewer, layer_class, data, visible=False)
+    check_viewer_functioning(viewer, view, data, ndim)
+
+    # Run all class keybindings
+    for func in layer.class_keymap.values():
+        func(layer)
+
+    # Close the viewer
+    viewer.window.close()
+
+
 def test_screenshot(qtbot):
     "Test taking a screenshot"
     viewer = Viewer()

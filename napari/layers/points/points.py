@@ -200,6 +200,8 @@ class Points(Layer):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
+        self._highlight_index = []
+        self._highlight_box = None
 
         self._drag_start = None
 
