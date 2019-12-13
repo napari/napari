@@ -673,7 +673,6 @@ class ViewerModel(KeymapMixin):
         is_pyramid=None,
         num_colors=50,
         seed=0.5,
-        n_dimensional=False,
         name=None,
         metadata=None,
         scale=None,
@@ -702,8 +701,6 @@ class ViewerModel(KeymapMixin):
             Number of unique colors to use in colormap.
         seed : float
             Seed for colormap random generator.
-        n_dimensional : bool
-            If `True`, paint and fill edit labels across all dimensions.
         name : str
             Name of the layer.
         metadata : dict
@@ -741,7 +738,6 @@ class ViewerModel(KeymapMixin):
             is_pyramid=is_pyramid,
             num_colors=num_colors,
             seed=seed,
-            n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,
             scale=scale,
