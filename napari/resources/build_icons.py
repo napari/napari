@@ -27,6 +27,7 @@ icons = [
     'down_arrow',
     'drop_down',
     'ellipse',
+    'file-copy',
     'fill',
     'grid',
     'home',

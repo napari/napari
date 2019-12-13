@@ -8,7 +8,14 @@ import dask
 
 from qtpy import QtCore, API_NAME, PYSIDE_VERSION, PYQT_VERSION
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QVBoxLayout, QTextEdit, QDialog, QLabel
+from qtpy.QtWidgets import (
+    QVBoxLayout,
+    QTextEdit,
+    QDialog,
+    QLabel,
+    QPushButton,
+    QHBoxLayout,
+)
 
 import napari
 
@@ -30,7 +37,15 @@ class QtAbout(QDialog):
         self.infoTextBox = QTextEdit()
         self.infoTextBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.infoTextBox.setLineWrapMode(QTextEdit.NoWrap)
-        self.layout.addWidget(self.infoTextBox, 1)
+        # Add text copy button
+        self.copy_button = QPushButton("Copy")
+
+        self.info_layout = QHBoxLayout()
+        self.info_layout.addWidget(self.infoTextBox)
+        self.info_layout.addWidget(self.copy_button)
+        self.layout.addLayout(self.info_layout)
+
+        # self.layout.addWidget(self.infoTextBox, 1)
 
         if API_NAME == 'PySide2':
             API_VERSION = PYSIDE_VERSION
