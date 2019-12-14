@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QApplication
 import collections
 
 
-class QtViewerSingleLabels:
+class QtViewerSingleLabelsSuite:
     """Benchmarks for editing a single labels layer in the viewer."""
 
     def setup(self):

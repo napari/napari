@@ -2300,7 +2300,7 @@ dth=\x226.8\x22 height\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.6, \
+strator 23.0.1, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -3108,7 +3108,7 @@ svg>\x0a\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.0.2, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -3177,7 +3177,7 @@ s=\x2221.7,46.6 34.\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.0.6, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -3502,7 +3502,7 @@ n points=\x2220.9,5\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.6, \
+strator 23.0.4, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -3795,7 +3795,7 @@ ht=\x229\x22/>\x0a</svg>\x0a\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.0.0, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -3958,7 +3958,7 @@ n points=\x2250,79.\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.0.6, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -4871,7 +4871,7 @@ n points=\x2250,20.\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.6, \
+strator 23.0.1, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \

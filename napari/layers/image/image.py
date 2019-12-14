@@ -8,15 +8,12 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ...util.misc import (
-    calc_data_range,
-    increment_unnamed_colormap,
-    get_pyramid_and_rgb,
-)
+from ..layer_utils import calc_data_range, increment_unnamed_colormap
 from ...util.event import Event
 from ...util.status_messages import format_float
 from ._constants import Rendering, Interpolation
 from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
+from .image_utils import get_pyramid_and_rgb
 
 
 class Image(Layer):
@@ -498,6 +495,7 @@ class Image(Layer):
                     self._data_pyramid[-1][tuple(indices)]
                 ).transpose(order)
         else:
+            self._scale_view = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
             thumbnail = image
 
