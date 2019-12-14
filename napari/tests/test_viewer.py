@@ -60,27 +60,12 @@ def test_no_qt_loop():
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer(qtbot, layer_class, data, ndim):
+@pytest.mark.parametrize('visible', [True, False])
+def test_add_layer(qtbot, layer_class, data, ndim, visible):
     viewer = Viewer()
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
-    layer = add_layer_by_type(viewer, layer_class, data)
-    check_viewer_functioning(viewer, view, data, ndim)
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer_invisble(qtbot, layer_class, data, ndim):
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-    layer = add_layer_by_type(viewer, layer_class, data, visible=False)
+    layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, view, data, ndim)
 
     # Run all class keybindings
