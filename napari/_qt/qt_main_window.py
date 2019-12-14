@@ -4,6 +4,7 @@ wrap.
 """
 # set vispy to use same backend as qtpy
 import os
+import sys
 
 from qtpy import API_NAME
 from vispy import app
@@ -11,6 +12,7 @@ from vispy import app
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
+from .exceptions import ExceptionHandler
 
 app.use_app(API_NAME)
 del app
@@ -27,8 +29,9 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
+    QMessageBox,
 )
-from qtpy.QtCore import Qt  # noqa: E402
+from qtpy.QtCore import Qt, Slot  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
 from .util import QImg2array  # noqa: E402
 from ..util.theme import template  # noqa: E402
@@ -95,6 +98,11 @@ class Window:
         self.qt_viewer.viewer.events.palette.connect(
             lambda event: self._update_palette(event.palette)
         )
+
+        # instantiate the execption handler
+        self.exception_handler = ExceptionHandler()
+        sys.excepthook = self.exception_handler.handler
+        self.exception_handler.error_message.connect(self._show_error_dialog)
 
         if show:
             self.show()
@@ -306,6 +314,26 @@ class Window:
         """Update help message on status bar.
         """
         self._help.setText(event.text)
+
+    @Slot(str, str, str, str)
+    def _show_error_dialog(self, errMsg, title=None, info=None, detail=None):
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle(title or "Napari Error")
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setText(errMsg)
+        if info:
+            msg_box.setInformativeText(info + "\n")
+        if detail:
+            msg_box.setDetailedText(detail)
+            msg_box.setStyleSheet(
+                """QTextEdit{
+                    min-width: 800px;
+                    font-size: 12px;
+                    font-weight: 400;
+                }"""
+            )
+
+        msg_box.exec_()
 
     def screenshot(self):
         """Take currently displayed viewer and convert to an image array.

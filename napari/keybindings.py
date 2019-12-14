@@ -148,3 +148,20 @@ def play(viewer):
     else:
         axis = viewer.window.qt_viewer.dims.last_used or 0
         viewer.window.qt_viewer.dims.play(axis)
+
+
+# just examples ... would remove before merge
+
+
+@Viewer.bind_key('Control-Alt-E')
+def raise_error(viewer):
+    """Reset view to original state."""
+    from .exceptions import NapariError
+
+    raise NapariError("Whoops!", "Looks like we've got a problem")
+
+
+@Viewer.bind_key('Control-Alt-R')
+def raise_generic_error(viewer):
+    """Reset view to original state."""
+    raise ValueError("Whoops!", "Looks like we've got a problem")
