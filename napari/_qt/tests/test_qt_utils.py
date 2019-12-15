@@ -1,6 +1,6 @@
 from qtpy.QtCore import QObject, Signal
 
-from ..util import blocked_signals
+from ..util import qt_signals_blocked
 
 
 class Emitter(QObject):
@@ -24,6 +24,6 @@ def test_signal_blocker(qtbot):
         raise AssertionError('a signal was emitted')
 
     obj.test_signal.connect(err)
-    with blocked_signals(obj):
+    with qt_signals_blocked(obj):
         obj.go()
         qtbot.wait(750)

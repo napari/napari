@@ -118,7 +118,7 @@ def new_worker_qthread(
 
 
 @contextmanager
-def blocked_signals(obj):
+def qt_signals_blocked(obj):
     """Context manager to temporarily block signals from `obj`"""
     obj.blockSignals(True)
     yield

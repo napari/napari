@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .util import blocked_signals
+from .util import qt_signals_blocked
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -118,7 +118,7 @@ class QtViewerDockWidget(QDockWidget):
         return self.size().height() > self.size().width()
 
     def _on_visibility_changed(self):
-        with blocked_signals(self):
+        with qt_signals_blocked(self):
             self.setTitleBarWidget(None)
             if not self.isFloating():
                 self.title = QtCustomTitleBar(
