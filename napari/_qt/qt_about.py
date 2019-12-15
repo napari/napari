@@ -38,13 +38,12 @@ class QtAbout(QDialog):
         self.infoTextBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.infoTextBox.setLineWrapMode(QTextEdit.NoWrap)
         # Add text copy button
-        self.info_copy_button = QCopyToClipboardButton(self.infoTextBox)
+        self.infoCopyButton = QtCopyToClipboardButton(self.infoTextBox)
         self.info_layout = QHBoxLayout()
-        self.info_layout.addWidget(self.infoTextBox)
-        self.info_layout.addWidget(self.info_copy_button)
+        self.info_layout.addWidget(self.infoTextBox, 1)
+        self.info_layout.addWidget(self.infoCopyButton, 0, Qt.AlignTop)
+        self.info_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(self.info_layout)
-
-        # self.layout.addWidget(self.infoTextBox, 1)
 
         if API_NAME == 'PySide2':
             API_VERSION = PYSIDE_VERSION
@@ -83,12 +82,10 @@ class QtAbout(QDialog):
         )
         self.citationTextBox = QTextEdit(citation_text)
         self.citationTextBox.setFixedHeight(64)
-        self.citation_copy_button = QCopyToClipboardButton(
-            self.citationTextBox
-        )
+        self.citationCopyButton = QtCopyToClipboardButton(self.citationTextBox)
         self.citation_layout = QHBoxLayout()
-        self.citation_layout.addWidget(self.citationTextBox)
-        self.citation_layout.addWidget(self.citation_copy_button)
+        self.citation_layout.addWidget(self.citationTextBox, 1)
+        self.citation_layout.addWidget(self.citationCopyButton, 0, Qt.AlignTop)
         self.layout.addLayout(self.citation_layout)
 
         self.setLayout(self.layout)
@@ -103,7 +100,7 @@ class QtAbout(QDialog):
         d.exec_()
 
 
-class QCopyToClipboardButton(QPushButton):
+class QtCopyToClipboardButton(QPushButton):
     def __init__(self, text_edit):
         super().__init__()
         self.text_edit = text_edit
