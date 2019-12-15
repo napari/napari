@@ -32,6 +32,26 @@ def test_random_3D_surface():
     assert layer._data_view.shape[1] == 3
 
 
+def test_visiblity():
+    """Test setting layer visiblity."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 3))
+    faces = np.random.randint(10, size=(6, 3))
+    values = np.random.random(10)
+    data = (vertices, faces, values)
+    layer = Surface(data)
+    assert layer.visible is True
+
+    layer.visible = False
+    assert layer.visible is False
+
+    layer = Surface(data, visible=False)
+    assert layer.visible is False
+
+    layer.visible = True
+    assert layer.visible is True
+
+
 def test_surface_gamma():
     """Test setting gamma."""
     np.random.seed(0)

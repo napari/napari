@@ -40,7 +40,7 @@ layer2viewmethod = {
 }
 
 
-def add_layer_by_type(viewer, layer_type, data):
+def add_layer_by_type(viewer, layer_type, data, visible=True):
     """
     Convenience method that maps a LayerType to its add_layer method.
 
@@ -49,8 +49,9 @@ def add_layer_by_type(viewer, layer_type, data):
     layer_type : LayerTypes
         Layer type to add
     data :
+        The layer data to view
     """
-    return layer2addmethod[layer_type](viewer, data)
+    return layer2addmethod[layer_type](viewer, data, visible=visible)
 
 
 def view_layer_type(layer_type, data):

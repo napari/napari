@@ -45,8 +45,8 @@ class QtViewerAddImageSuite:
         self.viewer.add_image(self.data)
 
 
-class QtViewerEditImageSuite:
-    """Benchmarks for editing images in the viewer."""
+class QtViewerImageSuite:
+    """Benchmarks for images in the viewer."""
 
     params = [2 ** i for i in range(4, 13)]
 
@@ -58,6 +58,15 @@ class QtViewerEditImageSuite:
 
     def teardown(self, n):
         self.viewer.window.close()
+
+    def time_zoom(self, n):
+        """Time to zoom in and zoom out."""
+        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.viewer.layers[0].refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -73,7 +82,7 @@ class QtViewerEditImageSuite:
 
 
 class QtViewerSingleImageSuite:
-    """Benchmarks for editing a single image layer in the viewer."""
+    """Benchmarks for a single image layer in the viewer."""
 
     def setup(self):
         _ = QApplication.instance() or QApplication([])
@@ -85,9 +94,61 @@ class QtViewerSingleImageSuite:
     def teardown(self):
         self.viewer.window.close()
 
+    def time_zoom(self):
+        """Time to zoom in and zoom out."""
+        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+
     def time_set_data(self):
         """Time to set view slice."""
         self.viewer.layers[0].data = self.new_data
+
+    def time_refresh(self):
+        """Time to refresh view."""
+        self.viewer.layers[0].refresh()
+
+    def time_set_view_slice(self):
+        """Time to set view slice."""
+        self.viewer.layers[0]._set_view_slice()
+
+    def time_update_thumbnail(self):
+        """Time to update thumbnail."""
+        self.viewer.layers[0]._update_thumbnail()
+
+    def time_get_value(self):
+        """Time to get current value."""
+        self.viewer.layers[0].get_value()
+
+    def time_ndisplay(self):
+        """Time to enter 3D rendering."""
+        self.viewer.dims.ndisplay = 3
+
+
+class QtViewerSingleInvisbleImageSuite:
+    """Benchmarks for a invisble single image layer in the viewer."""
+
+    def setup(self):
+        _ = QApplication.instance() or QApplication([])
+        np.random.seed(0)
+        self.data = np.random.random((128, 128, 128))
+        self.new_data = np.random.random((128, 128, 128))
+        self.viewer = napari.view_image(self.data, visible=False)
+
+    def teardown(self):
+        self.viewer.window.close()
+
+    def time_zoom(self):
+        """Time to zoom in and zoom out."""
+        self.viewer.window.qt_viewer.view.camera.zoom(0.5, center=(0.5, 0.5))
+        self.viewer.window.qt_viewer.view.camera.zoom(2.0, center=(0.5, 0.5))
+
+    def time_set_data(self):
+        """Time to set view slice."""
+        self.viewer.layers[0].data = self.new_data
+
+    def time_refresh(self):
+        """Time to refresh view."""
+        self.viewer.layers[0].refresh()
 
     def time_set_view_slice(self):
         """Time to set view slice."""

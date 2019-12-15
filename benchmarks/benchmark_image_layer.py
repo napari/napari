@@ -37,6 +37,10 @@ class Image2DSuite:
         """Time to get current value."""
         self.layer.data = self.new_data
 
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
+
     def mem_layer(self, n):
         """Memory used by layer."""
         return self.layer
@@ -76,6 +80,10 @@ class Image3DSuite:
     def time_set_data(self, n):
         """Time to get current value."""
         self.layer.data = self.new_data
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def mem_layer(self, n):
         """Memory used by layer."""
