@@ -41,12 +41,41 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
 
+/* ------------- Narrow scrollbar for qtlayer list --------- */
 QtLayerList {
-    min-width: 240px;
-    max-width: 240px;
+  border: 1px solid {{ background }};
+    min-width: 242px;
+    border-radius: 2px;
     padding: 0px;
     margin: 0px;
     border: 0px;
+    margin-bottom: 4px;
+}
+
+QtLayerList {
+  max-width: 8px;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+QtLayerList QScrollBar:vertical {
+    max-width: 8px;
+    margin: 12px 0px;
+}
+
+QtLayerList QScrollBar::add-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar::sub-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar:up-arrow, QtLayerList QScrollBar:down-arrow {
+    height: 4px;
+    width: 4px;
 }
 
 QLabel {
@@ -60,29 +89,21 @@ QStatusBar > QLabel { /* Help QLabel */
   background-color: {{ background }};
 }
 
-QDialog#QtAboutKeybindings {
-  min-width: 500px;
-  max-width: 500px;
-  min-height: 300px;
+QtAboutKeybindings {
+  min-width: 600px;
+  min-height: 605px;
 }
 
 QDialog#QtAbout {
-  min-width: 580px;
-  max-width: 580px;
-  min-height: 300px;
-  max-height: 300px;
+  min-width: 620px;
+  max-width: 620px;
+  min-height: 320px;
+  max-height: 320px;
 }
 
 QtAbout > QLabel {
-   qproperty-alignment: AlignLeft;
-}
-
-QtActiveKeybindings > QLabel {
-   qproperty-alignment: AlignLeft;
-}
-
-QtActiveKeybindings > QLabel {
-   qproperty-alignment: AlignLeft;
+  background-color: {{ background }};
+  qproperty-alignment: AlignLeft;
 }
 
 QTabBar::tab {
@@ -130,6 +151,28 @@ QtDivider[selected=false] {
   background-color: {{ background }};
 }
 
+QComboBox {
+   background-color: {{ primary }};
+   padding-left: 6px;
+   padding-right: 10px;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QComboBox::drop-down {
+   subcontrol-origin: padding;
+   subcontrol-position: top right;
+   width: 30px;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+}
+
+QComboBox::down-arrow {
+   image: url(":/icons/{{ folder }}/drop_down.svg");
+   width: 14px;
+   height: 14px;
+}
+
 /* --------------------- QSlider ------------------------ */
 
 QSlider {
@@ -165,8 +208,8 @@ QtLayerWidget {
   margin: 0px;
   min-height: 32px;
   max-height: 32px;
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 228px;
+  max-width: 228px;
 }
 
 QtLayerWidget[selected="true"] {
@@ -293,11 +336,18 @@ QtControls {
     border: 1px solid {{ foreground }};
     background-color: {{ foreground }};
     border-radius: 2px;
-    padding: 4px;
-    min-height: 210px;
-    max-height: 210px;
+    padding: 10px;
+    min-height: 200px;
+    max-height: 200px;
     min-width: 220px;
     max-width: 220px;
+    margin-left: 8px;
+    margin-right: 8px;
+    margin-bottom: 4px;
+}
+
+QtControls > QFrame{
+    background-color: {{ foreground }};
 }
 
 QtColorBox {
@@ -317,11 +367,18 @@ QtLayerControls {
     background-color: {{ foreground }};
 }
 
+QtLayerControls > QFrame {
+    background-color: {{ foreground }};
+    padding: 0px;
+    border: 0px;
+    margin: 0px;
+}
+
 QtLayerControls > QLabel {
   min-height: 18px;
   max-height: 18px;
-  min-width: 180px;
-  max-width: 180px;
+  min-width: 92px;
+  max-width: 92px;
   padding: 0px;
   border: 0px;
   margin: 0px;
@@ -386,31 +443,9 @@ QtLayerControls > QSlider::sub-page:horizontal {
 }
 
 
-QtLayerControls > QComboBox {
-   background-color: {{ primary }};
-   padding-left: 6px;
-   padding-right: 10px;
-   padding-top: 1px;
-   padding-bottom: 3px;
-}
-
-QtLayerControls > QComboBox::drop-down {
-   subcontrol-origin: padding;
-   subcontrol-position: top right;
-   width: 30px;
-   border-top-right-radius: 10px;
-   border-bottom-right-radius: 10px;
-}
-
-QtLayerControls > QComboBox::down-arrow {
-   image: url(":/icons/{{ folder }}/drop_down.svg");
-   width: 14px;
-   height: 14px;
-}
-
 QtLayerControls > QSpinBox {
    background-color: {{ primary }};
-   border: none;
+   border: 0px;
    padding-left: 14px;
    padding-right: 6px;
    padding-top: 2px;
@@ -489,6 +524,8 @@ QtLayerControls > QDoubleSpinBox::down-arrow {
 QtLayerControls > QPushButton#shuffle {
   background-color: {{ primary }};
   border: 3px solid {{ primary }};
+  margin: 0px;
+  padding: 0px;
   text-align: center;
 }
 
@@ -589,13 +626,13 @@ QtAdditionButton::indicator {
 }
 
 QtLayerButtons {
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 242px;
+  max-width: 242px;
 }
 
 QtViewerButtons {
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 238px;
+  max-width: 238px;
 }
 
 QPushButton {
@@ -857,46 +894,38 @@ QMainWindow::separator:hover {
 
 /* ------------- DockWidgets --------- */
 
-QDockWidget::title {
+#QtCustomTitleBar {
   background-color: {{ background }};
-  text-align: center; /* otherwise text overlaps with the buttons */
-  margin-top:-50px
+  padding-top:3px;
 }
 
-QDockWidget::title:hover {
+#QtCustomTitleBar:hover {
+  background-color: {{ background_darker }};
+}
+
+#QtCustomTitleBarLine {
   background-color: {{ foreground }};
 }
 
-QDockWidget::close-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 8px; left: 0;
-    width: 14px;
+#QtCustomTitleBar > QPushButton {
+  background-color: {{ background }};
+  max-width: 12px;
+  max-height: 12px;
 }
 
-QDockWidget::float-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 24px; left: 0;
-    width: 14px;
+#QtCustomTitleBar > QPushButton:hover {
+  background-color: {{ foreground }};
 }
 
-QDockWidget::close-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 2px; top: 4;
-    width: 14px;
+#QTitleBarCloseButton{
+  image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
 
-QDockWidget::float-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 20px; top: 4;
-    width: 14px;
+#QTitleBarFloatButton{
+  image: url(":/icons/{{ folder }}/pop_out.svg");
+  width: 10px;
+  height: 8px;
+  padding: 2 1 2 1;
 }
 
 /* ------------- QScrollBars --------- */
@@ -998,24 +1027,200 @@ QScrollBar::sub-page {
     background: none;
 }
 
+
+/* ------------- QComboBox --------- */
+
+QComboBox {
+   background-color: {{ primary }};
+   padding-left: 6px;
+   padding-right: 10px;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QComboBox::drop-down {
+   subcontrol-origin: padding;
+   subcontrol-position: top right;
+   width: 30px;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+}
+
+QComboBox::down-arrow {
+   image: url(":/icons/{{ folder }}/drop_down.svg");
+   width: 14px;
+   height: 14px;
+}
+
+
 /* ------------- DimsSliders --------- */
 
-QtDims > QRangeSlider[last_used=true] {
+QtDimSliderWidget > QRangeSlider[last_used=true] {
   qproperty-barColor: {{ secondary }};
   qproperty-handleColor: {{ secondary }};
   qproperty-handleBorderColor: {{ secondary }};
 }
 
-QtDims > QRangeSlider[last_used=false] {
+QtDimSliderWidget > QRangeSlider[last_used=false] {
   qproperty-barColor: {{ highlight }};
   qproperty-handleColor: {{ highlight }};
   qproperty-handleBorderColor: {{ highlight }};
 }
 
-QtDims > QScrollBar::handle[last_used=false]:horizontal {
+QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
     background: {{ highlight }};
 }
 
-QtDims > QScrollBar::handle[last_used=true]:horizontal {
+QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
     background: {{ secondary }};
+}
+
+QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_left.svg");
+}
+
+QtDimSliderWidget > QScrollBar::right-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_right.svg");
+}
+
+
+QtPlayButton {
+    /* border: none; */
+    background: {{ foreground }};
+    border-radius: 3px;
+    min-height: 10px;
+    max-height: 10px;
+    min-width: 10px;
+    max-width: 10px;
+    margin: 0px 2px;
+    padding: 2px;
+}
+
+QtPlayButton[reverse=True] {
+    image: url(":/icons/{{ folder }}/left_arrow.svg");
+}
+
+QtPlayButton[reverse=False] {
+    image: url(":/icons/{{ folder }}/right_arrow.svg");
+}
+
+QtPlayButton[playing=True] {
+    image: url(":/icons/{{ folder }}/new_image.svg");
+    background-color: {{ warning }};
+}
+
+#QtModalPopup {
+  background: transparent;
+}
+
+#QtPopupFrame {
+  background: {{ background }};
+  border: 1px solid {{ secondary }};
+  border-radius: 5px;}
+
+#QtPopupFrame > QLabel {
+  background: {{ background }};
+  color: #aaaaaa;
+  font-size: 12px;
+}
+
+
+#QtPopupFrame > QDoubleSpinBox {
+  background-color: {{ foreground }};
+  border: none;
+  padding: 0px;
+  width: 115px;
+  font-size: 12px;
+  min-height: 20px;
+  border-radius: 4px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-button,
+#QtPopupFrame > QDoubleSpinBox::down-button {
+    background-color: {{ foreground }};
+    subcontrol-origin: margin;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-button:pressed,
+#QtPopupFrame > QDoubleSpinBox::down-button:pressed {
+      background-color: {{ highlight }};
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-button {
+    subcontrol-position: center right;
+    right: 0px;
+}
+
+
+#QtPopupFrame > QDoubleSpinBox::down-button {
+    subcontrol-position: center left;
+    left: 0px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-arrow,
+#QtPopupFrame > QDoubleSpinBox::down-arrow {
+   width: 10px;
+   height: 10px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+}
+
+#QtPopupFrame > QDoubleSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+}
+#QtPopupFrame > QCheckBox {
+  background-color: {{ foreground }};
+  border-radius: 3px;
+  min-height: 20px;
+  max-height: 20px;
+}
+
+
+#QtPopupFrame > QCheckBox::indicator {
+   image: url(":/icons/{{ folder }}/long_right_arrow.svg");
+   width: 20px;
+   height: 20px;
+   padding-right: 4px;
+   padding-left: 6px;
+}
+
+#QtPopupFrame > QCheckBox::indicator:checked {
+   image: url(":/icons/{{ folder }}/long_left_arrow.svg");
+}
+
+
+#QtPopupFrame > QCheckBox:pressed {
+   background: {{ secondary }};
+}
+
+#QtPopupFrame > QPushButton {
+  min-height: 20px;
+}
+
+#QtPopupFrame  > QComboBox {
+   background-color: {{ foreground }};
+   border-radius: 3px;
+}
+
+#slice_label {
+  background-color: {{ background }};
+  color: {{ secondary }};
+  padding: 0;
+  margin: 0;
+  margin-top: 0px;
+  font-size: 11pt;
+  max-height: 12px;
+  min-height: 12px;
+  border: 0px;
+  padding-left: 1px;
+}
+
+#slice_label_sep{
+  background-color: {{ background }};
+  border: 1px solid {{ primary }};
 }

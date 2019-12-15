@@ -117,6 +117,8 @@ class Vectors(Layer):
         # Data containing vectors in the currently viewed slice
         self._data_view = np.empty((0, 2, 2))
         self._displayed_stored = []
+        self._view_vertices = []
+        self._view_faces = []
 
         # length attribute
         self._length = length
@@ -194,7 +196,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.edge_width()
-        self._set_view_slice()
+        self.refresh()
         self.status = format_float(self.edge_width)
 
     @property
@@ -216,7 +218,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.length()
-        self._set_view_slice()
+        self.refresh()
         self.status = format_float(self.length)
 
     @property
@@ -275,15 +277,11 @@ class Vectors(Layer):
             self._data_view = self.data[:, :, disp]
 
         if len(faces) == 0:
-            self._view_vertices = None
-            self._view_faces = None
+            self._view_vertices = []
+            self._view_faces = []
         else:
             self._view_vertices = vertices
             self._view_faces = faces
-
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -358,7 +356,7 @@ class Vectors(Layer):
 
         return xml_list
 
-    def get_value(self):
+    def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 

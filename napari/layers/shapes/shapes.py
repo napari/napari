@@ -587,7 +587,7 @@ class Shapes(Layer):
         self.events.mode(mode=mode)
         if not (mode in draw_modes and old_mode in draw_modes):
             self._finish_drawing()
-        self._set_view_slice()
+        self.refresh()
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -723,11 +723,6 @@ class Shapes(Layer):
             self.selected_data = []
         self._data_view.slice_key = slice_key
 
-        self._set_highlight(force=True)
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
-
     def interaction_box(self, index):
         """Create the interaction box around a shape or list of shapes.
         If a single index is passed then the boudning box will be inherited
@@ -788,7 +783,9 @@ class Shapes(Layer):
             Mx3 array of any indices of vertices for triangles of outline or
             None
         """
-        if self._value[0] is not None or len(self.selected_data) > 0:
+        if self._value is not None and (
+            self._value[0] is not None or len(self.selected_data) > 0
+        ):
             if len(self.selected_data) > 0:
                 index = copy(self.selected_data)
                 if self._value[0] is not None:
@@ -1073,7 +1070,7 @@ class Shapes(Layer):
 
         return data_full
 
-    def get_value(self):
+    def _get_value(self):
         """Determine if any shape at given coord using triangle meshes.
 
         Getting value is not supported yet for 3D meshes
@@ -1148,7 +1145,7 @@ class Shapes(Layer):
         new_z_index = max(self._data_view._z_index) + 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self._set_view_slice()
+        self.refresh()
 
     def move_to_back(self):
         """Moves selected objects to be displayed behind all others."""
@@ -1157,7 +1154,7 @@ class Shapes(Layer):
         new_z_index = min(self._data_view._z_index) - 1
         for index in self.selected_data:
             self._data_view.update_z_index(index, new_z_index)
-        self._set_view_slice()
+        self.refresh()
 
     def _copy_data(self):
         """Copy selected shapes to clipboard."""
@@ -1221,7 +1218,7 @@ class Shapes(Layer):
                     for index in self.selected_data:
                         self._data_view.shift(index, shift)
                     self._selected_box = self._selected_box + shift
-                    self._set_view_slice()
+                    self.refresh()
                 elif vertex < Box.LEN:
                     # Corner / edge vertex is being dragged so resize object
                     box = self._selected_box
@@ -1299,7 +1296,7 @@ class Shapes(Layer):
                         self._transform_box(
                             transform, center=self._fixed_vertex
                         )
-                    self._set_view_slice()
+                    self.refresh()
                 elif vertex == 8:
                     # Rotation handle is being dragged so rotate object
                     handle = self._selected_box[Box.HANDLE]
@@ -1331,7 +1328,7 @@ class Shapes(Layer):
                             index, angle, center=self._fixed_vertex
                         )
                     self._rotate_box(angle, center=self._fixed_vertex)
-                    self._set_view_slice()
+                    self.refresh()
             else:
                 self._is_selecting = True
                 if self._drag_start is None:
@@ -1361,7 +1358,7 @@ class Shapes(Layer):
                         )
                         shapes = self.selected_data
                         self._selected_box = self.interaction_box(shapes)
-                        self._set_view_slice()
+                        self.refresh()
             else:
                 self._is_selecting = True
                 if self._drag_start is None:
@@ -1505,7 +1502,7 @@ class Shapes(Layer):
             self._value = (self.selected_data[0], 4)
             self._moving_value = copy(self._value)
             self._is_creating = True
-            self._set_view_slice()
+            self.refresh()
         elif self._mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             if self._is_creating is False:
                 # Start drawing a path
@@ -1604,7 +1601,7 @@ class Shapes(Layer):
                 data_full = self.expand_shape(vertices)
                 self._data_view.edit(index, data_full, new_type=new_type)
                 self._selected_box = self.interaction_box(self.selected_data)
-            self._set_view_slice()
+            self.refresh()
         elif self._mode == Mode.VERTEX_REMOVE:
             if self._value[1] is not None:
                 # have clicked on a current vertex so remove
@@ -1647,7 +1644,7 @@ class Shapes(Layer):
                         )
                         shapes = self.selected_data
                         self._selected_box = self.interaction_box(shapes)
-                self._set_view_slice()
+                self.refresh()
         else:
             raise ValueError("Mode not recongnized")
 

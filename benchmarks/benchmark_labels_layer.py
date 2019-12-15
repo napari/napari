@@ -18,11 +18,15 @@ class Labels2DSuite:
 
     def time_create_layer(self, n):
         """Time to create layer."""
-        layer = Labels(self.data)
+        Labels(self.data)
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
         self.layer._set_view_slice()
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_update_thumbnail(self, n):
         """Time to update thumbnail."""
@@ -73,11 +77,15 @@ class Labels3DSuite:
 
     def time_create_layer(self, n):
         """Time to create layer."""
-        layer = Labels(self.data)
+        Labels(self.data)
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
         self.layer._set_view_slice()
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_update_thumbnail(self, n):
         """Time to update thumbnail."""

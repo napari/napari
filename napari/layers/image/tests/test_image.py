@@ -1,5 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
+import dask.array as da
+import xarray as xr
 
 import pytest
 from vispy.color import Colormap
@@ -512,3 +514,39 @@ def test_out_of_range_no_contrast(dtype):
     data = np.full((10, 15), -3.2, dtype=dtype)
     layer = Image(data)
     layer._update_thumbnail()
+
+
+@pytest.mark.parametrize(
+    "scale",
+    [
+        (None),
+        ([1, 1]),
+        (np.array([1, 1])),
+        (da.from_array([1, 1], chunks=1)),
+        (da.from_array([1, 1], chunks=2)),
+        (xr.DataArray(np.array([1, 1]))),
+        (xr.DataArray(np.array([1, 1]), dims=('dimension_name'))),
+    ],
+)
+def test_image_scale(scale):
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    Image(data, scale=scale)
+
+
+@pytest.mark.parametrize(
+    "translate",
+    [
+        (None),
+        ([1, 1]),
+        (np.array([1, 1])),
+        (da.from_array([1, 1], chunks=1)),
+        (da.from_array([1, 1], chunks=2)),
+        (xr.DataArray(np.array([1, 1]))),
+        (xr.DataArray(np.array([1, 1]), dims=('dimension_name'))),
+    ],
+)
+def test_image_translate(translate):
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    Image(data, translate=translate)

@@ -8,7 +8,7 @@ from scipy import ndimage as ndi
 from ..image import Image
 from ...util.colormaps import colormaps
 from ...util.event import Event
-from ...util.misc import interpolate_coordinates
+from .labels_utils import interpolate_coordinates
 from ...util.status_messages import format_float
 from ._constants import Mode
 
@@ -33,8 +33,6 @@ class Labels(Image):
         Number of unique colors to use in colormap.
     seed : float
         Seed for colormap random generator.
-    n_dimensional : bool
-        If `True`, paint and fill edit labels across all dimensions.
     name : str
         Name of the layer.
     metadata : dict
@@ -120,7 +118,6 @@ class Labels(Image):
         is_pyramid=None,
         num_colors=50,
         seed=0.5,
-        n_dimensional=False,
         name=None,
         metadata=None,
         scale=None,
@@ -160,7 +157,7 @@ class Labels(Image):
         )
 
         self._data_raw = np.zeros((1,) * self.dims.ndisplay)
-        self._n_dimensional = n_dimensional
+        self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
         self._last_cursor_coord = None
@@ -225,7 +222,7 @@ class Labels(Image):
     def seed(self, seed):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
-        self._set_view_slice()
+        self.refresh()
         self.events.selected_label()
 
     @property
@@ -240,7 +237,7 @@ class Labels(Image):
             self._colormap_name,
             colormaps.label_colormap(num_colors),
         )
-        self._set_view_slice()
+        self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
@@ -331,7 +328,7 @@ class Labels(Image):
         self._mode = mode
 
         self.events.mode(mode=mode)
-        self._set_view_slice()
+        self.refresh()
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -403,7 +400,7 @@ class Labels(Image):
         after.append(self.data[self.dims.indices].copy())
         self.data[self.dims.indices] = prev
 
-        self._set_view_slice()
+        self.refresh()
 
     def undo(self):
         self._load_history(self._undo_history, self._redo_history)
@@ -457,7 +454,7 @@ class Labels(Image):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.dims.indices)] = labels
 
-        self._set_view_slice()
+        self.refresh()
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
@@ -520,7 +517,7 @@ class Labels(Image):
         self.data[slice_coord] = new_label
 
         if refresh is True:
-            self._set_view_slice()
+            self.refresh()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -564,7 +561,7 @@ class Labels(Image):
                 )
             for c in interp_coord:
                 self.paint(c, self.selected_label, refresh=False)
-            self._set_view_slice()
+            self.refresh()
             self._last_cursor_coord = copy(self.coordinates)
 
     def on_mouse_release(self, event):

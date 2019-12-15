@@ -14,11 +14,12 @@ class Image2DSuite:
     def setup(self, n):
         np.random.seed(0)
         self.data = np.random.random((n, n))
+        self.new_data = np.random.random((n, n))
         self.layer = Image(self.data)
 
     def time_create_layer(self, n):
         """Time to create an image layer."""
-        layer = Image(self.data)
+        Image(self.data)
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -31,6 +32,14 @@ class Image2DSuite:
     def time_get_value(self, n):
         """Time to get current value."""
         self.layer.get_value()
+
+    def time_set_data(self, n):
+        """Time to get current value."""
+        self.layer.data = self.new_data
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def mem_layer(self, n):
         """Memory used by layer."""
@@ -49,11 +58,12 @@ class Image3DSuite:
     def setup(self, n):
         np.random.seed(0)
         self.data = np.random.random((n, n, n))
+        self.new_data = np.random.random((n, n, n))
         self.layer = Image(self.data)
 
     def time_create_layer(self, n):
         """Time to create an image layer."""
-        layer = Image(self.data)
+        Image(self.data)
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -66,6 +76,14 @@ class Image3DSuite:
     def time_get_value(self, n):
         """Time to get current value."""
         self.layer.get_value()
+
+    def time_set_data(self, n):
+        """Time to get current value."""
+        self.layer.data = self.new_data
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def mem_layer(self, n):
         """Memory used by layer."""

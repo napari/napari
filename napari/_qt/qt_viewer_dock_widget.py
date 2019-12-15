@@ -3,7 +3,15 @@ from operator import ior
 from typing import List, Optional
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QDockWidget, QWidget
+from qtpy.QtWidgets import (
+    QDockWidget,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -22,6 +30,8 @@ class QtViewerDockWidget(QDockWidget):
         Areas, relative to main window, that the widget is allowed dock.
         Each item in list must be in {'left', 'right', 'top', 'bottom'}
         By default, all areas are allowed.
+    shortcut : str, optional
+        Keyboard shortcut to appear in dropdown menu.
     """
 
     def __init__(
@@ -32,6 +42,7 @@ class QtViewerDockWidget(QDockWidget):
         name: str = '',
         area: str = 'bottom',
         allowed_areas: Optional[List[str]] = None,
+        shortcut=None,
     ):
         self.viewer = viewer
         super().__init__(name)
@@ -47,6 +58,7 @@ class QtViewerDockWidget(QDockWidget):
             raise ValueError(f'area argument must be in {list(areas.keys())}')
         self.area = area
         self.qt_area = areas[area]
+        self.shortcut = shortcut
 
         if allowed_areas:
             if not isinstance(allowed_areas, (list, tuple)):
@@ -65,8 +77,17 @@ class QtViewerDockWidget(QDockWidget):
 
         self.setWidget(widget)
         widget.setParent(self)
-        self._initial_features = self.features()
+        self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
+
+        # custom title bar
+        self.title = QtCustomTitleBar(self)
+        self.setTitleBarWidget(self.title)
+        self.visibilityChanged.connect(self._on_visibility_changed)
+
+    def setFeatures(self, features):
+        super().setFeatures(features)
+        self._features = self.features()
 
     def keyPressEvent(self, event):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
@@ -76,7 +97,98 @@ class QtViewerDockWidget(QDockWidget):
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
-            features = self._initial_features
+            features = self._features
+            if features & self.DockWidgetVerticalTitleBar:
+                features = features ^ self.DockWidgetVerticalTitleBar
         else:
-            features = self._initial_features | self.DockWidgetVerticalTitleBar
+            features = self._features | self.DockWidgetVerticalTitleBar
         self.setFeatures(features)
+
+    @property
+    def is_vertical(self):
+        if not self.isFloating():
+            par = self.parent()
+            if par and hasattr(par, 'dockWidgetArea'):
+                return par.dockWidgetArea(self) in (
+                    Qt.LeftDockWidgetArea,
+                    Qt.RightDockWidgetArea,
+                )
+        return self.size().height() > self.size().width()
+
+    def _on_visibility_changed(self):
+        self.blockSignals(True)
+        self.setTitleBarWidget(None)
+        if not self.isFloating():
+            self.title = QtCustomTitleBar(self, vertical=not self.is_vertical)
+            self.setTitleBarWidget(self.title)
+        self.blockSignals(False)
+
+
+class QtCustomTitleBar(QLabel):
+    """A widget to be used as the titleBar in the QtViewerDockWidget.
+
+    Keeps vertical size minimal, has a hand cursor and styles (in stylesheet)
+    for hover. Close and float buttons.
+
+    Parameters
+    ----------
+    parent : QDockWidget
+        The QtViewerDockWidget to which this titlebar belongs
+    vertical : bool
+        Whether this titlebar is oriented vertically or not.
+    """
+
+    def __init__(self, parent, vertical=False):
+        super().__init__(parent)
+        self.setObjectName("QtCustomTitleBar")
+        self.setProperty('vertical', str(vertical))
+        self.vertical = vertical
+        self.setToolTip('drag to move. double-click to float')
+
+        line = QFrame(self)
+        line.setObjectName("QtCustomTitleBarLine")
+
+        self.close_button = QPushButton(self)
+        self.close_button.setToolTip('hide this panel')
+        self.close_button.setObjectName("QTitleBarCloseButton")
+        self.close_button.setCursor(Qt.ArrowCursor)
+        self.close_button.clicked.connect(
+            lambda: self.parent().toggleViewAction().trigger()
+        )
+        self.float_button = QPushButton(self)
+        self.float_button.setToolTip('float this panel')
+        self.float_button.setObjectName("QTitleBarFloatButton")
+        self.float_button.setCursor(Qt.ArrowCursor)
+        self.float_button.clicked.connect(
+            lambda: self.parent().setFloating(not self.parent().isFloating())
+        )
+
+        if vertical:
+            layout = QVBoxLayout()
+            layout.setSpacing(4)
+            layout.setContentsMargins(0, 8, 0, 8)
+            line.setFixedWidth(1)
+            layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
+            layout.addWidget(self.float_button, 0, Qt.AlignHCenter)
+            layout.addWidget(line, 0, Qt.AlignHCenter)
+
+        else:
+            layout = QHBoxLayout()
+            layout.setSpacing(4)
+            layout.setContentsMargins(8, 1, 8, 0)
+            line.setFixedHeight(1)
+            layout.addWidget(self.close_button)
+            layout.addWidget(self.float_button)
+            layout.addWidget(line)
+
+        self.setLayout(layout)
+        self.setCursor(Qt.OpenHandCursor)
+
+    def sizeHint(self):
+        # this seems to be the correct way to set the height of the titlebar
+        szh = super().sizeHint()
+        if self.vertical:
+            szh.setWidth(20)
+        else:
+            szh.setHeight(20)
+        return szh

@@ -21,13 +21,11 @@ We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/
 
 ## installation
 
-**napari** can be installed on most macOS and Linux systems with Python 3.6 or 3.7 by calling
+**napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6 or 3.7 by calling
 
 ```sh
 $ pip install napari
 ```
-
-We're working on improving our Windows support.
 
 To clone the repository locally and install in editable mode use
 
@@ -37,7 +35,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-For more information see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
+For more information or troubleshooting see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
 
 ## simple example
 
@@ -99,7 +97,7 @@ Contributions are encouraged! Please read our [contributing guide](./docs/CONTRI
 
 If you find `napari` useful please cite this repository using its DOI as follows:
 
-> napari team (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
+> napari contributors (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
 
 Note this DOI will resolve to all versions of napari. To cite a specific version please find the
 DOI of that version on our [zenodo page](https://zenodo.org/record/3555620).

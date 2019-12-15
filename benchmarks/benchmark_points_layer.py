@@ -18,7 +18,11 @@ class Points2DSuite:
 
     def time_create_layer(self, n):
         """Time to create layer."""
-        layer = Points(self.data)
+        Points(self.data)
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -53,7 +57,11 @@ class Points3DSuite:
 
     def time_create_layer(self, n):
         """Time to create layer."""
-        layer = Points(self.data)
+        Points(self.data)
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""

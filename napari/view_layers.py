@@ -236,12 +236,11 @@ def view_points(
 
 
 def view_labels(
-    data,
+    data=None,
     *,
     is_pyramid=None,
     num_colors=50,
     seed=0.5,
-    n_dimensional=False,
     name=None,
     metadata=None,
     scale=None,
@@ -253,6 +252,7 @@ def view_labels(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    path=None,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -273,8 +273,6 @@ def view_labels(
         Number of unique colors to use in colormap.
     seed : float
         Seed for colormap random generator.
-    n_dimensional : bool
-        If `True`, paint and fill edit labels across all dimensions.
     name : str
         Name of the layer.
     metadata : dict
@@ -291,6 +289,9 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    path : str or list of str
+        Path or list of paths to image data. Paths can be passed as strings
+        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -311,11 +312,10 @@ def view_labels(
         title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
     )
     viewer.add_labels(
-        data,
+        data=data,
         is_pyramid=is_pyramid,
         num_colors=num_colors,
         seed=seed,
-        n_dimensional=n_dimensional,
         name=name,
         metadata=metadata,
         scale=scale,
@@ -323,6 +323,7 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        path=path,
     )
     return viewer
 
