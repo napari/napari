@@ -901,15 +901,15 @@ class Points(Layer):
             self._set_highlight(force=True)
 
     def _transform_color(
-        self, colors: ColorType, color_name: str, default: str
+        self, colors: ColorType, elem_name: str, default: str
     ) -> ColorArray:
         """Helper method to return a ColorArray from an arbitrary user input."""
         try:
             transformed = transform_color(colors)
         except (AttributeError, ValueError, KeyError):
             warnings.warn(
-                f"The provided {color_name} parameter contained illegal values, "
-                f"reseting all {color_name} values to {default}."
+                f"The provided {elem_name} parameter contained illegal values, "
+                f"reseting all {elem_name} values to {default}."
             )
             transformed = ColorArray(default)
         else:
@@ -917,8 +917,8 @@ class Points(Layer):
                 len(transformed) != len(self.data)
             ):
                 warnings.warn(
-                    f"The provided {color_name} parameter has {len(colors)} entries, "
-                    f"while the data contains {len(self.data)} entries. Setting {color_name} to {default}."
+                    f"The provided {elem_name} parameter has {len(colors)} entries, "
+                    f"while the data contains {len(self.data)} entries. Setting {elem_name} to {default}."
                 )
                 transformed = ColorArray(default)
         return transformed
@@ -939,8 +939,9 @@ class Points(Layer):
             A tiled version (if needed) of the original input
         """
         data_len = len(self.data)
+        # len == 0 data is handled somewhere else
         if (len(colors) == data_len) or (data_len == 0):
-            return colors
+            return ColorArray(colors)
         # If the user has supplied a list of colors, but its length doesn't
         # match the length of the data, we warn them and return a single
         # color for all inputs
@@ -951,7 +952,7 @@ class Points(Layer):
                 f" is {len(colors)}. Color for all points is resetted to white."
             )
             tiled = np.ones((data_len, 4), dtype=np.float32)
-            return tiled
+            return ColorArray(tiled)
         # All that's left is to deal with length=1 color inputs
         tiled = np.tile(colors.rgba.ravel(), (data_len, 1))
         return ColorArray(tiled)

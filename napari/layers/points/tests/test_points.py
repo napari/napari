@@ -3,6 +3,7 @@ from xml.etree.ElementTree import Element
 
 import numpy as np
 from vispy.color import ColorArray
+import pytest
 
 from napari.layers import Points
 
@@ -753,3 +754,66 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == shape[0]
     assert np.all([type(x) == Element for x in xml])
+
+
+def test_transform_color_basic():
+    """Test inner method with the same name."""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    ca = layer._transform_color('r', 'edge_color', 'black')
+    assert ca == ColorArray('r')
+
+
+def test_transform_color_wrong_colorname():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    with pytest.warns(UserWarning):
+        ca = layer._transform_color('rr', 'edge_color', 'black')
+    assert ca == ColorArray('black')
+
+
+def test_transform_color_wrong_colorlen():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    with pytest.warns(UserWarning):
+        ca = layer._transform_color(
+            ColorArray(['r', 'r']), 'face_color', 'black'
+        )
+    assert ca == ColorArray('black')
+
+
+def test_tile_colors_basic():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    colors = ColorArray(['w'] * shape[0])
+    ca = layer._tile_colors(colors)
+    np.testing.assert_array_equal(ca, colors)
+
+
+def test_tile_colors_wrong_num():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    colors = ColorArray(['w'] * shape[0])
+    with pytest.warns(UserWarning):
+        ca = layer._tile_colors(colors[:-1])
+    np.testing.assert_array_equal(ca, colors)
+
+
+def test_tile_colors_zero_colors():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+    with pytest.warns(UserWarning):
+        ca = layer._tile_colors([])
+    np.testing.assert_array_equal(ca, np.ones((shape[0], 4), dtype=np.float32))
