@@ -495,25 +495,23 @@ class Shapes(Layer):
             with self.block_update_properties():
                 self.current_opacity = opacity
 
-    @property
-    def attrs(self):
-        """dict: Dictionary of layer attributes."""
-        layer_attrs = self._base_attrs
-        del layer_attrs['opacity']
-        return layer_attrs
+    def _get_state(self):
+        """Get dictionary of layer state.
 
-    @property
-    def arrays(self):
-        """dict: Dictionary of layer arrays."""
-        return {
-            'data': self.data,
-            'shape_type': self.shape_type,
-            'z_index': self.z_index,
-            'opacity': self.opacity,
-            'edge_width': self.edge_width,
-            'edge_color': self.edge_color,
-            'face_color': self.face_color,
-        }
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state['shape_type'] = self.shape_type
+        state['opacity'] = self.opacity
+        state['z_index'] = self.z_index
+        state['edge_width'] = self.edge_width
+        state['edge_color'] = self.edge_color
+        state['face_color'] = self.face_color
+        state['data'] = self.data
+        return state
 
     @property
     def mode(self):

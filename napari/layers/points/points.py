@@ -396,22 +396,23 @@ class Points(Layer):
         self.events.face_color()
         self.events.highlight()
 
-    @property
-    def attrs(self):
-        """dict: Dictionary of layer attributes."""
-        layer_attrs = {'symbol': self.symbol, 'edge_width': self.edge_width}
-        layer_attrs.update(self._base_attrs)
-        return layer_attrs
+    def _get_state(self):
+        """Get dictionary of layer state.
 
-    @property
-    def arrays(self):
-        """dict: Dictionary of layer arrays."""
-        return {
-            'data': self.data,
-            'size': self.size,
-            'edge_color': self.edge_color,
-            'face_color': self.face_color,
-        }
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state['symbol'] = self.symbol
+        state['edge_width'] = self.edge_width
+        state['face_color'] = self.face_color
+        state['edge_color'] = self.edge_color
+        state['n_dimensional'] = self.n_dimensional
+        state['size'] = self.size
+        state['data'] = self.data
+        return state
 
     @property
     def selected_data(self):

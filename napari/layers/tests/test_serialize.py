@@ -1,43 +1,26 @@
 import numpy as np
 import pytest
-from napari import layers
 from napari.util.misc import callsignature
+from napari.tests.util import layer_test_data
 
 
-np.random.seed(0)
-surface_data = (
-    np.random.random((10, 2)),
-    np.random.randint(10, size=(6, 3)),
-    np.random.random(10),
-)
-input = [
-    (layers.Image, np.random.random((15, 30))),
-    (layers.Labels, np.random.randint(20, size=(30, 30))),
-    (layers.Points, 20 * np.random.random((10, 2))),
-    (layers.Shapes, 20 * np.random.random((10, 4, 2))),
-    (layers.Surface, surface_data),
-    (layers.Vectors, np.random.random((10, 2, 2))),
-]
-
-
-@pytest.mark.parametrize('Layer,data', input)
-def test_attrs_arrays(Layer, data):
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_attrs_arrays(Layer, data, ndim):
     """Test layer attributes and arrays."""
+    np.random.seed(0)
     layer = Layer(data)
-    properties = layer.attrs
-    properties.update(layer.arrays)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
 
-    # Check layer_type present and correct
-    assert 'layer_type' in properties
-    assert properties['layer_type'] == Layer.__name__
+    properties = layer._get_state()
 
-    # Remove layer_type from properties
-    del properties['layer_type']
-
-    # Check every remaining property is in call signature
+    # Check every property is in call signature
     signature = callsignature(Layer)
     for prop in properties.keys():
         assert prop in signature.parameters
+
+    # Check number of properties is same as number in signature
+    assert len(properties) == len(signature.parameters)
 
     # Check new layer can be created
     new_layer = Layer(**properties)

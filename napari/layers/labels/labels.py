@@ -241,16 +241,20 @@ class Labels(Image):
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
-    @property
-    def attrs(self):
-        """dict: Dictionary of layer attributes."""
-        layer_attrs = {
-            'num_colors': self.num_colors,
-            'seed': self.seed,
-            'n_dimensional': self.n_dimensional,
-        }
-        layer_attrs.update(self._base_attrs)
-        return layer_attrs
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state['is_pyramid'] = self.is_pyramid
+        state['num_colors'] = self.num_colors
+        state['seed'] = self.seed
+        state['data'] = self.data
+        return state
 
     @property
     def selected_label(self):

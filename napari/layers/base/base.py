@@ -412,11 +412,15 @@ class Layer(KeymapMixin, ABC):
             (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
         )
 
-    @property
-    def _base_attrs(self):
-        """dict: Dictionary of attributes on base layer."""
+    def _get_base_state(self):
+        """Get dictionary of attributes on base layer.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of attributes on base layer.
+        """
         base_dict = {
-            'layer_type': type(self).__name__,
             'name': self.name,
             'metadata': self.metadata,
             'scale': list(self.scale),
@@ -427,15 +431,9 @@ class Layer(KeymapMixin, ABC):
         }
         return base_dict
 
-    @property
-    def attrs(self):
-        """dict: Dictionary of layer attributes."""
-        return self._base_attrs
-
-    @property
-    def arrays(self):
-        """dict: Dictionary of layer arrays."""
-        return {'data': self.data}
+    @abstractmethod
+    def _get_state(self):
+        raise NotImplementedError()
 
     @property
     def thumbnail(self):
