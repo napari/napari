@@ -1,8 +1,10 @@
 import numpy as np
+from vispy.color import get_color_dict
 
 from napari.components import LayerList
 from napari.layers import Image
 from napari._qt.qt_layerlist import QtLayerList, QtDivider
+from napari._qt.layers.qt_base_layer import hex_to_name
 
 
 def check_layout_layers(layout, layers):
@@ -206,3 +208,13 @@ def test_reordering_layers(qtbot):
     assert view.vbox_layout.count() == 2 * (len(layers) + 1)
     assert check_layout_layers(view.vbox_layout, layers)
     assert check_layout_dividers(view.vbox_layout, len(layers))
+
+
+def test_hex_to_name_is_updated():
+    fail_msg = (
+        "If this test fails then vispy have probably updated their color dictionary, located "
+        "in vispy.color.get_color_dict. This not necessarily a bad thing, but make sure that "
+        "nothing terrible has happened due to this change."
+    )
+    new_hex_to_name = {v.lower(): k for k, v in get_color_dict().items()}
+    assert new_hex_to_name == hex_to_name, fail_msg

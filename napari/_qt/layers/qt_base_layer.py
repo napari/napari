@@ -1,3 +1,4 @@
+from vispy.color import get_color_dict
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
@@ -59,3 +60,19 @@ class QtLayerControls(QFrame):
                 self.layer.blending, Qt.MatchFixedString
             )
             self.blendComboBox.setCurrentIndex(index)
+
+
+def _convert_color_hex_to_name():
+    """Create a dictionary converting hexadecimal RGB colors into their
+    'official' name.
+
+    Returns
+    -----
+    hex_to_rgb : dict
+        Mapping from hexadecimal RGB ('#ff0000') to name ('red').
+    """
+    colordict = get_color_dict()
+    return {v.lower(): k for k, v in colordict.items()}
+
+
+hex_to_name = _convert_color_hex_to_name()
