@@ -880,12 +880,12 @@ QtDeletePointsButton {
 QtCopyToClipboardButton {
    background-color: {{ background }};
    margin: 0px;
-   padding: 0px;
+   padding: 1px 1px 3px 2px;
    border: 0px;
-   min-width: 14px;
-   max-width: 14px;
-   min-height: 14px;
-   max-height: 14px;
+   min-width: 16px;
+   max-width: 16px;
+   min-height: 16px;
+   max-height: 16px;
    border-radius: 3px;
    image: url(":/icons/{{ folder }}/copy_to_clipboard.svg");
 }
