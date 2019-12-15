@@ -13,7 +13,8 @@ def read_swc(swc_path):
     Returns
     -------
     df : :class:`pandas.DataFrame`
-        Indicies, coordinates, and parents of each node in the swc. Coordinates are in spatial units.
+        Indicies, coordinates, and parents of each node in the swc.
+        Coordinates are in spatial units.
     """
 
     # check input
@@ -60,7 +61,8 @@ def space_to_voxel(spatial_coord, spacing, origin=np.array([0, 0, 0])):
     spacing : :class:`numpy.array`
         Conversion factor (spatial units/voxel). Assumed to be np.array([x,y,z])
     origin : :class:`numpy.array`
-        Origin of the spatial coordinate. Default is (0,0,0). Assumed to be np.array([x,y,z])
+        Origin of the spatial coordinate. Default is (0,0,0). Assumed to be
+        np.array([x,y,z])
     Returns
     -------
     voxel_coord : :class:`numpy.array`
@@ -73,20 +75,24 @@ def space_to_voxel(spatial_coord, spacing, origin=np.array([0, 0, 0])):
 
 
 def swc_to_voxel(df, spacing, origin=np.array([0, 0, 0])):
-    """Converts coordinates in pd.DataFrame representing swc from spatial units to voxel units
+    """Converts coordinates in pd.DataFrame representing swc from spatial units
+    to voxel units
 
     Parameters
     ----------
     df : :class:`pandas.DataFrame`
-        Indicies, coordinates, and parents of each node in the swc. Coordinates are in spatial units.
+        Indicies, coordinates, and parents of each node in the swc. Coordinates
+        are in spatial units.
     spacing : :class:`numpy.array`
         Conversion factor (spatial units/voxel). Assumed to be np.array([x,y,z])
     origin : :class:`numpy.array`
-        Origin of the spatial coordinate. Default is (0,0,0). Assumed to be np.array([x,y,z])
+        Origin of the spatial coordinate. Default is (0,0,0). Assumed to be
+        np.array([x,y,z])
     Returns
     -------
     df_voxel : :class:`pandas.DataFrame`
-        Indicies, coordinates, and parents of each node in the swc. Coordinates are in voxel units.
+        Indicies, coordinates, and parents of each node in the swc. Coordinates
+        are in voxel units.
     """
     x = []
     y = []
@@ -111,11 +117,13 @@ def df_to_graph(df_voxel):
     Parameters
     ----------
     df_voxel : :class:`pandas.DataFrame`
-        Indicies, coordinates, and parents of each node in the swc. Coordinates are in voxel units.
+        Indicies, coordinates, and parents of each node in the swc. Coordinates
+        are in voxel units.
     Returns
     -------
     G : :class:`networkx.classes.digraph.DiGraph`
-        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
+        Neuron from swc represented as directed graph. Coordinates x,y,z are
+        node attributes accessed by keys 'x','y','z' respectively.
     """
     G = nx.DiGraph()
 
@@ -145,13 +153,16 @@ def get_sub_neuron(G, bounding_box):
     Parameters
     ----------
     G : :class:`networkx.classes.digraph.DiGraph`
-        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
+        Neuron from swc represented as directed graph. Coordinates x,y,z are
+        node attributes accessed by keys 'x','y','z' respectively.
     bounding_box : tuple or list or None
-        Defines a bounding box around a sub-region around the neuron. Length 2 tuple/list. First element is the coordinate of one corner (inclusive) and second element is the coordinate of the opposite corner (exclusive). Both coordinates are numpy.array([x,y,z])in voxel units.
+        Defines a bounding box around a sub-region around the neuron. Length 2
+        tuple/list. First element is the coordinate of one corner (inclusive) and second element is the coordinate of the opposite corner (exclusive). Both coordinates are numpy.array([x,y,z])in voxel units.
     Returns
     -------
     G_sub : :class:`networkx.classes.digraph.DiGraph`
-        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
+        Neuron from swc represented as directed graph. Coordinates x,y,z are
+        node attributes accessed by keys 'x','y','z' respectively.
     """
     G_sub = G.copy()  # make copy of input G
     start = bounding_box[0]
@@ -187,16 +198,19 @@ def get_sub_neuron(G, bounding_box):
 
 
 def graph_to_paths(G):
-    """Converts neuron represented as a directed graph with no cycles into a list of paths.
+    """Converts neuron represented as a directed graph with no cycles into a
+    list of paths.
 
     Parameters
     ----------
     G : :class:`networkx.classes.digraph.DiGraph`
-        Neuron from swc represented as directed graph. Coordinates x,y,z are node attributes accessed by keys 'x','y','z' respectively.
+        Neuron from swc represented as directed graph. Coordinates x,y,z are
+        node attributes accessed by keys 'x','y','z' respectively.
     Returns
     -------
     paths : list
-        List of Nx3 numpy.array. Rows of the array are 3D coordinates in voxel units. Each array is one path.
+        List of Nx3 numpy.array. Rows of the array are 3D coordinates in voxel
+        units. Each array is one path.
     """
     G_cp = G.copy()  # make copy of input G
     branches = []
@@ -215,7 +229,7 @@ def graph_to_paths(G):
     # convert branches into list of paths
     paths = []
     for branch in branches:
-        # get vertices in branch as n by 3 numpy.array, where n is length of branches
+        # get vertices in branch as n by 3 numpy.array; n = length of branches
         path = np.zeros((len(branch), 3), dtype=np.int64)
         for idx, node in enumerate(branch):
             path[idx, 0] = np.int64(G_cp.nodes[node]['x'])

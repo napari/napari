@@ -950,13 +950,21 @@ class ViewerModel(KeymapMixin):
         Parameters
         ----------
         swc_path : str
-            String representing the path to the swc file. Coordinates in swc file are assumed to be in spatial units.
+            String representing the path to the swc file. Coordinates in swc
+            file are assumed to be in spatial units.
         spacing : :class:`numpy.array`
-            Conversion factor (spatial units/voxel). Assumed to be np.array([x,y,z])
+            Conversion factor (spatial units/voxel). Assumed to be
+            np.array([x,y,z])
         origin : :class:`numpy.array`
-            Origin of the spatial coordinate. Default is (0,0,0). Assumed to be np.array([x,y,z])
+            Origin of the spatial coordinate. Default is (0,0,0). Assumed to be
+            np.array([x,y,z])
         bounding_box : tuple or list or None
-            Defines a bounding box around a sub-region around the neuron. Length 2 tuple/list. First element is the coordinate of one corner (inclusive) and second element is the coordinate of the opposite corner (exclusive). Both coordinates are numpy.array([x,y,z])in voxel units. If bounding_box=None then the entire neuron will be added.
+            Defines a bounding box around a sub-region around the neuron.
+            Length 2 tuple/list. First element is the coordinate of one corner
+            (inclusive) and second element is the coordinate of the opposite
+            corner (exclusive). Both coordinates are numpy.array([x,y,z])in
+            voxel units. If bounding_box=None then the entire neuron will be
+            added.
         edge_width : float or list
             Thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
