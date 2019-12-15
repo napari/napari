@@ -104,12 +104,9 @@ class QtCopyToClipboardButton(QPushButton):
     def __init__(self, text_edit):
         super().__init__()
         self.text_edit = text_edit
-        self.setFixedHeight(28)
-        self.setFixedWidth(28)
         self.setToolTip("Copy to clipboard")
-        self.clicked.connect(lambda: self.copyToClipboard())
+        self.clicked.connect(self.copyToClipboard)
 
     def copyToClipboard(self):
         cb = QtGui.QGuiApplication.clipboard()
-        cb.clear()
         cb.setText(str(self.text_edit.toPlainText()))
