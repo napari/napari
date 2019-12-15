@@ -370,11 +370,7 @@ def test_edge_color():
     # Instantiate with custom edge color list
     col_list = ['red', 'green'] * 5
     layer = Points(data, edge_color=col_list)
-    # Modified the behavior of the following assertion since I don't understand
-    # why should we assert that edge_color is black. If it's supposed to
-    # save the last modification of colors, then it should either be the given
-    # col_list or simply empty.
-    # assert layer.edge_color == ca_black[0]
+    assert layer.edge_color == ColorArray(col_list[-1])
     np.testing.assert_allclose(
         layer.edge_colors.rgba, ColorArray(col_list).rgba
     )
@@ -443,12 +439,7 @@ def test_face_color():
     # Instantiate with custom face color list
     col_list = ['red', 'green'] * 5
     layer = Points(data, face_color=col_list)
-    # Modified the behavior of the following assertion since I don't understand
-    # why should we assert that edge_color is black. If it's supposed to
-    # save the last modification of colors, then it should either be the given
-    # col_list or simply empty.
-    # assert layer.edge_color == ColorArray('black')
-    # assert layer.face_color == ca_white[0]
+    assert layer.face_color == ColorArray(col_list[-1])
     np.testing.assert_allclose(
         layer.face_colors.rgba, ColorArray(col_list).rgba
     )
@@ -814,6 +805,7 @@ def test_tile_colors_zero_colors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
+    real = ColorArray(np.ones((shape[0], 4), dtype=np.float32))
     with pytest.warns(UserWarning):
         ca = layer._tile_colors([])
-    np.testing.assert_array_equal(ca, np.ones((shape[0], 4), dtype=np.float32))
+    np.testing.assert_array_equal(ca, real)

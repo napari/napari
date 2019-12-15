@@ -220,6 +220,11 @@ class Points(Layer):
 
         self.edge_colors = self._tile_colors(self._edge_color)
         self.face_colors = self._tile_colors(self._face_color)
+        # Currently we keep in edge_color and face_color the last
+        # used color. This behavior will probably change in the near
+        # future.
+        self._edge_color = self._edge_color[-1]
+        self._face_color = self._face_color[-1]
         self.sizes = size
 
         # Trigger generation of view slice and thumbnail
