@@ -872,6 +872,15 @@ QtDeletePointsButton {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
 
+QCopyToClipboardButton {
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   border-radius: 3px;
+   image: url(":/icons/{{ folder }}/copy_to_clipboard.svg");
+}
+
 /* ------------- QMainWindow --------- */
 /* Styling the QMainWindow is important because
 any QDockWidgets will use the MainWindow styles

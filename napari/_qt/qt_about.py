@@ -6,7 +6,7 @@ import scipy
 import numpy
 import dask
 
-from qtpy import QtCore, API_NAME, PYSIDE_VERSION, PYQT_VERSION
+from qtpy import QtCore, QtGui, API_NAME, PYSIDE_VERSION, PYQT_VERSION
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QVBoxLayout,
@@ -38,11 +38,10 @@ class QtAbout(QDialog):
         self.infoTextBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.infoTextBox.setLineWrapMode(QTextEdit.NoWrap)
         # Add text copy button
-        self.copy_button = QPushButton("Copy")
-
+        self.info_copy_button = QCopyToClipboardButton(self.infoTextBox)
         self.info_layout = QHBoxLayout()
         self.info_layout.addWidget(self.infoTextBox)
-        self.info_layout.addWidget(self.copy_button)
+        self.info_layout.addWidget(self.info_copy_button)
         self.layout.addLayout(self.info_layout)
 
         # self.layout.addWidget(self.infoTextBox, 1)
@@ -84,7 +83,13 @@ class QtAbout(QDialog):
         )
         self.citationTextBox = QTextEdit(citation_text)
         self.citationTextBox.setFixedHeight(64)
-        self.layout.addWidget(self.citationTextBox)
+        self.citation_copy_button = QCopyToClipboardButton(
+            self.citationTextBox
+        )
+        self.citation_layout = QHBoxLayout()
+        self.citation_layout.addWidget(self.citationTextBox)
+        self.citation_layout.addWidget(self.citation_copy_button)
+        self.layout.addLayout(self.citation_layout)
 
         self.setLayout(self.layout)
 
@@ -96,3 +101,18 @@ class QtAbout(QDialog):
         d.setWindowTitle('About')
         d.setWindowModality(Qt.ApplicationModal)
         d.exec_()
+
+
+class QCopyToClipboardButton(QPushButton):
+    def __init__(self, text_edit):
+        super().__init__()
+        self.text_edit = text_edit
+        self.setFixedHeight(28)
+        self.setFixedWidth(28)
+        self.setToolTip("Copy to clipboard")
+        self.clicked.connect(lambda: self.copyToClipboard())
+
+    def copyToClipboard(self):
+        cb = QtGui.QGuiApplication.clipboard()
+        cb.clear()
+        cb.setText(str(self.text_edit.toPlainText()))
