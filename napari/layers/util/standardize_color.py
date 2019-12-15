@@ -21,8 +21,9 @@ def transform_color(colors) -> ColorArray:
     return color_switch[colortype](colors)
 
 
-def handle_str(colors) -> ColorArray:
+def handle_str(colors: str) -> ColorArray:
     """Creates an array from a color that was given as a string."""
+    colors = colors.replace("transparent", "#00000000")
     return ColorArray(colors)
 
 

@@ -24,6 +24,7 @@ GREENF = Color('green').hex
 single_color_options = [
     RED,
     GREENA,
+    'transparent',
     'red',
     'g',
     GREENF,
@@ -45,6 +46,7 @@ single_color_options = [
 single_colors_as_colorarray = [
     ColorArray(RED),
     ColorArray(GREEN),
+    ColorArray((0.0, 0.0, 0.0, 0.0,)),
     ColorArray(RED),
     ColorArray('#00ff00'),
     ColorArray(GREEN),
