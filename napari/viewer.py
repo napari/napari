@@ -71,7 +71,8 @@ class Viewer(ViewerModel):
             If True includes the napari viewer, otherwise just includes the
             canvas.
         max_shape : int
-            Size to which to rescale the size of the larger axis.
+            Size to which to rescale the largest axis. Only used without
+            viewer (with_viewer = False).
 
         Returns
         -------
@@ -79,27 +80,27 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        canvas_size = self.window.qt_viewer.canvas.size
-        if max_shape:
-            if canvas_size[0] > canvas_size[1]:
-                new_shape = (
-                    max_shape,
-                    int(canvas_size[1] * max_shape / canvas_size[0]),
-                )
-            else:
-                new_shape = (
-                    int(canvas_size[0] * max_shape / canvas_size[1]),
-                    max_shape,
-                )
-            self.window.qt_viewer.canvas.size = new_shape
-
         if with_viewer:
             image = self.window.screenshot()
-        else:
-            image = self.window.qt_viewer.screenshot()
 
-        # restore shape
-        self.window.qt_viewer.canvas.size = canvas_size
+        else:
+            # capture initial canvas size to reset after screenshot
+            canvas_size = self.window.qt_viewer.canvas.size
+            if max_shape:
+                if canvas_size[0] > canvas_size[1]:
+                    new_shape = (
+                        max_shape,
+                        int(canvas_size[1] * max_shape / canvas_size[0]),
+                    )
+                else:
+                    new_shape = (
+                        int(canvas_size[0] * max_shape / canvas_size[1]),
+                        max_shape,
+                    )
+                self.window.qt_viewer.canvas.size = new_shape
+
+            image = self.window.qt_viewer.screenshot()
+            self.window.qt_viewer.canvas.size = canvas_size
 
         return image
 

@@ -1,6 +1,5 @@
 import imageio
 import copy
-import os
 
 from . import util
 
@@ -221,33 +220,6 @@ class Animation:
         self.update_viewer_from_state(new_frame)
         self.current_interpolframe = new_frame
 
-    def frame_generator(self, frame=None, max_shape=None):
-        """Generator of frames of the animation
-
-        Parameters
-        -------
-        frame : int
-            specific frame to return
-
-        """
-
-        self.create_steps()
-        # capture SceneCanvas size of frist frame to set size of next ones
-        self.update_viewer_from_state(0)
-        frame_size = self.viewer.window.qt_viewer.canvas.size
-
-        if frame is not None:
-            self.update_viewer_from_state(frame)
-            self.viewer.window.qt_viewer.canvas.size = frame_size
-            image = self.viewer.screenshot(max_shape=max_shape)
-            while True:
-                yield image
-        else:
-            for i in range(len(self.states_dict)):
-                self.update_viewer_from_state(i)
-                self.viewer.window.qt_viewer.canvas.size = frame_size
-                yield self.viewer.screenshot(max_shape=max_shape)
-
     def update_viewer_from_state(self, frame):
         """Set the viewer to a given interpolated frame
 
@@ -278,14 +250,58 @@ class Animation:
         # update view
         self.viewer.window.qt_viewer.view.camera.view_changed()
 
-    def make_movie(
+    def frame_generator(self, frame=None, with_viewer=False, max_shape=None):
+        """Generator of frames of the animation
+
+        Parameters
+        -------
+        frame : int
+            Specific frame to return.
+        with_viewer : bool
+            If True includes the napari viewer, otherwise just includes the
+            canvas.
+        max_shape : int
+            Size to which to rescale the largest axis. Only used without
+            viewer (with_viewer = False).
+
+        """
+
+        # create states
+        self.create_steps()
+
+        # capture SceneCanvas size of frist frame to set size of next ones
+        self.update_viewer_from_state(0)
+        frame_size = self.viewer.window.qt_viewer.canvas.size
+        # if no max size provided, take current size as default
+        if max_shape is None:
+            max_shape = max(frame_size)
+
+        # return specific frame
+        if frame is not None:
+            self.update_viewer_from_state(frame)
+            image = self.viewer.screenshot(
+                max_shape=max_shape, with_viewer=with_viewer
+            )
+            while True:
+                yield image
+        # return all frames as a generator
+        else:
+            for i in range(len(self.states_dict)):
+                self.update_viewer_from_state(i)
+                if not with_viewer:
+                    self.viewer.window.qt_viewer.canvas.size = frame_size
+                yield self.viewer.screenshot(
+                    max_shape=max_shape, with_viewer=with_viewer
+                )
+
+    def animate(
         self,
         name="movie.mp4",
         fps=20,
+        quality=5,
+        format=None,
         with_viewer=False,
         max_shape=None,
-        compression_quality=5,
-        format=None,
     ):
         """Create a movie based on key-frames
 
@@ -296,39 +312,33 @@ class Animation:
             should be either .mp4 or .gif
         fps : int
             frames per second
-        max_shape : int
-            Size to which to rescale the size of the larger axis.
-        compression_quality: float
+        quality: float
             number from 1 (lowest quality) to 9
             only applies to mp4
         format: str
             The format to use to write the file. By default imageio selects the appropriate for you based on the filename.
+        with_viewer : bool
+            If True includes the napari viewer, otherwise just includes the
+            canvas.
+        max_shape : int
+            Size to which to rescale the largest axis. Only used without
+            viewer (with_viewer = False).
         """
 
-        # creat all states
-        self.create_steps()
-
-        # if no size if is given, capture of frame to set the size
-        if max_shape is None:
-            screenshot = self.viewer.screenshot()
-            max_shape = max(screenshot)
-
-        # capture SceneCanvas size of frist frame to set size of next ones
-        frame_gen = self.frame_generator(max_shape=max_shape)
+        # create a frame generator
+        frame_gen = self.frame_generator(
+            max_shape=max_shape, with_viewer=with_viewer
+        )
 
         # create imageio writer and add all frames
-        _, extension = os.path.splitext(name)
-        if extension == '.mp4':
+        if quality is not None:
             writer = imageio.get_writer(
-                name,
-                fps=fps,
-                quality=compression_quality,
-                format=format,
-                output_params=['-timeout', '3'],
+                name, fps=fps, quality=quality, format=format,
             )
         else:
             writer = imageio.get_writer(name, fps=fps, format=format)
-        for frame in range(len(self.interpolated_states["ndisplay"])):
-            newim = next(frame_gen)
-            writer.append_data(newim)
+
+        # save frames
+        for frame in frame_gen:
+            writer.append_data(frame)
         writer.close()
