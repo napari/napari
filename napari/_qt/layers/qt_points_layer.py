@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
 )
 
-from .qt_base_layer import QtLayerControls, hex_to_name
+from .qt_base_layer import QtLayerControls
 from ...layers.points._constants import Mode, Symbol
 
 
@@ -173,22 +173,18 @@ class QtPointsControls(QtLayerControls):
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event):
-        hex_repr = self.layer.edge_color.hex[0]
+        color = self.layer.edge_color
         with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(
-                hex_to_name.get(hex_repr, hex_repr), Qt.MatchFixedString
-            )
+            index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
             self.edgeComboBox.setCurrentIndex(index)
-        self.edgeColorSwatch.setStyleSheet("background-color: " + hex_repr)
+        self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event):
-        hex_repr = self.layer.face_color.hex[0]
+        color = self.layer.face_color
         with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(
-                hex_to_name.get(hex_repr, hex_repr), Qt.MatchFixedString
-            )
+            index = self.faceComboBox.findText(color, Qt.MatchFixedString)
             self.faceComboBox.setCurrentIndex(index)
-        self.faceColorSwatch.setStyleSheet("background-color: " + hex_repr)
+        self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_editable_change(self, event):
         self.select_button.setEnabled(self.layer.editable)

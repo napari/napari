@@ -1,13 +1,13 @@
 import pytest
 
-from colors_data import (
+from .colors_data import (
     single_color_options,
     single_colors_as_colorarray,
     two_color_options,
     two_colors_as_colorarray,
     invalid_colors,
 )
-from napari.layers.util.standardize_color import transform_color
+from napari.util.color.standardize_color import transform_color
 
 
 @pytest.mark.parametrize(

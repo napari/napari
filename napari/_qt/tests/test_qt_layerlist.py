@@ -4,7 +4,7 @@ from vispy.color import get_color_dict
 from napari.components import LayerList
 from napari.layers import Image
 from napari._qt.qt_layerlist import QtLayerList, QtDivider
-from napari._qt.layers.qt_base_layer import hex_to_name
+from napari.util.color.standardize_color import hex_to_name
 
 
 def check_layout_layers(layout, layers):

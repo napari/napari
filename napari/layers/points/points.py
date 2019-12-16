@@ -1,15 +1,16 @@
 from typing import Union, List, Tuple, AnyStr
 import warnings
-
 from xml.etree.ElementTree import Element
-import numpy as np
 from copy import copy, deepcopy
+
+from vispy.color import get_color_names, Color, ColorArray
+import numpy as np
+
 from ..base import Layer
 from ...util.event import Event
 from ...util.status_messages import format_float
-from vispy.color import get_color_names, Color, ColorArray
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
-from ..util.standardize_color import transform_color
+from napari.util.color.standardize_color import transform_color, hex_to_name
 
 
 ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
@@ -164,6 +165,7 @@ class Points(Layer):
             highlight=Event,
         )
         self._colors = get_color_names()
+        self._colors.append("transparent")
 
         # Save the point coordinates
         self._data = data
@@ -262,11 +264,11 @@ class Points(Layer):
                     # Add the default size, with a value for each dimension
                     new_size = np.repeat(self.size, self._sizes.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
-                new_edge_colors = np.tile(self.edge_color.rgba, (adding, 1))
+                new_edge_colors = np.tile(self._edge_color.rgba, (adding, 1))
                 self.edge_colors = self.edge_colors.extend(
                     ColorArray(new_edge_colors)
                 )
-                new_face_colors = np.tile(self.face_color.rgba, (adding, 1))
+                new_face_colors = np.tile(self._face_color.rgba, (adding, 1))
                 self.face_colors = self.face_colors.extend(new_face_colors)
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
         self._update_dims()
@@ -362,9 +364,11 @@ class Points(Layer):
         self.events.highlight()
 
     @property
-    def edge_color(self) -> ColorArray:
+    def edge_color(self) -> str:
         """Edge color of marker for the next added point."""
-        return self._edge_color
+        return hex_to_name.get(
+            self._edge_color.hex[0], self._edge_color.hex[0]
+        )
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType) -> None:
@@ -377,9 +381,11 @@ class Points(Layer):
         self.events.highlight()
 
     @property
-    def face_color(self) -> ColorArray:
+    def face_color(self) -> str:
         """Face color of marker for the next added point."""
-        return self._face_color
+        return hex_to_name.get(
+            self._face_color.hex[0], self._edge_color.hex[0]
+        )
 
     @face_color.setter
     def face_color(self, face_color: ColorType) -> None:

@@ -333,18 +333,18 @@ def test_edge_color():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     ca_black = ColorArray(['black'] * shape[0])
-    assert layer.edge_color == ca_black[0]
+    assert layer.edge_color == 'black'
     assert len(layer.edge_colors) == shape[0]
     np.testing.assert_allclose(ca_black.rgba, layer.edge_colors.rgba)
 
     # With no data selected chaning edge color has no effect
     layer.edge_color = 'blue'
-    assert layer.edge_color == ColorArray('blue')
+    assert layer.edge_color == 'blue'
     np.testing.assert_allclose(ca_black.rgba, layer.edge_colors.rgba)
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
-    assert layer.edge_color == ca_black[0]
+    assert layer.edge_color == 'black'
     layer.edge_color = ColorArray('green')
     ca_green = ColorArray(['green'] * len(layer.selected_data))
     np.testing.assert_allclose(ca_green.rgba, layer.edge_colors[:2].rgba)
@@ -365,12 +365,12 @@ def test_edge_color():
 
     # Instantiate with custom edge color
     layer = Points(data, edge_color='red')
-    np.testing.assert_allclose(layer.edge_color.rgba, ColorArray('red').rgba)
+    assert layer.edge_color == 'red'
 
     # Instantiate with custom edge color list
     col_list = ['red', 'green'] * 5
     layer = Points(data, edge_color=col_list)
-    assert layer.edge_color == ColorArray(col_list[-1])
+    assert layer.edge_color == 'green'
     np.testing.assert_allclose(
         layer.edge_colors.rgba, ColorArray(col_list).rgba
     )
@@ -402,18 +402,18 @@ def test_face_color():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     ca_white = ColorArray(['white'] * shape[0])
-    assert layer.face_color == ca_white[0]
+    assert layer.face_color == 'white'
     assert len(layer.face_colors) == shape[0]
     np.testing.assert_allclose(ca_white.rgba, layer.face_colors.rgba)
 
     # With no data selected chaning face color has no effect
     layer.face_color = 'blue'
-    assert layer.face_color == ColorArray('blue')
+    assert layer.face_color == 'blue'
     np.testing.assert_allclose(ca_white.rgba, layer.face_colors.rgba)
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
-    assert layer.face_color == ca_white[0]
+    assert layer.face_color == 'white'
     layer.face_color = ColorArray('green')
     ca_green = ColorArray(['green'] * len(layer.selected_data))
     np.testing.assert_allclose(ca_green.rgba, layer.face_colors[:2].rgba)
@@ -434,12 +434,12 @@ def test_face_color():
 
     # Instantiate with custom face color
     layer = Points(data, face_color='red')
-    np.testing.assert_allclose(layer.face_color.rgba, ColorArray('red').rgba)
+    assert layer.face_color == 'red'
 
     # Instantiate with custom face color list
     col_list = ['red', 'green'] * 5
     layer = Points(data, face_color=col_list)
-    assert layer.face_color == ColorArray(col_list[-1])
+    assert layer.face_color == 'green'
     np.testing.assert_allclose(
         layer.face_colors.rgba, ColorArray(col_list).rgba
     )

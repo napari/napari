@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from ..colormaps import AVAILABLE_COLORMAPS
+from ..color.colormaps import AVAILABLE_COLORMAPS
 from vispy.color.color_array import ColorArray
 
 

@@ -8,7 +8,7 @@ from vispy.color import ColorArray
 from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
-from ..util import colormaps
+from ..util.color import colormaps
 from ..util.event import EmitterGroup, Event
 from ..util.keybindings import KeymapMixin
 from ..util.theme import palettes

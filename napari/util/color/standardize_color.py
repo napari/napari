@@ -1,7 +1,7 @@
 import types
 
 import numpy as np
-from vispy.color import Color, ColorArray
+from vispy.color import Color, ColorArray, get_color_dict
 
 
 def transform_color(colors) -> ColorArray:
@@ -66,3 +66,19 @@ color_switch = {
     Color: handle_color,
     ColorArray: handle_color,
 }
+
+
+def _convert_color_hex_to_name():
+    """Create a dictionary converting hexadecimal RGB colors into their
+    'official' name.
+
+    Returns
+    -----
+    hex_to_rgb : dict
+        Mapping from hexadecimal RGB ('#ff0000') to name ('red').
+    """
+    colordict = get_color_dict()
+    return {v.lower(): k for k, v in colordict.items()}
+
+
+hex_to_name = _convert_color_hex_to_name()
