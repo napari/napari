@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import numpy as np
 from qtpy import API_NAME
 from qtpy.QtCore import QObject, QThread
@@ -113,3 +115,11 @@ def new_worker_qthread(
     if start:
         thread.start()  # sometimes need to connect stuff before starting
     return worker, thread
+
+
+@contextmanager
+def qt_signals_blocked(obj):
+    """Context manager to temporarily block signals from `obj`"""
+    obj.blockSignals(True)
+    yield
+    obj.blockSignals(False)
