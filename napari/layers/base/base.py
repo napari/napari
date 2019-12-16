@@ -610,6 +610,7 @@ class Layer(KeymapMixin, ABC):
 
         value = self._value
 
+        # FIXME: deprecation warning... but logic unclear
         if value is not None and not np.all(value == (None, None)):
             msg += ': '
             if type(value) == tuple:
