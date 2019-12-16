@@ -3,7 +3,7 @@ from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from unittest import mock
 
 
-def test_console(qtbot, mocker):
+def test_console(qtbot):
     """Test creating the console."""
     console = QtConsole()
     qtbot.addWidget(console)
