@@ -363,7 +363,9 @@ class QtPlayButton(QPushButton):
         fpsspin = QtCustomDoubleSpinBox(self.popup)
         fpsspin.setAlignment(Qt.AlignCenter)
         fpsspin.setValue(self.fps)
-        fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+        if hasattr(fpsspin, 'setStepType'):
+            # this was introduced in Qt 5.12.  Totally optional, just nice.
+            fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
         self.popup.form_layout.insertRow(

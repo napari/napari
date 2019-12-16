@@ -21,6 +21,7 @@ icons = [
     '3D',
     'add',
     'console',
+    'copy_to_clipboard',
     'delete',
     'delete_shape',
     'direct',

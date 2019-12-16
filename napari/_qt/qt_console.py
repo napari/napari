@@ -94,5 +94,7 @@ class QtConsole(RichJupyterWidget):
         # self.execute_on_complete_input = True
 
     def shutdown(self):
-        self.kernel_client.stop_channels()
-        self.kernel_manager.shutdown_kernel()
+        if self.kernel_client is not None:
+            self.kernel_client.stop_channels()
+        if self.kernel_manager is not None:
+            self.kernel_manager.shutdown_kernel()
