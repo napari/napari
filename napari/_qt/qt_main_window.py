@@ -319,6 +319,13 @@ class Window:
         img = self._qt_window.grab().toImage()
         return QImg2array(img)
 
+    def connect_remote_console(self, connection_file):
+        self.qt_viewer.make_remote_console(connection_file)
+        self._add_viewer_dock_widget(self.qt_viewer.dockRemoteConsole)
+        self._qt_window.tabifyDockWidget(
+            self.qt_viewer.dockConsole, self.qt_viewer.dockRemoteConsole
+        )
+
     def closeEvent(self, event):
         # Forward close event to the console to trigger proper shutdown
         self.qt_viewer.console.shutdown()

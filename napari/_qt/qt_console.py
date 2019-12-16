@@ -26,11 +26,14 @@ class QtConsole(RichJupyterWidget):
         Shell for the kernel if it exists, None otherwise.
     """
 
-    def __init__(self, user_variables=None):
+    def __init__(self, user_variables=None, *, connection_file=None):
         super().__init__()
 
         # get current running instance or create new instance
-        shell = get_ipython()
+        if connection_file is None:
+            shell = get_ipython()
+        else:
+            shell = 'connection_file'
 
         if shell is None:
             # If there is no currently running instance create an in-process
@@ -80,6 +83,15 @@ class QtConsole(RichJupyterWidget):
             self.kernel_client = kernel_client
             self.shell = shell
             self.push = self.shell.push
+        elif shell == 'connection_file':
+            kernel_client = QtKernelClient(connection_file=connection_file)
+            kernel_client.load_connection_file()
+            kernel_client.start_channels()
+
+            self.kernel_manager = None
+            self.kernel_client = kernel_client
+            self.shell = shell
+            self.push = lambda var: None  # self.shell.push
         else:
             raise ValueError(
                 'ipython shell not recognized; ' f'got {type(shell)}'

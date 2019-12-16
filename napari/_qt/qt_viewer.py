@@ -93,6 +93,8 @@ class QtViewer(QSplitter):
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
+        self.remoteConsole = None
+        self.dockRemoteConsole = None
 
         self.aboutKeybindings = QtAboutKeybindings(self.viewer)
         self.aboutKeybindings.hide()
@@ -310,6 +312,12 @@ class QtViewer(QSplitter):
         self.setStyleSheet(themed_stylesheet)
         self.aboutKeybindings.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
+        if self.remoteConsole is not None:
+            self.remoteConsole.style_sheet = themed_stylesheet
+            self.remoteConsole.syntax_style = palette['syntax_style']
+            self.remoteConsole._bracket_matcher.format.setBackground(
+                bracket_color
+            )
 
     def toggle_console(self):
         """Toggle console visible and not visible."""
@@ -327,6 +335,23 @@ class QtViewer(QSplitter):
         )
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
+        )
+
+    def make_remote_console(self, connection_file):
+        self.remoteConsole = QtConsole(connection_file=connection_file)
+        palette = self.viewer.palette
+        themed_stylesheet = template(self.raw_stylesheet, **palette)
+        self.remoteConsole.style_sheet = themed_stylesheet
+        self.remoteConsole.syntax_style = palette['syntax_style']
+        bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
+        self.remoteConsole._bracket_matcher.format.setBackground(bracket_color)
+        self.dockRemoteConsole = QtViewerDockWidget(
+            self,
+            self.remoteConsole,
+            name='remote console',
+            area='bottom',
+            allowed_areas=['top', 'bottom'],
+            shortcut='Ctrl+Shift+C',
         )
 
     def on_mouse_press(self, event):
