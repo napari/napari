@@ -2,7 +2,7 @@
 
 # Resource object code
 #
-# Created: Sun Dec 8 16:27:07 2019
+# Created: Sun Dec 15 14:48:48 2019
 #      by: The Resource Compiler for PySide2 (Qt v5.13.2)
 #
 # WARNING! All changes made in this file will be lost!
@@ -10,6 +10,1310 @@
 from qtpy import QtCore
 
 qt_resource_data = b"\
+\x00\x00\x06\x0b\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><path d\
+=\x22M58.8,82.6c-4.\
+7,0-8.6-3.9-8.6-\
+8.6s3.9-8.6,8.6-\
+8.6s8.6,3.9,8.6,\
+8.6S63.5,82.6,58\
+.8,82.6z M58.8,7\
+1c-1.7,0-3,1.3-3\
+,3\x0a\x09s1.3,3,3,3s3\
+-1.3,3-3S60.5,71\
+,58.8,71z\x22/>\x0a<pa\
+th d=\x22M39.5,39.8\
+c-4.7,0-8.6-3.9-\
+8.6-8.6s3.9-8.6,\
+8.6-8.6s8.6,3.9,\
+8.6,8.6S44.2,39.\
+8,39.5,39.8z M39\
+.5,28.2c-1.7,0-3\
+,1.3-3,3\x0a\x09s1.3,3\
+,3,3s3-1.3,3-3S4\
+1.2,28.2,39.5,28\
+.2z\x22/>\x0a<path d=\x22\
+M19.2,82.6c-4.7,\
+0-8.6-3.9-8.6-8.\
+6s3.9-8.6,8.6-8.\
+6s8.6,3.9,8.6,8.\
+6S23.9,82.6,19.2\
+,82.6z M19.2,71c\
+-1.7,0-3,1.3-3,3\
+\x0a\x09s1.3,3,3,3s3-1\
+.3,3-3S20.9,71,1\
+9.2,71z\x22/>\x0a<path\
+ d=\x22M83.1,39.8c-\
+4.7,0-8.6-3.9-8.\
+6-8.6s3.9-8.6,8.\
+6-8.6s8.6,3.9,8.\
+6,8.6S87.8,39.8,\
+83.1,39.8z M83.1\
+,28.2c-1.7,0-3,1\
+.3-3,3\x0a\x09s1.3,3,3\
+,3s3-1.3,3-3S84.\
+8,28.2,83.1,28.2\
+z\x22/>\x0a<rect x=\x2251\
+.1\x22 y=\x2249.2\x22 tra\
+nsform=\x22matrix(0\
+.5355 -0.8445 0.\
+8445 0.5355 -11.\
+219 83.5029)\x22 wi\
+dth=\x2238.5\x22 heigh\
+t=\x225.5\x22/>\x0a<rect \
+x=\x2246.4\x22 y=\x2235.3\
+\x22 transform=\x22mat\
+rix(0.9001 -0.43\
+56 0.4356 0.9001\
+ -18.0059 26.666\
+)\x22 width=\x225.5\x22 h\
+eight=\x2234.7\x22/>\x0a<\
+rect x=\x2210\x22 y=\x225\
+1.3\x22 transform=\x22\
+matrix(0.4615 -0\
+.8872 0.8872 0.4\
+615 -32.1006 55.\
+1188)\x22 width=\x2238\
+.8\x22 height=\x225.5\x22\
+/>\x0a</svg>\x0a\
+\x00\x00\x03Y\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(134, 142, \
+147)}\x0a    polygo\
+n{fill:rgb(134, \
+142, 147)}\x0a    c\
+ircle{fill:rgb(1\
+34, 142, 147)}\x0a \
+   rect{fill:rgb\
+(134, 142, 147)}\
+\x0a</style><path d\
+=\x22M31.8,56.4c-1.\
+9,0-3.8-0.8-5-2.\
+4c-2.2-2.8-1.8-6\
+.9,1-9.1l35.1-28\
+.2c2.8-2.2,6.9-1\
+.8,9.1,1c2.2,2.8\
+,1.8,6.9-1,9.1L3\
+5.8,54.9\x0a\x09C34.6,\
+55.9,33.2,56.4,3\
+1.8,56.4z\x22/>\x0a<pa\
+th d=\x22M66.9,84.6\
+c-1.4,0-2.9-0.5-\
+4-1.4L27.7,54.9c\
+-2.8-2.2-3.2-6.3\
+-1-9.1c2.2-2.8,6\
+.3-3.2,9.1-1l35.\
+1,28.2c2.8,2.2,3\
+.2,6.3,1,9.1\x0a\x09C7\
+0.6,83.8,68.8,84\
+.6,66.9,84.6z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x06\x0f\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><path d\
+=\x22M50,30c-4.7,0-\
+8.6-3.9-8.6-8.6s\
+3.9-8.6,8.6-8.6s\
+8.6,3.9,8.6,8.6S\
+54.7,30,50,30z M\
+50,18.4c-1.7,0-3\
+,1.3-3,3s1.3,3,3\
+,3\x0a\x09s3-1.3,3-3S5\
+1.7,18.4,50,18.4\
+z\x22/>\x0a<path d=\x22M7\
+7.8,58.9c-4.7,0-\
+8.6-3.9-8.6-8.6s\
+3.9-8.6,8.6-8.6s\
+8.6,3.9,8.6,8.6S\
+82.5,58.9,77.8,5\
+8.9z M77.8,47.3c\
+-1.7,0-3,1.3-3,3\
+\x0a\x09s1.3,3,3,3s3-1\
+.3,3-3S79.5,47.3\
+,77.8,47.3z\x22/>\x0a<\
+path d=\x22M50,85.6\
+c-4.7,0-8.6-3.9-\
+8.6-8.6s3.9-8.6,\
+8.6-8.6s8.6,3.9,\
+8.6,8.6S54.7,85.\
+6,50,85.6z M50,7\
+4c-1.7,0-3,1.3-3\
+,3s1.3,3,3,3\x0a\x09s3\
+-1.3,3-3S51.7,74\
+,50,74z\x22/>\x0a<path\
+ d=\x22M22.2,58.6c-\
+4.7,0-8.6-3.9-8.\
+6-8.6s3.9-8.6,8.\
+6-8.6s8.6,3.9,8.\
+6,8.6S26.9,58.6,\
+22.2,58.6z M22.2\
+,47c-1.7,0-3,1.3\
+-3,3\x0a\x09s1.3,3,3,3\
+s3-1.3,3-3S23.9,\
+47,22.2,47z\x22/>\x0a<\
+path d=\x22M26.4,44\
+.5L21,43.5c2.2-1\
+1.2,10.7-20.2,21\
+.7-23l1.4,5.4C35\
+.1,28.2,28.2,35.\
+5,26.4,44.5z\x22/>\x0a\
+<path d=\x22M43.6,7\
+8c-11.5-2.5-20.7\
+-12-22.8-23.6l5.\
+5-1c1.7,9.4,9.1,\
+17.1,18.4,19.2L4\
+3.6,78z\x22/>\x0a<path\
+ d=\x22M56.6,78l-1.\
+3-5.5c9.3-2.2,16\
+.4-9.6,18.2-18.9\
+l5.5,1.1C76.8,66\
+.2,68,75.4,56.6,\
+78z\x22/>\x0a<path d=\x22\
+M73.9,46.6c-1.1-\
+9.8-7.9-17.9-17.\
+4-20.5l1.5-5.4C6\
+9.8,24,78.2,33.9\
+,79.5,46L73.9,46\
+.6z\x22/>\x0a</svg>\x0a\
+\x00\x00\x02N\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><polygo\
+n points=\x2222.8,6\
+5.8 29.9,18.1 85\
+.7,67.4 51.9,79.\
+5 \x22/>\x0a</svg>\x0a\
+\x00\x00\x04U\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<path d\
+=\x22M79.4,30.1c0-2\
+.4-0.9-4.6-2.6-6\
+.3c-3.4-3.4-9.2-\
+3.4-12.6,0L33.9,\
+54.2c-2.8,0.2-5.\
+5,1.3-7.5,3.3c-4\
+.2,4.2-4,7.7-3.9\
+,10.6\x0a\x09\x09c0.1,2.4\
+,0.2,4.2-2.7,7.2\
+l-4.3,4.3c5.4,0.\
+7,6.7,1,9.6,1l0,\
+0c4.4,0,12.7-0.8\
+,18.1-6.2c2.1-2.\
+1,3.2-4.7,3.4-7.\
+6l30.2-30.2\x0a\x09\x09C7\
+8.5,34.7,79.4,32\
+.5,79.4,30.1z M3\
+9,70c-3.1,3.1-7.\
+9,4.1-11.5,4.3c1\
+.1-2.6,1-4.8,0.9\
+-6.7c-0.3-5.2,3.\
+2-7.8,6.4-7.8\x0a\x09\x09\
+c1.6,0,3.1,0.6,4\
+.2,1.7C41.3,64,4\
+1.3,67.7,39,70z \
+M72.6,32.2L45,59\
+.8c-0.5-0.9-1.1-\
+1.7-1.8-2.4s-1.6\
+-1.3-2.4-1.8L68.\
+4,28\x0a\x09\x09c1.1-1.1,\
+3.1-1.1,4.2,0c0.\
+6,0.6,0.9,1.3,0.\
+9,2.1C73.5,30.9,\
+73.2,31.7,72.6,3\
+2.2z\x22/>\x0a</g>\x0a</s\
+vg>\x0a\
+\x00\x00\x03\xbd\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+path class=\x22st0\x22\
+ d=\x22M50,13.6c-20\
+,0-36.3,16.3-36.\
+3,36.3c0,20,16.3\
+,36.3,36.3,36.3C\
+70,86.3,86.3,70,\
+86.3,50\x0a\x09\x09\x09C86.3\
+,29.9,70,13.6,50\
+,13.6z M50,79c-1\
+6,0-29.1-13-29.1\
+-29.1c0-16,13-29\
+.1,29.1-29.1C66,\
+20.9,79,33.9,79,\
+50C79,66,66,79,5\
+0,79z\x22/>\x0a\x09\x09<poly\
+gon class=\x22st0\x22 \
+points=\x2253.6,31.\
+8 46.3,31.8 46.3\
+,46.3 31.8,46.3 \
+31.8,53.6 46.3,5\
+3.6 46.3,68.1 53\
+.6,68.1 53.6,53.\
+6 \x0a\x09\x09\x0968.1,53.6 \
+68.1,46.3 53.6,4\
+6.3 \x09\x09\x22/>\x0a\x09</g>\x0a\
+</g>\x0a</svg>\x0a\
+\x00\x00\x03O\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><g>\x0a\x09<g\
+ id=\x22reply\x22>\x0a\x09\x09<\
+path d=\x22M68.8,15\
+.7l3.4-8.8l-21.4\
+,9.6l9.6,21.4l3.\
+5-9.1c11.1,4.2,1\
+7.4,10.7,20,20.6\
+C85.9,37.4,83.5,\
+23.8,68.8,15.7z\x22\
+/>\x0a\x09</g>\x0a</g>\x0a<p\
+ath d=\x22M52,91.9H\
+17.5c-4.9,0-8.7-\
+3.8-8.7-8.7V48.6\
+c0-4.9,3.8-8.7,8\
+.7-8.7h34.4c4.9,\
+0,8.7,3.8,8.7,8.\
+7v34.4\x0a\x09C60.7,88\
+,56.9,91.9,52,91\
+.9z M19.3,81.3h3\
+0.9V50.4H19.3V81\
+.3z\x22/>\x0a</svg>\x0a\
+\x00\x00\x03\xfd\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.4, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><path d\
+=\x22M42.1,51l-29-2\
+3.2c-2.3-1.8-2.6\
+-5.2-0.8-7.5c1.8\
+-2.3,5.2-2.6,7.5\
+-0.8l28.9,23.2c2\
+.3,1.8,2.6,5.2,0\
+.8,7.5c-1,1.3-2.\
+6,2-4.1,2\x0a\x09C44.3\
+,52.2,43.1,51.8,\
+42.1,51z\x22/>\x0a<pat\
+h d=\x22M12.4,73.4c\
+-1.8-2.3-1.5-5.7\
+,0.8-7.5l28.9-23\
+.2c2.3-1.8,5.7-1\
+.5,7.5,0.8s1.5,5\
+.7-0.8,7.5l-29,2\
+3.3c-0.9,0.7-2.1\
+,1.2-3.3,1.2\x0a\x09C1\
+4.9,75.5,13.5,74\
+.8,12.4,73.4z\x22/>\
+\x0a<path d=\x22M41.4,\
+75.3c0-2.9,2.3-5\
+.4,5.3-5.4l37.1-\
+0.5c2.9,0,5.4,2.\
+3,5.4,5.3c0,2.9-\
+2.3,5.4-5.3,5.4l\
+-37.2,0.5c-1.2,0\
+-2.4-0.4-3.3-1.1\
+\x0a\x09C42.2,78.5,41.\
+4,77.1,41.4,75.3\
+z\x22/>\x0a</svg>\x0a\
+\x00\x00\x02\x88\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><polygo\
+n points=\x2267.3,7\
+3.6 50.6,64.7 33\
+.7,73.4 37,54.8 \
+23.5,41.5 42.3,3\
+8.8 50.8,21.9 59\
+.1,38.9 77.8,41.\
+7 64.2,54.9 \x22/>\x0a\
+</svg>\x0a\
+\x00\x00\x04'\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+polygon points=\x22\
+70.7,36.5 85.3,3\
+6.5 85.3,29.2 70\
+.7,29.2 63.5,29.\
+2 48.9,29.2 48.9\
+,36.5 63.5,36.5 \
+\x09\x09\x22/>\x0a\x09</g>\x0a</g>\
+\x0a<g id=\x22Outline\x22\
+>\x0a\x09<g>\x0a\x09\x09<path d\
+=\x22M35.4,85.9c-0.\
+9,0-1.8-0.6-2.2-\
+1.5L16.8,44.5c-0\
+.4-0.9-0.2-1.9,0\
+.5-2.6c0.7-0.7,1\
+.7-0.9,2.6-0.5l3\
+9.9,16.4\x0a\x09\x09\x09c0.9\
+,0.4,1.5,1.3,1.4\
+,2.3s-0.8,1.9-1.\
+8,2.1L42,66.6L37\
+.6,84c-0.2,1-1.1\
+,1.7-2.1,1.8C35.\
+5,85.9,35.5,85.9\
+,35.4,85.9z M23.\
+3,47.9\x0a\x09\x09\x09L34.9,\
+76l3-11.9c0.2-0.\
+8,0.9-1.5,1.7-1.\
+7l11.9-3L23.3,47\
+.9z\x22/>\x0a\x09</g>\x0a</g\
+>\x0a<polygon point\
+s=\x2221.7,46.6 34.\
+5,78.3 39.3,65.7\
+ 53.9,59.5 \x22/>\x0a<\
+/svg>\x0a\
+\x00\x00\x06\x8a\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><g>\x0a\x09<p\
+ath d=\x22M34.6,16.\
+5l-12.3-5.1c-0.3\
+-0.1-0.6-0.2-0.9\
+,0c-0.3,0.1-0.5,\
+0.3-0.6,0.6s-0.2\
+,0.6,0,0.9l1.8,4\
+.3l-3.8,1.5\x0a\x09\x09c-\
+8,3.3-12.1,7.7-1\
+2,13c0,1.8,0.5,3\
+.8,1.5,6c0.8,1.9\
+,2.5,4.2,5.4,6.8\
+c0.1,0.1,0.2,0.2\
+,0.3,0.4c0.1,0.1\
+,0.3,0.3,0.4,0.4\
+\x0a\x09\x09c0.1,0.1,0.3,\
+0.3,0.4,0.3c0.2,\
+0.2,0.4,0.2,0.6,\
+0.1c0.2,0,0.3-0.\
+2,0.4-0.3c0-0.2,\
+0-0.4-0.1-0.5s-0\
+.1-0.2-0.2-0.4\x0a\x09\
+\x09c-0.1-0.2-0.2-0\
+.3-0.2-0.4c-0.4-\
+0.7-0.7-1.4-1-2c\
+-0.5-1.1-0.8-2.2\
+-1-3.2s-0.2-1.9-\
+0.1-2.7c0-0.8,0.\
+3-1.6,0.6-2.3\x0a\x09\x09\
+c0.4-0.7,0.8-1.4\
+,1.3-2c0.5-0.6,1\
+.2-1.1,2-1.7c0.8\
+-0.5,1.6-1,2.4-1\
+.5c0.8-0.4,1.8-0\
+.8,2.9-1.3l3.8-1\
+.5l1.8,4.3\x0a\x09\x09c0.\
+1,0.3,0.3,0.5,0.\
+6,0.6c0.3,0.1,0.\
+6,0.2,0.9,0c0.3-\
+0.1,0.5-0.3,0.6-\
+0.6l5.1-12.3c0.1\
+-0.3,0.2-0.6,0-0\
+.9\x0a\x09\x09C35.2,16.8,\
+35,16.6,34.6,16.\
+5z\x22/>\x0a</g>\x0a<path\
+ d=\x22M60.1,88.6l2\
+5.4-13.8V49.5l-2\
+5.4,9.2V88.6z M5\
+7.6,54.3l27.7-10\
+.1L57.6,34.2L29.\
+9,44.2L57.6,54.3\
+z M90.5,44.3v30.\
+4\x0a\x09c0,0.9-0.2,1.\
+8-0.7,2.6c-0.5,0\
+.8-1.1,1.4-1.9,1\
+.9L60,94.4c-0.7,\
+0.4-1.5,0.6-2.4,\
+0.6c-0.9,0-1.7-0\
+.2-2.4-0.6L27.3,\
+79.2\x0a\x09c-0.8-0.4-\
+1.5-1.1-1.9-1.9c\
+-0.5-0.8-0.7-1.7\
+-0.7-2.6V44.3c0-\
+1.1,0.3-2,0.9-2.\
+9s1.4-1.5,2.4-1.\
+9l27.9-10.1c0.6-\
+0.2,1.2-0.3,1.7-\
+0.3\x0a\x09c0.6,0,1.2,\
+0.1,1.7,0.3l27.9\
+,10.1c1,0.4,1.8,\
+1,2.4,1.9S90.5,4\
+3.2,90.5,44.3z\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x03\xc1\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(106, 115, \
+128)}\x0a    polygo\
+n{fill:rgb(106, \
+115, 128)}\x0a    c\
+ircle{fill:rgb(1\
+06, 115, 128)}\x0a \
+   rect{fill:rgb\
+(106, 115, 128)}\
+\x0a</style><path d\
+=\x22M50.5,77.3C26.\
+7,77.3,8.1,52.1,\
+7.3,51L6,49.2l1.\
+3-1.8C8.1,46.3,2\
+6.7,21,50.5,21s4\
+2.4,25.3,43.2,26\
+.3l1.3,1.8L93.7,\
+51\x0a\x09C92.9,52.1,7\
+4.3,77.3,50.5,77\
+.3z M13.8,49.2c4\
+.6,5.6,19.5,21.9\
+,36.7,21.9s32.1-\
+16.4,36.7-21.9c-\
+4.6-5.6-19.5-21.\
+9-36.7-21.9\x0a\x09C33\
+.3,27.2,18.4,43.\
+6,13.8,49.2z\x22/>\x0a\
+<circle cx=\x2250.5\
+\x22 cy=\x2249.2\x22 r=\x221\
+7.3\x22/>\x0a<rect x=\x22\
+1.1\x22 y=\x2244.6\x22 tr\
+ansform=\x22matrix(\
+0.8188 -0.5741 0\
+.5741 0.8188 -19\
+.1291 37.698)\x22 w\
+idth=\x2298.1\x22 heig\
+ht=\x229\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02F\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><rect x\
+=\x2222.2\x22 y=\x2222.2\x22\
+ width=\x2255.5\x22 he\
+ight=\x2255.5\x22/>\x0a</\
+svg>\x0a\
+\x00\x00\x03\xd9\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><path d\
+=\x22M30.2,77.7c-4.\
+7,0-8.6-3.9-8.6-\
+8.6s3.9-8.6,8.6-\
+8.6s8.6,3.9,8.6,\
+8.6S34.9,77.7,30\
+.2,77.7z M30.2,6\
+6.1c-1.7,0-3,1.3\
+-3,3\x0a\x09s1.3,3,3,3\
+s3-1.3,3-3S31.9,\
+66.1,30.2,66.1z\x22\
+/>\x0a<path d=\x22M70.\
+1,37.8c-4.7,0-8.\
+6-3.9-8.6-8.6s3.\
+9-8.6,8.6-8.6s8.\
+6,3.9,8.6,8.6S74\
+.8,37.8,70.1,37.\
+8z M70.1,26.2c-1\
+.7,0-3,1.3-3,3\x0a\x09\
+s1.3,3,3,3s3-1.3\
+,3-3S71.8,26.2,7\
+0.1,26.2z\x22/>\x0a<re\
+ct x=\x2228\x22 y=\x2246.\
+7\x22 transform=\x22ma\
+trix(0.7027 -0.7\
+115 0.7115 0.702\
+7 -20.1843 50.59\
+28)\x22 width=\x2244.8\
+\x22 height=\x225.6\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><polygo\
+n points=\x2220.9,5\
+0 79.1,97.4 79.1\
+,2.6 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x03O\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(240, 241, \
+242)}\x0a    polygo\
+n{fill:rgb(240, \
+241, 242)}\x0a    c\
+ircle{fill:rgb(2\
+40, 241, 242)}\x0a \
+   rect{fill:rgb\
+(240, 241, 242)}\
+\x0a</style><path d\
+=\x22M50.5,77.3C26.\
+7,77.3,8.1,52.1,\
+7.3,51L6,49.2l1.\
+3-1.8C8.1,46.3,2\
+6.7,21,50.5,21s4\
+2.4,25.3,43.2,26\
+.3l1.3,1.8L93.7,\
+51\x0a\x09C92.9,52.1,7\
+4.3,77.3,50.5,77\
+.3z M13.8,49.2c4\
+.6,5.6,19.5,21.9\
+,36.7,21.9s32.1-\
+16.4,36.7-21.9c-\
+4.6-5.6-19.5-21.\
+9-36.7-21.9\x0a\x09C33\
+.3,27.2,18.4,43.\
+6,13.8,49.2z\x22/>\x0a\
+<circle cx=\x2250.5\
+\x22 cy=\x2249.2\x22 r=\x221\
+7.3\x22/>\x0a</svg>\x0a\
+\x00\x00\x03e\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><circle\
+ cx=\x2259.6\x22 cy=\x224\
+2.7\x22 r=\x224.9\x22/>\x0a<\
+path d=\x22M41.1,84\
+.2c-1,0-2-0.4-2.\
+7-1.3l-22-26.7c-\
+1.2-1.5-1-3.7,0.\
+5-4.9l31.9-26.4c\
+0.6-0.5,1.4-0.8,\
+2.2-0.8c0,0,0,0,\
+0,0l27.1,0.1\x0a\x09c1\
+,0,2,0.5,2.7,1.3\
+c0.7,0.8,0.9,1.9\
+,0.7,2.9L76.5,55\
+c-0.2,0.8-0.6,1.\
+5-1.2,2L43.3,83.\
+4C42.7,83.9,41.9\
+,84.2,41.1,84.2z\
+ M24,54.5\x0a\x09l17.6\
+,21.3l28.3-23.3l\
+4-21.2l-21.6-0.1\
+L24,54.5z\x22/>\x0a</s\
+vg>\x0a\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 24.0.0, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><polygo\
+n points=\x2250,79.\
+1 97.4,20.9 2.6,\
+20.9 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x03\xcd\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><path d\
+=\x22M66.7,54.4h-6V\
+37.9H45.4v-6h16.\
+3c2.8,0,5,2.2,5,\
+5V54.4z\x22/>\x0a<path\
+ d=\x22M53.4,67.4H3\
+6.3c-2.8,0-5-2.2\
+-5-5V45.1h6v16.3\
+h16.1V67.4z\x22/>\x0a<\
+path d=\x22M42.5,47\
+.6H22.9c-2.8,0-5\
+-2.2-5-5V23c0-2.\
+8,2.2-5,5-5h19.6\
+c2.8,0,5,2.2,5,5\
+v19.6C47.5,45.4,\
+45.3,47.6,42.5,4\
+7.6z M23.9,41.6\x0a\
+\x09h17.6V24H23.9V4\
+1.6z\x22/>\x0a<path d=\
+\x22M75.7,81.3H56.1\
+c-2.8,0-5-2.2-5-\
+5V56.8c0-2.8,2.2\
+-5,5-5h19.6c2.8,\
+0,5,2.2,5,5v19.6\
+C80.7,79.1,78.5,\
+81.3,75.7,81.3z\x0a\
+\x09 M57.1,75.3h17.\
+6V57.8H57.1V75.3\
+z\x22/>\x0a</svg>\x0a\
+\x00\x00\x02\xc1\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(134, 142, \
+147)}\x0a    polygo\
+n{fill:rgb(134, \
+142, 147)}\x0a    c\
+ircle{fill:rgb(1\
+34, 142, 147)}\x0a \
+   rect{fill:rgb\
+(134, 142, 147)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+polygon points=\x22\
+59.1,3.4 40.6,3.\
+4 40.6,40.6 3.4,\
+40.6 3.4,59.1 40\
+.6,59.1 40.6,96.\
+3 59.1,96.3 59.1\
+,59.1 96.3,59.1 \
+96.3,40.6 \x0a\x09\x09\x0959\
+.1,40.6 \x09\x09\x22/>\x0a\x09<\
+/g>\x0a</g>\x0a</svg>\x0a\
+\
+\x00\x00\x04O\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+polygon points=\x22\
+70.7,14.7 63.5,1\
+4.7 63.5,29.2 48\
+.9,29.2 48.9,36.\
+5 63.5,36.5 63.5\
+,51 70.7,51 70.7\
+,36.5 85.3,36.5 \
+85.3,29.2 \x0a\x09\x09\x0970\
+.7,29.2 \x09\x09\x22/>\x0a\x09<\
+/g>\x0a</g>\x0a<g id=\x22\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M35.4,\
+85.9c-0.9,0-1.8-\
+0.6-2.2-1.5L16.8\
+,44.5c-0.4-0.9-0\
+.2-1.9,0.5-2.6c0\
+.7-0.7,1.7-0.9,2\
+.6-0.5l39.9,16.4\
+\x0a\x09\x09\x09c0.9,0.4,1.5\
+,1.3,1.4,2.3s-0.\
+8,1.9-1.8,2.1L42\
+,66.6L37.6,84c-0\
+.2,1-1.1,1.7-2.1\
+,1.8C35.5,85.9,3\
+5.5,85.9,35.4,85\
+.9z M23.3,47.9\x0a\x09\
+\x09\x09L34.9,76l3-11.\
+9c0.2-0.8,0.9-1.\
+5,1.7-1.7l11.9-3\
+L23.3,47.9z\x22/>\x0a\x09\
+</g>\x0a</g>\x0a<polyg\
+on points=\x2221.7,\
+46.6 34.5,78.3 3\
+9.3,65.7 53.9,59\
+.5 \x22/>\x0a</svg>\x0a\
 \x00\x00\x05\xa5\
 <\
 ?xml version=\x221.\
@@ -36,14 +1340,14 @@ und:new 0 0 100 \
 \x22preserve\x22>\x0a<sty\
 le type=\x22text/cs\
 s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
    rect{fill:rgb\
-(107, 105, 103)}\
+(209, 210, 212)}\
 \x0a</style><g id=\x22\
 Solid_1_\x22>\x0a\x09<pat\
 h d=\x22M72.9,61.1V\
@@ -103,895 +1407,6 @@ c-1.6,0-2.8-1.3-\
 71.6,71.9,70.1,7\
 1.9z\x22/>\x0a</g>\x0a</s\
 vg>\x0a\
-\x00\x00\x04H\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g>\x0a\x09<p\
-ath d=\x22M57.3,84.\
-7h-32c-4.6,0-8.2\
--3.6-8.2-8.2v-32\
-c0-4.6,3.6-8.2,8\
-.2-8.2h32c4.6,0,\
-8.2,3.6,8.2,8.2v\
-32\x0a\x09\x09C65.4,81.2,\
-61.9,84.7,57.3,8\
-4.7z M26.9,74.9h\
-28.7V46.2H26.9V7\
-4.9z\x22/>\x0a\x09<path d\
-=\x22M74.7,63.6h-32\
-c-4.6,0-8.2-3.6-\
-8.2-8.2v-32c0-4.\
-6,3.6-8.2,8.2-8.\
-2h32c4.6,0,8.2,3\
-.6,8.2,8.2v32\x0a\x09\x09\
-C82.9,60,79.3,63\
-.6,74.7,63.6z M4\
-4.3,53.8h28.7V25\
-.1H44.3V53.8z\x22/>\
-\x0a\x09<path d=\x22M81.1\
-,60.6L62.7,82.7l\
--6.9-6.9l13.8-15\
-.3l5-3.5\x22/>\x0a\x09<pa\
-th d=\x22M82,26.8L6\
-1.9,46.9l-6.9-7l\
-20.4-20.4l0,0\x22/>\
-\x0a\x09<path d=\x22M44.7\
-,60.6L24.8,83.1l\
--6.9-6.9l18.8-22\
-.2h1.6\x22/>\x0a\x09<path\
- d=\x22M19,39.4L36,\
-18.7l10.3,3L29.2\
-,42l0,0\x22/>\x0a</g>\x0a\
-</svg>\x0a\
-\x00\x00\x02\xb6\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2225.4,5\
-0 83.6,97.4 83.6\
-,2.6 \x22/>\x0a<rect x\
-=\x2213.8\x22 y=\x222.6\x22 \
-transform=\x22matri\
-x(-1 -1.224647e-\
-16 1.224647e-16 \
--1 40.1826 100)\x22\
- width=\x2212.5\x22 he\
-ight=\x2294.8\x22/>\x0a</\
-svg>\x0a\
-\x00\x00\x04'\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-polygon points=\x22\
-70.7,36.5 85.3,3\
-6.5 85.3,29.2 70\
-.7,29.2 63.5,29.\
-2 48.9,29.2 48.9\
-,36.5 63.5,36.5 \
-\x09\x09\x22/>\x0a\x09</g>\x0a</g>\
-\x0a<g id=\x22Outline\x22\
->\x0a\x09<g>\x0a\x09\x09<path d\
-=\x22M35.4,85.9c-0.\
-9,0-1.8-0.6-2.2-\
-1.5L16.8,44.5c-0\
-.4-0.9-0.2-1.9,0\
-.5-2.6c0.7-0.7,1\
-.7-0.9,2.6-0.5l3\
-9.9,16.4\x0a\x09\x09\x09c0.9\
-,0.4,1.5,1.3,1.4\
-,2.3s-0.8,1.9-1.\
-8,2.1L42,66.6L37\
-.6,84c-0.2,1-1.1\
-,1.7-2.1,1.8C35.\
-5,85.9,35.5,85.9\
-,35.4,85.9z M23.\
-3,47.9\x0a\x09\x09\x09L34.9,\
-76l3-11.9c0.2-0.\
-8,0.9-1.5,1.7-1.\
-7l11.9-3L23.3,47\
-.9z\x22/>\x0a\x09</g>\x0a</g\
->\x0a<polygon point\
-s=\x2221.7,46.6 34.\
-5,78.3 39.3,65.7\
- 53.9,59.5 \x22/>\x0a<\
-/svg>\x0a\
-\x00\x00\x04U\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<path d\
-=\x22M79.4,30.1c0-2\
-.4-0.9-4.6-2.6-6\
-.3c-3.4-3.4-9.2-\
-3.4-12.6,0L33.9,\
-54.2c-2.8,0.2-5.\
-5,1.3-7.5,3.3c-4\
-.2,4.2-4,7.7-3.9\
-,10.6\x0a\x09\x09c0.1,2.4\
-,0.2,4.2-2.7,7.2\
-l-4.3,4.3c5.4,0.\
-7,6.7,1,9.6,1l0,\
-0c4.4,0,12.7-0.8\
-,18.1-6.2c2.1-2.\
-1,3.2-4.7,3.4-7.\
-6l30.2-30.2\x0a\x09\x09C7\
-8.5,34.7,79.4,32\
-.5,79.4,30.1z M3\
-9,70c-3.1,3.1-7.\
-9,4.1-11.5,4.3c1\
-.1-2.6,1-4.8,0.9\
--6.7c-0.3-5.2,3.\
-2-7.8,6.4-7.8\x0a\x09\x09\
-c1.6,0,3.1,0.6,4\
-.2,1.7C41.3,64,4\
-1.3,67.7,39,70z \
-M72.6,32.2L45,59\
-.8c-0.5-0.9-1.1-\
-1.7-1.8-2.4s-1.6\
--1.3-2.4-1.8L68.\
-4,28\x0a\x09\x09c1.1-1.1,\
-3.1-1.1,4.2,0c0.\
-6,0.6,0.9,1.3,0.\
-9,2.1C73.5,30.9,\
-73.2,31.7,72.6,3\
-2.2z\x22/>\x0a</g>\x0a</s\
-vg>\x0a\
-\x00\x00\x02\xf8\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><rect x\
-=\x2245\x22 y=\x2221.3\x22 t\
-ransform=\x22matrix\
-(0.7112 -0.7029 \
-0.7029 0.7112 -2\
-1.6791 50.024)\x22 \
-width=\x2210\x22 heigh\
-t=\x2260.2\x22/>\x0a<rect\
- x=\x2219.9\x22 y=\x2246.\
-4\x22 transform=\x22ma\
-trix(0.7113 -0.7\
-029 0.7029 0.711\
-3 -21.7284 49.99\
-88)\x22 width=\x2260.2\
-\x22 height=\x2210\x22/>\x0a\
-</svg>\x0a\
-\x00\x00\x03\xa1\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M50.1,\
-76.4c10.9,0,19.8\
--8.9,19.8-19.8c0\
--10-15.4-29.5-17\
-.2-31.7l-2.6-3.2\
-L47.6,25c-1.8,2.\
-2-17.2,21.7-17.2\
-,31.7\x0a\x09\x09\x09C30.4,6\
-7.6,39.2,76.4,50\
-.1,76.4z M50.1,3\
-2.4c5.9,7.9,13.2\
-,19.2,13.2,24.3c\
-0,7.3-5.9,13.2-1\
-3.2,13.2c-7.3,0-\
-13.2-5.9-13.2-13\
-.2\x0a\x09\x09\x09C37,51.7,4\
-4.2,40.3,50.1,32\
-.4z\x22/>\x0a\x09\x09<path d\
-=\x22M59.2,56.7h-4.\
-9c0,2.3-1.8,4.1-\
-4.1,4.1v4.9C55.1\
-,65.7,59.2,61.7,\
-59.2,56.7z\x22/>\x0a\x09<\
-/g>\x0a</g>\x0a</svg>\x0a\
-\
-\x00\x00\x03e\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><circle\
- cx=\x2259.6\x22 cy=\x224\
-2.7\x22 r=\x224.9\x22/>\x0a<\
-path d=\x22M41.1,84\
-.2c-1,0-2-0.4-2.\
-7-1.3l-22-26.7c-\
-1.2-1.5-1-3.7,0.\
-5-4.9l31.9-26.4c\
-0.6-0.5,1.4-0.8,\
-2.2-0.8c0,0,0,0,\
-0,0l27.1,0.1\x0a\x09c1\
-,0,2,0.5,2.7,1.3\
-c0.7,0.8,0.9,1.9\
-,0.7,2.9L76.5,55\
-c-0.2,0.8-0.6,1.\
-5-1.2,2L43.3,83.\
-4C42.7,83.9,41.9\
-,84.2,41.1,84.2z\
- M24,54.5\x0a\x09l17.6\
-,21.3l28.3-23.3l\
-4-21.2l-21.6-0.1\
-L24,54.5z\x22/>\x0a</s\
-vg>\x0a\
-\x00\x00\x02\xbd\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 177.6 94.8\x22 st\
-yle=\x22enable-back\
-ground:new 0 0 1\
-77.6 94.8;\x22 xml:\
-space=\x22preserve\x22\
->\x0a<style type=\x22t\
-ext/css\x22>\x0a    pa\
-th{fill:rgb(107,\
- 105, 103)}\x0a    \
-polygon{fill:rgb\
-(107, 105, 103)}\
-\x0a    circle{fill\
-:rgb(107, 105, 1\
-03)}\x0a    rect{fi\
-ll:rgb(107, 105,\
- 103)}\x0a</style><\
-polygon points=\x22\
-0.5,47.4 58.7,94\
-.8 58.7,0 \x22/>\x0a<r\
-ect x=\x2258.6\x22 y=\x22\
-31.2\x22 transform=\
-\x22matrix(-1 -1.22\
-4647e-16 1.22464\
-7e-16 -1 236.168\
-7 94.8)\x22 width=\x22\
-119\x22 height=\x2232.\
-4\x22/>\x0a</svg>\x0a\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2220.9,5\
-0 79.1,97.4 79.1\
-,2.6 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x06*\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><rect x\
-=\x2213.1\x22 y=\x2223.1\x22\
- transform=\x22matr\
-ix(0.7071 -0.707\
-1 0.7071 0.7071 \
--10.0546 26.0581\
-)\x22 width=\x2226.7\x22 \
-height=\x224.1\x22/>\x0a<\
-rect x=\x2233.9\x22 y=\
-\x2223.1\x22 transform\
-=\x22matrix(0.8471 \
--0.5315 0.5315 0\
-.8471 -6.1536 28\
-.9461)\x22 width=\x222\
-6.7\x22 height=\x224.1\
-\x22/>\x0a<rect x=\x2256.\
-7\x22 y=\x2223.1\x22 tran\
-sform=\x22matrix(0.\
-9345 -0.356 0.35\
-6 0.9345 -4.3723\
- 26.5752)\x22 width\
-=\x2226.7\x22 height=\x22\
-4.1\x22/>\x0a<rect x=\x22\
-13.1\x22 y=\x2247.3\x22 t\
-ransform=\x22matrix\
-(0.7071 -0.7071 \
-0.7071 0.7071 -2\
-7.1546 33.1412)\x22\
- width=\x2226.7\x22 he\
-ight=\x224.1\x22/>\x0a<re\
-ct x=\x2233.9\x22 y=\x224\
-7.3\x22 transform=\x22\
-matrix(0.8209 -0\
-.5711 0.5711 0.8\
-209 -19.725 35.8\
-084)\x22 width=\x2226.\
-7\x22 height=\x224.1\x22/\
->\x0a<rect x=\x2256.7\x22\
- y=\x2247.3\x22 transf\
-orm=\x22matrix(0.96\
-89 -0.2476 0.247\
-6 0.9689 -10.037\
-8 18.8686)\x22 widt\
-h=\x2226.7\x22 height=\
-\x224.1\x22/>\x0a<rect x=\
-\x2213.1\x22 y=\x2274\x22 tr\
-ansform=\x22matrix(\
-0.8209 -0.5711 0\
-.5711 0.8209 -38\
-.7071 28.7179)\x22 \
-width=\x2226.7\x22 hei\
-ght=\x224.1\x22/>\x0a<rec\
-t x=\x2233.9\x22 y=\x2274\
-\x22 transform=\x22mat\
-rix(0.8471 -0.53\
-15 0.5315 0.8471\
- -33.2051 36.729\
-9)\x22 width=\x2226.7\x22\
- height=\x224.1\x22/>\x0a\
-<rect x=\x2256.7\x22 y\
-=\x2274\x22 transform=\
-\x22matrix(0.9946 -\
-0.1035 0.1035 0.\
-9946 -7.4995 7.6\
-579)\x22 width=\x2226.\
-7\x22 height=\x224.1\x22/\
->\x0a</svg>\x0a\
-\x00\x00\x03\xcd\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M66.7,54.4h-6V\
-37.9H45.4v-6h16.\
-3c2.8,0,5,2.2,5,\
-5V54.4z\x22/>\x0a<path\
- d=\x22M53.4,67.4H3\
-6.3c-2.8,0-5-2.2\
--5-5V45.1h6v16.3\
-h16.1V67.4z\x22/>\x0a<\
-path d=\x22M42.5,47\
-.6H22.9c-2.8,0-5\
--2.2-5-5V23c0-2.\
-8,2.2-5,5-5h19.6\
-c2.8,0,5,2.2,5,5\
-v19.6C47.5,45.4,\
-45.3,47.6,42.5,4\
-7.6z M23.9,41.6\x0a\
-\x09h17.6V24H23.9V4\
-1.6z\x22/>\x0a<path d=\
-\x22M75.7,81.3H56.1\
-c-2.8,0-5-2.2-5-\
-5V56.8c0-2.8,2.2\
--5,5-5h19.6c2.8,\
-0,5,2.2,5,5v19.6\
-C80.7,79.1,78.5,\
-81.3,75.7,81.3z\x0a\
-\x09 M57.1,75.3h17.\
-6V57.8H57.1V75.3\
-z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03\xfd\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.4, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M42.1,51l-29-2\
-3.2c-2.3-1.8-2.6\
--5.2-0.8-7.5c1.8\
--2.3,5.2-2.6,7.5\
--0.8l28.9,23.2c2\
-.3,1.8,2.6,5.2,0\
-.8,7.5c-1,1.3-2.\
-6,2-4.1,2\x0a\x09C44.3\
-,52.2,43.1,51.8,\
-42.1,51z\x22/>\x0a<pat\
-h d=\x22M12.4,73.4c\
--1.8-2.3-1.5-5.7\
-,0.8-7.5l28.9-23\
-.2c2.3-1.8,5.7-1\
-.5,7.5,0.8s1.5,5\
-.7-0.8,7.5l-29,2\
-3.3c-0.9,0.7-2.1\
-,1.2-3.3,1.2\x0a\x09C1\
-4.9,75.5,13.5,74\
-.8,12.4,73.4z\x22/>\
-\x0a<path d=\x22M41.4,\
-75.3c0-2.9,2.3-5\
-.4,5.3-5.4l37.1-\
-0.5c2.9,0,5.4,2.\
-3,5.4,5.3c0,2.9-\
-2.3,5.4-5.3,5.4l\
--37.2,0.5c-1.2,0\
--2.4-0.4-3.3-1.1\
-\x0a\x09C42.2,78.5,41.\
-4,77.1,41.4,75.3\
-z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03\xc1\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(163, 158, \
-156)}\x0a    polygo\
-n{fill:rgb(163, \
-158, 156)}\x0a    c\
-ircle{fill:rgb(1\
-63, 158, 156)}\x0a \
-   rect{fill:rgb\
-(163, 158, 156)}\
-\x0a</style><path d\
-=\x22M50.5,77.3C26.\
-7,77.3,8.1,52.1,\
-7.3,51L6,49.2l1.\
-3-1.8C8.1,46.3,2\
-6.7,21,50.5,21s4\
-2.4,25.3,43.2,26\
-.3l1.3,1.8L93.7,\
-51\x0a\x09C92.9,52.1,7\
-4.3,77.3,50.5,77\
-.3z M13.8,49.2c4\
-.6,5.6,19.5,21.9\
-,36.7,21.9s32.1-\
-16.4,36.7-21.9c-\
-4.6-5.6-19.5-21.\
-9-36.7-21.9\x0a\x09C33\
-.3,27.2,18.4,43.\
-6,13.8,49.2z\x22/>\x0a\
-<circle cx=\x2250.5\
-\x22 cy=\x2249.2\x22 r=\x221\
-7.3\x22/>\x0a<rect x=\x22\
-1.1\x22 y=\x2244.6\x22 tr\
-ansform=\x22matrix(\
-0.8188 -0.5741 0\
-.5741 0.8188 -19\
-.1291 37.698)\x22 w\
-idth=\x2298.1\x22 heig\
-ht=\x229\x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x05,\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M78.9,82.7c-4.\
-7,0-8.6-3.9-8.6-\
-8.6s3.9-8.6,8.6-\
-8.6s8.6,3.9,8.6,\
-8.6S83.6,82.7,78\
-.9,82.7z M78.9,7\
-1.1c-1.7,0-3,1.3\
--3,3\x0a\x09s1.3,3,3,3\
-s3-1.3,3-3S80.6,\
-71.1,78.9,71.1z\x22\
-/>\x0a<path d=\x22M49.\
-1,31c-4.7,0-8.6-\
-3.9-8.6-8.6s3.9-\
-8.6,8.6-8.6c4.7,\
-0,8.6,3.9,8.6,8.\
-6S53.8,31,49.1,3\
-1z M49.1,19.4c-1\
-.7,0-3,1.3-3,3\x0a\x09\
-s1.3,3,3,3s3-1.3\
-,3-3S50.8,19.4,4\
-9.1,19.4z\x22/>\x0a<pa\
-th d=\x22M19.7,82.7\
-c-4.7,0-8.6-3.9-\
-8.6-8.6s3.9-8.6,\
-8.6-8.6s8.6,3.9,\
-8.6,8.6S24.4,82.\
-7,19.7,82.7z M19\
-.7,71.1c-1.7,0-3\
-,1.3-3,3\x0a\x09s1.3,3\
-,3,3s3-1.3,3-3S2\
-1.4,71.1,19.7,71\
-.1z\x22/>\x0a<rect x=\x22\
-26.7\x22 y=\x2271.3\x22 w\
-idth=\x2245\x22 height\
-=\x225.6\x22/>\x0a<rect x\
-=\x2211.4\x22 y=\x2244.5\x22\
- transform=\x22matr\
-ix(0.4995 -0.866\
-3 0.8663 0.4995 \
--23.5844 53.777)\
-\x22 width=\x2246.6\x22 h\
-eight=\x225.6\x22/>\x0a<r\
-ect x=\x2261.1\x22 y=\x22\
-24.2\x22 transform=\
-\x22matrix(0.8668 -\
-0.4986 0.4986 0.\
-8668 -15.4303 38\
-.2311)\x22 width=\x225\
-.6\x22 height=\x2247.5\
-\x22/>\x0a</svg>\x0a\
 \x00\x00\x02E\
 <\
 ?xml version=\x221.\
@@ -1018,59 +1433,20 @@ und:new 0 0 100 \
 \x22preserve\x22>\x0a<sty\
 le type=\x22text/cs\
 s\x22>\x0a    path{fil\
-l:rgb(150, 146, \
-144)}\x0a    polygo\
-n{fill:rgb(150, \
-146, 144)}\x0a    c\
+l:rgb(134, 142, \
+147)}\x0a    polygo\
+n{fill:rgb(134, \
+142, 147)}\x0a    c\
 ircle{fill:rgb(1\
-50, 146, 144)}\x0a \
+34, 142, 147)}\x0a \
    rect{fill:rgb\
-(150, 146, 144)}\
+(134, 142, 147)}\
 \x0a</style><rect x\
 =\x223.4\x22 y=\x2240.6\x22 \
 width=\x2292.9\x22 hei\
 ght=\x2218.6\x22/>\x0a</s\
 vg>\x0a\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.0, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(150, 146, \
-144)}\x0a    polygo\
-n{fill:rgb(150, \
-146, 144)}\x0a    c\
-ircle{fill:rgb(1\
-50, 146, 144)}\x0a \
-   rect{fill:rgb\
-(150, 146, 144)}\
-\x0a</style><polygo\
-n points=\x2250,79.\
-1 97.4,20.9 2.6,\
-20.9 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x03Y\
+\x00\x00\x03\x9e\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
@@ -1096,249 +1472,81 @@ und:new 0 0 100 \
 \x22preserve\x22>\x0a<sty\
 le type=\x22text/cs\
 s\x22>\x0a    path{fil\
-l:rgb(150, 146, \
-144)}\x0a    polygo\
-n{fill:rgb(150, \
-146, 144)}\x0a    c\
-ircle{fill:rgb(1\
-50, 146, 144)}\x0a \
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
    rect{fill:rgb\
-(150, 146, 144)}\
-\x0a</style><path d\
-=\x22M31.8,56.4c-1.\
-9,0-3.8-0.8-5-2.\
-4c-2.2-2.8-1.8-6\
-.9,1-9.1l35.1-28\
-.2c2.8-2.2,6.9-1\
-.8,9.1,1c2.2,2.8\
-,1.8,6.9-1,9.1L3\
-5.8,54.9\x0a\x09C34.6,\
-55.9,33.2,56.4,3\
-1.8,56.4z\x22/>\x0a<pa\
-th d=\x22M66.9,84.6\
-c-1.4,0-2.9-0.5-\
-4-1.4L27.7,54.9c\
--2.8-2.2-3.2-6.3\
--1-9.1c2.2-2.8,6\
-.3-3.2,9.1-1l35.\
-1,28.2c2.8,2.2,3\
-.2,6.3,1,9.1\x0a\x09C7\
-0.6,83.8,68.8,84\
-.6,66.9,84.6z\x22/>\
-\x0a</svg>\x0a\
-\x00\x00\x03\xd9\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M30.2,77.7c-4.\
-7,0-8.6-3.9-8.6-\
-8.6s3.9-8.6,8.6-\
-8.6s8.6,3.9,8.6,\
-8.6S34.9,77.7,30\
-.2,77.7z M30.2,6\
-6.1c-1.7,0-3,1.3\
--3,3\x0a\x09s1.3,3,3,3\
-s3-1.3,3-3S31.9,\
-66.1,30.2,66.1z\x22\
-/>\x0a<path d=\x22M70.\
-1,37.8c-4.7,0-8.\
-6-3.9-8.6-8.6s3.\
-9-8.6,8.6-8.6s8.\
-6,3.9,8.6,8.6S74\
-.8,37.8,70.1,37.\
-8z M70.1,26.2c-1\
-.7,0-3,1.3-3,3\x0a\x09\
-s1.3,3,3,3s3-1.3\
-,3-3S71.8,26.2,7\
-0.1,26.2z\x22/>\x0a<re\
-ct x=\x2228\x22 y=\x2246.\
-7\x22 transform=\x22ma\
-trix(0.7027 -0.7\
-115 0.7115 0.702\
-7 -20.1843 50.59\
-28)\x22 width=\x2244.8\
-\x22 height=\x225.6\x22/>\
-\x0a</svg>\x0a\
-\x00\x00\x03\xde\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.1.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><rect x\
-=\x2213\x22 y=\x2212\x22 wid\
-th=\x2216.8\x22 height\
-=\x2216.8\x22/>\x0a<rect \
-x=\x2241.7\x22 y=\x2212\x22 \
-width=\x2216.8\x22 hei\
-ght=\x2216.8\x22/>\x0a<re\
-ct x=\x2270.4\x22 y=\x221\
-2\x22 width=\x2216.8\x22 \
-height=\x2216.8\x22/>\x0a\
-<rect x=\x2213\x22 y=\x22\
-41.5\x22 width=\x2216.\
-8\x22 height=\x2216.8\x22\
-/>\x0a<rect x=\x2241.7\
-\x22 y=\x2241.5\x22 width\
-=\x2216.8\x22 height=\x22\
-16.8\x22/>\x0a<rect x=\
-\x2270.4\x22 y=\x2241.5\x22 \
-width=\x2216.8\x22 hei\
-ght=\x2216.8\x22/>\x0a<re\
-ct x=\x2212.9\x22 y=\x227\
-1\x22 width=\x2216.8\x22 \
-height=\x2216.8\x22/>\x0a\
-<rect x=\x2241.6\x22 y\
-=\x2271\x22 width=\x2216.\
-8\x22 height=\x2216.8\x22\
-/>\x0a<rect x=\x2270.3\
-\x22 y=\x2271\x22 width=\x22\
-16.8\x22 height=\x2216\
-.8\x22/>\x0a</svg>\x0a\
-\x00\x00\x02F\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><rect x\
-=\x2222.2\x22 y=\x2222.2\x22\
- width=\x2255.5\x22 he\
-ight=\x2255.5\x22/>\x0a</\
-svg>\x0a\
-\x00\x00\x02\xc1\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(150, 146, \
-144)}\x0a    polygo\
-n{fill:rgb(150, \
-146, 144)}\x0a    c\
-ircle{fill:rgb(1\
-50, 146, 144)}\x0a \
-   rect{fill:rgb\
-(150, 146, 144)}\
+(209, 210, 212)}\
 \x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-polygon points=\x22\
-59.1,3.4 40.6,3.\
-4 40.6,40.6 3.4,\
-40.6 3.4,59.1 40\
-.6,59.1 40.6,96.\
-3 59.1,96.3 59.1\
-,59.1 96.3,59.1 \
-96.3,40.6 \x0a\x09\x09\x0959\
-.1,40.6 \x09\x09\x22/>\x0a\x09<\
-/g>\x0a</g>\x0a</svg>\x0a\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M47.2,\
+86.9c-1.4,0-2.7-\
+0.9-3.3-2.2l-25-\
+60.6c-0.6-1.3-0.\
+2-2.9,0.8-3.9s2.\
+5-1.3,3.9-0.8l60\
+.6,25c1.4,0.6,2.\
+3,2,2.2,3.6\x0a\x09\x09\x09c\
+-0.1,1.5-1.2,2.8\
+-2.7,3.2l-26.4,6\
+.6l-6.6,26.4c-0.\
+4,1.5-1.7,2.6-3.\
+2,2.7C47.3,86.9,\
+47.2,86.9,47.2,8\
+6.9z M28.7,29.3L\
+46.3,72\x0a\x09\x09\x09l4.5-\
+18c0.3-1.3,1.3-2\
+.3,2.6-2.6l18-4.\
+5L28.7,29.3z\x22/>\x0a\
+\x09</g>\x0a</g>\x0a<poly\
+gon points=\x2226.3\
+,27.2 45.7,75.4 \
+53,56.2 75.2,46.\
+8 \x22/>\x0a</svg>\x0a\
+\x00\x00\x02q\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><polygo\
+n points=\x2272,50 \
+13.8,2.6 13.8,97\
+.4 \x22/>\x0a<rect x=\x22\
+71\x22 y=\x222.6\x22 widt\
+h=\x2212.5\x22 height=\
+\x2294.8\x22/>\x0a</svg>\x0a\
 \
 \x00\x00\x03\xa4\
 <\
@@ -1366,14 +1574,14 @@ und:new 0 0 100 \
 \x22preserve\x22>\x0a<sty\
 le type=\x22text/cs\
 s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
    rect{fill:rgb\
-(107, 105, 103)}\
+(209, 210, 212)}\
 \x0a</style><path d\
 =\x22M32.4,53.5H23c\
 -2.8,0-5-2.2-5-5\
@@ -1401,166 +1609,6 @@ path d=\x22M61.8,67\
 1.4h23.5V37.9H37\
 .3V61.4z\x22/>\x0a</sv\
 g>\x0a\
-\x00\x00\x02}\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 177.6 94.8\x22 st\
-yle=\x22enable-back\
-ground:new 0 0 1\
-77.6 94.8;\x22 xml:\
-space=\x22preserve\x22\
->\x0a<style type=\x22t\
-ext/css\x22>\x0a    pa\
-th{fill:rgb(107,\
- 105, 103)}\x0a    \
-polygon{fill:rgb\
-(107, 105, 103)}\
-\x0a    circle{fill\
-:rgb(107, 105, 1\
-03)}\x0a    rect{fi\
-ll:rgb(107, 105,\
- 103)}\x0a</style><\
-polygon points=\x22\
-177.6,47.4 119.4\
-,0 119.4,94.8 \x22/\
->\x0a<rect x=\x220.5\x22 \
-y=\x2231.2\x22 width=\x22\
-119\x22 height=\x2232.\
-4\x22/>\x0a</svg>\x0a\
-\x00\x00\x02\xc9\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M74.7,86.9H26.\
-4c-6.9,0-12.2-5.\
-4-12.2-12.2V26.4\
-c0-6.9,5.4-12.2,\
-12.2-12.2h48.1c6\
-.9,0,12.2,5.4,12\
-.2,12.2v48.1\x0a\x09C8\
-6.9,81.5,81.5,86\
-.9,74.7,86.9z M2\
-8.9,72.1h43.2V28\
-.9H28.9V72.1z\x22/>\
-\x0a</svg>\x0a\
-\x00\x00\x04O\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-polygon points=\x22\
-70.7,14.7 63.5,1\
-4.7 63.5,29.2 48\
-.9,29.2 48.9,36.\
-5 63.5,36.5 63.5\
-,51 70.7,51 70.7\
-,36.5 85.3,36.5 \
-85.3,29.2 \x0a\x09\x09\x0970\
-.7,29.2 \x09\x09\x22/>\x0a\x09<\
-/g>\x0a</g>\x0a<g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M35.4,\
-85.9c-0.9,0-1.8-\
-0.6-2.2-1.5L16.8\
-,44.5c-0.4-0.9-0\
-.2-1.9,0.5-2.6c0\
-.7-0.7,1.7-0.9,2\
-.6-0.5l39.9,16.4\
-\x0a\x09\x09\x09c0.9,0.4,1.5\
-,1.3,1.4,2.3s-0.\
-8,1.9-1.8,2.1L42\
-,66.6L37.6,84c-0\
-.2,1-1.1,1.7-2.1\
-,1.8C35.5,85.9,3\
-5.5,85.9,35.4,85\
-.9z M23.3,47.9\x0a\x09\
-\x09\x09L34.9,76l3-11.\
-9c0.2-0.8,0.9-1.\
-5,1.7-1.7l11.9-3\
-L23.3,47.9z\x22/>\x0a\x09\
-</g>\x0a</g>\x0a<polyg\
-on points=\x2221.7,\
-46.6 34.5,78.3 3\
-9.3,65.7 53.9,59\
-.5 \x22/>\x0a</svg>\x0a\
 \x00\x00\x03Y\
 <\
 ?xml version=\x221.\
@@ -1587,14 +1635,14 @@ und:new 0 0 100 \
 \x22preserve\x22>\x0a<sty\
 le type=\x22text/cs\
 s\x22>\x0a    path{fil\
-l:rgb(150, 146, \
-144)}\x0a    polygo\
-n{fill:rgb(150, \
-146, 144)}\x0a    c\
+l:rgb(134, 142, \
+147)}\x0a    polygo\
+n{fill:rgb(134, \
+142, 147)}\x0a    c\
 ircle{fill:rgb(1\
-50, 146, 144)}\x0a \
+34, 142, 147)}\x0a \
    rect{fill:rgb\
-(150, 146, 144)}\
+(134, 142, 147)}\
 \x0a</style><path d\
 =\x22M51.3,75.9c-1.\
 9,0-3.8-0.8-5-2.\
@@ -1643,14 +1691,14 @@ und:new 0 0 100 \
 \x22preserve\x22>\x0a<sty\
 le type=\x22text/cs\
 s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
    rect{fill:rgb\
-(107, 105, 103)}\
+(209, 210, 212)}\
 \x0a</style><g id=\x22\
 Layer_17\x22>\x0a\x09<pat\
 h d=\x22M48.4,34.9c\
@@ -1774,2021 +1822,6 @@ h d=\x22M52.3,36.2l\
 1,26.5,66.1L26.5\
 ,66.1z\x22/>\x0a</g>\x0a<\
 /svg>\x0a\
-\x00\x00\x03\x88\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M41.5,67.6c-14\
-.4,0-26.1-11.7-2\
-6.1-26.1s11.7-26\
-.1,26.1-26.1s26.\
-1,11.7,26.1,26.1\
-S55.9,67.6,41.5,\
-67.6z M41.5,22.4\
-\x0a\x09C31,22.4,22.4,\
-31,22.4,41.5c0,1\
-0.5,8.6,19.1,19.\
-1,19.1c10.5,0,19\
-.1-8.6,19.1-19.1\
-C60.6,31,52,22.4\
-,41.5,22.4z\x22/>\x0a<\
-path d=\x22M84.4,79\
-.8L64.2,60.6c-1.\
-4,1.7-3.1,3.2-4.\
-8,4.6l20.5,19.4c\
-0.6,0.6,1.5,0.9,\
-2.3,0.9c0.9,0,1.\
-8-0.3,2.4-1\x0a\x09C85\
-.8,83.2,85.7,81.\
-1,84.4,79.8z\x22/>\x0a\
-</svg>\x0a\
-\x00\x00\x02\xf3\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><circle\
- cx=\x2258.1\x22 cy=\x222\
-3.5\x22 r=\x226.9\x22/>\x0a<\
-circle cx=\x2255.8\x22\
- cy=\x2252.5\x22 r=\x226.\
-9\x22/>\x0a<circle cx=\
-\x2230\x22 cy=\x2239.8\x22 r\
-=\x226.9\x22/>\x0a<circle\
- cx=\x2223.1\x22 cy=\x226\
-2.6\x22 r=\x226.9\x22/>\x0a<\
-circle cx=\x2255.8\x22\
- cy=\x2277.6\x22 r=\x226.\
-9\x22/>\x0a<circle cx=\
-\x2277.2\x22 cy=\x2246.7\x22\
- r=\x226.9\x22/>\x0a</svg\
->\x0a\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 24.0.0, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2250,20.\
-9 2.6,79.1 97.4,\
-79.1 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x02\x88\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2267.3,7\
-3.6 50.6,64.7 33\
-.7,73.4 37,54.8 \
-23.5,41.5 42.3,3\
-8.8 50.8,21.9 59\
-.1,38.9 77.8,41.\
-7 64.2,54.9 \x22/>\x0a\
-</svg>\x0a\
-\x00\x00\x06\x0f\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M50,30c-4.7,0-\
-8.6-3.9-8.6-8.6s\
-3.9-8.6,8.6-8.6s\
-8.6,3.9,8.6,8.6S\
-54.7,30,50,30z M\
-50,18.4c-1.7,0-3\
-,1.3-3,3s1.3,3,3\
-,3\x0a\x09s3-1.3,3-3S5\
-1.7,18.4,50,18.4\
-z\x22/>\x0a<path d=\x22M7\
-7.8,58.9c-4.7,0-\
-8.6-3.9-8.6-8.6s\
-3.9-8.6,8.6-8.6s\
-8.6,3.9,8.6,8.6S\
-82.5,58.9,77.8,5\
-8.9z M77.8,47.3c\
--1.7,0-3,1.3-3,3\
-\x0a\x09s1.3,3,3,3s3-1\
-.3,3-3S79.5,47.3\
-,77.8,47.3z\x22/>\x0a<\
-path d=\x22M50,85.6\
-c-4.7,0-8.6-3.9-\
-8.6-8.6s3.9-8.6,\
-8.6-8.6s8.6,3.9,\
-8.6,8.6S54.7,85.\
-6,50,85.6z M50,7\
-4c-1.7,0-3,1.3-3\
-,3s1.3,3,3,3\x0a\x09s3\
--1.3,3-3S51.7,74\
-,50,74z\x22/>\x0a<path\
- d=\x22M22.2,58.6c-\
-4.7,0-8.6-3.9-8.\
-6-8.6s3.9-8.6,8.\
-6-8.6s8.6,3.9,8.\
-6,8.6S26.9,58.6,\
-22.2,58.6z M22.2\
-,47c-1.7,0-3,1.3\
--3,3\x0a\x09s1.3,3,3,3\
-s3-1.3,3-3S23.9,\
-47,22.2,47z\x22/>\x0a<\
-path d=\x22M26.4,44\
-.5L21,43.5c2.2-1\
-1.2,10.7-20.2,21\
-.7-23l1.4,5.4C35\
-.1,28.2,28.2,35.\
-5,26.4,44.5z\x22/>\x0a\
-<path d=\x22M43.6,7\
-8c-11.5-2.5-20.7\
--12-22.8-23.6l5.\
-5-1c1.7,9.4,9.1,\
-17.1,18.4,19.2L4\
-3.6,78z\x22/>\x0a<path\
- d=\x22M56.6,78l-1.\
-3-5.5c9.3-2.2,16\
-.4-9.6,18.2-18.9\
-l5.5,1.1C76.8,66\
-.2,68,75.4,56.6,\
-78z\x22/>\x0a<path d=\x22\
-M73.9,46.6c-1.1-\
-9.8-7.9-17.9-17.\
-4-20.5l1.5-5.4C6\
-9.8,24,78.2,33.9\
-,79.5,46L73.9,46\
-.6z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03c\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M47.2,\
-86.9c-1.4,0-2.7-\
-0.9-3.3-2.2l-25-\
-60.6c-0.6-1.3-0.\
-2-2.9,0.8-3.9s2.\
-5-1.3,3.9-0.8l60\
-.6,25c1.4,0.6,2.\
-3,2,2.2,3.6\x0a\x09\x09\x09c\
--0.1,1.5-1.2,2.8\
--2.7,3.2l-26.4,6\
-.6l-6.6,26.4c-0.\
-4,1.5-1.7,2.6-3.\
-2,2.7C47.3,86.9,\
-47.2,86.9,47.2,8\
-6.9z M28.7,29.3L\
-46.3,72\x0a\x09\x09\x09l4.5-\
-18c0.3-1.3,1.3-2\
-.3,2.6-2.6l18-4.\
-5L28.7,29.3z\x22/>\x0a\
-\x09</g>\x0a</g>\x0a</svg\
->\x0a\
-\x00\x00\x03O\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g>\x0a\x09<g\
- id=\x22reply\x22>\x0a\x09\x09<\
-path d=\x22M68.8,15\
-.7l3.4-8.8l-21.4\
-,9.6l9.6,21.4l3.\
-5-9.1c11.1,4.2,1\
-7.4,10.7,20,20.6\
-C85.9,37.4,83.5,\
-23.8,68.8,15.7z\x22\
-/>\x0a\x09</g>\x0a</g>\x0a<p\
-ath d=\x22M52,91.9H\
-17.5c-4.9,0-8.7-\
-3.8-8.7-8.7V48.6\
-c0-4.9,3.8-8.7,8\
-.7-8.7h34.4c4.9,\
-0,8.7,3.8,8.7,8.\
-7v34.4\x0a\x09C60.7,88\
-,56.9,91.9,52,91\
-.9z M19.3,81.3h3\
-0.9V50.4H19.3V81\
-.3z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03\x91\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M84.9,45.3l-6.\
-8-6.8V21.9c0-2.6\
--2.1-4.7-4.7-4.7\
-h-4.7c-2.6,0-4.7\
-,2.1-4.7,4.7v2.6\
-l-9.4-9.4c-1.3-1\
-.2-2.5-2.6-4.7-2\
-.6\x0a\x09s-3.4,1.4-4.\
-7,2.6L15.1,45.3c\
--1.5,1.5-2.6,2.6\
--2.6,4.7c0,2.6,2\
-,4.7,4.7,4.7h4.7\
-v28.1c0,2.6,2.1,\
-4.7,4.7,4.7h14.1\
-V64.1\x0a\x09c0-2.6,2.\
-1-4.7,4.7-4.7h9.\
-4c2.6,0,4.7,2.1,\
-4.7,4.7v23.4h14.\
-1c2.6,0,4.7-2.1,\
-4.7-4.7V54.7h4.7\
-c2.7,0,4.7-2,4.7\
--4.7\x0a\x09C87.5,47.9\
-,86.4,46.8,84.9,\
-45.3z\x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x03}\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M26.5,\
-74.2c0,3.7,3,6.8\
-,6.8,6.8h33.8c3.\
-7,0,6.8-3,6.8-6.\
-8V33.7H26.5V74.2\
-z M33.3,40.4h33.\
-8v33.8H33.3V40.4\
-z\x22/>\x0a\x09\x09<polygon \
-points=\x2260.3,23.\
-5 60.3,16.8 40.1\
-,16.8 40.1,23.5 \
-19.8,23.5 19.8,3\
-0.3 80.6,30.3 80\
-.6,23.5 \x09\x09\x22/>\x0a\x09\x09\
-<rect x=\x2240.1\x22 y\
-=\x2247.2\x22 width=\x226\
-.8\x22 height=\x2220.3\
-\x22/>\x0a\x09\x09<rect x=\x225\
-3.6\x22 y=\x2247.2\x22 wi\
-dth=\x226.8\x22 height\
-=\x2220.3\x22/>\x0a\x09</g>\x0a\
-</g>\x0a</svg>\x0a\
-\x00\x00\x02N\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2222.8,6\
-5.8 29.9,18.1 85\
-.7,67.4 51.9,79.\
-5 \x22/>\x0a</svg>\x0a\
-\x00\x00\x06\x8a\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g>\x0a\x09<p\
-ath d=\x22M34.6,16.\
-5l-12.3-5.1c-0.3\
--0.1-0.6-0.2-0.9\
-,0c-0.3,0.1-0.5,\
-0.3-0.6,0.6s-0.2\
-,0.6,0,0.9l1.8,4\
-.3l-3.8,1.5\x0a\x09\x09c-\
-8,3.3-12.1,7.7-1\
-2,13c0,1.8,0.5,3\
-.8,1.5,6c0.8,1.9\
-,2.5,4.2,5.4,6.8\
-c0.1,0.1,0.2,0.2\
-,0.3,0.4c0.1,0.1\
-,0.3,0.3,0.4,0.4\
-\x0a\x09\x09c0.1,0.1,0.3,\
-0.3,0.4,0.3c0.2,\
-0.2,0.4,0.2,0.6,\
-0.1c0.2,0,0.3-0.\
-2,0.4-0.3c0-0.2,\
-0-0.4-0.1-0.5s-0\
-.1-0.2-0.2-0.4\x0a\x09\
-\x09c-0.1-0.2-0.2-0\
-.3-0.2-0.4c-0.4-\
-0.7-0.7-1.4-1-2c\
--0.5-1.1-0.8-2.2\
--1-3.2s-0.2-1.9-\
-0.1-2.7c0-0.8,0.\
-3-1.6,0.6-2.3\x0a\x09\x09\
-c0.4-0.7,0.8-1.4\
-,1.3-2c0.5-0.6,1\
-.2-1.1,2-1.7c0.8\
--0.5,1.6-1,2.4-1\
-.5c0.8-0.4,1.8-0\
-.8,2.9-1.3l3.8-1\
-.5l1.8,4.3\x0a\x09\x09c0.\
-1,0.3,0.3,0.5,0.\
-6,0.6c0.3,0.1,0.\
-6,0.2,0.9,0c0.3-\
-0.1,0.5-0.3,0.6-\
-0.6l5.1-12.3c0.1\
--0.3,0.2-0.6,0-0\
-.9\x0a\x09\x09C35.2,16.8,\
-35,16.6,34.6,16.\
-5z\x22/>\x0a</g>\x0a<path\
- d=\x22M60.1,88.6l2\
-5.4-13.8V49.5l-2\
-5.4,9.2V88.6z M5\
-7.6,54.3l27.7-10\
-.1L57.6,34.2L29.\
-9,44.2L57.6,54.3\
-z M90.5,44.3v30.\
-4\x0a\x09c0,0.9-0.2,1.\
-8-0.7,2.6c-0.5,0\
-.8-1.1,1.4-1.9,1\
-.9L60,94.4c-0.7,\
-0.4-1.5,0.6-2.4,\
-0.6c-0.9,0-1.7-0\
-.2-2.4-0.6L27.3,\
-79.2\x0a\x09c-0.8-0.4-\
-1.5-1.1-1.9-1.9c\
--0.5-0.8-0.7-1.7\
--0.7-2.6V44.3c0-\
-1.1,0.3-2,0.9-2.\
-9s1.4-1.5,2.4-1.\
-9l27.9-10.1c0.6-\
-0.2,1.2-0.3,1.7-\
-0.3\x0a\x09c0.6,0,1.2,\
-0.1,1.7,0.3l27.9\
-,10.1c1,0.4,1.8,\
-1,2.4,1.9S90.5,4\
-3.2,90.5,44.3z\x22/\
->\x0a</svg>\x0a\
-\x00\x00\x02q\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2272,50 \
-13.8,2.6 13.8,97\
-.4 \x22/>\x0a<rect x=\x22\
-71\x22 y=\x222.6\x22 widt\
-h=\x2212.5\x22 height=\
-\x2294.8\x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x03C\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(59, 58, 57\
-)}\x0a    polygon{f\
-ill:rgb(59, 58, \
-57)}\x0a    circle{\
-fill:rgb(59, 58,\
- 57)}\x0a    rect{f\
-ill:rgb(59, 58, \
-57)}\x0a</style><pa\
-th d=\x22M50.5,77.3\
-C26.7,77.3,8.1,5\
-2.1,7.3,51L6,49.\
-2l1.3-1.8C8.1,46\
-.3,26.7,21,50.5,\
-21s42.4,25.3,43.\
-2,26.3l1.3,1.8L9\
-3.7,51\x0a\x09C92.9,52\
-.1,74.3,77.3,50.\
-5,77.3z M13.8,49\
-.2c4.6,5.6,19.5,\
-21.9,36.7,21.9s3\
-2.1-16.4,36.7-21\
-.9c-4.6-5.6-19.5\
--21.9-36.7-21.9\x0a\
-\x09C33.3,27.2,18.4\
-,43.6,13.8,49.2z\
-\x22/>\x0a<circle cx=\x22\
-50.5\x22 cy=\x2249.2\x22 \
-r=\x2217.3\x22/>\x0a</svg\
->\x0a\
-\x00\x00\x03\x9e\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M47.2,\
-86.9c-1.4,0-2.7-\
-0.9-3.3-2.2l-25-\
-60.6c-0.6-1.3-0.\
-2-2.9,0.8-3.9s2.\
-5-1.3,3.9-0.8l60\
-.6,25c1.4,0.6,2.\
-3,2,2.2,3.6\x0a\x09\x09\x09c\
--0.1,1.5-1.2,2.8\
--2.7,3.2l-26.4,6\
-.6l-6.6,26.4c-0.\
-4,1.5-1.7,2.6-3.\
-2,2.7C47.3,86.9,\
-47.2,86.9,47.2,8\
-6.9z M28.7,29.3L\
-46.3,72\x0a\x09\x09\x09l4.5-\
-18c0.3-1.3,1.3-2\
-.3,2.6-2.6l18-4.\
-5L28.7,29.3z\x22/>\x0a\
-\x09</g>\x0a</g>\x0a<poly\
-gon points=\x2226.3\
-,27.2 45.7,75.4 \
-53,56.2 75.2,46.\
-8 \x22/>\x0a</svg>\x0a\
-\x00\x00\x06\x0b\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M58.8,82.6c-4.\
-7,0-8.6-3.9-8.6-\
-8.6s3.9-8.6,8.6-\
-8.6s8.6,3.9,8.6,\
-8.6S63.5,82.6,58\
-.8,82.6z M58.8,7\
-1c-1.7,0-3,1.3-3\
-,3\x0a\x09s1.3,3,3,3s3\
--1.3,3-3S60.5,71\
-,58.8,71z\x22/>\x0a<pa\
-th d=\x22M39.5,39.8\
-c-4.7,0-8.6-3.9-\
-8.6-8.6s3.9-8.6,\
-8.6-8.6s8.6,3.9,\
-8.6,8.6S44.2,39.\
-8,39.5,39.8z M39\
-.5,28.2c-1.7,0-3\
-,1.3-3,3\x0a\x09s1.3,3\
-,3,3s3-1.3,3-3S4\
-1.2,28.2,39.5,28\
-.2z\x22/>\x0a<path d=\x22\
-M19.2,82.6c-4.7,\
-0-8.6-3.9-8.6-8.\
-6s3.9-8.6,8.6-8.\
-6s8.6,3.9,8.6,8.\
-6S23.9,82.6,19.2\
-,82.6z M19.2,71c\
--1.7,0-3,1.3-3,3\
-\x0a\x09s1.3,3,3,3s3-1\
-.3,3-3S20.9,71,1\
-9.2,71z\x22/>\x0a<path\
- d=\x22M83.1,39.8c-\
-4.7,0-8.6-3.9-8.\
-6-8.6s3.9-8.6,8.\
-6-8.6s8.6,3.9,8.\
-6,8.6S87.8,39.8,\
-83.1,39.8z M83.1\
-,28.2c-1.7,0-3,1\
-.3-3,3\x0a\x09s1.3,3,3\
-,3s3-1.3,3-3S84.\
-8,28.2,83.1,28.2\
-z\x22/>\x0a<rect x=\x2251\
-.1\x22 y=\x2249.2\x22 tra\
-nsform=\x22matrix(0\
-.5355 -0.8445 0.\
-8445 0.5355 -11.\
-219 83.5029)\x22 wi\
-dth=\x2238.5\x22 heigh\
-t=\x225.5\x22/>\x0a<rect \
-x=\x2246.4\x22 y=\x2235.3\
-\x22 transform=\x22mat\
-rix(0.9001 -0.43\
-56 0.4356 0.9001\
- -18.0059 26.666\
-)\x22 width=\x225.5\x22 h\
-eight=\x2234.7\x22/>\x0a<\
-rect x=\x2210\x22 y=\x225\
-1.3\x22 transform=\x22\
-matrix(0.4615 -0\
-.8872 0.8872 0.4\
-615 -32.1006 55.\
-1188)\x22 width=\x2238\
-.8\x22 height=\x225.5\x22\
-/>\x0a</svg>\x0a\
-\x00\x00\x03S\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><path d\
-=\x22M82.1,89.6H34.\
-5c-5.2,0-9.3-3.9\
--9.3-8.9v-7.3h11\
-.2v5.5h43.9V37.2\
-h-5.6V26.5h7.5c5\
-.2,0,9.3,3.9,9.3\
-,8.9v45.3\x0a\x09C91.4\
-,85.7,87.3,89.6,\
-82.1,89.6z\x22/>\x0a<p\
-ath d=\x22M65.3,73.\
-5H17.9c-5.2,0-9.\
-3-3.9-9.3-8.9V19\
-.3c0-5,4.1-8.9,9\
-.3-8.9h47.5c5.2,\
-0,9.3,3.9,9.3,8.\
-9v45.3\x0a\x09C74.7,69\
-.6,70.6,73.5,65.\
-3,73.5z M19.8,62\
-.8h43.7V21.1H19.\
-8V62.8z\x22/>\x0a</svg\
->\x0a\
-\x00\x00\x03\xbd\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-path class=\x22st0\x22\
- d=\x22M50,13.6c-20\
-,0-36.3,16.3-36.\
-3,36.3c0,20,16.3\
-,36.3,36.3,36.3C\
-70,86.3,86.3,70,\
-86.3,50\x0a\x09\x09\x09C86.3\
-,29.9,70,13.6,50\
-,13.6z M50,79c-1\
-6,0-29.1-13-29.1\
--29.1c0-16,13-29\
-.1,29.1-29.1C66,\
-20.9,79,33.9,79,\
-50C79,66,66,79,5\
-0,79z\x22/>\x0a\x09\x09<poly\
-gon class=\x22st0\x22 \
-points=\x2253.6,31.\
-8 46.3,31.8 46.3\
-,46.3 31.8,46.3 \
-31.8,53.6 46.3,5\
-3.6 46.3,68.1 53\
-.6,68.1 53.6,53.\
-6 \x0a\x09\x09\x0968.1,53.6 \
-68.1,46.3 53.6,4\
-6.3 \x09\x09\x22/>\x0a\x09</g>\x0a\
-</g>\x0a</svg>\x0a\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 24.0.0, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2250,79.\
-1 97.4,20.9 2.6,\
-20.9 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(107, 105, \
-103)}\x0a    polygo\
-n{fill:rgb(107, \
-105, 103)}\x0a    c\
-ircle{fill:rgb(1\
-07, 105, 103)}\x0a \
-   rect{fill:rgb\
-(107, 105, 103)}\
-\x0a</style><polygo\
-n points=\x2279.1,5\
-0 20.9,2.6 20.9,\
-97.4 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x05\xa5\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g id=\x22\
-Solid_1_\x22>\x0a\x09<pat\
-h d=\x22M72.9,61.1V\
-37.3c3.3-1.2,5.7\
--4.3,5.7-8c0-4.7\
--3.8-8.5-8.5-8.5\
-c-3.7,0-6.8,2.4-\
-8,5.7H38.2c-1.2-\
-3.3-4.3-5.7-8-5.\
-7\x0a\x09\x09c-4.7,0-8.5,\
-3.8-8.5,8.5c0,3.\
-7,2.4,6.8,5.7,8v\
-23.8c-3.3,1.2-5.\
-7,4.3-5.7,8c0,4.\
-7,3.8,8.5,8.5,8.\
-5c3.7,0,6.8-2.4,\
-8-5.7H62\x0a\x09\x09c1.2,\
-3.3,4.3,5.7,8,5.\
-7c4.7,0,8.5-3.8,\
-8.5-8.5C78.6,65.\
-4,76.2,62.2,72.9\
-,61.1z M70.1,26.\
-4c1.6,0,2.8,1.3,\
-2.8,2.8\x0a\x09\x09c0,1.6\
--1.3,2.8-2.8,2.8\
-c-1.6,0-2.8-1.3-\
-2.8-2.8C67.2,27.\
-7,68.5,26.4,70.1\
-,26.4z M30.2,26.\
-4c1.6,0,2.8,1.3,\
-2.8,2.8\x0a\x09\x09c0,1.6\
--1.3,2.8-2.8,2.8\
-c-1.6,0-2.8-1.3-\
-2.8-2.8C27.4,27.\
-7,28.7,26.4,30.2\
-,26.4z M30.2,71.\
-9c-1.6,0-2.8-1.3\
--2.8-2.8\x0a\x09\x09c0-1.\
-6,1.3-2.8,2.8-2.\
-8c1.6,0,2.8,1.3,\
-2.8,2.8C33.1,70.\
-6,31.8,71.9,30.2\
-,71.9z M62.1,66.\
-2H38.2c-0.9-2.4-\
-2.8-4.3-5.2-5.2V\
-37.3\x0a\x09\x09c2.4-0.9,\
-4.3-2.8,5.2-5.2H\
-62c0.9,2.4,2.8,4\
-.3,5.2,5.2v23.8C\
-64.8,61.9,62.9,6\
-3.8,62.1,66.2z M\
-70.1,71.9c-1.6,0\
--2.8-1.3-2.8-2.8\
-\x0a\x09\x09c0-1.6,1.3-2.\
-8,2.8-2.8c1.6,0,\
-2.8,1.3,2.8,2.8S\
-71.6,71.9,70.1,7\
-1.9z\x22/>\x0a</g>\x0a</s\
-vg>\x0a\
-\x00\x00\x04H\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g>\x0a\x09<p\
-ath d=\x22M57.3,84.\
-7h-32c-4.6,0-8.2\
--3.6-8.2-8.2v-32\
-c0-4.6,3.6-8.2,8\
-.2-8.2h32c4.6,0,\
-8.2,3.6,8.2,8.2v\
-32\x0a\x09\x09C65.4,81.2,\
-61.9,84.7,57.3,8\
-4.7z M26.9,74.9h\
-28.7V46.2H26.9V7\
-4.9z\x22/>\x0a\x09<path d\
-=\x22M74.7,63.6h-32\
-c-4.6,0-8.2-3.6-\
-8.2-8.2v-32c0-4.\
-6,3.6-8.2,8.2-8.\
-2h32c4.6,0,8.2,3\
-.6,8.2,8.2v32\x0a\x09\x09\
-C82.9,60,79.3,63\
-.6,74.7,63.6z M4\
-4.3,53.8h28.7V25\
-.1H44.3V53.8z\x22/>\
-\x0a\x09<path d=\x22M81.1\
-,60.6L62.7,82.7l\
--6.9-6.9l13.8-15\
-.3l5-3.5\x22/>\x0a\x09<pa\
-th d=\x22M82,26.8L6\
-1.9,46.9l-6.9-7l\
-20.4-20.4l0,0\x22/>\
-\x0a\x09<path d=\x22M44.7\
-,60.6L24.8,83.1l\
--6.9-6.9l18.8-22\
-.2h1.6\x22/>\x0a\x09<path\
- d=\x22M19,39.4L36,\
-18.7l10.3,3L29.2\
-,42l0,0\x22/>\x0a</g>\x0a\
-</svg>\x0a\
-\x00\x00\x02\xb6\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><polygo\
-n points=\x2225.4,5\
-0 83.6,97.4 83.6\
-,2.6 \x22/>\x0a<rect x\
-=\x2213.8\x22 y=\x222.6\x22 \
-transform=\x22matri\
-x(-1 -1.224647e-\
-16 1.224647e-16 \
--1 40.1826 100)\x22\
- width=\x2212.5\x22 he\
-ight=\x2294.8\x22/>\x0a</\
-svg>\x0a\
-\x00\x00\x04'\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-polygon points=\x22\
-70.7,36.5 85.3,3\
-6.5 85.3,29.2 70\
-.7,29.2 63.5,29.\
-2 48.9,29.2 48.9\
-,36.5 63.5,36.5 \
-\x09\x09\x22/>\x0a\x09</g>\x0a</g>\
-\x0a<g id=\x22Outline\x22\
->\x0a\x09<g>\x0a\x09\x09<path d\
-=\x22M35.4,85.9c-0.\
-9,0-1.8-0.6-2.2-\
-1.5L16.8,44.5c-0\
-.4-0.9-0.2-1.9,0\
-.5-2.6c0.7-0.7,1\
-.7-0.9,2.6-0.5l3\
-9.9,16.4\x0a\x09\x09\x09c0.9\
-,0.4,1.5,1.3,1.4\
-,2.3s-0.8,1.9-1.\
-8,2.1L42,66.6L37\
-.6,84c-0.2,1-1.1\
-,1.7-2.1,1.8C35.\
-5,85.9,35.5,85.9\
-,35.4,85.9z M23.\
-3,47.9\x0a\x09\x09\x09L34.9,\
-76l3-11.9c0.2-0.\
-8,0.9-1.5,1.7-1.\
-7l11.9-3L23.3,47\
-.9z\x22/>\x0a\x09</g>\x0a</g\
->\x0a<polygon point\
-s=\x2221.7,46.6 34.\
-5,78.3 39.3,65.7\
- 53.9,59.5 \x22/>\x0a<\
-/svg>\x0a\
-\x00\x00\x04U\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<path d\
-=\x22M79.4,30.1c0-2\
-.4-0.9-4.6-2.6-6\
-.3c-3.4-3.4-9.2-\
-3.4-12.6,0L33.9,\
-54.2c-2.8,0.2-5.\
-5,1.3-7.5,3.3c-4\
-.2,4.2-4,7.7-3.9\
-,10.6\x0a\x09\x09c0.1,2.4\
-,0.2,4.2-2.7,7.2\
-l-4.3,4.3c5.4,0.\
-7,6.7,1,9.6,1l0,\
-0c4.4,0,12.7-0.8\
-,18.1-6.2c2.1-2.\
-1,3.2-4.7,3.4-7.\
-6l30.2-30.2\x0a\x09\x09C7\
-8.5,34.7,79.4,32\
-.5,79.4,30.1z M3\
-9,70c-3.1,3.1-7.\
-9,4.1-11.5,4.3c1\
-.1-2.6,1-4.8,0.9\
--6.7c-0.3-5.2,3.\
-2-7.8,6.4-7.8\x0a\x09\x09\
-c1.6,0,3.1,0.6,4\
-.2,1.7C41.3,64,4\
-1.3,67.7,39,70z \
-M72.6,32.2L45,59\
-.8c-0.5-0.9-1.1-\
-1.7-1.8-2.4s-1.6\
--1.3-2.4-1.8L68.\
-4,28\x0a\x09\x09c1.1-1.1,\
-3.1-1.1,4.2,0c0.\
-6,0.6,0.9,1.3,0.\
-9,2.1C73.5,30.9,\
-73.2,31.7,72.6,3\
-2.2z\x22/>\x0a</g>\x0a</s\
-vg>\x0a\
-\x00\x00\x02\xf8\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><rect x\
-=\x2245\x22 y=\x2221.3\x22 t\
-ransform=\x22matrix\
-(0.7112 -0.7029 \
-0.7029 0.7112 -2\
-1.6791 50.024)\x22 \
-width=\x2210\x22 heigh\
-t=\x2260.2\x22/>\x0a<rect\
- x=\x2219.9\x22 y=\x2246.\
-4\x22 transform=\x22ma\
-trix(0.7113 -0.7\
-029 0.7029 0.711\
-3 -21.7284 49.99\
-88)\x22 width=\x2260.2\
-\x22 height=\x2210\x22/>\x0a\
-</svg>\x0a\
-\x00\x00\x03\xa1\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M50.1,\
-76.4c10.9,0,19.8\
--8.9,19.8-19.8c0\
--10-15.4-29.5-17\
-.2-31.7l-2.6-3.2\
-L47.6,25c-1.8,2.\
-2-17.2,21.7-17.2\
-,31.7\x0a\x09\x09\x09C30.4,6\
-7.6,39.2,76.4,50\
-.1,76.4z M50.1,3\
-2.4c5.9,7.9,13.2\
-,19.2,13.2,24.3c\
-0,7.3-5.9,13.2-1\
-3.2,13.2c-7.3,0-\
-13.2-5.9-13.2-13\
-.2\x0a\x09\x09\x09C37,51.7,4\
-4.2,40.3,50.1,32\
-.4z\x22/>\x0a\x09\x09<path d\
-=\x22M59.2,56.7h-4.\
-9c0,2.3-1.8,4.1-\
-4.1,4.1v4.9C55.1\
-,65.7,59.2,61.7,\
-59.2,56.7z\x22/>\x0a\x09<\
-/g>\x0a</g>\x0a</svg>\x0a\
-\
-\x00\x00\x03e\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><circle\
- cx=\x2259.6\x22 cy=\x224\
-2.7\x22 r=\x224.9\x22/>\x0a<\
-path d=\x22M41.1,84\
-.2c-1,0-2-0.4-2.\
-7-1.3l-22-26.7c-\
-1.2-1.5-1-3.7,0.\
-5-4.9l31.9-26.4c\
-0.6-0.5,1.4-0.8,\
-2.2-0.8c0,0,0,0,\
-0,0l27.1,0.1\x0a\x09c1\
-,0,2,0.5,2.7,1.3\
-c0.7,0.8,0.9,1.9\
-,0.7,2.9L76.5,55\
-c-0.2,0.8-0.6,1.\
-5-1.2,2L43.3,83.\
-4C42.7,83.9,41.9\
-,84.2,41.1,84.2z\
- M24,54.5\x0a\x09l17.6\
-,21.3l28.3-23.3l\
-4-21.2l-21.6-0.1\
-L24,54.5z\x22/>\x0a</s\
-vg>\x0a\
-\x00\x00\x02\xbd\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 177.6 94.8\x22 st\
-yle=\x22enable-back\
-ground:new 0 0 1\
-77.6 94.8;\x22 xml:\
-space=\x22preserve\x22\
->\x0a<style type=\x22t\
-ext/css\x22>\x0a    pa\
-th{fill:rgb(209,\
- 210, 212)}\x0a    \
-polygon{fill:rgb\
-(209, 210, 212)}\
-\x0a    circle{fill\
-:rgb(209, 210, 2\
-12)}\x0a    rect{fi\
-ll:rgb(209, 210,\
- 212)}\x0a</style><\
-polygon points=\x22\
-0.5,47.4 58.7,94\
-.8 58.7,0 \x22/>\x0a<r\
-ect x=\x2258.6\x22 y=\x22\
-31.2\x22 transform=\
-\x22matrix(-1 -1.22\
-4647e-16 1.22464\
-7e-16 -1 236.168\
-7 94.8)\x22 width=\x22\
-119\x22 height=\x2232.\
-4\x22/>\x0a</svg>\x0a\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><polygo\
-n points=\x2220.9,5\
-0 79.1,97.4 79.1\
-,2.6 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x06*\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><rect x\
-=\x2213.1\x22 y=\x2223.1\x22\
- transform=\x22matr\
-ix(0.7071 -0.707\
-1 0.7071 0.7071 \
--10.0546 26.0581\
-)\x22 width=\x2226.7\x22 \
-height=\x224.1\x22/>\x0a<\
-rect x=\x2233.9\x22 y=\
-\x2223.1\x22 transform\
-=\x22matrix(0.8471 \
--0.5315 0.5315 0\
-.8471 -6.1536 28\
-.9461)\x22 width=\x222\
-6.7\x22 height=\x224.1\
-\x22/>\x0a<rect x=\x2256.\
-7\x22 y=\x2223.1\x22 tran\
-sform=\x22matrix(0.\
-9345 -0.356 0.35\
-6 0.9345 -4.3723\
- 26.5752)\x22 width\
-=\x2226.7\x22 height=\x22\
-4.1\x22/>\x0a<rect x=\x22\
-13.1\x22 y=\x2247.3\x22 t\
-ransform=\x22matrix\
-(0.7071 -0.7071 \
-0.7071 0.7071 -2\
-7.1546 33.1412)\x22\
- width=\x2226.7\x22 he\
-ight=\x224.1\x22/>\x0a<re\
-ct x=\x2233.9\x22 y=\x224\
-7.3\x22 transform=\x22\
-matrix(0.8209 -0\
-.5711 0.5711 0.8\
-209 -19.725 35.8\
-084)\x22 width=\x2226.\
-7\x22 height=\x224.1\x22/\
->\x0a<rect x=\x2256.7\x22\
- y=\x2247.3\x22 transf\
-orm=\x22matrix(0.96\
-89 -0.2476 0.247\
-6 0.9689 -10.037\
-8 18.8686)\x22 widt\
-h=\x2226.7\x22 height=\
-\x224.1\x22/>\x0a<rect x=\
-\x2213.1\x22 y=\x2274\x22 tr\
-ansform=\x22matrix(\
-0.8209 -0.5711 0\
-.5711 0.8209 -38\
-.7071 28.7179)\x22 \
-width=\x2226.7\x22 hei\
-ght=\x224.1\x22/>\x0a<rec\
-t x=\x2233.9\x22 y=\x2274\
-\x22 transform=\x22mat\
-rix(0.8471 -0.53\
-15 0.5315 0.8471\
- -33.2051 36.729\
-9)\x22 width=\x2226.7\x22\
- height=\x224.1\x22/>\x0a\
-<rect x=\x2256.7\x22 y\
-=\x2274\x22 transform=\
-\x22matrix(0.9946 -\
-0.1035 0.1035 0.\
-9946 -7.4995 7.6\
-579)\x22 width=\x2226.\
-7\x22 height=\x224.1\x22/\
->\x0a</svg>\x0a\
-\x00\x00\x03\xcd\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><path d\
-=\x22M66.7,54.4h-6V\
-37.9H45.4v-6h16.\
-3c2.8,0,5,2.2,5,\
-5V54.4z\x22/>\x0a<path\
- d=\x22M53.4,67.4H3\
-6.3c-2.8,0-5-2.2\
--5-5V45.1h6v16.3\
-h16.1V67.4z\x22/>\x0a<\
-path d=\x22M42.5,47\
-.6H22.9c-2.8,0-5\
--2.2-5-5V23c0-2.\
-8,2.2-5,5-5h19.6\
-c2.8,0,5,2.2,5,5\
-v19.6C47.5,45.4,\
-45.3,47.6,42.5,4\
-7.6z M23.9,41.6\x0a\
-\x09h17.6V24H23.9V4\
-1.6z\x22/>\x0a<path d=\
-\x22M75.7,81.3H56.1\
-c-2.8,0-5-2.2-5-\
-5V56.8c0-2.8,2.2\
--5,5-5h19.6c2.8,\
-0,5,2.2,5,5v19.6\
-C80.7,79.1,78.5,\
-81.3,75.7,81.3z\x0a\
-\x09 M57.1,75.3h17.\
-6V57.8H57.1V75.3\
-z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03\xfd\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.4, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><path d\
-=\x22M42.1,51l-29-2\
-3.2c-2.3-1.8-2.6\
--5.2-0.8-7.5c1.8\
--2.3,5.2-2.6,7.5\
--0.8l28.9,23.2c2\
-.3,1.8,2.6,5.2,0\
-.8,7.5c-1,1.3-2.\
-6,2-4.1,2\x0a\x09C44.3\
-,52.2,43.1,51.8,\
-42.1,51z\x22/>\x0a<pat\
-h d=\x22M12.4,73.4c\
--1.8-2.3-1.5-5.7\
-,0.8-7.5l28.9-23\
-.2c2.3-1.8,5.7-1\
-.5,7.5,0.8s1.5,5\
-.7-0.8,7.5l-29,2\
-3.3c-0.9,0.7-2.1\
-,1.2-3.3,1.2\x0a\x09C1\
-4.9,75.5,13.5,74\
-.8,12.4,73.4z\x22/>\
-\x0a<path d=\x22M41.4,\
-75.3c0-2.9,2.3-5\
-.4,5.3-5.4l37.1-\
-0.5c2.9,0,5.4,2.\
-3,5.4,5.3c0,2.9-\
-2.3,5.4-5.3,5.4l\
--37.2,0.5c-1.2,0\
--2.4-0.4-3.3-1.1\
-\x0a\x09C42.2,78.5,41.\
-4,77.1,41.4,75.3\
-z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03\xc1\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(106, 115, \
-128)}\x0a    polygo\
-n{fill:rgb(106, \
-115, 128)}\x0a    c\
-ircle{fill:rgb(1\
-06, 115, 128)}\x0a \
-   rect{fill:rgb\
-(106, 115, 128)}\
-\x0a</style><path d\
-=\x22M50.5,77.3C26.\
-7,77.3,8.1,52.1,\
-7.3,51L6,49.2l1.\
-3-1.8C8.1,46.3,2\
-6.7,21,50.5,21s4\
-2.4,25.3,43.2,26\
-.3l1.3,1.8L93.7,\
-51\x0a\x09C92.9,52.1,7\
-4.3,77.3,50.5,77\
-.3z M13.8,49.2c4\
-.6,5.6,19.5,21.9\
-,36.7,21.9s32.1-\
-16.4,36.7-21.9c-\
-4.6-5.6-19.5-21.\
-9-36.7-21.9\x0a\x09C33\
-.3,27.2,18.4,43.\
-6,13.8,49.2z\x22/>\x0a\
-<circle cx=\x2250.5\
-\x22 cy=\x2249.2\x22 r=\x221\
-7.3\x22/>\x0a<rect x=\x22\
-1.1\x22 y=\x2244.6\x22 tr\
-ansform=\x22matrix(\
-0.8188 -0.5741 0\
-.5741 0.8188 -19\
-.1291 37.698)\x22 w\
-idth=\x2298.1\x22 heig\
-ht=\x229\x22/>\x0a</svg>\x0a\
-\
 \x00\x00\x05,\
 <\
 ?xml version=\x221.\
@@ -3874,269 +1907,7 @@ ect x=\x2261.1\x22 y=\x22\
 .2311)\x22 width=\x225\
 .6\x22 height=\x2247.5\
 \x22/>\x0a</svg>\x0a\
-\x00\x00\x02E\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(134, 142, \
-147)}\x0a    polygo\
-n{fill:rgb(134, \
-142, 147)}\x0a    c\
-ircle{fill:rgb(1\
-34, 142, 147)}\x0a \
-   rect{fill:rgb\
-(134, 142, 147)}\
-\x0a</style><rect x\
-=\x223.4\x22 y=\x2240.6\x22 \
-width=\x2292.9\x22 hei\
-ght=\x2218.6\x22/>\x0a</s\
-vg>\x0a\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.0, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(134, 142, \
-147)}\x0a    polygo\
-n{fill:rgb(134, \
-142, 147)}\x0a    c\
-ircle{fill:rgb(1\
-34, 142, 147)}\x0a \
-   rect{fill:rgb\
-(134, 142, 147)}\
-\x0a</style><polygo\
-n points=\x2250,79.\
-1 97.4,20.9 2.6,\
-20.9 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x03Y\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(134, 142, \
-147)}\x0a    polygo\
-n{fill:rgb(134, \
-142, 147)}\x0a    c\
-ircle{fill:rgb(1\
-34, 142, 147)}\x0a \
-   rect{fill:rgb\
-(134, 142, 147)}\
-\x0a</style><path d\
-=\x22M31.8,56.4c-1.\
-9,0-3.8-0.8-5-2.\
-4c-2.2-2.8-1.8-6\
-.9,1-9.1l35.1-28\
-.2c2.8-2.2,6.9-1\
-.8,9.1,1c2.2,2.8\
-,1.8,6.9-1,9.1L3\
-5.8,54.9\x0a\x09C34.6,\
-55.9,33.2,56.4,3\
-1.8,56.4z\x22/>\x0a<pa\
-th d=\x22M66.9,84.6\
-c-1.4,0-2.9-0.5-\
-4-1.4L27.7,54.9c\
--2.8-2.2-3.2-6.3\
--1-9.1c2.2-2.8,6\
-.3-3.2,9.1-1l35.\
-1,28.2c2.8,2.2,3\
-.2,6.3,1,9.1\x0a\x09C7\
-0.6,83.8,68.8,84\
-.6,66.9,84.6z\x22/>\
-\x0a</svg>\x0a\
-\x00\x00\x03\xd9\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><path d\
-=\x22M30.2,77.7c-4.\
-7,0-8.6-3.9-8.6-\
-8.6s3.9-8.6,8.6-\
-8.6s8.6,3.9,8.6,\
-8.6S34.9,77.7,30\
-.2,77.7z M30.2,6\
-6.1c-1.7,0-3,1.3\
--3,3\x0a\x09s1.3,3,3,3\
-s3-1.3,3-3S31.9,\
-66.1,30.2,66.1z\x22\
-/>\x0a<path d=\x22M70.\
-1,37.8c-4.7,0-8.\
-6-3.9-8.6-8.6s3.\
-9-8.6,8.6-8.6s8.\
-6,3.9,8.6,8.6S74\
-.8,37.8,70.1,37.\
-8z M70.1,26.2c-1\
-.7,0-3,1.3-3,3\x0a\x09\
-s1.3,3,3,3s3-1.3\
-,3-3S71.8,26.2,7\
-0.1,26.2z\x22/>\x0a<re\
-ct x=\x2228\x22 y=\x2246.\
-7\x22 transform=\x22ma\
-trix(0.7027 -0.7\
-115 0.7115 0.702\
-7 -20.1843 50.59\
-28)\x22 width=\x2244.8\
-\x22 height=\x225.6\x22/>\
-\x0a</svg>\x0a\
-\x00\x00\x03\xde\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.1.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><rect x\
-=\x2213\x22 y=\x2212\x22 wid\
-th=\x2216.8\x22 height\
-=\x2216.8\x22/>\x0a<rect \
-x=\x2241.7\x22 y=\x2212\x22 \
-width=\x2216.8\x22 hei\
-ght=\x2216.8\x22/>\x0a<re\
-ct x=\x2270.4\x22 y=\x221\
-2\x22 width=\x2216.8\x22 \
-height=\x2216.8\x22/>\x0a\
-<rect x=\x2213\x22 y=\x22\
-41.5\x22 width=\x2216.\
-8\x22 height=\x2216.8\x22\
-/>\x0a<rect x=\x2241.7\
-\x22 y=\x2241.5\x22 width\
-=\x2216.8\x22 height=\x22\
-16.8\x22/>\x0a<rect x=\
-\x2270.4\x22 y=\x2241.5\x22 \
-width=\x2216.8\x22 hei\
-ght=\x2216.8\x22/>\x0a<re\
-ct x=\x2212.9\x22 y=\x227\
-1\x22 width=\x2216.8\x22 \
-height=\x2216.8\x22/>\x0a\
-<rect x=\x2241.6\x22 y\
-=\x2271\x22 width=\x2216.\
-8\x22 height=\x2216.8\x22\
-/>\x0a<rect x=\x2270.3\
-\x22 y=\x2271\x22 width=\x22\
-16.8\x22 height=\x2216\
-.8\x22/>\x0a</svg>\x0a\
-\x00\x00\x02F\
+\x00\x00\x03\x91\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
@@ -4170,119 +1941,32 @@ ircle{fill:rgb(2\
 09, 210, 212)}\x0a \
    rect{fill:rgb\
 (209, 210, 212)}\
-\x0a</style><rect x\
-=\x2222.2\x22 y=\x2222.2\x22\
- width=\x2255.5\x22 he\
-ight=\x2255.5\x22/>\x0a</\
-svg>\x0a\
-\x00\x00\x02\xc1\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(134, 142, \
-147)}\x0a    polygo\
-n{fill:rgb(134, \
-142, 147)}\x0a    c\
-ircle{fill:rgb(1\
-34, 142, 147)}\x0a \
-   rect{fill:rgb\
-(134, 142, 147)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-polygon points=\x22\
-59.1,3.4 40.6,3.\
-4 40.6,40.6 3.4,\
-40.6 3.4,59.1 40\
-.6,59.1 40.6,96.\
-3 59.1,96.3 59.1\
-,59.1 96.3,59.1 \
-96.3,40.6 \x0a\x09\x09\x0959\
-.1,40.6 \x09\x09\x22/>\x0a\x09<\
-/g>\x0a</g>\x0a</svg>\x0a\
-\
-\x00\x00\x03\xa4\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
 \x0a</style><path d\
-=\x22M32.4,53.5H23c\
--2.8,0-5-2.2-5-5\
-V23c0-2.8,2.2-5,\
-5-5h25.5c2.8,0,5\
-,2.2,5,5v10.3h-6\
-V24H24v23.5h8.4V\
-53.5z\x22/>\x0a<path d\
-=\x22M75.7,81.3H50.\
-1c-2.8,0-5-2.2-5\
--5V65.2h6v10.1h2\
-3.6V51.8h-9.5v-6\
-h10.5c2.8,0,5,2.\
-2,5,5v25.5C80.7,\
-79.1,78.5,81.3,7\
-5.7,81.3z\x0a\x09\x22/>\x0a<\
-path d=\x22M61.8,67\
-.4H36.3c-2.8,0-5\
--2.2-5-5V36.9c0-\
-2.8,2.2-5,5-5h25\
-.5c2.8,0,5,2.2,5\
-,5v25.5C66.8,65.\
-2,64.6,67.4,61.8\
-,67.4z\x0a\x09 M37.3,6\
-1.4h23.5V37.9H37\
-.3V61.4z\x22/>\x0a</sv\
-g>\x0a\
+=\x22M84.9,45.3l-6.\
+8-6.8V21.9c0-2.6\
+-2.1-4.7-4.7-4.7\
+h-4.7c-2.6,0-4.7\
+,2.1-4.7,4.7v2.6\
+l-9.4-9.4c-1.3-1\
+.2-2.5-2.6-4.7-2\
+.6\x0a\x09s-3.4,1.4-4.\
+7,2.6L15.1,45.3c\
+-1.5,1.5-2.6,2.6\
+-2.6,4.7c0,2.6,2\
+,4.7,4.7,4.7h4.7\
+v28.1c0,2.6,2.1,\
+4.7,4.7,4.7h14.1\
+V64.1\x0a\x09c0-2.6,2.\
+1-4.7,4.7-4.7h9.\
+4c2.6,0,4.7,2.1,\
+4.7,4.7v23.4h14.\
+1c2.6,0,4.7-2.1,\
+4.7-4.7V54.7h4.7\
+c2.7,0,4.7-2,4.7\
+-4.7\x0a\x09C87.5,47.9\
+,86.4,46.8,84.9,\
+45.3z\x22/>\x0a</svg>\x0a\
+\
 \x00\x00\x03\xa2\
 <\
 ?xml version=\x221.\
@@ -4344,173 +2028,13 @@ v7.5c0,2.6-2.3,4\
 4,5.9,17.3,8.7,1\
 7.3\x0a\x09z\x22/>\x0a</svg>\
 \x0a\
-\x00\x00\x02}\
+\x00\x00\x02A\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 177.6 94.8\x22 st\
-yle=\x22enable-back\
-ground:new 0 0 1\
-77.6 94.8;\x22 xml:\
-space=\x22preserve\x22\
->\x0a<style type=\x22t\
-ext/css\x22>\x0a    pa\
-th{fill:rgb(209,\
- 210, 212)}\x0a    \
-polygon{fill:rgb\
-(209, 210, 212)}\
-\x0a    circle{fill\
-:rgb(209, 210, 2\
-12)}\x0a    rect{fi\
-ll:rgb(209, 210,\
- 212)}\x0a</style><\
-polygon points=\x22\
-177.6,47.4 119.4\
-,0 119.4,94.8 \x22/\
->\x0a<rect x=\x220.5\x22 \
-y=\x2231.2\x22 width=\x22\
-119\x22 height=\x2232.\
-4\x22/>\x0a</svg>\x0a\
-\x00\x00\x02\xc9\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><path d\
-=\x22M74.7,86.9H26.\
-4c-6.9,0-12.2-5.\
-4-12.2-12.2V26.4\
-c0-6.9,5.4-12.2,\
-12.2-12.2h48.1c6\
-.9,0,12.2,5.4,12\
-.2,12.2v48.1\x0a\x09C8\
-6.9,81.5,81.5,86\
-.9,74.7,86.9z M2\
-8.9,72.1h43.2V28\
-.9H28.9V72.1z\x22/>\
-\x0a</svg>\x0a\
-\x00\x00\x04O\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-polygon points=\x22\
-70.7,14.7 63.5,1\
-4.7 63.5,29.2 48\
-.9,29.2 48.9,36.\
-5 63.5,36.5 63.5\
-,51 70.7,51 70.7\
-,36.5 85.3,36.5 \
-85.3,29.2 \x0a\x09\x09\x0970\
-.7,29.2 \x09\x09\x22/>\x0a\x09<\
-/g>\x0a</g>\x0a<g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M35.4,\
-85.9c-0.9,0-1.8-\
-0.6-2.2-1.5L16.8\
-,44.5c-0.4-0.9-0\
-.2-1.9,0.5-2.6c0\
-.7-0.7,1.7-0.9,2\
-.6-0.5l39.9,16.4\
-\x0a\x09\x09\x09c0.9,0.4,1.5\
-,1.3,1.4,2.3s-0.\
-8,1.9-1.8,2.1L42\
-,66.6L37.6,84c-0\
-.2,1-1.1,1.7-2.1\
-,1.8C35.5,85.9,3\
-5.5,85.9,35.4,85\
-.9z M23.3,47.9\x0a\x09\
-\x09\x09L34.9,76l3-11.\
-9c0.2-0.8,0.9-1.\
-5,1.7-1.7l11.9-3\
-L23.3,47.9z\x22/>\x0a\x09\
-</g>\x0a</g>\x0a<polyg\
-on points=\x2221.7,\
-46.6 34.5,78.3 3\
-9.3,65.7 53.9,59\
-.5 \x22/>\x0a</svg>\x0a\
-\x00\x00\x03Y\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.0.0, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -4538,35 +2062,18 @@ ircle{fill:rgb(1\
 34, 142, 147)}\x0a \
    rect{fill:rgb\
 (134, 142, 147)}\
-\x0a</style><path d\
-=\x22M51.3,75.9c-1.\
-9,0-3.8-0.8-5-2.\
-4L18.1,38.4c-2.2\
--2.8-1.8-6.9,1-9\
-.1c2.8-2.2,6.9-1\
-.8,9.1,1l28.2,35\
-.1c2.2,2.8,1.8,6\
-.9-1,9.1\x0a\x09C54.2,\
-75.5,52.7,75.9,5\
-1.3,75.9z\x22/>\x0a<pa\
-th d=\x22M51.3,75.9\
-c-1.4,0-2.9-0.5-\
-4-1.4c-2.8-2.2-3\
-.2-6.3-1-9.1l28.\
-2-35.1c2.2-2.8,6\
-.3-3.2,9.1-1c2.8\
-,2.2,3.2,6.3,1,9\
-.1L56.4,73.5\x0a\x09C5\
-5.1,75.1,53.2,75\
-.9,51.3,75.9z\x22/>\
-\x0a</svg>\x0a\
-\x00\x00\x09\xa7\
+\x0a</style><polygo\
+n points=\x2250,79.\
+1 97.4,20.9 2.6,\
+20.9 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02\xb6\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.0.2, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -4594,129 +2101,18 @@ ircle{fill:rgb(2\
 09, 210, 212)}\x0a \
    rect{fill:rgb\
 (209, 210, 212)}\
-\x0a</style><g id=\x22\
-Layer_17\x22>\x0a\x09<pat\
-h d=\x22M48.4,34.9c\
-1.4-1.4,3.8-1.4,\
-5.2,0l1.1,1.1l10\
-.4-10.3c2.9-2.9,\
-7.6-2.9,10.5,0c2\
-.9,2.9,2.9,7.6,0\
-,10.5L65.2,46.5l\
-1.1,1.1\x0a\x09\x09c1.4,1\
-.4,1.4,3.8,0,5.2\
-c-1.4,1.4-3.8,1.\
-4-5.2,0L48.4,40.\
-2C46.9,38.7,46.9\
-,36.4,48.4,34.9z\
-\x22/>\x0a\x09<polygon po\
-ints=\x2247.4,64.3 \
-36.2,75.4 25.8,7\
-5.4 25.8,65 26.5\
-,64.3 26.5,64.3 \
-\x09\x22/>\x0a\x09<path d=\x22M\
-76.8,37.4c1.8-1.\
-8,2.8-4.2,2.7-6.\
-5c0-2.4-0.9-4.7-\
-2.7-6.5l0,0c0,0,\
-0,0,0,0c0,0,0,0,\
-0,0l0,0c-1.8-1.8\
--4.2-2.7-6.5-2.7\
-\x0a\x09\x09c-2.4,0-4.7,0\
-.9-6.5,2.7l0,0l-\
-9.1,9.1c-1-0.9-2\
-.4-1.4-3.7-1.4c-\
-1.4,0-2.8,0.5-3.\
-9,1.6c-1.1,1.1-1\
-.6,2.5-1.6,3.9\x0a\x09\
-\x09c0,1.3,0.5,2.6,\
-1.4,3.7L25.2,62.\
-9c0,0-0.1,0-0.1,\
-0.1l0,0l-0.7,0.7\
-C24.1,64,24,64.5\
-,24,65v9.7l-3.2,\
-3.2c-0.7,0.7-0.7\
-,1.9,0,2.6\x0a\x09\x09c0.\
-7,0.7,1.9,0.7,2.\
-6,0l3.1-3.1l9.7,\
-0c0.5,0,1-0.2,1.\
-3-0.5l11.2-11.1L\
-60,54.3c1,0.9,2.\
-4,1.4,3.7,1.4c1.\
-4,0,2.8-0.5,3.9-\
-1.6\x0a\x09\x09c1.1-1.1,1\
-.6-2.5,1.6-3.9c0\
--1.3-0.5-2.6-1.4\
--3.7L76.8,37.4L7\
-6.8,37.4z M46.1,\
-63L35.5,73.5l-7.\
-8,0v-7.9l0.1-0.1\
-c0,0,0.1,0,0.1-0\
-.1\x0a\x09\x09L49.3,44l7.\
-9,7.9L46.1,63z M\
-74.2,34.8L74.2,3\
-4.8L63.9,45.2c-0\
-.7,0.7-0.7,1.9,0\
-,2.6c0.2,0.2,0.4\
-,0.3,0.7,0.4\x0a\x09\x09c\
-0.1,0.2,0.2,0.5,\
-0.4,0.7c0.4,0.4,\
-0.5,0.8,0.5,1.3c\
-0,0.5-0.2,0.9-0.\
-5,1.3c-0.4,0.4-0\
-.8,0.5-1.3,0.5c-\
-0.5,0-0.9-0.2-1.\
-3-0.5\x0a\x09\x09L49.7,38\
-.9c-0.4-0.4-0.5-\
-0.8-0.5-1.3c0-0.\
-5,0.2-0.9,0.5-1.\
-3c0.4-0.4,0.8-0.\
-5,1.3-0.5c0.5,0,\
-0.9,0.2,1.3,0.5\x0a\
-\x09\x09c0.2,0.2,0.4,0\
-.3,0.7,0.4c0.1,0\
-.2,0.2,0.5,0.4,0\
-.7c0.7,0.7,1.9,0\
-.7,2.6,0L66.4,27\
-l0,0c1.1-1.1,2.5\
--1.6,3.9-1.6\x0a\x09\x09c\
-1.4,0,2.8,0.5,3.\
-9,1.6l0,0c1.1,1.\
-1,1.6,2.5,1.6,3.\
-9C75.9,32.3,75.3\
-,33.7,74.2,34.8z\
-\x22/>\x0a\x09<path d=\x22M6\
-1.8,45.7l2.1,2.1\
-l1.1,1.1c0.7,0.7\
-,1.9,0.7,2.6,0c0\
-.7-0.7,0.7-1.9,0\
--2.6l-1.1-1.1l-2\
-.1-2.1c-0.7-0.7-\
-1.9-0.7-2.6,0\x0a\x09\x09\
-C61.1,43.8,61.1,\
-45,61.8,45.7L61.\
-8,45.7z\x22/>\x0a\x09<pat\
-h d=\x22M52.3,36.2l\
-1.1,1.1l2.1,2.1c\
-0.7,0.7,1.9,0.7,\
-2.6,0c0.7-0.7,0.\
-7-1.9,0-2.6L56,3\
-4.7l-1.1-1.1c-0.\
-7-0.7-1.9-0.7-2.\
-6,0\x0a\x09\x09C51.6,34.3\
-,51.6,35.5,52.3,\
-36.2L52.3,36.2z\x22\
-/>\x0a\x09<path d=\x22M26\
-.5,66.1L26.5,66.\
-1h20.9c1,0,1.9-0\
-.8,1.9-1.9c0-1-0\
-.8-1.9-1.9-1.9H2\
-6.5h0c-1,0-1.9,0\
-.8-1.9,1.9\x0a\x09\x09C24\
-.6,65.3,25.5,66.\
-1,26.5,66.1L26.5\
-,66.1z\x22/>\x0a</g>\x0a<\
-/svg>\x0a\
+\x0a</style><polygo\
+n points=\x2225.4,5\
+0 83.6,97.4 83.6\
+,2.6 \x22/>\x0a<rect x\
+=\x2213.8\x22 y=\x222.6\x22 \
+transform=\x22matri\
+x(-1 -1.224647e-\
+16 1.224647e-16 \
+-1 40.1826 100)\x22\
+ width=\x2212.5\x22 he\
+ight=\x2294.8\x22/>\x0a</\
+svg>\x0a\
 \x00\x00\x03\x88\
 <\
 ?xml version=\x221.\
@@ -4776,7 +2172,7 @@ path d=\x22M84.4,79\
 .8,83.2,85.7,81.\
 1,84.4,79.8z\x22/>\x0a\
 </svg>\x0a\
-\x00\x00\x02\xf3\
+\x00\x00\x02\xf8\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
@@ -4810,375 +2206,22 @@ ircle{fill:rgb(2\
 09, 210, 212)}\x0a \
    rect{fill:rgb\
 (209, 210, 212)}\
-\x0a</style><circle\
- cx=\x2258.1\x22 cy=\x222\
-3.5\x22 r=\x226.9\x22/>\x0a<\
-circle cx=\x2255.8\x22\
- cy=\x2252.5\x22 r=\x226.\
-9\x22/>\x0a<circle cx=\
-\x2230\x22 cy=\x2239.8\x22 r\
-=\x226.9\x22/>\x0a<circle\
- cx=\x2223.1\x22 cy=\x226\
-2.6\x22 r=\x226.9\x22/>\x0a<\
-circle cx=\x2255.8\x22\
- cy=\x2277.6\x22 r=\x226.\
-9\x22/>\x0a<circle cx=\
-\x2277.2\x22 cy=\x2246.7\x22\
- r=\x226.9\x22/>\x0a</svg\
->\x0a\
-\x00\x00\x02A\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 24.0.0, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><polygo\
-n points=\x2250,20.\
-9 2.6,79.1 97.4,\
-79.1 \x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x02\x88\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><polygo\
-n points=\x2267.3,7\
-3.6 50.6,64.7 33\
-.7,73.4 37,54.8 \
-23.5,41.5 42.3,3\
-8.8 50.8,21.9 59\
-.1,38.9 77.8,41.\
-7 64.2,54.9 \x22/>\x0a\
+\x0a</style><rect x\
+=\x2245\x22 y=\x2221.3\x22 t\
+ransform=\x22matrix\
+(0.7112 -0.7029 \
+0.7029 0.7112 -2\
+1.6791 50.024)\x22 \
+width=\x2210\x22 heigh\
+t=\x2260.2\x22/>\x0a<rect\
+ x=\x2219.9\x22 y=\x2246.\
+4\x22 transform=\x22ma\
+trix(0.7113 -0.7\
+029 0.7029 0.711\
+3 -21.7284 49.99\
+88)\x22 width=\x2260.2\
+\x22 height=\x2210\x22/>\x0a\
 </svg>\x0a\
-\x00\x00\x06\x0f\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><path d\
-=\x22M50,30c-4.7,0-\
-8.6-3.9-8.6-8.6s\
-3.9-8.6,8.6-8.6s\
-8.6,3.9,8.6,8.6S\
-54.7,30,50,30z M\
-50,18.4c-1.7,0-3\
-,1.3-3,3s1.3,3,3\
-,3\x0a\x09s3-1.3,3-3S5\
-1.7,18.4,50,18.4\
-z\x22/>\x0a<path d=\x22M7\
-7.8,58.9c-4.7,0-\
-8.6-3.9-8.6-8.6s\
-3.9-8.6,8.6-8.6s\
-8.6,3.9,8.6,8.6S\
-82.5,58.9,77.8,5\
-8.9z M77.8,47.3c\
--1.7,0-3,1.3-3,3\
-\x0a\x09s1.3,3,3,3s3-1\
-.3,3-3S79.5,47.3\
-,77.8,47.3z\x22/>\x0a<\
-path d=\x22M50,85.6\
-c-4.7,0-8.6-3.9-\
-8.6-8.6s3.9-8.6,\
-8.6-8.6s8.6,3.9,\
-8.6,8.6S54.7,85.\
-6,50,85.6z M50,7\
-4c-1.7,0-3,1.3-3\
-,3s1.3,3,3,3\x0a\x09s3\
--1.3,3-3S51.7,74\
-,50,74z\x22/>\x0a<path\
- d=\x22M22.2,58.6c-\
-4.7,0-8.6-3.9-8.\
-6-8.6s3.9-8.6,8.\
-6-8.6s8.6,3.9,8.\
-6,8.6S26.9,58.6,\
-22.2,58.6z M22.2\
-,47c-1.7,0-3,1.3\
--3,3\x0a\x09s1.3,3,3,3\
-s3-1.3,3-3S23.9,\
-47,22.2,47z\x22/>\x0a<\
-path d=\x22M26.4,44\
-.5L21,43.5c2.2-1\
-1.2,10.7-20.2,21\
-.7-23l1.4,5.4C35\
-.1,28.2,28.2,35.\
-5,26.4,44.5z\x22/>\x0a\
-<path d=\x22M43.6,7\
-8c-11.5-2.5-20.7\
--12-22.8-23.6l5.\
-5-1c1.7,9.4,9.1,\
-17.1,18.4,19.2L4\
-3.6,78z\x22/>\x0a<path\
- d=\x22M56.6,78l-1.\
-3-5.5c9.3-2.2,16\
-.4-9.6,18.2-18.9\
-l5.5,1.1C76.8,66\
-.2,68,75.4,56.6,\
-78z\x22/>\x0a<path d=\x22\
-M73.9,46.6c-1.1-\
-9.8-7.9-17.9-17.\
-4-20.5l1.5-5.4C6\
-9.8,24,78.2,33.9\
-,79.5,46L73.9,46\
-.6z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03c\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g id=\x22\
-Outline\x22>\x0a\x09<g>\x0a\x09\
-\x09<path d=\x22M47.2,\
-86.9c-1.4,0-2.7-\
-0.9-3.3-2.2l-25-\
-60.6c-0.6-1.3-0.\
-2-2.9,0.8-3.9s2.\
-5-1.3,3.9-0.8l60\
-.6,25c1.4,0.6,2.\
-3,2,2.2,3.6\x0a\x09\x09\x09c\
--0.1,1.5-1.2,2.8\
--2.7,3.2l-26.4,6\
-.6l-6.6,26.4c-0.\
-4,1.5-1.7,2.6-3.\
-2,2.7C47.3,86.9,\
-47.2,86.9,47.2,8\
-6.9z M28.7,29.3L\
-46.3,72\x0a\x09\x09\x09l4.5-\
-18c0.3-1.3,1.3-2\
-.3,2.6-2.6l18-4.\
-5L28.7,29.3z\x22/>\x0a\
-\x09</g>\x0a</g>\x0a</svg\
->\x0a\
-\x00\x00\x03O\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g>\x0a\x09<g\
- id=\x22reply\x22>\x0a\x09\x09<\
-path d=\x22M68.8,15\
-.7l3.4-8.8l-21.4\
-,9.6l9.6,21.4l3.\
-5-9.1c11.1,4.2,1\
-7.4,10.7,20,20.6\
-C85.9,37.4,83.5,\
-23.8,68.8,15.7z\x22\
-/>\x0a\x09</g>\x0a</g>\x0a<p\
-ath d=\x22M52,91.9H\
-17.5c-4.9,0-8.7-\
-3.8-8.7-8.7V48.6\
-c0-4.9,3.8-8.7,8\
-.7-8.7h34.4c4.9,\
-0,8.7,3.8,8.7,8.\
-7v34.4\x0a\x09C60.7,88\
-,56.9,91.9,52,91\
-.9z M19.3,81.3h3\
-0.9V50.4H19.3V81\
-.3z\x22/>\x0a</svg>\x0a\
-\x00\x00\x03\x91\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><path d\
-=\x22M84.9,45.3l-6.\
-8-6.8V21.9c0-2.6\
--2.1-4.7-4.7-4.7\
-h-4.7c-2.6,0-4.7\
-,2.1-4.7,4.7v2.6\
-l-9.4-9.4c-1.3-1\
-.2-2.5-2.6-4.7-2\
-.6\x0a\x09s-3.4,1.4-4.\
-7,2.6L15.1,45.3c\
--1.5,1.5-2.6,2.6\
--2.6,4.7c0,2.6,2\
-,4.7,4.7,4.7h4.7\
-v28.1c0,2.6,2.1,\
-4.7,4.7,4.7h14.1\
-V64.1\x0a\x09c0-2.6,2.\
-1-4.7,4.7-4.7h9.\
-4c2.6,0,4.7,2.1,\
-4.7,4.7v23.4h14.\
-1c2.6,0,4.7-2.1,\
-4.7-4.7V54.7h4.7\
-c2.7,0,4.7-2,4.7\
--4.7\x0a\x09C87.5,47.9\
-,86.4,46.8,84.9,\
-45.3z\x22/>\x0a</svg>\x0a\
-\
 \x00\x00\x03}\
 <\
 ?xml version=\x221.\
@@ -5237,13 +2280,13 @@ points=\x2260.3,23.\
 dth=\x226.8\x22 height\
 =\x2220.3\x22/>\x0a\x09</g>\x0a\
 </g>\x0a</svg>\x0a\
-\x00\x00\x02N\
+\x00\x00\x03\xde\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.1.1, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -5271,216 +2314,37 @@ ircle{fill:rgb(2\
 09, 210, 212)}\x0a \
    rect{fill:rgb\
 (209, 210, 212)}\
-\x0a</style><polygo\
-n points=\x2222.8,6\
-5.8 29.9,18.1 85\
-.7,67.4 51.9,79.\
-5 \x22/>\x0a</svg>\x0a\
-\x00\x00\x06\x8a\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.6, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><g>\x0a\x09<p\
-ath d=\x22M34.6,16.\
-5l-12.3-5.1c-0.3\
--0.1-0.6-0.2-0.9\
-,0c-0.3,0.1-0.5,\
-0.3-0.6,0.6s-0.2\
-,0.6,0,0.9l1.8,4\
-.3l-3.8,1.5\x0a\x09\x09c-\
-8,3.3-12.1,7.7-1\
-2,13c0,1.8,0.5,3\
-.8,1.5,6c0.8,1.9\
-,2.5,4.2,5.4,6.8\
-c0.1,0.1,0.2,0.2\
-,0.3,0.4c0.1,0.1\
-,0.3,0.3,0.4,0.4\
-\x0a\x09\x09c0.1,0.1,0.3,\
-0.3,0.4,0.3c0.2,\
-0.2,0.4,0.2,0.6,\
-0.1c0.2,0,0.3-0.\
-2,0.4-0.3c0-0.2,\
-0-0.4-0.1-0.5s-0\
-.1-0.2-0.2-0.4\x0a\x09\
-\x09c-0.1-0.2-0.2-0\
-.3-0.2-0.4c-0.4-\
-0.7-0.7-1.4-1-2c\
--0.5-1.1-0.8-2.2\
--1-3.2s-0.2-1.9-\
-0.1-2.7c0-0.8,0.\
-3-1.6,0.6-2.3\x0a\x09\x09\
-c0.4-0.7,0.8-1.4\
-,1.3-2c0.5-0.6,1\
-.2-1.1,2-1.7c0.8\
--0.5,1.6-1,2.4-1\
-.5c0.8-0.4,1.8-0\
-.8,2.9-1.3l3.8-1\
-.5l1.8,4.3\x0a\x09\x09c0.\
-1,0.3,0.3,0.5,0.\
-6,0.6c0.3,0.1,0.\
-6,0.2,0.9,0c0.3-\
-0.1,0.5-0.3,0.6-\
-0.6l5.1-12.3c0.1\
--0.3,0.2-0.6,0-0\
-.9\x0a\x09\x09C35.2,16.8,\
-35,16.6,34.6,16.\
-5z\x22/>\x0a</g>\x0a<path\
- d=\x22M60.1,88.6l2\
-5.4-13.8V49.5l-2\
-5.4,9.2V88.6z M5\
-7.6,54.3l27.7-10\
-.1L57.6,34.2L29.\
-9,44.2L57.6,54.3\
-z M90.5,44.3v30.\
-4\x0a\x09c0,0.9-0.2,1.\
-8-0.7,2.6c-0.5,0\
-.8-1.1,1.4-1.9,1\
-.9L60,94.4c-0.7,\
-0.4-1.5,0.6-2.4,\
-0.6c-0.9,0-1.7-0\
-.2-2.4-0.6L27.3,\
-79.2\x0a\x09c-0.8-0.4-\
-1.5-1.1-1.9-1.9c\
--0.5-0.8-0.7-1.7\
--0.7-2.6V44.3c0-\
-1.1,0.3-2,0.9-2.\
-9s1.4-1.5,2.4-1.\
-9l27.9-10.1c0.6-\
-0.2,1.2-0.3,1.7-\
-0.3\x0a\x09c0.6,0,1.2,\
-0.1,1.7,0.3l27.9\
-,10.1c1,0.4,1.8,\
-1,2.4,1.9S90.5,4\
-3.2,90.5,44.3z\x22/\
->\x0a</svg>\x0a\
-\x00\x00\x02q\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.2, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(209, 210, \
-212)}\x0a    polygo\
-n{fill:rgb(209, \
-210, 212)}\x0a    c\
-ircle{fill:rgb(2\
-09, 210, 212)}\x0a \
-   rect{fill:rgb\
-(209, 210, 212)}\
-\x0a</style><polygo\
-n points=\x2272,50 \
-13.8,2.6 13.8,97\
-.4 \x22/>\x0a<rect x=\x22\
-71\x22 y=\x222.6\x22 widt\
-h=\x2212.5\x22 height=\
-\x2294.8\x22/>\x0a</svg>\x0a\
-\
-\x00\x00\x03O\
-<\
-?xml version=\x221.\
-0\x22 encoding=\x22utf\
--8\x22?>\x0a<!-- Gener\
-ator: Adobe Illu\
-strator 23.0.1, \
-SVG Export Plug-\
-In . SVG Version\
-: 6.00 Build 0) \
- -->\x0a<svg versio\
-n=\x221.1\x22 id=\x22Laye\
-r_1\x22 xmlns=\x22http\
-://www.w3.org/20\
-00/svg\x22 xmlns:xl\
-ink=\x22http://www.\
-w3.org/1999/xlin\
-k\x22 x=\x220px\x22 y=\x220p\
-x\x22\x0a\x09 viewBox=\x220 \
-0 100 100\x22 style\
-=\x22enable-backgro\
-und:new 0 0 100 \
-100;\x22 xml:space=\
-\x22preserve\x22>\x0a<sty\
-le type=\x22text/cs\
-s\x22>\x0a    path{fil\
-l:rgb(240, 241, \
-242)}\x0a    polygo\
-n{fill:rgb(240, \
-241, 242)}\x0a    c\
-ircle{fill:rgb(2\
-40, 241, 242)}\x0a \
-   rect{fill:rgb\
-(240, 241, 242)}\
-\x0a</style><path d\
-=\x22M50.5,77.3C26.\
-7,77.3,8.1,52.1,\
-7.3,51L6,49.2l1.\
-3-1.8C8.1,46.3,2\
-6.7,21,50.5,21s4\
-2.4,25.3,43.2,26\
-.3l1.3,1.8L93.7,\
-51\x0a\x09C92.9,52.1,7\
-4.3,77.3,50.5,77\
-.3z M13.8,49.2c4\
-.6,5.6,19.5,21.9\
-,36.7,21.9s32.1-\
-16.4,36.7-21.9c-\
-4.6-5.6-19.5-21.\
-9-36.7-21.9\x0a\x09C33\
-.3,27.2,18.4,43.\
-6,13.8,49.2z\x22/>\x0a\
-<circle cx=\x2250.5\
-\x22 cy=\x2249.2\x22 r=\x221\
-7.3\x22/>\x0a</svg>\x0a\
-\x00\x00\x03\x9e\
+\x0a</style><rect x\
+=\x2213\x22 y=\x2212\x22 wid\
+th=\x2216.8\x22 height\
+=\x2216.8\x22/>\x0a<rect \
+x=\x2241.7\x22 y=\x2212\x22 \
+width=\x2216.8\x22 hei\
+ght=\x2216.8\x22/>\x0a<re\
+ct x=\x2270.4\x22 y=\x221\
+2\x22 width=\x2216.8\x22 \
+height=\x2216.8\x22/>\x0a\
+<rect x=\x2213\x22 y=\x22\
+41.5\x22 width=\x2216.\
+8\x22 height=\x2216.8\x22\
+/>\x0a<rect x=\x2241.7\
+\x22 y=\x2241.5\x22 width\
+=\x2216.8\x22 height=\x22\
+16.8\x22/>\x0a<rect x=\
+\x2270.4\x22 y=\x2241.5\x22 \
+width=\x2216.8\x22 hei\
+ght=\x2216.8\x22/>\x0a<re\
+ct x=\x2212.9\x22 y=\x227\
+1\x22 width=\x2216.8\x22 \
+height=\x2216.8\x22/>\x0a\
+<rect x=\x2241.6\x22 y\
+=\x2271\x22 width=\x2216.\
+8\x22 height=\x2216.8\x22\
+/>\x0a<rect x=\x2270.3\
+\x22 y=\x2271\x22 width=\x22\
+16.8\x22 height=\x2216\
+.8\x22/>\x0a</svg>\x0a\
+\x00\x00\x03c\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
@@ -5535,18 +2399,100 @@ Outline\x22>\x0a\x09<g>\x0a\x09\
 18c0.3-1.3,1.3-2\
 .3,2.6-2.6l18-4.\
 5L28.7,29.3z\x22/>\x0a\
-\x09</g>\x0a</g>\x0a<poly\
-gon points=\x2226.3\
-,27.2 45.7,75.4 \
-53,56.2 75.2,46.\
-8 \x22/>\x0a</svg>\x0a\
-\x00\x00\x06\x0b\
+\x09</g>\x0a</g>\x0a</svg\
+>\x0a\
+\x00\x00\x02\xbd\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.1, \
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 177.6 94.8\x22 st\
+yle=\x22enable-back\
+ground:new 0 0 1\
+77.6 94.8;\x22 xml:\
+space=\x22preserve\x22\
+>\x0a<style type=\x22t\
+ext/css\x22>\x0a    pa\
+th{fill:rgb(209,\
+ 210, 212)}\x0a    \
+polygon{fill:rgb\
+(209, 210, 212)}\
+\x0a    circle{fill\
+:rgb(209, 210, 2\
+12)}\x0a    rect{fi\
+ll:rgb(209, 210,\
+ 212)}\x0a</style><\
+polygon points=\x22\
+0.5,47.4 58.7,94\
+.8 58.7,0 \x22/>\x0a<r\
+ect x=\x2258.6\x22 y=\x22\
+31.2\x22 transform=\
+\x22matrix(-1 -1.22\
+4647e-16 1.22464\
+7e-16 -1 236.168\
+7 94.8)\x22 width=\x22\
+119\x22 height=\x2232.\
+4\x22/>\x0a</svg>\x0a\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><polygo\
+n points=\x2279.1,5\
+0 20.9,2.6 20.9,\
+97.4 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02\xc9\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -5575,70 +2521,18 @@ ircle{fill:rgb(2\
    rect{fill:rgb\
 (209, 210, 212)}\
 \x0a</style><path d\
-=\x22M58.8,82.6c-4.\
-7,0-8.6-3.9-8.6-\
-8.6s3.9-8.6,8.6-\
-8.6s8.6,3.9,8.6,\
-8.6S63.5,82.6,58\
-.8,82.6z M58.8,7\
-1c-1.7,0-3,1.3-3\
-,3\x0a\x09s1.3,3,3,3s3\
--1.3,3-3S60.5,71\
-,58.8,71z\x22/>\x0a<pa\
-th d=\x22M39.5,39.8\
-c-4.7,0-8.6-3.9-\
-8.6-8.6s3.9-8.6,\
-8.6-8.6s8.6,3.9,\
-8.6,8.6S44.2,39.\
-8,39.5,39.8z M39\
-.5,28.2c-1.7,0-3\
-,1.3-3,3\x0a\x09s1.3,3\
-,3,3s3-1.3,3-3S4\
-1.2,28.2,39.5,28\
-.2z\x22/>\x0a<path d=\x22\
-M19.2,82.6c-4.7,\
-0-8.6-3.9-8.6-8.\
-6s3.9-8.6,8.6-8.\
-6s8.6,3.9,8.6,8.\
-6S23.9,82.6,19.2\
-,82.6z M19.2,71c\
--1.7,0-3,1.3-3,3\
-\x0a\x09s1.3,3,3,3s3-1\
-.3,3-3S20.9,71,1\
-9.2,71z\x22/>\x0a<path\
- d=\x22M83.1,39.8c-\
-4.7,0-8.6-3.9-8.\
-6-8.6s3.9-8.6,8.\
-6-8.6s8.6,3.9,8.\
-6,8.6S87.8,39.8,\
-83.1,39.8z M83.1\
-,28.2c-1.7,0-3,1\
-.3-3,3\x0a\x09s1.3,3,3\
-,3s3-1.3,3-3S84.\
-8,28.2,83.1,28.2\
-z\x22/>\x0a<rect x=\x2251\
-.1\x22 y=\x2249.2\x22 tra\
-nsform=\x22matrix(0\
-.5355 -0.8445 0.\
-8445 0.5355 -11.\
-219 83.5029)\x22 wi\
-dth=\x2238.5\x22 heigh\
-t=\x225.5\x22/>\x0a<rect \
-x=\x2246.4\x22 y=\x2235.3\
-\x22 transform=\x22mat\
-rix(0.9001 -0.43\
-56 0.4356 0.9001\
- -18.0059 26.666\
-)\x22 width=\x225.5\x22 h\
-eight=\x2234.7\x22/>\x0a<\
-rect x=\x2210\x22 y=\x225\
-1.3\x22 transform=\x22\
-matrix(0.4615 -0\
-.8872 0.8872 0.4\
-615 -32.1006 55.\
-1188)\x22 width=\x2238\
-.8\x22 height=\x225.5\x22\
-/>\x0a</svg>\x0a\
+=\x22M74.7,86.9H26.\
+4c-6.9,0-12.2-5.\
+4-12.2-12.2V26.4\
+c0-6.9,5.4-12.2,\
+12.2-12.2h48.1c6\
+.9,0,12.2,5.4,12\
+.2,12.2v48.1\x0a\x09C8\
+6.9,81.5,81.5,86\
+.9,74.7,86.9z M2\
+8.9,72.1h43.2V28\
+.9H28.9V72.1z\x22/>\
+\x0a</svg>\x0a\
 \x00\x00\x03S\
 <\
 ?xml version=\x221.\
@@ -5695,7 +2589,107 @@ ath d=\x22M65.3,73.\
 .8h43.7V21.1H19.\
 8V62.8z\x22/>\x0a</svg\
 >\x0a\
-\x00\x00\x03\xbd\
+\x00\x00\x02\xf3\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><circle\
+ cx=\x2258.1\x22 cy=\x222\
+3.5\x22 r=\x226.9\x22/>\x0a<\
+circle cx=\x2255.8\x22\
+ cy=\x2252.5\x22 r=\x226.\
+9\x22/>\x0a<circle cx=\
+\x2230\x22 cy=\x2239.8\x22 r\
+=\x226.9\x22/>\x0a<circle\
+ cx=\x2223.1\x22 cy=\x226\
+2.6\x22 r=\x226.9\x22/>\x0a<\
+circle cx=\x2255.8\x22\
+ cy=\x2277.6\x22 r=\x226.\
+9\x22/>\x0a<circle cx=\
+\x2277.2\x22 cy=\x2246.7\x22\
+ r=\x226.9\x22/>\x0a</svg\
+>\x0a\
+\x00\x00\x02\xf4\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 xmlns:xli\
+nk=\x22http://www.w\
+3.org/1999/xlink\
+\x22 focusable=\x22fal\
+se\x22 preserveAspe\
+ctRatio=\x22xMidYMi\
+d meet\x22 viewBox=\
+\x220 0 14 16\x22>\x0a<!-\
+-From GitHub's O\
+ctoicons-->\x0a<!--\
+extra line-->\x0a<!\
+--extra line2-->\
+\x0a<style type=\x22te\
+xt/css\x22>\x0a    pat\
+h{fill:rgb(209, \
+210, 212)}\x0a    p\
+olygon{fill:rgb(\
+209, 210, 212)}\x0a\
+    circle{fill:\
+rgb(209, 210, 21\
+2)}\x0a    rect{fil\
+l:rgb(209, 210, \
+212)}\x0a</style><p\
+ath d=\x22M2 13h4v1\
+H2v-1zm5-6H2v1h5\
+V7zm2 3V8l-3 3l3\
+ 3v-2h5v-2H9zM4.\
+5 9H2v1h2.5V9zM2\
+ 12h2.5v-1H2v1zm\
+9 1h1v2c-.02.28-\
+.11.52-.3.7c-.19\
+.18-.42.28-.7.3H\
+1c-.55 0-1-.45-1\
+-1V4c0-.55.45-1 \
+1-1h3c0-1.11.89-\
+2 2-2c1.11 0 2 .\
+89 2 2h3c.55 0 1\
+ .45 1 1v5h-1V6H\
+1v9h10v-2zM2 5h8\
+c0-.55-.45-1-1-1\
+H8c-.55 0-1-.45-\
+1-1s-.45-1-1-1s-\
+1 .45-1 1s-.45 1\
+-1 1H3c-.55 0-1 \
+.45-1 1z\x22 />\x0a</s\
+vg>\
+\x00\x00\x03\xa1\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
@@ -5730,33 +2724,145 @@ ircle{fill:rgb(2\
    rect{fill:rgb\
 (209, 210, 212)}\
 \x0a</style><g id=\x22\
-Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
-path class=\x22st0\x22\
- d=\x22M50,13.6c-20\
-,0-36.3,16.3-36.\
-3,36.3c0,20,16.3\
-,36.3,36.3,36.3C\
-70,86.3,86.3,70,\
-86.3,50\x0a\x09\x09\x09C86.3\
-,29.9,70,13.6,50\
-,13.6z M50,79c-1\
-6,0-29.1-13-29.1\
--29.1c0-16,13-29\
-.1,29.1-29.1C66,\
-20.9,79,33.9,79,\
-50C79,66,66,79,5\
-0,79z\x22/>\x0a\x09\x09<poly\
-gon class=\x22st0\x22 \
-points=\x2253.6,31.\
-8 46.3,31.8 46.3\
-,46.3 31.8,46.3 \
-31.8,53.6 46.3,5\
-3.6 46.3,68.1 53\
-.6,68.1 53.6,53.\
-6 \x0a\x09\x09\x0968.1,53.6 \
-68.1,46.3 53.6,4\
-6.3 \x09\x09\x22/>\x0a\x09</g>\x0a\
-</g>\x0a</svg>\x0a\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M50.1,\
+76.4c10.9,0,19.8\
+-8.9,19.8-19.8c0\
+-10-15.4-29.5-17\
+.2-31.7l-2.6-3.2\
+L47.6,25c-1.8,2.\
+2-17.2,21.7-17.2\
+,31.7\x0a\x09\x09\x09C30.4,6\
+7.6,39.2,76.4,50\
+.1,76.4z M50.1,3\
+2.4c5.9,7.9,13.2\
+,19.2,13.2,24.3c\
+0,7.3-5.9,13.2-1\
+3.2,13.2c-7.3,0-\
+13.2-5.9-13.2-13\
+.2\x0a\x09\x09\x09C37,51.7,4\
+4.2,40.3,50.1,32\
+.4z\x22/>\x0a\x09\x09<path d\
+=\x22M59.2,56.7h-4.\
+9c0,2.3-1.8,4.1-\
+4.1,4.1v4.9C55.1\
+,65.7,59.2,61.7,\
+59.2,56.7z\x22/>\x0a\x09<\
+/g>\x0a</g>\x0a</svg>\x0a\
+\
+\x00\x00\x04H\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(209, 210, \
+212)}\x0a    polygo\
+n{fill:rgb(209, \
+210, 212)}\x0a    c\
+ircle{fill:rgb(2\
+09, 210, 212)}\x0a \
+   rect{fill:rgb\
+(209, 210, 212)}\
+\x0a</style><g>\x0a\x09<p\
+ath d=\x22M57.3,84.\
+7h-32c-4.6,0-8.2\
+-3.6-8.2-8.2v-32\
+c0-4.6,3.6-8.2,8\
+.2-8.2h32c4.6,0,\
+8.2,3.6,8.2,8.2v\
+32\x0a\x09\x09C65.4,81.2,\
+61.9,84.7,57.3,8\
+4.7z M26.9,74.9h\
+28.7V46.2H26.9V7\
+4.9z\x22/>\x0a\x09<path d\
+=\x22M74.7,63.6h-32\
+c-4.6,0-8.2-3.6-\
+8.2-8.2v-32c0-4.\
+6,3.6-8.2,8.2-8.\
+2h32c4.6,0,8.2,3\
+.6,8.2,8.2v32\x0a\x09\x09\
+C82.9,60,79.3,63\
+.6,74.7,63.6z M4\
+4.3,53.8h28.7V25\
+.1H44.3V53.8z\x22/>\
+\x0a\x09<path d=\x22M81.1\
+,60.6L62.7,82.7l\
+-6.9-6.9l13.8-15\
+.3l5-3.5\x22/>\x0a\x09<pa\
+th d=\x22M82,26.8L6\
+1.9,46.9l-6.9-7l\
+20.4-20.4l0,0\x22/>\
+\x0a\x09<path d=\x22M44.7\
+,60.6L24.8,83.1l\
+-6.9-6.9l18.8-22\
+.2h1.6\x22/>\x0a\x09<path\
+ d=\x22M19,39.4L36,\
+18.7l10.3,3L29.2\
+,42l0,0\x22/>\x0a</g>\x0a\
+</svg>\x0a\
+\x00\x00\x02}\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 177.6 94.8\x22 st\
+yle=\x22enable-back\
+ground:new 0 0 1\
+77.6 94.8;\x22 xml:\
+space=\x22preserve\x22\
+>\x0a<style type=\x22t\
+ext/css\x22>\x0a    pa\
+th{fill:rgb(209,\
+ 210, 212)}\x0a    \
+polygon{fill:rgb\
+(209, 210, 212)}\
+\x0a    circle{fill\
+:rgb(209, 210, 2\
+12)}\x0a    rect{fi\
+ll:rgb(209, 210,\
+ 212)}\x0a</style><\
+polygon points=\x22\
+177.6,47.4 119.4\
+,0 119.4,94.8 \x22/\
+>\x0a<rect x=\x220.5\x22 \
+y=\x2231.2\x22 width=\x22\
+119\x22 height=\x2232.\
+4\x22/>\x0a</svg>\x0a\
 \x00\x00\x02A\
 <\
 ?xml version=\x221.\
@@ -5792,11 +2898,11 @@ ircle{fill:rgb(2\
    rect{fill:rgb\
 (209, 210, 212)}\
 \x0a</style><polygo\
-n points=\x2250,79.\
-1 97.4,20.9 2.6,\
-20.9 \x22/>\x0a</svg>\x0a\
+n points=\x2250,20.\
+9 2.6,79.1 97.4,\
+79.1 \x22/>\x0a</svg>\x0a\
 \
-\x00\x00\x02A\
+\x00\x00\x06*\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22utf\
@@ -5830,11 +2936,73 @@ ircle{fill:rgb(2\
 09, 210, 212)}\x0a \
    rect{fill:rgb\
 (209, 210, 212)}\
-\x0a</style><polygo\
-n points=\x2279.1,5\
-0 20.9,2.6 20.9,\
-97.4 \x22/>\x0a</svg>\x0a\
-\
+\x0a</style><rect x\
+=\x2213.1\x22 y=\x2223.1\x22\
+ transform=\x22matr\
+ix(0.7071 -0.707\
+1 0.7071 0.7071 \
+-10.0546 26.0581\
+)\x22 width=\x2226.7\x22 \
+height=\x224.1\x22/>\x0a<\
+rect x=\x2233.9\x22 y=\
+\x2223.1\x22 transform\
+=\x22matrix(0.8471 \
+-0.5315 0.5315 0\
+.8471 -6.1536 28\
+.9461)\x22 width=\x222\
+6.7\x22 height=\x224.1\
+\x22/>\x0a<rect x=\x2256.\
+7\x22 y=\x2223.1\x22 tran\
+sform=\x22matrix(0.\
+9345 -0.356 0.35\
+6 0.9345 -4.3723\
+ 26.5752)\x22 width\
+=\x2226.7\x22 height=\x22\
+4.1\x22/>\x0a<rect x=\x22\
+13.1\x22 y=\x2247.3\x22 t\
+ransform=\x22matrix\
+(0.7071 -0.7071 \
+0.7071 0.7071 -2\
+7.1546 33.1412)\x22\
+ width=\x2226.7\x22 he\
+ight=\x224.1\x22/>\x0a<re\
+ct x=\x2233.9\x22 y=\x224\
+7.3\x22 transform=\x22\
+matrix(0.8209 -0\
+.5711 0.5711 0.8\
+209 -19.725 35.8\
+084)\x22 width=\x2226.\
+7\x22 height=\x224.1\x22/\
+>\x0a<rect x=\x2256.7\x22\
+ y=\x2247.3\x22 transf\
+orm=\x22matrix(0.96\
+89 -0.2476 0.247\
+6 0.9689 -10.037\
+8 18.8686)\x22 widt\
+h=\x2226.7\x22 height=\
+\x224.1\x22/>\x0a<rect x=\
+\x2213.1\x22 y=\x2274\x22 tr\
+ansform=\x22matrix(\
+0.8209 -0.5711 0\
+.5711 0.8209 -38\
+.7071 28.7179)\x22 \
+width=\x2226.7\x22 hei\
+ght=\x224.1\x22/>\x0a<rec\
+t x=\x2233.9\x22 y=\x2274\
+\x22 transform=\x22mat\
+rix(0.8471 -0.53\
+15 0.5315 0.8471\
+ -33.2051 36.729\
+9)\x22 width=\x2226.7\x22\
+ height=\x224.1\x22/>\x0a\
+<rect x=\x2256.7\x22 y\
+=\x2274\x22 transform=\
+\x22matrix(0.9946 -\
+0.1035 0.1035 0.\
+9946 -7.4995 7.6\
+579)\x22 width=\x2226.\
+7\x22 height=\x224.1\x22/\
+>\x0a</svg>\x0a\
 \x00\x00\x02\x06\
 \x89\
 PNG\x0d\x0a\x1a\x0a\x00\x00\x00\x0dIHDR\x00\
@@ -6076,6 +3244,2938 @@ VH\xb9\xa1\xc4\xef\xb9YnHi\x90\xe2Ci\x90\
 \xe2Ci\x90\xe2Ci\x90\xe2Ci\x90\xe27\x91$\
 \xe9?\x9f\x17\xe2&\xcd=?_\x00\x00\x00\x00IE\
 ND\xaeB`\x82\
+\x00\x00\x06\x0b\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M58.8,82.6c-4.\
+7,0-8.6-3.9-8.6-\
+8.6s3.9-8.6,8.6-\
+8.6s8.6,3.9,8.6,\
+8.6S63.5,82.6,58\
+.8,82.6z M58.8,7\
+1c-1.7,0-3,1.3-3\
+,3\x0a\x09s1.3,3,3,3s3\
+-1.3,3-3S60.5,71\
+,58.8,71z\x22/>\x0a<pa\
+th d=\x22M39.5,39.8\
+c-4.7,0-8.6-3.9-\
+8.6-8.6s3.9-8.6,\
+8.6-8.6s8.6,3.9,\
+8.6,8.6S44.2,39.\
+8,39.5,39.8z M39\
+.5,28.2c-1.7,0-3\
+,1.3-3,3\x0a\x09s1.3,3\
+,3,3s3-1.3,3-3S4\
+1.2,28.2,39.5,28\
+.2z\x22/>\x0a<path d=\x22\
+M19.2,82.6c-4.7,\
+0-8.6-3.9-8.6-8.\
+6s3.9-8.6,8.6-8.\
+6s8.6,3.9,8.6,8.\
+6S23.9,82.6,19.2\
+,82.6z M19.2,71c\
+-1.7,0-3,1.3-3,3\
+\x0a\x09s1.3,3,3,3s3-1\
+.3,3-3S20.9,71,1\
+9.2,71z\x22/>\x0a<path\
+ d=\x22M83.1,39.8c-\
+4.7,0-8.6-3.9-8.\
+6-8.6s3.9-8.6,8.\
+6-8.6s8.6,3.9,8.\
+6,8.6S87.8,39.8,\
+83.1,39.8z M83.1\
+,28.2c-1.7,0-3,1\
+.3-3,3\x0a\x09s1.3,3,3\
+,3s3-1.3,3-3S84.\
+8,28.2,83.1,28.2\
+z\x22/>\x0a<rect x=\x2251\
+.1\x22 y=\x2249.2\x22 tra\
+nsform=\x22matrix(0\
+.5355 -0.8445 0.\
+8445 0.5355 -11.\
+219 83.5029)\x22 wi\
+dth=\x2238.5\x22 heigh\
+t=\x225.5\x22/>\x0a<rect \
+x=\x2246.4\x22 y=\x2235.3\
+\x22 transform=\x22mat\
+rix(0.9001 -0.43\
+56 0.4356 0.9001\
+ -18.0059 26.666\
+)\x22 width=\x225.5\x22 h\
+eight=\x2234.7\x22/>\x0a<\
+rect x=\x2210\x22 y=\x225\
+1.3\x22 transform=\x22\
+matrix(0.4615 -0\
+.8872 0.8872 0.4\
+615 -32.1006 55.\
+1188)\x22 width=\x2238\
+.8\x22 height=\x225.5\x22\
+/>\x0a</svg>\x0a\
+\x00\x00\x03Y\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(150, 146, \
+144)}\x0a    polygo\
+n{fill:rgb(150, \
+146, 144)}\x0a    c\
+ircle{fill:rgb(1\
+50, 146, 144)}\x0a \
+   rect{fill:rgb\
+(150, 146, 144)}\
+\x0a</style><path d\
+=\x22M31.8,56.4c-1.\
+9,0-3.8-0.8-5-2.\
+4c-2.2-2.8-1.8-6\
+.9,1-9.1l35.1-28\
+.2c2.8-2.2,6.9-1\
+.8,9.1,1c2.2,2.8\
+,1.8,6.9-1,9.1L3\
+5.8,54.9\x0a\x09C34.6,\
+55.9,33.2,56.4,3\
+1.8,56.4z\x22/>\x0a<pa\
+th d=\x22M66.9,84.6\
+c-1.4,0-2.9-0.5-\
+4-1.4L27.7,54.9c\
+-2.8-2.2-3.2-6.3\
+-1-9.1c2.2-2.8,6\
+.3-3.2,9.1-1l35.\
+1,28.2c2.8,2.2,3\
+.2,6.3,1,9.1\x0a\x09C7\
+0.6,83.8,68.8,84\
+.6,66.9,84.6z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x06\x0f\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M50,30c-4.7,0-\
+8.6-3.9-8.6-8.6s\
+3.9-8.6,8.6-8.6s\
+8.6,3.9,8.6,8.6S\
+54.7,30,50,30z M\
+50,18.4c-1.7,0-3\
+,1.3-3,3s1.3,3,3\
+,3\x0a\x09s3-1.3,3-3S5\
+1.7,18.4,50,18.4\
+z\x22/>\x0a<path d=\x22M7\
+7.8,58.9c-4.7,0-\
+8.6-3.9-8.6-8.6s\
+3.9-8.6,8.6-8.6s\
+8.6,3.9,8.6,8.6S\
+82.5,58.9,77.8,5\
+8.9z M77.8,47.3c\
+-1.7,0-3,1.3-3,3\
+\x0a\x09s1.3,3,3,3s3-1\
+.3,3-3S79.5,47.3\
+,77.8,47.3z\x22/>\x0a<\
+path d=\x22M50,85.6\
+c-4.7,0-8.6-3.9-\
+8.6-8.6s3.9-8.6,\
+8.6-8.6s8.6,3.9,\
+8.6,8.6S54.7,85.\
+6,50,85.6z M50,7\
+4c-1.7,0-3,1.3-3\
+,3s1.3,3,3,3\x0a\x09s3\
+-1.3,3-3S51.7,74\
+,50,74z\x22/>\x0a<path\
+ d=\x22M22.2,58.6c-\
+4.7,0-8.6-3.9-8.\
+6-8.6s3.9-8.6,8.\
+6-8.6s8.6,3.9,8.\
+6,8.6S26.9,58.6,\
+22.2,58.6z M22.2\
+,47c-1.7,0-3,1.3\
+-3,3\x0a\x09s1.3,3,3,3\
+s3-1.3,3-3S23.9,\
+47,22.2,47z\x22/>\x0a<\
+path d=\x22M26.4,44\
+.5L21,43.5c2.2-1\
+1.2,10.7-20.2,21\
+.7-23l1.4,5.4C35\
+.1,28.2,28.2,35.\
+5,26.4,44.5z\x22/>\x0a\
+<path d=\x22M43.6,7\
+8c-11.5-2.5-20.7\
+-12-22.8-23.6l5.\
+5-1c1.7,9.4,9.1,\
+17.1,18.4,19.2L4\
+3.6,78z\x22/>\x0a<path\
+ d=\x22M56.6,78l-1.\
+3-5.5c9.3-2.2,16\
+.4-9.6,18.2-18.9\
+l5.5,1.1C76.8,66\
+.2,68,75.4,56.6,\
+78z\x22/>\x0a<path d=\x22\
+M73.9,46.6c-1.1-\
+9.8-7.9-17.9-17.\
+4-20.5l1.5-5.4C6\
+9.8,24,78.2,33.9\
+,79.5,46L73.9,46\
+.6z\x22/>\x0a</svg>\x0a\
+\x00\x00\x02N\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2222.8,6\
+5.8 29.9,18.1 85\
+.7,67.4 51.9,79.\
+5 \x22/>\x0a</svg>\x0a\
+\x00\x00\x04U\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<path d\
+=\x22M79.4,30.1c0-2\
+.4-0.9-4.6-2.6-6\
+.3c-3.4-3.4-9.2-\
+3.4-12.6,0L33.9,\
+54.2c-2.8,0.2-5.\
+5,1.3-7.5,3.3c-4\
+.2,4.2-4,7.7-3.9\
+,10.6\x0a\x09\x09c0.1,2.4\
+,0.2,4.2-2.7,7.2\
+l-4.3,4.3c5.4,0.\
+7,6.7,1,9.6,1l0,\
+0c4.4,0,12.7-0.8\
+,18.1-6.2c2.1-2.\
+1,3.2-4.7,3.4-7.\
+6l30.2-30.2\x0a\x09\x09C7\
+8.5,34.7,79.4,32\
+.5,79.4,30.1z M3\
+9,70c-3.1,3.1-7.\
+9,4.1-11.5,4.3c1\
+.1-2.6,1-4.8,0.9\
+-6.7c-0.3-5.2,3.\
+2-7.8,6.4-7.8\x0a\x09\x09\
+c1.6,0,3.1,0.6,4\
+.2,1.7C41.3,64,4\
+1.3,67.7,39,70z \
+M72.6,32.2L45,59\
+.8c-0.5-0.9-1.1-\
+1.7-1.8-2.4s-1.6\
+-1.3-2.4-1.8L68.\
+4,28\x0a\x09\x09c1.1-1.1,\
+3.1-1.1,4.2,0c0.\
+6,0.6,0.9,1.3,0.\
+9,2.1C73.5,30.9,\
+73.2,31.7,72.6,3\
+2.2z\x22/>\x0a</g>\x0a</s\
+vg>\x0a\
+\x00\x00\x03\xbd\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+path class=\x22st0\x22\
+ d=\x22M50,13.6c-20\
+,0-36.3,16.3-36.\
+3,36.3c0,20,16.3\
+,36.3,36.3,36.3C\
+70,86.3,86.3,70,\
+86.3,50\x0a\x09\x09\x09C86.3\
+,29.9,70,13.6,50\
+,13.6z M50,79c-1\
+6,0-29.1-13-29.1\
+-29.1c0-16,13-29\
+.1,29.1-29.1C66,\
+20.9,79,33.9,79,\
+50C79,66,66,79,5\
+0,79z\x22/>\x0a\x09\x09<poly\
+gon class=\x22st0\x22 \
+points=\x2253.6,31.\
+8 46.3,31.8 46.3\
+,46.3 31.8,46.3 \
+31.8,53.6 46.3,5\
+3.6 46.3,68.1 53\
+.6,68.1 53.6,53.\
+6 \x0a\x09\x09\x0968.1,53.6 \
+68.1,46.3 53.6,4\
+6.3 \x09\x09\x22/>\x0a\x09</g>\x0a\
+</g>\x0a</svg>\x0a\
+\x00\x00\x03O\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g>\x0a\x09<g\
+ id=\x22reply\x22>\x0a\x09\x09<\
+path d=\x22M68.8,15\
+.7l3.4-8.8l-21.4\
+,9.6l9.6,21.4l3.\
+5-9.1c11.1,4.2,1\
+7.4,10.7,20,20.6\
+C85.9,37.4,83.5,\
+23.8,68.8,15.7z\x22\
+/>\x0a\x09</g>\x0a</g>\x0a<p\
+ath d=\x22M52,91.9H\
+17.5c-4.9,0-8.7-\
+3.8-8.7-8.7V48.6\
+c0-4.9,3.8-8.7,8\
+.7-8.7h34.4c4.9,\
+0,8.7,3.8,8.7,8.\
+7v34.4\x0a\x09C60.7,88\
+,56.9,91.9,52,91\
+.9z M19.3,81.3h3\
+0.9V50.4H19.3V81\
+.3z\x22/>\x0a</svg>\x0a\
+\x00\x00\x03\xfd\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.4, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M42.1,51l-29-2\
+3.2c-2.3-1.8-2.6\
+-5.2-0.8-7.5c1.8\
+-2.3,5.2-2.6,7.5\
+-0.8l28.9,23.2c2\
+.3,1.8,2.6,5.2,0\
+.8,7.5c-1,1.3-2.\
+6,2-4.1,2\x0a\x09C44.3\
+,52.2,43.1,51.8,\
+42.1,51z\x22/>\x0a<pat\
+h d=\x22M12.4,73.4c\
+-1.8-2.3-1.5-5.7\
+,0.8-7.5l28.9-23\
+.2c2.3-1.8,5.7-1\
+.5,7.5,0.8s1.5,5\
+.7-0.8,7.5l-29,2\
+3.3c-0.9,0.7-2.1\
+,1.2-3.3,1.2\x0a\x09C1\
+4.9,75.5,13.5,74\
+.8,12.4,73.4z\x22/>\
+\x0a<path d=\x22M41.4,\
+75.3c0-2.9,2.3-5\
+.4,5.3-5.4l37.1-\
+0.5c2.9,0,5.4,2.\
+3,5.4,5.3c0,2.9-\
+2.3,5.4-5.3,5.4l\
+-37.2,0.5c-1.2,0\
+-2.4-0.4-3.3-1.1\
+\x0a\x09C42.2,78.5,41.\
+4,77.1,41.4,75.3\
+z\x22/>\x0a</svg>\x0a\
+\x00\x00\x02\x88\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2267.3,7\
+3.6 50.6,64.7 33\
+.7,73.4 37,54.8 \
+23.5,41.5 42.3,3\
+8.8 50.8,21.9 59\
+.1,38.9 77.8,41.\
+7 64.2,54.9 \x22/>\x0a\
+</svg>\x0a\
+\x00\x00\x04'\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+polygon points=\x22\
+70.7,36.5 85.3,3\
+6.5 85.3,29.2 70\
+.7,29.2 63.5,29.\
+2 48.9,29.2 48.9\
+,36.5 63.5,36.5 \
+\x09\x09\x22/>\x0a\x09</g>\x0a</g>\
+\x0a<g id=\x22Outline\x22\
+>\x0a\x09<g>\x0a\x09\x09<path d\
+=\x22M35.4,85.9c-0.\
+9,0-1.8-0.6-2.2-\
+1.5L16.8,44.5c-0\
+.4-0.9-0.2-1.9,0\
+.5-2.6c0.7-0.7,1\
+.7-0.9,2.6-0.5l3\
+9.9,16.4\x0a\x09\x09\x09c0.9\
+,0.4,1.5,1.3,1.4\
+,2.3s-0.8,1.9-1.\
+8,2.1L42,66.6L37\
+.6,84c-0.2,1-1.1\
+,1.7-2.1,1.8C35.\
+5,85.9,35.5,85.9\
+,35.4,85.9z M23.\
+3,47.9\x0a\x09\x09\x09L34.9,\
+76l3-11.9c0.2-0.\
+8,0.9-1.5,1.7-1.\
+7l11.9-3L23.3,47\
+.9z\x22/>\x0a\x09</g>\x0a</g\
+>\x0a<polygon point\
+s=\x2221.7,46.6 34.\
+5,78.3 39.3,65.7\
+ 53.9,59.5 \x22/>\x0a<\
+/svg>\x0a\
+\x00\x00\x06\x8a\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g>\x0a\x09<p\
+ath d=\x22M34.6,16.\
+5l-12.3-5.1c-0.3\
+-0.1-0.6-0.2-0.9\
+,0c-0.3,0.1-0.5,\
+0.3-0.6,0.6s-0.2\
+,0.6,0,0.9l1.8,4\
+.3l-3.8,1.5\x0a\x09\x09c-\
+8,3.3-12.1,7.7-1\
+2,13c0,1.8,0.5,3\
+.8,1.5,6c0.8,1.9\
+,2.5,4.2,5.4,6.8\
+c0.1,0.1,0.2,0.2\
+,0.3,0.4c0.1,0.1\
+,0.3,0.3,0.4,0.4\
+\x0a\x09\x09c0.1,0.1,0.3,\
+0.3,0.4,0.3c0.2,\
+0.2,0.4,0.2,0.6,\
+0.1c0.2,0,0.3-0.\
+2,0.4-0.3c0-0.2,\
+0-0.4-0.1-0.5s-0\
+.1-0.2-0.2-0.4\x0a\x09\
+\x09c-0.1-0.2-0.2-0\
+.3-0.2-0.4c-0.4-\
+0.7-0.7-1.4-1-2c\
+-0.5-1.1-0.8-2.2\
+-1-3.2s-0.2-1.9-\
+0.1-2.7c0-0.8,0.\
+3-1.6,0.6-2.3\x0a\x09\x09\
+c0.4-0.7,0.8-1.4\
+,1.3-2c0.5-0.6,1\
+.2-1.1,2-1.7c0.8\
+-0.5,1.6-1,2.4-1\
+.5c0.8-0.4,1.8-0\
+.8,2.9-1.3l3.8-1\
+.5l1.8,4.3\x0a\x09\x09c0.\
+1,0.3,0.3,0.5,0.\
+6,0.6c0.3,0.1,0.\
+6,0.2,0.9,0c0.3-\
+0.1,0.5-0.3,0.6-\
+0.6l5.1-12.3c0.1\
+-0.3,0.2-0.6,0-0\
+.9\x0a\x09\x09C35.2,16.8,\
+35,16.6,34.6,16.\
+5z\x22/>\x0a</g>\x0a<path\
+ d=\x22M60.1,88.6l2\
+5.4-13.8V49.5l-2\
+5.4,9.2V88.6z M5\
+7.6,54.3l27.7-10\
+.1L57.6,34.2L29.\
+9,44.2L57.6,54.3\
+z M90.5,44.3v30.\
+4\x0a\x09c0,0.9-0.2,1.\
+8-0.7,2.6c-0.5,0\
+.8-1.1,1.4-1.9,1\
+.9L60,94.4c-0.7,\
+0.4-1.5,0.6-2.4,\
+0.6c-0.9,0-1.7-0\
+.2-2.4-0.6L27.3,\
+79.2\x0a\x09c-0.8-0.4-\
+1.5-1.1-1.9-1.9c\
+-0.5-0.8-0.7-1.7\
+-0.7-2.6V44.3c0-\
+1.1,0.3-2,0.9-2.\
+9s1.4-1.5,2.4-1.\
+9l27.9-10.1c0.6-\
+0.2,1.2-0.3,1.7-\
+0.3\x0a\x09c0.6,0,1.2,\
+0.1,1.7,0.3l27.9\
+,10.1c1,0.4,1.8,\
+1,2.4,1.9S90.5,4\
+3.2,90.5,44.3z\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x03\xc1\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(163, 158, \
+156)}\x0a    polygo\
+n{fill:rgb(163, \
+158, 156)}\x0a    c\
+ircle{fill:rgb(1\
+63, 158, 156)}\x0a \
+   rect{fill:rgb\
+(163, 158, 156)}\
+\x0a</style><path d\
+=\x22M50.5,77.3C26.\
+7,77.3,8.1,52.1,\
+7.3,51L6,49.2l1.\
+3-1.8C8.1,46.3,2\
+6.7,21,50.5,21s4\
+2.4,25.3,43.2,26\
+.3l1.3,1.8L93.7,\
+51\x0a\x09C92.9,52.1,7\
+4.3,77.3,50.5,77\
+.3z M13.8,49.2c4\
+.6,5.6,19.5,21.9\
+,36.7,21.9s32.1-\
+16.4,36.7-21.9c-\
+4.6-5.6-19.5-21.\
+9-36.7-21.9\x0a\x09C33\
+.3,27.2,18.4,43.\
+6,13.8,49.2z\x22/>\x0a\
+<circle cx=\x2250.5\
+\x22 cy=\x2249.2\x22 r=\x221\
+7.3\x22/>\x0a<rect x=\x22\
+1.1\x22 y=\x2244.6\x22 tr\
+ansform=\x22matrix(\
+0.8188 -0.5741 0\
+.5741 0.8188 -19\
+.1291 37.698)\x22 w\
+idth=\x2298.1\x22 heig\
+ht=\x229\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02F\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><rect x\
+=\x2222.2\x22 y=\x2222.2\x22\
+ width=\x2255.5\x22 he\
+ight=\x2255.5\x22/>\x0a</\
+svg>\x0a\
+\x00\x00\x03\xd9\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M30.2,77.7c-4.\
+7,0-8.6-3.9-8.6-\
+8.6s3.9-8.6,8.6-\
+8.6s8.6,3.9,8.6,\
+8.6S34.9,77.7,30\
+.2,77.7z M30.2,6\
+6.1c-1.7,0-3,1.3\
+-3,3\x0a\x09s1.3,3,3,3\
+s3-1.3,3-3S31.9,\
+66.1,30.2,66.1z\x22\
+/>\x0a<path d=\x22M70.\
+1,37.8c-4.7,0-8.\
+6-3.9-8.6-8.6s3.\
+9-8.6,8.6-8.6s8.\
+6,3.9,8.6,8.6S74\
+.8,37.8,70.1,37.\
+8z M70.1,26.2c-1\
+.7,0-3,1.3-3,3\x0a\x09\
+s1.3,3,3,3s3-1.3\
+,3-3S71.8,26.2,7\
+0.1,26.2z\x22/>\x0a<re\
+ct x=\x2228\x22 y=\x2246.\
+7\x22 transform=\x22ma\
+trix(0.7027 -0.7\
+115 0.7115 0.702\
+7 -20.1843 50.59\
+28)\x22 width=\x2244.8\
+\x22 height=\x225.6\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2220.9,5\
+0 79.1,97.4 79.1\
+,2.6 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x03C\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(59, 58, 57\
+)}\x0a    polygon{f\
+ill:rgb(59, 58, \
+57)}\x0a    circle{\
+fill:rgb(59, 58,\
+ 57)}\x0a    rect{f\
+ill:rgb(59, 58, \
+57)}\x0a</style><pa\
+th d=\x22M50.5,77.3\
+C26.7,77.3,8.1,5\
+2.1,7.3,51L6,49.\
+2l1.3-1.8C8.1,46\
+.3,26.7,21,50.5,\
+21s42.4,25.3,43.\
+2,26.3l1.3,1.8L9\
+3.7,51\x0a\x09C92.9,52\
+.1,74.3,77.3,50.\
+5,77.3z M13.8,49\
+.2c4.6,5.6,19.5,\
+21.9,36.7,21.9s3\
+2.1-16.4,36.7-21\
+.9c-4.6-5.6-19.5\
+-21.9-36.7-21.9\x0a\
+\x09C33.3,27.2,18.4\
+,43.6,13.8,49.2z\
+\x22/>\x0a<circle cx=\x22\
+50.5\x22 cy=\x2249.2\x22 \
+r=\x2217.3\x22/>\x0a</svg\
+>\x0a\
+\x00\x00\x03e\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><circle\
+ cx=\x2259.6\x22 cy=\x224\
+2.7\x22 r=\x224.9\x22/>\x0a<\
+path d=\x22M41.1,84\
+.2c-1,0-2-0.4-2.\
+7-1.3l-22-26.7c-\
+1.2-1.5-1-3.7,0.\
+5-4.9l31.9-26.4c\
+0.6-0.5,1.4-0.8,\
+2.2-0.8c0,0,0,0,\
+0,0l27.1,0.1\x0a\x09c1\
+,0,2,0.5,2.7,1.3\
+c0.7,0.8,0.9,1.9\
+,0.7,2.9L76.5,55\
+c-0.2,0.8-0.6,1.\
+5-1.2,2L43.3,83.\
+4C42.7,83.9,41.9\
+,84.2,41.1,84.2z\
+ M24,54.5\x0a\x09l17.6\
+,21.3l28.3-23.3l\
+4-21.2l-21.6-0.1\
+L24,54.5z\x22/>\x0a</s\
+vg>\x0a\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 24.0.0, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2250,79.\
+1 97.4,20.9 2.6,\
+20.9 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x03\xcd\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M66.7,54.4h-6V\
+37.9H45.4v-6h16.\
+3c2.8,0,5,2.2,5,\
+5V54.4z\x22/>\x0a<path\
+ d=\x22M53.4,67.4H3\
+6.3c-2.8,0-5-2.2\
+-5-5V45.1h6v16.3\
+h16.1V67.4z\x22/>\x0a<\
+path d=\x22M42.5,47\
+.6H22.9c-2.8,0-5\
+-2.2-5-5V23c0-2.\
+8,2.2-5,5-5h19.6\
+c2.8,0,5,2.2,5,5\
+v19.6C47.5,45.4,\
+45.3,47.6,42.5,4\
+7.6z M23.9,41.6\x0a\
+\x09h17.6V24H23.9V4\
+1.6z\x22/>\x0a<path d=\
+\x22M75.7,81.3H56.1\
+c-2.8,0-5-2.2-5-\
+5V56.8c0-2.8,2.2\
+-5,5-5h19.6c2.8,\
+0,5,2.2,5,5v19.6\
+C80.7,79.1,78.5,\
+81.3,75.7,81.3z\x0a\
+\x09 M57.1,75.3h17.\
+6V57.8H57.1V75.3\
+z\x22/>\x0a</svg>\x0a\
+\x00\x00\x02\xc1\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(150, 146, \
+144)}\x0a    polygo\
+n{fill:rgb(150, \
+146, 144)}\x0a    c\
+ircle{fill:rgb(1\
+50, 146, 144)}\x0a \
+   rect{fill:rgb\
+(150, 146, 144)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+polygon points=\x22\
+59.1,3.4 40.6,3.\
+4 40.6,40.6 3.4,\
+40.6 3.4,59.1 40\
+.6,59.1 40.6,96.\
+3 59.1,96.3 59.1\
+,59.1 96.3,59.1 \
+96.3,40.6 \x0a\x09\x09\x0959\
+.1,40.6 \x09\x09\x22/>\x0a\x09<\
+/g>\x0a</g>\x0a</svg>\x0a\
+\
+\x00\x00\x04O\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Solid\x22>\x0a\x09<g>\x0a\x09\x09<\
+polygon points=\x22\
+70.7,14.7 63.5,1\
+4.7 63.5,29.2 48\
+.9,29.2 48.9,36.\
+5 63.5,36.5 63.5\
+,51 70.7,51 70.7\
+,36.5 85.3,36.5 \
+85.3,29.2 \x0a\x09\x09\x0970\
+.7,29.2 \x09\x09\x22/>\x0a\x09<\
+/g>\x0a</g>\x0a<g id=\x22\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M35.4,\
+85.9c-0.9,0-1.8-\
+0.6-2.2-1.5L16.8\
+,44.5c-0.4-0.9-0\
+.2-1.9,0.5-2.6c0\
+.7-0.7,1.7-0.9,2\
+.6-0.5l39.9,16.4\
+\x0a\x09\x09\x09c0.9,0.4,1.5\
+,1.3,1.4,2.3s-0.\
+8,1.9-1.8,2.1L42\
+,66.6L37.6,84c-0\
+.2,1-1.1,1.7-2.1\
+,1.8C35.5,85.9,3\
+5.5,85.9,35.4,85\
+.9z M23.3,47.9\x0a\x09\
+\x09\x09L34.9,76l3-11.\
+9c0.2-0.8,0.9-1.\
+5,1.7-1.7l11.9-3\
+L23.3,47.9z\x22/>\x0a\x09\
+</g>\x0a</g>\x0a<polyg\
+on points=\x2221.7,\
+46.6 34.5,78.3 3\
+9.3,65.7 53.9,59\
+.5 \x22/>\x0a</svg>\x0a\
+\x00\x00\x05\xa5\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Solid_1_\x22>\x0a\x09<pat\
+h d=\x22M72.9,61.1V\
+37.3c3.3-1.2,5.7\
+-4.3,5.7-8c0-4.7\
+-3.8-8.5-8.5-8.5\
+c-3.7,0-6.8,2.4-\
+8,5.7H38.2c-1.2-\
+3.3-4.3-5.7-8-5.\
+7\x0a\x09\x09c-4.7,0-8.5,\
+3.8-8.5,8.5c0,3.\
+7,2.4,6.8,5.7,8v\
+23.8c-3.3,1.2-5.\
+7,4.3-5.7,8c0,4.\
+7,3.8,8.5,8.5,8.\
+5c3.7,0,6.8-2.4,\
+8-5.7H62\x0a\x09\x09c1.2,\
+3.3,4.3,5.7,8,5.\
+7c4.7,0,8.5-3.8,\
+8.5-8.5C78.6,65.\
+4,76.2,62.2,72.9\
+,61.1z M70.1,26.\
+4c1.6,0,2.8,1.3,\
+2.8,2.8\x0a\x09\x09c0,1.6\
+-1.3,2.8-2.8,2.8\
+c-1.6,0-2.8-1.3-\
+2.8-2.8C67.2,27.\
+7,68.5,26.4,70.1\
+,26.4z M30.2,26.\
+4c1.6,0,2.8,1.3,\
+2.8,2.8\x0a\x09\x09c0,1.6\
+-1.3,2.8-2.8,2.8\
+c-1.6,0-2.8-1.3-\
+2.8-2.8C27.4,27.\
+7,28.7,26.4,30.2\
+,26.4z M30.2,71.\
+9c-1.6,0-2.8-1.3\
+-2.8-2.8\x0a\x09\x09c0-1.\
+6,1.3-2.8,2.8-2.\
+8c1.6,0,2.8,1.3,\
+2.8,2.8C33.1,70.\
+6,31.8,71.9,30.2\
+,71.9z M62.1,66.\
+2H38.2c-0.9-2.4-\
+2.8-4.3-5.2-5.2V\
+37.3\x0a\x09\x09c2.4-0.9,\
+4.3-2.8,5.2-5.2H\
+62c0.9,2.4,2.8,4\
+.3,5.2,5.2v23.8C\
+64.8,61.9,62.9,6\
+3.8,62.1,66.2z M\
+70.1,71.9c-1.6,0\
+-2.8-1.3-2.8-2.8\
+\x0a\x09\x09c0-1.6,1.3-2.\
+8,2.8-2.8c1.6,0,\
+2.8,1.3,2.8,2.8S\
+71.6,71.9,70.1,7\
+1.9z\x22/>\x0a</g>\x0a</s\
+vg>\x0a\
+\x00\x00\x02E\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(150, 146, \
+144)}\x0a    polygo\
+n{fill:rgb(150, \
+146, 144)}\x0a    c\
+ircle{fill:rgb(1\
+50, 146, 144)}\x0a \
+   rect{fill:rgb\
+(150, 146, 144)}\
+\x0a</style><rect x\
+=\x223.4\x22 y=\x2240.6\x22 \
+width=\x2292.9\x22 hei\
+ght=\x2218.6\x22/>\x0a</s\
+vg>\x0a\
+\x00\x00\x03\x9e\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M47.2,\
+86.9c-1.4,0-2.7-\
+0.9-3.3-2.2l-25-\
+60.6c-0.6-1.3-0.\
+2-2.9,0.8-3.9s2.\
+5-1.3,3.9-0.8l60\
+.6,25c1.4,0.6,2.\
+3,2,2.2,3.6\x0a\x09\x09\x09c\
+-0.1,1.5-1.2,2.8\
+-2.7,3.2l-26.4,6\
+.6l-6.6,26.4c-0.\
+4,1.5-1.7,2.6-3.\
+2,2.7C47.3,86.9,\
+47.2,86.9,47.2,8\
+6.9z M28.7,29.3L\
+46.3,72\x0a\x09\x09\x09l4.5-\
+18c0.3-1.3,1.3-2\
+.3,2.6-2.6l18-4.\
+5L28.7,29.3z\x22/>\x0a\
+\x09</g>\x0a</g>\x0a<poly\
+gon points=\x2226.3\
+,27.2 45.7,75.4 \
+53,56.2 75.2,46.\
+8 \x22/>\x0a</svg>\x0a\
+\x00\x00\x02q\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2272,50 \
+13.8,2.6 13.8,97\
+.4 \x22/>\x0a<rect x=\x22\
+71\x22 y=\x222.6\x22 widt\
+h=\x2212.5\x22 height=\
+\x2294.8\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x03\xa4\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M32.4,53.5H23c\
+-2.8,0-5-2.2-5-5\
+V23c0-2.8,2.2-5,\
+5-5h25.5c2.8,0,5\
+,2.2,5,5v10.3h-6\
+V24H24v23.5h8.4V\
+53.5z\x22/>\x0a<path d\
+=\x22M75.7,81.3H50.\
+1c-2.8,0-5-2.2-5\
+-5V65.2h6v10.1h2\
+3.6V51.8h-9.5v-6\
+h10.5c2.8,0,5,2.\
+2,5,5v25.5C80.7,\
+79.1,78.5,81.3,7\
+5.7,81.3z\x0a\x09\x22/>\x0a<\
+path d=\x22M61.8,67\
+.4H36.3c-2.8,0-5\
+-2.2-5-5V36.9c0-\
+2.8,2.2-5,5-5h25\
+.5c2.8,0,5,2.2,5\
+,5v25.5C66.8,65.\
+2,64.6,67.4,61.8\
+,67.4z\x0a\x09 M37.3,6\
+1.4h23.5V37.9H37\
+.3V61.4z\x22/>\x0a</sv\
+g>\x0a\
+\x00\x00\x03Y\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(150, 146, \
+144)}\x0a    polygo\
+n{fill:rgb(150, \
+146, 144)}\x0a    c\
+ircle{fill:rgb(1\
+50, 146, 144)}\x0a \
+   rect{fill:rgb\
+(150, 146, 144)}\
+\x0a</style><path d\
+=\x22M51.3,75.9c-1.\
+9,0-3.8-0.8-5-2.\
+4L18.1,38.4c-2.2\
+-2.8-1.8-6.9,1-9\
+.1c2.8-2.2,6.9-1\
+.8,9.1,1l28.2,35\
+.1c2.2,2.8,1.8,6\
+.9-1,9.1\x0a\x09C54.2,\
+75.5,52.7,75.9,5\
+1.3,75.9z\x22/>\x0a<pa\
+th d=\x22M51.3,75.9\
+c-1.4,0-2.9-0.5-\
+4-1.4c-2.8-2.2-3\
+.2-6.3-1-9.1l28.\
+2-35.1c2.2-2.8,6\
+.3-3.2,9.1-1c2.8\
+,2.2,3.2,6.3,1,9\
+.1L56.4,73.5\x0a\x09C5\
+5.1,75.1,53.2,75\
+.9,51.3,75.9z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x09\xa7\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Layer_17\x22>\x0a\x09<pat\
+h d=\x22M48.4,34.9c\
+1.4-1.4,3.8-1.4,\
+5.2,0l1.1,1.1l10\
+.4-10.3c2.9-2.9,\
+7.6-2.9,10.5,0c2\
+.9,2.9,2.9,7.6,0\
+,10.5L65.2,46.5l\
+1.1,1.1\x0a\x09\x09c1.4,1\
+.4,1.4,3.8,0,5.2\
+c-1.4,1.4-3.8,1.\
+4-5.2,0L48.4,40.\
+2C46.9,38.7,46.9\
+,36.4,48.4,34.9z\
+\x22/>\x0a\x09<polygon po\
+ints=\x2247.4,64.3 \
+36.2,75.4 25.8,7\
+5.4 25.8,65 26.5\
+,64.3 26.5,64.3 \
+\x09\x22/>\x0a\x09<path d=\x22M\
+76.8,37.4c1.8-1.\
+8,2.8-4.2,2.7-6.\
+5c0-2.4-0.9-4.7-\
+2.7-6.5l0,0c0,0,\
+0,0,0,0c0,0,0,0,\
+0,0l0,0c-1.8-1.8\
+-4.2-2.7-6.5-2.7\
+\x0a\x09\x09c-2.4,0-4.7,0\
+.9-6.5,2.7l0,0l-\
+9.1,9.1c-1-0.9-2\
+.4-1.4-3.7-1.4c-\
+1.4,0-2.8,0.5-3.\
+9,1.6c-1.1,1.1-1\
+.6,2.5-1.6,3.9\x0a\x09\
+\x09c0,1.3,0.5,2.6,\
+1.4,3.7L25.2,62.\
+9c0,0-0.1,0-0.1,\
+0.1l0,0l-0.7,0.7\
+C24.1,64,24,64.5\
+,24,65v9.7l-3.2,\
+3.2c-0.7,0.7-0.7\
+,1.9,0,2.6\x0a\x09\x09c0.\
+7,0.7,1.9,0.7,2.\
+6,0l3.1-3.1l9.7,\
+0c0.5,0,1-0.2,1.\
+3-0.5l11.2-11.1L\
+60,54.3c1,0.9,2.\
+4,1.4,3.7,1.4c1.\
+4,0,2.8-0.5,3.9-\
+1.6\x0a\x09\x09c1.1-1.1,1\
+.6-2.5,1.6-3.9c0\
+-1.3-0.5-2.6-1.4\
+-3.7L76.8,37.4L7\
+6.8,37.4z M46.1,\
+63L35.5,73.5l-7.\
+8,0v-7.9l0.1-0.1\
+c0,0,0.1,0,0.1-0\
+.1\x0a\x09\x09L49.3,44l7.\
+9,7.9L46.1,63z M\
+74.2,34.8L74.2,3\
+4.8L63.9,45.2c-0\
+.7,0.7-0.7,1.9,0\
+,2.6c0.2,0.2,0.4\
+,0.3,0.7,0.4\x0a\x09\x09c\
+0.1,0.2,0.2,0.5,\
+0.4,0.7c0.4,0.4,\
+0.5,0.8,0.5,1.3c\
+0,0.5-0.2,0.9-0.\
+5,1.3c-0.4,0.4-0\
+.8,0.5-1.3,0.5c-\
+0.5,0-0.9-0.2-1.\
+3-0.5\x0a\x09\x09L49.7,38\
+.9c-0.4-0.4-0.5-\
+0.8-0.5-1.3c0-0.\
+5,0.2-0.9,0.5-1.\
+3c0.4-0.4,0.8-0.\
+5,1.3-0.5c0.5,0,\
+0.9,0.2,1.3,0.5\x0a\
+\x09\x09c0.2,0.2,0.4,0\
+.3,0.7,0.4c0.1,0\
+.2,0.2,0.5,0.4,0\
+.7c0.7,0.7,1.9,0\
+.7,2.6,0L66.4,27\
+l0,0c1.1-1.1,2.5\
+-1.6,3.9-1.6\x0a\x09\x09c\
+1.4,0,2.8,0.5,3.\
+9,1.6l0,0c1.1,1.\
+1,1.6,2.5,1.6,3.\
+9C75.9,32.3,75.3\
+,33.7,74.2,34.8z\
+\x22/>\x0a\x09<path d=\x22M6\
+1.8,45.7l2.1,2.1\
+l1.1,1.1c0.7,0.7\
+,1.9,0.7,2.6,0c0\
+.7-0.7,0.7-1.9,0\
+-2.6l-1.1-1.1l-2\
+.1-2.1c-0.7-0.7-\
+1.9-0.7-2.6,0\x0a\x09\x09\
+C61.1,43.8,61.1,\
+45,61.8,45.7L61.\
+8,45.7z\x22/>\x0a\x09<pat\
+h d=\x22M52.3,36.2l\
+1.1,1.1l2.1,2.1c\
+0.7,0.7,1.9,0.7,\
+2.6,0c0.7-0.7,0.\
+7-1.9,0-2.6L56,3\
+4.7l-1.1-1.1c-0.\
+7-0.7-1.9-0.7-2.\
+6,0\x0a\x09\x09C51.6,34.3\
+,51.6,35.5,52.3,\
+36.2L52.3,36.2z\x22\
+/>\x0a\x09<path d=\x22M26\
+.5,66.1L26.5,66.\
+1h20.9c1,0,1.9-0\
+.8,1.9-1.9c0-1-0\
+.8-1.9-1.9-1.9H2\
+6.5h0c-1,0-1.9,0\
+.8-1.9,1.9\x0a\x09\x09C24\
+.6,65.3,25.5,66.\
+1,26.5,66.1L26.5\
+,66.1z\x22/>\x0a</g>\x0a<\
+/svg>\x0a\
+\x00\x00\x05,\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M78.9,82.7c-4.\
+7,0-8.6-3.9-8.6-\
+8.6s3.9-8.6,8.6-\
+8.6s8.6,3.9,8.6,\
+8.6S83.6,82.7,78\
+.9,82.7z M78.9,7\
+1.1c-1.7,0-3,1.3\
+-3,3\x0a\x09s1.3,3,3,3\
+s3-1.3,3-3S80.6,\
+71.1,78.9,71.1z\x22\
+/>\x0a<path d=\x22M49.\
+1,31c-4.7,0-8.6-\
+3.9-8.6-8.6s3.9-\
+8.6,8.6-8.6c4.7,\
+0,8.6,3.9,8.6,8.\
+6S53.8,31,49.1,3\
+1z M49.1,19.4c-1\
+.7,0-3,1.3-3,3\x0a\x09\
+s1.3,3,3,3s3-1.3\
+,3-3S50.8,19.4,4\
+9.1,19.4z\x22/>\x0a<pa\
+th d=\x22M19.7,82.7\
+c-4.7,0-8.6-3.9-\
+8.6-8.6s3.9-8.6,\
+8.6-8.6s8.6,3.9,\
+8.6,8.6S24.4,82.\
+7,19.7,82.7z M19\
+.7,71.1c-1.7,0-3\
+,1.3-3,3\x0a\x09s1.3,3\
+,3,3s3-1.3,3-3S2\
+1.4,71.1,19.7,71\
+.1z\x22/>\x0a<rect x=\x22\
+26.7\x22 y=\x2271.3\x22 w\
+idth=\x2245\x22 height\
+=\x225.6\x22/>\x0a<rect x\
+=\x2211.4\x22 y=\x2244.5\x22\
+ transform=\x22matr\
+ix(0.4995 -0.866\
+3 0.8663 0.4995 \
+-23.5844 53.777)\
+\x22 width=\x2246.6\x22 h\
+eight=\x225.6\x22/>\x0a<r\
+ect x=\x2261.1\x22 y=\x22\
+24.2\x22 transform=\
+\x22matrix(0.8668 -\
+0.4986 0.4986 0.\
+8668 -15.4303 38\
+.2311)\x22 width=\x225\
+.6\x22 height=\x2247.5\
+\x22/>\x0a</svg>\x0a\
+\x00\x00\x03\x91\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M84.9,45.3l-6.\
+8-6.8V21.9c0-2.6\
+-2.1-4.7-4.7-4.7\
+h-4.7c-2.6,0-4.7\
+,2.1-4.7,4.7v2.6\
+l-9.4-9.4c-1.3-1\
+.2-2.5-2.6-4.7-2\
+.6\x0a\x09s-3.4,1.4-4.\
+7,2.6L15.1,45.3c\
+-1.5,1.5-2.6,2.6\
+-2.6,4.7c0,2.6,2\
+,4.7,4.7,4.7h4.7\
+v28.1c0,2.6,2.1,\
+4.7,4.7,4.7h14.1\
+V64.1\x0a\x09c0-2.6,2.\
+1-4.7,4.7-4.7h9.\
+4c2.6,0,4.7,2.1,\
+4.7,4.7v23.4h14.\
+1c2.6,0,4.7-2.1,\
+4.7-4.7V54.7h4.7\
+c2.7,0,4.7-2,4.7\
+-4.7\x0a\x09C87.5,47.9\
+,86.4,46.8,84.9,\
+45.3z\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.0, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(150, 146, \
+144)}\x0a    polygo\
+n{fill:rgb(150, \
+146, 144)}\x0a    c\
+ircle{fill:rgb(1\
+50, 146, 144)}\x0a \
+   rect{fill:rgb\
+(150, 146, 144)}\
+\x0a</style><polygo\
+n points=\x2250,79.\
+1 97.4,20.9 2.6,\
+20.9 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02\xb6\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2225.4,5\
+0 83.6,97.4 83.6\
+,2.6 \x22/>\x0a<rect x\
+=\x2213.8\x22 y=\x222.6\x22 \
+transform=\x22matri\
+x(-1 -1.224647e-\
+16 1.224647e-16 \
+-1 40.1826 100)\x22\
+ width=\x2212.5\x22 he\
+ight=\x2294.8\x22/>\x0a</\
+svg>\x0a\
+\x00\x00\x03\x88\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M41.5,67.6c-14\
+.4,0-26.1-11.7-2\
+6.1-26.1s11.7-26\
+.1,26.1-26.1s26.\
+1,11.7,26.1,26.1\
+S55.9,67.6,41.5,\
+67.6z M41.5,22.4\
+\x0a\x09C31,22.4,22.4,\
+31,22.4,41.5c0,1\
+0.5,8.6,19.1,19.\
+1,19.1c10.5,0,19\
+.1-8.6,19.1-19.1\
+C60.6,31,52,22.4\
+,41.5,22.4z\x22/>\x0a<\
+path d=\x22M84.4,79\
+.8L64.2,60.6c-1.\
+4,1.7-3.1,3.2-4.\
+8,4.6l20.5,19.4c\
+0.6,0.6,1.5,0.9,\
+2.3,0.9c0.9,0,1.\
+8-0.3,2.4-1\x0a\x09C85\
+.8,83.2,85.7,81.\
+1,84.4,79.8z\x22/>\x0a\
+</svg>\x0a\
+\x00\x00\x02\xf8\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><rect x\
+=\x2245\x22 y=\x2221.3\x22 t\
+ransform=\x22matrix\
+(0.7112 -0.7029 \
+0.7029 0.7112 -2\
+1.6791 50.024)\x22 \
+width=\x2210\x22 heigh\
+t=\x2260.2\x22/>\x0a<rect\
+ x=\x2219.9\x22 y=\x2246.\
+4\x22 transform=\x22ma\
+trix(0.7113 -0.7\
+029 0.7029 0.711\
+3 -21.7284 49.99\
+88)\x22 width=\x2260.2\
+\x22 height=\x2210\x22/>\x0a\
+</svg>\x0a\
+\x00\x00\x03}\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M26.5,\
+74.2c0,3.7,3,6.8\
+,6.8,6.8h33.8c3.\
+7,0,6.8-3,6.8-6.\
+8V33.7H26.5V74.2\
+z M33.3,40.4h33.\
+8v33.8H33.3V40.4\
+z\x22/>\x0a\x09\x09<polygon \
+points=\x2260.3,23.\
+5 60.3,16.8 40.1\
+,16.8 40.1,23.5 \
+19.8,23.5 19.8,3\
+0.3 80.6,30.3 80\
+.6,23.5 \x09\x09\x22/>\x0a\x09\x09\
+<rect x=\x2240.1\x22 y\
+=\x2247.2\x22 width=\x226\
+.8\x22 height=\x2220.3\
+\x22/>\x0a\x09\x09<rect x=\x225\
+3.6\x22 y=\x2247.2\x22 wi\
+dth=\x226.8\x22 height\
+=\x2220.3\x22/>\x0a\x09</g>\x0a\
+</g>\x0a</svg>\x0a\
+\x00\x00\x03\xde\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.1.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><rect x\
+=\x2213\x22 y=\x2212\x22 wid\
+th=\x2216.8\x22 height\
+=\x2216.8\x22/>\x0a<rect \
+x=\x2241.7\x22 y=\x2212\x22 \
+width=\x2216.8\x22 hei\
+ght=\x2216.8\x22/>\x0a<re\
+ct x=\x2270.4\x22 y=\x221\
+2\x22 width=\x2216.8\x22 \
+height=\x2216.8\x22/>\x0a\
+<rect x=\x2213\x22 y=\x22\
+41.5\x22 width=\x2216.\
+8\x22 height=\x2216.8\x22\
+/>\x0a<rect x=\x2241.7\
+\x22 y=\x2241.5\x22 width\
+=\x2216.8\x22 height=\x22\
+16.8\x22/>\x0a<rect x=\
+\x2270.4\x22 y=\x2241.5\x22 \
+width=\x2216.8\x22 hei\
+ght=\x2216.8\x22/>\x0a<re\
+ct x=\x2212.9\x22 y=\x227\
+1\x22 width=\x2216.8\x22 \
+height=\x2216.8\x22/>\x0a\
+<rect x=\x2241.6\x22 y\
+=\x2271\x22 width=\x2216.\
+8\x22 height=\x2216.8\x22\
+/>\x0a<rect x=\x2270.3\
+\x22 y=\x2271\x22 width=\x22\
+16.8\x22 height=\x2216\
+.8\x22/>\x0a</svg>\x0a\
+\x00\x00\x03c\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M47.2,\
+86.9c-1.4,0-2.7-\
+0.9-3.3-2.2l-25-\
+60.6c-0.6-1.3-0.\
+2-2.9,0.8-3.9s2.\
+5-1.3,3.9-0.8l60\
+.6,25c1.4,0.6,2.\
+3,2,2.2,3.6\x0a\x09\x09\x09c\
+-0.1,1.5-1.2,2.8\
+-2.7,3.2l-26.4,6\
+.6l-6.6,26.4c-0.\
+4,1.5-1.7,2.6-3.\
+2,2.7C47.3,86.9,\
+47.2,86.9,47.2,8\
+6.9z M28.7,29.3L\
+46.3,72\x0a\x09\x09\x09l4.5-\
+18c0.3-1.3,1.3-2\
+.3,2.6-2.6l18-4.\
+5L28.7,29.3z\x22/>\x0a\
+\x09</g>\x0a</g>\x0a</svg\
+>\x0a\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2279.1,5\
+0 20.9,2.6 20.9,\
+97.4 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02\xbd\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 177.6 94.8\x22 st\
+yle=\x22enable-back\
+ground:new 0 0 1\
+77.6 94.8;\x22 xml:\
+space=\x22preserve\x22\
+>\x0a<style type=\x22t\
+ext/css\x22>\x0a    pa\
+th{fill:rgb(107,\
+ 105, 103)}\x0a    \
+polygon{fill:rgb\
+(107, 105, 103)}\
+\x0a    circle{fill\
+:rgb(107, 105, 1\
+03)}\x0a    rect{fi\
+ll:rgb(107, 105,\
+ 103)}\x0a</style><\
+polygon points=\x22\
+0.5,47.4 58.7,94\
+.8 58.7,0 \x22/>\x0a<r\
+ect x=\x2258.6\x22 y=\x22\
+31.2\x22 transform=\
+\x22matrix(-1 -1.22\
+4647e-16 1.22464\
+7e-16 -1 236.168\
+7 94.8)\x22 width=\x22\
+119\x22 height=\x2232.\
+4\x22/>\x0a</svg>\x0a\
+\x00\x00\x02\xc9\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M74.7,86.9H26.\
+4c-6.9,0-12.2-5.\
+4-12.2-12.2V26.4\
+c0-6.9,5.4-12.2,\
+12.2-12.2h48.1c6\
+.9,0,12.2,5.4,12\
+.2,12.2v48.1\x0a\x09C8\
+6.9,81.5,81.5,86\
+.9,74.7,86.9z M2\
+8.9,72.1h43.2V28\
+.9H28.9V72.1z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x03S\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><path d\
+=\x22M82.1,89.6H34.\
+5c-5.2,0-9.3-3.9\
+-9.3-8.9v-7.3h11\
+.2v5.5h43.9V37.2\
+h-5.6V26.5h7.5c5\
+.2,0,9.3,3.9,9.3\
+,8.9v45.3\x0a\x09C91.4\
+,85.7,87.3,89.6,\
+82.1,89.6z\x22/>\x0a<p\
+ath d=\x22M65.3,73.\
+5H17.9c-5.2,0-9.\
+3-3.9-9.3-8.9V19\
+.3c0-5,4.1-8.9,9\
+.3-8.9h47.5c5.2,\
+0,9.3,3.9,9.3,8.\
+9v45.3\x0a\x09C74.7,69\
+.6,70.6,73.5,65.\
+3,73.5z M19.8,62\
+.8h43.7V21.1H19.\
+8V62.8z\x22/>\x0a</svg\
+>\x0a\
+\x00\x00\x02\xf3\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><circle\
+ cx=\x2258.1\x22 cy=\x222\
+3.5\x22 r=\x226.9\x22/>\x0a<\
+circle cx=\x2255.8\x22\
+ cy=\x2252.5\x22 r=\x226.\
+9\x22/>\x0a<circle cx=\
+\x2230\x22 cy=\x2239.8\x22 r\
+=\x226.9\x22/>\x0a<circle\
+ cx=\x2223.1\x22 cy=\x226\
+2.6\x22 r=\x226.9\x22/>\x0a<\
+circle cx=\x2255.8\x22\
+ cy=\x2277.6\x22 r=\x226.\
+9\x22/>\x0a<circle cx=\
+\x2277.2\x22 cy=\x2246.7\x22\
+ r=\x226.9\x22/>\x0a</svg\
+>\x0a\
+\x00\x00\x02\xf4\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 xmlns:xli\
+nk=\x22http://www.w\
+3.org/1999/xlink\
+\x22 focusable=\x22fal\
+se\x22 preserveAspe\
+ctRatio=\x22xMidYMi\
+d meet\x22 viewBox=\
+\x220 0 14 16\x22>\x0a<!-\
+-From GitHub's O\
+ctoicons-->\x0a<!--\
+extra line-->\x0a<!\
+--extra line2-->\
+\x0a<style type=\x22te\
+xt/css\x22>\x0a    pat\
+h{fill:rgb(107, \
+105, 103)}\x0a    p\
+olygon{fill:rgb(\
+107, 105, 103)}\x0a\
+    circle{fill:\
+rgb(107, 105, 10\
+3)}\x0a    rect{fil\
+l:rgb(107, 105, \
+103)}\x0a</style><p\
+ath d=\x22M2 13h4v1\
+H2v-1zm5-6H2v1h5\
+V7zm2 3V8l-3 3l3\
+ 3v-2h5v-2H9zM4.\
+5 9H2v1h2.5V9zM2\
+ 12h2.5v-1H2v1zm\
+9 1h1v2c-.02.28-\
+.11.52-.3.7c-.19\
+.18-.42.28-.7.3H\
+1c-.55 0-1-.45-1\
+-1V4c0-.55.45-1 \
+1-1h3c0-1.11.89-\
+2 2-2c1.11 0 2 .\
+89 2 2h3c.55 0 1\
+ .45 1 1v5h-1V6H\
+1v9h10v-2zM2 5h8\
+c0-.55-.45-1-1-1\
+H8c-.55 0-1-.45-\
+1-1s-.45-1-1-1s-\
+1 .45-1 1s-.45 1\
+-1 1H3c-.55 0-1 \
+.45-1 1z\x22 />\x0a</s\
+vg>\
+\x00\x00\x03\xa1\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.1, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g id=\x22\
+Outline\x22>\x0a\x09<g>\x0a\x09\
+\x09<path d=\x22M50.1,\
+76.4c10.9,0,19.8\
+-8.9,19.8-19.8c0\
+-10-15.4-29.5-17\
+.2-31.7l-2.6-3.2\
+L47.6,25c-1.8,2.\
+2-17.2,21.7-17.2\
+,31.7\x0a\x09\x09\x09C30.4,6\
+7.6,39.2,76.4,50\
+.1,76.4z M50.1,3\
+2.4c5.9,7.9,13.2\
+,19.2,13.2,24.3c\
+0,7.3-5.9,13.2-1\
+3.2,13.2c-7.3,0-\
+13.2-5.9-13.2-13\
+.2\x0a\x09\x09\x09C37,51.7,4\
+4.2,40.3,50.1,32\
+.4z\x22/>\x0a\x09\x09<path d\
+=\x22M59.2,56.7h-4.\
+9c0,2.3-1.8,4.1-\
+4.1,4.1v4.9C55.1\
+,65.7,59.2,61.7,\
+59.2,56.7z\x22/>\x0a\x09<\
+/g>\x0a</g>\x0a</svg>\x0a\
+\
+\x00\x00\x04H\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><g>\x0a\x09<p\
+ath d=\x22M57.3,84.\
+7h-32c-4.6,0-8.2\
+-3.6-8.2-8.2v-32\
+c0-4.6,3.6-8.2,8\
+.2-8.2h32c4.6,0,\
+8.2,3.6,8.2,8.2v\
+32\x0a\x09\x09C65.4,81.2,\
+61.9,84.7,57.3,8\
+4.7z M26.9,74.9h\
+28.7V46.2H26.9V7\
+4.9z\x22/>\x0a\x09<path d\
+=\x22M74.7,63.6h-32\
+c-4.6,0-8.2-3.6-\
+8.2-8.2v-32c0-4.\
+6,3.6-8.2,8.2-8.\
+2h32c4.6,0,8.2,3\
+.6,8.2,8.2v32\x0a\x09\x09\
+C82.9,60,79.3,63\
+.6,74.7,63.6z M4\
+4.3,53.8h28.7V25\
+.1H44.3V53.8z\x22/>\
+\x0a\x09<path d=\x22M81.1\
+,60.6L62.7,82.7l\
+-6.9-6.9l13.8-15\
+.3l5-3.5\x22/>\x0a\x09<pa\
+th d=\x22M82,26.8L6\
+1.9,46.9l-6.9-7l\
+20.4-20.4l0,0\x22/>\
+\x0a\x09<path d=\x22M44.7\
+,60.6L24.8,83.1l\
+-6.9-6.9l18.8-22\
+.2h1.6\x22/>\x0a\x09<path\
+ d=\x22M19,39.4L36,\
+18.7l10.3,3L29.2\
+,42l0,0\x22/>\x0a</g>\x0a\
+</svg>\x0a\
+\x00\x00\x02}\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.2, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 177.6 94.8\x22 st\
+yle=\x22enable-back\
+ground:new 0 0 1\
+77.6 94.8;\x22 xml:\
+space=\x22preserve\x22\
+>\x0a<style type=\x22t\
+ext/css\x22>\x0a    pa\
+th{fill:rgb(107,\
+ 105, 103)}\x0a    \
+polygon{fill:rgb\
+(107, 105, 103)}\
+\x0a    circle{fill\
+:rgb(107, 105, 1\
+03)}\x0a    rect{fi\
+ll:rgb(107, 105,\
+ 103)}\x0a</style><\
+polygon points=\x22\
+177.6,47.4 119.4\
+,0 119.4,94.8 \x22/\
+>\x0a<rect x=\x220.5\x22 \
+y=\x2231.2\x22 width=\x22\
+119\x22 height=\x2232.\
+4\x22/>\x0a</svg>\x0a\
+\x00\x00\x02A\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 24.0.0, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><polygo\
+n points=\x2250,20.\
+9 2.6,79.1 97.4,\
+79.1 \x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x06*\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22utf\
+-8\x22?>\x0a<!-- Gener\
+ator: Adobe Illu\
+strator 23.0.6, \
+SVG Export Plug-\
+In . SVG Version\
+: 6.00 Build 0) \
+ -->\x0a<svg versio\
+n=\x221.1\x22 id=\x22Laye\
+r_1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22 xmlns:xl\
+ink=\x22http://www.\
+w3.org/1999/xlin\
+k\x22 x=\x220px\x22 y=\x220p\
+x\x22\x0a\x09 viewBox=\x220 \
+0 100 100\x22 style\
+=\x22enable-backgro\
+und:new 0 0 100 \
+100;\x22 xml:space=\
+\x22preserve\x22>\x0a<sty\
+le type=\x22text/cs\
+s\x22>\x0a    path{fil\
+l:rgb(107, 105, \
+103)}\x0a    polygo\
+n{fill:rgb(107, \
+105, 103)}\x0a    c\
+ircle{fill:rgb(1\
+07, 105, 103)}\x0a \
+   rect{fill:rgb\
+(107, 105, 103)}\
+\x0a</style><rect x\
+=\x2213.1\x22 y=\x2223.1\x22\
+ transform=\x22matr\
+ix(0.7071 -0.707\
+1 0.7071 0.7071 \
+-10.0546 26.0581\
+)\x22 width=\x2226.7\x22 \
+height=\x224.1\x22/>\x0a<\
+rect x=\x2233.9\x22 y=\
+\x2223.1\x22 transform\
+=\x22matrix(0.8471 \
+-0.5315 0.5315 0\
+.8471 -6.1536 28\
+.9461)\x22 width=\x222\
+6.7\x22 height=\x224.1\
+\x22/>\x0a<rect x=\x2256.\
+7\x22 y=\x2223.1\x22 tran\
+sform=\x22matrix(0.\
+9345 -0.356 0.35\
+6 0.9345 -4.3723\
+ 26.5752)\x22 width\
+=\x2226.7\x22 height=\x22\
+4.1\x22/>\x0a<rect x=\x22\
+13.1\x22 y=\x2247.3\x22 t\
+ransform=\x22matrix\
+(0.7071 -0.7071 \
+0.7071 0.7071 -2\
+7.1546 33.1412)\x22\
+ width=\x2226.7\x22 he\
+ight=\x224.1\x22/>\x0a<re\
+ct x=\x2233.9\x22 y=\x224\
+7.3\x22 transform=\x22\
+matrix(0.8209 -0\
+.5711 0.5711 0.8\
+209 -19.725 35.8\
+084)\x22 width=\x2226.\
+7\x22 height=\x224.1\x22/\
+>\x0a<rect x=\x2256.7\x22\
+ y=\x2247.3\x22 transf\
+orm=\x22matrix(0.96\
+89 -0.2476 0.247\
+6 0.9689 -10.037\
+8 18.8686)\x22 widt\
+h=\x2226.7\x22 height=\
+\x224.1\x22/>\x0a<rect x=\
+\x2213.1\x22 y=\x2274\x22 tr\
+ansform=\x22matrix(\
+0.8209 -0.5711 0\
+.5711 0.8209 -38\
+.7071 28.7179)\x22 \
+width=\x2226.7\x22 hei\
+ght=\x224.1\x22/>\x0a<rec\
+t x=\x2233.9\x22 y=\x2274\
+\x22 transform=\x22mat\
+rix(0.8471 -0.53\
+15 0.5315 0.8471\
+ -33.2051 36.729\
+9)\x22 width=\x2226.7\x22\
+ height=\x224.1\x22/>\x0a\
+<rect x=\x2256.7\x22 y\
+=\x2274\x22 transform=\
+\x22matrix(0.9946 -\
+0.1035 0.1035 0.\
+9946 -7.4995 7.6\
+579)\x22 width=\x2226.\
+7\x22 height=\x224.1\x22/\
+>\x0a</svg>\x0a\
 "
 
 qt_resource_name = b"\
@@ -6083,6 +6183,10 @@ qt_resource_name = b"\
 \x00o\xa6S\
 \x00i\
 \x00c\x00o\x00n\x00s\
+\x00\x05\
+\x00r\xfd\xf4\
+\x00l\
+\x00i\x00g\x00h\x00t\
 \x00\x06\
 \x06\xac\x9ab\
 \x00c\
@@ -6091,120 +6195,114 @@ qt_resource_name = b"\
 \x00\x06\xa8\x8b\
 \x00d\
 \x00a\x00r\x00k\
-\x00\x05\
-\x00r\xfd\xf4\
-\x00l\
-\x00i\x00g\x00h\x00t\
-\x00\x0d\
-\x0fU\x0b\xa7\
-\x00r\
-\x00e\x00c\x00t\x00a\x00n\x00g\x00l\x00e\x00.\x00s\x00v\x00g\
-\x00\x06\
-\x03wZ\xc7\
-\x003\
-\x00D\x00.\x00s\x00v\x00g\
-\x00\x0d\
-\x0e\x8f\x97g\
-\x00s\
-\x00t\x00e\x00p\x00_\x00l\x00e\x00f\x00t\x00.\x00s\x00v\x00g\
-\x00\x11\
-\x0ezm\xe7\
-\x00v\
-\x00e\x00r\x00t\x00e\x00x\x00_\x00r\x00e\x00m\x00o\x00v\x00e\x00.\x00s\x00v\x00g\
-\
-\x00\x09\
-\x00W\xb7\xc7\
-\x00p\
-\x00a\x00i\x00n\x00t\x00.\x00s\x00v\x00g\
-\x00\x10\
-\x01,9\xa7\
-\x00d\
-\x00e\x00l\x00e\x00t\x00e\x00_\x00s\x00h\x00a\x00p\x00e\x00.\x00s\x00v\x00g\
 \x00\x08\
-\x00/Wg\
-\x00f\
-\x00i\x00l\x00l\x00.\x00s\x00v\x00g\
-\x00\x0e\
-\x05\x9a\x08\xe7\
-\x00n\
-\x00e\x00w\x00_\x00l\x00a\x00b\x00e\x00l\x00s\x00.\x00s\x00v\x00g\
-\x00\x13\
-\x03Q\xb0\xc7\
-\x00l\
-\x00o\x00n\x00g\x00_\x00l\x00e\x00f\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\
-\x00v\x00g\
-\x00\x0e\
-\x0e\xde\xf7G\
-\x00l\
-\x00e\x00f\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\x00v\x00g\
-\x00\x0f\
-\x0cN\xfc\x87\
-\x00n\
-\x00e\x00w\x00_\x00v\x00e\x00c\x00t\x00o\x00r\x00s\x00.\x00s\x00v\x00g\
-\x00\x0d\
-\x0fG0\x07\
-\x00m\
-\x00o\x00v\x00e\x00_\x00b\x00a\x00c\x00k\x00.\x00s\x00v\x00g\
-\x00\x0b\
-\x06\xf4\x91\x87\
-\x00c\
-\x00o\x00n\x00s\x00o\x00l\x00e\x00.\x00s\x00v\x00g\
-\x00\x12\
-\x02\xeaZ\x07\
-\x00v\
-\x00i\x00s\x00i\x00b\x00i\x00l\x00i\x00t\x00y\x00_\x00o\x00f\x00f\x00.\x00s\x00v\
-\x00g\
-\x00\x0b\
-\x0e\xcf\x9d'\
+\x08\xabT\x07\
 \x00p\
-\x00o\x00l\x00y\x00g\x00o\x00n\x00.\x00s\x00v\x00g\
-\x00\x09\
-\x05\xc6\xb2\xc7\
-\x00m\
-\x00i\x00n\x00u\x00s\x00.\x00s\x00v\x00g\
-\x00\x0d\
-\x02\x0d\x90\x07\
-\x00d\
-\x00r\x00o\x00p\x00_\x00d\x00o\x00w\x00n\x00.\x00s\x00v\x00g\
+\x00a\x00t\x00h\x00.\x00s\x00v\x00g\
 \x00\x17\
 \x0c\x84\xac\xe7\
 \x00p\
 \x00r\x00o\x00p\x00e\x00r\x00t\x00i\x00e\x00s\x00_\x00c\x00o\x00n\x00t\x00r\x00a\
 \x00c\x00t\x00.\x00s\x00v\x00g\
+\x00\x0b\
+\x07P<\xc7\
+\x00e\
+\x00l\x00l\x00i\x00p\x00s\x00e\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x0fkz\xe7\
+\x00n\
+\x00e\x00w\x00_\x00s\x00h\x00a\x00p\x00e\x00s\x00.\x00s\x00v\x00g\
+\x00\x09\
+\x00W\xb7\xc7\
+\x00p\
+\x00a\x00i\x00n\x00t\x00.\x00s\x00v\x00g\
+\x00\x07\
+\x07\xa7Z\x07\
+\x00a\
+\x00d\x00d\x00.\x00s\x00v\x00g\
+\x00\x0d\
+\x01\x88\xef\xc7\
+\x00t\
+\x00r\x00a\x00n\x00s\x00p\x00o\x00s\x00e\x00.\x00s\x00v\x00g\
+\x00\x0b\
+\x06\xf4\x91\x87\
+\x00c\
+\x00o\x00n\x00s\x00o\x00l\x00e\x00.\x00s\x00v\x00g\
+\x00\x0f\
+\x0dD\x18g\
+\x00n\
+\x00e\x00w\x00_\x00s\x00u\x00r\x00f\x00a\x00c\x00e\x00.\x00s\x00v\x00g\
+\x00\x11\
+\x0ezm\xe7\
+\x00v\
+\x00e\x00r\x00t\x00e\x00x\x00_\x00r\x00e\x00m\x00o\x00v\x00e\x00.\x00s\x00v\x00g\
+\
 \x00\x08\
-\x00HT\xa7\
-\x00l\
-\x00i\x00n\x00e\x00.\x00s\x00v\x00g\
-\x00\x08\
-\x08\xf7W\x07\
+\x06/U\xe7\
+\x00r\
+\x00o\x00l\x00l\x00.\x00s\x00v\x00g\
+\x00\x12\
+\x02\xeaZ\x07\
+\x00v\
+\x00i\x00s\x00i\x00b\x00i\x00l\x00i\x00t\x00y\x00_\x00o\x00f\x00f\x00.\x00s\x00v\
 \x00g\
-\x00r\x00i\x00d\x00.\x00s\x00v\x00g\
 \x00\x0d\
 \x0eN\x9bg\
 \x00n\
 \x00e\x00w\x00_\x00i\x00m\x00a\x00g\x00e\x00.\x00s\x00v\x00g\
 \x00\x08\
+\x00HT\xa7\
+\x00l\
+\x00i\x00n\x00e\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x0e\xde\xf7G\
+\x00l\
+\x00e\x00f\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x01\x87]\xe7\
+\x00v\
+\x00i\x00s\x00i\x00b\x00i\x00l\x00i\x00t\x00y\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x05\x9a\x08\xe7\
+\x00n\
+\x00e\x00w\x00_\x00l\x00a\x00b\x00e\x00l\x00s\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x04\xa2\xf1'\
+\x00d\
+\x00o\x00w\x00n\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\x00v\x00g\
+\x00\x0d\
+\x0fG0\x07\
+\x00m\
+\x00o\x00v\x00e\x00_\x00b\x00a\x00c\x00k\x00.\x00s\x00v\x00g\
+\x00\x08\
 \x03\xc6T'\
 \x00p\
 \x00l\x00u\x00s\x00.\x00s\x00v\x00g\
-\x00\x0e\
-\x0b\xc1\xfc\xe7\
-\x00m\
-\x00o\x00v\x00e\x00_\x00f\x00r\x00o\x00n\x00t\x00.\x00s\x00v\x00g\
-\x00\x14\
-\x0b\xa3q\xa7\
-\x00l\
-\x00o\x00n\x00g\x00_\x00r\x00i\x00g\x00h\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\
-\x00s\x00v\x00g\
-\x00\x06\
-\x03gZ\xc7\
-\x002\
-\x00D\x00.\x00s\x00v\x00g\
 \x00\x11\
 \x04.wG\
 \x00v\
 \x00e\x00r\x00t\x00e\x00x\x00_\x00i\x00n\x00s\x00e\x00r\x00t\x00.\x00s\x00v\x00g\
 \
+\x00\x0d\
+\x0fU\x0b\xa7\
+\x00r\
+\x00e\x00c\x00t\x00a\x00n\x00g\x00l\x00e\x00.\x00s\x00v\x00g\
+\x00\x09\
+\x05\xc6\xb2\xc7\
+\x00m\
+\x00i\x00n\x00u\x00s\x00.\x00s\x00v\x00g\
+\x00\x0a\
+\x0b\xaa;\xc7\
+\x00d\
+\x00i\x00r\x00e\x00c\x00t\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x08{\x95\x87\
+\x00s\
+\x00t\x00e\x00p\x00_\x00r\x00i\x00g\x00h\x00t\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x0b\xc1\xfc\xe7\
+\x00m\
+\x00o\x00v\x00e\x00_\x00f\x00r\x00o\x00n\x00t\x00.\x00s\x00v\x00g\
 \x00\x15\
 \x08\xdd\x13G\
 \x00p\
@@ -6214,86 +6312,93 @@ qt_resource_name = b"\
 \x01\xcb\x85\x87\
 \x00p\
 \x00i\x00c\x00k\x00e\x00r\x00.\x00s\x00v\x00g\
+\x00\x0b\
+\x0e\xcf\x9d'\
+\x00p\
+\x00o\x00l\x00y\x00g\x00o\x00n\x00.\x00s\x00v\x00g\
+\x00\x08\
+\x068W'\
+\x00h\
+\x00o\x00m\x00e\x00.\x00s\x00v\x00g\
+\x00\x08\
+\x0cXT\xa7\
+\x00m\
+\x00e\x00n\x00u\x00.\x00s\x00v\x00g\
+\x00\x0d\
+\x02\x0d\x90\x07\
+\x00d\
+\x00r\x00o\x00p\x00_\x00d\x00o\x00w\x00n\x00.\x00s\x00v\x00g\
+\x00\x0d\
+\x0e\x8f\x97g\
+\x00s\
+\x00t\x00e\x00p\x00_\x00l\x00e\x00f\x00t\x00.\x00s\x00v\x00g\
 \x00\x08\
 \x06`J\xe7\
 \x00z\
 \x00o\x00o\x00m\x00.\x00s\x00v\x00g\
+\x00\x10\
+\x01,9\xa7\
+\x00d\
+\x00e\x00l\x00e\x00t\x00e\x00_\x00s\x00h\x00a\x00p\x00e\x00.\x00s\x00v\x00g\
+\x00\x0a\
+\x0c\xad\x02\x87\
+\x00d\
+\x00e\x00l\x00e\x00t\x00e\x00.\x00s\x00v\x00g\
+\x00\x08\
+\x08\xf7W\x07\
+\x00g\
+\x00r\x00i\x00d\x00.\x00s\x00v\x00g\
+\x00\x0a\
+\x0b\xa8b\x87\
+\x00s\
+\x00e\x00l\x00e\x00c\x00t\x00.\x00s\x00v\x00g\
+\x00\x13\
+\x03Q\xb0\xc7\
+\x00l\
+\x00o\x00n\x00g\x00_\x00l\x00e\x00f\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\
+\x00v\x00g\
+\x00\x0f\
+\x02\x9f\x08\x07\
+\x00r\
+\x00i\x00g\x00h\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\x00v\x00g\
+\x00\x06\
+\x03gZ\xc7\
+\x002\
+\x00D\x00.\x00s\x00v\x00g\
+\x00\x0b\
+\x06)\x96\x07\
+\x00p\
+\x00o\x00p\x00_\x00o\x00u\x00t\x00.\x00s\x00v\x00g\
 \x00\x0e\
 \x0c\x1a\xad\xe7\
 \x00n\
 \x00e\x00w\x00_\x00p\x00o\x00i\x00n\x00t\x00s\x00.\x00s\x00v\x00g\
+\x00\x15\
+\x0b>\x0e\x07\
+\x00c\
+\x00o\x00p\x00y\x00_\x00t\x00o\x00_\x00c\x00l\x00i\x00p\x00b\x00o\x00a\x00r\x00d\
+\x00.\x00s\x00v\x00g\
+\x00\x08\
+\x00/Wg\
+\x00f\
+\x00i\x00l\x00l\x00.\x00s\x00v\x00g\
+\x00\x06\
+\x03wZ\xc7\
+\x003\
+\x00D\x00.\x00s\x00v\x00g\
+\x00\x14\
+\x0b\xa3q\xa7\
+\x00l\
+\x00o\x00n\x00g\x00_\x00r\x00i\x00g\x00h\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\
+\x00s\x00v\x00g\
 \x00\x0c\
 \x06\xe6\xeb\xe7\
 \x00u\
 \x00p\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\x00v\x00g\
 \x00\x0f\
-\x0dD\x18g\
+\x0cN\xfc\x87\
 \x00n\
-\x00e\x00w\x00_\x00s\x00u\x00r\x00f\x00a\x00c\x00e\x00.\x00s\x00v\x00g\
-\x00\x0b\
-\x07P<\xc7\
-\x00e\
-\x00l\x00l\x00i\x00p\x00s\x00e\x00.\x00s\x00v\x00g\
-\x00\x0a\
-\x0b\xa8b\x87\
-\x00s\
-\x00e\x00l\x00e\x00c\x00t\x00.\x00s\x00v\x00g\
-\x00\x0d\
-\x01\x88\xef\xc7\
-\x00t\
-\x00r\x00a\x00n\x00s\x00p\x00o\x00s\x00e\x00.\x00s\x00v\x00g\
-\x00\x08\
-\x068W'\
-\x00h\
-\x00o\x00m\x00e\x00.\x00s\x00v\x00g\
-\x00\x0a\
-\x0c\xad\x02\x87\
-\x00d\
-\x00e\x00l\x00e\x00t\x00e\x00.\x00s\x00v\x00g\
-\x00\x0e\
-\x0fkz\xe7\
-\x00n\
-\x00e\x00w\x00_\x00s\x00h\x00a\x00p\x00e\x00s\x00.\x00s\x00v\x00g\
-\x00\x08\
-\x06/U\xe7\
-\x00r\
-\x00o\x00l\x00l\x00.\x00s\x00v\x00g\
-\x00\x0e\
-\x08{\x95\x87\
-\x00s\
-\x00t\x00e\x00p\x00_\x00r\x00i\x00g\x00h\x00t\x00.\x00s\x00v\x00g\
-\x00\x0e\
-\x01\x87]\xe7\
-\x00v\
-\x00i\x00s\x00i\x00b\x00i\x00l\x00i\x00t\x00y\x00.\x00s\x00v\x00g\
-\x00\x0a\
-\x0b\xaa;\xc7\
-\x00d\
-\x00i\x00r\x00e\x00c\x00t\x00.\x00s\x00v\x00g\
-\x00\x08\
-\x08\xabT\x07\
-\x00p\
-\x00a\x00t\x00h\x00.\x00s\x00v\x00g\
-\x00\x0b\
-\x06)\x96\x07\
-\x00p\
-\x00o\x00p\x00_\x00o\x00u\x00t\x00.\x00s\x00v\x00g\
-\x00\x07\
-\x07\xa7Z\x07\
-\x00a\
-\x00d\x00d\x00.\x00s\x00v\x00g\
-\x00\x0e\
-\x04\xa2\xf1'\
-\x00d\
-\x00o\x00w\x00n\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\x00v\x00g\
-\x00\x0f\
-\x02\x9f\x08\x07\
-\x00r\
-\x00i\x00g\x00h\x00t\x00_\x00a\x00r\x00r\x00o\x00w\x00.\x00s\x00v\x00g\
-\x00\x08\
-\x0cXT\xa7\
-\x00m\
-\x00e\x00n\x00u\x00.\x00s\x00v\x00g\
+\x00e\x00w\x00_\x00v\x00e\x00c\x00t\x00o\x00r\x00s\x00.\x00s\x00v\x00g\
 \x00\x11\
 \x05\x22 \xa7\
 \x00c\
@@ -6309,106 +6414,108 @@ qt_resource_name = b"\
 qt_resource_struct = b"\
 \x00\x00\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x01\
 \x00\x00\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x02\
-\x00\x00\x00\x22\x00\x02\x00\x00\x000\x00\x00\x006\
-\x00\x00\x000\x00\x02\x00\x00\x00/\x00\x00\x00\x07\
-\x00\x00\x00\x10\x00\x02\x00\x00\x00\x02\x00\x00\x00\x05\
-\x00\x00\x06&\x00\x00\x00\x00\x00\x01\x00\x01`\x8c\
-\x00\x00\x05\xfe\x00\x00\x00\x00\x00\x01\x00\x01^\x82\
-\x00\x00\x00\xf8\x00\x00\x00\x00\x00\x01\x00\x00\x18/\
-\x00\x00\x02\x90\x00\x00\x00\x00\x00\x01\x00\x00C#\
-\x00\x00\x00\xba\x00\x00\x00\x00\x00\x01\x00\x00\x10\xda\
-\x00\x00\x00\xd2\x00\x00\x00\x00\x00\x01\x00\x00\x153\
-\x00\x00\x05 \x00\x00\x00\x00\x00\x01\x00\x00\x94\xce\
-\x00\x00\x04v\x00\x00\x00\x00\x00\x01\x00\x00\x7f\x10\
-\x00\x00\x03\xac\x00\x00\x00\x00\x00\x01\x00\x00`\x97\
-\x00\x00\x02<\x00\x00\x00\x00\x00\x01\x00\x00=\x81\
-\x00\x00\x05\xc4\x00\x00\x00\x00\x00\x01\x00\x00\xab#\
-\x00\x00\x01\xde\x00\x00\x00\x00\x00\x01\x00\x002C\
-\x00\x00\x010\x00\x00\x00\x00\x00\x01\x00\x00\x1f=\
-\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x00V\x1a\
-\x00\x00\x00`\x00\x00\x00\x00\x00\x01\x00\x00\x05\xa9\
-\x00\x00\x02\xdc\x00\x00\x00\x00\x00\x01\x00\x00M,\
-\x00\x00\x03T\x00\x00\x00\x00\x00\x01\x00\x00X\xe7\
-\x00\x00\x05\xa2\x00\x00\x00\x00\x00\x01\x00\x00\xa8\xde\
-\x00\x00\x01\x0e\x00\x00\x00\x00\x00\x01\x00\x00\x1b\xd4\
-\x00\x00\x02$\x00\x00\x00\x00\x00\x01\x00\x00;8\
-\x00\x00\x05r\x00\x00\x00\x00\x00\x01\x00\x00\xa1\xc6\
-\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x00\x8b\xcb\
-\x00\x00\x04\x96\x00\x00\x00\x00\x00\x01\x00\x00\x82c\
-\x00\x00\x03\xc6\x00\x00\x00\x00\x00\x01\x00\x00jB\
-\x00\x00\x03\xfe\x00\x00\x00\x00\x00\x01\x00\x00p\xc5\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x00.B\
-\x00\x00\x04@\x00\x00\x00\x00\x00\x01\x00\x00u\x96\
-\x00\x00\x05\x8e\x00\x00\x00\x00\x00\x01\x00\x00\xa5\x1d\
-\x00\x00\x04\xfe\x00\x00\x00\x00\x00\x01\x00\x00\x92Y\
-\x00\x00\x05\x5c\x00\x00\x00\x00\x00\x01\x00\x00\x9b\xb7\
-\x00\x00\x03|\x00\x00\x00\x00\x00\x01\x00\x00]:\
-\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x00G\x00\
-\x00\x00\x03\x14\x00\x00\x00\x00\x00\x01\x00\x00S\x99\
-\x00\x00\x04\x5c\x00\x00\x00\x00\x00\x01\x00\x00{\xa9\
-\x00\x00\x05B\x00\x00\x00\x00\x00\x01\x00\x00\x98\x15\
-\x00\x00\x02\xf2\x00\x00\x00\x00\x00\x01\x00\x00O\xf1\
-\x00\x00\x03\xdc\x00\x00\x00\x00\x00\x01\x00\x00m\xce\
-\x00\x00\x01~\x00\x00\x00\x00\x00\x01\x00\x00$C\
-\x00\x00\x02\x5c\x00\x00\x00\x00\x00\x01\x00\x00?\xc6\
-\x00\x00\x04\xac\x00\x00\x00\x00\x00\x01\x00\x00\x85\xf8\
-\x00\x00\x04\x1c\x00\x00\x00\x00\x00\x01\x00\x00s\x0a\
-\x00\x00\x02\xbc\x00\x00\x00\x00\x00\x01\x00\x00J\xe2\
-\x00\x00\x00\x92\x00\x00\x00\x00\x00\x01\x00\x00\x0c\xaf\
-\x00\x00\x00r\x00\x00\x00\x00\x00\x01\x00\x00\x09\xf5\
-\x00\x00\x02\x08\x00\x00\x00\x00\x00\x01\x00\x006\x08\
-\x00\x00\x01\x5c\x00\x00\x00\x00\x00\x01\x00\x00!\xfe\
-\x00\x00\x01\xa2\x00\x00\x00\x00\x00\x01\x00\x00*q\
+\x00\x00\x002\x00\x02\x00\x00\x001\x00\x00\x007\
+\x00\x00\x00\x10\x00\x02\x00\x00\x000\x00\x00\x00\x07\
+\x00\x00\x00 \x00\x02\x00\x00\x00\x02\x00\x00\x00\x05\
+\x00\x00\x06V\x00\x00\x00\x00\x00\x01\x00\x00\xb6\x1c\
+\x00\x00\x06.\x00\x00\x00\x00\x00\x01\x00\x00\xb4\x12\
+\x00\x00\x05\x96\x00\x00\x00\x00\x00\x01\x00\x01`R\
+\x00\x00\x01\xdc\x00\x00\x00\x00\x00\x01\x00\x00\xf7j\
+\x00\x00\x00\xc8\x00\x00\x00\x00\x00\x01\x00\x00\xd4\xa8\
+\x00\x00\x04V\x00\x00\x00\x00\x00\x01\x00\x01As\
+\x00\x00\x02\x14\x00\x00\x00\x00\x00\x01\x00\x00\xfd\x8c\
+\x00\x00\x00\xf4\x00\x00\x00\x00\x00\x01\x00\x00\xdc\xc2\
+\x00\x00\x03\x9e\x00\x00\x00\x00\x00\x01\x00\x01&x\
+\x00\x00\x04\x00\x00\x00\x00\x00\x00\x01\x00\x018\xe8\
+\x00\x00\x04\xf2\x00\x00\x00\x00\x00\x01\x00\x01O9\
+\x00\x00\x01\x92\x00\x00\x00\x00\x00\x01\x00\x00\xf1[\
+\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x01Q~\
+\x00\x00\x05\x16\x00\x00\x00\x00\x00\x01\x00\x01T?\
+\x00\x00\x05\xac\x00\x00\x00\x00\x00\x01\x00\x01c\xf7\
+\x00\x00\x02\x9a\x00\x00\x00\x00\x00\x01\x00\x01\x0aR\
+\x00\x00\x02\xb0\x00\x00\x00\x00\x00\x01\x00\x01\x0d\x17\
+\x00\x00\x02X\x00\x00\x00\x00\x00\x01\x00\x01\x04<\
+\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x01\x00\xd3\
+\x00\x00\x02\xf8\x00\x00\x00\x00\x00\x01\x00\x01\x17\x13\
+\x00\x00\x05(\x00\x00\x00\x00\x00\x01\x00\x01W\x0c\
+\x00\x00\x01|\x00\x00\x00\x00\x00\x01\x00\x00\xea\xcd\
+\x00\x00\x03\xd4\x00\x00\x00\x00\x00\x01\x00\x015S\
+\x00\x00\x04@\x00\x00\x00\x00\x00\x01\x00\x01=\xe7\
+\x00\x00\x05\xec\x00\x00\x00\x00\x00\x01\x00\x01j\xc4\
+\x00\x00\x01\x14\x00\x00\x00\x00\x00\x01\x00\x00\xe0\x15\
+\x00\x00\x00\x8a\x00\x00\x00\x00\x00\x01\x00\x00\xccC\
+\x00\x00\x00\xe0\x00\x00\x00\x00\x00\x01\x00\x00\xd9\x01\
+\x00\x00\x03*\x00\x00\x00\x00\x00\x01\x00\x01\x1c\xfe\
+\x00\x00\x00@\x00\x00\x00\x00\x00\x01\x00\x00\xc2\xd7\
+\x00\x00\x03n\x00\x00\x00\x00\x00\x01\x00\x01#\x1b\
+\x00\x00\x04\x96\x00\x00\x00\x00\x00\x01\x00\x01G\xf0\
+\x00\x00\x05f\x00\x00\x00\x00\x00\x01\x00\x01]Z\
+\x00\x00\x05\xbe\x00\x00\x00\x00\x00\x01\x00\x01hC\
+\x00\x00\x04\xac\x00\x00\x00\x00\x00\x01\x00\x01K\xd2\
+\x00\x00\x03\x10\x00\x00\x00\x00\x00\x01\x00\x01\x19\x5c\
+\x00\x00\x03L\x00\x00\x00\x00\x00\x01\x00\x01\x1fs\
+\x00\x00\x05D\x00\x00\x00\x00\x00\x01\x00\x01Zc\
+\x00\x00\x06\x0a\x00\x00\x00\x00\x00\x01\x00\x01m\x09\
+\x00\x00\x00V\x00\x00\x00\x00\x00\x01\x00\x00\xc8\xe6\
+\x00\x00\x04|\x00\x00\x00\x00\x00\x01\x00\x01Do\
+\x00\x00\x010\x00\x00\x00\x00\x00\x01\x00\x00\xe4\x16\
+\x00\x00\x01\xbc\x00\x00\x00\x00\x00\x01\x00\x00\xf5 \
+\x00\x00\x01T\x00\x00\x00\x00\x00\x01\x00\x00\xe6\xa2\
+\x00\x00\x04 \x00\x00\x00\x00\x00\x01\x00\x01;-\
+\x00\x00\x03\xb8\x00\x00\x00\x00\x00\x01\x00\x010#\
+\x00\x00\x01\xf2\x00\x00\x00\x00\x00\x01\x00\x00\xfbG\
+\x00\x00\x02z\x00\x00\x00\x00\x00\x01\x00\x01\x06\x81\
+\x00\x00\x02\xd8\x00\x00\x00\x00\x00\x01\x00\x01\x11j\
+\x00\x00\x00\xa6\x00\x00\x00\x00\x00\x01\x00\x00\xd2V\
+\x00\x00\x05\x96\x00\x00\x00\x00\x00\x01\x00\x00\xa1-\
+\x00\x00\x01\xdc\x00\x00\x00\x00\x00\x01\x00\x004\x93\
+\x00\x00\x00\xc8\x00\x00\x00\x00\x00\x01\x00\x00\x11\xd1\
+\x00\x00\x04V\x00\x00\x00\x00\x00\x01\x00\x00\x82N\
+\x00\x00\x02\x14\x00\x00\x00\x00\x00\x01\x00\x00:\xb5\
+\x00\x00\x00\xf4\x00\x00\x00\x00\x00\x01\x00\x00\x19\xeb\
+\x00\x00\x03\x9e\x00\x00\x00\x00\x00\x01\x00\x00c\xad\
+\x00\x00\x04\x00\x00\x00\x00\x00\x00\x01\x00\x00y\xc3\
+\x00\x00\x04\xf2\x00\x00\x00\x00\x00\x01\x00\x00\x92\xd5\
+\x00\x00\x01\x92\x00\x00\x00\x00\x00\x01\x00\x00.\x84\
+\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x00\x90\x14\
+\x00\x00\x05\x16\x00\x00\x00\x00\x00\x01\x00\x00\x95\x1a\
+\x00\x00\x05\xac\x00\x00\x00\x00\x00\x01\x00\x00\xa4\xd2\
+\x00\x00\x02\x9a\x00\x00\x00\x00\x00\x01\x00\x00G\x87\
+\x00\x00\x02\xb0\x00\x00\x00\x00\x00\x01\x00\x00JL\
+\x00\x00\x02X\x00\x00\x00\x00\x00\x01\x00\x00Aq\
+\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x00>\x08\
+\x00\x00\x02\xf8\x00\x00\x00\x00\x00\x01\x00\x00TH\
+\x00\x00\x05(\x00\x00\x00\x00\x00\x01\x00\x00\x97\xe7\
+\x00\x00\x01|\x00\x00\x00\x00\x00\x01\x00\x00'\xf6\
+\x00\x00\x03\xd4\x00\x00\x00\x00\x00\x01\x00\x00r\x88\
+\x00\x00\x04@\x00\x00\x00\x00\x00\x01\x00\x00~\xc2\
+\x00\x00\x05\xec\x00\x00\x00\x00\x00\x01\x00\x00\xab\x9f\
+\x00\x00\x01\x14\x00\x00\x00\x00\x00\x01\x00\x00\x1d>\
+\x00\x00\x00\x8a\x00\x00\x00\x00\x00\x01\x00\x00\x09l\
+\x00\x00\x00\xe0\x00\x00\x00\x00\x00\x01\x00\x00\x16*\
+\x00\x00\x03*\x00\x00\x00\x00\x00\x01\x00\x00Z3\
 \x00\x00\x00@\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\
-\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x00\x89y\
-\x00\x00\x00\xf8\x00\x00\x00\x00\x00\x01\x00\x00\xc5\x97\
-\x00\x00\x02\x90\x00\x00\x00\x00\x00\x01\x00\x00\xf0\x8b\
-\x00\x00\x00\xba\x00\x00\x00\x00\x00\x01\x00\x00\xbeB\
-\x00\x00\x00\xd2\x00\x00\x00\x00\x00\x01\x00\x00\xc2\x9b\
-\x00\x00\x05 \x00\x00\x00\x00\x00\x01\x00\x01E\xdc\
-\x00\x00\x04v\x00\x00\x00\x00\x00\x01\x00\x010\x1e\
-\x00\x00\x03\xac\x00\x00\x00\x00\x00\x01\x00\x01\x11\xa5\
-\x00\x00\x02<\x00\x00\x00\x00\x00\x01\x00\x00\xea\xe9\
-\x00\x00\x05\xc4\x00\x00\x00\x00\x00\x01\x00\x01\x5c=\
-\x00\x00\x01\xde\x00\x00\x00\x00\x00\x01\x00\x00\xdf\xab\
-\x00\x00\x010\x00\x00\x00\x00\x00\x01\x00\x00\xcc\xa5\
-\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x01\x07(\
-\x00\x00\x00`\x00\x00\x00\x00\x00\x01\x00\x00\xb3\x11\
-\x00\x00\x02\xdc\x00\x00\x00\x00\x00\x01\x00\x00\xfa\x94\
-\x00\x00\x03T\x00\x00\x00\x00\x00\x01\x00\x01\x09\xf5\
-\x00\x00\x05\xa2\x00\x00\x00\x00\x00\x01\x00\x01Y\xf8\
-\x00\x00\x01\x0e\x00\x00\x00\x00\x00\x01\x00\x00\xc9<\
-\x00\x00\x02$\x00\x00\x00\x00\x00\x01\x00\x00\xe8\xa0\
-\x00\x00\x05r\x00\x00\x00\x00\x00\x01\x00\x01R\xe0\
-\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x01<\xd9\
-\x00\x00\x04\x96\x00\x00\x00\x00\x00\x01\x00\x013q\
-\x00\x00\x03\xc6\x00\x00\x00\x00\x00\x01\x00\x01\x1bP\
-\x00\x00\x03\xfe\x00\x00\x00\x00\x00\x01\x00\x01!\xd3\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x00\xdb\xaa\
-\x00\x00\x04@\x00\x00\x00\x00\x00\x01\x00\x01&\xa4\
-\x00\x00\x05\x8e\x00\x00\x00\x00\x00\x01\x00\x01V7\
-\x00\x00\x04\xfe\x00\x00\x00\x00\x00\x01\x00\x01Cg\
-\x00\x00\x05\x5c\x00\x00\x00\x00\x00\x01\x00\x01L\xd1\
-\x00\x00\x03|\x00\x00\x00\x00\x00\x01\x00\x01\x0eH\
-\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x00\xf4h\
-\x00\x00\x03\x14\x00\x00\x00\x00\x00\x01\x00\x01\x04\xa7\
-\x00\x00\x04\x5c\x00\x00\x00\x00\x00\x01\x00\x01,\xb7\
-\x00\x00\x05B\x00\x00\x00\x00\x00\x01\x00\x01I/\
-\x00\x00\x02\xf2\x00\x00\x00\x00\x00\x01\x00\x00\xfdY\
-\x00\x00\x03\xdc\x00\x00\x00\x00\x00\x01\x00\x01\x1e\xdc\
-\x00\x00\x01~\x00\x00\x00\x00\x00\x01\x00\x00\xd1\xab\
-\x00\x00\x05\xe8\x00\x00\x00\x00\x00\x01\x00\x01\x01\x01\
-\x00\x00\x02\x5c\x00\x00\x00\x00\x00\x01\x00\x00\xed.\
-\x00\x00\x04\xac\x00\x00\x00\x00\x00\x01\x00\x017\x06\
-\x00\x00\x04\x1c\x00\x00\x00\x00\x00\x01\x00\x01$\x18\
-\x00\x00\x02\xbc\x00\x00\x00\x00\x00\x01\x00\x00\xf8J\
-\x00\x00\x00\x92\x00\x00\x00\x00\x00\x01\x00\x00\xba\x17\
-\x00\x00\x00r\x00\x00\x00\x00\x00\x01\x00\x00\xb7]\
-\x00\x00\x02\x08\x00\x00\x00\x00\x00\x01\x00\x00\xe3p\
-\x00\x00\x01\x5c\x00\x00\x00\x00\x00\x01\x00\x00\xcff\
-\x00\x00\x01\xa2\x00\x00\x00\x00\x00\x01\x00\x00\xd7\xd9\
-\x00\x00\x00@\x00\x00\x00\x00\x00\x01\x00\x00\xadh\
-\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x01:\x87\
+\x00\x00\x03n\x00\x00\x00\x00\x00\x01\x00\x00`P\
+\x00\x00\x04\x96\x00\x00\x00\x00\x00\x01\x00\x00\x88\xcb\
+\x00\x00\x05f\x00\x00\x00\x00\x00\x01\x00\x00\x9e5\
+\x00\x00\x05\xbe\x00\x00\x00\x00\x00\x01\x00\x00\xa9\x1e\
+\x00\x00\x04\xac\x00\x00\x00\x00\x00\x01\x00\x00\x8c\xad\
+\x00\x00\x03\x10\x00\x00\x00\x00\x00\x01\x00\x00V\x91\
+\x00\x00\x03L\x00\x00\x00\x00\x00\x01\x00\x00\x5c\xa8\
+\x00\x00\x05D\x00\x00\x00\x00\x00\x01\x00\x00\x9b>\
+\x00\x00\x06\x0a\x00\x00\x00\x00\x00\x01\x00\x00\xad\xe4\
+\x00\x00\x03\xea\x00\x00\x00\x00\x00\x01\x00\x00v\x1d\
+\x00\x00\x00V\x00\x00\x00\x00\x00\x01\x00\x00\x06\x0f\
+\x00\x00\x04|\x00\x00\x00\x00\x00\x01\x00\x00\x85J\
+\x00\x00\x010\x00\x00\x00\x00\x00\x01\x00\x00!?\
+\x00\x00\x01\xbc\x00\x00\x00\x00\x00\x01\x00\x002I\
+\x00\x00\x01T\x00\x00\x00\x00\x00\x01\x00\x00#\xcb\
+\x00\x00\x04 \x00\x00\x00\x00\x00\x01\x00\x00|\x08\
+\x00\x00\x03\xb8\x00\x00\x00\x00\x00\x01\x00\x00mX\
+\x00\x00\x01\xf2\x00\x00\x00\x00\x00\x01\x00\x008p\
+\x00\x00\x02z\x00\x00\x00\x00\x00\x01\x00\x00C\xb6\
+\x00\x00\x02\xd8\x00\x00\x00\x00\x00\x01\x00\x00N\x9f\
+\x00\x00\x00\xa6\x00\x00\x00\x00\x00\x01\x00\x00\x0f\x7f\
 "
 
 def qInitResources():
