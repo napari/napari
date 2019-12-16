@@ -611,7 +611,7 @@ class Layer(KeymapMixin, ABC):
         value = self._value
         if value is not None:
             if isinstance(value, tuple) and value != (None, None):
-                # it's a pyramid -> value == (data_level, value)
+                # it's a pyramid -> value = (data_level, value)
                 msg += f': {status_format(value[0])}'
                 if value[1] is not None:
                     msg += f', {status_format(value[1])}'
