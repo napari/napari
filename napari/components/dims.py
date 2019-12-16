@@ -122,6 +122,12 @@ class Dims:
         return copy(self._range)
 
     @property
+    def max_indices(self):
+        """Maximum index for each dimension (in data space).
+        """
+        return [((ma - st) // st) for mi, ma, st in self._range]
+
+    @property
     def point(self):
         """List of int: value of each dimension if in POINT mode."""
         return copy(self._point)

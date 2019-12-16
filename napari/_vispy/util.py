@@ -17,18 +17,17 @@ layer_to_visual = {
 
 
 def create_vispy_visual(layer):
-    """
-    Create vispy visual for a layer based on its layer type.
+    """Create vispy visual for a layer based on its layer type.
 
     Parameters
     ----------
-        layer : napari.layers._base_layer.Layer
-            Layer that needs its propetry widget created.
+    layer : napari.layers._base_layer.Layer
+        Layer that needs its propetry widget created.
 
     Returns
     ----------
-        visual : vispy.scene.visuals.VisualNode
-            Vispy visual node
+    visual : vispy.scene.visuals.VisualNode
+        Vispy visual node
     """
     visual = layer_to_visual[type(layer)](layer)
 

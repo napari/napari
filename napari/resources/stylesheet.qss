@@ -41,12 +41,41 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
 
+/* ------------- Narrow scrollbar for qtlayer list --------- */
 QtLayerList {
-    min-width: 240px;
-    max-width: 240px;
+  border: 1px solid {{ background }};
+    min-width: 242px;
+    border-radius: 2px;
     padding: 0px;
     margin: 0px;
     border: 0px;
+    margin-bottom: 4px;
+}
+
+QtLayerList {
+  max-width: 8px;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+QtLayerList QScrollBar:vertical {
+    max-width: 8px;
+    margin: 12px 0px;
+}
+
+QtLayerList QScrollBar::add-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar::sub-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar:up-arrow, QtLayerList QScrollBar:down-arrow {
+    height: 4px;
+    width: 4px;
 }
 
 QLabel {
@@ -179,8 +208,8 @@ QtLayerWidget {
   margin: 0px;
   min-height: 32px;
   max-height: 32px;
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 228px;
+  max-width: 228px;
 }
 
 QtLayerWidget[selected="true"] {
@@ -307,11 +336,18 @@ QtControls {
     border: 1px solid {{ foreground }};
     background-color: {{ foreground }};
     border-radius: 2px;
-    padding: 4px;
-    min-height: 210px;
-    max-height: 210px;
+    padding: 10px;
+    min-height: 200px;
+    max-height: 200px;
     min-width: 220px;
     max-width: 220px;
+    margin-left: 8px;
+    margin-right: 8px;
+    margin-bottom: 4px;
+}
+
+QtControls > QFrame{
+    background-color: {{ foreground }};
 }
 
 QtColorBox {
@@ -331,11 +367,18 @@ QtLayerControls {
     background-color: {{ foreground }};
 }
 
+QtLayerControls > QFrame {
+    background-color: {{ foreground }};
+    padding: 0px;
+    border: 0px;
+    margin: 0px;
+}
+
 QtLayerControls > QLabel {
   min-height: 18px;
   max-height: 18px;
-  min-width: 180px;
-  max-width: 180px;
+  min-width: 92px;
+  max-width: 92px;
   padding: 0px;
   border: 0px;
   margin: 0px;
@@ -402,7 +445,7 @@ QtLayerControls > QSlider::sub-page:horizontal {
 
 QtLayerControls > QSpinBox {
    background-color: {{ primary }};
-   border: none;
+   border: 0px;
    padding-left: 14px;
    padding-right: 6px;
    padding-top: 2px;
@@ -481,6 +524,8 @@ QtLayerControls > QDoubleSpinBox::down-arrow {
 QtLayerControls > QPushButton#shuffle {
   background-color: {{ primary }};
   border: 3px solid {{ primary }};
+  margin: 0px;
+  padding: 0px;
   text-align: center;
 }
 
@@ -581,13 +626,13 @@ QtAdditionButton::indicator {
 }
 
 QtLayerButtons {
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 242px;
+  max-width: 242px;
 }
 
 QtViewerButtons {
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 238px;
+  max-width: 238px;
 }
 
 QPushButton {
@@ -849,46 +894,38 @@ QMainWindow::separator:hover {
 
 /* ------------- DockWidgets --------- */
 
-QDockWidget::title {
+#QtCustomTitleBar {
   background-color: {{ background }};
-  text-align: center; /* otherwise text overlaps with the buttons */
-  margin-top:-50px
+  padding-top:3px;
 }
 
-QDockWidget::title:hover {
+#QtCustomTitleBar:hover {
+  background-color: {{ background_darker }};
+}
+
+#QtCustomTitleBarLine {
   background-color: {{ foreground }};
 }
 
-QDockWidget::close-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 8px; left: 0;
-    width: 14px;
+#QtCustomTitleBar > QPushButton {
+  background-color: {{ background }};
+  max-width: 12px;
+  max-height: 12px;
 }
 
-QDockWidget::float-button:vertical {
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-    position: relative;
-    top: 24px; left: 0;
-    width: 14px;
+#QtCustomTitleBar > QPushButton:hover {
+  background-color: {{ foreground }};
 }
 
-QDockWidget::close-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 2px; top: 4;
-    width: 14px;
+#QTitleBarCloseButton{
+  image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
 
-QDockWidget::float-button:horizontal {
-    subcontrol-position: top left;
-    subcontrol-origin: margin;
-    position: relative;
-    left: 20px; top: 4;
-    width: 14px;
+#QTitleBarFloatButton{
+  image: url(":/icons/{{ folder }}/pop_out.svg");
+  width: 10px;
+  height: 8px;
+  padding: 2 1 2 1;
 }
 
 /* ------------- QScrollBars --------- */
@@ -1168,4 +1205,22 @@ QtPlayButton[playing=True] {
 #QtPopupFrame  > QComboBox {
    background-color: {{ foreground }};
    border-radius: 3px;
+}
+
+#slice_label {
+  background-color: {{ background }};
+  color: {{ secondary }};
+  padding: 0;
+  margin: 0;
+  margin-top: 0px;
+  font-size: 11pt;
+  max-height: 12px;
+  min-height: 12px;
+  border: 0px;
+  padding-left: 1px;
+}
+
+#slice_label_sep{
+  background-color: {{ background }};
+  border: 1px solid {{ primary }};
 }

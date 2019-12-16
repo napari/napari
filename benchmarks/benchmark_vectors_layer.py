@@ -18,7 +18,11 @@ class Vectors2DSuite:
 
     def time_create_layer(self, n):
         """Time to create an image layer."""
-        layer = Vectors(self.data)
+        Vectors(self.data)
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -61,7 +65,11 @@ class Vectors3DSuite:
 
     def time_create_layer(self, n):
         """Time to create a layer."""
-        layer = Vectors(self.data)
+        Vectors(self.data)
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
