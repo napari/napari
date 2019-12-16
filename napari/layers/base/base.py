@@ -609,17 +609,15 @@ class Layer(KeymapMixin, ABC):
         msg = f'{self.name} {full_coord}'
 
         value = self._value
-
-        if value is not None and not np.all(value == (None, None)):
-            msg += ': '
-            if type(value) == tuple:
-                msg += status_format(value[0])
+        if value is not None:
+            if isinstance(value, tuple) and value != (None, None):
+                # it's a pyramid -> value = (data_level, value)
+                msg += f': {status_format(value[0])}'
                 if value[1] is not None:
-                    msg += ', '
-                    msg += status_format(value[1])
+                    msg += f', {status_format(value[1])}'
             else:
-                msg += status_format(value)
-
+                # it's either a grayscale or rgb image (scalar or list)
+                msg += f': {status_format(value)}'
         return msg
 
     def to_xml_list(self):
