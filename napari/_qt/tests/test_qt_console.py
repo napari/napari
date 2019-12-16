@@ -38,7 +38,7 @@ def test_multiple_consoles(qtbot):
     console_b.shutdown()
 
 
-def test_ipython_console(qtbot, mocker):
+def test_ipython_console(qtbot):
     """Test mock-creating a console from within ipython."""
 
     def mock_get_ipython():
