@@ -3,10 +3,10 @@ import numpy as np
 from copy import copy
 import vispy.color
 from ..base import Layer
-from ...util.event import Event
-from ...util.status_messages import format_float
+from ...utils.event import Event
+from ...utils.status_messages import format_float
 from ..layer_utils import calc_data_range, increment_unnamed_colormap
-from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
+from ...utils.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
 class Surface(Layer):

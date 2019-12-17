@@ -30,8 +30,8 @@ from qtpy.QtWidgets import (  # noqa: E402
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
-from .util import QImg2array  # noqa: E402
-from ..util.theme import template  # noqa: E402
+from .utils import QImg2array  # noqa: E402
+from ..utils.theme import template  # noqa: E402
 
 
 class Window:

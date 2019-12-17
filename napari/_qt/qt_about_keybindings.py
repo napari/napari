@@ -8,7 +8,7 @@ from qtpy.QtWidgets import (
 )
 from collections import OrderedDict
 import napari
-from ..util.interactions import get_keybindings_summary
+from ..utils.interactions import get_keybindings_summary
 
 
 class QtAboutKeybindings(QDialog):

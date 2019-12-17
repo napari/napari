@@ -1,6 +1,6 @@
 from qtpy.QtCore import QObject, Signal
 
-from ..util import qt_signals_blocked
+from ..utils import qt_signals_blocked
 
 
 class Emitter(QObject):
