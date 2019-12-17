@@ -17,11 +17,11 @@ from qtpy.QtWidgets import (
 )
 
 from ..components.dims_constants import DimsMode
-from ..util.event import Event
+from ..utils.event import Event
 from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
-from .util import new_worker_qthread
+from .utils import new_worker_qthread
 
 
 class QtDimSliderWidget(QWidget):

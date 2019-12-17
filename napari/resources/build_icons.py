@@ -7,7 +7,7 @@ run as python -m napari.resources.build_icons"""
 from os.path import join
 
 from ..resources import resources_dir
-from ..util.theme import palettes
+from ..utils.theme import palettes
 
 insert = """<style type="text/css">
     path{fill:{{ color }}}

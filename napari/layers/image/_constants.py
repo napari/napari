@@ -1,5 +1,5 @@
 from enum import auto
-from ...util.misc import StringEnum
+from ...utils.misc import StringEnum
 
 
 class Interpolation(StringEnum):

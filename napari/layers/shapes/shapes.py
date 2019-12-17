@@ -1,14 +1,14 @@
 import numpy as np
 from copy import copy, deepcopy
 
-from ...util.event import Event
-from ...util.misc import ensure_iterable
-from ...util.status_messages import format_float
+from ...utils.event import Event
+from ...utils.misc import ensure_iterable
+from ...utils.status_messages import format_float
 from ..base import Layer
 from vispy.color import get_color_names
 from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
 from .shape_list import ShapeList
-from .shape_util import create_box, point_to_lines
+from .shape_utils import create_box, point_to_lines
 from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
 
 

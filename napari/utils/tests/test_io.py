@@ -5,7 +5,7 @@ import numpy as np
 from dask import array as da
 from skimage.data import data_dir
 from tempfile import TemporaryDirectory
-from napari.util import io
+from napari.utils import io
 import pytest
 
 

@@ -7,9 +7,9 @@ from skimage import img_as_ubyte
 from ._constants import Blending
 
 from ...components import Dims
-from ...util.event import EmitterGroup, Event
-from ...util.keybindings import KeymapMixin
-from ...util.status_messages import status_format, format_float
+from ...utils.event import EmitterGroup, Event
+from ...utils.keybindings import KeymapMixin
+from ...utils.status_messages import status_format, format_float
 
 
 class Layer(KeymapMixin, ABC):

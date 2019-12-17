@@ -3,7 +3,7 @@ from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider
 
 from .. import QHRangeSlider
-from ..util import qt_signals_blocked
+from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
 
 

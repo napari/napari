@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .util import qt_signals_blocked
+from .utils import qt_signals_blocked
 
 
 class QtViewerDockWidget(QDockWidget):
