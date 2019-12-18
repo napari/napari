@@ -27,6 +27,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
+    QApplication,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -270,12 +271,21 @@ class Window:
         self._qt_window.resize(width, height)
 
     def show(self):
-        """Resize, show, and bring forward the window.
-        """
+        """Resize, show, and bring forward the window."""
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
-        # make sure window is not hidden, e.g. by browser window in Jupyter
-        self._qt_window.raise_()
+
+        # We want to call Window._qt_window.raise_() in every case *except*
+        # when instantiating a viewer within a gui_qt() context for the
+        # _first_ time within the Qt app's lifecycle.
+        #
+        # `app_name` will be "napari" iff the application was instantiated in
+        # gui_qt(). isActiveWindow() will be True if it is the second time a
+        # _qt_window has been created. See #732
+        app_name = QApplication.instance().applicationName()
+        if app_name != 'napari' or self._qt_window.isActiveWindow():
+            self._qt_window.raise_()  # for macOS
+            self._qt_window.activateWindow()  # for Windows
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet
