@@ -36,6 +36,7 @@ Improvements
 - Block refresh for invisible layers (#776)
 - About copy button to info display box (#798)
 - Add blocked_signals context manager (#797)
+- Better selected menu header background color (#813)
 
 Bugfixes
 ********
