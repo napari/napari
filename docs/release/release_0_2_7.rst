@@ -53,6 +53,7 @@ Bugfixes
 - Fix FPS spin box on Qt < 5.12 (#803)
 - Bumpy vispy dependency to 0.6.4 (#807)
 - Set threshold for codecov failure (#806)
+- Rename util to utils in MANIFEST.in (#811)
 
 API Changes
 ***********
