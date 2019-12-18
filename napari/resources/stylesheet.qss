@@ -89,6 +89,10 @@ QStatusBar > QLabel { /* Help QLabel */
   background-color: {{ background }};
 }
 
+QMenuBar::item:selected {
+   background-color: {{ secondary }};
+}
+
 QtAboutKeybindings {
   min-width: 600px;
   min-height: 605px;
