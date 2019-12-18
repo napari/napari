@@ -1,6 +1,6 @@
 import numpy as np
 from .shape_models import Shape, Line, Path
-from .shape_util import inside_triangles, triangles_intersect_box
+from .shape_utils import inside_triangles, triangles_intersect_box
 from .mesh import Mesh
 from ._constants import shape_classes, ShapeType
 

@@ -50,12 +50,9 @@ class QtConsole(RichJupyterWidget):
             # If there is an existing running InProcessInteractiveShell
             # it is likely because multiple viewers have been launched from
             # the same process. In that case create a new kernel.
-            kernel_manager = QtInProcessKernelManager()
-            kernel_manager.start_kernel(show_banner=False)
-            kernel_manager.kernel.gui = 'qt'
-
+            # Connect existing kernel
+            kernel_manager = QtInProcessKernelManager(kernel=shell.kernel)
             kernel_client = kernel_manager.client()
-            kernel_client.start_channels()
 
             self.kernel_manager = kernel_manager
             self.kernel_client = kernel_client
@@ -87,7 +84,6 @@ class QtConsole(RichJupyterWidget):
             raise ValueError(
                 'ipython shell not recognized; ' f'got {type(shell)}'
             )
-
         # Add any user variables
         user_variables = user_variables or {}
         self.push(user_variables)

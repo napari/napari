@@ -1,4 +1,4 @@
-from ...util.event import EmitterGroup
+from ...utils.event import EmitterGroup
 
 from ._multi import MultiIndexList
 from ._typed import TypedList

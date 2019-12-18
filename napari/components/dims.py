@@ -3,7 +3,7 @@ from typing import Union, Sequence
 import numpy as np
 
 from .dims_constants import DimsMode
-from ..util.event import EmitterGroup
+from ..utils.event import EmitterGroup
 
 
 class Dims:
@@ -120,6 +120,12 @@ class Dims:
         """List of 3-tuple: (min, max, step size) of each dimension.
         """
         return copy(self._range)
+
+    @property
+    def max_indices(self):
+        """Maximum index for each dimension (in data space).
+        """
+        return [((ma - st) // st) for mi, ma, st in self._range]
 
     @property
     def point(self):

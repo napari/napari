@@ -1,3 +1,4 @@
+import warnings
 from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Volume as VolumeNode
 from vispy.color import Colormap
@@ -69,6 +70,18 @@ class VispyImageLayer(VispyBaseLayer):
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
+
+        # Check if data exceeds MAX_TEXTURE_SIZE and downsample
+        if (
+            self.MAX_TEXTURE_SIZE_2D is not None
+            and self.layer.dims.ndisplay == 2
+        ):
+            data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_2D)
+        elif (
+            self.MAX_TEXTURE_SIZE_3D is not None
+            and self.layer.dims.ndisplay == 3
+        ):
+            data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
         # Check if ndisplay has changed current node type needs updating
         if (
@@ -233,3 +246,46 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_rendering_change()
         if self.layer.dims.ndisplay == 2:
             self._on_contrast_limits_change()
+
+    def downsample_texture(self, data, MAX_TEXTURE_SIZE):
+        """Downsample data based on maximum allowed texture size.
+
+        Parameters
+        ----------
+        data : array
+            Data to be downsampled if needed.
+        MAX_TEXTURE_SIZE : int
+            Maximum allowed texture size.
+
+        Returns
+        -------
+        data : array
+            Data that now fits inside texture.
+        """
+        if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
+            if self.layer.is_pyramid:
+                raise ValueError(
+                    f"Shape of individual tiles in pyramid {data.shape} "
+                    f"cannot exceed GL_MAX_TEXTURE_SIZE "
+                    f"{MAX_TEXTURE_SIZE}. The max tile shape "
+                    f"`layer._max_tile_shape` {self.layer._max_tile_shape}"
+                    f" must be reduced. Rendering is currently in "
+                    f"{self.layer.dims.ndisplay}D mode."
+                )
+            warnings.warn(
+                f"data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE "
+                f"{MAX_TEXTURE_SIZE} in at least one axis and "
+                f"will be downsampled. Rendering is currently in "
+                f"{self.layer.dims.ndisplay}D mode."
+            )
+            downsample = np.ceil(
+                np.divide(data.shape, MAX_TEXTURE_SIZE)
+            ).astype(int)
+            scale = np.ones(self.layer.ndim)
+            for i, d in enumerate(self.layer.dims.displayed):
+                scale[d] = downsample[i]
+            self.layer._scale_view = scale
+            self._on_scale_change()
+            slices = tuple(slice(None, None, ds) for ds in downsample)
+            data = data[slices]
+        return data

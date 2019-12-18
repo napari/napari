@@ -21,13 +21,11 @@ We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/
 
 ## installation
 
-**napari** can be installed on most macOS and Linux systems with Python 3.6 or 3.7 by calling
+**napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6 or 3.7 by calling
 
 ```sh
 $ pip install napari
 ```
-
-We're working on improving our Windows support.
 
 To clone the repository locally and install in editable mode use
 
@@ -37,7 +35,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-For more information see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
+For more information or troubleshooting see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
 
 ## simple example
 

@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from .util import io
+from .utils import io
 from . import Viewer, gui_qt
 
 
@@ -50,7 +50,7 @@ def main():
         'only a single image is given.',
     )
     args = parser.parse_args()
-    with gui_qt():
+    with gui_qt(startup_logo=True):
         v = Viewer()
         if len(args.images) > 0:
             images = io.magic_imread(

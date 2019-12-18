@@ -9,7 +9,6 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
-from .qt_about_keybindings import QtAboutKeybindings
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
@@ -28,10 +27,12 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
+    QApplication,
 )
+from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
-from .util import QImg2array  # noqa: E402
-from ..util.theme import template  # noqa: E402
+from .utils import QImg2array  # noqa: E402
+from ..utils.theme import template  # noqa: E402
 
 
 class Window:
@@ -85,6 +86,9 @@ class Window:
 
         if self.qt_viewer.console.shell is not None:
             self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
+
+        self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
+        self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
@@ -163,19 +167,21 @@ class Window:
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
+        about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
             lambda e: QtAbout.showAbout(self.qt_viewer)
         )
         self.help_menu.addAction(about_action)
 
-        keybidings_action = QAction("keybindings", self._qt_window)
-        keybidings_action.setShortcut("Ctrl+/")
-        keybidings_action.setStatusTip('About keybindings')
-        keybidings_action.triggered.connect(
-            lambda e: QtAboutKeybindings.showAbout(self.qt_viewer)
+        about_keybindings = QAction("keybindings", self._qt_window)
+        about_keybindings.setShortcut("Ctrl+Alt+/")
+        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_keybindings.setStatusTip('keybindings')
+        about_keybindings.triggered.connect(
+            self.qt_viewer.aboutKeybindings.toggle_visible
         )
-        self.help_menu.addAction(keybidings_action)
+        self.help_menu.addAction(about_keybindings)
 
     def add_dock_widget(
         self,
@@ -184,6 +190,7 @@ class Window:
         name: str = '',
         area: str = 'bottom',
         allowed_areas=None,
+        shortcut=None,
     ):
         """Convenience method to add a QDockWidget to the main window
 
@@ -200,6 +207,8 @@ class Window:
             Areas, relative to main window, that the widget is allowed dock.
             Each item in list must be in {'left', 'right', 'top', 'bottom'}
             By default, all areas are allowed.
+        shortcut : str, optional
+            Keyboard shortcut to appear in dropdown menu.
 
         Returns
         -------
@@ -213,6 +222,7 @@ class Window:
             name=name,
             area=area,
             allowed_areas=allowed_areas,
+            shortcut=shortcut,
         )
         self._add_viewer_dock_widget(dock_widget)
         return dock_widget
@@ -230,6 +240,8 @@ class Window:
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
+        if dock_widget.shortcut is not None:
+            action.setShortcut(dock_widget.shortcut)
         self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget):
@@ -259,12 +271,21 @@ class Window:
         self._qt_window.resize(width, height)
 
     def show(self):
-        """Resize, show, and bring forward the window.
-        """
+        """Resize, show, and bring forward the window."""
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
-        # make sure window is not hidden, e.g. by browser window in Jupyter
-        self._qt_window.raise_()
+
+        # We want to call Window._qt_window.raise_() in every case *except*
+        # when instantiating a viewer within a gui_qt() context for the
+        # _first_ time within the Qt app's lifecycle.
+        #
+        # `app_name` will be "napari" iff the application was instantiated in
+        # gui_qt(). isActiveWindow() will be True if it is the second time a
+        # _qt_window has been created. See #732
+        app_name = QApplication.instance().applicationName()
+        if app_name != 'napari' or self._qt_window.isActiveWindow():
+            self._qt_window.raise_()  # for macOS
+            self._qt_window.activateWindow()  # for Windows
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet
