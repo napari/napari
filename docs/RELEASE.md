@@ -7,6 +7,8 @@ it will include generating release notes, documentation, etc.
 This is mainly meant for the core developers who will actually be performing the release.
 They will need to have a [PyPI](https://pypi.org) account with upload permissions to the `napari` package.
 
+You will also need the additional `release` dependencies in `requirements/release.txt` to complete the release process.
+
 ## determining the version
 
 The version of `napari` is automatically determined by [`versioneer`](https://github.com/warner/python-versioneer)
@@ -84,11 +86,6 @@ $ python setup.py sdist bdist_wheel
 Make sure to check that all necessary ones are listed before beginning the release process.
 
 ## uploading the release candidate to PyPI
-
-You'll need `twine` installed for this step:
-```bash
-$ pip install twine
-```
 
 Upload the release candidate with:
 ```bash
