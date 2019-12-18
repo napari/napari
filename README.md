@@ -75,15 +75,9 @@ You can extend **napari** using custom shortcuts, key bindings, and mouse functi
 
 For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/). These are still a work in progress, but we'll be updating them regularly.
 
-## plans
+## mission and values
 
-We're working on several features, including
-
-- support for multiple linked canvases
-- script & macro generation
-- a plugin ecosystem for integrating image processing and machine learning tools
-
-See [this issue](https://github.com/napari/napari/issues/420) for some of the features on the roadmap for our `0.3` release. Feel free to add comments or ideas!
+For more information about our plans for `napari` you can read our [mission and values statement](./docs/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari.
 
 ## contributing
 
@@ -93,6 +87,10 @@ Contributions are encouraged! Please read our [contributing guide](./docs/CONTRI
 
 `napari` has a [Code of Conduct](./docs/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
 
+## governance
+
+You can learn more about how the `napari` project is organized and managed from our [governance model](./docs/GOVERNANCE.md), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+
 ## citing napari
 
 If you find `napari` useful please cite this repository using its DOI as follows:
@@ -100,8 +98,11 @@ If you find `napari` useful please cite this repository using its DOI as follows
 > napari contributors (2019). napari: a multi-dimensional image viewer for python. [doi:10.5281/zenodo.3555620](https://zenodo.org/record/3555620)
 
 Note this DOI will resolve to all versions of napari. To cite a specific version please find the
-DOI of that version on our [zenodo page](https://zenodo.org/record/3555620).
+DOI of that version on our [zenodo page](https://zenodo.org/record/3555620). The DOI of the latest version is in the badge at the top of this page.
 
 ## help
 
 We're a community partner on the [image.sc forum](https://forum.image.sc/tags/napari) and all help and support requests should be posted on the forum with the tag `napari`. We look forward to interacting with you there.
+
+Bug reports should be made on our [github issues](https://github.com/napari/napari/issues/new?template=bug_report.md) using
+the bug report template. If you think something isn't working, don't hesitate to reach out - it is probably us and not you!
