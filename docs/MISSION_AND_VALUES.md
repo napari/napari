@@ -8,7 +8,7 @@ values are. You can also learn more about how the project is managed by looking 
 
 ## Our founding principles
 
-The original napari team came together around a shared vision for a Python based image viewer that was
+The founding napari team came together around a shared vision for a Python based image viewer that is
 
 - n-dimensional first
 
@@ -28,7 +28,7 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - being **easy to use and install**. We are careful in taking on new dependencies, sometimes making them optional, and will support a fully packaged installation that works cross-platform.
 
-- being **well documented** with **comprehensive tutorials and examples**. All functions in our API have thorough docstrings clarifying expected inputs and outputs, and we maintain a separate [tutorials and example website](http://napari.org) to explain different use cases and working modes.
+- being **well-documented** with **comprehensive tutorials and examples**. All functions in our API have thorough docstrings clarifying expected inputs and outputs, and we maintain a separate [tutorials and example website](http://napari.org) to explain different use cases and working modes.
 
 - providing **GUI access** to all critical functionality so napari can be used by people with no coding experience.
 
@@ -58,8 +58,7 @@ a welcoming place for all.
 
 - We value **education and documentation**. All functions should have docstrings, preferably with examples, and major functionality should be explained in our [tutorials](https://github.com/napari/napari-tutorials). Core developers can take an active role in finishing documentation examples.
 
-- We **minimize magic** and always provide a way for users to opt out of magical behaviour and guessing by providing
-explicit ways to control functionality. We support NumPy array like objects and we prefer to educate users rather than make decisions on their behalf. This does not preclude the use of sensible defaults.
+- We **minimize [magic](https://en.wikipedia.org/wiki/Magic_(programming))** and always provide a way for users to opt out of magical behaviour and guessing by providing explicit ways to control functionality. We support NumPy array like objects and we prefer to educate users rather than make decisions on their behalf. This does not preclude the use of sensible defaults.
 
 ## Our vision for plugins
 

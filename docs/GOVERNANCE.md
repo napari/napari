@@ -13,6 +13,7 @@ resolved.
 # Roles And Responsibilities
 
 ## The Community
+
 The napari community consists of anyone using or working with the project
 in any way.
 
@@ -141,7 +142,7 @@ are made according to the following rules:
   require a  dedicated issue on our [issue tracker](https://github.com/napari/napari/issues)
   and follow the decision-making process outlined above,
   *unless* there is unanimous agreement from core developers on the change in
-  which case in can move forward faster.
+  which case it can move forward faster.
 
 If an objection is raised on a lazy consensus, the proposer can appeal to the
 community and core developers and the change can be approved or rejected by

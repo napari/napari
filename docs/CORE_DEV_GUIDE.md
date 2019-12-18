@@ -24,17 +24,18 @@ As a core developer, you gain the ability to merge or approve
 other contributors' pull requests.  Much like nuclear launch keys, it
 is a shared power: you must merge *only after* another core has
 approved the pull request, *and* after you yourself have carefully
-reviewed it.  (See `Reviewing` and especially `Merge Only Changes You
-Understand` below.) It should also be considered best practice to leave a
-reasonable (24hr) time window after approval before merge to ensure that other
-core developers have a reasonable chance to weigh in.
+reviewed it.  (See [Reviewing](#reviewing) and especially
+[Merge Only Changes You Understand](#Merge Only Changes You Understand) below.)
+It should also be considered best practice to leave a reasonable (24hr) time window
+after approval before merge to ensure that other core developers have a reasonable
+chance to weigh in.
 
 We are also an international community, with contributors from many different time zones,
 some of whom will only contribute during their working hours, others who might only be able
 to contribute during nights and weekends. It is important to be respectful of other peoples
 schedules and working habits, even if it slows the project down slightly - we are in this
 for the long run. In the same vein you also shouldn't feel pressured to be constantly
-available or online, and users or contributors who are overly demanding and unreasonable   
+available or online, and users or contributors who are overly demanding and unreasonable
 to the point of harassment will be directed to our [Code of Conduct](CODE_OF_CONDUCT.md).
 We value sustainable development practices over mad rushes.
 
@@ -62,17 +63,17 @@ experience. Repeat yourself liberally, and, if you don’t recognize a
 contributor, point them to our development guide, or other GitHub
 workflow tutorials around the web. Do not assume that they know how
 GitHub works (many don't realize that adding a commit
-automatically updates a pull request for example). Gentle, polite, kind
+automatically updates a pull request, for example). Gentle, polite, kind
 encouragement can make the difference between a new core developer and
 an abandoned pull request.
 
 When reviewing, focus on the following:
 
-1. **Usability and generality:** `napari` is an GUI application that strives to be accessible
+1. **Usability and generality:** `napari` is a GUI application that strives to be accessible
 to both coding and non-coding users, and new features should ultimately be
 accessible to everyone using the app. `napari` targets the scientific user
-community broadly, and core features should be domain agnostic and general purpose.
-Custom functionality is meant to be provided through our plugin ecosystem. If in doubt
+community broadly, and core features should be domain-agnostic and general purpose.
+Custom functionality is meant to be provided through our plugin ecosystem. If in doubt,
 consult back with our [mission and values](MISSION_AND_VALUES.md).
 
 2. **Performance and benchmarks:** As `napari` targets scientific applications that often involve
@@ -83,7 +84,7 @@ need to ask for benchmarks to be run and reported or new benchmarks to be added.
 
 3. **APIs and stability:** Coding users and plugin developers will make
 extensive use of our APIs. The foundation of a healthy plugin ecosystem will be
-a fully capable and stable set of APIs and so as the `napari` matures it will
+a fully capable and stable set of APIs, so as `napari` matures it will
 very important to ensure our APIs are stable. For now, while the project is still
 in an earlier stage, spending the extra time to consider names of public facing
 variables and methods, along side function signatures, could save us considerable
@@ -98,8 +99,8 @@ For any major new features, accompanying changes should be made to our
 illustrates the new feature, but explains it.
 
 5. **Implementations and algorithms:** You should understand the code being modified
-or added before approving it.  (See `Merge Only Changes You Understand` below.)
-Implementations should do what they claim and be simple, readable, and efficient
+or added before approving it.  (See [Merge Only Changes You Understand](#Merge Only Changes You Understand)
+below.) Implementations should do what they claim and be simple, readable, and efficient
 in that order.
 
 6. **Tests:** All contributions *must* be tested, and each added line of code
@@ -171,7 +172,7 @@ that are required to be private, such as voting on new core members.
 ## Inviting New Core Members
 
 Any core member may nominate other contributors to join the core team.
-While there is no hard-and-fast rule about who can be nominated; at a minimum,
+While there is no hard-and-fast rule about who can be nominated, ideally,
 they should have: been part of the project for at least two months, contributed
 significant changes of their own, contributed to the discussion and
 review of others' work, and collaborated in a way befitting our
