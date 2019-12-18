@@ -18,6 +18,12 @@ Highlights
 - Dockable widgets (!)
 - Slice information on sliders
 - Dramatically improved performance with many invisible layers
+- Adopted a Governance model with a mission and values statement
+- Added a new Core Dev guide
+
+New Features
+************
+- Add governance model, mission and values, core dev guide (#655)
 
 Improvements
 ************
