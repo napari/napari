@@ -1,20 +1,28 @@
 Announcement: napari 0.2.7
 ==========================
 
-We're happy to announce the release of napari v0.2.7!
+We're happy to announce the release of napari 0.2.7!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-base
+images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
+Highlights
+**********
+- Play button for animating axes now in the GUI
+- Threshold slider for much improved isosurface rendering
+- Dockable widgets (!)
+- Slice information on sliders
+- Dramatically improved performance with many invisible layers
+
 Improvements
 ************
 - Iso-surface threshold slider (#712)
-- Add play button to gui (#726)
+- Add play button to GUI (#726)
 - Make layers list dockable (#727)
 - Add Zenodo badge to documentation (#743)
 - Add a dock icon (#744)
@@ -43,7 +51,7 @@ Bugfixes
 - Respect vispy max texture limits (#788)
 - Fix (minor) deprecation warnings (#800)
 - Fix FPS spin box on Qt < 5.12 (#803)
-- Bumpy vispy 0.6.4 (#807)
+- Bumpy vispy dependency to 0.6.4 (#807)
 - Set threshold for codecov failure (#806)
 
 API Changes
@@ -53,10 +61,7 @@ API Changes
 - Move Image layer utility functions to image_utils.py (#775)
 - Move Layer utility functions to /napari/layers/layer_utils.py (#778)
 - Refactor util.misc (#781)
-
-Deprecations
-************
-- drop ndim keyword from labels layer (#773)
+- Drop ndim keyword from labels layer (#773)
 
 
 7 authors added to this release [alphabetical by first name or login]
