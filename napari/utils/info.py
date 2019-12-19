@@ -1,10 +1,12 @@
 import platform
+
 import sys
 
 import napari
 
 
 def sys_info(as_html=False):
+    """Gathers relevant module versions for troubleshooting purposes"""
 
     sys_version = sys.version.replace('\n', ' ')
     text = (
@@ -48,7 +50,10 @@ def sys_info(as_html=False):
 
     if loaded.get('vispy', False):
         sys_info_text = "<br>".join(
-            [loaded['vispy'].sys_info().split("\n")[index] for index in [-4, -3]]
+            [
+                loaded['vispy'].sys_info().split("\n")[index]
+                for index in [-4, -3]
+            ]
         ).replace("'", "")
         text += f'<br>{sys_info_text}'
 
