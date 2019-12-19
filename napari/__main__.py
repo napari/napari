@@ -13,9 +13,6 @@ from .utils import sys_info
 
 
 class InfoAction(argparse.Action):
-    def __init__(self, option_strings, dest, nargs=None, **kwargs):
-        super().__init__(option_strings, dest, 0, **kwargs)
-
     def __call__(self, *args, **kwargs):
         print(sys_info())
         sys.exit()
@@ -31,7 +28,10 @@ def main():
         version=f'napari version {__version__}',
     )
     parser.add_argument(
-        '--info', action=InfoAction, help='show system information and exit'
+        '--info',
+        action=InfoAction,
+        nargs=0,
+        help='show system information and exit',
     )
     parser.add_argument(
         '--layers',
