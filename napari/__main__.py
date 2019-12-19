@@ -8,11 +8,31 @@ import numpy as np
 
 from .utils import io
 from . import Viewer, gui_qt
+from . import __version__
+from ._info import sys_info
+
+
+class InfoAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        super().__init__(option_strings, dest, 0, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        print(sys_info())
+        sys.exit()
 
 
 def main():
     parser = argparse.ArgumentParser(usage=__doc__)
     parser.add_argument('images', nargs='*', help='Images to view.')
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=f'napari version {__version__}',
+    )
+    parser.add_argument(
+        '--info', action=InfoAction, help='show system information and exit'
+    )
     parser.add_argument(
         '--layers',
         action='store_true',

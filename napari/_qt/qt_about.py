@@ -1,12 +1,4 @@
-import sys
-import platform
-import skimage
-import vispy
-import scipy
-import numpy
-import dask
-
-from qtpy import QtCore, QtGui, API_NAME, PYSIDE_VERSION, PYQT_VERSION
+from qtpy import QtGui
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QVBoxLayout,
@@ -17,7 +9,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
 )
 
-import napari
+from .._info import sys_info, citation_text
 
 
 class QtAbout(QDialog):
@@ -45,41 +37,9 @@ class QtAbout(QDialog):
         self.info_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(self.info_layout)
 
-        if API_NAME == 'PySide2':
-            API_VERSION = PYSIDE_VERSION
-        elif API_NAME == 'PyQt5':
-            API_VERSION = PYQT_VERSION
-        else:
-            API_VERSION = ''
-        sys_version = sys.version.replace('\n', ' ')
-
-        versions = (
-            f"<b>napari</b>: {napari.__version__} <br>"
-            f"<b>Platform</b>: {platform.platform()} <br>"
-            f"<b>Python</b>: {sys_version} <br>"
-            f"<b>{API_NAME}</b>: {API_VERSION} <br>"
-            f"<b>Qt</b>: {QtCore.__version__} <br>"
-            f"<b>VisPy</b>: {vispy.__version__} <br>"
-            f"<b>NumPy</b>: {numpy.__version__} <br>"
-            f"<b>SciPy</b>: {scipy.__version__} <br>"
-            f"<b>scikit-image</b>: {skimage.__version__} <br>"
-            f"<b>Dask</b>: {dask.__version__} <br>"
-        )
-
-        sys_info_text = "<br>".join(
-            [vispy.sys_info().split("\n")[index] for index in [-4, -3]]
-        )
-
-        text = f'{versions} <br> {sys_info_text} <br>'
-        self.infoTextBox.setText(text)
+        self.infoTextBox.setText(sys_info(as_html=True))
 
         self.layout.addWidget(QLabel('<b>citation information:</b>'))
-
-        citation_text = (
-            'napari contributors (2019). napari: a '
-            'multi-dimensional image viewer for python. '
-            'doi:10.5281/zenodo.3555620'
-        )
         self.citationTextBox = QTextEdit(citation_text)
         self.citationTextBox.setFixedHeight(64)
         self.citationCopyButton = QtCopyToClipboardButton(self.citationTextBox)
