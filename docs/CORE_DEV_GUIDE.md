@@ -25,7 +25,7 @@ other contributors' pull requests.  Much like nuclear launch keys, it
 is a shared power: you must merge *only after* another core has
 approved the pull request, *and* after you yourself have carefully
 reviewed it.  (See [Reviewing](#reviewing) and especially
-[Merge Only Changes You Understand](#Merge Only Changes You Understand) below.)
+[Merge Only Changes You Understand](#merge-only-changes-you-understand) below.)
 It should also be considered best practice to leave a reasonable (24hr) time window
 after approval before merge to ensure that other core developers have a reasonable
 chance to weigh in.
@@ -99,7 +99,7 @@ For any major new features, accompanying changes should be made to our
 illustrates the new feature, but explains it.
 
 5. **Implementations and algorithms:** You should understand the code being modified
-or added before approving it.  (See [Merge Only Changes You Understand](#Merge Only Changes You Understand)
+or added before approving it.  (See [Merge Only Changes You Understand](#merge-only-changes-you-understand)
 below.) Implementations should do what they claim and be simple, readable, and efficient
 in that order.
 
