@@ -1,14 +1,7 @@
 import platform
 import sys
 
-try:
-    import napari
-except Exception:
-    from ._version import get_versions
-    from .utils import sys_info
-
-    __version__ = get_versions()['version']
-    del get_versions
+import napari
 
 
 def sys_info(as_html=False):
