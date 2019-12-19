@@ -6,10 +6,8 @@ import sys
 
 import numpy as np
 
-from .utils import io
-from . import Viewer, gui_qt
-from . import __version__
-from .utils import sys_info
+from . import Viewer, __version__, gui_qt
+from .utils import io, sys_info
 
 
 class InfoAction(argparse.Action):
