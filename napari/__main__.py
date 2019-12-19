@@ -9,7 +9,7 @@ import numpy as np
 from .utils import io
 from . import Viewer, gui_qt
 from . import __version__
-from ._info import sys_info
+from .utils import sys_info
 
 
 class InfoAction(argparse.Action):

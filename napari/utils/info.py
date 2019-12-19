@@ -18,7 +18,7 @@ def sys_info(as_html=False):
         API_VERSION = PYQT_VERSION
     else:
         API_VERSION = ''
-    sys_version = sys.version.replace('\n', ' ')
+    sys_version = sys.version.replace('\n', ' ').strip()
 
     versions = (
         f"<b>napari</b>: {napari.__version__}<br>"
@@ -37,7 +37,7 @@ def sys_info(as_html=False):
         [vispy.sys_info().split("\n")[index] for index in [-4, -3]]
     )
 
-    text = f'{versions}<br>{sys_info_text}<br>'
+    text = f'{versions}<br>{sys_info_text}'
 
     if not as_html:
         text = (
