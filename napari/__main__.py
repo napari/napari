@@ -7,13 +7,8 @@ import sys
 import numpy as np
 
 from . import Viewer, __version__, gui_qt
-from .utils import io, sys_info, citation_text
-
-
-class InfoAction(argparse.Action):
-    def __call__(self, *args, **kwargs):
-        print(sys_info())
-        sys.exit()
+from .utils import io
+from napari_info import citation_text
 
 
 class CitationAction(argparse.Action):
@@ -30,12 +25,6 @@ def main():
         '--version',
         action='version',
         version=f'napari version {__version__}',
-    )
-    parser.add_argument(
-        '--info',
-        action=InfoAction,
-        nargs=0,
-        help='show system information and exit',
     )
     parser.add_argument(
         '--citation',
