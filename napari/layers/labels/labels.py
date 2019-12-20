@@ -6,10 +6,10 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ..image import Image
-from ...util.colormaps import colormaps
-from ...util.event import Event
+from ...utils.colormaps import colormaps
+from ...utils.event import Event
 from .labels_utils import interpolate_coordinates
-from ...util.status_messages import format_float
+from ...utils.status_messages import format_float
 from ._constants import Mode
 
 

@@ -1,10 +1,10 @@
-from qtpy.QtWidgets import QSlider
-from .. import QHRangeSlider
-from .qt_base_layer import QtLayerControls
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox
 from qtpy.QtGui import QImage, QPixmap
-from ...util.misc import blocked_qt_signals
+from qtpy.QtWidgets import QComboBox, QLabel, QSlider
+
+from .. import QHRangeSlider
+from ..utils import qt_signals_blocked
+from .qt_base_layer import QtLayerControls
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -87,14 +87,14 @@ class QtBaseImageControls(QtLayerControls):
         cmin, cmax = self.layer.contrast_limits
         slidermin = (cmin - valmin) / (valmax - valmin)
         slidermax = (cmax - valmin) / (valmax - valmin)
-        with blocked_qt_signals(self.contrastLimitsSlider):
+        with qt_signals_blocked(self.contrastLimitsSlider):
             self.contrastLimitsSlider.setValues((slidermin, slidermax))
 
     def gamma_slider_changed(self, value):
         self.layer.gamma = value / 100
 
     def gamma_slider_update(self):
-        with blocked_qt_signals(self.gammaSlider):
+        with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(self.layer.gamma * 100)
 
     def mouseMoveEvent(self, event):

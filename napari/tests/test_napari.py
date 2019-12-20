@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import napari
 
-from napari.tests.util import (
+from napari.tests.utils import (
     check_viewer_functioning,
     layer_test_data,
     view_layer_type,
