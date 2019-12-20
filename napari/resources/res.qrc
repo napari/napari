@@ -12,7 +12,6 @@
     <file>icons/light/direct.svg</file>
     <file>icons/light/down_arrow.svg</file>
     <file>icons/light/drop_down.svg</file>
-    <file>icons/light/down_arrow.svg</file>
     <file>icons/light/ellipse.svg</file>
     <file>icons/light/fill.svg</file>
     <file>icons/light/grid.svg</file>
@@ -61,7 +60,6 @@
     <file>icons/dark/direct.svg</file>
     <file>icons/dark/down_arrow.svg</file>
     <file>icons/dark/drop_down.svg</file>
-    <file>icons/dark/down_arrow.svg</file>
     <file>icons/dark/ellipse.svg</file>
     <file>icons/dark/fill.svg</file>
     <file>icons/dark/grid.svg</file>

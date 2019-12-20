@@ -1,11 +1,9 @@
 """Miscellaneous utility functions.
 """
+from enum import Enum, EnumMeta
+import re
 import inspect
 import itertools
-import re
-from contextlib import contextmanager
-from enum import Enum, EnumMeta
-
 import numpy as np
 
 
@@ -164,11 +162,3 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
-
-
-@contextmanager
-def blocked_qt_signals(obj):
-    """Context manager to temporarily block signals from `obj`"""
-    obj.blockSignals(True)
-    yield
-    obj.blockSignals(False)

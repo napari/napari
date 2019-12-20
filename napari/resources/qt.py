@@ -1828,7 +1828,7 @@ h d=\x22M52.3,36.2l\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 24.0.0, \
+strator 23.0.1, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \
@@ -3841,7 +3841,7 @@ n points=\x2267.3,7\
 0\x22 encoding=\x22utf\
 -8\x22?>\x0a<!-- Gener\
 ator: Adobe Illu\
-strator 23.0.6, \
+strator 23.0.1, \
 SVG Export Plug-\
 In . SVG Version\
 : 6.00 Build 0) \

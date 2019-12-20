@@ -27,7 +27,6 @@ icons = [
     'direct',
     'down_arrow',
     'drop_down',
-    'down_arrow',
     'ellipse',
     'fill',
     'grid',
