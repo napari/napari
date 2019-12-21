@@ -4,6 +4,11 @@ from xml.etree.ElementTree import Element
 from napari.layers import Points
 
 
+def test_empty_points():
+    pts = Points()
+    assert pts.data.shape == (0, 2)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
@@ -41,7 +46,7 @@ def test_negative_points():
     assert len(layer.data) == 10
 
 
-def test_empty_points():
+def test_empty_points_array():
     """Test instantiating Points layer with empty array."""
     shape = (0, 2)
     data = np.empty(shape)
@@ -181,19 +186,19 @@ def test_changing_modes():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
     layer.mode = 'add'
     assert layer.mode == 'add'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'select'
     assert layer.mode == 'select'
-    assert layer.interactive == False
+    assert layer.interactive is False
 
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
-    assert layer.interactive == True
+    assert layer.interactive is True
 
 
 def test_name():
@@ -215,16 +220,16 @@ def test_visiblity():
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
     layer = Points(data)
-    assert layer.visible == True
+    assert layer.visible is True
 
     layer.visible = False
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer = Points(data, visible=False)
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer.visible = True
-    assert layer.visible == True
+    assert layer.visible is True
 
 
 def test_opacity():
@@ -297,24 +302,24 @@ def test_n_dimensional():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.n_dimensional == False
+    assert layer.n_dimensional is False
 
     layer.n_dimensional = True
-    assert layer.n_dimensional == True
+    assert layer.n_dimensional is True
 
     layer = Points(data, n_dimensional=True)
-    assert layer.n_dimensional == True
+    assert layer.n_dimensional is True
 
     shape = (10, 4)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer.n_dimensional == False
+    assert layer.n_dimensional is False
 
     layer.n_dimensional = True
-    assert layer.n_dimensional == True
+    assert layer.n_dimensional is True
 
     layer = Points(data, n_dimensional=True)
-    assert layer.n_dimensional == True
+    assert layer.n_dimensional is True
 
 
 def test_edge_color():
@@ -612,7 +617,7 @@ def test_interaction_box():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    assert layer._selected_box == None
+    assert layer._selected_box is None
 
     layer.selected_data = [0]
     assert len(layer._selected_box) == 4
@@ -621,7 +626,7 @@ def test_interaction_box():
     assert len(layer._selected_box) == 4
 
     layer.selected_data = []
-    assert layer._selected_box == None
+    assert layer._selected_box is None
 
 
 def test_copy_and_paste():
@@ -676,7 +681,7 @@ def test_value():
 
     layer.data = layer.data + 20
     value = layer.get_value()
-    assert value == None
+    assert value is None
 
 
 def test_message():

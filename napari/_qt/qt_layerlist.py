@@ -1,14 +1,19 @@
-from qtpy.QtCore import Qt, QMimeData
+from qtpy.QtCore import Qt, QMimeData, QTimer
+from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QFrame,
     QScrollArea,
     QApplication,
+    QLineEdit,
+    QLabel,
+    QCheckBox,
+    QHBoxLayout,
+    QSizePolicy,
 )
 from qtpy.QtGui import QDrag
 import numpy as np
-from .util import create_qt_properties
 
 
 class QtLayerList(QScrollArea):
@@ -24,9 +29,20 @@ class QtLayerList(QScrollArea):
         self.vbox_layout.addWidget(QtDivider())
         self.vbox_layout.addStretch(1)
         self.vbox_layout.setContentsMargins(0, 0, 0, 0)
+        self.vbox_layout.setSpacing(2)
         self.centers = []
+
+        # Create a timer to be used for autoscrolling the layers list up and
+        # down when dragging a layer near the end of the displayed area
+        self.dragTimer = QTimer()
+        self.dragTimer.setSingleShot(False)
+        self.dragTimer.setInterval(20)
+        self.dragTimer.timeout.connect(self._force_scroll)
+        self._scroll_up = True
+        self._min_scroll_region = 24
         self.setAcceptDrops(True)
         self.setToolTip('Layer list')
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
         self.layers.events.added.connect(self._add)
         self.layers.events.removed.connect(self._remove)
@@ -40,9 +56,10 @@ class QtLayerList(QScrollArea):
         layer = event.item
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
-        properties = create_qt_properties(layer)
-        self.vbox_layout.insertWidget(index, properties)
+        widget = QtLayerWidget(layer)
+        self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
+        layer.events.select.connect(self._scroll_on_select)
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`."""
@@ -92,6 +109,40 @@ class QtLayerList(QScrollArea):
                 # Insert the property widget and divider into new location
                 self.vbox_layout.insertWidget(index_new, widget)
                 self.vbox_layout.insertWidget(index_new + 1, divider)
+
+    def _force_scroll(self):
+        """Force the scroll bar to automattically scroll either up or down."""
+        cur_value = self.verticalScrollBar().value()
+        if self._scroll_up:
+            new_value = cur_value - self.verticalScrollBar().singleStep() / 4
+            if new_value < 0:
+                new_value = 0
+            self.verticalScrollBar().setValue(new_value)
+        else:
+            new_value = cur_value + self.verticalScrollBar().singleStep() / 4
+            if new_value > self.verticalScrollBar().maximum():
+                new_value = self.verticalScrollBar().maximum()
+            self.verticalScrollBar().setValue(new_value)
+
+    def _scroll_on_select(self, event):
+        """Scroll to ensure that the currently selected layer is visible."""
+        layer = event.source
+        self._ensure_visible(layer)
+
+    def _ensure_visible(self, layer):
+        """Ensure layer widget for at particular layer is visible."""
+        total = len(self.layers)
+        layer_index = self.layers.index(layer)
+        # Find property widget and divider for layer to be removed
+        index = 2 * (total - layer_index) - 1
+        widget = self.vbox_layout.itemAt(index).widget()
+        self.ensureWidgetVisible(widget)
+
+    def keyPressEvent(self, event):
+        event.ignore()
+
+    def keyReleaseEvent(self, event):
+        event.ignore()
 
     def mousePressEvent(self, event):
         # Check if mouse press happens on a layer properties widget or
@@ -153,11 +204,16 @@ class QtLayerList(QScrollArea):
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
-        dropAction = drag.exec_()
+        drag.exec_()
+        if self.drag_name is not None:
+            index = self.layers.index(self.drag_name)
+            layer = self.layers[index]
+            self._ensure_visible(layer)
 
     def dragLeaveEvent(self, event):
         """Unselects layer dividers."""
         event.ignore()
+        self.dragTimer.stop()
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
 
@@ -178,15 +234,34 @@ class QtLayerList(QScrollArea):
         """Set the appropriate layers list divider to be highlighted when
         dragging a layer to a new position in the layers list.
         """
+        max_height = self.frameGeometry().height()
+        if (
+            event.pos().y() < self._min_scroll_region
+            and not self.dragTimer.isActive()
+        ):
+            self._scroll_up = True
+            self.dragTimer.start()
+        elif (
+            event.pos().y() > max_height - self._min_scroll_region
+            and not self.dragTimer.isActive()
+        ):
+            self._scroll_up = False
+            self.dragTimer.start()
+        elif (
+            self.dragTimer.isActive()
+            and event.pos().y() >= self._min_scroll_region
+            and event.pos().y() <= max_height - self._min_scroll_region
+        ):
+            self.dragTimer.stop()
+
         # Determine which widget center is the mouse currently closed to
-        cord = event.pos().y()
+        cord = event.pos().y() + self.verticalScrollBar().value()
         center_list = (i for i, x in enumerate(self.centers) if x > cord)
         divider_index = next(center_list, len(self.centers))
         # Determine the current location of the widget being dragged
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
-        layer_name = event.mimeData().text()
-        index = self.layers.index(layer_name)
+        index = self.layers.index(self.drag_name)
         # If the widget being dragged hasn't moved above or below any other
         # widgets then don't highlight any dividers
         selected = not (insert == index) and not (insert - 1 == index)
@@ -198,15 +273,17 @@ class QtLayerList(QScrollArea):
                 self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
+        if self.dragTimer.isActive():
+            self.dragTimer.stop()
+
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
-        cord = event.pos().y()
+        cord = event.pos().y() + self.verticalScrollBar().value()
         center_list = (i for i, x in enumerate(self.centers) if x > cord)
         divider_index = next(center_list, len(self.centers))
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
-        layer_name = event.mimeData().text()
-        index = self.layers.index(layer_name)
+        index = self.layers.index(self.drag_name)
         if index != insert and index + 1 != insert:
             if insert >= index:
                 insert -= 1
@@ -218,7 +295,9 @@ class QtDivider(QFrame):
     def __init__(self):
         super().__init__()
         self.setSelected(False)
-        self.setFixedSize(50, 2)
+        self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
 
     def setSelected(self, selected):
         if selected:
@@ -227,3 +306,104 @@ class QtDivider(QFrame):
         else:
             self.setProperty('selected', False)
             self.style().polish(self)
+
+
+class QtLayerWidget(QFrame):
+    def __init__(self, layer):
+        super().__init__()
+
+        self.layer = layer
+        layer.events.select.connect(lambda v: self.setSelected(True))
+        layer.events.deselect.connect(lambda v: self.setSelected(False))
+        layer.events.name.connect(self._on_layer_name_change)
+        layer.events.visible.connect(self._on_visible_change)
+        layer.events.thumbnail.connect(self._on_thumbnail_change)
+
+        self.setObjectName('layer')
+
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+
+        tb = QLabel(self)
+        tb.setObjectName('thumbmnail')
+        tb.setToolTip('Layer thumbmnail')
+        self.thumbnailLabel = tb
+        self._on_thumbnail_change(None)
+        self.layout.addWidget(tb)
+
+        cb = QCheckBox(self)
+        cb.setObjectName('visibility')
+        cb.setToolTip('Layer visibility')
+        cb.setChecked(self.layer.visible)
+        cb.setProperty('mode', 'visibility')
+        cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
+        self.visibleCheckBox = cb
+        self.layout.addWidget(cb)
+
+        textbox = QLineEdit(self)
+        textbox.setText(layer.name)
+        textbox.home(False)
+        textbox.setToolTip('Layer name')
+        textbox.setAcceptDrops(False)
+        textbox.setEnabled(True)
+        textbox.editingFinished.connect(self.changeText)
+        self.nameTextBox = textbox
+        self.layout.addWidget(textbox)
+
+        ltb = QLabel(self)
+        layer_type = type(layer).__name__
+        ltb.setObjectName(layer_type)
+        ltb.setToolTip('Layer type')
+        self.typeLabel = ltb
+        self.layout.addWidget(ltb)
+
+        msg = 'Click to select\nDrag to rearrange'
+        self.setToolTip(msg)
+        self.setSelected(self.layer.selected)
+
+    def setSelected(self, state):
+        self.setProperty('selected', state)
+        self.nameTextBox.setEnabled(state)
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    def changeVisible(self, state):
+        if state == Qt.Checked:
+            self.layer.visible = True
+        else:
+            self.layer.visible = False
+
+    def changeText(self):
+        self.layer.name = self.nameTextBox.text()
+        self.nameTextBox.clearFocus()
+        self.setFocus()
+
+    def mouseReleaseEvent(self, event):
+        event.ignore()
+
+    def mousePressEvent(self, event):
+        event.ignore()
+
+    def mouseMoveEvent(self, event):
+        event.ignore()
+
+    def _on_layer_name_change(self, event):
+        with self.layer.events.name.blocker():
+            self.nameTextBox.setText(self.layer.name)
+            self.nameTextBox.home(False)
+
+    def _on_visible_change(self, event):
+        with self.layer.events.visible.blocker():
+            self.visibleCheckBox.setChecked(self.layer.visible)
+
+    def _on_thumbnail_change(self, event):
+        thumbnail = self.layer.thumbnail
+        # Note that QImage expects the image width followed by height
+        image = QImage(
+            thumbnail,
+            thumbnail.shape[1],
+            thumbnail.shape[0],
+            QImage.Format_RGBA8888,
+        )
+        self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))

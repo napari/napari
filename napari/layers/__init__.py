@@ -10,7 +10,6 @@ from .base import Layer
 from .image import Image
 from .points import Points
 from .vectors import Vectors
+from .surface import Surface
 from .shapes import Shapes
 from .labels import Labels
-from .pyramid import Pyramid
-from .volume import Volume

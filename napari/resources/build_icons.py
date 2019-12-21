@@ -7,7 +7,7 @@ run as python -m napari.resources.build_icons"""
 from os.path import join
 
 from ..resources import resources_dir
-from ..util.theme import palettes
+from ..utils.theme import palettes
 
 insert = """<style type="text/css">
     path{fill:{{ color }}}
@@ -17,30 +17,49 @@ insert = """<style type="text/css">
 </style>"""
 
 icons = [
+    '2D',
+    '3D',
     'add',
     'console',
+    'copy_to_clipboard',
     'delete',
     'delete_shape',
     'direct',
+    'down_arrow',
     'drop_down',
     'ellipse',
     'fill',
+    'grid',
+    'home',
+    'left_arrow',
+    'long_right_arrow',
+    'long_left_arrow',
     'line',
     'minus',
     'move_back',
     'move_front',
+    'new_image',
     'new_labels',
     'new_points',
     'new_shapes',
+    'new_surface',
+    'new_vectors',
     'paint',
     'path',
     'picker',
     'plus',
     'polygon',
+    'pop_out',
     'properties_contract',
     'properties_expand',
     'rectangle',
+    'right_arrow',
+    'roll',
     'select',
+    'step_left',
+    'step_right',
+    'transpose',
+    'up_arrow',
     'vertex_insert',
     'vertex_remove',
     'visibility',

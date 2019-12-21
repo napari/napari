@@ -3,10 +3,10 @@ from xml.etree.ElementTree import Element
 import numpy as np
 import itertools
 from copy import copy, deepcopy
-from contextlib import contextmanager
 from ..base import Layer
-from ...util.event import Event
-from ...util.misc import ensure_iterable
+from ...utils.event import Event
+from ...utils.misc import ensure_iterable
+from ...utils.status_messages import format_float
 from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
@@ -16,7 +16,7 @@ class Points(Layer):
 
     Parameters
     ----------
-    coords : array (N, D)
+    data : array (N, D)
         Coordinates for N points in D dimensions.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
@@ -35,6 +35,14 @@ class Points(Layer):
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -43,8 +51,6 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -105,9 +111,13 @@ class Points(Layer):
         None after dragging is done.
     """
 
+    # The max number of points that will ever be used to render the thumbnail
+    # If more points are present then they are randomly subsampled
+    _max_points_thumbnail = 1024
+
     def __init__(
         self,
-        coords,
+        data=None,
         *,
         symbol='o',
         size=10,
@@ -115,14 +125,26 @@ class Points(Layer):
         edge_color='black',
         face_color='white',
         n_dimensional=False,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
         opacity=1,
         blending='translucent',
         visible=True,
-        name=None,
     ):
-
+        if data is None:
+            data = np.empty((0, 2))
+        ndim = data.shape[1]
         super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
+            ndim,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
         )
 
         self.events.add(
@@ -138,7 +160,7 @@ class Points(Layer):
         self._colors = get_color_names()
 
         # Save the point coordinates
-        self._data = coords
+        self._data = data
         self.dims.clip = False
 
         # Save the point style params
@@ -178,6 +200,8 @@ class Points(Layer):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
+        self._highlight_index = []
+        self._highlight_box = None
 
         self._drag_start = None
 
@@ -207,7 +231,6 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._set_view_slice()
 
     @property
     def data(self) -> np.ndarray:
@@ -245,10 +268,13 @@ class Points(Layer):
                 self.face_colors += [self.face_color for i in range(adding)]
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
-    def _get_range(self):
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        return self.data.shape[1]
+
+    def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)
@@ -268,7 +294,7 @@ class Points(Layer):
     def n_dimensional(self, n_dimensional: bool) -> None:
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
-        self._set_view_slice()
+        self.refresh()
 
     @property
     def symbol(self) -> str:
@@ -286,6 +312,7 @@ class Points(Layer):
                 symbol = Symbol(symbol)
         self._symbol = symbol
         self.events.symbol()
+        self.events.highlight()
 
     @property
     def sizes(self) -> Union[int, float, np.ndarray, list]:
@@ -296,14 +323,14 @@ class Points(Layer):
     def sizes(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
             self._sizes = np.broadcast_to(size, self.data.shape).copy()
-        except:
+        except Exception:
             try:
                 self._sizes = np.broadcast_to(
                     size, self.data.shape[::-1]
                 ).T.copy()
-            except:
+            except Exception:
                 raise ValueError("Size is not compatible for broadcasting")
-        self._set_view_slice()
+        self.refresh()
 
     @property
     def size(self) -> Union[int, float]:
@@ -316,7 +343,8 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.sizes[i, :] = (self.sizes[i, :] > 0) * size
-            self._set_view_slice()
+            self.refresh()
+        self.status = format_float(self.size)
         self.events.size()
 
     @property
@@ -328,7 +356,9 @@ class Points(Layer):
     @edge_width.setter
     def edge_width(self, edge_width: Union[None, float]) -> None:
         self._edge_width = edge_width
+        self.status = format_float(self.edge_width)
         self.events.edge_width()
+        self.events.highlight()
 
     @property
     def edge_color(self) -> str:
@@ -343,6 +373,7 @@ class Points(Layer):
             for i in self.selected_data:
                 self.edge_colors[i] = edge_color
         self.events.edge_color()
+        self.events.highlight()
 
     @property
     def face_color(self) -> str:
@@ -357,6 +388,7 @@ class Points(Layer):
             for i in self.selected_data:
                 self.face_colors[i] = face_color
         self.events.face_color()
+        self.events.highlight()
 
     @property
     def selected_data(self):
@@ -441,6 +473,10 @@ class Points(Layer):
     def mode(self, mode):
         if isinstance(mode, str):
             mode = Mode(mode)
+
+        if not self.editable:
+            mode = Mode.PAN_ZOOM
+
         if mode == self._mode:
             return
         old_mode = self._mode
@@ -468,6 +504,17 @@ class Points(Layer):
         self._mode = mode
 
         self.events.mode(mode=mode)
+
+    def _set_editable(self, editable=None):
+        """Set editable mode based on layer properties."""
+        if editable is None:
+            if self.dims.ndisplay == 3:
+                self.editable = False
+            else:
+                self.editable = True
+
+        if not self.editable:
+            self.mode = Mode.PAN_ZOOM
 
     def _slice_data(self, indices):
         """Determines the slice of points given the indices.
@@ -514,7 +561,7 @@ class Points(Layer):
         else:
             return [], [], []
 
-    def get_value(self):
+    def _get_value(self):
         """Determine if points at current coordinates.
 
         Returns
@@ -522,8 +569,6 @@ class Points(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        in_slice_data = self._data_view
-
         # Display points if there are any in this slice
         if len(self._data_view) > 0:
             # Get the point sizes
@@ -563,7 +608,7 @@ class Points(Layer):
 
         else:
             # if no points in this slice send dummy data
-            data = np.empty((0, 2))
+            data = np.zeros((0, self.dims.ndisplay))
             sizes = [0]
         self._data_view = data
         self._sizes_view = sizes
@@ -579,11 +624,6 @@ class Points(Layer):
         if len(selected) == 0:
             self.selected_data
         self._selected_box = self.interaction_box(self._selected_view)
-
-        self._set_highlight(force=True)
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
@@ -627,7 +667,7 @@ class Points(Layer):
 
         pos = self._selected_box
         if pos is None and not self._is_selecting:
-            pos = np.empty((0, 2))
+            pos = np.zeros((0, 2))
         elif self._is_selecting:
             pos = create_box(self._drag_box)
             pos = pos[list(range(4)) + [0]]
@@ -652,8 +692,15 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
+            if len(self._data_view) > self._max_points_thumbnail:
+                inds = np.random.randint(
+                    0, len(self._data_view), self._max_points_thumbnail
+                )
+                points = self._data_view[inds]
+            else:
+                points = self._data_view
             coords = np.floor(
-                (self._data_view[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
+                (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
             ).astype(int)
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
@@ -707,7 +754,7 @@ class Points(Layer):
             self.data[np.ix_(index, disp)] = (
                 self.data[np.ix_(index, disp)] + shift
             )
-            self._set_view_slice()
+            self.refresh()
 
     def _copy_data(self):
         """Copy selected points to clipboard."""
@@ -755,7 +802,7 @@ class Points(Layer):
             self._selected_data = list(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
-            self._set_view_slice()
+            self.refresh()
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg
@@ -894,10 +941,10 @@ def points_to_squares(points, sizes):
     """
     rect = np.concatenate(
         [
-            points + np.array([sizes / 2, sizes / 2]).T,
-            points + np.array([sizes / 2, -sizes / 2]).T,
-            points + np.array([-sizes / 2, sizes / 2]).T,
-            points + np.array([-sizes / 2, -sizes / 2]).T,
+            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
+            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
         ],
         axis=0,
     )

@@ -1,6 +1,6 @@
 from ..layers import Layer
-from ..util.naming import inc_name_count
-from ..util.list import ListModel
+from ..utils.naming import inc_name_count
+from ..utils.list import ListModel
 
 
 def _add(event):
@@ -131,7 +131,7 @@ class LayerList(ListModel):
             elif first_to_delete > 0:
                 self[first_to_delete - 1].selected = True
 
-    def select_next(self):
+    def select_next(self, shift=False):
         """Selects next item from list.
         """
         selected = []
@@ -140,14 +140,16 @@ class LayerList(ListModel):
                 selected.append(i)
         if len(selected) > 0:
             if selected[-1] == len(self) - 1:
-                self.unselect_all(ignore=self[selected[-1]])
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[-1]])
             elif selected[-1] < len(self) - 1:
-                self.unselect_all(ignore=self[selected[-1] + 1])
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[-1] + 1])
                 self[selected[-1] + 1].selected = True
         elif len(self) > 0:
             self[-1].selected = True
 
-    def select_previous(self):
+    def select_previous(self, shift=False):
         """Selects previous item from list.
         """
         selected = []
@@ -156,9 +158,11 @@ class LayerList(ListModel):
                 selected.append(i)
         if len(selected) > 0:
             if selected[0] == 0:
-                self.unselect_all(ignore=self[0])
+                if shift is False:
+                    self.unselect_all(ignore=self[0])
             elif selected[0] > 0:
-                self.unselect_all(ignore=self[selected[0] - 1])
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[0] - 1])
                 self[selected[0] - 1].selected = True
         elif len(self) > 0:
             self[0].selected = True

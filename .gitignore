@@ -33,6 +33,7 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pip-wheel-metadata/
 
 # Unit test / coverage reports
 htmlcov/
@@ -108,3 +109,9 @@ venv.bak/
 
 # OS stuff
 .DS_store
+
+# Benchmarking results
+.asv/
+
+# VSCode
+.vscode/

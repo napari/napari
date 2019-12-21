@@ -1,8 +1,13 @@
 """
-Display one 4-D image layer using the add_image API
+Display a dask array
 """
 
-import dask.array as da
+try:
+    from dask import array as da
+except ImportError:
+    raise ImportError("""This example uses a dask array but dask is not
+    installed. To install try 'pip install dask'.""")
+
 import numpy as np
 from skimage import data
 import napari
@@ -18,4 +23,4 @@ with napari.gui_qt():
         ],
         axis=0,
     )
-    viewer = napari.view(blobs.astype(float))
+    viewer = napari.view_image(blobs.astype(float))

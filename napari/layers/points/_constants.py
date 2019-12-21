@@ -1,6 +1,6 @@
 from enum import Enum, auto
 
-from ...util.misc import StringEnum
+from ...utils.misc import StringEnum
 
 
 class Mode(StringEnum):

@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import (
+from ..shape_utils import (
     triangulate_edge,
     triangulate_ellipse,
     center_radii_to_corners,
@@ -47,6 +47,7 @@ class Ellipse(Shape):
         opacity=1,
         z_index=0,
         dims_order=None,
+        ndisplay=2,
     ):
 
         super().__init__(
@@ -56,6 +57,7 @@ class Ellipse(Shape):
             opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,
+            ndisplay=ndisplay,
         )
 
         self._closed = True

@@ -3,8 +3,9 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from copy import copy
 from ..base import Layer
-from ...util.event import Event
-from .vectors_util import vectors_to_coordinates, generate_vector_meshes
+from ...utils.event import Event
+from ...utils.status_messages import format_float
+from .vector_utils import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
 
 
@@ -14,7 +15,7 @@ class Vectors(Layer):
 
     Parameters
     ----------
-    vectors : (N, 2, D) or (N1, N2, ..., ND, D) array
+    data : (N, 2, D) or (N1, N2, ..., ND, D) array
         An (N, 2, D) array is interpreted as "coordinate-like" data and a
         list of N vectors with start point and projections of the vector in
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
@@ -26,6 +27,14 @@ class Vectors(Layer):
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Edge color of all the vectors.
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -34,8 +43,6 @@ class Vectors(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    name : str
-        Name of the layer.
 
     Attributes
     ----------
@@ -56,7 +63,7 @@ class Vectors(Layer):
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
         rectangle in the slice that it starts in.
-    _mesh_vertices : (2N, 3) array
+    _mesh_triangles : (2N, 3) array
         The integer indices of the `_mesh_vertices` that form the two triangles
         for the mesh representation of the vectors.
     _max_vectors_thumbnail : int
@@ -71,19 +78,29 @@ class Vectors(Layer):
 
     def __init__(
         self,
-        vectors,
+        data,
         *,
         edge_width=1,
         edge_color='red',
         length=1,
-        opacity=1,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=0.7,
         blending='translucent',
         visible=True,
-        name=None,
     ):
 
         super().__init__(
-            name=name, opacity=opacity, blending=blending, visible=visible
+            2,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
         )
 
         # events for non-napari calculations
@@ -100,16 +117,14 @@ class Vectors(Layer):
         # Data containing vectors in the currently viewed slice
         self._data_view = np.empty((0, 2, 2))
         self._displayed_stored = []
+        self._view_vertices = []
+        self._view_faces = []
 
         # length attribute
         self._length = length
 
         # assign vector data and establish default behavior
-        self.data = vectors
-
-        # Trigger generation of view slice and thumbnail
-        self._update_dims()
-        self._set_view_slice()
+        self.data = data
 
     @property
     def data(self) -> np.ndarray:
@@ -131,10 +146,13 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self._update_dims()
-        self._set_view_slice()
         self.events.data()
 
-    def _get_range(self):
+    def _get_ndim(self):
+        """Determine number of dimensions of the layer."""
+        return self.data.shape[2]
+
+    def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[2], dtype=int)
@@ -167,7 +185,8 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.edge_width()
-        self._set_view_slice()
+        self.refresh()
+        self.status = format_float(self.edge_width)
 
     @property
     def length(self) -> Union[int, float]:
@@ -188,7 +207,8 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.length()
-        self._set_view_slice()
+        self.refresh()
+        self.status = format_float(self.length)
 
     @property
     def edge_color(self) -> str:
@@ -199,6 +219,7 @@ class Vectors(Layer):
         """str: edge color of all the vectors."""
         self._edge_color = edge_color
         self.events.edge_color()
+        self._update_thumbnail()
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -231,21 +252,25 @@ class Vectors(Layer):
             else:
                 keep_inds = np.repeat(2 * matches, 2)
                 keep_inds[1::2] = keep_inds[1::2] + 1
+                if self.dims.ndisplay == 3:
+                    keep_inds = np.concatenate(
+                        [
+                            keep_inds,
+                            len(self._mesh_triangles) // 2 + keep_inds,
+                        ],
+                        axis=0,
+                    )
                 faces = self._mesh_triangles[keep_inds]
         else:
             faces = self._mesh_triangles
             self._data_view = self.data[:, :, disp]
 
         if len(faces) == 0:
-            self._view_vertices = None
-            self._view_faces = None
+            self._view_vertices = []
+            self._view_faces = []
         else:
-            self._view_vertices = vertices[:, ::-1] + 0.5
+            self._view_vertices = vertices
             self._view_faces = faces
-
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -255,7 +280,7 @@ class Vectors(Layer):
         offset = (
             np.array([self.dims.range[d][0] for d in self.dims.displayed])
             + 0.5
-        )
+        )[-2:]
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
@@ -264,10 +289,15 @@ class Vectors(Layer):
                 self.dims.range[d][1] - self.dims.range[d][0] + 1
                 for d in self.dims.displayed
             ]
-        ).astype(int)
+        ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
-        vectors = copy(self._data_view)
+        vectors = copy(self._data_view[:, :, -2:])
+        if len(vectors) > self._max_vectors_thumbnail:
+            inds = np.random.randint(
+                0, len(vectors), self._max_vectors_thumbnail
+            )
+            vectors = vectors[inds]
         vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
         downsampled = (vectors - offset) * zoom_factor
         downsampled = np.clip(
@@ -276,11 +306,6 @@ class Vectors(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         col = Color(self.edge_color).rgba
-        if len(downsampled) > self._max_vectors_thumbnail:
-            inds = np.random.randint(
-                0, len(downsampled), self._max_vectors_thumbnail
-            )
-            downsampled = downsampled[inds]
         for v in downsampled:
             start = v[0]
             stop = v[1]
@@ -320,7 +345,7 @@ class Vectors(Layer):
 
         return xml_list
 
-    def get_value(self):
+    def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 

@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import create_box
+from ..shape_utils import create_box
 
 
 class Polygon(Shape):
@@ -40,6 +40,7 @@ class Polygon(Shape):
         opacity=1,
         z_index=0,
         dims_order=None,
+        ndisplay=2,
     ):
 
         super().__init__(
@@ -49,6 +50,7 @@ class Polygon(Shape):
             opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,
+            ndisplay=ndisplay,
         )
         self._closed = True
         self.data = data

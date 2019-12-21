@@ -115,16 +115,16 @@ def test_visiblity():
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert layer.visible == True
+    assert layer.visible is True
 
     layer.visible = False
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer = Vectors(data, visible=False)
-    assert layer.visible == False
+    assert layer.visible is False
 
     layer.visible = True
-    assert layer.visible == True
+    assert layer.visible is True
 
 
 def test_opacity():
@@ -133,7 +133,7 @@ def test_opacity():
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert layer.opacity == 1.0
+    assert layer.opacity == 0.7
 
     layer.opacity = 0.5
     assert layer.opacity == 0.5
@@ -229,7 +229,7 @@ def test_value():
     layer = Vectors(data)
     value = layer.get_value()
     assert layer.coordinates == (0, 0)
-    assert value == None
+    assert value is None
 
 
 def test_message():

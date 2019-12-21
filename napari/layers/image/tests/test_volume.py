@@ -1,0 +1,165 @@
+import numpy as np
+from napari.layers import Image
+
+
+def test_random_volume():
+    """Test instantiating Image layer with random 3D data."""
+    shape = (10, 15, 20)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.dims.range == [(0, m, 1) for m in shape]
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_switching_displayed_dimensions():
+    """Test instantiating data then switching to displayed."""
+    shape = (10, 15, 20)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.dims.range == [(0, m, 1) for m in shape]
+
+    # check displayed data is initially 2D
+    assert layer._data_view.shape == shape[-2:]
+
+    layer.dims.ndisplay = 3
+    # check displayed data is now 3D
+    assert layer._data_view.shape == shape[-3:]
+
+    layer.dims.ndisplay = 2
+    # check displayed data is now 2D
+    assert layer._data_view.shape == shape[-2:]
+
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer.dims.range == [(0, m, 1) for m in shape]
+
+    # check displayed data is initially 3D
+    assert layer._data_view.shape == shape[-3:]
+
+    layer.dims.ndisplay = 2
+    # check displayed data is now 2D
+    assert layer._data_view.shape == shape[-2:]
+
+    layer.dims.ndisplay = 3
+    # check displayed data is now 3D
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_all_zeros_volume():
+    """Test instantiating Image layer with all zeros data."""
+    shape = (10, 15, 20)
+    data = np.zeros(shape, dtype=float)
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_integer_volume():
+    """Test instantiating Image layer with integer data."""
+    shape = (10, 15, 20)
+    np.random.seed(0)
+    data = np.round(10 * np.random.random(shape)).astype(int)
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_3D_volume():
+    """Test instantiating Image layer with random 3D data."""
+    shape = (10, 15, 6)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_4D_volume():
+    """Test instantiating multiple Image layers with random 4D data."""
+    shape = (10, 15, 6, 8)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == shape
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_changing_volume():
+    """Test changing Image data."""
+    shape_a = (10, 15, 30)
+    shape_b = (20, 12, 6)
+    np.random.seed(0)
+    data_a = np.random.random(shape_a)
+    data_b = np.random.random(shape_b)
+    layer = Image(data_a)
+    layer.dims.ndisplay = 3
+    layer.data = data_b
+    assert np.all(layer.data == data_b)
+    assert layer.ndim == len(shape_b)
+    assert layer.shape == shape_b
+    assert layer.dims.range == [(0, m, 1) for m in shape_b]
+    assert layer._data_view.shape == shape_b[-3:]
+
+
+def test_scale():
+    """Test instantiating anisotropic 3D volume."""
+    shape = (10, 15, 20)
+    scale = [3, 1, 1]
+    full_shape = tuple(np.multiply(shape, scale))
+    np.random.seed(0)
+    data = np.random.random(shape)
+    layer = Image(data, scale=scale)
+    layer.dims.ndisplay = 3
+    assert np.all(layer.data == data)
+    assert layer.ndim == len(shape)
+    assert layer.shape == full_shape
+    # Note that the scale appears as the step size in the range
+    assert layer.dims.range == list(
+        (0, m, s) for m, s in zip(full_shape, scale)
+    )
+    assert layer._data_view.shape == shape[-3:]
+
+
+def test_value():
+    """Test getting the value of the data at the current coordinates."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    value = layer.get_value()
+    assert layer.coordinates == (0, 0, 0)
+    assert value == data[0, 0, 0]
+
+
+def test_message():
+    """Test converting value and coords to message."""
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    layer = Image(data)
+    layer.dims.ndisplay = 3
+    msg = layer.get_message()
+    assert type(msg) == str
