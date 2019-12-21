@@ -1,0 +1,1 @@
+hiddenimports = ["ipykernel.datapub"]
