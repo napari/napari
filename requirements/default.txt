@@ -16,3 +16,5 @@ PyOpenGL>=3.1.0
 PySide2>=5.12.3
 wrapt>=1.11.1
 numpydoc>=0.9.1
+qtutils>=2.3.2
+zprocess>=2.18.0

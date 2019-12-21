@@ -8,6 +8,7 @@ from napari._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
+from .remote import RemoteServer
 
 
 class Viewer(ViewerModel):
@@ -25,10 +26,18 @@ class Viewer(ViewerModel):
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    port : int
+        Port of `zprocess.ZMQServer` used to listen for remote calls to
+        methods of the viewer.
     """
 
     def __init__(
-        self, title='napari', ndisplay=2, order=None, axis_labels=None
+        self,
+        title='napari',
+        ndisplay=2,
+        order=None,
+        axis_labels=None,
+        port=None,
     ):
         # instance() returns the singleton instance if it exists, or None
         app = QApplication.instance()
@@ -61,6 +70,12 @@ class Viewer(ViewerModel):
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
         self.update_console = self.window.qt_viewer.console.push
+        if port:
+            self.remote = RemoteServer(
+                self, port=int(port), allow_insecure=True
+            )
+        else:
+            self.remote = None
 
     def screenshot(self, with_viewer=False):
         """Take currently displayed screen and convert to an image array.

@@ -49,9 +49,15 @@ def main():
         'dask if all the images fit in RAM. This option does nothing if '
         'only a single image is given.',
     )
+    parser.add_argument(
+        '-p',
+        '--remote-port',
+        help='Start a ZMQSserver listening on specified port for remote procedure calls.',
+        default=None,
+    )
     args = parser.parse_args()
     with gui_qt(startup_logo=True):
-        v = Viewer()
+        v = Viewer(port=args.remote_port)
         if len(args.images) > 0:
             images = io.magic_imread(
                 args.images, use_dask=args.use_dask, stack=not args.layers

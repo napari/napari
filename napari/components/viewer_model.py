@@ -12,6 +12,10 @@ from ..utils.keybindings import KeymapMixin
 from ..utils.theme import palettes
 from ..utils.misc import ensure_iterable, is_iterable
 from ..utils import io
+from .._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
 
 
 class ViewerModel(KeymapMixin):
@@ -49,6 +53,8 @@ class ViewerModel(KeymapMixin):
         self, title='napari', ndisplay=2, order=None, axis_labels=None
     ):
         super().__init__()
+
+        self.version = __version__
 
         self.events = EmitterGroup(
             source=self,
