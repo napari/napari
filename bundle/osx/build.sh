@@ -13,7 +13,7 @@ rm -rf dist
 
 echo "checking installations of build tools"
 
-pip install pyinstaller==3.5
+pip install pyinstaller==3.4
 conda install freetype
 
 

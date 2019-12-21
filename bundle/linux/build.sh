@@ -23,6 +23,7 @@ echo "building app..."
 pyinstaller --windowed --onefile --noconfirm --clean --log-level=INFO napari.spec
 
 # pyqt5 works out of the box, but with PySide2, you may get the following error
+# with pyinstaller 3.5, when running the executable:
 # WARNING: Could not find the Qt platform plugin "xcb" in ""
 # WARNING: This application failed to start because no Qt platform plugin
 #   could be initialized. Reinstalling the application may fix this problem.

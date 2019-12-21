@@ -6,8 +6,9 @@ import sys
 
 import numpy as np
 
-from .utils import io
-from . import Viewer, gui_qt
+# non-relative imports here for the sake of PyInstaller
+from napari.utils import io
+from napari import Viewer, gui_qt
 
 
 def main():
