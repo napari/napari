@@ -4,6 +4,7 @@ from os.path import dirname, join
 
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
+from ..utils.misc import absolute_resource
 
 
 @contextmanager
@@ -29,7 +30,9 @@ def gui_qt(*, startup_logo=False):
         app = QApplication(sys.argv)
         app.setApplicationName('napari')
     if startup_logo:
-        logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
+        logopath = absolute_resource(
+            join(dirname(dirname(__file__)), 'resources', 'logo.png')
+        )
         splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
         splash_widget.show()
     yield

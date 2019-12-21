@@ -8,6 +8,7 @@ from napari._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
+from .utils.misc import absolute_resource
 
 
 class Viewer(ViewerModel):
@@ -49,7 +50,9 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
-        logopath = join(dirname(__file__), 'resources', 'logo.png')
+        logopath = absolute_resource(
+            join(dirname(dirname(__file__)), 'resources', 'logo.png')
+        )
         app.setWindowIcon(QIcon(logopath))
 
         super().__init__(
