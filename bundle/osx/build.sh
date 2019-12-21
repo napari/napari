@@ -13,10 +13,10 @@ rm -rf dist
 
 echo "checking installations of build tools"
 
-pip install pyinstaller==3.4
+pip install pyinstaller==3.5
 conda install freetype
 
 
 echo "building app..."
 
-pyinstaller -w -F -y --clean napari.spec
+pyinstaller --windowed --onefile --noconfirm --clean --log-level=INFO napari.spec

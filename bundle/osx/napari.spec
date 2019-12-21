@@ -1,19 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import sys
+import os
 import vispy.glsl
 import vispy.io
 import freetype
+from napari import __version__
+from PyInstaller.building.build_main import Analysis, PYZ, EXE, COLLECT, BUNDLE
 sys.modules['FixTk'] = None
 
 block_cipher = None
 
 data_files = [
     (os.path.dirname(vispy.glsl.__file__), os.path.join("vispy", "glsl")),
-    (os.path.join(os.path.dirname(vispy.io.__file__), "_data"), os.path.join("vispy", "io", "_data")),
+    (os.path.join(os.path.dirname(vispy.io.__file__), "_data"),
+        os.path.join("vispy", "io", "_data")),
     (os.path.dirname(vispy.util.__file__), os.path.join("vispy", "util")),
     (os.path.dirname(freetype.__file__), os.path.join("freetype")),
-    (os.path.join("../..", "napari", "util", "colormaps", "matplotlib_cmaps.txt"),
+    (os.path.join("../..", "napari", "utils", "colormaps", "matplotlib_cmaps.txt"),
      os.path.join("util", "colormaps")),
     (os.path.join("../..", "napari", "resources", "stylesheet.qss"), "resources"),
 ]
@@ -24,8 +28,8 @@ hidden_imports = [
     "freetype"
 ]
 
-a = Analysis(['../../napari/main.py'],
-             pathex=['/Users/nicholassofroniew/Github/napari'],
+a = Analysis(['../../napari/__main__.py'],
+             pathex=[os.path.abspath('..')],
              binaries=[],
              datas=data_files,
              hiddenimports=hidden_imports,
@@ -36,8 +40,9 @@ a = Analysis(['../../napari/main.py'],
              win_private_assemblies=False,
              cipher=block_cipher,
              noarchive=False)
-pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
 exe = EXE(pyz,
           a.scripts,
           [],
@@ -47,7 +52,8 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=False )
+          console=False)
+
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
@@ -56,7 +62,13 @@ coll = COLLECT(exe,
                upx=True,
                upx_exclude=[],
                name='napari')
+
 app = BUNDLE(coll,
              name='napari.app',
-             icon=None,
-             bundle_identifier=None)
+             icon='logo.icns',
+             bundle_identifier='com.napari.napari',
+             info_plist={
+                 'CFBundleIdentifier': 'com.napari.napari',
+                 'CFBundleShortVersionString': __version__,
+                 'NSHighResolutionCapable': 'True'
+             })
