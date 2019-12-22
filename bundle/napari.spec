@@ -107,7 +107,15 @@ a = Analysis(
     pathex=[BUNDLE_ROOT],
     datas=DATA_FILES,
     hookspath=[HOOKSPATH],
-    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
+    excludes=[
+        'FixTk',
+        'tcl',
+        'tk',
+        '_tkinter',
+        'tkinter',
+        'Tkinter',
+        'matplotlib',
+    ],
     cipher=BLOCK_CIPHER,
 )
 
