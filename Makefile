@@ -1,4 +1,4 @@
-.PHONY: docs clean gui-spec gui-build
+.PHONY: docs clean gui-spec gui-build bundle
 
 CLEANFILES := dist build
 
@@ -16,6 +16,9 @@ gui-spec:
 
 gui-build: clean
 	pyinstaller --clean napari.spec
+
+bundle: 
+	sh ./bundle/build.sh
 
 clean:
 	rm -rf $(CLEANFILES)
