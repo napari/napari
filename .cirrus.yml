@@ -207,6 +207,8 @@
 
 bundle_osx_task:
   auto_cancellation: true
+  # depends_on: osx
+  # only_if: $CIRRUS_TAG != ''
   name: Bundle osx
   osx_instance:
     image: mojave-xcode
@@ -228,13 +230,15 @@ bundle_osx_task:
   bundle_script:
     - make bundle
   
-  create_artifacts:
+  napari_artifacts:
     path: dist/*.dmg
     type: application/octet-stream
 
 
 bundle_linux_task:
   auto_cancellation: true
+  # depends_on: linux
+  # only_if: $CIRRUS_TAG != ''
   name: Bundle linux
   container:
     image: gcc:latest
@@ -253,8 +257,6 @@ bundle_linux_task:
     - rm install.sh
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
   xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
-  # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
-  herbstluftwm_start_background_script: herbstluftwm
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
@@ -263,7 +265,8 @@ bundle_linux_task:
 
   bundle_script:
     - make bundle
+    - ls dist
   
-  create_artifacts:
+  napari_artifacts:
     path: dist/*
 
