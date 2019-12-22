@@ -32,9 +32,10 @@ else
 fi
 
 if [ -f "$DIR/napari.spec" ]; then
-    pyinstaller --noconfirm --clean --log-level=INFO "$DIR/napari.spec"
+    pyinstaller --noconfirm --clean --log-level=INFO "$DIR/napari.spec";
 else
-    echo "Could not find $DIR/napari.spec... quitting"
+    echo "Could not find $DIR/napari.spec... quitting";
+    exit 127;
 fi
 
 
@@ -47,3 +48,21 @@ fi
 if [ -d "dist/napari/PySide2/plugins" ]; then
     mv "dist/napari/PySide2/plugins/" "dist/napari/PySide2/Qt/";
 fi
+
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "creating mac .dmg ..."
+    mkdir dist/dmg
+    ln -s /Applications dist/dmg
+    cp -r dist/napari.app dist/dmg
+    hdiutil create dist/napari.dmg -srcfolder dist/dmg
+    rm -rf dist/dmg
+    rm -rf dist/napari
+
+    # broken pkg building command
+    # productbuild --component ./dist/napari.app /Applications napari.pkg \
+    #   --sign "3rd Party Mac Developer Installer: napari team"
+fi
+
+
+
