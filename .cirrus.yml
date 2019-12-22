@@ -228,14 +228,13 @@ bundle_osx_task:
   bundle_script:
     - make bundle
   
-  bundle_artifacts:
+  create_artifacts:
     path: dist/*.dmg
     type: application/octet-stream
 
 
 bundle_linux_task:
   auto_cancellation: true
-
   name: Bundle linux
   container:
     image: gcc:latest
@@ -265,6 +264,6 @@ bundle_linux_task:
   bundle_script:
     - make bundle
   
-  bundle_artifacts:
+  create_artifacts:
     path: dist/*
 
