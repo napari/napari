@@ -266,16 +266,16 @@ bundle_linux_task:
   bundle_script:
     - make bundle
     - tar -czvf dist/napari.tar.gz -C dist napari
-    - cd dist
   
   napari_artifacts:
-    path: napari/*
+    path: dist/napari/*
     # type: application/gzip
 
 
 bundle_windows_task:
   auto_cancellation: true
-  
+  # depends_on: windows
+  # only_if: $CIRRUS_TAG != ''
   windows_container:
     image: cirrusci/windowsservercore:2019
     os_version: 2019
@@ -314,7 +314,6 @@ bundle_windows_task:
   bundle_script:
     - call .\bundle\build.bat
     # - powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('dist\napari', 'napari.zip'); }"
-    - cd dist
 
   napari_artifacts:
-    path: napari/*
+    path: dist/napari/*
