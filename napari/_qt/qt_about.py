@@ -9,7 +9,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
 )
 
-from napari_info import sys_info, citation_text
+from ..utils import sys_info, citation_text
 
 
 class QtAbout(QDialog):

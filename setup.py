@@ -3,12 +3,6 @@
 
 GUI component of Napari.
 """
-import os.path as osp
-import sys
-from setuptools import setup, find_packages
-
-import versioneer
-
 
 MIN_PY_VER = '3.6'
 DISTNAME = 'napari'
@@ -38,6 +32,14 @@ CLASSIFIERS = [
     'Operating System :: Unix',
     'Operating System :: MacOS',
 ]
+
+
+import os
+import os.path as osp
+import sys
+from setuptools import setup, find_packages
+
+import versioneer
 
 
 if sys.version_info < (3, 6):
@@ -86,12 +88,7 @@ if __name__ == '__main__':
         requires=REQUIRES,
         python_requires=f'>={MIN_PY_VER}',
         packages=PACKAGES,
-        entry_points={
-            'console_scripts': [
-                'napari=napari.__main__:main',
-                'napari-info=napari_info.__main__:main',
-            ]
-        },
+        entry_points={'console_scripts': ['napari=napari.__main__:main']},
         include_package_data=True,
         zip_safe=False,  # the package can run out of an .egg file
     )
