@@ -265,8 +265,10 @@ bundle_linux_task:
 
   bundle_script:
     - make bundle
-    - ls dist
+    - tar -czvf dist/napari.tar.gz -C dist napari 
   
   napari_artifacts:
-    path: dist/*
+    path: dist/napari.tar.gz
+    type: application/gzip
+
 
