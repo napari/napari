@@ -2,11 +2,13 @@ import warnings
 from xml.etree.ElementTree import Element
 from base64 import b64encode
 import types
+from copy import copy
+
 from imageio import imwrite
 import numpy as np
-from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
+
 from ..base import Layer
 from ..layer_utils import calc_data_range, increment_unnamed_colormap
 from ...utils.event import Event

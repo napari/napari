@@ -7,7 +7,7 @@ from .colors_data import (
     two_colors_as_colorarray,
     invalid_colors,
 )
-from napari.util.color.standardize_color import transform_color
+from napari.utils.colormaps.standardize_color import transform_color
 
 
 @pytest.mark.parametrize(
