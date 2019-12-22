@@ -205,7 +205,7 @@
 #     - git push --quiet "https://${GH_TOKEN}@${GH_REF}" master > /dev/null 2>&1
 
 
-bundle_task:
+bundle_osx_task:
   auto_cancellation: true
   name: Bundle osx
   osx_instance:
@@ -233,7 +233,7 @@ bundle_task:
     type: application/octet-stream
 
 
-bundle_task:
+bundle_linux_task:
   auto_cancellation: true
 
   name: Bundle linux
