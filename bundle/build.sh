@@ -9,15 +9,34 @@ rm -rf dist
 
 echo "installing build tools..."
 
-# 3.5 works fine for PyQt5... but lots of issues with PySide2
-pip install pyinstaller==3.4
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # 3.5 works fine for PyQt5... but lots of issues with PySide2
+    pip install pyinstaller==3.4;
+else
+    # 3.5 seems to be required for PySide2 on linux, otherwise, in 3.4
+    # it fails to find python in run-time hook 'pyi_rth_qt5plugins.py'
+    pip install pyinstaller==3.5;
+fi
+
 conda install -y freetype
 
 
 echo "building app..."
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-pyinstaller --noconfirm --clean --log-level=INFO "$DIR/napari.spec"
+
+# find the directory of this script (for easier portability)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )";
+else
+    DIR=$(dirname $(readlink -f $0));
+fi
+
+if [ -f "$DIR/napari.spec" ]; then
+    pyinstaller --noconfirm --clean --log-level=INFO "$DIR/napari.spec"
+else
+    echo "Could not find $DIR/napari.spec... quitting"
+fi
+
 
 # pyqt5 works out of the box, but with PySide2, you may get the following error
 # with pyinstaller 3.5, when running the executable:
