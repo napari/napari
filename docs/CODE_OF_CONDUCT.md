@@ -61,7 +61,7 @@ If your report involves any members of the committee, or if they feel they have 
 
 
 ## Incident reporting resolution & Code of Conduct enforcement
-*This section summarizes the most important points, more details can be found in [napari Code of Conduct - How to follow up on a report.](https://github.com/napari/napari/blob/master/REPORT_HANDLING_MANUAL.md)*
+*This section summarizes the most important points, more details can be found in [napari Code of Conduct - How to follow up on a report.](https://github.com/napari/napari/blob/master/docs/REPORT_HANDLING_MANUAL.md)*
 
 We will investigate and respond to all complaints. The napari Code of Conduct Committee will protect the identity of the reporter, and treat the content of complaints as confidential (unless the reporter agrees otherwise).
 
@@ -75,7 +75,7 @@ In cases not involving clear severe and obvious breaches of this code of conduct
 
 3. mediation (if feedback didn’t help, and only if both reporter and reportee agree to this)
 
-4. enforcement via transparent decision (see [Resolutions](https://github.com/napari/napari/blob/master/REPORT_HANDLING_MANUAL.md#resolutions)) by the Code of Conduct Committee
+4. enforcement via transparent decision (see [Resolutions](https://github.com/napari/napari/blob/master/docs/REPORT_HANDLING_MANUAL.md#resolutions)) by the Code of Conduct Committee
 
 The committee will respond to any report as soon as possible, and at most within 72 hours.
 

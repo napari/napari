@@ -3,11 +3,10 @@ import numpy as np
 from copy import copy
 import vispy.color
 from ..base import Layer
-from ...util.event import Event
-from ...util.status_messages import format_float
-from ...util.misc import calc_data_range, increment_unnamed_colormap
-from ...util.color.colorbars import make_colorbar
-from ...util.color.colormaps import AVAILABLE_COLORMAPS
+from ...utils.event import Event
+from ...utils.status_messages import format_float
+from ..layer_utils import calc_data_range, increment_unnamed_colormap
+from ...utils.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 
 
 class Surface(Layer):
@@ -168,7 +167,7 @@ class Surface(Layer):
         self._vertices = vertices
 
         self._update_dims()
-        self._set_view_slice()
+        self.refresh()
         self.events.data()
 
     @property
@@ -181,7 +180,7 @@ class Surface(Layer):
 
         self._vertex_values = vertex_values
 
-        self._set_view_slice()
+        self.refresh()
         self.events.data()
 
     @property
@@ -194,7 +193,7 @@ class Surface(Layer):
 
         self.faces = faces
 
-        self._set_view_slice()
+        self.refresh()
         self.events.data()
 
     def _get_ndim(self):
@@ -302,10 +301,6 @@ class Surface(Layer):
         else:
             self._view_faces = self.faces
 
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
-
     def _update_thumbnail(self):
         """Update thumbnail with current surface."""
         pass
@@ -322,7 +317,7 @@ class Surface(Layer):
 
         return xml_list
 
-    def get_value(self):
+    def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 

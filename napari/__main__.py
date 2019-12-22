@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 
-from .util import io
+from .utils import io
 from . import Viewer, gui_qt
 
 

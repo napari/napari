@@ -1,5 +1,6 @@
 import numpy as np
-from vispy.scene.visuals import Line, Compound, Markers
+from vispy.scene.visuals import Line, Compound
+from .markers import Markers
 from vispy.visuals.transforms import ChainTransform
 from vispy.color import ColorArray
 
@@ -39,7 +40,6 @@ class VispyPointsLayer(VispyBaseLayer):
             self.node = Compound([Markers(), Markers(), Line()])
         else:
             self.node = Markers()
-
         self.node.parent = parent
         self._reset_base()
 
@@ -116,8 +116,11 @@ class VispyPointsLayer(VispyBaseLayer):
             scaling=True,
         )
 
-        if 0 in self.layer._highlight_box.shape:
-            pos = np.zeros((1, 2))
+        if (
+            self.layer._highlight_box is None
+            or 0 in self.layer._highlight_box.shape
+        ):
+            pos = np.zeros((1, self.layer.dims.ndisplay))
             width = 0
         else:
             pos = self.layer._highlight_box

@@ -15,17 +15,17 @@ from vispy.app import use_app
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
-from ..util.theme import template
-from ..util.misc import (
-    str_to_rgb,
+from ..utils.theme import template
+from ..utils.misc import str_to_rgb
+from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
     mouse_release_callbacks,
 )
-from ..util.keybindings import components_to_key_combo
+from ..utils.keybindings import components_to_key_combo
 
-from .util import QImg2array
+from .utils import QImg2array
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
@@ -445,6 +445,11 @@ class QtViewer(QSplitter):
         if self.pool.activeThreadCount() > 0:
             self.pool.clear()
         event.accept()
+
+    def shutdown(self):
+        self.pool.clear()
+        self.canvas.close()
+        self.console.shutdown()
 
 
 def viewbox_key_event(event):
