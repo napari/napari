@@ -29,6 +29,7 @@ def get_version():
         VarFileInfo,
         VarStruct,
     )
+    from datetime import datetime
 
     ver_str = napari.__version__
     version = ver_str.replace("+", '.').split('.')
@@ -63,7 +64,7 @@ def get_version():
                             StringStruct('InternalName', 'napari'),
                             StringStruct(
                                 'LegalCopyright',
-                                '© napari. All rights reserved.',
+                                f'napari {datetime.now().year}. All rights reserved.',
                             ),
                             StringStruct('OriginalFilename', 'napari.exe'),
                             StringStruct('ProductName', 'napari'),
