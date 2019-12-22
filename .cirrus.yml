@@ -27,64 +27,61 @@
 #     - flake8 napari
 
 
-task:
-  auto_cancellation: true
+# task:
+#   auto_cancellation: true
 
-  env:
-    matrix:
-      PY_VER: "3.6"
-      PY_VER: "3.7"
+#   env:
+#     matrix:
+#       PY_VER: "3.6"
+#       PY_VER: "3.7"
 
-  matrix:
-    - name: linux
-      container:
-        image: gcc:latest
-      env:
-        PATH: $HOME/conda/bin:$PATH
-        DISPLAY: ":99"
-      system_script:
-        - apt-get update
-        - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
-      conda_script:
-        - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
-        - bash install.sh -b -p $HOME/conda
-        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
-        - conda update -yn base conda
-        - conda install -y python=$PY_VER
-        - rm install.sh
-      # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
-      xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
-      # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
-      herbstluftwm_start_background_script: herbstluftwm
+#   matrix:
+#     - name: linux
+#       container:
+#         image: gcc:latest
+#       env:
+#         PATH: $HOME/conda/bin:$PATH
+#         DISPLAY: ":99"
+#       system_script:
+#         - apt-get update
+#         - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
+#       conda_script:
+#         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
+#         - bash install.sh -b -p $HOME/conda
+#         - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
+#         - conda update -yn base conda
+#         - conda install -y python=$PY_VER
+#         - rm install.sh
+#       # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
+#       xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
+#       # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
+#       herbstluftwm_start_background_script: herbstluftwm
 
-    - name: osx
-      osx_instance:
-        image: mojave-xcode-10.2
-      env:
-        PATH: $HOME/conda/bin:$PATH
-      conda_script:
-        - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
-        - bash install.sh -b -p $HOME/conda
-        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
-        - conda update -yn base conda
-        - conda install -y python=$PY_VER
-        - rm install.sh
+#     - name: osx
+#       osx_instance:
+#         image: mojave-xcode-10.2
+#       env:
+#         PATH: $HOME/conda/bin:$PATH
+#       conda_script:
+#         - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
+#         - bash install.sh -b -p $HOME/conda
+#         - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
+#         - conda update -yn base conda
+#         - conda install -y python=$PY_VER
+#         - rm install.sh
 
-  install_script:
-    - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements.txt
-    - python setup.py develop
+#   install_script:
+#     - python -m pip install --retries 3 --upgrade pip
+#     - pip install --retries 3 -r requirements.txt
+#     - python setup.py develop
 
-  check_script:
-    - pip list
-    - python -c "import napari; print(napari.__version__)"
+#   check_script:
+#     - pip list
+#     - python -c "import napari; print(napari.__version__)"
 
-  # test_script:
-  #   - pytest -v
-  
-  deploy_script:
-    # - only_if: $CIRRUS_BRANCH == 'master'
-    - make bundle
+#   test_script:
+#     - pytest -v
+
 
 # windows_task:
 #   auto_cancellation: true
@@ -206,3 +203,68 @@ task:
 #     - if [[ -z $(git status --untracked-files=no --porcelain) ]]; then exit 0; fi  # repo is clean 
 #     - git commit -m "dev docs v${VERSION}"
 #     - git push --quiet "https://${GH_TOKEN}@${GH_REF}" master > /dev/null 2>&1
+
+
+bundle_task:
+  auto_cancellation: true
+  name: Bundle osx
+  osx_instance:
+    image: mojave-xcode
+  env:
+    PATH: $HOME/conda/bin:$PATH
+  conda_script:
+    - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
+    - bash install.sh -b -p $HOME/conda
+    - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
+    - conda update -yn base conda
+    - conda install -y python=3.7
+    - rm install.sh
+
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - pip install --retries 3 -r requirements.txt
+    - python setup.py develop
+
+  bundle_script:
+    - make bundle
+  
+  bundle_artifacts:
+    path: dist/*.dmg
+    type: application/octet-stream
+
+
+bundle_task:
+  auto_cancellation: true
+
+  name: Bundle linux
+  container:
+    image: gcc:latest
+  env:
+    PATH: $HOME/conda/bin:$PATH
+    DISPLAY: ":99"
+  system_script:
+    - apt-get update
+    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
+  conda_script:
+    - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
+    - bash install.sh -b -p $HOME/conda
+    - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
+    - conda update -yn base conda
+    - conda install -y python=3.7
+    - rm install.sh
+  # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
+  xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
+  # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
+  herbstluftwm_start_background_script: herbstluftwm
+
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - pip install --retries 3 -r requirements.txt
+    - python setup.py develop
+
+  bundle_script:
+    - make bundle
+  
+  bundle_artifacts:
+    path: dist/*
+
