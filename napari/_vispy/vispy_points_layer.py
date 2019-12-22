@@ -98,7 +98,7 @@ class VispyPointsLayer(VispyBaseLayer):
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._sizes_view[self.layer._highlight_index]
-            face_color = self.layer.face_color[
+            face_color = self.layer.face_colors[
                 self.layer._indices_view[self.layer._highlight_index]
             ]
         else:

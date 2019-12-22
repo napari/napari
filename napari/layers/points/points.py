@@ -8,11 +8,12 @@ import numpy as np
 
 from ..base import Layer
 from ...utils.event import Event
-from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
-from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
-from napari.utils.color.standardize_color import transform_color, hex_to_name
+from napari.utils.colormaps.standardize_color import (
+    transform_color,
+    hex_to_name,
+)
 
 
 ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
