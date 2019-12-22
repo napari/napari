@@ -18,7 +18,7 @@ gui-build: clean
 	pyinstaller --clean napari.spec
 
 bundle: 
-	sh ./bundle/build.sh
+	bash ./bundle/build.sh
 
 clean:
 	rm -rf $(CLEANFILES)
