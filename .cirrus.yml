@@ -247,7 +247,7 @@ bundle_linux_task:
     DISPLAY: ":99"
   system_script:
     - apt-get update
-    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
+    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm libzmq3-dev
   conda_script:
     - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
     - bash install.sh -b -p $HOME/conda
