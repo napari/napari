@@ -302,7 +302,8 @@ bundle_windows_task:
 
   choco_script:
     - choco install -y innosetup
-    - dir %ProgramFiles%
+    - set PATH="C:\Program Files (x86)\Inno Setup 6";%PATH%
+    - echo %PATH%
     - iscc .\bundle\create_win_installer.iss /OOutput
     - dir
     
