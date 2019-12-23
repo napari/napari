@@ -117,7 +117,9 @@ class QtViewerDockWidget(QDockWidget):
                 )
         return self.size().height() > self.size().width()
 
-    def _on_visibility_changed(self):
+    def _on_visibility_changed(self, visible):
+        if not visible:
+            return
         with qt_signals_blocked(self):
             self.setTitleBarWidget(None)
             if not self.isFloating():
