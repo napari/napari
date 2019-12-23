@@ -15,3 +15,4 @@ def test_sys_info():
 
 def test_citation_text():
     assert isinstance(citation_text, str)
+    assert 'doi' in citation_text
