@@ -303,11 +303,6 @@ bundle_windows_task:
   choco_script:
     - choco install -y innosetup
     - set PATH="C:\Program Files (x86)\Inno Setup 6";%PATH%
-    - echo %PATH%
-    - iscc .\bundle\create_win_installer.iss /OOutput
-    - dir
-    
-  conda_script:
     - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
     - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda update -yn base conda
@@ -321,7 +316,9 @@ bundle_windows_task:
 
   bundle_script:
     - call .\bundle\build.bat
+    - iscc .\bundle\create_win_installer.iss /OOutput
+    - dir Output
     # - powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('dist\napari', 'napari.zip'); }"
 
   napari_artifacts:
-    path: dist/napari/*
+    path: Output/napari_installer.exe
