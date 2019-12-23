@@ -6,7 +6,13 @@ import napari
 
 
 def sys_info(as_html=False):
-    """Gathers relevant module versions for troubleshooting purposes"""
+    """Gathers relevant module versions for troubleshooting purposes.
+
+    Parameters
+    ----------
+    as_html : bool
+        if True, info will be returned as HTML, suitable for a QTextEdit widget
+    """
 
     sys_version = sys.version.replace('\n', ' ')
     text = (
