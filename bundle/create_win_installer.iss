@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define AppName "napari"
-#define AppVersion "0.0.0"
+#define AppVersion GetFileVersion('..\dist\napari\napari.exe')
 #define AppPublisher "napari"
 #define AppURL "https://napari.org/"
 #define AppExeName "napari.exe"
@@ -18,13 +18,18 @@ AppPublisher={#AppPublisher}
 AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}
 AppUpdatesURL={#AppURL}
-DefaultDirName={pf}\{#AppName}
+DefaultDirName={commonpf64}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 LicenseFile="..\LICENSE"
+OutputDir="..\dist\"
 OutputBaseFilename={#AppName}_installer
 Compression=lzma
 SolidCompression=yes
+UninstallDisplayIcon={app}\{#AppExeName},1
+WizardImageFile=".\images\wizardImage_*.bmp"
+WizardSmallImageFile=".\images\wizardSmallImage.bmp"
+
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
