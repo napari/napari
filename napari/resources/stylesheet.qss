@@ -98,16 +98,10 @@ QtAboutKeybindings {
   min-height: 605px;
 }
 
-QDialog#QtAbout {
-  min-width: 650px;
-  min-height: 320px;
-  max-height: 320px;
-}
-
 QtAbout > QTextEdit{
   margin: 0px;
   border: 0px;
-  padding: 0px;
+  padding: 2px;
 }
 
 QtAbout > QLabel {
