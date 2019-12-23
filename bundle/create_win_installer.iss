@@ -21,7 +21,7 @@ AppUpdatesURL={#AppURL}
 DefaultDirName={pf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
-LicenseFile=.\LICENSE
+LicenseFile="..\LICENSE"
 OutputBaseFilename={#AppName}_installer
 Compression=lzma
 SolidCompression=yes
@@ -30,8 +30,8 @@ SolidCompression=yes
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: ".\dist\{#AppName}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: ".\dist\{#AppName}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\{#AppName}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\{#AppName}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
