@@ -13,8 +13,8 @@ from ._constants import Symbol, SYMBOL_ALIAS, Mode
 from napari.utils.colormaps.standardize_color import (
     transform_color,
     hex_to_name,
+    get_color_namelist,
 )
-from napari._vispy.utils import get_color_namelist
 
 
 ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
@@ -37,9 +37,9 @@ class Points(Layer):
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
+    edge_color : str, array-like, vispy.color.Color, vispy.color.ColorArray
         Color of the point marker border.
-    face_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
+    face_color : str, array-like, vispy.color.Color, vispy.color.ColorArray
         Color of the point marker body.
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
@@ -72,10 +72,10 @@ class Points(Layer):
         selected point.
     edge_width : float
         Width of the marker edges in pixels for all points
-    edge_color : vispy.color.ColorArray
+    edge_color : str,
         Color of the marker edge for the next point to be added or the currently
         selected point.
-    face_color : vispy.color.ColorArray
+    face_color : str,
         Color of the marker body for the next point to be added or the currently
         selected point.
     edge_colors : vispy.color.ColorArray
@@ -419,9 +419,11 @@ class Points(Layer):
         self._selected_box = self.interaction_box(self._selected_view)
 
         # Update properties based on selected points
+        if len(self._selected_data) == 0:
+            return
         index = self._selected_data
         edge_colors = ColorArray(
-            np.unique(self.edge_colors[index].rgba, axis=0)
+            np.unique(self.edge_colors.rgba[index], axis=0)
         )
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
@@ -429,7 +431,7 @@ class Points(Layer):
                 self.edge_color = edge_color
 
         face_colors = ColorArray(
-            np.unique(self.face_colors[index].rgba, axis=0)
+            np.unique(self.face_colors.rgba[index], axis=0)
         )
         if len(face_colors) == 1:
             face_color = face_colors[0]

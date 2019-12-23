@@ -1,7 +1,7 @@
 import types
 
 import numpy as np
-from vispy.color import Color, ColorArray, get_color_dict
+from vispy.color import Color, ColorArray, get_color_dict, get_color_names
 
 
 def transform_color(colors) -> ColorArray:
@@ -79,6 +79,16 @@ def _convert_color_hex_to_name():
     """
     colordict = get_color_dict()
     return {v.lower(): k for k, v in colordict.items()}
+
+
+def get_color_namelist():
+    """A simple wrapper around vispy's get_color_names. It also adds the
+    'transparent' color to that list. Once https://github.com/vispy/vispy/pull/1794
+    is merged this function is no longer necessary.
+    """
+    names = get_color_names()
+    names.append("transparent")
+    return names
 
 
 hex_to_name = _convert_color_hex_to_name()

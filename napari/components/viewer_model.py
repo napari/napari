@@ -13,7 +13,6 @@ from ..utils.keybindings import KeymapMixin
 from ..utils.theme import palettes
 from ..utils.misc import ensure_iterable, is_iterable
 from ..utils import io
-from ..utils.colormaps.standardize_color import transform_color
 
 
 class ViewerModel(KeymapMixin):
@@ -654,8 +653,8 @@ class ViewerModel(KeymapMixin):
             symbol=symbol,
             size=size,
             edge_width=edge_width,
-            edge_color=transform_color(edge_color),
-            face_color=transform_color(face_color),
+            edge_color=edge_color,
+            face_color=face_color,
             n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,

@@ -1,5 +1,4 @@
 from .viewer import Viewer
-from .utils.colormaps.standardize_color import transform_color
 
 
 def view_image(
@@ -222,8 +221,8 @@ def view_points(
         symbol=symbol,
         size=size,
         edge_width=edge_width,
-        edge_color=transform_color(edge_color),
-        face_color=transform_color(face_color),
+        edge_color=edge_color,
+        face_color=face_color,
         n_dimensional=n_dimensional,
         name=name,
         metadata=metadata,
