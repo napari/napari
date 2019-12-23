@@ -1,3 +1,5 @@
+from vispy.color import get_color_names
+
 from ..layers import Image, Labels, Points, Shapes, Surface, Vectors
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
@@ -32,3 +34,13 @@ def create_vispy_visual(layer):
     visual = layer_to_visual[type(layer)](layer)
 
     return visual
+
+
+def get_color_namelist():
+    """A simple wrapper around vispy's get_color_names. It also adds the
+    'transparent' color to that list. Once https://github.com/vispy/vispy/pull/1794
+    is merged this function is no longer necessary.
+    """
+    names = get_color_names()
+    names.append("transparent")
+    return names

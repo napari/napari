@@ -3,7 +3,6 @@ import itertools
 from xml.etree.ElementTree import Element, tostring
 
 import numpy as np
-from vispy.color import ColorArray
 
 from .dims import Dims
 from .layerlist import LayerList
@@ -14,6 +13,7 @@ from ..utils.keybindings import KeymapMixin
 from ..utils.theme import palettes
 from ..utils.misc import ensure_iterable, is_iterable
 from ..utils import io
+from ..utils.colormaps.standardize_color import transform_color
 
 
 class ViewerModel(KeymapMixin):
@@ -584,8 +584,8 @@ class ViewerModel(KeymapMixin):
         symbol='o',
         size=10,
         edge_width=1,
-        edge_color=ColorArray("black"),
-        face_color=ColorArray("white"),
+        edge_color="black",
+        face_color="white",
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -611,9 +611,9 @@ class ViewerModel(KeymapMixin):
             broadcastable to the same shape as the data.
         edge_width : float
             Width of the symbol edge in pixels.
-        edge_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
+        edge_color : str, array-like, vispy.color.Color, vispy.color.ColorArray
             Color of the point marker border.
-        face_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
+        face_color : str, array-like, vispy.color.Color, vispy.color.ColorArray
             Color of the point marker body.
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
@@ -654,8 +654,8 @@ class ViewerModel(KeymapMixin):
             symbol=symbol,
             size=size,
             edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
+            edge_color=transform_color(edge_color),
+            face_color=transform_color(face_color),
             n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,

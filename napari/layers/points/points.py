@@ -3,7 +3,7 @@ import warnings
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
 
-from vispy.color import get_color_names, Color, ColorArray
+from vispy.color import Color, ColorArray
 import numpy as np
 
 from ..base import Layer
@@ -14,6 +14,7 @@ from napari.utils.colormaps.standardize_color import (
     transform_color,
     hex_to_name,
 )
+from napari._vispy.utils import get_color_namelist
 
 
 ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
@@ -130,8 +131,8 @@ class Points(Layer):
         symbol='o',
         size=10,
         edge_width=1,
-        edge_color=ColorArray('black'),
-        face_color=ColorArray('white'),
+        edge_color='black',
+        face_color='white',
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -167,8 +168,7 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
         )
-        self._colors = get_color_names()
-        self._colors.append("transparent")
+        self._colors = get_color_namelist()
 
         # Save the point coordinates
         self._data = data
@@ -420,13 +420,17 @@ class Points(Layer):
 
         # Update properties based on selected points
         index = self._selected_data
-        edge_colors = ColorArray(np.unique(self.edge_colors.rgba, axis=0))
+        edge_colors = ColorArray(
+            np.unique(self.edge_colors[index].rgba, axis=0)
+        )
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
                 self.edge_color = edge_color
 
-        face_colors = ColorArray(np.unique(self.face_colors.rgba, axis=0))
+        face_colors = ColorArray(
+            np.unique(self.face_colors[index].rgba, axis=0)
+        )
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
@@ -942,7 +946,7 @@ class Points(Layer):
         Parameters
         --------
         color : ColorType
-            The user's input after being normalized by self.transform_color
+            The user's input after being normalized by self._transform_color
 
         Returns
         -----

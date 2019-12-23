@@ -84,6 +84,9 @@ two_color_options = [
     ColorArray(np.array([GREEN, RED])),
 ]
 
+# Some of the options below are commented out. When the bugs with
+# vispy described above are resolved, we can uncomment the lines
+# below as well.
 two_colors_simple = [
     ['red', 'green'],
     ['g', 'g'],

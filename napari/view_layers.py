@@ -1,6 +1,5 @@
-from vispy.color import ColorArray
-
 from .viewer import Viewer
+from .utils.colormaps.standardize_color import transform_color
 
 
 def view_image(
@@ -140,8 +139,8 @@ def view_points(
     symbol='o',
     size=10,
     edge_width=1,
-    edge_color=ColorArray("black"),
-    face_color=ColorArray("white"),
+    edge_color="black",
+    face_color="white",
     n_dimensional=False,
     name=None,
     metadata=None,
@@ -171,9 +170,9 @@ def view_points(
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
+    edge_color : str, array-like, vispy.color.Color, vispy.color.ColorArray
         Color of the point marker border.
-    face_color : array-like, vispy.color.Color, vispy.color.ColorArray, str
+    face_color : str, array-like, vispy.color.Color, vispy.color.ColorArray
         Color of the point marker body.
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
@@ -223,8 +222,8 @@ def view_points(
         symbol=symbol,
         size=size,
         edge_width=edge_width,
-        edge_color=edge_color,
-        face_color=face_color,
+        edge_color=transform_color(edge_color),
+        face_color=transform_color(face_color),
         n_dimensional=n_dimensional,
         name=name,
         metadata=metadata,
