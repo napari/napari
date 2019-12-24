@@ -1,9 +1,11 @@
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QLabel,
     QComboBox,
     QSlider,
     QCheckBox,
+    QLineEdit,
     QButtonGroup,
     QRadioButton,
     QPushButton,
@@ -12,7 +14,30 @@ from qtpy.QtWidgets import (
 )
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
+from ..qt_color_dialog import QColorPopup
 from ...layers.points._constants import Mode, Symbol
+
+
+class QColorFrame(QFrame):
+    def __init__(self, parent=None, tooltip=None):
+        super().__init__(parent)
+        self.setObjectName('swatch')
+        if tooltip:
+            self.setToolTip(tooltip)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            popup = QColorPopup(self)
+            popup.colorSelected.connect(self.setColor)
+            popup.show_right_of_mouse()
+
+    def setColor(self, color):
+        print(color)
+        if isinstance(color, QColor):
+            # change to hex
+            color = color.name()
+        self.setStyleSheet('#swatch { background-color: ' + color + '}')
+        self._color = color
 
 
 class QtPointsControls(QtLayerControls):
@@ -37,17 +62,24 @@ class QtPointsControls(QtLayerControls):
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.sizeSlider = sld
 
-        face_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            face_comboBox.addItem(c)
-        face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.changeFaceColor(text)
+        # face_comboBox = QComboBox()
+        # colors = self.layer._colors
+        # for c in colors:
+        #     face_comboBox.addItem(c)
+        # face_comboBox.activated[str].connect(
+        #     lambda text=face_comboBox: self.changeFaceColor(text)
+        # )
+        # self.faceComboBox = face_comboBox
+        # self.faceColorSwatch = QFrame()
+        # self.faceColorSwatch.setObjectName('swatch')
+        # self.faceColorSwatch.setToolTip('Face color swatch')
+
+        face_lineEdit = QLineEdit()
+        face_lineEdit.editingFinished.connect(
+            lambda: self.changeFaceColor(face_lineEdit.text())
         )
-        self.faceComboBox = face_comboBox
-        self.faceColorSwatch = QFrame()
-        self.faceColorSwatch.setObjectName('swatch')
-        self.faceColorSwatch.setToolTip('Face color swatch')
+        self.faceComboBox = face_lineEdit
+        self.faceColorSwatch = QColorFrame(tooltip='Face color swatch')
         self._on_face_color_change(None)
 
         edge_comboBox = QComboBox()
@@ -182,13 +214,13 @@ class QtPointsControls(QtLayerControls):
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event):
-        with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(
-                self.layer.face_color, Qt.MatchFixedString
-            )
-            self.faceComboBox.setCurrentIndex(index)
+        # with self.layer.events.face_color.blocker():
+        #     index = self.faceComboBox.findText(
+        #         self.layer.face_color, Qt.MatchFixedString
+        #     )
+        #     self.faceComboBox.setCurrentIndex(index)
         color = Color(self.layer.face_color).hex
-        self.faceColorSwatch.setStyleSheet("background-color: " + color)
+        self.faceColorSwatch.setColor(color)
 
     def _on_editable_change(self, event):
         self.select_button.setEnabled(self.layer.editable)
