@@ -37,7 +37,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             # Offseting so pixels now centered
             vertices = self.layer._data_view[:, ::-1] + 0.5
             faces = self.layer._view_faces
-            vertex_values = self.layer.vertex_values
+            vertex_values = self.layer._view_vertex_values
 
         if (
             vertices is not None

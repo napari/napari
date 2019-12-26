@@ -18,8 +18,9 @@ class Surface(Layer):
     data : 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (N, ) array of
-        values used to color vertices.
+        of the mesh triangles. The third element is the (N, K0, ..., KL)
+        array of values used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -55,13 +56,14 @@ class Surface(Layer):
     data : 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (N, ) array of
-        values used to color vertices.
+        of the mesh triangles. The third element is the (N, K0, ..., KL)
+        array of values used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values.
     vertices : (N, D) array
         Vertices of mesh triangles.
     faces : (M, 3) array of int
         Indices of mesh triangles.
-    vertex_values : (N,) array
+    vertex_values : (N, K0, ..., KL) array
         Values used to color vertices.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
@@ -143,6 +145,7 @@ class Surface(Layer):
         # Data containing vectors in the currently viewed slice
         self._data_view = np.zeros((0, self.dims.ndisplay))
         self._view_faces = np.zeros((0, 3))
+        self._view_vertex_values = []
 
         # assign mesh data and establish default behavior
         self._vertices = data[0]
@@ -198,7 +201,7 @@ class Surface(Layer):
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
-        return self.vertices.shape[1]
+        return self.vertices.shape[1] + (self.vertex_values.ndim - 1)
 
     def _get_extent(self):
         """Determine ranges for slicing given by (min, max, step)."""
@@ -208,6 +211,10 @@ class Surface(Layer):
         else:
             maxs = np.max(self.vertices, axis=0)
             mins = np.min(self.vertices, axis=0)
+
+        if self.vertex_values.ndim > 1:
+            mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
+            maxs = list(self.vertex_values.shape[1:]) + list(maxs)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -285,6 +292,25 @@ class Surface(Layer):
         not_disp = list(self.dims.not_displayed)
         disp = list(self.dims.displayed)
         indices = np.array(self.dims.indices)
+
+        # Take vertex_values dimensionality into account.
+        # Note that displayed dimensions corresponding to vertex_values will be
+        # ignored from the display and averaged over to get the used values
+        if self.vertex_values.ndim > 1:
+            disp_adj = np.subtract(disp, self.vertex_values.ndim - 1)
+            disp = [d for d in disp_adj if d >= 0]
+            not_disp_adj = np.subtract(not_disp, self.vertex_values.ndim - 1)
+            not_disp = [d for d in not_disp_adj if d >= 0]
+            indices_vv = (slice(None),) + tuple(
+                indices[: -self.vertices.shape[1]]
+            )
+            indices = indices[-self.vertices.shape[1] :]
+            values = self.vertex_values[indices_vv]
+            if values.ndim > 1:
+                values = values.mean(axis=tuple(range(1, values.ndim)))
+            self._view_vertex_values = values
+        else:
+            self._view_vertex_values = self.vertex_values
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
