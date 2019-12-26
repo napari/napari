@@ -315,7 +315,7 @@ class Surface(Layer):
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
-        elif self.ndim > self.dims.ndisplay:
+        elif self.vertices.shape[1] > self.dims.ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
