@@ -27,7 +27,7 @@ class QColorFrame(QFrame):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            popup = QColorPopup(self)
+            popup = QColorPopup(self, self._color)
             popup.colorSelected.connect(self.setColor)
             popup.show_right_of_mouse()
 
