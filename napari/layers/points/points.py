@@ -389,7 +389,7 @@ class Points(Layer):
     def face_color(self) -> str:
         """Face color of marker for the next added point."""
         return hex_to_name.get(
-            self._face_color.hex[0], self._edge_color.hex[0]
+            self._face_color.hex[0], self._face_color.hex[0]
         )
 
     @face_color.setter
