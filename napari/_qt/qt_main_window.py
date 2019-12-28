@@ -9,6 +9,7 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
+from .qt_settings import SETTINGS
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
@@ -99,6 +100,7 @@ class Window:
 
         if show:
             self.show()
+        self.restoreState()
 
     def _add_menubar(self):
         self.main_menu = self._qt_window.menuBar()
@@ -329,6 +331,10 @@ class Window:
         img = self._qt_window.grab().toImage()
         return QImg2array(img)
 
+    def restoreState(self):
+        self._qt_window.restoreState(SETTINGS.value('mainWindow/state'))
+        self._qt_window.restoreGeometry(SETTINGS.value('mainWindow/geometry'))
+
     def closeEvent(self, event):
         # Forward close event to the console to trigger proper shutdown
         self.qt_viewer.console.shutdown()
@@ -336,4 +342,9 @@ class Window:
         # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
         # (calling stop() when no animation is occuring is also not a problem)
         self.qt_viewer.dims.stop()
+        SETTINGS.setValue('mainWindow/state', self._qt_window.saveState())
+        SETTINGS.setValue(
+            'mainWindow/geometry', self._qt_window.saveGeometry()
+        )
+        SETTINGS.sync()
         event.accept()
