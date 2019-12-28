@@ -3,15 +3,13 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 # set vispy to use same backend as qtpy
-import os
-
 from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
-from .qt_settings import SETTINGS
+from .qt_settings import SETTINGS, PreferencesWindow, RESTORE_GEOMETRY
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import resources_dir
+from ..resources import stylesheet
 
 app.use_app(API_NAME)
 del app
@@ -49,9 +47,6 @@ class Window:
     qt_viewer : QtViewer
         Contained viewer widget.
     """
-
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
 
     def __init__(self, qt_viewer, *, show=True):
 
@@ -100,7 +95,8 @@ class Window:
 
         if show:
             self.show()
-        self.restoreState()
+        if SETTINGS.value(RESTORE_GEOMETRY.key, True):
+            self.restoreState()
 
     def _add_menubar(self):
         self.main_menu = self._qt_window.menuBar()
@@ -145,9 +141,14 @@ class Window:
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
+        open_preferences = QAction('Preferences...', self._qt_window)
+        open_preferences.setShortcut('Ctrl-,')
+        open_preferences.triggered.connect(self.show_preferences)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addAction(open_preferences)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
@@ -302,7 +303,7 @@ class Window:
         self._qt_center.setStyleSheet(
             template('QWidget { background: {{ background }}; }', **palette)
         )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
+        self._qt_window.setStyleSheet(template(stylesheet, **palette))
 
     def _status_changed(self, event):
         """Update status bar.
@@ -330,6 +331,12 @@ class Window:
         """
         img = self._qt_window.grab().toImage()
         return QImg2array(img)
+
+    def show_preferences(self):
+        win = PreferencesWindow()
+        palette = self.qt_viewer.viewer.palette
+        win.setStyleSheet(template(win.stylesheet, **palette))
+        win.exec_()
 
     def restoreState(self):
         self._qt_window.restoreState(SETTINGS.value('mainWindow/state'))

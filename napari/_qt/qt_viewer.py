@@ -14,7 +14,7 @@ from vispy.app import use_app
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
-from ..resources import resources_dir
+from ..resources import stylesheet
 from ..utils.theme import template
 from ..utils.misc import str_to_rgb
 from ..utils.interactions import (
@@ -39,9 +39,6 @@ use_app(API_NAME)
 
 
 class QtViewer(QSplitter):
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
-
     def __init__(self, viewer):
         super().__init__()
 
@@ -302,7 +299,7 @@ class QtViewer(QSplitter):
 
     def _update_palette(self, palette):
         # template and apply the primary stylesheet
-        themed_stylesheet = template(self.raw_stylesheet, **palette)
+        themed_stylesheet = template(stylesheet, **palette)
         self.console.style_sheet = themed_stylesheet
         self.console.syntax_style = palette['syntax_style']
         bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
