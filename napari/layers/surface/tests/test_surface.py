@@ -86,8 +86,8 @@ def test_random_3D_multitimeseries_surface():
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
-    assert layer.shape[0] == 22
-    assert layer.shape[1] == 16
+    assert layer.shape[0] == 16
+    assert layer.shape[1] == 22
 
     layer.dims.ndisplay = 3
     assert layer._data_view.shape[1] == 3
