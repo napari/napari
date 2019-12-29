@@ -46,6 +46,7 @@ class ViewerModel(KeymapMixin):
     """
 
     themes = palettes
+    default_theme = list(palettes.keys())[0]
 
     def __init__(
         self, title='napari', ndisplay=2, order=None, axis_labels=None
@@ -84,14 +85,14 @@ class ViewerModel(KeymapMixin):
         self.grid_stride = 1
 
         self._palette = None
-        theme_key = "mainWindow/theme"
-        self.theme = str(SETTINGS.get(theme_key, 'dark'))
+        self.theme_key = "mainWindow/theme"
         SETTINGS.register_setting(
-            theme_key,
+            self.theme_key,
             ThemeEnum.DARK,
             "Theme",
             callback=lambda x: __class__.theme.fset(self, x),
         )
+        self.theme = SETTINGS.get(self.theme_key, self.default_theme)
 
         self.dims.events.camera.connect(lambda e: self.reset_view())
         self.dims.events.ndisplay.connect(lambda e: self._update_layers())
@@ -140,13 +141,18 @@ class ViewerModel(KeymapMixin):
         if theme == self.theme:
             return
 
-        try:
-            self.palette = self.themes[str(theme)]
-        except KeyError:
-            raise ValueError(
-                f"Theme '{theme}' not found; "
-                f"options are {list(self.themes)}."
+        theme = str(theme)
+        if theme not in self.themes:
+            import warnings
+
+            warnings.warn(
+                f"Theme '{theme}' not found; options are {list(self.themes)}."
             )
+            theme = self.default_theme
+
+        self.palette = self.themes[theme]
+        with self.events.palette.blocker():
+            SETTINGS[self.theme_key] = theme
 
     @property
     def grid_size(self):
