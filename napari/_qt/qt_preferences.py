@@ -62,7 +62,7 @@ class PreferencesWindow(QDialog):
         }
 
         #preferencesWindow > QLabel {
-            color: #CCC;
+            color: {{ text }};
         }
 
         #preferencesWindow > #title {

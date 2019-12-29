@@ -339,6 +339,13 @@ class Window:
         win = PreferencesWindow()
         palette = self.qt_viewer.viewer.palette
         win.setStyleSheet(template(win.stylesheet, **palette))
+
+        self.qt_viewer.viewer.events.palette.connect(
+            lambda event: win.setStyleSheet(
+                template(win.stylesheet, **event.palette)
+            )
+        )
+
         win.exec_()
 
     def restoreState(self):

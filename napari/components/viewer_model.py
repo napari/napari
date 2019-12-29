@@ -84,13 +84,14 @@ class ViewerModel(KeymapMixin):
         self.grid_stride = 1
 
         self._palette = None
-        self.theme = 'dark'
+        theme_key = "mainWindow/theme"
+        self.theme = str(SETTINGS.get(theme_key, 'dark'))
 
         def set_theme(value):
             self.theme = str(value)
 
         SETTINGS.register_setting(
-            "mainWindow/theme", ThemeEnum.DARK, "Theme", callback=set_theme
+            theme_key, ThemeEnum.DARK, "Theme", callback=set_theme
         )
 
         self.dims.events.camera.connect(lambda e: self.reset_view())
