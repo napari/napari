@@ -86,12 +86,11 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         theme_key = "mainWindow/theme"
         self.theme = str(SETTINGS.get(theme_key, 'dark'))
-
-        def set_theme(value):
-            self.theme = str(value)
-
         SETTINGS.register_setting(
-            theme_key, ThemeEnum.DARK, "Theme", callback=set_theme
+            theme_key,
+            ThemeEnum.DARK,
+            "Theme",
+            callback=lambda x: __class__.theme.fset(self, x),
         )
 
         self.dims.events.camera.connect(lambda e: self.reset_view())
@@ -142,7 +141,7 @@ class ViewerModel(KeymapMixin):
             return
 
         try:
-            self.palette = self.themes[theme]
+            self.palette = self.themes[str(theme)]
         except KeyError:
             raise ValueError(
                 f"Theme '{theme}' not found; "
