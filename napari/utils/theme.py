@@ -1,3 +1,6 @@
+from ..utils.misc import StringEnum
+
+
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
 
@@ -39,3 +42,6 @@ def template(css, **palette):
     for k, v in palette.items():
         css = css.replace('{{ %s }}' % k, v)
     return css
+
+
+ThemeEnum = StringEnum('ThemeEnum', [k.upper() for k in palettes.keys()])

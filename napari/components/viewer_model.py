@@ -12,6 +12,8 @@ from ..utils.keybindings import KeymapMixin
 from ..utils.theme import palettes
 from ..utils.misc import ensure_iterable, is_iterable
 from ..utils import io
+from ..utils.theme import ThemeEnum
+from ..settings import SETTINGS
 
 
 class ViewerModel(KeymapMixin):
@@ -83,6 +85,13 @@ class ViewerModel(KeymapMixin):
 
         self._palette = None
         self.theme = 'dark'
+
+        def set_theme(value):
+            self.theme = str(value)
+
+        SETTINGS.register_setting(
+            "mainWindow/theme", ThemeEnum.DARK, "Theme", callback=set_theme
+        )
 
         self.dims.events.camera.connect(lambda e: self.reset_view())
         self.dims.events.ndisplay.connect(lambda e: self._update_layers())
