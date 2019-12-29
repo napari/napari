@@ -869,7 +869,7 @@ class ViewerModel(KeymapMixin):
         data : 3-tuple of array
             The first element of the tuple is an (N, D) array of vertices of
             mesh triangles. The second is an (M, 3) array of int of indices
-            of the mesh triangles. The third element is the (N, K0, ..., KL)
+            of the mesh triangles. The third element is the (K0, ..., KL, N)
             array of values used to color vertices where the additional L
             dimensions are used to color the same mesh with different values.
         colormap : str, vispy.Color.Colormap, tuple, dict

@@ -18,7 +18,7 @@ class Surface(Layer):
     data : 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (N, K0, ..., KL)
+        of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
     colormap : str, vispy.Color.Colormap, tuple, dict
@@ -56,14 +56,14 @@ class Surface(Layer):
     data : 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (N, K0, ..., KL)
+        of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
     vertices : (N, D) array
         Vertices of mesh triangles.
     faces : (M, 3) array of int
         Indices of mesh triangles.
-    vertex_values : (N, K0, ..., KL) array
+    vertex_values : (K0, ..., KL, N) array
         Values used to color vertices.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
@@ -214,7 +214,7 @@ class Surface(Layer):
 
         if self.vertex_values.ndim > 1:
             mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
-            maxs = list(self.vertex_values.shape[1:]) + list(maxs)
+            maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
@@ -289,28 +289,32 @@ class Surface(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        not_disp = list(self.dims.not_displayed)
-        disp = list(self.dims.displayed)
-        indices = np.array(self.dims.indices)
-
-        # Take vertex_values dimensionality into account.
-        # Note that displayed dimensions corresponding to vertex_values will be
-        # ignored from the display and averaged over to get the used values
+        # Take vertex_values dimensionality into account if more than one value
+        # is provided per vertex.
         if self.vertex_values.ndim > 1:
-            disp_adj = np.subtract(disp, self.vertex_values.ndim - 1)
-            disp = [d for d in disp_adj if d >= 0]
-            not_disp_adj = np.subtract(not_disp, self.vertex_values.ndim - 1)
-            not_disp = [d for d in not_disp_adj if d >= 0]
-            indices_vv = (slice(None),) + tuple(
-                indices[: -self.vertices.shape[1]]
-            )
-            indices = indices[-self.vertices.shape[1] :]
-            values = self.vertex_values[indices_vv]
+            values = self.vertex_values[
+                self.dims.indices[: -self.vertices.shape[1]]
+            ]
             if values.ndim > 1:
-                values = values.mean(axis=tuple(range(1, values.ndim)))
+                # If not all dimensions corresponding to the vertex_values
+                # are being sliced through, average over any remaining ones
+                # so that there is always only value per vertex.
+                values = values.mean(axis=tuple(range(0, values.ndim - 1)))
             self._view_vertex_values = values
+            # Determine which axes of the vertices data are being displayed
+            # and not displayed, but ignoring the additional dimensions
+            # corresponding to the vertex_values.
+            indices = np.array(self.dims.indices[-self.vertices.shape[1] :])
+            additional_ndim = self.vertex_values.ndim - 1
+            disp = np.subtract(self.dims.displayed, additional_ndim)
+            disp = [d for d in disp if d >= 0]
+            not_disp = np.subtract(self.dims.not_displayed, additional_ndim)
+            not_disp = [d for d in not_disp if d >= 0]
         else:
             self._view_vertex_values = self.vertex_values
+            indices = np.array(self.dims.indices)
+            not_disp = list(self.dims.not_displayed)
+            disp = list(self.dims.displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:

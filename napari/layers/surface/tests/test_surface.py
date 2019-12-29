@@ -60,7 +60,7 @@ def test_random_3D_timeseries_surface():
     np.random.seed(0)
     vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
-    values = np.random.random((10, 22))
+    values = np.random.random((22, 10))
     data = (vertices, faces, values)
     layer = Surface(data)
     assert layer.ndim == 4
@@ -79,7 +79,7 @@ def test_random_3D_multitimeseries_surface():
     np.random.seed(0)
     vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
-    values = np.random.random((10, 22, 16))
+    values = np.random.random((16, 22, 10))
     data = (vertices, faces, values)
     layer = Surface(data)
     assert layer.ndim == 5
