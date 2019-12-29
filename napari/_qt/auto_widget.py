@@ -56,7 +56,7 @@ class TupleWidgetFrame(QFrame):
             self._setters[i](v)
 
 
-def val_to_widget(val):
+def val_to_widget(val, dtype=None):
     """generate a widget that works for a given value type.
 
     Returns a tuple:
@@ -65,7 +65,7 @@ def val_to_widget(val):
         getter: the getter function to retrieve the object value
         setter: the setter function to set the object value
     """
-    dtype = type(val)
+    dtype = dtype if dtype is not None else type(val)
     if dtype == bool:
         widg = QCheckBox()
         widg.setChecked(val)

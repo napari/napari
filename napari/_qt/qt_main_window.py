@@ -7,9 +7,12 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
-from .qt_settings import SETTINGS, PreferencesWindow, RESTORE_GEOMETRY
+from .qt_settings import PreferencesWindow
+from ..settings import SETTINGS, RESTORE_GEOMETRY
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import stylesheet
+from .utils import qbytearray_to_str, str_to_qbytearray, is_qbyte
+
 
 app.use_app(API_NAME)
 del app
@@ -339,8 +342,17 @@ class Window:
         win.exec_()
 
     def restoreState(self):
-        self._qt_window.restoreState(SETTINGS.value('mainWindow/state'))
-        self._qt_window.restoreGeometry(SETTINGS.value('mainWindow/geometry'))
+        state = SETTINGS.value('mainWindow/state')
+        if state:
+            if is_qbyte(state):
+                state = str_to_qbytearray(state)
+            self._qt_window.restoreState(state)
+
+        geometry = SETTINGS.value('mainWindow/geometry')
+        if geometry:
+            if is_qbyte(geometry):
+                geometry = str_to_qbytearray(geometry)
+            self._qt_window.restoreGeometry(geometry)
 
     def closeEvent(self, event):
         # Forward close event to the console to trigger proper shutdown
@@ -349,9 +361,9 @@ class Window:
         # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
         # (calling stop() when no animation is occuring is also not a problem)
         self.qt_viewer.dims.stop()
-        SETTINGS.setValue('mainWindow/state', self._qt_window.saveState())
-        SETTINGS.setValue(
-            'mainWindow/geometry', self._qt_window.saveGeometry()
-        )
+        state = qbytearray_to_str(self._qt_window.saveState())
+        geometry = qbytearray_to_str(self._qt_window.saveGeometry())
+        SETTINGS.setValue('mainWindow/state', state)
+        SETTINGS.setValue('mainWindow/geometry', geometry)
         SETTINGS.sync()
         event.accept()

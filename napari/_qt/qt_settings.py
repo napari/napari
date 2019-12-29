@@ -1,26 +1,8 @@
-import sys
-from collections import namedtuple
-
-from qtpy.QtCore import QSettings, Signal
-from qtpy.QtWidgets import QDialog, QGridLayout, QLabel
+from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QDialog, QGridLayout, QLabel, QCheckBox
 
 from .auto_widget import val_to_widget
-
-SETTINGS = QSettings('napari', 'napari')
-
-SetTup = namedtuple("Setting", ["key", "default", "description"])
-
-RESTORE_GEOMETRY = SetTup(
-    "prefs/restore_geometry",
-    True,
-    "Preserve window size/position across sessions",
-)
-
-this = sys.modules[__name__]
-OPTIONS = {k: v for k, v in this.__dict__.items() if isinstance(v, SetTup)}
-for settup in OPTIONS.values():
-    if not SETTINGS.contains(settup.key):
-        SETTINGS.setValue(settup.key, settup.default)
+from ..settings import SETTINGS
 
 
 class ClickableLabel(QLabel):
@@ -39,17 +21,22 @@ class PreferencesWindow(QDialog):
         title.setObjectName("title")
 
         self.layout().addWidget(title, 0, 0, 1, 2)
-        for i, settup in enumerate(OPTIONS.values()):
-            val = bool(SETTINGS.value(settup.key))
-            stuff = val_to_widget(val)
+        for i, (key, info) in enumerate(SETTINGS._registered.items()):
+            val = SETTINGS.value(key)
+            stuff = val_to_widget(val, dtype=info['type'])
             if not stuff:
                 continue
-            widg, signal, getter, dtype = stuff
-            signal.connect(self.set_param(settup.key, getter, type(val)))
-            label = ClickableLabel(settup.description)
-            label.clicked.connect(widg.toggle)
-            self.layout().addWidget(widg, i + 1, 0)
-            self.layout().addWidget(label, i + 1, 1)
+            widg, signal, getter, setter = stuff
+            signal.connect(self.set_param(key, getter, info['type']))
+            label = ClickableLabel(info['description'])
+            if hasattr(widg, 'toggle'):
+                label.clicked.connect(widg.toggle)
+            if isinstance(widg, QCheckBox):
+                self.layout().addWidget(widg, i + 1, 0)
+                self.layout().addWidget(label, i + 1, 1)
+            else:
+                self.layout().addWidget(label, i + 1, 0)
+                self.layout().addWidget(widg, i + 1, 1)
             self.layout().setSpacing(16)
             self.layout().setContentsMargins(50, 25, 70, 40)
         self.layout().setColumnStretch(1, 1)

@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 import numpy as np
 from qtpy import API_NAME
-from qtpy.QtCore import QObject, QThread
+from qtpy.QtCore import QByteArray, QObject, QThread
 
 
 def QImg2array(img):
@@ -123,3 +123,18 @@ def qt_signals_blocked(obj):
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+QBYTE_FLAG = "!QBYTE_"
+
+
+def is_qbyte(string):
+    return isinstance(string, str) and string.startswith(QBYTE_FLAG)
+
+
+def qbytearray_to_str(qbyte):
+    return QBYTE_FLAG + qbyte.toBase64().data().decode()
+
+
+def str_to_qbytearray(string):
+    return QByteArray.fromBase64(string.lstrip(QBYTE_FLAG).encode())
