@@ -7,7 +7,7 @@ from qtpy import API_NAME
 from vispy import app
 
 from .qt_about import QtAbout
-from .qt_settings import PreferencesWindow
+from .qt_preferences import PreferencesWindow
 from ..settings import SETTINGS, RESTORE_GEOMETRY
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import stylesheet
