@@ -66,6 +66,9 @@ def val_to_widget(val, dtype=None):
         setter: the setter function to set the object value
     """
     dtype = dtype if dtype is not None else type(val)
+    if issubclass(dtype, Enum) and isinstance(val, str):
+        # make sure enum values are not strings
+        val = dtype(val)
     if dtype == bool:
         widg = QCheckBox()
         widg.setChecked(val)

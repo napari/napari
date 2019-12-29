@@ -1,30 +1,20 @@
-import json
 import os
 import sys
 from collections import abc, namedtuple
 
+from .utils.settings_formats.json import JSON_FORMAT
 from .vendored.appdirs import site_config_dir, user_config_dir
 
 # Read/Write funcs should accept a filename, Write funcs also take a dict
 
-SettingTuple = namedtuple("Setting", ["key", "default", "description"])
+_fields = ['key', 'default', 'description', 'type', 'callback']
+SettingTuple = namedtuple("Setting", _fields, defaults=(None,) * len(_fields))
 
 RESTORE_GEOMETRY = SettingTuple(
     "prefs/restore_geometry",
     True,
     "Preserve window size/position across sessions",
 )
-
-
-def read_json(filename):
-    with open(filename, 'r') as fp:
-        _json = json.load(fp)
-    return _json
-
-
-def write_json(filename, dct):
-    with open(filename, 'w') as fp:
-        json.dump(dct, fp)
 
 
 class ReprMixin:
@@ -92,7 +82,7 @@ class Settings(abc.MutableMapping, QSettingsMixin):
         orgname='napari',
         appname='napari',
         scope='user',
-        format=None,
+        format=JSON_FORMAT,
         autosync=True,
     ):
         """Settings object to hold general application preferences & options.
@@ -110,7 +100,7 @@ class Settings(abc.MutableMapping, QSettingsMixin):
             of the same system ('system') by default 'user'
         format : tuple, optional
             Custom (extension, readfunc, writefunc) for reading and writing
-            settings to and from disk.
+            settings to and from disk. by default JSON format
         autosync : bool, optional
             Whether to automatically sync to disk after set/delete operations,
             by default True
@@ -132,11 +122,7 @@ class Settings(abc.MutableMapping, QSettingsMixin):
         self.orgname = orgname
         self.appname = appname
         self.autosync = False
-
-        if format is None:
-            self.format = ("json", read_json, write_json)
-        else:
-            self.format = format
+        self.format = format
 
         self._current = {}
         self._registered = {}
@@ -199,6 +185,11 @@ class Settings(abc.MutableMapping, QSettingsMixin):
 
     def __setitem__(self, key, value):
         self._current[key] = value
+
+        cb = self._registered.get(key, {}).get('callback')
+        if callable(cb):
+            cb(value)
+
         if self.autosync:
             self.sync()
 
@@ -277,7 +268,7 @@ class Settings(abc.MutableMapping, QSettingsMixin):
                 pass
 
     def register_setting(
-        self, key, default, description, initial=None, dtype=None
+        self, key, default, description, dtype=None, callback=None
     ):
         """Register a key as a setting that can appear in the GUI preferences.
 
@@ -297,11 +288,12 @@ class Settings(abc.MutableMapping, QSettingsMixin):
             default value of this setting
         description : str
             description for this setting.
-        initial, optional
-            initial value, otherwise will be set to `default`
         dtype : type, optional
             Enforce a specific data type for this setting.
             by default type(default)
+        callback : callable, optional
+            if provided, will be called when the key is changed (with the new
+            value as the argument)
         """
         if (
             dtype is not None
@@ -312,15 +304,15 @@ class Settings(abc.MutableMapping, QSettingsMixin):
                 'cannot currently set dtype to a different type than default '
                 'value. Please raise an issue with a use case.'
             )
-        if key not in self:
-            self[key] = initial if initial is not None else default
-        elif initial is not None:
-            self[key] = initial
+        if callback is not None and not callable(callback):
+            raise TypeError("`callback` must be callable")
 
+        self.setdefault(key, default)
         self._registered[key] = {
             'default': default,
             'description': description,
             'type': type(default) if dtype is None else dtype,
+            'callback': callback,
         }
 
 
