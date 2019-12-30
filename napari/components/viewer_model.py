@@ -151,8 +151,7 @@ class ViewerModel(KeymapMixin):
             theme = self.default_theme
 
         self.palette = self.themes[theme]
-        with self.events.palette.blocker():
-            SETTINGS[self.theme_key] = theme
+        SETTINGS.__setitem__(self.theme_key, theme, callback=False)
 
     @property
     def grid_size(self):

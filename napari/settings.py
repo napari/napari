@@ -62,7 +62,11 @@ def validate_format(format):
         raise ValueError("`format` must have three items")
     ext, readfunc, writefunc = format
     if not isinstance(ext, str):
-        raise TypeError("The first item of `format` must be a string")
+        if not (callable(ext) and isinstance(ext(), str)):
+            raise TypeError(
+                "The first item of `format` must be a string or a "
+                "function that returns a string"
+            )
     if not callable(readfunc):
         raise TypeError(
             "The second item of `format` must be a callable "
@@ -175,20 +179,25 @@ class Settings(abc.MutableMapping, QSettingsMixin):
             dir = user_config_dir(self.appname, self.orgname)
         else:
             dir = site_config_dir(self.appname, self.orgname)
-        fname = f'prefs.{self.extension}'
-        return os.path.join(dir, fname)
+        ext = self.extension() if callable(self.extension) else self.extension
+        return os.path.join(dir, f'prefs.{ext}')
 
     def __getitem__(self, key):
         if isinstance(key, SettingTuple):
             key = key.key
         return self._current[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value, callback=True):
+        """Sets self[key] = value.
+
+        if bool(callback) is False, the callback function will not be called.
+        """
         self._current[key] = value
 
-        cb = self._registered.get(key, {}).get('callback')
-        if callable(cb):
-            cb(value)
+        if callback:
+            cb = self._registered.get(key, {}).get('callback')
+            if callable(cb):
+                cb(value)
 
         if self.autosync:
             self.sync()
