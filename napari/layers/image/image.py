@@ -11,7 +11,7 @@ from ..base import Layer
 from ..layer_utils import calc_data_range, increment_unnamed_colormap
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._constants import Rendering, Interpolation
+from ._constants import Rendering, Interpolation, ComplexRendering
 from ...utils.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 from .image_utils import get_pyramid_and_rgb
 
@@ -141,6 +141,7 @@ class Image(Layer):
         opacity=1,
         blending='translucent',
         visible=True,
+        complex_func='magnitude',
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -167,6 +168,7 @@ class Image(Layer):
             interpolation=Event,
             rendering=Event,
             iso_threshold=Event,
+            complex_func=Event,
         )
 
         # Set data
@@ -208,6 +210,7 @@ class Image(Layer):
         self.contrast_limits = self._contrast_limits
         self.interpolation = interpolation
         self.rendering = rendering
+        self.complex_func = complex_func
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -403,6 +406,40 @@ class Image(Layer):
         self._rendering = rendering
         self.events.rendering()
 
+    @property
+    def complex_func(self):
+        """Mode for converting complex values to real values for visualization.
+
+        * magnitude: uses np.abs
+        * phase: uses np.angle
+        * real: uses np.real
+        * imaginary: uses np.imag
+        """
+        return self._complex_func
+
+    @complex_func.setter
+    def complex_func(self, value):
+        if isinstance(value, str):
+            try:
+                value = getattr(ComplexRendering, value.upper())
+            except AttributeError:
+                opt = ComplexRendering.lower_members()
+                raise ValueError(
+                    f"string values for `complex_func` must be one of {opt}"
+                )
+        if not isinstance(value, ComplexRendering):
+            test_arr = np.ones(1).astype(np.complex)
+            if not (callable(value) and np.isrealobj(value(test_arr))):
+                raise ValueError(
+                    "The value for `complex_func` must be either a string or "
+                    "a callable function that accepts a complex array and "
+                    "returns a real array."
+                )
+
+        self._complex_func = value
+        self.events.complex_func()
+        self.refresh()
+
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
 
@@ -498,6 +535,8 @@ class Image(Layer):
         else:
             self._scale_view = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
+            if np.iscomplexobj(image):
+                image = self.complex_func(image)
             thumbnail = image
 
         if self.rgb and image.dtype.kind == 'f':

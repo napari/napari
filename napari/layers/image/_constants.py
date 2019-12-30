@@ -1,5 +1,7 @@
-from enum import auto
+from enum import auto, Enum
 from ...utils.misc import StringEnum
+import numpy as np
+from functools import partial
 
 
 class Interpolation(StringEnum):
@@ -47,3 +49,25 @@ class Rendering(StringEnum):
     ADDITIVE = auto()
     ISO = auto()
     MIP = auto()
+
+
+class ComplexRendering(Enum):
+    """Mode for visualizing complex values
+
+    * magnitude: uses np.abs
+    * phase: uses np.angle
+    * real: uses np.real
+    * imaginary: uses np.imag
+    """
+
+    MAGNITUDE = partial(np.abs)
+    PHASE = partial(np.angle)
+    REAL = partial(np.real)
+    IMAGINARY = partial(np.imag)
+
+    def __call__(self, *args):
+        return self.value(*args)
+
+    @classmethod
+    def lower_members(cls):
+        return list(map(str.lower, cls.__members__.keys()))
