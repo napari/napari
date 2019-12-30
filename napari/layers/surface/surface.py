@@ -301,10 +301,11 @@ class Surface(Layer):
             values_indices = self.dims.indices[:-vertex_ndim]
             values = self.vertex_values[values_indices]
             if values.ndim > 1:
-                # If not all dimensions corresponding to the vertex_values
-                # are being sliced through, average over any remaining ones
-                # so that there is always only value per vertex.
-                values = values.mean(axis=tuple(range(0, values.ndim - 1)))
+                raise ValueError(
+                    """Assigning multiple values per vertex after slicing is
+                    not allowed. All dimensions corresponding to vertex_values
+                    must be non-displayed dimensions."""
+                )
             self._view_vertex_values = values
             # Determine which axes of the vertices data are being displayed
             # and not displayed, ignoring the additional dimensions
