@@ -77,13 +77,13 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
     def contrast_limits_slider_changed(self, slidermin, slidermax):
-        valmin, valmax = self.layer._contrast_limits_range
+        valmin, valmax = self.layer.contrast_limits_range
         cmin = valmin + slidermin * (valmax - valmin)
         cmax = valmin + slidermax * (valmax - valmin)
         self.layer.contrast_limits = cmin, cmax
 
     def contrast_limits_slider_update(self):
-        valmin, valmax = self.layer._contrast_limits_range
+        valmin, valmax = self.layer.contrast_limits_range
         cmin, cmax = self.layer.contrast_limits
         slidermin = (cmin - valmin) / (valmax - valmin)
         slidermax = (cmax - valmin) / (valmax - valmin)
