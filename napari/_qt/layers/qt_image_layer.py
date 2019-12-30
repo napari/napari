@@ -1,4 +1,3 @@
-import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider
 
@@ -177,7 +176,7 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_iso_threhold_visbility()
 
     def _on_data_change(self, event):
-        if np.iscomplexobj(self.layer.data):
+        if self.layer.iscomplex:
             self.complexComboBox.show()
             self.complexLabel.show()
         else:

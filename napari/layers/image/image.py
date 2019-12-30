@@ -175,6 +175,10 @@ class Image(Layer):
         # Set data
         self.is_pyramid = is_pyramid
         self.rgb = rgb
+        self.iscomplex = (
+            np.iscomplexobj(data[0]) if is_pyramid else np.iscomplexobj[data]
+        )
+        self.complex_func = complex_func
         self._data = data
         self._data_pyramid = data_pyramid
         self._top_left = np.zeros(ndim, dtype=int)
@@ -208,7 +212,6 @@ class Image(Layer):
         self.contrast_limits = self._contrast_limits
         self.interpolation = interpolation
         self.rendering = rendering
-        self.complex_func = complex_func
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -218,7 +221,14 @@ class Image(Layer):
             input_data = self._data_pyramid[-1]
         else:
             input_data = self.data
+        if self.iscomplex:
+            input_data = self.complex_func(input_data)
         return calc_data_range(input_data)
+
+    def reset_contrast_range(self):
+        data_range = self._calc_data_range()
+        self.contrast_limits_range = data_range
+        self.contrast_limits = data_range
 
     @property
     def data(self):
@@ -232,6 +242,9 @@ class Image(Layer):
         )
         self.is_pyramid = is_pyramid
         self.rgb = rgb
+        self.iscomplex = (
+            np.iscomplexobj(data[0]) if is_pyramid else np.iscomplexobj[data]
+        )
         self._data = data
         self._data_pyramid = data_pyramid
 
@@ -470,8 +483,14 @@ class Image(Layer):
                 )
 
         self._complex_func = value
-        self.events.complex_func()
-        self.refresh()
+        if hasattr(self, '_data'):
+            if value == ComplexRendering.PHASE:
+                self.contrast_limits_range = [-np.pi, np.pi]
+                self.contrast_limits = [-np.pi, np.pi]
+            else:
+                self.reset_contrast_range()
+            self.events.complex_func()
+            self.refresh()
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
@@ -568,9 +587,11 @@ class Image(Layer):
         else:
             self._scale_view = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            if np.iscomplexobj(image):
-                image = self.complex_func(image)
             thumbnail = image
+
+        if self.iscomplex:
+            image = self.complex_func(image)
+            thumbnail = self.complex_func(thumbnail)
 
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
