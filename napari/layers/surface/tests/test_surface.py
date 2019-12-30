@@ -73,6 +73,8 @@ def test_random_3D_timeseries_surface():
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
+    # If a values axis is made to be a displayed axis then no data should be
+    # shown
     layer.dims.order = [3, 0, 1, 2]
     assert len(layer._data_view) == 0
 
