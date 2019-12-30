@@ -176,7 +176,7 @@ class Image(Layer):
         self.is_pyramid = is_pyramid
         self.rgb = rgb
         self.iscomplex = (
-            np.iscomplexobj(data[0]) if is_pyramid else np.iscomplexobj[data]
+            np.iscomplexobj(data[0]) if is_pyramid else np.iscomplexobj(data)
         )
         self.complex_func = complex_func
         self._data = data
@@ -243,7 +243,7 @@ class Image(Layer):
         self.is_pyramid = is_pyramid
         self.rgb = rgb
         self.iscomplex = (
-            np.iscomplexobj(data[0]) if is_pyramid else np.iscomplexobj[data]
+            np.iscomplexobj(data[0]) if is_pyramid else np.iscomplexobj(data)
         )
         self._data = data
         self._data_pyramid = data_pyramid
