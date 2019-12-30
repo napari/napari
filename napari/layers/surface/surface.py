@@ -212,6 +212,9 @@ class Surface(Layer):
             maxs = np.max(self.vertices, axis=0)
             mins = np.min(self.vertices, axis=0)
 
+        # The full dimensionality and shape of the layer is determined by
+        # the number of additional vertex value dimensions and the
+        # dimensionality of the vertices themselves
         if self.vertex_values.ndim > 1:
             mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
             maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
@@ -288,13 +291,15 @@ class Surface(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
+        N, vertex_ndim = self.vertices.shape
+        values_ndim = self.vertex_values.ndim - 1
 
         # Take vertex_values dimensionality into account if more than one value
         # is provided per vertex.
-        if self.vertex_values.ndim > 1:
-            values = self.vertex_values[
-                self.dims.indices[: -self.vertices.shape[1]]
-            ]
+        if values_ndim > 0:
+            # Get indices for axes corresponding to values dimensions
+            values_indices = self.dims.indices[:-vertex_ndim]
+            values = self.vertex_values[values_indices]
             if values.ndim > 1:
                 # If not all dimensions corresponding to the vertex_values
                 # are being sliced through, average over any remaining ones
@@ -302,14 +307,19 @@ class Surface(Layer):
                 values = values.mean(axis=tuple(range(0, values.ndim - 1)))
             self._view_vertex_values = values
             # Determine which axes of the vertices data are being displayed
-            # and not displayed, but ignoring the additional dimensions
+            # and not displayed, ignoring the additional dimensions
             # corresponding to the vertex_values.
-            indices = np.array(self.dims.indices[-self.vertices.shape[1] :])
-            additional_ndim = self.vertex_values.ndim - 1
-            disp = np.subtract(self.dims.displayed, additional_ndim)
-            disp = [d for d in disp if d >= 0]
-            not_disp = np.subtract(self.dims.not_displayed, additional_ndim)
-            not_disp = [d for d in not_disp if d >= 0]
+            indices = np.array(self.dims.indices[-vertex_ndim:])
+            disp = [
+                d
+                for d in np.subtract(self.dims.displayed, values_ndim)
+                if d >= 0
+            ]
+            not_disp = [
+                d
+                for d in np.subtract(self.dims.not_displayed, values_ndim)
+                if d >= 0
+            ]
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self.dims.indices)
@@ -319,7 +329,7 @@ class Surface(Layer):
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
-        elif self.vertices.shape[1] > self.dims.ndisplay:
+        elif vertex_ndim > self.dims.ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
