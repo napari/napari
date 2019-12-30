@@ -14,6 +14,7 @@ from ...utils.status_messages import format_float
 from ._constants import Rendering, Interpolation, ComplexRendering
 from ...utils.colormaps import make_colorbar, AVAILABLE_COLORMAPS
 from .image_utils import get_pyramid_and_rgb
+from ...utils.validators import validate_N_seq
 
 
 class Image(Layer):
@@ -197,15 +198,12 @@ class Image(Layer):
         self._iso_threshold = iso_threshold
         self._colormap_name = ''
         self._contrast_limits_msg = ''
+        self._contrast_limits_range = [None, None]
         if contrast_limits is None:
-            if self.is_pyramid:
-                input_data = self._data_pyramid[-1]
-            else:
-                input_data = self.data
-            self._contrast_limits_range = calc_data_range(input_data)
+            self.contrast_limits_range = self._calc_data_range()
         else:
-            self._contrast_limits_range = contrast_limits
-        self._contrast_limits = copy(self._contrast_limits_range)
+            self.contrast_limits_range = contrast_limits
+        self._contrast_limits = copy(self.contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
         self.interpolation = interpolation
@@ -214,6 +212,13 @@ class Image(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _calc_data_range(self):
+        if self.is_pyramid:
+            input_data = self._data_pyramid[-1]
+        else:
+            input_data = self.data
+        return calc_data_range(input_data)
 
     @property
     def data(self):
@@ -327,6 +332,7 @@ class Image(Layer):
 
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
+        validate_N_seq(2)(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
             + ', '
@@ -334,12 +340,39 @@ class Image(Layer):
         )
         self.status = self._contrast_limits_msg
         self._contrast_limits = contrast_limits
-        if contrast_limits[0] < self._contrast_limits_range[0]:
-            self._contrast_limits_range[0] = copy(contrast_limits[0])
-        if contrast_limits[1] > self._contrast_limits_range[1]:
-            self._contrast_limits_range[1] = copy(contrast_limits[1])
+        # make sure range slider is big enough to fit range
+        if contrast_limits[0] < self.contrast_limits_range[0]:
+            self.contrast_limits_range = [contrast_limits[0], None]
+        if contrast_limits[1] > self.contrast_limits_range[1]:
+            self.contrast_limits_range = [None, contrast_limits[1]]
         self._update_thumbnail()
         self.events.contrast_limits()
+
+    @property
+    def contrast_limits_range(self):
+        """The current valid range of the contrast limits."""
+        return list(self._contrast_limits_range)
+
+    @contrast_limits_range.setter
+    def contrast_limits_range(self, value):
+        """Set the valid range of the contrast limits"""
+        validate_N_seq(2)(value)
+        # if either value is "None", it just preserves the current range
+        current_range = self.contrast_limits_range
+        value = list(value)  # make sure it is mutable
+        for i in range(2):
+            value[i] = current_range[i] if value[i] is None else value[i]
+        self._contrast_limits_range = value
+
+        # make sure that the current values fit within the new range
+        # this also serves the purpose of emitting events.contrast_limits()
+        # and updating the views/controllers
+        if hasattr(self, '_contrast_limits'):
+            cur_min, cur_max = self.contrast_limits
+            self.contrast_limits = (
+                max(value[0], cur_min),
+                min(value[1], cur_max),
+            )
 
     @property
     def gamma(self):
