@@ -301,11 +301,17 @@ class Surface(Layer):
             values_indices = self.dims.indices[:-vertex_ndim]
             values = self.vertex_values[values_indices]
             if values.ndim > 1:
-                raise ValueError(
+                warnings.warn(
                     """Assigning multiple values per vertex after slicing is
                     not allowed. All dimensions corresponding to vertex_values
-                    must be non-displayed dimensions."""
+                    must be non-displayed dimensions. Data will not be
+                    visible."""
                 )
+                self._data_view = np.zeros((0, self.dims.ndisplay))
+                self._view_faces = np.zeros((0, 3))
+                self._view_vertex_values = []
+                return
+
             self._view_vertex_values = values
             # Determine which axes of the vertices data are being displayed
             # and not displayed, ignoring the additional dimensions
