@@ -61,6 +61,7 @@ class QtDims(QWidget):
         self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
+        self.dims.events.embedded.connect(self._update_display)
 
     @property
     def nsliders(self):
@@ -137,7 +138,7 @@ class QtDims(QWidget):
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
         for (axis, widget) in widgets:
-            if axis in self.dims.displayed:
+            if axis in self.dims.displayed and axis != self.dims.sliced:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.last_used = None

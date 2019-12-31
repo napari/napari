@@ -180,6 +180,7 @@ class Layer(KeymapMixin, ABC):
         self.dims.events.ndisplay.connect(lambda e: self._update_dims())
         self.dims.events.order.connect(lambda e: self._update_dims())
         self.dims.events.axis.connect(lambda e: self.refresh())
+        self.dims.events.axis.connect(lambda e: self._embedded_slicing())
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
@@ -528,6 +529,16 @@ class Layer(KeymapMixin, ABC):
             return
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
+
+    def _embedded_slicing(self):
+        """Translate embedded view based on slicing."""
+        if self.dims.sliced is None or self.dims.ndisplay == 3:
+            return
+        else:
+            self._translate_view[self.dims.sliced] = self.dims.point[
+                self.dims.sliced
+            ]
+            self.events.translate()
 
     @abstractmethod
     def _set_view_slice(self):

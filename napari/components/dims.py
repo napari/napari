@@ -53,7 +53,15 @@ class Dims:
         Order of only displayed dimensions.
     """
 
-    def __init__(self, ndim=None, *, ndisplay=2, order=None, axis_labels=None):
+    def __init__(
+        self,
+        ndim=None,
+        *,
+        ndisplay=2,
+        order=None,
+        embedded=False,
+        axis_labels=None,
+    ):
         super().__init__()
 
         # Events:
@@ -64,6 +72,7 @@ class Dims:
             axis_labels=None,
             ndim=None,
             ndisplay=None,
+            embedded=None,
             order=None,
             range=None,
             camera=None,
@@ -76,6 +85,7 @@ class Dims:
         self._axis_labels = []
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay
+        self._embedded = embedded
 
         if ndim is None and order is None and axis_labels is None:
             ndim = self._ndisplay
@@ -297,6 +307,19 @@ class Dims:
         self.events.camera()
 
     @property
+    def embedded(self):
+        """Bool: Whether 2D display is embedded in 3D rendering."""
+        return self._embedded
+
+    @embedded.setter
+    def embedded(self, embedded):
+        if self._embedded == embedded:
+            return
+
+        self._embedded = embedded
+        self.events.embedded()
+
+    @property
     def displayed(self):
         """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
@@ -305,6 +328,14 @@ class Dims:
     def not_displayed(self):
         """Tuple: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
+
+    @property
+    def sliced(self):
+        """int: Dimension that is sliced if embedded."""
+        if self.embedded and self.ndim >= 3:
+            return self.order[-3]
+        else:
+            return None
 
     @property
     def displayed_order(self):

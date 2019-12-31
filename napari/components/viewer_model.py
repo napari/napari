@@ -85,9 +85,16 @@ class ViewerModel(KeymapMixin):
         self.theme = 'dark'
 
         self.dims.events.camera.connect(lambda e: self.reset_view())
-        self.dims.events.ndisplay.connect(lambda e: self._update_layers())
-        self.dims.events.order.connect(lambda e: self._update_layers())
-        self.dims.events.axis.connect(lambda e: self._update_layers())
+        self.dims.events.ndisplay.connect(
+            lambda e: self._update_layer_dims_ndisplay()
+        )
+        self.dims.events.order.connect(
+            lambda e: self._update_layer_dims_order()
+        )
+        self.dims.events.embedded.connect(
+            lambda e: self._update_layer_dims_embedded()
+        )
+        self.dims.events.axis.connect(lambda e: self._update_layers_dims())
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
         self.layers.events.added.connect(self._update_active_layer)
@@ -1003,8 +1010,8 @@ class ViewerModel(KeymapMixin):
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
-    def _update_layers(self, layers=None):
-        """Updates the contained layers.
+    def _update_layer_dims_order(self, layers=None):
+        """Updates the contained layers dims order.
 
         Parameters
         ----------
@@ -1027,13 +1034,63 @@ class ViewerModel(KeymapMixin):
             else:
                 order = list(order[order >= offset] - offset)
             layer.dims.order = order
+
+    def _update_layer_dims_ndisplay(self, layers=None):
+        """Updates the contained layers dims ndisplay.
+
+        Parameters
+        ----------
+        layers : list of napari.layers.Layer, optional
+            List of layers to update. If none provided updates all.
+        """
+        layers = layers or self.layers
+
+        for layer in layers:
             layer.dims.ndisplay = self.dims.ndisplay
 
+    def _update_layer_dims_embedded(self, layers=None):
+        """Updates the contained layers dims embedded status.
+
+        Parameters
+        ----------
+        layers : list of napari.layers.Layer, optional
+            List of layers to update. If none provided updates all.
+        """
+        layers = layers or self.layers
+
+        for layer in layers:
+            layer.dims.embedded = self.dims.embedded
+
+    def _update_layers_dims(self, layers=None):
+        """Updates the contained layers dims points.
+
+        Parameters
+        ----------
+        layers : list of napari.layers.Layer, optional
+            List of layers to update. If none provided updates all.
+        """
+        layers = layers or self.layers
+
+        for layer in layers:
             # Update the point values of the layers for the dimensions that
             # the layer has
+            offset = self.dims.ndim - layer.dims.ndim
             for axis in range(layer.dims.ndim):
                 point = self.dims.point[axis + offset]
                 layer.dims.set_point(axis, point)
+
+    def _update_layers(self, layers=None):
+        """Updates the contained layers dims.
+
+        Parameters
+        ----------
+        layers : list of napari.layers.Layer, optional
+            List of layers to update. If none provided updates all.
+        """
+        self._update_layer_dims_order(layers)
+        self._update_layer_dims_ndisplay(layers)
+        self._update_layer_dims_embedded(layers)
+        self._update_layers_dims(layers)
 
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and
