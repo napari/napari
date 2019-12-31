@@ -12,7 +12,10 @@ might change in a future release.
 from vispy.color import Color, ColorArray
 import numpy as np
 
-
+# Apparently there a re two types of greens - 'g' is represented by a
+# (0, 1, 0) tuple, while 'green' has an approximate value of
+# (0, 0.5, 0). This is why these two colors are treated differently
+# below
 REDA = (1.0, 0.0, 0.0, 1.0)
 RED = (1.0, 0.0, 0.0)
 REDF = '#ff0000'
@@ -31,80 +34,76 @@ single_color_options = [
     '#ffccaa44',
     Color('red'),
     Color(REDA),
-    Color(RED),
-    Color(GREENF),
+    Color(RED).rgb,
+    Color(GREENF).rgba,
     ColorArray('red'),
-    ColorArray(GREENA),
-    ColorArray(GREEN),
-    ColorArray([GREENA]),
+    ColorArray(GREENA).rgba,
+    ColorArray(GREEN).rgb,
+    ColorArray([GREENA]).rgba,
     ColorArray([GREEN]),
     ColorArray(REDF),
     np.array([GREEN]),
     np.array([GREENF]),
+    None,
 ]
 
-single_colors_as_colorarray = [
-    ColorArray(RED),
+single_colors_as_array = [
+    ColorArray(RED).rgba,
+    ColorArray(GREEN).rgba,
+    ColorArray((0.0, 0.0, 0.0, 0.0,)).rgba,
+    ColorArray(RED).rgba,
+    ColorArray('#00ff00').rgba,
+    ColorArray(GREEN).rgba,
+    ColorArray('#ffccaa44').rgba,
+    ColorArray(RED).rgba,
+    ColorArray(RED).rgba,
+    ColorArray(RED).rgba,
     ColorArray(GREEN),
-    ColorArray((0.0, 0.0, 0.0, 0.0,)),
-    ColorArray(RED),
-    ColorArray('#00ff00'),
-    ColorArray(GREEN),
-    ColorArray('#ffccaa44'),
-    ColorArray(RED),
-    ColorArray(RED),
-    ColorArray(RED),
-    ColorArray(GREEN),
-    ColorArray(RED),
-    ColorArray(GREEN),
-    ColorArray(GREEN),
-    ColorArray(GREEN),
-    ColorArray(GREEN),
-    ColorArray(RED),
-    ColorArray(GREEN),
-    ColorArray(GREEN),
+    ColorArray(RED).rgba,
+    ColorArray(GREEN).rgba,
+    ColorArray(GREEN).rgba,
+    ColorArray(GREEN).rgba,
+    ColorArray(GREEN).rgba,
+    ColorArray(RED).rgba,
+    ColorArray(GREEN).rgba,
+    ColorArray(GREEN).rgba,
+    np.zeros((1, 4), dtype=np.float32),
 ]
 
 two_color_options = [
-    [Color('red'), Color(GREENF)],
-    [ColorArray('g'), 'g'],
-    (Color('red'), Color(RED)),
-    # Doesn't work due to weird interaction between numpy and Color
-    # np.array([Color(REDF), Color('red')], dtype='object'),
-    # np.array([Color(GREENA), Color(GREENA)], dtype='object'),
-    [REDF, GREENA],
-    (GREENA, GREEN),
-    ['red', GREENF],
-    ('red', 'blue'),
+    ['red', 'red'],
+    ('green', 'red'),
+    ['green', '#ff0000'],
+    ['green', 'g'],
     ('r' for r in range(2)),
-    ColorArray(['red', 'blue']),
-    ColorArray([GREEN, RED]),
-    # ColorArray([GREENA, RED]),  # doesn't work due to a vispy error
-    ColorArray((REDF, GREENA)),
-    ColorArray(np.array([GREEN, RED])),
+    (None, 'green'),
+    (Color('red'), Color('green')),
+    [ColorArray('green'), ColorArray('red')],
+    ColorArray(['r', 'r']),
+    np.array(['r', 'r']),
+    np.array(['g', 'g'], dtype=object),
+    np.array([[1, 1, 1, 1], [0, GREENV, 0, 1]]),
+    np.array([[3, 3, 3, 3], [0, 0, 0, 1]]),
 ]
-
 # Some of the options below are commented out. When the bugs with
 # vispy described above are resolved, we can uncomment the lines
 # below as well.
 two_colors_simple = [
+    ['red', 'red'],
+    ['green', 'red'],
+    ['green', 'red'],
+    ['green', 'g'],
+    ['red', 'red'],
+    [None, 'green'],
     ['red', 'green'],
+    ['green', 'red'],
+    ['red', 'red'],
+    ['red', 'red'],
     ['g', 'g'],
-    ['red', 'red'],
-    # ['red', 'red'],
-    # ['green', 'green'],
-    ['red', 'green'],
-    ['green', 'green'],
-    ['red', 'green'],
-    ['red', 'blue'],
-    ['red', 'red'],
-    ['red', 'blue'],
-    ['green', 'red'],
-    # ['green', 'red'],
-    ['red', 'green'],
-    ['green', 'red'],
+    ['white', 'green'],
+    ['white', 'k'],
 ]
-two_colors_as_colorarray = [ColorArray(color) for color in two_colors_simple]
+two_colors_as_array = [ColorArray(color).rgba for color in two_colors_simple]
 
 invalid_colors = [
     'rr',
@@ -118,4 +117,6 @@ invalid_colors = [
     ('a', 1, 1, 1),
     4,
     (3,),
+    np.array([[1, 1, 1, 1, 1]]),
+    np.array([[[0, 1, 1, 1]]]),
 ]
