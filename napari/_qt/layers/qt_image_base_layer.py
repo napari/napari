@@ -28,7 +28,7 @@ class QtBaseImageControls(QtLayerControls):
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
-            slider_range=[0, 1, 0.0001], values=[0, 1]
+            slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
         )
         self.contrastLimitsSlider.setEmitWhileMoving(True)
         self.contrastLimitsSlider.collapsable = False

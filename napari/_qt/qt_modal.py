@@ -1,5 +1,5 @@
 from qtpy.QtCore import Qt, QPoint
-from qtpy.QtWidgets import QVBoxLayout, QDialog, QFormLayout, QFrame
+from qtpy.QtWidgets import QVBoxLayout, QDialog, QFrame
 from qtpy.QtGui import QCursor
 
 
@@ -7,18 +7,17 @@ class QtPopup(QDialog):
     """A generic popup window.
 
     The seemingly extra frame here is to allow rounded corners on a truly
-    transparent background
+    transparent background.  New items should be added to QtPopup.frame
 
-    +-------------------------------
+    +----------------------------------
     | Dialog
-    |  +----------------------------
+    |  +-------------------------------
     |  | QVBoxLayout
-    |  |  +-------------------------
+    |  |  +----------------------------
     |  |  | QFrame
-    |  |  |  +----------------------
-    |  |  |  | QFormLayout
+    |  |  |  +-------------------------
     |  |  |  |
-    |  |  |  |  (stuff goes here)
+    |  |  |  |  (add a new layout here)
     """
 
     def __init__(self, parent):
@@ -32,9 +31,6 @@ class QtPopup(QDialog):
         self.frame.setObjectName("QtPopupFrame")
         self.layout().addWidget(self.frame)
         self.layout().setContentsMargins(0, 0, 0, 0)
-
-        self.form_layout = QFormLayout()
-        self.frame.setLayout(self.form_layout)
 
     def show_above_mouse(self, *args):
         pos = QCursor().pos()  # mouse position

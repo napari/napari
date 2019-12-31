@@ -3,7 +3,129 @@ Range slider, extended QWidget slider for napari.
 """
 
 from qtpy import QtCore, QtGui
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QFrame
+from .qt_modal import QtPopup
+import numpy as np
+from .utils import qt_signals_blocked
+
+
+class LabelEdit(QLineEdit):
+    def __init__(self, value, parent=None):
+        super().__init__(value, parent)
+        self.setObjectName('slice_label')
+        self.setFixedWidth(40)
+        self.setValidator(QtGui.QDoubleValidator(0, 999999, 1))
+
+
+class SliderPopup(QtPopup):
+    def __init__(self, parent):
+        super().__init__(parent)
+        try:
+            self.layer = parent.parent().layer
+            assert hasattr(self.layer, 'contrast_limits')
+        except (AttributeError, AssertionError):
+            raise NotImplementedError(
+                "SliderPopups are only meant to be instantiated with a parent "
+                "RangeSlider that, in turn, has an image/surface layer as a "
+                "parent."
+            )
+
+        self.decimals = (
+            0 if np.issubdtype(self.layer.data.dtype, np.integer) else 1
+        )
+        _range = parent.start, parent.end, parent.single_step
+        _values = parent.getValues()
+        sld = parent.__class__(
+            slider_range=_range, values=_values, allow_popup=False
+        )
+        sld.setEmitWhileMoving(True)
+        sld.collapsable = False
+        sld.setMinimumHeight(18)
+        sld.rangeChanged.connect(self._on_values_change)
+        self.slider = sld
+
+        layout = QHBoxLayout()
+        layout.addWidget(sld, 50)
+        self.frame.setLayout(layout)
+        self.setGeometry(0, 0, 700, 20)
+
+        cmin_, cmax_ = parent.parent().layer.contrast_limits
+        rmin_, rmax_ = parent.parent().layer.contrast_limits_range
+
+        self.curmin_label = LabelEdit(self._numformat(cmin_))
+        self.curmax_label = LabelEdit(self._numformat(cmax_))
+        self.range_min_label = LabelEdit(self._numformat(rmin_))
+        self.range_max_label = LabelEdit(self._numformat(rmax_))
+
+        self.curmin_label.editingFinished.connect(self._current_label_changed)
+        self.curmax_label.editingFinished.connect(self._current_label_changed)
+        self.range_min_label.editingFinished.connect(self._range_label_changed)
+        self.range_max_label.editingFinished.connect(self._range_label_changed)
+
+        self.range_min_label.setAlignment(QtCore.Qt.AlignRight)
+        self.curmax_label.setAlignment(QtCore.Qt.AlignRight)
+        sep1 = QFrame(self)
+        sep2 = QFrame(self)
+        sep1.setFixedSize(1, 14)
+        sep2.setFixedSize(1, 14)
+        sep1.setObjectName('slice_label_sep')
+        sep2.setObjectName('slice_label_sep')
+        layout.insertWidget(0, self.curmin_label)
+        layout.insertWidget(0, sep1)
+        layout.insertWidget(0, self.range_min_label)
+        layout.addWidget(self.curmax_label)
+        layout.addWidget(sep2)
+        layout.addWidget(self.range_max_label)
+
+        # def change_min():
+        #     val = float(curmin_label.text())
+        #     max_allowed = dims.max_indices[axis]
+        #     if val > max_allowed:
+        #         val = max_allowed
+        #         curslice_label.setText(str(val))
+        #     curslice_label.clearFocus()
+        #     qt_dims.setFocus()
+        #     dims.set_point(axis, val)
+
+        # curslice_label.editingFinished.connect(change_slice)
+        # totslice_label = QLabel()
+        # totslice_label.setToolTip(f'Total slices for axis {axis}')
+        # curslice_label.setObjectName('slice_label')
+        # totslice_label.setObjectName('slice_label')
+
+    def _numformat(self, number):
+        return "{:.{}f}".format(number, self.decimals)
+
+    def _on_values_change(self, minval, maxval):
+        self.parent().setValues((minval, maxval))
+        cmin_, cmax_ = self.layer.contrast_limits
+        with qt_signals_blocked(self.slider):
+            self.curmin_label.setText(self._numformat(cmin_))
+            self.curmax_label.setText(self._numformat(cmax_))
+
+    def _current_label_changed(self):
+        valmin, valmax = self.layer.contrast_limits_range
+        cmin = float(self.curmin_label.text())
+        cmax = float(self.curmax_label.text())
+        slidermin = (cmin - valmin) / (valmax - valmin)
+        slidermax = (cmax - valmin) / (valmax - valmin)
+        self.slider.setValues((slidermin, slidermax))
+
+    def _range_label_changed(self):
+        rmin = float(self.range_min_label.text())
+        rmax = float(self.range_max_label.text())
+        self.layer.contrast_limits_range = (rmin, rmax)
+        cmin_, cmax_ = self.layer.contrast_limits
+        with qt_signals_blocked(self.slider):
+            self.curmin_label.setText(self._numformat(cmin_))
+            self.curmax_label.setText(self._numformat(cmax_))
+        self._current_label_changed()
+
+    def keyPressEvent(self, event):
+        if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+            # return self.close()
+            return
+        super().keyPressEvent(event)
 
 
 class QRangeSlider(QWidget):
@@ -15,8 +137,8 @@ class QRangeSlider(QWidget):
     collapsedChanged = QtCore.Signal(bool)
     focused = QtCore.Signal()
 
-    def __init__(self, slider_range, values, parent=None):
-        QWidget.__init__(self, parent)
+    def __init__(self, slider_range, values, parent=None, allow_popup=True):
+        super().__init__(parent)
         self.bar_width = 16
         self.slider_width = 8
         self.emit_while_moving = 0
@@ -26,6 +148,7 @@ class QRangeSlider(QWidget):
         self.scale = 0
         self.setMouseTracking(False)
         self.single_step = 0.0
+        self.allow_popup = allow_popup
 
         self.default_collapse_logic = True
         self.collapsable = True
@@ -49,6 +172,8 @@ class QRangeSlider(QWidget):
         self.setHandleBorderColor(QtGui.QColor(200, 200, 200))
 
         self.setEnabled(True)
+        if not parent:
+            self.setGeometry(200, 200, 200, 20)
 
         if slider_range:
             self.setRange(slider_range)
@@ -183,6 +308,8 @@ class QRangeSlider(QWidget):
                         if self.emit_while_moving:
                             self.emitRange()
             else:
+                if self.allow_popup:
+                    self.show_expanded_popup()
                 if self.collapsable:
                     if self.collapsed:
                         # print("collapsed already")
@@ -196,6 +323,10 @@ class QRangeSlider(QWidget):
             self.start_display_max = self.display_max
             self.start_pos = pos
         self.focused.emit()
+
+    def show_expanded_popup(self):
+        p = SliderPopup(self)
+        p.show_above_mouse()
 
     def collapse(self):
         if self.default_collapse_logic:
@@ -327,11 +458,6 @@ class QHRangeSlider(QRangeSlider):
         Parent widget.
     """
 
-    def __init__(self, slider_range=None, values=None, parent=None):
-        QRangeSlider.__init__(self, slider_range, values, parent)
-        if not parent:
-            self.setGeometry(200, 200, 200, 20)
-
     def getPos(self, event):
         """Get event position.
 
@@ -423,11 +549,6 @@ class QVRangeSlider(QRangeSlider):
     parent : qtpy.QtWidgets.QWidget
         Parent widget.
     """
-
-    def __init__(self, slider_range=None, values=None, parent=None):
-        QRangeSlider.__init__(self, slider_range, values, parent)
-        if not parent:
-            self.setGeometry(200, 200, 20, 200)
 
     def getPos(self, event):
         """Get event position.
