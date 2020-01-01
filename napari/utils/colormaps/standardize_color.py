@@ -1,7 +1,15 @@
 """This module contains functions that 'standardize' the color handling
-of napari layers by supplying functions that are able to convert every
+of napari layers by supplying functions that are able to convert most
 color representation the user had in mind into a single representation -
 a numpy Nx4 array of float32 values - that is used across the codebase.
+
+The main function of the module is "transform_color", which might call
+a cascade of other, private, function in the module to do the hard work
+of converting the input.
+
+In general, we try to catch invalid color representations, warn the users
+of their misbehaving and return a default white color array, since it seems
+unreasonable to crash the entire napari session to mis-represented colors.
 """
 
 import types
@@ -14,7 +22,7 @@ from vispy.color import Color, ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
 
-def transform_color(colors) -> np.ndarray:
+def transform_color(colors: Any) -> np.ndarray:
     """Receives the user-given colors and transforms them into an array of
     Nx4 np.float32 values, with N being the number of colors. The function
     (via its subfunctions, marked with _handle_X) is designed to parse all
@@ -51,6 +59,11 @@ def _handle_str(color: str) -> np.ndarray:
     # This line will stay here until vispy adds a "transparent" key
     # to their color dictionary. A PR was sent and approved, currently
     # waiting to be merged.
+    if len(color) == 0:
+        warnings.warn(
+            "Empty string detected." " Returning a white color instead."
+        )
+        return np.ones((1, 4), dtype=np.float32)
     color = color.replace("transparent", "#00000000")
     as_arr = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
     if as_arr.shape[1] == 3:
@@ -63,30 +76,37 @@ def _handle_list_like(colors: Iterable) -> np.ndarray:
     arrays are handled in _handle_array. Lists which are known to contain
     strings will be parsed with _handle_str_list_like.
     """
-    # TODO
     try:
-        color_array = np.asarray(colors, dtype=np.float32)
+        # The following conversion works for most cases, and so it's expected
+        # that most valid inputs will pass this .asarray() call
+        # with ease. Those who don't are usually too cryptic to decipher. The
+        # only exception is a list-like container with Vispy's Color and
+        # ColorArray which is considered valid.
+        color_array = np.atleast_2d(np.asarray(colors))
     except ValueError:
-        warnings.warn(
-            "Coudln't convert input color array to a proper numpy array. Converting input to a white color array."
-        )
-        return np.ones((len(colors), 4), dtype=np.float32)
+        if type(colors[0]) in (Color, ColorArray):
+            color_array = np.vstack([c.rgba for c in colors])
+            return color_array
+        else:
+            warnings.warn(
+                "Coudln't convert input color array to a proper numpy array."
+                " Please make sure that your input data is in a parsable format."
+                " Converting input to a white color array."
+            )
+            return np.ones((max(len(colors), 1), 4), dtype=np.float32)
 
-    if color_array.dtype.kind != 'O':
-        return color_array
-    # We're left with iterables of strings and ColorArrays, most likely
-    color_array = np.empty((len(colors), 4), dtype=np.float32)
-    for idx, c in enumerate(colors):
-        try:
-            color_array[idx, :] = _color_switch[type(c)](c)
-        except (ValueError, TypeError, KeyError):
-            raise ValueError(f"Invalid color found: {c} at index {idx}.")
-    return color_array
+    # Happy path - converted to a float\integer array
+    if color_array.dtype.kind in ['f', 'i']:
+        return _handle_array(color_array)
+
+    # User input was an iterable with strings
+    if color_array.dtype.kind in ['U', 'O']:
+        return _handle_str_list_like(color_array.ravel())
 
 
 def _handle_vispy_color(colors: Union[Color, ColorArray]) -> np.ndarray:
     """Convert vispy's types to plain numpy arrays."""
-    return colors.rgba
+    return np.atleast_2d(colors.rgba)
 
 
 def _handle_generator(colors) -> np.ndarray:
@@ -108,8 +128,17 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     """Converts the given array into an array in the right format."""
     kind = colors.dtype.kind
 
+    # Object arrays aren't handled by napari
+    if kind == 'O':
+        warnings.warn(
+            "An object array was passed as the color input."
+            " Please convert its datatype before sending it to napari."
+            " Converting input to a white color array."
+        )
+        return np.ones((max(len(colors), 1), 4), dtype=np.float32)
+
     # An array of strings will be treated as a list if compatible
-    if kind == 'U':
+    elif kind == 'U':
         if colors.ndim == 1:
             return _handle_str_list_like(colors)
         else:
@@ -140,14 +169,6 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
     if kind in ['f', 'i', 'u']:
         return _convert_array_to_correct_format(colors)
 
-    # Object arrays aren't handled by napari
-    elif kind == 'O':
-        warnings.warn(
-            "An object array was passed as the color input."
-            " Please convert its datatype before sending it to napari."
-            " Converting input to a white color array."
-        )
-        return np.ones((len(colors), 4), dtype=np.float32)
     else:
         raise ValueError(f"Data type of array ({colors.dtype}) not supported.")
 
@@ -164,9 +185,12 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
             [colors, np.ones(len(colors), dtype=np.float32)]
         )
 
-    if colors.max() > 1 or colors.min() < 0:
+    if colors.min() < 0:
+        raise ValueError("Colors input had negative values.")
+
+    if colors.max() > 1:
         colors = _normalize_color_array(colors)
-    return colors
+    return np.atleast_2d(np.asarray(colors, dtype=np.float32))
 
 
 def _handle_str_list_like(colors: Iterable) -> np.ndarray:
@@ -192,7 +216,7 @@ def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     array contains four identical value a simple normalization will raise a
     division by zero exception.
     """
-    out_of_bounds_idx = np.where((colors > 1) | (colors < 0))[0]
+    out_of_bounds_idx = np.unique(np.where((colors > 1) | (colors < 0))[0])
     out_of_bounds = colors[out_of_bounds_idx]
     out_of_bounds_no_dc = (
         out_of_bounds - out_of_bounds.min(axis=1)[:, np.newaxis]
@@ -201,7 +225,7 @@ def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     zero_norm = np.where(norm == 0)[0]
     if len(zero_norm) > 0:
         norm[zero_norm] = 1
-        out_of_bounds[zero_norm] == 1.0
+        out_of_bounds[zero_norm] = 1.0
     out_of_bounds = out_of_bounds / norm[:, np.newaxis]
     colors[out_of_bounds_idx] = out_of_bounds
     return colors.astype(np.float32)

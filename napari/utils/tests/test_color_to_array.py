@@ -7,6 +7,7 @@ from .colors_data import (
     two_color_options,
     two_colors_as_array,
     invalid_colors,
+    warning_colors,
 )
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -29,3 +30,12 @@ def test_twod_points(colors, true_colors):
 def test_invalid_colors(color):
     with pytest.raises((ValueError, AttributeError, KeyError)):
         transform_color(color)
+
+
+@pytest.mark.parametrize("colors", warning_colors)
+def test_warning_colors(colors):
+    with pytest.warns(UserWarning):
+        np.testing.assert_array_equal(
+            np.ones((len(colors), 4), dtype=np.float32),
+            transform_color(colors),
+        )

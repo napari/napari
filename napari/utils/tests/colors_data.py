@@ -45,6 +45,7 @@ single_color_options = [
     np.array([GREEN]),
     np.array([GREENF]),
     None,
+    '',
 ]
 
 single_colors_as_array = [
@@ -58,7 +59,7 @@ single_colors_as_array = [
     ColorArray(RED).rgba,
     ColorArray(RED).rgba,
     ColorArray(RED).rgba,
-    ColorArray(GREEN),
+    ColorArray(GREEN).rgba,
     ColorArray(RED).rgba,
     ColorArray(GREEN).rgba,
     ColorArray(GREEN).rgba,
@@ -68,6 +69,7 @@ single_colors_as_array = [
     ColorArray(GREEN).rgba,
     ColorArray(GREEN).rgba,
     np.zeros((1, 4), dtype=np.float32),
+    np.zeros((1, 4), dtype=np.float32),
 ]
 
 two_color_options = [
@@ -76,14 +78,13 @@ two_color_options = [
     ['green', '#ff0000'],
     ['green', 'g'],
     ('r' for r in range(2)),
-    (None, 'green'),
     (Color('red'), Color('green')),
     [ColorArray('green'), ColorArray('red')],
     ColorArray(['r', 'r']),
     np.array(['r', 'r']),
-    np.array(['g', 'g'], dtype=object),
     np.array([[1, 1, 1, 1], [0, GREENV, 0, 1]]),
     np.array([[3, 3, 3, 3], [0, 0, 0, 1]]),
+    (None, 'green'),
 ]
 # Some of the options below are commented out. When the bugs with
 # vispy described above are resolved, we can uncomment the lines
@@ -94,15 +95,15 @@ two_colors_simple = [
     ['green', 'red'],
     ['green', 'g'],
     ['red', 'red'],
-    [None, 'green'],
     ['red', 'green'],
     ['green', 'red'],
     ['red', 'red'],
     ['red', 'red'],
-    ['g', 'g'],
     ['white', 'green'],
     ['white', 'k'],
+    (None, 'green'),
 ]
+
 two_colors_as_array = [ColorArray(color).rgba for color in two_colors_simple]
 
 invalid_colors = [
@@ -111,12 +112,17 @@ invalid_colors = [
     '#gf9gfg',
     '#ff00000',
     '#ff0000ii',
-    (43, 3, 3, 3),
-    (1.0, 1.0, 1.0, 3),
+    (43, 3, 3, 3),  # RGBA color, but not parsed correctly
     (-1, 0.0, 0.0, 0.0),
     ('a', 1, 1, 1),
     4,
     (3,),
+]
+
+warning_colors = [
     np.array([[1, 1, 1, 1, 1]]),
     np.array([[[0, 1, 1, 1]]]),
+    np.array([]),
+    np.array(['g', 'g'], dtype=object),
+    [],
 ]
