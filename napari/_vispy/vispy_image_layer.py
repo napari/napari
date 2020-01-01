@@ -1,6 +1,6 @@
 import warnings
 from vispy.scene.visuals import Image as ImageNode
-from vispy.scene.visuals import Volume as VolumeNode
+from .volume import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
