@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import (
+from ..shape_utils import (
     triangulate_edge,
     triangulate_ellipse,
     center_radii_to_corners,

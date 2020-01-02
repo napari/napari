@@ -3,7 +3,7 @@ from typing import Union, Sequence
 import numpy as np
 
 from .dims_constants import DimsMode
-from ..util.event import EmitterGroup
+from ..utils.event import EmitterGroup
 
 
 class Dims:

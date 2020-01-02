@@ -1,7 +1,7 @@
 from enum import auto
 
 import pytest
-from napari.util.misc import callsignature, StringEnum
+from napari.utils.misc import callsignature, StringEnum
 
 
 def test_callsignature():

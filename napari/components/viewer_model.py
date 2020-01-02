@@ -6,12 +6,12 @@ from xml.etree.ElementTree import Element, tostring
 from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
-from ..util import colormaps
-from ..util.event import EmitterGroup, Event
-from ..util.keybindings import KeymapMixin
-from ..util.theme import palettes
-from ..util.misc import ensure_iterable, is_iterable
-from ..util import io
+from ..utils import colormaps
+from ..utils.event import EmitterGroup, Event
+from ..utils.keybindings import KeymapMixin
+from ..utils.theme import palettes
+from ..utils.misc import ensure_iterable, is_iterable
+from ..utils import io
 
 
 class ViewerModel(KeymapMixin):
@@ -869,8 +869,9 @@ class ViewerModel(KeymapMixin):
         data : 3-tuple of array
             The first element of the tuple is an (N, D) array of vertices of
             mesh triangles. The second is an (M, 3) array of int of indices
-            of the mesh triangles. The third element is the (N, ) array of
-            values used to color vertices.
+            of the mesh triangles. The third element is the (K0, ..., KL, N)
+            array of values used to color vertices where the additional L
+            dimensions are used to color the same mesh with different values.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the

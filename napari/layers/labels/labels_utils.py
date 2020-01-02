@@ -24,7 +24,7 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
         max(abs(np.array(new_coord) - np.array(old_coord))) / brush_size * 4
     )
     coords = [
-        np.linspace(old_coord[i], new_coord[i], num=num_step + 1)
+        np.linspace(old_coord[i], new_coord[i], num=int(num_step + 1))
         for i in range(len(new_coord))
     ]
     coords = np.stack(coords).T

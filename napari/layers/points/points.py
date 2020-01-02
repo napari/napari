@@ -4,9 +4,9 @@ import numpy as np
 import itertools
 from copy import copy, deepcopy
 from ..base import Layer
-from ...util.event import Event
-from ...util.misc import ensure_iterable
-from ...util.status_messages import format_float
+from ...utils.event import Event
+from ...utils.misc import ensure_iterable
+from ...utils.status_messages import format_float
 from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 

@@ -38,7 +38,7 @@ from .view_layers import (
 )
 from ._qt import gui_qt
 from ._version import get_versions
-
+from .utils import sys_info
 
 __version__ = get_versions()['version']
 del get_versions

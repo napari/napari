@@ -89,16 +89,19 @@ QStatusBar > QLabel { /* Help QLabel */
   background-color: {{ background }};
 }
 
+QMenuBar::item:selected {
+   background-color: {{ secondary }};
+}
+
 QtAboutKeybindings {
   min-width: 600px;
   min-height: 605px;
 }
 
-QDialog#QtAbout {
-  min-width: 620px;
-  max-width: 620px;
-  min-height: 320px;
-  max-height: 320px;
+QtAbout > QTextEdit{
+  margin: 0px;
+  border: 0px;
+  padding: 2px;
 }
 
 QtAbout > QLabel {
@@ -870,6 +873,19 @@ QtDeleteShapeButton {
 
 QtDeletePointsButton {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
+}
+
+QtCopyToClipboardButton {
+   background-color: {{ background }};
+   margin: 0px;
+   padding: 1px 1px 3px 2px;
+   border: 0px;
+   min-width: 16px;
+   max-width: 16px;
+   min-height: 16px;
+   max-height: 16px;
+   border-radius: 3px;
+   image: url(":/icons/{{ folder }}/copy_to_clipboard.svg");
 }
 
 /* ------------- QMainWindow --------- */

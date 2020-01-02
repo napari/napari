@@ -4,7 +4,7 @@ from skimage.data import binary_blobs
 from imageio import imwrite
 from scipy import ndimage as ndi
 from napari.components import ViewerModel
-from napari.util.temporary_file import temporary_file
+from napari.utils.temporary_file import temporary_file
 
 
 @pytest.mark.parametrize('suffix', ['.png', '.tiff'])
