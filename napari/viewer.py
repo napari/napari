@@ -64,14 +64,23 @@ class Viewer(ViewerModel):
             logopath = join(dirname(__file__), 'resources', 'logo.png')
             app.setWindowIcon(QIcon(logopath))
 
-            super().__init__(title=title, ndisplay=ndisplay, order=order)
+            super().__init__(
+                title=title,
+                ndisplay=ndisplay,
+                order=order,
+                axis_labels=axis_labels,
+            )
 
             qt_viewer = QtViewer(self)
             self.window = Window(qt_viewer)
-            self.screenshot = self.window.qt_viewer.screenshot
             self.update_console = self.window.qt_viewer.console.push
         else:
-            super().__init__(title=title, ndisplay=ndisplay, order=order)
+            super().__init__(
+                title=title,
+                ndisplay=ndisplay,
+                order=order,
+                axis_labels=axis_labels,
+            )
             app = None
 
         if self.address is not None:
