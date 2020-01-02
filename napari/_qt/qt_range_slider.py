@@ -133,33 +133,33 @@ class QRangeSlider(QWidget):
     QRangeSlider class, super class for QVRangeSlider and QHRangeSlider.
     """
 
-    rangeChanged = QtCore.Signal(float, float)
+    valuesChanged = QtCore.Signal(tuple)
+    rangeChanged = QtCore.Signal(tuple)
     collapsedChanged = QtCore.Signal(bool)
     focused = QtCore.Signal()
 
-    def __init__(self, slider_range, values, parent=None, allow_popup=True):
+    def __init__(
+        self,
+        initial_values=None,
+        data_range=None,
+        step_size=1,
+        collapsible=True,
+        collapsed=False,
+        parent=None,
+    ):
         super().__init__(parent)
-        self.bar_width = 16
+        self.handle_radius = 8
         self.slider_width = 8
-        self.emit_while_moving = 0
         self.moving = "none"
-        self.old_scale_min = 0.0
-        self.old_scale_max = 0.0
-        self.scale = 0
-        self.setMouseTracking(False)
-        self.single_step = 0.0
-        self.allow_popup = allow_popup
-
-        self.default_collapse_logic = True
-        self.collapsable = True
-        self.collapsed = False
+        self.collapsible = collapsible
+        self.collapsed = collapsed
         self.prev_moving = None
         self.bc_min = None
         self.bc_max = None
 
         # Variables initialized in methods
-        self.scale_min = None
-        self.scale_max = None
+        self.value_min = None
+        self.value_max = None
         self.start_display_min = None
         self.start_display_max = None
         self.start_pos = None
@@ -175,230 +175,203 @@ class QRangeSlider(QWidget):
         if not parent:
             self.setGeometry(200, 200, 200, 20)
 
-        if slider_range:
-            self.setRange(slider_range)
-        else:
-            self.setRange((0.0, 1.0, 0.01))
-        if values:
-            self.setValues(values)
-        else:
-            self.setValues((0.3, 0.7))
+        self.setRange((0, 1) if data_range is None else data_range)
+        self.setValues(
+            (0.2, 0.8) if initial_values is None else initial_values
+        )
+        self.single_step = (
+            0.01 if step_size is None else step_size / self.scale
+        )
+        if not parent:
+            self.setGeometry(200, 200, 20, 200)
 
-    def emitRange(self):
-        change_min = self.old_scale_min != self.scale_min
-        change_max = self.old_scale_max != self.scale_max
-        if change_min or change_max:
-            self.rangeChanged.emit(self.scale_min, self.scale_max)
-            self.old_scale_min = self.scale_min
-            self.old_scale_max = self.scale_max
-            # For debug purposes
-            # if False:
-            #     print("Range change:", self.scale_min, self.scale_max)
+    @property
+    def range(self):
+        """Min and max possible values for the slider range. In data units"""
+        return self.data_range_min, self.data_range_max
 
-    def emitCollapse(self, collapsed_state):
-        self.collapsedChanged.emit(collapsed_state)
+    def setRange(self, values):
+        """Min and max possible values for the slider range. In data units."""
+        self.data_range_min, self.data_range_max = values
+        self.rangeChanged.emit(values)
 
-    def getValues(self):
-        """Values of the range bar.
+    def values(self):
+        """Current slider values.
+
+        Returns
+        -------
+        tuple
+            Current minimum and maximum values of the range slider
+        """
+        return tuple(
+            [self._slider_to_data_value(v) for v in self.sliderValues()]
+        )
+
+    def setValues(self, values):
+        self.setSliderValues(self._data_to_slider_value(v) for v in values)
+
+    def sliderValues(self):
+        """Current slider values, as a fraction of slider width.
 
         Returns
         -------
         values : 2-tuple of int
             Start and end of the range.
         """
-        return [self.scale_min, self.scale_max]
+        return self.value_min, self.value_max
 
-    def setValues(self, values):
-        """Set values of the range bar.
+    def setSliderValues(self, values):
+        """Set current slider values, as a fraction of slider width.
 
         Parameters
         ----------
         values : 2-tuple of float or int
             Start and end of the range.
         """
-        if values is not None:
-            self.scale_min, self.scale_max = values
-            if self.scale_min is None:
-                self.scale_min = self.start
-            if self.scale_max is None:
-                self.scale_max = self.end
-        else:
-            self.scale_min = self.start
-            self.scale_max = self.end
-        self.emitRange()
-        self.updateDisplayValues()
-        self.update()
+        # assert hasattr(values, '__len__') and len(values) == 2
+        self.value_min, self.value_max = values
+        self.valuesChanged.emit(self.values())
+        self.updateDisplayPositions()
 
-    def setValue(self, value):
-        """Set values of the range bar.
-
-        Parameters
-        ----------
-        value : float | int
-            Value to used when collapsed
-        """
-        self.setValues((value, value))
+    def setStep(self, step):
+        self.single_step = step / self.scale
 
     def mouseMoveEvent(self, event):
-        if self.enabled:
-            size = self.rangeSliderSize()
-            pos = self.getPos(event)
-            if self.moving == "min":
-                if pos <= self.bar_width / 2:
-                    self.display_min = self.bar_width / 2
-                elif pos > self.display_max - self.bar_width / 4:
-                    self.display_min = self.display_max - self.bar_width / 4
-                else:
-                    self.display_min = pos
-            elif self.moving == "max":
-                if pos >= size + self.bar_width / 2:
-                    self.display_max = size + self.bar_width / 2
-                elif pos < self.display_min + self.bar_width / 4:
-                    self.display_max = self.display_min + self.bar_width / 4
-                else:
-                    self.display_max = pos
-            elif self.moving == "bar":
-                width = self.start_display_max - self.start_display_min
-                lower_part = self.start_pos - self.start_display_min
-                upper_part = self.start_display_max - self.start_pos
-                if pos + upper_part >= size + self.bar_width / 2:
-                    self.display_max = size + self.bar_width / 2
-                    self.display_min = self.display_max - width
-                elif pos - lower_part <= self.bar_width / 2:
-                    self.display_min = self.bar_width / 2
-                    self.display_max = self.display_min + width
-                else:
-                    self.display_min = pos - lower_part
-                    self.display_max = self.display_min + width
+        if not self.enabled:
+            return
 
-            self.updateScaleValues()
-            if self.emit_while_moving:
-                self.emitRange()
+        size = self.rangeSliderSize()
+        pos = self.getPos(event)
+        if self.moving == "min":
+            if pos <= self.handle_radius:
+                self.display_min = self.handle_radius
+            elif pos > self.display_max - self.handle_radius / 2:
+                self.display_min = self.display_max - self.handle_radius / 2
+            else:
+                self.display_min = pos
+        elif self.moving == "max":
+            if pos >= size + self.handle_radius:
+                self.display_max = size + self.handle_radius
+            elif pos < self.display_min + self.handle_radius / 2:
+                self.display_max = self.display_min + self.handle_radius / 2
+            else:
+                self.display_max = pos
+        elif self.moving == "bar":
+            width = self.start_display_max - self.start_display_min
+            lower_part = self.start_pos - self.start_display_min
+            upper_part = self.start_display_max - self.start_pos
+            if pos + upper_part >= size + self.handle_radius:
+                self.display_max = size + self.handle_radius
+                self.display_min = self.display_max - width
+            elif pos - lower_part <= self.handle_radius:
+                self.display_min = self.handle_radius
+                self.display_max = self.display_min + width
+            else:
+                self.display_min = pos - lower_part
+                self.display_max = self.display_min + width
+
+        self.updateValuesFromDisplay()
 
     def mousePressEvent(self, event):
-        if self.enabled:
-            pos = self.getPos(event)
-            top = self.rangeSliderSize() + self.bar_width / 2
-            if event.button() == QtCore.Qt.LeftButton:
-                if not self.collapsed:
-                    if abs(self.display_min - pos) <= (self.bar_width / 2):
-                        self.moving = "min"
-                    elif abs(self.display_max - pos) <= (self.bar_width / 2):
-                        self.moving = "max"
-                    elif pos > self.display_min and pos < self.display_max:
-                        self.moving = "bar"
-                    elif pos > self.display_max and pos < top:
-                        self.display_max = pos
-                        self.moving = "max"
-                        self.updateScaleValues()
-                        if self.emit_while_moving:
-                            self.emitRange()
-                    elif pos < self.display_min and pos > self.bar_width / 2:
-                        self.display_min = pos
-                        self.moving = "min"
-                        self.updateScaleValues()
-                        if self.emit_while_moving:
-                            self.emitRange()
-                else:
+        if not self.enabled:
+            return
+
+        pos = self.getPos(event)
+        top = self.rangeSliderSize() + self.handle_radius
+        if event.button() == QtCore.Qt.LeftButton:
+            if not self.collapsed:
+                if abs(self.display_min - pos) <= (self.handle_radius):
+                    self.moving = "min"
+                elif abs(self.display_max - pos) <= (self.handle_radius):
+                    self.moving = "max"
+                elif pos > self.display_min and pos < self.display_max:
                     self.moving = "bar"
-                    if pos > self.bar_width / 2 and pos < top:
-                        self.display_max = pos
-                        self.display_min = pos
-                        self.updateScaleValues()
-                        if self.emit_while_moving:
-                            self.emitRange()
+                elif pos > self.display_max and pos < top:
+                    self.display_max = pos
+                    self.moving = "max"
+                elif pos < self.display_min and pos > self.handle_radius:
+                    self.display_min = pos
+                    self.moving = "min"
             else:
-                if self.allow_popup:
-                    self.show_expanded_popup()
-                if self.collapsable:
-                    if self.collapsed:
-                        # print("collapsed already")
-                        self.expand()
-                    else:
-                        # print("not collapsed")
-                        self.collapse()
-                    self.emitCollapse(self.collapsed)
+                self.moving = "bar"
+                if pos > self.handle_radius and pos < top:
+                    self.display_max = pos
+                    self.display_min = pos
+        else:
+            if self.collapsible:
+                if self.collapsed:
+                    self.expand()
+                else:
+                    self.collapse()
+                self.collapsedChanged.emit(self.collapsed)
 
-            self.start_display_min = self.display_min
-            self.start_display_max = self.display_max
-            self.start_pos = pos
+        self.start_display_min = self.display_min
+        self.start_display_max = self.display_max
+        self.start_pos = pos
         self.focused.emit()
-
-    def show_expanded_popup(self):
-        p = SliderPopup(self)
-        p.show_above_mouse()
-
-    def collapse(self):
-        if self.default_collapse_logic:
-            self.bc_min, self.bc_max = self.scale_min, self.scale_max
-            min_value = (self.scale_max + self.scale_min) / 2
-            max_value = (self.scale_max + self.scale_min) / 2
-            self.setValues((min_value, max_value))
-        else:
-            # self.setValues((self.scale_min, self.scale_max))
-            self.update()
-        self.collapsed = True
-
-    def expand(self):
-        if self.default_collapse_logic:
-            min_value = self.scale_min - (self.bc_max - self.bc_min) / 2
-            max_value = self.scale_min + (self.bc_max - self.bc_min) / 2
-            if min_value < self.start:
-                min_value = self.start
-                max_value = min_value + self.bc_max - self.bc_min
-            elif max_value > self.end:
-                max_value = self.end
-                min_value = max_value - (self.bc_max - self.bc_min)
-            self.setValues((min_value, max_value))
-        else:
-            # self.setValues((self.scale_min, self.scale_max))
-            self.update()
-        self.collapsed = False
 
     def mouseReleaseEvent(self, event):
         if self.enabled:
             if not (self.moving == "none"):
-                self.emitRange()
+                self.valuesChanged.emit(self.values())
             self.moving = "none"
 
+    def collapse(self):
+        self.bc_min, self.bc_max = self.value_min, self.value_max
+        midpoint = (self.value_max + self.value_min) / 2
+        min_value = midpoint
+        max_value = midpoint
+        self.setSliderValues((min_value, max_value))
+        self.collapsed = True
+
+    def expand(self):
+        _mid = (self.bc_max - self.bc_min) / 2
+        min_value = self.value_min - _mid
+        max_value = self.value_min + _mid
+        if min_value < 0:
+            min_value = 0
+            max_value = self.bc_max - self.bc_min
+        elif max_value > 1:
+            max_value = 1
+            min_value = max_value - (self.bc_max - self.bc_min)
+        self.setSliderValues((min_value, max_value))
+        self.collapsed = False
+
     def resizeEvent(self, event):
-        self.updateDisplayValues()
+        self.updateDisplayPositions()
 
-    def setRange(self, slider_range):
-        self.start, self.end, self.single_step = slider_range
-        self.scale = self.end - self.start
-
-    def setEmitWhileMoving(self, flag):
-        if flag:
-            self.emit_while_moving = 1
-        else:
-            self.emit_while_moving = 0
-
-    def updateDisplayValues(self):
+    def updateDisplayPositions(self):
         size = self.rangeSliderSize()
-        if self.scale == 0:
-            range_min = 0
-            range_max = 0
-        else:
-            range_min = int(size * (self.scale_min - self.start) / self.scale)
-            range_max = int(size * (self.scale_max - self.start) / self.scale)
-        self.display_min = range_min + self.bar_width / 2
-        self.display_max = range_max + self.bar_width / 2
-
-    def updateScaleValues(self):
-        size = self.rangeSliderSize()
-        if (self.moving == "min") or (self.moving == "bar"):
-            ratio = (self.display_min - self.bar_width / 2) / float(size)
-            scale_min = self.start + ratio * self.scale
-            ratio = float(round(scale_min / self.single_step))
-            self.scale_min = ratio * self.single_step
-        if (self.moving == "max") or (self.moving == "bar"):
-            ratio = (self.display_max - self.bar_width / 2) / float(size)
-            scale_max = self.start + ratio * self.scale
-            ratio = float(round(scale_max / self.single_step))
-            self.scale_max = ratio * self.single_step
-        self.updateDisplayValues()
+        range_min = int(size * self.value_min)
+        range_max = int(size * self.value_max)
+        self.display_min = range_min + self.handle_radius
+        self.display_max = range_max + self.handle_radius
         self.update()
+
+    def _data_to_slider_value(self, value):
+        rmin, rmax = self.range
+        return (value - rmin) / self.scale
+
+    def _slider_to_data_value(self, value):
+        rmin, rmax = self.range
+        return rmin + value * self.scale
+
+    @property
+    def scale(self):
+        return self.data_range_max - self.data_range_min
+
+    def updateValuesFromDisplay(self):
+        size = self.rangeSliderSize()
+        val_min, val_max = self.sliderValues()
+        if (self.moving == "min") or (self.moving == "bar"):
+            scale_min = (self.display_min - self.handle_radius) / size
+            ratio = round(scale_min / self.single_step)
+            val_min = ratio * self.single_step
+        if (self.moving == "max") or (self.moving == "bar"):
+            scale_max = (self.display_max - self.handle_radius) / size
+            ratio = round(scale_max / self.single_step)
+            val_max = ratio * self.single_step
+        self.setSliderValues((val_min, val_max))
 
     def getBarColor(self):
         return self.bar_color
@@ -417,6 +390,10 @@ class QRangeSlider(QWidget):
     backgroundColor = QtCore.Property(
         QtGui.QColor, getBackgroundColor, setBackgroundColor
     )
+
+    @property
+    def handle_width(self):
+        return self.handle_radius * 2
 
     def getHandleColor(self):
         return self.handle_color
@@ -450,10 +427,16 @@ class QHRangeSlider(QRangeSlider):
 
     Parameters
     ----------
-    slider_range : 3-tuple of int
-        Min, max, and step of the slider.
-    values : 2-tuple of int
-        Start and end of the slider range.
+    initial_values : 2-tuple, optional
+        Initial min & max values of the slider, defaults to (0.2, 0.8)
+    data_range : 2-tuple, optional
+        Min and max of the slider range, defaults to (0, 1)
+    step_size : float, optional
+        Single step size for the slider, defaults to 1
+    collapsible : bool
+        Whether the slider is collapsible, defaults to True.
+    collapsed : bool
+        Whether the slider begins collapsed, defaults to False.
     parent : qtpy.QtWidgets.QWidget
         Parent widget.
     """
@@ -483,27 +466,23 @@ class QHRangeSlider(QRangeSlider):
         """
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
 
+        half_width = self.slider_width / 2
+        halfdiff = h / 2 - half_width
+
         # Background
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
-        painter.drawRect(
-            0, h / 2 - self.slider_width / 2, w, self.slider_width
-        )
+        painter.drawRect(0, halfdiff, w, self.slider_width)
 
         # Range Bar
         painter.setPen(self.bar_color)
         painter.setBrush(self.bar_color)
         if self.collapsed:
-            painter.drawRect(
-                0,
-                h / 2 - self.slider_width / 2,
-                self.display_max,
-                self.slider_width,
-            )
+            painter.drawRect(0, halfdiff, self.display_max, self.slider_width)
         else:
             painter.drawRect(
                 self.display_min,
-                h / 2 - self.slider_width / 2,
+                halfdiff,
                 self.display_max - self.display_min,
                 self.slider_width,
             )
@@ -512,20 +491,20 @@ class QHRangeSlider(QRangeSlider):
         painter.setPen(self.handle_border_color)
         painter.setBrush(self.handle_color)
         painter.drawEllipse(
-            self.display_min - self.bar_width / 2,
-            h / 2 - self.bar_width / 2,
-            self.bar_width,
-            self.bar_width,
+            self.display_min - self.handle_radius,
+            h / 2 - self.handle_radius,
+            self.handle_width,
+            self.handle_width,
         )  # left
         painter.drawEllipse(
-            self.display_max - self.bar_width / 2,
-            h / 2 - self.bar_width / 2,
-            self.bar_width,
-            self.bar_width,
+            self.display_max - self.handle_radius,
+            h / 2 - self.handle_radius,
+            self.handle_width,
+            self.handle_width,
         )  # right
 
     def rangeSliderSize(self):
-        """Size of the slider.
+        """Width of the slider, in pixels
 
         Returns
         -------
@@ -533,7 +512,7 @@ class QHRangeSlider(QRangeSlider):
             Slider bar length (horizontal sliders) or height (vertical
             sliders).
         """
-        return float(self.width() - self.bar_width)
+        return float(self.width() - self.handle_width)
 
 
 class QVRangeSlider(QRangeSlider):
@@ -542,10 +521,16 @@ class QVRangeSlider(QRangeSlider):
 
     Parameters
     ----------
-    slider_range : 3-tuple of int
-        Min, max, and step of the slider.
-    values : 2-tuple of int
-        Start and end of the slider range.
+    initial_values : 2-tuple, optional
+        Initial min & max values of the slider, defaults to (0.2, 0.8)
+    data_range : 2-tuple, optional
+        Min and max of the slider range, defaults to (0, 1)
+    step_size : float, optional
+        Single step size for the slider, defaults to 1
+    collapsible : bool
+        Whether the slider is collapsible, defaults to True.
+    collapsed : bool
+        Whether the slider begins collapsed, defaults to False.
     parent : qtpy.QtWidgets.QWidget
         Parent widget.
     """
@@ -574,27 +559,26 @@ class QVRangeSlider(QRangeSlider):
             Event from the Qt context.
         """
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
-
+        half_width = self.slider_width / 2
+        halfdiff = w / 2 - half_width
         # Background
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
-        painter.drawRect(
-            w / 2 - self.slider_width / 2, 0, self.slider_width, h
-        )
+        painter.drawRect(halfdiff, 0, self.slider_width, h)
 
         # Range Bar
         painter.setPen(self.bar_color)
         painter.setBrush(self.bar_color)
         if self.collapsed:
             painter.drawRect(
-                w / 2 - self.slider_width / 2,
+                halfdiff,
                 h - self.display_max,
                 self.slider_width,
                 self.display_max,
             )
         else:
             painter.drawRect(
-                w / 2 - self.slider_width / 2,
+                halfdiff,
                 h - self.display_max,
                 self.slider_width,
                 self.display_max - self.display_min,
@@ -604,20 +588,20 @@ class QVRangeSlider(QRangeSlider):
         painter.setPen(self.handle_border_color)
         painter.setBrush(self.handle_color)
         painter.drawEllipse(
-            w / 2 - self.bar_width / 2,
-            h - self.display_min - self.bar_width / 2,
-            self.bar_width,
-            self.bar_width,
+            w / 2 - self.handle_radius,
+            h - self.display_min - self.handle_radius,
+            self.handle_width,
+            self.handle_width,
         )  # upper
         painter.drawEllipse(
-            w / 2 - self.bar_width / 2,
-            h - self.display_max - self.bar_width / 2,
-            self.bar_width,
-            self.bar_width,
+            w / 2 - self.handle_radius,
+            h - self.display_max - self.handle_radius,
+            self.handle_width,
+            self.handle_width,
         )  # lower
 
     def rangeSliderSize(self):
-        """Size of the slider.
+        """Height of the slider, in pixels
 
         Returns
         -------
@@ -625,4 +609,4 @@ class QVRangeSlider(QRangeSlider):
             Slider bar length (horizontal sliders) or height (vertical
             sliders).
         """
-        return float(self.height() - self.bar_width)
+        return float(self.height() - self.handle_width)

@@ -1,10 +1,12 @@
 import warnings
 from vispy.scene.visuals import Image as ImageNode
-from vispy.scene.visuals import Volume as VolumeNode
+from .volume import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._constants import Rendering
+from ..layers import Image, Labels
+
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -101,7 +103,11 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_interpolation_change(self):
-        if self.layer.dims.ndisplay == 2:
+        if self.layer.dims.ndisplay == 3 and isinstance(self.layer, Labels):
+            self.node.interpolation = 'nearest'
+        elif self.layer.dims.ndisplay == 3 and isinstance(self.layer, Image):
+            self.node.interpolation = 'linear'
+        else:
             self.node.interpolation = self.layer.interpolation
 
     def _on_rendering_change(self):

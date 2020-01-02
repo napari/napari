@@ -123,3 +123,31 @@ def qt_signals_blocked(obj):
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+def connect_model_to_rangeslider(layer, attr, slider, initialize=False):
+    range_attr = f"{attr}_range"
+
+    try:
+        getattr(layer, range_attr)
+    except AttributeError:
+        range_attr = f"_{attr}_range"
+        try:
+            getattr(layer, range_attr)
+        except AttributeError as e:
+            raise AttributeError(
+                f"{str(e)}. "
+                "'connect_model_to_rangeslider' assumes that the underlying "
+                f"model has attributes named both '{attr}' and '{range_attr}'"
+            )
+
+    def on_model_change(event=None):
+        with qt_signals_blocked(slider):
+            slider.setRange(getattr(layer, range_attr))
+            slider.setValues(getattr(layer, attr))
+
+    slider.valuesChanged.connect(lambda x: setattr(layer, attr, x))
+    getattr(layer.events, attr).connect(on_model_change)
+
+    if initialize:
+        on_model_change()

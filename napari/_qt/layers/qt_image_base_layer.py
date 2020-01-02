@@ -3,7 +3,7 @@ from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider
 
 from .. import QHRangeSlider
-from ..utils import qt_signals_blocked
+from ..utils import qt_signals_blocked, connect_model_to_rangeslider
 from .qt_base_layer import QtLayerControls
 
 
@@ -12,9 +12,6 @@ class QtBaseImageControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(
-            lambda e: self.contrast_limits_slider_update()
-        )
         self.layer.events.gamma.connect(lambda e: self.gamma_slider_update())
 
         comboBox = QComboBox()
@@ -28,16 +25,11 @@ class QtBaseImageControls(QtLayerControls):
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
-            slider_range=[0, 1, 0.0001], values=[0, 1], parent=self
+            self.layer.contrast_limits, self.layer._contrast_limits_range
         )
-        self.contrastLimitsSlider.setEmitWhileMoving(True)
-        self.contrastLimitsSlider.collapsable = False
-        self.contrastLimitsSlider.setEnabled(True)
-
-        self.contrastLimitsSlider.rangeChanged.connect(
-            self.contrast_limits_slider_changed
+        connect_model_to_rangeslider(
+            self.layer, 'contrast_limits', self.contrastLimitsSlider
         )
-        self.contrast_limits_slider_update()
 
         # gamma slider
         sld = QSlider(Qt.Horizontal)
@@ -75,20 +67,6 @@ class QtBaseImageControls(QtLayerControls):
             QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
-
-    def contrast_limits_slider_changed(self, slidermin, slidermax):
-        valmin, valmax = self.layer.contrast_limits_range
-        cmin = valmin + slidermin * (valmax - valmin)
-        cmax = valmin + slidermax * (valmax - valmin)
-        self.layer.contrast_limits = cmin, cmax
-
-    def contrast_limits_slider_update(self):
-        valmin, valmax = self.layer.contrast_limits_range
-        cmin, cmax = self.layer.contrast_limits
-        slidermin = (cmin - valmin) / (valmax - valmin)
-        slidermax = (cmax - valmin) / (valmax - valmin)
-        with qt_signals_blocked(self.contrastLimitsSlider):
-            self.contrastLimitsSlider.setValues((slidermin, slidermax))
 
     def gamma_slider_changed(self, value):
         self.layer.gamma = value / 100
