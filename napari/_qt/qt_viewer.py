@@ -1,12 +1,12 @@
 import os.path
-import numpy as np
 import inspect
 from pathlib import Path
 
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QGridLayout, QFileDialog, QSplitter
+from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
+from qtpy.QtCore import QThreadPool
 from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
@@ -15,19 +15,22 @@ from vispy.app import use_app
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import resources_dir
-from ..util.theme import template
-from ..util.misc import (
-    str_to_rgb,
+from ..utils.theme import template
+from ..utils.misc import str_to_rgb
+from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
     mouse_release_callbacks,
 )
-from ..util.keybindings import components_to_key_combo
+from ..utils.keybindings import components_to_key_combo
 
+from .utils import QImg2array
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
+from .qt_viewer_dock_widget import QtViewerDockWidget
+from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
 
 
@@ -42,6 +45,8 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
 
+        self.pool = QThreadPool()
+
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
         )
@@ -54,21 +59,57 @@ class QtViewer(QSplitter):
         self.viewerButtons = QtViewerButtons(self.viewer)
         self.console = QtConsole({'viewer': self.viewer})
 
+        layerList = QWidget()
+        layerList.setObjectName('layerList')
+        layerListLayout = QVBoxLayout()
+        layerListLayout.addWidget(self.layerButtons)
+        layerListLayout.addWidget(self.layers)
+        layerListLayout.addWidget(self.viewerButtons)
+        layerListLayout.setContentsMargins(8, 4, 8, 6)
+        layerList.setLayout(layerListLayout)
+        self.dockLayerList = QtViewerDockWidget(
+            self,
+            layerList,
+            name='layer list',
+            area='left',
+            allowed_areas=['left', 'right'],
+        )
+        self.dockLayerControls = QtViewerDockWidget(
+            self,
+            self.controls,
+            name='layer controls',
+            area='left',
+            allowed_areas=['left', 'right'],
+        )
+        self.dockConsole = QtViewerDockWidget(
+            self,
+            self.console,
+            name='console',
+            area='bottom',
+            allowed_areas=['top', 'bottom'],
+            shortcut='Ctrl+Shift+C',
+        )
+        self.dockConsole.setVisible(False)
+        self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
+        self.dockLayerList.setMaximumWidth(258)
+        self.dockLayerList.setMinimumWidth(258)
+
+        self.aboutKeybindings = QtAboutKeybindings(self.viewer)
+        self.aboutKeybindings.hide()
+
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
 
         if self.console.shell is not None:
-            self.console.style().unpolish(self.console)
-            self.console.style().polish(self.console)
-            self.console.hide()
             self.viewerButtons.consoleButton.clicked.connect(
-                lambda: self._toggle_console()
+                lambda: self.toggle_console()
             )
         else:
             self.viewerButtons.consoleButton.setEnabled(False)
 
         self.canvas = SceneCanvas(keys=None, vsync=True)
         self.canvas.events.ignore_callback_errors = False
+        self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 
@@ -83,22 +124,15 @@ class QtViewer(QSplitter):
         self._update_camera()
 
         main_widget = QWidget()
-        main_layout = QGridLayout()
-        main_layout.setContentsMargins(15, 20, 15, 10)
-        main_layout.addWidget(self.canvas.native, 0, 1, 3, 1)
-        main_layout.addWidget(self.dims, 3, 1)
-        main_layout.addWidget(self.controls, 0, 0)
-        main_layout.addWidget(self.layerButtons, 1, 0)
-        main_layout.addWidget(self.layers, 2, 0)
-        main_layout.addWidget(self.viewerButtons, 3, 0)
-        main_layout.setColumnStretch(1, 1)
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(10, 22, 10, 2)
+        main_layout.addWidget(self.canvas.native)
+        main_layout.addWidget(self.dims)
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
-        if self.console.shell is not None:
-            self.addWidget(self.console)
 
         self._last_visited_dir = str(Path.home())
 
@@ -128,8 +162,17 @@ class QtViewer(QSplitter):
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
+        # stop any animations whenever the layers change
+        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    def _constrain_width(self, event):
+        # allow the layer controls to be wider, only if floated
+        if self.dockLayerControls.isFloating():
+            self.controls.setMaximumWidth(700)
+        else:
+            self.controls.setMaximumWidth(220)
 
     def _add_layer(self, event):
         """When a layer is added, set its parent and order."""
@@ -161,7 +204,7 @@ class QtViewer(QSplitter):
         if self.viewer.dims.ndisplay == 3:
             # Set a 3D camera
             if not isinstance(self.view.camera, ArcballCamera):
-                self.view.camera = ArcballCamera(name="ArcballCamera")
+                self.view.camera = ArcballCamera(name="ArcballCamera", fov=0)
                 # flip y-axis to have correct alignment
                 # self.view.camera.flip = (0, 1, 0)
 
@@ -189,22 +232,7 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         img = self.canvas.native.grabFramebuffer()
-        b = img.constBits()
-        h, w, c = img.height(), img.width(), 4
-
-        # As vispy doesn't use qtpy we need to reconcile the differences
-        # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
-        # a QImage to a numpy array.
-        if API_NAME == 'PySide2':
-            arr = np.array(b).reshape(h, w, c)
-        else:
-            b.setsize(h * w * c)
-            arr = np.frombuffer(b, np.uint8).reshape(h, w, c)
-
-        # Format of QImage is ARGB32_Premultiplied, but color channels are
-        # reversed.
-        arr = arr[:, :, [2, 1, 0, 3]]
-        return arr
+        return QImg2array(img)
 
     def _open_images(self):
         """Add image files from the menubar."""
@@ -213,7 +241,7 @@ class QtViewer(QSplitter):
             caption='Select image(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if filenames is not None:
+        if (filenames != []) and (filenames is not None):
             self._add_files(filenames)
 
     def _open_folder(self):
@@ -223,7 +251,7 @@ class QtViewer(QSplitter):
             caption='Select folder...',
             directory=self._last_visited_dir,  # home dir by default
         )
-        if folder is not None:
+        if folder not in {'', None}:
             self._add_files([folder])
 
     def _add_files(self, filenames):
@@ -262,9 +290,10 @@ class QtViewer(QSplitter):
 
     def _on_reset_view(self, event):
         if isinstance(self.view.camera, ArcballCamera):
-            self.view.camera._quaternion = self.view.camera._quaternion.create_from_axis_angle(
+            quat = self.view.camera._quaternion.create_from_axis_angle(
                 *event.quaternion
             )
+            self.view.camera._quaternion = quat
             self.view.camera.center = event.center
             self.view.camera.scale_factor = event.scale_factor
         else:
@@ -279,13 +308,19 @@ class QtViewer(QSplitter):
         bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
         self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
+        self.aboutKeybindings.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
-    def _toggle_console(self):
+    def toggle_console(self):
         """Toggle console visible and not visible."""
-        self.console.setVisible(not self.console.isVisible())
+        viz = not self.dockConsole.isVisible()
+        # modulate visibility at the dock widget level as console is docakable
+        self.dockConsole.setVisible(viz)
+        if self.dockConsole.isFloating():
+            self.dockConsole.setFloating(True)
+
         self.viewerButtons.consoleButton.setProperty(
-            'expanded', self.console.isVisible()
+            'expanded', self.dockConsole.isVisible()
         )
         self.viewerButtons.consoleButton.style().unpolish(
             self.viewerButtons.consoleButton
@@ -405,6 +440,16 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
         self._add_files(filenames)
+
+    def closeEvent(self, event):
+        if self.pool.activeThreadCount() > 0:
+            self.pool.clear()
+        event.accept()
+
+    def shutdown(self):
+        self.pool.clear()
+        self.canvas.close()
+        self.console.shutdown()
 
 
 def viewbox_key_event(event):

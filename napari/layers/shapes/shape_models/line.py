@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import create_box
+from ..shape_utils import create_box
 
 
 class Line(Shape):

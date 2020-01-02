@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_util import find_corners, rectangle_to_box
+from ..shape_utils import find_corners, rectangle_to_box
 
 
 class Rectangle(Shape):

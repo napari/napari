@@ -46,19 +46,20 @@ class QtVectorsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel('opacity:'), 0, 0, 1, 3)
-        self.grid_layout.addWidget(self.opacitySilder, 0, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('width:'), 1, 0, 1, 0)
-        self.grid_layout.addWidget(self.widthSpinBox, 1, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('length:'), 2, 0, 1, 3)
-        self.grid_layout.addWidget(self.lengthSpinBox, 2, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('blending:'), 3, 0, 1, 3)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 3, 1, 4)
-        self.grid_layout.addWidget(QLabel('edge color:'), 4, 0, 1, 3)
-        self.grid_layout.addWidget(self.edgeComboBox, 4, 3, 1, 3)
-        self.grid_layout.addWidget(self.edgeColorSwatch, 4, 6)
+        self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
+        self.grid_layout.addWidget(self.opacitySilder, 0, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('width:'), 1, 0)
+        self.grid_layout.addWidget(self.widthSpinBox, 1, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('length:'), 2, 0)
+        self.grid_layout.addWidget(self.lengthSpinBox, 2, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
+        self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
+        self.grid_layout.addWidget(QLabel('edge color:'), 4, 0)
+        self.grid_layout.addWidget(self.edgeComboBox, 4, 2)
+        self.grid_layout.addWidget(self.edgeColorSwatch, 4, 1)
         self.grid_layout.setRowStretch(5, 1)
-        self.grid_layout.setVerticalSpacing(4)
+        self.grid_layout.setColumnStretch(1, 1)
+        self.grid_layout.setSpacing(4)
 
     def change_edge_color(self, text):
         self.layer.edge_color = text

@@ -22,7 +22,11 @@ class Surface2DSuite:
 
     def time_create_layer(self, n):
         """Time to create an image layer."""
-        layer = Surface(self.data)
+        Surface(self.data)
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -61,7 +65,11 @@ class Surface3DSuite:
 
     def time_create_layer(self, n):
         """Time to create a layer."""
-        layer = Surface(self.data)
+        Surface(self.data)
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""

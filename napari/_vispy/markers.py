@@ -1,19 +1,20 @@
 from vispy.scene.visuals import Markers as BaseMarkers
-import numpy as np
 
 
+# Custom markers class is needed for entering 3D rendering mode when a points
+# layer is invisble and the self._data property is None
 class Markers(BaseMarkers):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _prepare_draw(self, view):
-        if self._symbol is None:
-            return False
-        view.view_program['u_px_scale'] = view.transforms.pixel_scale
-        if self.scaling:
-            tr = view.transforms.get_transform('visual', 'document').simplified
-            mat = tr.map(np.eye(3)) - tr.map(np.zeros((3, 3)))
-            scale = np.linalg.norm(mat[:, :3])
-            view.view_program['u_scale'] = scale
+    def _compute_bounds(self, axis, view):
+        # This if statement needs to be added to vispy master
+        if self._data is None:
+            return None
+        pos = self._data['a_position']
+        if pos is None:
+            return None
+        if pos.shape[1] > axis:
+            return (pos[:, axis].min(), pos[:, axis].max())
         else:
-            view.view_program['u_scale'] = 1
+            return (0, 0)

@@ -4,9 +4,9 @@ import numpy as np
 import itertools
 from copy import copy, deepcopy
 from ..base import Layer
-from ...util.event import Event
-from ...util.misc import ensure_iterable
-from ...util.status_messages import format_float
+from ...utils.event import Event
+from ...utils.misc import ensure_iterable
+from ...utils.status_messages import format_float
 from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
 
@@ -200,6 +200,8 @@ class Points(Layer):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
+        self._highlight_index = []
+        self._highlight_box = None
 
         self._drag_start = None
 
@@ -292,7 +294,7 @@ class Points(Layer):
     def n_dimensional(self, n_dimensional: bool) -> None:
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
-        self._set_view_slice()
+        self.refresh()
 
     @property
     def symbol(self) -> str:
@@ -328,7 +330,7 @@ class Points(Layer):
                 ).T.copy()
             except Exception:
                 raise ValueError("Size is not compatible for broadcasting")
-        self._set_view_slice()
+        self.refresh()
 
     @property
     def size(self) -> Union[int, float]:
@@ -341,7 +343,7 @@ class Points(Layer):
         if self._update_properties and len(self.selected_data) > 0:
             for i in self.selected_data:
                 self.sizes[i, :] = (self.sizes[i, :] > 0) * size
-            self._set_view_slice()
+            self.refresh()
         self.status = format_float(self.size)
         self.events.size()
 
@@ -511,7 +513,7 @@ class Points(Layer):
             else:
                 self.editable = True
 
-        if self.editable == False:
+        if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
     def _slice_data(self, indices):
@@ -559,7 +561,7 @@ class Points(Layer):
         else:
             return [], [], []
 
-    def get_value(self):
+    def _get_value(self):
         """Determine if points at current coordinates.
 
         Returns
@@ -622,11 +624,6 @@ class Points(Layer):
         if len(selected) == 0:
             self.selected_data
         self._selected_box = self.interaction_box(self._selected_view)
-
-        self.events.set_data()
-        self._set_highlight(force=True)
-        self._update_thumbnail()
-        self._update_coordinates()
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
@@ -757,7 +754,7 @@ class Points(Layer):
             self.data[np.ix_(index, disp)] = (
                 self.data[np.ix_(index, disp)] + shift
             )
-            self._set_view_slice()
+            self.refresh()
 
     def _copy_data(self):
         """Copy selected points to clipboard."""
@@ -805,7 +802,7 @@ class Points(Layer):
             self._selected_data = list(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
-            self._set_view_slice()
+            self.refresh()
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg

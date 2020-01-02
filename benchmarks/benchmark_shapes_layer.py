@@ -18,7 +18,11 @@ class Shapes2DSuite:
 
     def time_create_layer(self, n):
         """Time to create an image layer."""
-        layer = Shapes(self.data, shape_type='polygon')
+        Shapes(self.data, shape_type='polygon')
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""
@@ -53,7 +57,11 @@ class Shapes3DSuite:
 
     def time_create_layer(self, n):
         """Time to create a layer."""
-        layer = Shapes(self.data, shape_type='polygon')
+        Shapes(self.data, shape_type='polygon')
+
+    def time_refresh(self, n):
+        """Time to refresh view."""
+        self.layer.refresh()
 
     def time_set_view_slice(self, n):
         """Time to set view slice."""

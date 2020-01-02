@@ -28,7 +28,6 @@ import os
 import argparse
 from datetime import datetime
 from collections import OrderedDict
-import string
 from warnings import warn
 
 from github import Github
@@ -36,8 +35,6 @@ from github import Github
 try:
     from tqdm import tqdm
 except ImportError:
-    from warnings import warn
-
     warn(
         'tqdm not installed. This script takes approximately 5 minutes '
         'to run. To view live progressbars, please install tqdm. '
@@ -153,11 +150,12 @@ authors.discard('Azure Pipelines Bot')
 
 highlights = OrderedDict()
 
+highlights['Highlight'] = {}
 highlights['New Feature'] = {}
 highlights['Improvement'] = {}
 highlights['Bugfix'] = {}
 highlights['API Change'] = {}
-highlights['Deprecations'] = {}
+highlights['Deprecation'] = {}
 highlights['Build Tool'] = {}
 other_pull_requests = {}
 
@@ -188,7 +186,7 @@ for pull in tqdm(
 
 
 # add Other PRs to the ordered dict to make doc generation easier.
-highlights['Pull Request'] = other_pull_requests
+highlights['Other Pull Request'] = other_pull_requests
 
 
 # Now generate the release notes
@@ -198,10 +196,10 @@ print('=' * len(announcement_title))
 
 print(
     f"""
-We're happy to announce the release of napari v{args.version}!
+We're happy to announce the release of napari {args.version}!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-base
+images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 """
 )
@@ -214,9 +212,9 @@ https://github.com/napari/napari
 )
 
 for section, pull_request_dicts in highlights.items():
-    if not pull_request_dicts:
-        continue
     print(f'{section}s\n{"*" * (len(section)+1)}')
+    if len(pull_request_dicts.items()) == 0:
+        print()
     for number, pull_request_info in pull_request_dicts.items():
         print(f'- {pull_request_info["summary"]} (#{number})')
 

@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QStackedWidget, QWidget
+from qtpy.QtWidgets import QStackedWidget, QFrame
 from .layers import create_qt_controls
 
 
@@ -9,7 +9,7 @@ class QtControls(QStackedWidget):
         self.viewer = viewer
 
         self.setMouseTracking(True)
-        self.empty_widget = QWidget()
+        self.empty_widget = QFrame()
         self.widgets = {}
         self.addWidget(self.empty_widget)
         self._display(None)

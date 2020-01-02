@@ -7,13 +7,55 @@ it will include generating release notes, documentation, etc.
 This is mainly meant for the core developers who will actually be performing the release.
 They will need to have a [PyPI](https://pypi.org) account with upload permissions to the `napari` package.
 
+You will also need the additional `release` dependencies in `requirements/release.txt` to complete the release process.
+
 ## determining the version
 
 The version of `napari` is automatically determined by [`versioneer`](https://github.com/warner/python-versioneer)
 from the latest [`git` tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) beginning with `v`.
-Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with the new version number.
-You should include a message with the tag but because we don't generate release notes for now,
-this will be a basic `"Version X.Y.Zrc1"`:
+Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with the new version number. It is likely something like `X.Y.Z`. Before making a release though we need to generate the release notes.
+
+## generating release notes
+
+1. Review and cleanup ``docs/release/release_dev.txt``. This may be empty if it has not been
+   updated during work on the last release.
+
+2. Make a list of merges, contributors, and reviewers by running
+   ``python docs/release/generate_release_notes.py -h`` and following that file's usage. For minor or major releases generate the list to include everything since the last minor or major release.
+   For other releases generate the list to include
+   everything since the last release for which there
+   are release notes (which should just be the last release). For example making the release notes
+   for the `0.2.0` release can be done as follows:
+   ```
+   python docs/release/generate_release_notes.py v0.1.0 master --version 0.2.0 | tee docs/release/release_0_2_0.rst
+   ```
+
+3. Paste this list at the end of the ``release_dev.txt``.
+
+4. Scan the PR titles for highlights, deprecations, API changes,
+   and bugfixes, and mention these in the relevant sections of the notes.
+   Try to present the information in an expressive way by mentioning
+   the affected functions, elaborating on the changes and their
+   consequences. If possible, organize semantically close PRs in groups.
+
+5. Make sure the file name is of the form ``doc/release/release_<major>_<minor>_<release>.txt``.
+
+6. Copy ``doc/release/release_template.txt`` to
+   ``doc/release/release_dev.txt`` for the next release.
+
+7. Copy relevant deprecations from ``release_<major>_<minor>_<release>.txt``
+   to ``release_dev.txt``.
+
+8. Make and merge a PR with these release notes before moving onto the next steps.
+
+
+## Tagging the new release candidate
+
+First we will generate a release candidate, which will contain the letters `rc`.
+Using release candidates allows us to test releases on PyPi without using up the actual
+release number.
+
+You should include a basic message with the tag `"Version X.Y.Zrc1"`:
 ```bash
 $ git tag -a vX.Y.Zrc1 -m "Version X.Y.Zrc1" master
 ```
@@ -43,70 +85,42 @@ $ python setup.py sdist bdist_wheel
 [`MANIFEST.in`](../MANIFEST.in) determines which non-Python files are included.
 Make sure to check that all necessary ones are listed before beginning the release process.
 
-## uploading to PyPI
+## uploading the release candidate to PyPI
 
-You'll need `twine` installed for this step:
+Upload the release candidate with:
 ```bash
-$ pip install twine
+$ python -m twine upload dist/napari-X.Y.Zrc1.tar.gz
 ```
 
-To make sure that everything is working properly, first upload to `test.pypi.org`,
-entering your credentials when prompted:
+The release candidate can then be tested with
+
 ```bash
-$ python -m twine upload --repository-url=https://test.pypi.org/legacy/ dist/*
+$ pip install --pre napari
+```
+or
+
+```bash
+$ pip install -U --pre napari
+```
+if napari is already installed.
+
+If the release candidate is not what you want, make your changes and repeat the process from the beginning but
+incrementing the number after `rc` on tag (e.g. `vX.Y.Zrc2`).
+
+Once you are satisfied with the release candidate it is time to generate the actual release.
+
+## Generating the actual release
+To generate the actual release you will now repeat the processes above but now dropping the `rc`.
+For example:
+
+```bash
+$ git tag -a vX.Y.Z -m "Version X.Y.Z" master
+$ rm -rf dist build
+$ python setup.py sdist bdist_wheel
+$ python -m twine upload dist/napari-X.Y.Z.tar.gz
 ```
 
-Then create a new environment and download the release from the test servers:
-```bash
-$ python -m pip install --extra-index-url https://test.pypi.org/simple/ napari==X.Y.Z
-```
-
-Try running some examples and tests to verify that everything is working properly.
-If these fail, delete the tag with:
-```bash
-$ git tag -d vX.Y.Z
-```
-
-Make your changes and repeat the process from the beginning but with a slightly different tag (e.g. `vX.Y.Z.0`).
-Once the release passes, remember to reset the tag name to the original `vX.Y.Z`
-to avoid uploading a mislabeled version.
-
-Then, you may complete the release with:
-```bash
-$ python -m twine upload dist/*
-```
-
-Don't forget to push the new tag to the repo!
+At the very end you should push the new tags to the repo.
 ```bash
 $ git push upstream --tags
 ```
-
-## generating release notes
-
-1. Review and cleanup ``docs/release/release_dev.txt``.
-
-2. Make a list of merges, contributors, and reviewers by running
-   ``python docs/release/generate_release_notes.py -h`` and following that file's usage. For minor or major releases generate the list to include everything since the last minor or major release.
-   For other releases generate the list to include
-   everything since the last release for which there
-   are release notes (which should just be the last release). For example making the release notes
-   for the `0.2.0` release can be done as follows:
-   ```
-   python docs/release/generate_release_notes.py v0.1.0 master --version 0.2.0 | tee docs/release/release_0_2.rst
-   ```
-
-3. Paste this list at the end of the ``release_dev.txt``.
-
-4. Scan the PR titles for highlights, deprecations, API changes,
-   and bugfixes, and mention these in the relevant sections of the notes.
-   Try to present the information in an expressive way by mentioning
-   the affected functions, elaborating on the changes and their
-   consequences. If possible, organize semantically close PRs in groups.
-
-5. Rename the file to ``doc/release/release_<major>_<minor>.txt`` for a minor release and ``doc/release/release_<major>_<minor>_<release>.txt`` otherwise
-
-6. Copy ``doc/release/release_template.txt`` to
-   ``doc/release/release_dev.txt`` for the next release.
-
-7. Copy relevant deprecations from ``release_<major>_<minor>_<release>.txt``
-   to ``release_dev.txt``.

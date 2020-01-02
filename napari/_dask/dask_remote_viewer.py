@@ -1,4 +1,4 @@
-from .util import RemoteTopic
+from .utils import RemoteTopic
 
 
 class DaskRemoteViewer:

@@ -1,5 +1,4 @@
 import numpy as np
-from copy import copy
 from napari.layers.shapes.shape_list import ShapeList
 from napari.layers.shapes.shape_models import Rectangle, Polygon, Path
 

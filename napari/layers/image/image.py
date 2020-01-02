@@ -8,15 +8,12 @@ from copy import copy
 from scipy import ndimage as ndi
 import vispy.color
 from ..base import Layer
-from ...util.misc import (
-    calc_data_range,
-    increment_unnamed_colormap,
-    get_pyramid_and_rgb,
-)
-from ...util.event import Event
-from ...util.status_messages import format_float
+from ..layer_utils import calc_data_range, increment_unnamed_colormap
+from ...utils.event import Event
+from ...utils.status_messages import format_float
 from ._constants import Rendering, Interpolation
-from ...util.colormaps import make_colorbar, AVAILABLE_COLORMAPS
+from ...utils.colormaps import make_colorbar, AVAILABLE_COLORMAPS
+from .image_utils import get_pyramid_and_rgb
 
 
 class Image(Layer):
@@ -51,10 +48,12 @@ class Image(Layer):
         luminance images. If not passed is calculated as the min and max of
         the image.
     gamma : float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    iso_threshold : float
+        Threshold for isosurface.
     name : str
         Name of the layer.
     metadata : dict
@@ -105,6 +104,8 @@ class Image(Layer):
         rgb the contrast_limits_range is ignored.
     gamma : float
         Gamma correction for determining colormap linearity.
+    iso_threshold : float
+        Threshold for isosurface.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported modes.
 
@@ -132,6 +133,7 @@ class Image(Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
+        iso_threshold=0.5,
         name=None,
         metadata=None,
         scale=None,
@@ -164,6 +166,7 @@ class Image(Layer):
             colormap=Event,
             interpolation=Event,
             rendering=Event,
+            iso_threshold=Event,
         )
 
         # Set data
@@ -184,10 +187,12 @@ class Image(Layer):
             )
         else:
             self._data_view = np.zeros((1,) * self.dims.ndisplay)
+        self._data_raw = self._data_view
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
+        self._iso_threshold = iso_threshold
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         if contrast_limits is None:
@@ -242,7 +247,7 @@ class Image(Layer):
         if self._data_level == level:
             return
         self._data_level = level
-        self._set_view_slice()
+        self.refresh()
 
     @property
     def level_shapes(self):
@@ -274,7 +279,7 @@ class Image(Layer):
         if np.all(self._top_left == top_left):
             return
         self._top_left = top_left.astype(int)
-        self._set_view_slice()
+        self.refresh()
 
     @property
     def colormap(self):
@@ -343,6 +348,18 @@ class Image(Layer):
         self._gamma = value
         self._update_thumbnail()
         self.events.gamma()
+
+    @property
+    def iso_threshold(self):
+        """float: threshold for isosurface."""
+        return self._iso_threshold
+
+    @iso_threshold.setter
+    def iso_threshold(self, value):
+        self.status = format_float(value)
+        self._iso_threshold = value
+        self._update_thumbnail()
+        self.events.iso_threshold()
 
     @property
     def interpolation(self):
@@ -479,6 +496,7 @@ class Image(Layer):
                     self._data_pyramid[-1][tuple(indices)]
                 ).transpose(order)
         else:
+            self._scale_view = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
             thumbnail = image
 
@@ -494,12 +512,9 @@ class Image(Layer):
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(thumbnail)
 
-        self._update_thumbnail()
-        self._update_coordinates()
         if self.is_pyramid:
             self.events.scale()
             self.events.translate()
-        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
@@ -562,7 +577,7 @@ class Image(Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def get_value(self):
+    def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 

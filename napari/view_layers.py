@@ -12,6 +12,7 @@ def view_image(
     gamma=1,
     interpolation='nearest',
     rendering='mip',
+    iso_threshold=0.5,
     name=None,
     metadata=None,
     scale=None,
@@ -23,6 +24,7 @@ def view_image(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add an image layer.
 
@@ -61,12 +63,14 @@ def view_image(
         that is being expanded and then each colormap is applied to each
         image.
     gamma : list, float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
         If a list then must be same length as the axis that is being expanded
         and then each entry in the list is applied to each image.
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    iso_threshold : float
+        Threshold for isosurface.
     name : str
         Name of the layer.
     metadata : dict
@@ -84,22 +88,27 @@ def view_image(
     visible : bool
         Whether the layer visual is currently being displayed.
     path : str or list of str
-        Path or list of paths to image data.
+        Path or list of paths to image data. Paths can be passed as strings
+        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_image(
         data=data,
         channel_axis=channel_axis,
@@ -110,6 +119,7 @@ def view_image(
         gamma=gamma,
         interpolation=interpolation,
         rendering=rendering,
+        iso_threshold=iso_threshold,
         name=name,
         metadata=metadata,
         scale=scale,
@@ -141,6 +151,7 @@ def view_points(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a points layer.
 
@@ -185,10 +196,12 @@ def view_points(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
 
     Returns
     -------
@@ -200,7 +213,9 @@ def view_points(
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_points(
         data=data,
         symbol=symbol,
@@ -221,12 +236,11 @@ def view_points(
 
 
 def view_labels(
-    data,
+    data=None,
     *,
     is_pyramid=None,
     num_colors=50,
     seed=0.5,
-    n_dimensional=False,
     name=None,
     metadata=None,
     scale=None,
@@ -237,6 +251,8 @@ def view_labels(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
+    path=None,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -257,8 +273,6 @@ def view_labels(
         Number of unique colors to use in colormap.
     seed : float
         Seed for colormap random generator.
-    n_dimensional : bool
-        If `True`, paint and fill edit labels across all dimensions.
     name : str
         Name of the layer.
     metadata : dict
@@ -275,27 +289,33 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    path : str or list of str
+        Path or list of paths to image data. Paths can be passed as strings
+        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_labels(
-        data,
+        data=data,
         is_pyramid=is_pyramid,
         num_colors=num_colors,
         seed=seed,
-        n_dimensional=n_dimensional,
         name=name,
         metadata=metadata,
         scale=scale,
@@ -303,6 +323,7 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        path=path,
     )
     return viewer
 
@@ -325,6 +346,7 @@ def view_shapes(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a shapes layer.
 
@@ -383,17 +405,21 @@ def view_shapes(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_shapes(
         data=data,
         shape_type=shape_type,
@@ -428,6 +454,7 @@ def view_surface(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a surface layer.
 
@@ -436,8 +463,9 @@ def view_surface(
     data : 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (N, ) array of
-        values used to color vertices.
+        of the mesh triangles. The third element is the (K0, ..., KL, N)
+        array of values used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -450,7 +478,7 @@ def view_surface(
         luminance images. If not passed is calculated as the min and max of
         the image.
     gamma : float
-        Gamma correction for determining colormap linearity.  Defaults to 1.
+        Gamma correction for determining colormap linearity. Defaults to 1.
     name : str
         Name of the layer.
     metadata : dict
@@ -471,17 +499,21 @@ def view_surface(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_surface(
         data,
         colormap=colormap,
@@ -514,6 +546,7 @@ def view_vectors(
     title='napari',
     ndisplay=2,
     order=None,
+    axis_labels=None,
 ):
     """Create a viewer and add a vectors layer.
 
@@ -551,17 +584,21 @@ def view_vectors(
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    tuple of int
+    order : tuple of int
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
 
     Returns
     -------
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    viewer = Viewer(title=title, ndisplay=ndisplay, order=order)
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
     viewer.add_vectors(
         data,
         edge_width=edge_width,
