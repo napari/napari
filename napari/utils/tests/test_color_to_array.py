@@ -36,6 +36,6 @@ def test_invalid_colors(color):
 def test_warning_colors(colors):
     with pytest.warns(UserWarning):
         np.testing.assert_array_equal(
-            np.ones((len(colors), 4), dtype=np.float32),
+            np.ones((max(len(colors), 1), 4), dtype=np.float32),
             transform_color(colors),
         )

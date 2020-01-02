@@ -51,7 +51,7 @@ single_color_options = [
 single_colors_as_array = [
     ColorArray(RED).rgba,
     ColorArray(GREEN).rgba,
-    ColorArray((0.0, 0.0, 0.0, 0.0,)).rgba,
+    ColorArray((0.0, 0.0, 0.0, 0.0)).rgba,
     ColorArray(RED).rgba,
     ColorArray('#00ff00').rgba,
     ColorArray(GREEN).rgba,
@@ -117,12 +117,15 @@ invalid_colors = [
     ('a', 1, 1, 1),
     4,
     (3,),
+    (34, 342, 2334, 4343, 32, 0.1, -1),
+    np.array([[1, 1, 1, 1, 1]]),
+    np.array([[[0, 1, 1, 1]]]),
 ]
 
 warning_colors = [
-    np.array([[1, 1, 1, 1, 1]]),
-    np.array([[[0, 1, 1, 1]]]),
     np.array([]),
     np.array(['g', 'g'], dtype=object),
     [],
+    [[1, 2], [3, 4], [5, 6]],
+    np.array([[10], [10], [10], [10]]),
 ]

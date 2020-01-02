@@ -61,9 +61,9 @@ def _handle_str(color: str) -> np.ndarray:
     # waiting to be merged.
     if len(color) == 0:
         warnings.warn(
-            "Empty string detected." " Returning a white color instead."
+            "Empty string detected. Returning a black color instead."
         )
-        return np.ones((1, 4), dtype=np.float32)
+        return np.zeros((1, 4), dtype=np.float32)
     color = color.replace("transparent", "#00000000")
     as_arr = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
     if as_arr.shape[1] == 3:
@@ -149,7 +149,45 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
             return np.ones((len(colors), 4), dtype=np.float32)
 
     # Test the dimensionality of the input array
+
+    # Empty color array can be a way for the user to signal
+    # that it wants the "default" colors of napari. We return
+    # a single white color.
+    if colors.shape[-1] == 0:
+        warnings.warn(
+            "Given color input is empty. Converting input to"
+            " a white color array."
+        )
+        return np.ones((1, 4), dtype=np.float32)
+
     colors = np.atleast_2d(colors)
+
+    # Arrays with more than two dimensions don't have a clear
+    # conversion method to a color array and thus raise an error.
+    if colors.ndim > 2:
+        raise ValueError(
+            "Given colors input should contain one or two dimensions."
+            f" Received array with {colors.ndim} dimensions."
+        )
+
+    # User provided a list of numbers as color input. This input
+    # cannot be coerced into something understandable and thus
+    # will return an error.
+    if colors.shape[0] == 1 and colors.shape[1] not in {3, 4}:
+        raise ValueError(
+            "Given color array has an unsupported format."
+            f" Received the following array:\n{colors}\n"
+            "A proper color array should have 3-4 columns"
+            " with a row per data entry."
+        )
+
+    # The user gave a list of colors, but it contains a wrong number
+    # of columns. This check will also drop Nx1 (2D) arrays, since
+    # numpy has vectors, and representing colors in this way
+    # (column vector-like) is redundant. However, this results in a
+    # warning and not a ValueError since we know the number of colors
+    # in this dataset, meaning we can save the napari session by
+    # rendering the data in white, which better than crashing.
     if not 3 <= colors.shape[1] <= 4:
         warnings.warn(
             "Given colors input should contain three or four columns."
@@ -157,15 +195,8 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
             " Converting input to a white color array."
         )
         return np.ones((len(colors), 4), dtype=np.float32)
-    if colors.ndim > 2:
-        warnings.warn(
-            "Given colors input should contain one or two dimensions."
-            f" Received array with {colors.ndim} dimensions."
-            " Converting input to a white color array."
-        )
-        return np.ones((len(colors), 4), dtype=np.float32)
 
-    # Arrays with floats and ints can safely converted to the proper format
+    # Arrays with floats and ints can be safely converted to the proper format
     if kind in ['f', 'i', 'u']:
         return _convert_array_to_correct_format(colors)
 
