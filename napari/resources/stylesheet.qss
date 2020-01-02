@@ -414,8 +414,6 @@ QtLayerControls > QFrame#swatch {
 }
 
 QtLayerControls > QHRangeSlider {
-  min-height: 16px;
-  max-height: 16px;
   qproperty-barColor: {{ secondary }};
   qproperty-backgroundColor: {{ primary }};
   qproperty-handleColor: {{ secondary }};
