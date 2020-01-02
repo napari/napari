@@ -381,13 +381,13 @@ class Volume(BaseVolume):
         return self._interpolation
 
     @interpolation.setter
-    def interpolation(self, i):
-        if i not in self._interpolation_names:
+    def interpolation(self, interp):
+        if interp not in self._interpolation_names:
             raise ValueError(
                 "interpolation must be one of %s"
                 % ', '.join(self._interpolation_names)
             )
-        if self._interpolation != i:
-            self._interpolation = i
+        if self._interpolation != interp:
+            self._interpolation = interp
             self._tex.interpolation = self._interpolation
             self.update()
