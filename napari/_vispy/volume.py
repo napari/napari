@@ -323,6 +323,7 @@ ATTENUATED_MIP_SNIPPETS = dict(
         float sumval = 0.0; // The sum of the encountered values
         float scaled = 0.0; // The scaled value
         int maxi = 0;  // Where the maximum value was encountered
+        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
         """,
     in_loop="""
         sumval = sumval + val;
@@ -330,9 +331,11 @@ ATTENUATED_MIP_SNIPPETS = dict(
         if( scaled > maxval ) {
             maxval = scaled;
             maxi = iter;
+            maxloc = loc;
         }
         """,
     after_loop="""
+        maxval = $sample(u_volumetex, maxloc).g;
         gl_FragColor = $cmap(maxval);
         """,
 )
