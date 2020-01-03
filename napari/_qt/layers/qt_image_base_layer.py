@@ -15,7 +15,6 @@ class QtBaseImageControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
         self.layer.events.gamma.connect(lambda e: self.gamma_slider_update())
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
