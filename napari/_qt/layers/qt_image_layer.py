@@ -49,8 +49,8 @@ class QtImageControls(QtBaseImageControls):
         sld.valueChanged[int].connect(
             lambda value=sld: self.changeisoThreshold(value)
         )
-        self.isoThesholdSlider = sld
-        self.isoThesholdLabel = QLabel('iso threshold:')
+        self.isoThresholdSlider = sld
+        self.isoThresholdLabel = QLabel('iso threshold:')
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -73,8 +73,8 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
         self.grid_layout.addWidget(self.gammaSlider, 2, 1, 1, 2)
-        self.grid_layout.addWidget(self.isoThesholdLabel, 3, 0)
-        self.grid_layout.addWidget(self.isoThesholdSlider, 3, 1, 1, 2)
+        self.grid_layout.addWidget(self.isoThresholdLabel, 3, 0)
+        self.grid_layout.addWidget(self.isoThresholdSlider, 3, 1, 1, 2)
         self.grid_layout.addWidget(self.attenuationLabel, 3, 0)
         self.grid_layout.addWidget(self.attenuationSlider, 3, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('colormap:'), 4, 0)
@@ -103,7 +103,7 @@ class QtImageControls(QtBaseImageControls):
 
     def _on_iso_threshold_change(self, event):
         with self.layer.events.iso_threshold.blocker():
-            self.isoThesholdSlider.setValue(self.layer.iso_threshold * 100)
+            self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
 
     def changeAttenuation(self, value):
         with self.layer.events.blocker(self._on_attenuation_change):
@@ -133,11 +133,11 @@ class QtImageControls(QtBaseImageControls):
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
         if rendering == Rendering.ISO:
-            self.isoThesholdSlider.show()
-            self.isoThesholdLabel.show()
+            self.isoThresholdSlider.show()
+            self.isoThresholdLabel.show()
         else:
-            self.isoThesholdSlider.hide()
-            self.isoThesholdLabel.hide()
+            self.isoThresholdSlider.hide()
+            self.isoThresholdLabel.hide()
         if rendering == Rendering.ATTENUATED_MIP:
             self.attenuationSlider.show()
             self.attenuationLabel.show()
@@ -147,8 +147,8 @@ class QtImageControls(QtBaseImageControls):
 
     def _on_ndisplay_change(self, event):
         if self.layer.dims.ndisplay == 2:
-            self.isoThesholdSlider.hide()
-            self.isoThesholdLabel.hide()
+            self.isoThresholdSlider.hide()
+            self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()
             self.attenuationLabel.hide()
             self.renderComboBox.hide()
