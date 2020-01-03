@@ -137,7 +137,7 @@ class QtShapesControls(QtLayerControls):
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_grid, 0, 0, 1, 3)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('edge width:'), 2, 0)
         self.grid_layout.addWidget(self.widthSlider, 2, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)

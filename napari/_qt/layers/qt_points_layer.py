@@ -105,7 +105,7 @@ class QtPointsControls(QtLayerControls):
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('point size:'), 2, 0)
         self.grid_layout.addWidget(self.sizeSlider, 2, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)

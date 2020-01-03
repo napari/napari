@@ -419,6 +419,30 @@ def test_gamma():
     assert layer.gamma == gamma
 
 
+def test_rendering():
+    """Test setting rendering."""
+    np.random.seed(0)
+    data = np.random.random((20, 10, 15))
+    layer = Image(data)
+    assert layer.rendering == 'mip'
+
+    # Change rendering property
+    layer.rendering = 'translucent'
+    assert layer.rendering == 'translucent'
+
+    # Change rendering property
+    layer.rendering = 'attenuated_mip'
+    assert layer.rendering == 'attenuated_mip'
+
+    # Change rendering property
+    layer.rendering = 'iso'
+    assert layer.rendering == 'iso'
+
+    # Change rendering property
+    layer.rendering = 'additive'
+    assert layer.rendering == 'additive'
+
+
 def test_iso_threshold():
     """Test setting iso_threshold."""
     np.random.seed(0)
@@ -434,6 +458,23 @@ def test_iso_threshold():
     # Set iso_threshold as keyword argument
     layer = Image(data, iso_threshold=iso_threshold)
     assert layer.iso_threshold == iso_threshold
+
+
+def test_attenuation():
+    """Test setting attenuation."""
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer.attenuation == 0.5
+
+    # Change iso_threshold property
+    attenuation = 0.7
+    layer.attenuation = attenuation
+    assert layer.attenuation == attenuation
+
+    # Set attenuation as keyword argument
+    layer = Image(data, attenuation=attenuation)
+    assert layer.attenuation == attenuation
 
 
 def test_metadata():

@@ -28,7 +28,7 @@ class QtLayerControls(QFrame):
         sld.valueChanged[int].connect(
             lambda value=sld: self.changeOpacity(value)
         )
-        self.opacitySilder = sld
+        self.opacitySlider = sld
 
         blend_comboBox = QComboBox()
         for blend in Blending:
@@ -51,7 +51,7 @@ class QtLayerControls(QFrame):
 
     def _on_opacity_change(self, event):
         with self.layer.events.opacity.blocker():
-            self.opacitySilder.setValue(self.layer.opacity * 100)
+            self.opacitySlider.setValue(self.layer.opacity * 100)
 
     def _on_blending_change(self, event):
         with self.layer.events.blending.blocker():

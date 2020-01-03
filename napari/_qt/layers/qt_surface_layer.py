@@ -9,7 +9,7 @@ class QtSurfaceControls(QtBaseImageControls):
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 0, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('contrast limits:'), 1, 0)
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
