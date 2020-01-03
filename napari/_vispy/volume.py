@@ -327,7 +327,7 @@ ATTENUATED_MIP_SNIPPETS = dict(
         """,
     in_loop="""
         sumval = sumval + val;
-        scaled = val * exp(-u_threshold * sumval / u_relative_step_size);
+        scaled = val * exp(-u_threshold * (sumval - 1) / u_relative_step_size);
         if( scaled > maxval ) {
             maxval = scaled;
             maxi = iter;
@@ -335,7 +335,6 @@ ATTENUATED_MIP_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        maxval = $sample(u_volumetex, maxloc).g;
         gl_FragColor = $cmap(maxval);
         """,
 )
