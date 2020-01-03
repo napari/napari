@@ -367,8 +367,8 @@ class Image(Layer):
         if hasattr(self, '_contrast_limits'):
             cur_min, cur_max = self.contrast_limits
             self.contrast_limits = (
-                max(value[0], cur_min),
-                min(value[1], cur_max),
+                min(max(value[0], cur_min), cur_max),
+                max(min(value[1], cur_max), cur_min),
             )
 
     @property

@@ -16,7 +16,7 @@ class QtBaseImageControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.gamma.connect(lambda e: self.gamma_slider_update())
+        self.layer.events.gamma.connect(self.gamma_slider_update)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QComboBox()
@@ -114,7 +114,7 @@ class QtBaseImageControls(QtLayerControls):
     def gamma_slider_changed(self, value):
         self.layer.gamma = value / 100
 
-    def gamma_slider_update(self):
+    def gamma_slider_update(self, event=None):
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(self.layer.gamma * 100)
 
