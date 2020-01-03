@@ -1,3 +1,5 @@
+from functools import partial
+
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider
@@ -6,7 +8,6 @@ from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
 from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
-from functools import partial
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -16,6 +17,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
         self.layer.events.gamma.connect(lambda e: self.gamma_slider_update())
+        self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
@@ -32,6 +34,10 @@ class QtBaseImageControls(QtLayerControls):
         )
 
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
+        set_clim = partial(setattr, self.layer, 'contrast_limits')
+        set_climrange = partial(setattr, self.layer, '_contrast_limits_range')
+        self.contrastLimitsSlider.valuesChanged.connect(set_clim)
+        self.contrastLimitsSlider.rangeChanged.connect(set_climrange)
 
         # gamma slider
         sld = QSlider(Qt.Horizontal)

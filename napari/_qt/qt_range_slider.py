@@ -20,7 +20,7 @@ class QRangeSlider(QWidget):
         self,
         initial_values=None,
         data_range=None,
-        step_size=1,
+        step_size=None,
         collapsible=True,
         collapsed=False,
         parent=None,
@@ -53,15 +53,14 @@ class QRangeSlider(QWidget):
         if not parent:
             self.setGeometry(200, 200, 200, 20)
 
-        self.setRange((0, 1) if data_range is None else data_range)
-        self.setValues(
-            (0.2, 0.8) if initial_values is None else initial_values
-        )
-        self.single_step = (
-            0.01 if step_size is None else step_size / self.scale
-        )
+        self.setRange((0, 100) if data_range is None else data_range)
+        self.setValues((20, 80) if initial_values is None else initial_values)
+        self.setStep(1 if step_size is None else step_size)
         if not parent:
-            self.setGeometry(200, 200, 20, 200)
+            if 'HRange' in self.__class__.__name__:
+                self.setGeometry(200, 200, 200, 20)
+            else:
+                self.setGeometry(200, 200, 20, 200)
 
     @property
     def range(self):
