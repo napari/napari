@@ -47,7 +47,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setSingleStep(1)
         sld.setValue(self.layer.iso_threshold * 100)
         sld.valueChanged[int].connect(
-            lambda value=sld: self.changeIsoTheshold(value)
+            lambda value=sld: self.changeisoThreshold(value)
         )
         self.isoThesholdSlider = sld
         self.isoThesholdLabel = QLabel('iso threshold:')
@@ -97,7 +97,7 @@ class QtImageControls(QtBaseImageControls):
         self.layer.rendering = text
         self._toggle_rendering_parameter_visbility()
 
-    def changeIsoTheshold(self, value):
+    def changeisoThreshold(self, value):
         with self.layer.events.blocker(self._on_iso_threshold_change):
             self.layer.iso_threshold = value / 100
 
