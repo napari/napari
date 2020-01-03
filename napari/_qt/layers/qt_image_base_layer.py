@@ -1,3 +1,5 @@
+from functools import partial
+
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider
@@ -12,10 +14,8 @@ class QtBaseImageControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(
-            lambda e: self.contrast_limits_slider_update()
-        )
         self.layer.events.gamma.connect(lambda e: self.gamma_slider_update())
+        self.layer.events.contrast_limits.connect(self._on_clim_change)
 
         comboBox = QComboBox()
         for cmap in self.layer.colormaps:
@@ -28,16 +28,13 @@ class QtBaseImageControls(QtLayerControls):
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
-            slider_range=[0, 1, 0.0001], values=[0, 1]
+            self.layer.contrast_limits, self.layer._contrast_limits_range
         )
-        self.contrastLimitsSlider.setEmitWhileMoving(True)
-        self.contrastLimitsSlider.collapsable = False
-        self.contrastLimitsSlider.setEnabled(True)
 
-        self.contrastLimitsSlider.rangeChanged.connect(
-            self.contrast_limits_slider_changed
-        )
-        self.contrast_limits_slider_update()
+        set_clim = partial(setattr, self.layer, 'contrast_limits')
+        set_climrange = partial(setattr, self.layer, '_contrast_limits_range')
+        self.contrastLimitsSlider.valuesChanged.connect(set_clim)
+        self.contrastLimitsSlider.rangeChanged.connect(set_climrange)
 
         # gamma slider
         sld = QSlider(Qt.Horizontal)
@@ -59,6 +56,13 @@ class QtBaseImageControls(QtLayerControls):
     def changeColor(self, text):
         self.layer.colormap = text
 
+    def _on_clim_change(self, event=None):
+        with qt_signals_blocked(self.contrastLimitsSlider):
+            self.contrastLimitsSlider.setRange(
+                self.layer._contrast_limits_range
+            )
+            self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
+
     def _on_colormap_change(self, event):
         name = self.layer.colormap[0]
         if name not in self.colormapComboBox._allitems:
@@ -75,20 +79,6 @@ class QtBaseImageControls(QtLayerControls):
             QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
-
-    def contrast_limits_slider_changed(self, slidermin, slidermax):
-        valmin, valmax = self.layer._contrast_limits_range
-        cmin = valmin + slidermin * (valmax - valmin)
-        cmax = valmin + slidermax * (valmax - valmin)
-        self.layer.contrast_limits = cmin, cmax
-
-    def contrast_limits_slider_update(self):
-        valmin, valmax = self.layer._contrast_limits_range
-        cmin, cmax = self.layer.contrast_limits
-        slidermin = (cmin - valmin) / (valmax - valmin)
-        slidermax = (cmax - valmin) / (valmax - valmin)
-        with qt_signals_blocked(self.contrastLimitsSlider):
-            self.contrastLimitsSlider.setValues((slidermin, slidermax))
 
     def gamma_slider_changed(self, value):
         self.layer.gamma = value / 100
