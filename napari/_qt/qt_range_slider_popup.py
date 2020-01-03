@@ -12,23 +12,21 @@ class LabelEdit(QLineEdit):
         self.setObjectName('slice_label')
         self.setFixedWidth(40)
         self.setValidator(QtGui.QDoubleValidator(0, 999999, 1))
+        self.setCursor(Qt.IBeamCursor)
 
 
 class QRangeSliderPopup(QtPopup):
-    def __init__(self, parent=None, horizontal=True, precision=0, **kwargs):
+    def __init__(
+        self, parent=None, horizontal=True, precision=0, top=True, **kwargs
+    ):
         super().__init__(parent)
         self.precision = precision
-        # (
-        #     0 if np.issubdtype(self.layer.data.dtype, np.integer) else 1
-        # )
         layout = QHBoxLayout()
-
         self.slider = (
             QHRangeSlider(**kwargs) if horizontal else QVRangeSlider(**kwargs)
         )
         self.slider.setMinimumHeight(18)
         self.frame.setLayout(layout)
-        self.setGeometry(0, 0, 700, 20)
         cmin, cmax = self.slider.values()
         self.curmin_label = LabelEdit(self._numformat(cmin))
         self.curmax_label = LabelEdit(self._numformat(cmax))
@@ -50,9 +48,9 @@ class QRangeSliderPopup(QtPopup):
         layout.addWidget(self.curmax_label)
         layout.addWidget(sep2)
         layout.addWidget(self.range_max_label)
-
-        self.curmin_label.editingFinished.connect(self._current_label_changed)
-        self.curmax_label.editingFinished.connect(self._current_label_changed)
+        self.slider.setFocus()
+        self.curmin_label.editingFinished.connect(self._curmin_label_changed)
+        self.curmax_label.editingFinished.connect(self._curmax_label_changed)
         self.range_min_label.editingFinished.connect(self._range_label_changed)
         self.range_max_label.editingFinished.connect(self._range_label_changed)
         self.slider.valuesChanged.connect(self._on_values_change)
@@ -72,19 +70,34 @@ class QRangeSliderPopup(QtPopup):
         with qt_signals_blocked(self.slider):
             self.range_min_label.setText(self._numformat(cmin_))
             self.range_max_label.setText(self._numformat(cmax_))
+            # changing range may also change values
+            vmin_, vmax_ = self.slider.values()
+            self.curmin_label.setText(self._numformat(vmin_))
+            self.curmax_label.setText(self._numformat(vmax_))
 
-    def _current_label_changed(self):
+    def _curmin_label_changed(self):
         cmin = float(self.curmin_label.text())
         cmax = float(self.curmax_label.text())
+        if cmin > cmax:
+            cmin = cmax
+        self.slider.setValues((cmin, cmax))
+
+    def _curmax_label_changed(self):
+        cmin = float(self.curmin_label.text())
+        cmax = float(self.curmax_label.text())
+        if cmax < cmin:
+            cmax = cmin
         self.slider.setValues((cmin, cmax))
 
     def _range_label_changed(self):
         rmin = float(self.range_min_label.text())
         rmax = float(self.range_max_label.text())
+        if rmin >= rmax:
+            rmin = rmax - 1
         self.slider.setRange((rmin, rmax))
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            # return self.close()
+            self.slider.setFocus()
             return
         super().keyPressEvent(event)

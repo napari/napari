@@ -36,8 +36,8 @@ class QRangeSlider(QWidget):
         self.bc_max = None
 
         # Variables initialized in methods
-        self.value_min = None
-        self.value_max = None
+        self.value_min = 0
+        self.value_max = 1
         self.start_display_min = None
         self.start_display_max = None
         self.start_pos = None
@@ -71,6 +71,7 @@ class QRangeSlider(QWidget):
         """Min and max possible values for the slider range. In data units."""
         self.data_range_min, self.data_range_max = values
         self.rangeChanged.emit(values)
+        self.updateDisplayPositions()
 
     def values(self):
         """Current slider values.
@@ -364,6 +365,7 @@ class QHRangeSlider(QRangeSlider):
                 self.slider_width,
             )
 
+        painter.setRenderHints(QtGui.QPainter.Antialiasing)
         # Splitters
         painter.setPen(self.handle_border_color)
         painter.setBrush(self.handle_color)
@@ -436,6 +438,7 @@ class QVRangeSlider(QRangeSlider):
             Event from the Qt context.
         """
         painter, w, h = QtGui.QPainter(self), self.width(), self.height()
+
         half_width = self.slider_width / 2
         halfdiff = w / 2 - half_width
         # Background
@@ -461,6 +464,7 @@ class QVRangeSlider(QRangeSlider):
                 self.display_max - self.display_min,
             )
 
+        painter.setRenderHints(QtGui.QPainter.Antialiasing)
         # Splitters
         painter.setPen(self.handle_border_color)
         painter.setBrush(self.handle_color)

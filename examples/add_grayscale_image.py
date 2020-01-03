@@ -8,4 +8,4 @@ import napari
 
 with napari.gui_qt():
     # create the viewer with an image
-    viewer = napari.view_image(data.astronaut().mean(-1))
+    viewer = napari.view_image(data.astronaut().mean(-1).astype('int'))

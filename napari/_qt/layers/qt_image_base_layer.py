@@ -1,5 +1,6 @@
 from functools import partial
 
+import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider
@@ -29,12 +30,12 @@ class QtBaseImageControls(QtLayerControls):
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
-            self.layer.contrast_limits, self.layer._contrast_limits_range
+            self.layer.contrast_limits, self.layer.contrast_limits_range
         )
 
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
         set_clim = partial(setattr, self.layer, 'contrast_limits')
-        set_climrange = partial(setattr, self.layer, '_contrast_limits_range')
+        set_climrange = partial(setattr, self.layer, 'contrast_limits_range')
         self.contrastLimitsSlider.valuesChanged.connect(set_clim)
         self.contrastLimitsSlider.rangeChanged.connect(set_climrange)
 
@@ -62,14 +63,21 @@ class QtBaseImageControls(QtLayerControls):
         if event.button() == Qt.RightButton:
             self.clim_pop = QRangeSliderPopup(
                 initial_values=self.layer.contrast_limits,
-                data_range=self.layer._contrast_limits_range,
+                data_range=self.layer.contrast_limits_range,
                 collapsible=False,
+                precision=(
+                    0
+                    if np.issubdtype(self.layer.data.dtype, np.integer)
+                    else 1
+                ),
+                parent=self,
             )
+
             set_clim = partial(setattr, self.layer, 'contrast_limits')
-            set_crange = partial(setattr, self.layer, '_contrast_limits_range')
+            set_crange = partial(setattr, self.layer, 'contrast_limits_range')
             self.clim_pop.slider.valuesChanged.connect(set_clim)
             self.clim_pop.slider.rangeChanged.connect(set_crange)
-            self.clim_pop.show_above_mouse()
+            self.clim_pop.show_at('top')
         else:
             return QHRangeSlider.mousePressEvent(
                 self.contrastLimitsSlider, event
@@ -78,14 +86,12 @@ class QtBaseImageControls(QtLayerControls):
     def _on_clims_change(self, event=None):
         with qt_signals_blocked(self.contrastLimitsSlider):
             self.contrastLimitsSlider.setRange(
-                self.layer._contrast_limits_range
+                self.layer.contrast_limits_range
             )
             self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
         if hasattr(self, 'clim_pop'):
             with qt_signals_blocked(self.clim_pop.slider):
-                self.clim_pop.slider.setRange(
-                    self.layer._contrast_limits_range
-                )
+                self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
                 self.clim_pop.slider.setValues(self.layer.contrast_limits)
 
     def _on_colormap_change(self, event):
