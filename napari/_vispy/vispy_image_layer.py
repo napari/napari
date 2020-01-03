@@ -4,7 +4,6 @@ from .volume import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers.image._constants import Rendering
 from ..layers import Image, Labels
 
 
@@ -139,12 +138,8 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_iso_threshold_change(self):
-        rendering = self.layer.rendering
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
-        if self.layer.dims.ndisplay == 3 and rendering == Rendering.ISO:
+        if self.layer.dims.ndisplay == 3:
             self.node.threshold = float(self.layer.iso_threshold)
-            self.node.shared_program['u_threshold'] = self.node.threshold
 
     def _on_scale_change(self):
         self.scale = [

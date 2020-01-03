@@ -109,7 +109,7 @@ class QtImageControls(QtBaseImageControls):
         rendering = self.layer.rendering
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
-        if rendering == Rendering.ISO:
+        if rendering in [Rendering.ISO, Rendering.ATTENUATED_MIP]:
             self.isoThesholdSilder.show()
             self.isoThesholdLabel.show()
         else:

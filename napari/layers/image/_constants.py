@@ -47,3 +47,4 @@ class Rendering(StringEnum):
     ADDITIVE = auto()
     ISO = auto()
     MIP = auto()
+    ATTENUATED_MIP = auto()
