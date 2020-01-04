@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from napari.util.misc import callsignature
-from napari.tests.util import layer_test_data
+from napari.utils.misc import callsignature
+from napari.tests.utils import layer_test_data
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
