@@ -171,9 +171,11 @@ class QRangeSlider(QWidget):
                 elif pos > self.display_max and pos < top:
                     self.display_max = pos
                     self.moving = "max"
+                    self.updateValuesFromDisplay()
                 elif pos < self.display_min and pos > self.handle_radius:
                     self.display_min = pos
                     self.moving = "min"
+                    self.updateValuesFromDisplay()
             else:
                 self.moving = "bar"
                 if pos > self.handle_radius and pos < top:
