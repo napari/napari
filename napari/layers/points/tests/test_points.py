@@ -332,7 +332,7 @@ def test_edge_color():
     assert len(layer.edge_color) == shape[0]
     assert np.all([col == 'black' for col in layer.edge_color])
 
-    # With no data selected chaning edge color has no effect
+    # With no data selected changing edge color has no effect
     layer.current_edge_color = 'blue'
     assert layer.current_edge_color == 'blue'
     assert np.all([col == 'black' for col in layer.edge_color])
@@ -389,7 +389,7 @@ def test_face_color():
     assert len(layer.face_color) == shape[0]
     assert np.all([col == 'white' for col in layer.face_color])
 
-    # With no data selected chaning face color has no effect
+    # With no data selected changing face color has no effect
     layer.current_face_color = 'blue'
     assert layer.current_face_color == 'blue'
     assert np.all([col == 'white' for col in layer.face_color])

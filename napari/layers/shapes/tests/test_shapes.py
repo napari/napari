@@ -514,7 +514,7 @@ def test_edge_color():
     assert len(layer.edge_color) == shape[0]
     assert layer.edge_color == ['black'] * shape[0]
 
-    # With no data selected chaning edge color has no effect
+    # With no data selected changing edge color has no effect
     layer.current_edge_color = 'blue'
     assert layer.current_edge_color == 'blue'
     assert layer.edge_color == ['black'] * shape[0]
@@ -569,7 +569,7 @@ def test_face_color():
     assert len(layer.face_color) == shape[0]
     assert layer.face_color == ['white'] * shape[0]
 
-    # With no data selected chaning face color has no effect
+    # With no data selected changing face color has no effect
     layer.current_face_color = 'blue'
     assert layer.current_face_color == 'blue'
     assert layer.face_color == ['white'] * shape[0]
@@ -624,7 +624,7 @@ def test_edge_width():
     assert len(layer.edge_width) == shape[0]
     assert layer.edge_width == [1] * shape[0]
 
-    # With no data selected chaning edge width has no effect
+    # With no data selected changing edge width has no effect
     layer.current_edge_width = 2
     assert layer.current_edge_width == 2
     assert layer.edge_width == [1] * shape[0]
@@ -677,7 +677,7 @@ def test_opacity():
     assert len(layer.opacity) == shape[0]
     assert layer.opacity == [0.7] * shape[0]
 
-    # With no data selected chaning opacity has no effect
+    # With no data selected changing opacity has no effect
     layer.current_opacity = 1
     assert layer.current_opacity == 1
     assert layer.opacity == [0.7] * shape[0]
