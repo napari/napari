@@ -395,7 +395,8 @@ class Volume(BaseVolume):
             if (hasattr(self.cmap, 'texture_lut'))
             else None
         )
-        self.shared_program['u_threshold'] = self.threshold
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = self.threshold
         self.update()
 
     @property
@@ -407,7 +408,8 @@ class Volume(BaseVolume):
     @threshold.setter
     def threshold(self, value):
         self._threshold = float(value)
-        self.shared_program['u_threshold'] = self._threshold
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = self._threshold
         self.update()
 
     @property

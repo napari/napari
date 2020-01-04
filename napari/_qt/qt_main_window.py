@@ -5,15 +5,9 @@ wrap.
 # set vispy to use same backend as qtpy
 import os
 
-from qtpy import API_NAME
-from vispy import app
-
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
-
-app.use_app(API_NAME)
-del app
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
