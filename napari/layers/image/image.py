@@ -338,10 +338,10 @@ class Image(Layer):
         self.status = self._contrast_limits_msg
         self._contrast_limits = contrast_limits
         # make sure range slider is big enough to fit range
-        if contrast_limits[0] < self.contrast_limits_range[0]:
-            self.contrast_limits_range = [contrast_limits[0], None]
-        if contrast_limits[1] > self.contrast_limits_range[1]:
-            self.contrast_limits_range = [None, contrast_limits[1]]
+        newrange = list(self.contrast_limits_range)
+        newrange[0] = min(newrange[0], contrast_limits[0])
+        newrange[1] = max(newrange[1], contrast_limits[1])
+        self.contrast_limits_range = newrange
         self._update_thumbnail()
         self.events.contrast_limits()
 
@@ -354,6 +354,9 @@ class Image(Layer):
     def contrast_limits_range(self, value):
         """Set the valid range of the contrast limits"""
         validate_N_seq(2)(value)
+        if list(value) == self.contrast_limits_range:
+            return
+
         # if either value is "None", it just preserves the current range
         current_range = self.contrast_limits_range
         value = list(value)  # make sure it is mutable
@@ -366,10 +369,12 @@ class Image(Layer):
         # and updating the views/controllers
         if hasattr(self, '_contrast_limits'):
             cur_min, cur_max = self.contrast_limits
-            self.contrast_limits = (
-                min(max(value[0], cur_min), cur_max),
-                max(min(value[1], cur_max), cur_min),
-            )
+            new_min = min(max(value[0], cur_min), value[1])
+            new_max = max(min(value[1], cur_max), value[0])
+            if (new_min, new_max) != (cur_min, cur_max):
+                self.contrast_limits = (new_min, new_max)
+            else:
+                self.events.contrast_limits()
 
     @property
     def gamma(self):

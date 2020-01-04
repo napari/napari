@@ -93,7 +93,7 @@ class QRangeSliderPopup(QtPopup):
         rmin = float(self.range_min_label.text())
         rmax = float(self.range_max_label.text())
         if rmin >= rmax:
-            rmin = rmax - 1
+            rmax = rmin + 1
         self.slider.setRange((rmin, rmax))
 
     def keyPressEvent(self, event):
