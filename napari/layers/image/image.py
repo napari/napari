@@ -12,7 +12,7 @@ from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..layer_utils import calc_data_range
-from ..mixins import ImageSurfaceMixin
+from ..image_surface_mixin import ImageSurfaceMixin
 from ._constants import Interpolation, Rendering
 from .image_utils import get_pyramid_and_rgb
 
