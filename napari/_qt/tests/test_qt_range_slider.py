@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from qtpy.QtCore import QPoint, Qt
-from ..qt_range_slider import QHRangeSlider, QVRangeSlider
+from napari._qt.qt_range_slider import QHRangeSlider, QVRangeSlider
 
 
 @pytest.mark.parametrize('orientation', ['h', 'v'])

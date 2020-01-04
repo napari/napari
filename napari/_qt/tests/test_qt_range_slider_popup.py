@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..qt_range_slider_popup import QRangeSliderPopup
+from napari._qt.qt_range_slider_popup import QRangeSliderPopup
 
 
 def test_range_slider_popup(qtbot):

@@ -3,8 +3,8 @@ import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
-from ....layers import Image, Surface
-from ..qt_image_base_layer import QtBaseImageControls
+from napari.layers import Image, Surface
+from napari._qt.layers.qt_image_base_layer import QtBaseImageControls
 
 
 @pytest.mark.parametrize('model', [Image, Surface])
