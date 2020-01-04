@@ -1,19 +1,33 @@
-from qtpy import QtGui
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QLineEdit, QFrame
-from .qt_range_slider import QHRangeSlider, QVRangeSlider
+from qtpy.QtGui import QDoubleValidator, QFontMetrics, QFont
+from qtpy.QtWidgets import QFrame, QHBoxLayout, QLineEdit
+
 from .qt_modal import QtPopup
+from .qt_range_slider import QHRangeSlider, QVRangeSlider
 from .utils import qt_signals_blocked
 
 
 class LabelEdit(QLineEdit):
     # Just a helper class to minimize a lot of code duplication
+    min_width = 30
+    max_width = 120
+
     def __init__(self, value='', parent=None):
         super().__init__(value, parent)
+        self.fm = QFontMetrics(QFont("", 0))
         self.setObjectName('slice_label')
-        self.setFixedWidth(40)
-        self.setValidator(QtGui.QDoubleValidator(0, 999999, 1))
+        self.setValidator(QDoubleValidator(-9999999, 9999999, 4))
         self.setCursor(Qt.IBeamCursor)
+        self.textChanged.connect(self._on_text_changed)
+        self._on_text_changed(value)
+
+    def _on_text_changed(self, text):
+        width = self.fm.boundingRect('8' * len(text)).width() + 4
+        width = max(self.min_width, min(width, self.max_width))
+        if width > self.min_width:
+            # don't ever make the label smaller ... it causes visual jitter
+            self.min_width = width
+        self.setFixedWidth(width)
 
 
 class QRangeSliderPopup(QtPopup):
