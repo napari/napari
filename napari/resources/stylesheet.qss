@@ -1213,7 +1213,13 @@ QtPlayButton[playing=True] {
 }
 
 #QtPopupFrame > QPushButton {
+  font-size: 11pt;
+  color: {{ secondary }};
   min-height: 20px;
+}
+
+#QtPopupFrame > QPushButton::hover {
+  color: {{ text }};
 }
 
 #QtPopupFrame  > QComboBox {
@@ -1238,3 +1244,4 @@ QtPlayButton[playing=True] {
   background-color: {{ background }};
   border: 1px solid {{ primary }};
 }
+

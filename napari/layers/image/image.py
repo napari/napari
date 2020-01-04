@@ -217,6 +217,21 @@ class Image(Layer):
             input_data = self.data
         return calc_data_range(input_data)
 
+    def reset_contrast_limits(self):
+        """Scale contrast to data range"""
+        data_range = self._calc_data_range()
+        self.contrast_limits = data_range
+
+    def reset_contrast_limits_range(self):
+        """Scale contrast to data range"""
+        if np.issubdtype(self.dtype, np.unsignedinteger):
+            info = np.iinfo(self.dtype)
+            self.contrast_limits_range = (info.min, info.max)
+
+    @property
+    def dtype(self):
+        return self.data[0].dtype if self.is_pyramid else self.data.dtype
+
     @property
     def data(self):
         """array: Image data."""
@@ -371,10 +386,8 @@ class Image(Layer):
             cur_min, cur_max = self.contrast_limits
             new_min = min(max(value[0], cur_min), value[1])
             new_max = max(min(value[1], cur_max), value[0])
-            if (new_min, new_max) != (cur_min, cur_max):
-                self.contrast_limits = (new_min, new_max)
-            else:
-                self.events.contrast_limits()
+            self.contrast_limits = (new_min, new_max)
+            self.events.contrast_limits()
 
     @property
     def gamma(self):

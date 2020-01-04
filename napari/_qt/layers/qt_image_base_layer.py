@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QComboBox, QLabel, QSlider
+from qtpy.QtWidgets import QComboBox, QLabel, QSlider, QPushButton
 
 from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
@@ -77,6 +77,27 @@ class QtBaseImageControls(QtLayerControls):
             set_crange = partial(setattr, self.layer, 'contrast_limits_range')
             self.clim_pop.slider.valuesChanged.connect(set_clim)
             self.clim_pop.slider.rangeChanged.connect(set_crange)
+
+            def reset():
+                self.layer.reset_contrast_limits()
+                self.layer.contrast_limits_range = self.layer.contrast_limits
+
+            btn = QPushButton("reset")
+            btn.setFixedWidth(40)
+            btn.clicked.connect(reset)
+            self.clim_pop.layout.addWidget(btn)
+            # the "full range" button doesn't do anything if it's not an
+            # unsigned integer type (it's unclear what range should be set)
+            if np.issubdtype(self.layer.dtype, np.unsignedinteger):
+
+                def reset_range():
+                    self.layer.reset_contrast_limits_range()
+
+                btn = QPushButton("full range")
+                btn.setFixedWidth(65)
+                btn.clicked.connect(reset_range)
+                self.clim_pop.layout.addWidget(btn)
+
             self.clim_pop.show_at('top')
         else:
             return QHRangeSlider.mousePressEvent(
@@ -90,8 +111,8 @@ class QtBaseImageControls(QtLayerControls):
             )
             self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
         if hasattr(self, 'clim_pop'):
+            self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
             with qt_signals_blocked(self.clim_pop.slider):
-                self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
                 self.clim_pop.slider.setValues(self.layer.contrast_limits)
 
     def _on_colormap_change(self, event):

@@ -48,6 +48,7 @@ class QRangeSliderPopup(QtPopup):
         layout.addWidget(self.curmax_label)
         layout.addWidget(sep2)
         layout.addWidget(self.range_max_label)
+        self.layout = layout
         self.slider.setFocus()
         self.curmin_label.editingFinished.connect(self._curmin_label_changed)
         self.curmax_label.editingFinished.connect(self._curmax_label_changed)
