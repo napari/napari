@@ -7,6 +7,7 @@ from .utils import qt_signals_blocked
 
 
 class LabelEdit(QLineEdit):
+    # Just a helper class to minimize a lot of code duplication
     def __init__(self, value='', parent=None):
         super().__init__(value, parent)
         self.setObjectName('slice_label')
@@ -16,9 +17,22 @@ class LabelEdit(QLineEdit):
 
 
 class QRangeSliderPopup(QtPopup):
-    def __init__(
-        self, parent=None, horizontal=True, precision=0, top=True, **kwargs
-    ):
+    def __init__(self, parent=None, horizontal=True, precision=0, **kwargs):
+        """A popup window that contains a range slider and linked LineEdits.
+
+        Parameters
+        ----------
+        parent : QWidget, optional
+            Will like be an instance of QtLayerControls.  Note, providing
+            parent can be useful to inherit stylesheets.
+        horizontal : bool, optional
+            Whether the slider is oriented horizontally, by default True.
+            (Vertical orientation has not been tested much)
+        precision : int, optional
+            Number of decimal values in the labels, by default 0
+        **kwargs
+            all additional keyword arguments will be passed to the RangeSlider
+        """
         super().__init__(parent)
         self.precision = precision
         layout = QHBoxLayout()
@@ -98,6 +112,8 @@ class QRangeSliderPopup(QtPopup):
         self.slider.setRange((rmin, rmax))
 
     def keyPressEvent(self, event):
+        # we override the parent keyPressEvent so that hitting enter does not
+        # hide the window... but we do want to lose focus on the lineEdits
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.slider.setFocus()
             return

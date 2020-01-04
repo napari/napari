@@ -4,6 +4,10 @@ Range slider, extended QWidget slider for napari.
 
 from qtpy import QtCore, QtGui
 from qtpy.QtWidgets import QWidget
+from ..utils.validators import validate_n_seq
+
+
+validate_2_tuple = validate_n_seq(2)
 
 
 class QRangeSlider(QWidget):
@@ -25,6 +29,26 @@ class QRangeSlider(QWidget):
         collapsed=False,
         parent=None,
     ):
+        """A range slider with two handles for min/max values.
+
+        Values should be provided in the range of the underlying data.
+        (normalization to 0-1 happens internally in the slider.sliderValues())
+
+        Parameters
+        ----------
+        initial_values : 2-tuple, optional
+            Initial min & max values of the slider, defaults to (0.2, 0.8)
+        data_range : 2-tuple, optional
+            Min and max of the slider range, defaults to (0, 1)
+        step_size : float, optional
+            Single step size for the slider, defaults to 1
+        collapsible : bool
+            Whether the slider is collapsible, defaults to True.
+        collapsed : bool
+            Whether the slider begins collapsed, defaults to False.
+        parent : qtpy.QtWidgets.QWidget
+            Parent widget.
+        """
         super().__init__(parent)
         self.handle_radius = 8
         self.slider_width = 8
@@ -69,6 +93,7 @@ class QRangeSlider(QWidget):
 
     def setRange(self, values):
         """Min and max possible values for the slider range. In data units."""
+        validate_2_tuple(values)
         self.data_range_min, self.data_range_max = values
         self.rangeChanged.emit(values)
         self.updateDisplayPositions()
@@ -86,7 +111,7 @@ class QRangeSlider(QWidget):
         )
 
     def setValues(self, values):
-        self.setSliderValues(self._data_to_slider_value(v) for v in values)
+        self.setSliderValues([self._data_to_slider_value(v) for v in values])
 
     def sliderValues(self):
         """Current slider values, as a fraction of slider width.
@@ -106,7 +131,7 @@ class QRangeSlider(QWidget):
         values : 2-tuple of float or int
             Start and end of the range.
         """
-        # assert hasattr(values, '__len__') and len(values) == 2
+        validate_2_tuple(values)
         self.value_min, self.value_max = values
         self.valuesChanged.emit(self.values())
         self.updateDisplayPositions()

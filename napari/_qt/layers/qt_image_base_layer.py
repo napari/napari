@@ -60,6 +60,10 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.colormap = text
 
     def _clim_mousepress(self, event):
+        """when right clicking the clim slider, we want a QHRangeSliderPopup
+        to appear that provides greater control over the values and range of
+        the contrast limits.
+        """
         if event.button() == Qt.RightButton:
             precision = 2
             try:
