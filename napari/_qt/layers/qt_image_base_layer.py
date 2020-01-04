@@ -61,15 +61,18 @@ class QtBaseImageControls(QtLayerControls):
 
     def _clim_mousepress(self, event):
         if event.button() == Qt.RightButton:
+            precision = 2
+            try:
+                layer_is_int = np.issubdtype(self.layer.data.dtype, np.integer)
+                precision = 0 if layer_is_int else precision
+            except AttributeError:
+                layer_is_int = False
+
             self.clim_pop = QRangeSliderPopup(
                 initial_values=self.layer.contrast_limits,
                 data_range=self.layer.contrast_limits_range,
                 collapsible=False,
-                precision=(
-                    0
-                    if np.issubdtype(self.layer.data.dtype, np.integer)
-                    else 1
-                ),
+                precision=precision,
                 parent=self,
             )
 
@@ -83,17 +86,20 @@ class QtBaseImageControls(QtLayerControls):
                 self.layer.contrast_limits_range = self.layer.contrast_limits
 
             btn = QPushButton("reset")
+            btn.setObjectName("reset_clims_button")
             btn.setFixedWidth(40)
             btn.clicked.connect(reset)
             self.clim_pop.layout.addWidget(btn)
             # the "full range" button doesn't do anything if it's not an
             # unsigned integer type (it's unclear what range should be set)
+            # surface layers will also not have a dtype
             if np.issubdtype(self.layer.dtype, np.unsignedinteger):
 
                 def reset_range():
                     self.layer.reset_contrast_limits_range()
 
                 btn = QPushButton("full range")
+                btn.setObjectName("full_clim_range_button")
                 btn.setFixedWidth(65)
                 btn.clicked.connect(reset_range)
                 self.clim_pop.layout.addWidget(btn)
@@ -113,7 +119,9 @@ class QtBaseImageControls(QtLayerControls):
         if hasattr(self, 'clim_pop'):
             self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
             with qt_signals_blocked(self.clim_pop.slider):
-                self.clim_pop.slider.setValues(self.layer.contrast_limits)
+                clims = self.layer.contrast_limits
+                self.clim_pop.slider.setValues(clims)
+                self.clim_pop._on_values_change(clims)
 
     def _on_colormap_change(self, event):
         name = self.layer.colormap[0]

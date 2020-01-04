@@ -6,7 +6,7 @@ from ..qt_range_slider import QHRangeSlider, QVRangeSlider
 
 
 @pytest.mark.parametrize('orientation', ['h', 'v'])
-def test_slider(qtbot, orientation):
+def test_range_slider(qtbot, orientation):
     model = QHRangeSlider if orientation == 'h' else QVRangeSlider
     initial = np.array([100, 400])
     range_ = np.array([0, 500])
