@@ -112,7 +112,11 @@ class QRangeSlider(QWidget):
         self.updateDisplayPositions()
 
     def setStep(self, step):
-        self.single_step = step / self.scale
+        self._step = step
+
+    @property
+    def single_step(self):
+        return self._step / self.scale
 
     def mouseMoveEvent(self, event):
         if not self.enabled:
