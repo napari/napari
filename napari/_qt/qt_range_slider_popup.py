@@ -29,7 +29,7 @@ class LabelEdit(QLineEdit):
         self.min_width = 30
         self.max_width = 200
         self.setCursor(Qt.IBeamCursor)
-        self.setValidator(QDoubleValidator(-9999999, 9999999, 4))
+        self.setValidator(QDoubleValidator())
         self.textChanged.connect(self._on_text_changed)
         self._on_text_changed(value)
 
@@ -40,6 +40,9 @@ class LabelEdit(QLineEdit):
             self.setAlignment(Qt.AlignCenter)
 
     def _on_text_changed(self, text):
+        # with non mono-spaced fonts, an "n-digit" number isn't always the same
+        # width... so we convert all numbers to "n 8s" before measuring width
+        # so as to avoid visual jitter in the width of the label
         width = self.fm.boundingRect('8' * len(text)).width() + 4
         width = max(self.min_width, min(width, self.max_width))
         if width > self.min_width:
