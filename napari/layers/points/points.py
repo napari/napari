@@ -271,12 +271,12 @@ class Points(Layer):
                     new_size = np.repeat(self.size, self._sizes.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
                 new_edge_colors = np.tile(self._edge_color, (adding, 1))
-                self.edge_colors = np.concatenate(
-                    (self.edge_colors, new_edge_colors), axis=0
+                self.edge_colors = np.vstack(
+                    (self.edge_colors, new_edge_colors),
                 )
                 new_face_colors = np.tile(self._face_color, (adding, 1))
-                self.face_colors = np.concatenate(
-                    (self.face_colors, new_face_colors), axis=0
+                self.face_colors = np.vstack(
+                    (self.face_colors, new_face_colors),
                 )
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
         self._update_dims()

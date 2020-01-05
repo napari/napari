@@ -6,6 +6,7 @@ from vispy.color import ColorArray
 import pytest
 
 from napari.layers import Points
+from napari.utils.colormaps.standardize_color import transform_color
 
 
 def test_empty_points():
@@ -332,23 +333,23 @@ def test_edge_color():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    ca_black = ColorArray(['black'] * shape[0])
+    ca_black = transform_color(['black'] * shape[0])
     assert layer.edge_color == 'black'
     assert len(layer.edge_colors) == shape[0]
-    np.testing.assert_allclose(ca_black.rgba, layer.edge_colors.rgba)
+    np.testing.assert_allclose(ca_black, layer.edge_colors)
 
     # With no data selected chaning edge color has no effect
     layer.edge_color = 'blue'
     assert layer.edge_color == 'blue'
-    np.testing.assert_allclose(ca_black.rgba, layer.edge_colors.rgba)
+    np.testing.assert_allclose(ca_black, layer.edge_colors)
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.edge_color == 'black'
     layer.edge_color = ColorArray('green')
-    ca_green = ColorArray(['green'] * len(layer.selected_data))
-    np.testing.assert_allclose(ca_green.rgba, layer.edge_colors[:2].rgba)
-    np.testing.assert_allclose(ca_black[2:].rgba, layer.edge_colors[2:].rgba)
+    ca_green = transform_color(['green'] * len(layer.selected_data))
+    np.testing.assert_allclose(ca_green, layer.edge_colors[:2])
+    np.testing.assert_allclose(ca_black[2:], layer.edge_colors[2:])
 
     # Add new point and test its color
     coord = [18, 18]
@@ -357,11 +358,9 @@ def test_edge_color():
     layer.add(coord)
     ca_black.extend('blue')
     assert len(layer.edge_colors) == shape[0] + 1
-    np.testing.assert_allclose(ca_green.rgba, layer.edge_colors[:2].rgba)
-    np.testing.assert_allclose(ca_black[2:].rgba, layer.edge_colors[2:].rgba)
-    np.testing.assert_allclose(
-        ColorArray("blue").rgba, layer.edge_colors[10].rgba
-    )
+    np.testing.assert_allclose(ca_green, layer.edge_colors[:2])
+    np.testing.assert_allclose(ca_black[2:], layer.edge_colors[2:])
+    np.testing.assert_allclose(transform_color("blue"), layer.edge_colors[10])
 
     # Instantiate with custom edge color
     layer = Points(data, edge_color='red')
@@ -369,11 +368,10 @@ def test_edge_color():
 
     # Instantiate with custom edge color list
     col_list = ['red', 'green'] * 5
+    col_list_arr = transform_color(col_list)
     layer = Points(data, edge_color=col_list)
     assert layer.edge_color == 'green'
-    np.testing.assert_allclose(
-        layer.edge_colors.rgba, ColorArray(col_list).rgba
-    )
+    np.testing.assert_allclose(layer.edge_colors, col_list_arr)
 
     # Add new point and test its color
     coord = [18, 18]
@@ -381,7 +379,7 @@ def test_edge_color():
     layer.add(coord)
     assert len(layer.edge_colors) == shape[0] + 1
     np.testing.assert_allclose(
-        layer.edge_colors.rgba, ColorArray(col_list).extend('blue').rgba
+        layer.edge_colors, np.vstack((col_list_arr, transform_color('blue')))
     )
 
     # Check removing data adjusts colors correctly
@@ -390,8 +388,8 @@ def test_edge_color():
     assert len(layer.data) == shape[0] - 1
     assert len(layer.edge_colors) == shape[0] - 1
     np.testing.assert_allclose(
-        layer.edge_colors.rgba,
-        ColorArray(col_list[1]).extend(col_list[3:]).extend('blue').rgba,
+        layer.edge_colors,
+        np.vstack((col_list[1], col_list[3:], transform_color('blue'))),
     )
 
 
@@ -401,48 +399,44 @@ def test_face_color():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    ca_white = ColorArray(['white'] * shape[0])
+    ca_white = transform_color(['white'] * shape[0])
     assert layer.face_color == 'white'
     assert len(layer.face_colors) == shape[0]
-    np.testing.assert_allclose(ca_white.rgba, layer.face_colors.rgba)
+    np.testing.assert_allclose(ca_white, layer.face_colors)
 
     # With no data selected chaning face color has no effect
     layer.face_color = 'blue'
     assert layer.face_color == 'blue'
-    np.testing.assert_allclose(ca_white.rgba, layer.face_colors.rgba)
+    np.testing.assert_allclose(ca_white, layer.face_colors)
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.face_color == 'white'
-    layer.face_color = ColorArray('green')
-    ca_green = ColorArray(['green'] * len(layer.selected_data))
-    np.testing.assert_allclose(ca_green.rgba, layer.face_colors[:2].rgba)
-    np.testing.assert_allclose(ca_white[2:].rgba, layer.face_colors[2:].rgba)
+    layer.face_color = transform_color('green')
+    ca_green = transform_color(['green'] * len(layer.selected_data))
+    np.testing.assert_allclose(ca_green, layer.face_colors[:2])
+    np.testing.assert_allclose(ca_white[2:], layer.face_colors[2:])
 
     # Add new point and test its color
     coord = [18, 18]
     layer.selected_data = []
     layer.face_color = 'blue'
     layer.add(coord)
-    ca_white.extend('blue')
+    ca_white = np.vstack((ca_white, transform_color('blue')))
     assert len(layer.face_colors) == shape[0] + 1
-    np.testing.assert_allclose(ca_green.rgba, layer.face_colors[:2].rgba)
-    np.testing.assert_allclose(ca_white[2:].rgba, layer.face_colors[2:].rgba)
-    np.testing.assert_allclose(
-        ColorArray("blue").rgba, layer.face_colors[10].rgba
-    )
+    np.testing.assert_allclose(ca_green, layer.face_colors[:2])
+    np.testing.assert_allclose(ca_white[2:], layer.face_colors[2:])
+    np.testing.assert_allclose(transform_color("blue"), layer.face_colors[10])
 
     # Instantiate with custom face color
     layer = Points(data, face_color='red')
     assert layer.face_color == 'red'
 
     # Instantiate with custom face color list
-    col_list = ['red', 'green'] * 5
+    col_list = transform_color(['red', 'green'] * 5)
     layer = Points(data, face_color=col_list)
     assert layer.face_color == 'green'
-    np.testing.assert_allclose(
-        layer.face_colors.rgba, ColorArray(col_list).rgba
-    )
+    np.testing.assert_allclose(layer.face_colors, col_list)
 
     # Add new point and test its color
     coord = [18, 18]
@@ -450,7 +444,7 @@ def test_face_color():
     layer.add(coord)
     assert len(layer.face_colors) == shape[0] + 1
     np.testing.assert_allclose(
-        layer.face_colors.rgba, ColorArray(col_list).extend('blue').rgba
+        layer.face_colors, np.vstack((col_list, transform_color('blue')))
     )
 
     # Check removing data adjusts colors correctly
@@ -459,8 +453,8 @@ def test_face_color():
     assert len(layer.data) == shape[0] - 1
     assert len(layer.face_colors) == shape[0] - 1
     np.testing.assert_allclose(
-        layer.face_colors.rgba,
-        ColorArray(col_list[1]).extend(col_list[3:]).extend('blue').rgba,
+        layer.face_colors,
+        np.vstack((col_list[1], col_list[3:], transform_color('blue'))),
     )
 
 
