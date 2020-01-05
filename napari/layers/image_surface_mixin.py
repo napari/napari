@@ -16,7 +16,7 @@ validate_2_tuple = validate_n_seq(2)
 class ImageSurfaceMixin:
     """A mixin that adds gamma, colormap, and contrast limits logic to Layers.
 
-    When usinging, this should come before the Layer in the inheritance, e.g.:
+    When used, this should come before the Layer in the inheritance, e.g.:
 
         class Image(ImageSurfaceMixin, Layer):
             def __init__(self):
