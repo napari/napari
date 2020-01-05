@@ -16,13 +16,9 @@ def test_range_slider_popup(qtbot):
     )
     pop.show()
 
-    # make sure labels are correct and have the appropriate format
-    mintext = pop.curmin_label.text()
-    maxtext = pop.curmax_label.text()
-    assert len(mintext.split('.')[-1]) == precision
-    assert len(maxtext.split('.')[-1]) == precision
-    assert float(mintext) == initial[0]
-    assert float(maxtext) == initial[1]
+    # make sure labels are correct
+    assert float(pop.curmin_label.text()) == initial[0]
+    assert float(pop.curmax_label.text()) == initial[1]
     assert np.all(pop.slider.range == range_)
 
     # make sure setting the slider updates the labels
