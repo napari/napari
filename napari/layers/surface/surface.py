@@ -1,15 +1,16 @@
 import warnings
+
 import numpy as np
-from copy import copy
-import vispy.color
-from ..base import Layer
+
+from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
-from ...utils.status_messages import format_float
-from ..layer_utils import calc_data_range, increment_unnamed_colormap
-from ...utils.colormaps import make_colorbar, AVAILABLE_COLORMAPS
+from ..base import Layer
+from ..layer_utils import calc_data_range
+from ..intensity_mixin import IntensityVisualizationMixin
 
 
-class Surface(Layer):
+# Mixin must come before Layer
+class Surface(IntensityVisualizationMixin, Layer):
     """
     Surface layer renders meshes onto the canvas.
 
@@ -121,24 +122,15 @@ class Surface(Layer):
             visible=visible,
         )
 
-        self.events.add(
-            contrast_limits=Event,
-            gamma=Event,
-            colormap=Event,
-            interpolation=Event,
-            rendering=Event,
-        )
+        self.events.add(interpolation=Event, rendering=Event)
 
-        # Save the vector style params
         # Set contrast_limits and colormaps
         self._gamma = gamma
-        self._colormap_name = ''
-        self._contrast_limits_msg = ''
         if contrast_limits is None:
             self._contrast_limits_range = calc_data_range(data[2])
         else:
             self._contrast_limits_range = contrast_limits
-        self._contrast_limits = copy(self._contrast_limits_range)
+        self._contrast_limits = tuple(self._contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
 
@@ -154,6 +146,13 @@ class Surface(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _calc_data_range(self):
+        return calc_data_range(self.vertex_values)
+
+    @property
+    def dtype(self):
+        return self.vertex_values.dtype
 
     @property
     def data(self):
@@ -220,74 +219,6 @@ class Surface(Layer):
             maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
-
-    @property
-    def colormap(self):
-        """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
-        """
-        return self._colormap_name, self._cmap
-
-    @colormap.setter
-    def colormap(self, colormap):
-        name = '[unnamed colormap]'
-        if isinstance(colormap, str):
-            name = colormap
-        elif isinstance(colormap, tuple):
-            name, cmap = colormap
-            self._colormaps[name] = cmap
-        elif isinstance(colormap, dict):
-            self._colormaps.update(colormap)
-            name = list(colormap)[0]  # first key in dict
-        elif isinstance(colormap, vispy.color.Colormap):
-            name = increment_unnamed_colormap(
-                name, list(self._colormaps.keys())
-            )
-            self._colormaps[name] = colormap
-        else:
-            warnings.warn(f'invalid value for colormap: {colormap}')
-            name = self._colormap_name
-        self._colormap_name = name
-        self._cmap = self._colormaps[name]
-        self._colorbar = make_colorbar(self._cmap)
-        self._update_thumbnail()
-        self.events.colormap()
-
-    @property
-    def colormaps(self):
-        """tuple of str: names of available colormaps."""
-        return tuple(self._colormaps.keys())
-
-    @property
-    def contrast_limits(self):
-        """list of float: Limits to use for the colormap."""
-        return list(self._contrast_limits)
-
-    @contrast_limits.setter
-    def contrast_limits(self, contrast_limits):
-        self._contrast_limits_msg = (
-            format_float(contrast_limits[0])
-            + ', '
-            + format_float(contrast_limits[1])
-        )
-        self.status = self._contrast_limits_msg
-        self._contrast_limits = contrast_limits
-        if contrast_limits[0] < self._contrast_limits_range[0]:
-            self._contrast_limits_range[0] = copy(contrast_limits[0])
-        if contrast_limits[1] > self._contrast_limits_range[1]:
-            self._contrast_limits_range[1] = copy(contrast_limits[1])
-        self._update_thumbnail()
-        self.events.contrast_limits()
-
-    @property
-    def gamma(self):
-        return self._gamma
-
-    @gamma.setter
-    def gamma(self, value):
-        self.status = format_float(value)
-        self._gamma = value
-        self._update_thumbnail()
-        self.events.gamma()
 
     def _get_state(self):
         """Get dictionary of layer state.

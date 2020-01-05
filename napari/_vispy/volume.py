@@ -327,7 +327,10 @@ frag_dict = {
 
 # Custom volume class is needed for better 3D rendering
 class Volume(BaseVolume):
+    _interpolation_names = ['linear', 'nearest']
+
     def __init__(self, *args, **kwargs):
+        self._interpolation = 'linear'
         super().__init__(*args, **kwargs)
 
     @property
@@ -372,3 +375,19 @@ class Volume(BaseVolume):
             else None
         )
         self.update()
+
+    @property
+    def interpolation(self):
+        return self._interpolation
+
+    @interpolation.setter
+    def interpolation(self, interp):
+        if interp not in self._interpolation_names:
+            raise ValueError(
+                "interpolation must be one of %s"
+                % ', '.join(self._interpolation_names)
+            )
+        if self._interpolation != interp:
+            self._interpolation = interp
+            self._tex.interpolation = self._interpolation
+            self.update()

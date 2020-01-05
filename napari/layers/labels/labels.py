@@ -138,7 +138,7 @@ class Labels(Image):
             colormap=colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
-            rendering='mip',
+            rendering='translucent',
             name=name,
             metadata=metadata,
             scale=scale,
