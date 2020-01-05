@@ -220,6 +220,11 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
         raise ValueError("Colors input had negative values.")
 
     if colors.max() > 1:
+        warnings.warn(
+            "Colors with values larger than one detected. napari"
+            " will normalize these colors for you. If you'd like to convert these"
+            " yourself, please use the proper method from scikit-image.color."
+        )
         colors = _normalize_color_array(colors)
     return np.atleast_2d(np.asarray(colors, dtype=np.float32))
 
@@ -247,16 +252,10 @@ def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     array contains four identical value a simple normalization will raise a
     division by zero exception.
     """
+    colors = colors.astype(np.float32)
     out_of_bounds_idx = np.unique(np.where((colors > 1) | (colors < 0))[0])
     out_of_bounds = colors[out_of_bounds_idx]
-    out_of_bounds_no_dc = (
-        out_of_bounds - out_of_bounds.min(axis=1)[:, np.newaxis]
-    )
-    norm = np.linalg.norm(out_of_bounds_no_dc, np.inf, axis=1)
-    zero_norm = np.where(norm == 0)[0]
-    if len(zero_norm) > 0:
-        norm[zero_norm] = 1
-        out_of_bounds[zero_norm] = 1.0
+    norm = np.linalg.norm(out_of_bounds, np.inf, axis=1)
     out_of_bounds = out_of_bounds / norm[:, np.newaxis]
     colors[out_of_bounds_idx] = out_of_bounds
     return colors.astype(np.float32)

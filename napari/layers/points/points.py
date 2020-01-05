@@ -379,9 +379,9 @@ class Points(Layer):
     def edge_color(self, edge_color: ColorType) -> None:
         self._edge_color = transform_color(edge_color)
         if self._update_properties and len(self.selected_data) > 0:
-            cur_colors: np.ndarray = self.edge_colors.rgba
-            cur_colors[self.selected_data] = self._edge_color.rgba
-            self.edge_colors = ColorArray(cur_colors)
+            cur_colors: np.ndarray = self.edge_colors
+            cur_colors[self.selected_data] = self._edge_color
+            self.edge_colors = cur_colors
         self.events.edge_color()
         self.events.highlight()
 

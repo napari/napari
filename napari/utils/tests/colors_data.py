@@ -46,6 +46,7 @@ single_color_options = [
     np.array([GREENF]),
     None,
     '',
+    (43, 3, 3, 3),
 ]
 
 single_colors_as_array = [
@@ -70,6 +71,7 @@ single_colors_as_array = [
     ColorArray(GREEN).rgba,
     np.zeros((1, 4), dtype=np.float32),
     np.zeros((1, 4), dtype=np.float32),
+    np.array([[1, 3 / 43, 3 / 43, 3 / 43]], dtype=np.float32),
 ]
 
 two_color_options = [
@@ -112,7 +114,6 @@ invalid_colors = [
     '#gf9gfg',
     '#ff00000',
     '#ff0000ii',
-    (43, 3, 3, 3),  # RGBA color, but not parsed correctly
     (-1, 0.0, 0.0, 0.0),
     ('a', 1, 1, 1),
     4,
