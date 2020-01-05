@@ -6,11 +6,11 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ..base import Layer
 from ..layer_utils import calc_data_range
-from ..image_surface_mixin import ImageSurfaceMixin
+from ..intensity_mixin import IntensityVisualizationMixin
 
 
 # Mixin must come before Layer
-class Surface(ImageSurfaceMixin, Layer):
+class Surface(IntensityVisualizationMixin, Layer):
     """
     Surface layer renders meshes onto the canvas.
 

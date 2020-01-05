@@ -12,13 +12,13 @@ from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..layer_utils import calc_data_range
-from ..image_surface_mixin import ImageSurfaceMixin
+from ..intensity_mixin import IntensityVisualizationMixin
 from ._constants import Interpolation, Rendering
 from .image_utils import get_pyramid_and_rgb
 
 
 # Mixin must come before Layer
-class Image(ImageSurfaceMixin, Layer):
+class Image(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters

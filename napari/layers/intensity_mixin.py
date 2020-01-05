@@ -13,7 +13,7 @@ from .layer_utils import increment_unnamed_colormap
 validate_2_tuple = validate_n_seq(2)
 
 
-class ImageSurfaceMixin:
+class IntensityVisualizationMixin:
     """A mixin that adds gamma, colormap, and contrast limits logic to Layers.
 
     When used, this should come before the Layer in the inheritance, e.g.:
