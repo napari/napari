@@ -1,4 +1,5 @@
 from functools import partial
+from contextlib import suppress
 
 import numpy as np
 from qtpy.QtCore import Qt
@@ -87,15 +88,15 @@ class QtBaseImageControls(QtLayerControls):
             )
             self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
 
-        try:
+        # clim_popup will throw an AttributeError if not yet created
+        # and a RuntimeError if it has already been cleaned up.
+        # we only want to update the slider if it's active
+        with suppress(AttributeError, RuntimeError):
             self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
             with qt_signals_blocked(self.clim_pop.slider):
                 clims = self.layer.contrast_limits
                 self.clim_pop.slider.setValues(clims)
                 self.clim_pop._on_values_change(clims)
-        # if popup has been deleted or doesn't exist
-        except (AttributeError, RuntimeError):
-            pass
 
     def _on_colormap_change(self, event):
         name = self.layer.colormap[0]
