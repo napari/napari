@@ -91,6 +91,7 @@ class QtBaseImageControls(QtLayerControls):
 
             btn = QPushButton("reset")
             btn.setObjectName("reset_clims_button")
+            btn.setToolTip("autoscale contrast to data range")
             btn.setFixedWidth(40)
             btn.clicked.connect(reset)
             self.clim_pop.layout.addWidget(btn)
@@ -104,6 +105,7 @@ class QtBaseImageControls(QtLayerControls):
 
                 btn = QPushButton("full range")
                 btn.setObjectName("full_clim_range_button")
+                btn.setToolTip("set contrast range to full bit-depth")
                 btn.setFixedWidth(65)
                 btn.clicked.connect(reset_range)
                 self.clim_pop.layout.addWidget(btn)

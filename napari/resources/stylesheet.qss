@@ -1228,7 +1228,7 @@ QtPlayButton[playing=True] {
 }
 
 #slice_label {
-  background-color: {{ background }};
+  background-color: transparent;
   color: {{ secondary }};
   padding: 0;
   margin: 0;

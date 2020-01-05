@@ -1,6 +1,6 @@
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QPoint
 from qtpy.QtGui import QDoubleValidator, QFontMetrics, QFont
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QLineEdit
+from qtpy.QtWidgets import QHBoxLayout, QLineEdit
 
 from .qt_modal import QtPopup
 from .qt_range_slider import QHRangeSlider, QVRangeSlider
@@ -10,16 +10,20 @@ from .utils import qt_signals_blocked
 class LabelEdit(QLineEdit):
     # Just a helper class to minimize a lot of code duplication
     min_width = 30
-    max_width = 120
+    max_width = 300
 
     def __init__(self, value='', parent=None):
-        super().__init__(value, parent)
+        super().__init__(value, parent=parent)
         self.fm = QFontMetrics(QFont("", 0))
         self.setObjectName('slice_label')
-        self.setValidator(QDoubleValidator(-9999999, 9999999, 4))
+        self.setMouseTracking(True)
         self.setCursor(Qt.IBeamCursor)
+        self.setValidator(QDoubleValidator(-9999999, 9999999, 4))
         self.textChanged.connect(self._on_text_changed)
         self._on_text_changed(value)
+        if parent is not None:
+            self.slider = parent.slider
+            self.setAlignment(Qt.AlignCenter)
 
     def _on_text_changed(self, text):
         width = self.fm.boundingRect('8' * len(text)).width() + 4
@@ -28,6 +32,14 @@ class LabelEdit(QLineEdit):
             # don't ever make the label smaller ... it causes visual jitter
             self.min_width = width
         self.setFixedWidth(width)
+
+    def _update_position(self, pos):
+        rad = self.slider.handle_radius + 6
+        pos = QPoint(pos - self.width() / 2, -rad) + self.slider.pos()
+        self.move(pos)
+
+    def mouseDoubleClickEvent(self, event):
+        self.selectAll()
 
 
 class QRangeSliderPopup(QtPopup):
@@ -51,30 +63,29 @@ class QRangeSliderPopup(QtPopup):
         self.precision = precision
         layout = QHBoxLayout()
         self.slider = (
-            QHRangeSlider(**kwargs) if horizontal else QVRangeSlider(**kwargs)
+            QHRangeSlider(parent=parent, **kwargs)
+            if horizontal
+            else QVRangeSlider(parent=parent, **kwargs)
         )
         self.slider.setMinimumHeight(18)
         self.frame.setLayout(layout)
+        self.frame.setContentsMargins(0, 8, 0, 0)
         cmin, cmax = self.slider.values()
-        self.curmin_label = LabelEdit(self._numformat(cmin))
-        self.curmax_label = LabelEdit(self._numformat(cmax))
+        self.curmin_label = LabelEdit(self._numformat(cmin), self)
+        self.curmax_label = LabelEdit(self._numformat(cmax), self)
+        self.slider.minDisplayChanged.connect(
+            self.curmin_label._update_position
+        )
+
+        self.slider.maxDisplayChanged.connect(
+            self.curmax_label._update_position
+        )
         rmin, rmax = self.slider.range
         self.range_min_label = LabelEdit(self._numformat(rmin))
         self.range_max_label = LabelEdit(self._numformat(rmax))
         self.range_min_label.setAlignment(Qt.AlignRight)
-        self.curmax_label.setAlignment(Qt.AlignRight)
-        sep1 = QFrame(self)
-        sep2 = QFrame(self)
-        sep1.setFixedSize(1, 14)
-        sep2.setFixedSize(1, 14)
-        sep1.setObjectName('slice_label_sep')
-        sep2.setObjectName('slice_label_sep')
         layout.addWidget(self.range_min_label)
-        layout.addWidget(sep1)
-        layout.addWidget(self.curmin_label)
         layout.addWidget(self.slider, 50)
-        layout.addWidget(self.curmax_label)
-        layout.addWidget(sep2)
         layout.addWidget(self.range_max_label)
         self.layout = layout
         self.slider.setFocus()
@@ -85,14 +96,24 @@ class QRangeSliderPopup(QtPopup):
         self.slider.valuesChanged.connect(self._on_values_change)
         self.slider.rangeChanged.connect(self._on_range_change)
 
+        self.curmin_label.setToolTip("current minimum contrast limit")
+        self.curmax_label.setToolTip("current maximum contrast limit")
+        self.range_min_label.setToolTip("minimum contrast range")
+        self.range_max_label.setToolTip("maximum contrast range")
+
     def _numformat(self, number):
-        return "{:.{}f}".format(number, self.precision)
+        if round(number) == number:
+            return "{:.{}f}".format(number, 0)
+        else:
+            return "{:.{}f}".format(number, self.precision)
 
     def _on_values_change(self, values):
         cmin_, cmax_ = values
         with qt_signals_blocked(self.slider):
             self.curmin_label.setText(self._numformat(cmin_))
             self.curmax_label.setText(self._numformat(cmax_))
+            self.curmin_label._update_position(self.slider.display_min)
+            self.curmax_label._update_position(self.slider.display_max)
 
     def _on_range_change(self, values):
         cmin_, cmax_ = values

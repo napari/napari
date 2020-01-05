@@ -17,6 +17,8 @@ class QRangeSlider(QWidget):
 
     valuesChanged = QtCore.Signal(tuple)
     rangeChanged = QtCore.Signal(tuple)
+    minDisplayChanged = QtCore.Signal(float)  # emits handle pixel coordinates
+    maxDisplayChanged = QtCore.Signal(float)  # emits handle pixel coordinates
     collapsedChanged = QtCore.Signal(bool)
     focused = QtCore.Signal()
 
@@ -65,8 +67,8 @@ class QRangeSlider(QWidget):
         self.start_display_min = None
         self.start_display_max = None
         self.start_pos = None
-        self.display_min = None
-        self.display_max = None
+        self._display_min = None
+        self._display_max = None
 
         self.setBarColor(QtGui.QColor(200, 200, 200))
         self.setBackgroundColor(QtGui.QColor(100, 100, 100))
@@ -256,6 +258,24 @@ class QRangeSlider(QWidget):
         self.display_min = range_min + self.handle_radius
         self.display_max = range_max + self.handle_radius
         self.update()
+
+    @property
+    def display_min(self):
+        return self._display_min
+
+    @display_min.setter
+    def display_min(self, value):
+        self._display_min = value
+        self.minDisplayChanged.emit(value)
+
+    @property
+    def display_max(self):
+        return self._display_max
+
+    @display_max.setter
+    def display_max(self, value):
+        self._display_max = value
+        self.maxDisplayChanged.emit(value)
 
     def _data_to_slider_value(self, value):
         rmin, rmax = self.range
