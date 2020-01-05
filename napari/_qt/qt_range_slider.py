@@ -75,10 +75,6 @@ class QRangeSlider(QWidget):
         self.setHandleColor(QColor(200, 200, 200))
         self.setHandleBorderColor(QColor(200, 200, 200))
 
-        self.setEnabled(True)
-        if not parent:
-            self.setGeometry(200, 200, 200, 20)
-
         self.setRange((0, 100) if data_range is None else data_range)
         self.setValues((20, 80) if initial_values is None else initial_values)
         self.setStep(0.01 if step_size is None else step_size)
@@ -146,7 +142,7 @@ class QRangeSlider(QWidget):
         return self._step / self.scale
 
     def mouseMoveEvent(self, event):
-        if not self.enabled:
+        if not self.isEnabled():
             return
 
         size = self.rangeSliderSize()
@@ -182,7 +178,7 @@ class QRangeSlider(QWidget):
         self.updateValuesFromDisplay()
 
     def mousePressEvent(self, event):
-        if not self.enabled:
+        if not self.isEnabled():
             return
 
         pos = self.getPos(event)
@@ -222,7 +218,7 @@ class QRangeSlider(QWidget):
         self.focused.emit()
 
     def mouseReleaseEvent(self, event):
-        if self.enabled:
+        if self.isEnabled():
             if not (self.moving == "none"):
                 self.valuesChanged.emit(self.values())
             self.moving = "none"
@@ -324,10 +320,7 @@ class QRangeSlider(QWidget):
     )
 
     def setEnabled(self, bool):
-        if bool:
-            self.enabled = True
-        else:
-            self.enabled = False
+        super().setEnabled(bool)
         self.update()
 
 
