@@ -1,5 +1,5 @@
 """
-Display one image using the add_image API.
+Display one grayscale image using the add_image API.
 """
 
 from skimage import data
@@ -8,5 +8,7 @@ import numpy as np
 
 
 with napari.gui_qt():
-    # create the viewer with an image
-    viewer = napari.view_image(data.astronaut().mean(-1).astype(np.uint16))
+    # simulating a grayscale image here for testing contrast limits adjustments
+    image = data.astronaut().mean(-1) * 100 + 100
+    image += np.random.rand(*image.shape) * 3000
+    viewer = napari.view_image(image.astype(np.uint16))

@@ -2,7 +2,8 @@
 Range slider, extended QWidget slider for napari.
 """
 
-from qtpy import QtCore, QtGui
+from qtpy.QtGui import QPainter, QColor
+from qtpy.QtCore import Signal, Property, Qt
 from qtpy.QtWidgets import QWidget
 from ..utils.validators import validate_n_seq
 
@@ -15,10 +16,11 @@ class QRangeSlider(QWidget):
     QRangeSlider class, super class for QVRangeSlider and QHRangeSlider.
     """
 
-    valuesChanged = QtCore.Signal(tuple)
-    rangeChanged = QtCore.Signal(tuple)
-    collapsedChanged = QtCore.Signal(bool)
-    focused = QtCore.Signal()
+    valuesChanged = Signal(tuple)
+    rangeChanged = Signal(tuple)
+    collapsedChanged = Signal(bool)
+    focused = Signal()
+    resized = Signal()
 
     def __init__(
         self,
@@ -68,10 +70,10 @@ class QRangeSlider(QWidget):
         self.display_min = None
         self.display_max = None
 
-        self.setBarColor(QtGui.QColor(200, 200, 200))
-        self.setBackgroundColor(QtGui.QColor(100, 100, 100))
-        self.setHandleColor(QtGui.QColor(200, 200, 200))
-        self.setHandleBorderColor(QtGui.QColor(200, 200, 200))
+        self.setBarColor(QColor(200, 200, 200))
+        self.setBackgroundColor(QColor(100, 100, 100))
+        self.setHandleColor(QColor(200, 200, 200))
+        self.setHandleBorderColor(QColor(200, 200, 200))
 
         self.setEnabled(True)
         if not parent:
@@ -185,7 +187,7 @@ class QRangeSlider(QWidget):
 
         pos = self.getPos(event)
         top = self.rangeSliderSize() + self.handle_radius
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             if not self.collapsed:
                 if abs(self.display_min - pos) <= (self.handle_radius):
                     self.moving = "min"
@@ -248,6 +250,7 @@ class QRangeSlider(QWidget):
 
     def resizeEvent(self, event):
         self.updateDisplayPositions()
+        self.resized.emit()
 
     def updateDisplayPositions(self):
         size = self.rangeSliderSize()
@@ -288,7 +291,7 @@ class QRangeSlider(QWidget):
     def setBarColor(self, barColor):
         self.bar_color = barColor
 
-    barColor = QtCore.Property(QtGui.QColor, getBarColor, setBarColor)
+    barColor = Property(QColor, getBarColor, setBarColor)
 
     def getBackgroundColor(self):
         return self.background_color
@@ -296,9 +299,7 @@ class QRangeSlider(QWidget):
     def setBackgroundColor(self, backgroundColor):
         self.background_color = backgroundColor
 
-    backgroundColor = QtCore.Property(
-        QtGui.QColor, getBackgroundColor, setBackgroundColor
-    )
+    backgroundColor = Property(QColor, getBackgroundColor, setBackgroundColor)
 
     @property
     def handle_width(self):
@@ -310,7 +311,7 @@ class QRangeSlider(QWidget):
     def setHandleColor(self, handleColor):
         self.handle_color = handleColor
 
-    handleColor = QtCore.Property(QtGui.QColor, getHandleColor, setHandleColor)
+    handleColor = Property(QColor, getHandleColor, setHandleColor)
 
     def getHandleBorderColor(self):
         return self.handle_border_color
@@ -318,8 +319,8 @@ class QRangeSlider(QWidget):
     def setHandleBorderColor(self, handleBorderColor):
         self.handle_border_color = handleBorderColor
 
-    handleBorderColor = QtCore.Property(
-        QtGui.QColor, getHandleBorderColor, setHandleBorderColor
+    handleBorderColor = Property(
+        QColor, getHandleBorderColor, setHandleBorderColor
     )
 
     def setEnabled(self, bool):
@@ -355,7 +356,7 @@ class QHRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QEvent
             Event from the Qt context.
 
         Returns
@@ -370,10 +371,10 @@ class QHRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QEvent
             Event from the Qt context.
         """
-        painter, w, h = QtGui.QPainter(self), self.width(), self.height()
+        painter, w, h = QPainter(self), self.width(), self.height()
 
         half_width = self.slider_width / 2
         halfdiff = h / 2 - half_width
@@ -396,7 +397,7 @@ class QHRangeSlider(QRangeSlider):
                 self.slider_width,
             )
 
-        painter.setRenderHints(QtGui.QPainter.Antialiasing)
+        painter.setRenderHints(QPainter.Antialiasing)
         # Splitters
         painter.setPen(self.handle_border_color)
         painter.setBrush(self.handle_color)
@@ -450,7 +451,7 @@ class QVRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QEvent
             Event from the Qt context.
 
         Returns
@@ -465,10 +466,10 @@ class QVRangeSlider(QRangeSlider):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : qtpy.QEvent
             Event from the Qt context.
         """
-        painter, w, h = QtGui.QPainter(self), self.width(), self.height()
+        painter, w, h = QPainter(self), self.width(), self.height()
 
         half_width = self.slider_width / 2
         halfdiff = w / 2 - half_width
@@ -495,7 +496,7 @@ class QVRangeSlider(QRangeSlider):
                 self.display_max - self.display_min,
             )
 
-        painter.setRenderHints(QtGui.QPainter.Antialiasing)
+        painter.setRenderHints(QPainter.Antialiasing)
         # Splitters
         painter.setPen(self.handle_border_color)
         painter.setBrush(self.handle_color)

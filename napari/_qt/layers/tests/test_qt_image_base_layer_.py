@@ -14,7 +14,7 @@ def test_base_controls_contrast_limits(qtbot, model):
     elif model == Surface:
         vertices = np.random.random((10, 2))
         faces = np.random.randint(10, size=(6, 3))
-        values = np.arange(100)
+        values = np.arange(100).astype(np.float)
         data = (vertices, faces, values)
     layer = model(data)
 
