@@ -1,8 +1,11 @@
-from collections.abc import Collection
+from collections.abc import Collection, Generator
 
 
-def validate_N_seq(n: int, dtype=None):
+def validate_n_seq(n: int, dtype=None):
     """Creates a function to validate a sequence of len == N and type == dtype.
+
+    Currently does **not** validate generators (will always validate true).
+
 
     Parameters
     ----------
@@ -16,12 +19,40 @@ def validate_N_seq(n: int, dtype=None):
     function
         Function that can be called on an object to validate that is a sequence
         of len `n` and (optionally) each item in the sequence has type `dtype`
+
+    Example
+    -------
+
+    validate = validate_n_seq(2)
+    validate(8)  # raises TypeError
+    validate([1, 2, 3])  # raises ValueError
+    validate([4, 5])  # just fine, thank you very much
     """
 
     def func(obj):
+        """Function that validates whether an object is a sequence of len `n`.
+
+        Parameters
+        ----------
+        obj : any
+            the object to be validated
+
+        Raises
+        ------
+        TypeError
+            If the object is not an indexable collection.
+        ValueError
+            If the object does not have length `n`
+        TypeError
+            If `dtype` was provided to the wrapper function and all items in
+            the sequence are not of type `dtype`.
+        """
+
+        if isinstance(obj, Generator):
+            return
         if not (isinstance(obj, Collection) and hasattr(obj, '__getitem__')):
             raise TypeError(
-                "object must be an indexable collection "
+                f"object '{obj}' is not an indexable collection "
                 f"(list, tuple, or np.array), of length {n}"
             )
         if not len(obj) == n:

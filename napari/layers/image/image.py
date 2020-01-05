@@ -1,23 +1,24 @@
-import warnings
-from xml.etree.ElementTree import Element
-from base64 import b64encode
 import types
-from imageio import imwrite
+import warnings
+from base64 import b64encode
+from xml.etree.ElementTree import Element
+
 import numpy as np
-from copy import copy
+from imageio import imwrite
 from scipy import ndimage as ndi
-import vispy.color
-from ..base import Layer
-from ..layer_utils import calc_data_range, increment_unnamed_colormap
+
+from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._constants import Rendering, Interpolation, ComplexRendering
-from ...utils.colormaps import make_colorbar, AVAILABLE_COLORMAPS
+from ..base import Layer
+from ..layer_utils import calc_data_range
+from ..intensity_mixin import IntensityVisualizationMixin
+from ._constants import Interpolation, Rendering, ComplexRendering
 from .image_utils import get_pyramid_and_rgb
-from ...utils.validators import validate_N_seq
 
 
-class Image(Layer):
+# Mixin must come before Layer
+class Image(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
@@ -163,9 +164,6 @@ class Image(Layer):
         )
 
         self.events.add(
-            contrast_limits=Event,
-            gamma=Event,
-            colormap=Event,
             interpolation=Event,
             rendering=Event,
             iso_threshold=Event,
@@ -200,14 +198,11 @@ class Image(Layer):
         # Set contrast_limits and colormaps
         self._gamma = gamma
         self._iso_threshold = iso_threshold
-        self._colormap_name = ''
-        self._contrast_limits_msg = ''
-        self._contrast_limits_range = [None, None]
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
-        self._contrast_limits = copy(self.contrast_limits_range)
+        self._contrast_limits = tuple(self.contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
         self.interpolation = interpolation
@@ -225,10 +220,9 @@ class Image(Layer):
             input_data = self.complex_func(input_data)
         return calc_data_range(input_data)
 
-    def reset_contrast_range(self):
-        data_range = self._calc_data_range()
-        self.contrast_limits_range = data_range
-        self.contrast_limits = data_range
+    @property
+    def dtype(self):
+        return self.data[0].dtype if self.is_pyramid else self.data.dtype
 
     @property
     def data(self):
@@ -301,102 +295,6 @@ class Image(Layer):
             return
         self._top_left = top_left.astype(int)
         self.refresh()
-
-    @property
-    def colormap(self):
-        """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
-        """
-        return self._colormap_name, self._cmap
-
-    @colormap.setter
-    def colormap(self, colormap):
-        name = '[unnamed colormap]'
-        if isinstance(colormap, str):
-            name = colormap
-        elif isinstance(colormap, tuple):
-            name, cmap = colormap
-            self._colormaps[name] = cmap
-        elif isinstance(colormap, dict):
-            self._colormaps.update(colormap)
-            name = list(colormap)[0]  # first key in dict
-        elif isinstance(colormap, vispy.color.Colormap):
-            name = increment_unnamed_colormap(
-                name, list(self._colormaps.keys())
-            )
-            self._colormaps[name] = colormap
-        else:
-            warnings.warn(f'invalid value for colormap: {colormap}')
-            name = self._colormap_name
-        self._colormap_name = name
-        self._cmap = self._colormaps[name]
-        self._colorbar = make_colorbar(self._cmap)
-        self._update_thumbnail()
-        self.events.colormap()
-
-    @property
-    def colormaps(self):
-        """tuple of str: names of available colormaps."""
-        return tuple(self._colormaps.keys())
-
-    @property
-    def contrast_limits(self):
-        """list of float: Limits to use for the colormap."""
-        return list(self._contrast_limits)
-
-    @contrast_limits.setter
-    def contrast_limits(self, contrast_limits):
-        validate_N_seq(2)(contrast_limits)
-        self._contrast_limits_msg = (
-            format_float(contrast_limits[0])
-            + ', '
-            + format_float(contrast_limits[1])
-        )
-        self.status = self._contrast_limits_msg
-        self._contrast_limits = contrast_limits
-        # make sure range slider is big enough to fit range
-        if contrast_limits[0] < self.contrast_limits_range[0]:
-            self.contrast_limits_range = [contrast_limits[0], None]
-        if contrast_limits[1] > self.contrast_limits_range[1]:
-            self.contrast_limits_range = [None, contrast_limits[1]]
-        self._update_thumbnail()
-        self.events.contrast_limits()
-
-    @property
-    def contrast_limits_range(self):
-        """The current valid range of the contrast limits."""
-        return list(self._contrast_limits_range)
-
-    @contrast_limits_range.setter
-    def contrast_limits_range(self, value):
-        """Set the valid range of the contrast limits"""
-        validate_N_seq(2)(value)
-        # if either value is "None", it just preserves the current range
-        current_range = self.contrast_limits_range
-        value = list(value)  # make sure it is mutable
-        for i in range(2):
-            value[i] = current_range[i] if value[i] is None else value[i]
-        self._contrast_limits_range = value
-
-        # make sure that the current values fit within the new range
-        # this also serves the purpose of emitting events.contrast_limits()
-        # and updating the views/controllers
-        if hasattr(self, '_contrast_limits'):
-            cur_min, cur_max = self.contrast_limits
-            self.contrast_limits = (
-                max(value[0], cur_min),
-                min(value[1], cur_max),
-            )
-
-    @property
-    def gamma(self):
-        return self._gamma
-
-    @gamma.setter
-    def gamma(self, value):
-        self.status = format_float(value)
-        self._gamma = value
-        self._update_thumbnail()
-        self.events.gamma()
 
     @property
     def iso_threshold(self):
@@ -488,7 +386,8 @@ class Image(Layer):
                 self.contrast_limits_range = [-np.pi, np.pi]
                 self.contrast_limits = [-np.pi, np.pi]
             else:
-                self.reset_contrast_range()
+                self.reset_contrast_limits()
+                self.contrast_limits_range = self.contrast_limits
             self.events.complex_func()
             self.refresh()
 
