@@ -383,8 +383,8 @@ class Image(IntensityVisualizationMixin, Layer):
         self._complex_func = value
         if hasattr(self, '_data'):
             if value == ComplexRendering.PHASE:
+                self.reset_contrast_limits()
                 self.contrast_limits_range = [-np.pi, np.pi]
-                self.contrast_limits = [-np.pi, np.pi]
             else:
                 self.reset_contrast_limits()
                 self.contrast_limits_range = self.contrast_limits
