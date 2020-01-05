@@ -371,18 +371,18 @@ def test_contrast_limits():
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
-    assert layer.contrast_limits == layer._contrast_limits_range
+    assert layer.contrast_limits == layer.contrast_limits_range
 
     # Change contrast_limits property
     contrast_limits = [0, 2]
     layer.contrast_limits = contrast_limits
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
     # Set contrast_limits as keyword argument
     layer = Image(data, contrast_limits=contrast_limits)
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
 
 def test_contrast_limits_range():
@@ -390,16 +390,39 @@ def test_contrast_limits_range():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer._contrast_limits_range[0] >= 0
-    assert layer._contrast_limits_range[1] <= 1
-    assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
+    assert layer.contrast_limits_range[0] >= 0
+    assert layer.contrast_limits_range[1] <= 1
+    assert layer.contrast_limits_range[0] < layer.contrast_limits_range[1]
 
     # If all data is the same value the contrast_limits_range and
     # contrast_limits defaults to [0, 1]
     data = np.zeros((10, 15))
     layer = Image(data)
-    assert layer._contrast_limits_range == [0, 1]
+    assert layer.contrast_limits_range == [0, 1]
     assert layer.contrast_limits == [0.0, 1.0]
+
+
+def test_set_contrast_limits_range():
+    """Test setting color limits range."""
+    np.random.seed(0)
+    data = np.random.random((10, 15)) * 100
+    layer = Image(data)
+    layer.contrast_limits_range = [0, 100]
+    layer.contrast_limits = [20, 40]
+    assert layer.contrast_limits_range == [0, 100]
+    assert layer.contrast_limits == [20, 40]
+
+    # clim values should stay within the contrast limits range
+    layer.contrast_limits_range = [0, 30]
+    assert layer.contrast_limits == [20, 30]
+    # setting contrast limits range should clamp both of the clims values
+    layer.contrast_limits_range = [0, 10]
+    assert layer.contrast_limits == [10, 10]
+    # in both directions...
+    layer.contrast_limits_range = [0, 100]
+    layer.contrast_limits = [20, 40]
+    layer.contrast_limits_range = [60, 100]
+    assert layer.contrast_limits == [60, 60]
 
 
 def test_gamma():
