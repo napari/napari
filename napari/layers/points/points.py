@@ -14,6 +14,7 @@ from napari.utils.colormaps.standardize_color import (
     transform_color,
     hex_to_name,
     get_color_namelist,
+    rgb_to_hex,
 )
 
 
@@ -269,12 +270,14 @@ class Points(Layer):
                     # Add the default size, with a value for each dimension
                     new_size = np.repeat(self.size, self._sizes.shape[1])
                 size = np.repeat([new_size], adding, axis=0)
-                new_edge_colors = np.tile(self._edge_color.rgba, (adding, 1))
-                self.edge_colors = self.edge_colors.extend(
-                    ColorArray(new_edge_colors)
+                new_edge_colors = np.tile(self._edge_color, (adding, 1))
+                self.edge_colors = np.concatenate(
+                    (self.edge_colors, new_edge_colors), axis=0
                 )
-                new_face_colors = np.tile(self._face_color.rgba, (adding, 1))
-                self.face_colors = self.face_colors.extend(new_face_colors)
+                new_face_colors = np.tile(self._face_color, (adding, 1))
+                self.face_colors = np.concatenate(
+                    (self.face_colors, new_face_colors), axis=0
+                )
                 self.sizes = np.concatenate((self._sizes, size), axis=0)
         self._update_dims()
         self.events.data()
@@ -371,9 +374,8 @@ class Points(Layer):
     @property
     def edge_color(self) -> str:
         """Edge color of marker for the next added point."""
-        return hex_to_name.get(
-            self._edge_color.hex[0], self._edge_color.hex[0]
-        )
+        hex_ = rgb_to_hex(self._edge_color)
+        return hex_to_name.get(hex_, hex_)
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType) -> None:
@@ -388,17 +390,16 @@ class Points(Layer):
     @property
     def face_color(self) -> str:
         """Face color of marker for the next added point."""
-        return hex_to_name.get(
-            self._face_color.hex[0], self._face_color.hex[0]
-        )
+        hex_ = rgb_to_hex(self._edge_color)
+        return hex_to_name.get(hex_, hex_)
 
     @face_color.setter
     def face_color(self, face_color: ColorType) -> None:
         self._face_color = transform_color(face_color)
         if self._update_properties and len(self.selected_data) > 0:
-            cur_colors: np.ndarray = self.face_colors.rgba
-            cur_colors[self.selected_data] = self._face_color.rgba
-            self.face_colors = ColorArray(cur_colors)
+            cur_colors: np.ndarray = self.face_colors
+            cur_colors[self.selected_data] = self._face_color
+            self.face_colors = cur_colors
         self.events.face_color()
         self.events.highlight()
 
@@ -422,17 +423,13 @@ class Points(Layer):
         if len(self._selected_data) == 0:
             return
         index = self._selected_data
-        edge_colors = ColorArray(
-            np.unique(self.edge_colors.rgba[index], axis=0)
-        )
+        edge_colors = ColorArray(np.unique(self.edge_colors[index], axis=0))
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
                 self.edge_color = edge_color
 
-        face_colors = ColorArray(
-            np.unique(self.face_colors.rgba[index], axis=0)
-        )
+        face_colors = ColorArray(np.unique(self.face_colors[index], axis=0))
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
@@ -725,7 +722,7 @@ class Points(Layer):
             )
             for i, c in enumerate(coords):
                 col = self.face_colors[self._indices_view[i]]
-                colormapped[c[0], c[1], :] = col.rgba
+                colormapped[c[0], c[1], :] = col
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -745,10 +742,10 @@ class Points(Layer):
         if len(index) > 0:
             self._sizes = np.delete(self._sizes, index, axis=0)
             self.edge_colors = ColorArray(
-                np.delete(self.edge_colors.rgba, index, axis=0)
+                np.delete(self.edge_colors, index, axis=0)
             )
             self.face_colors = ColorArray(
-                np.delete(self.face_colors.rgba, index, axis=0)
+                np.delete(self.face_colors, index, axis=0)
             )
             if self._value in self.selected_data:
                 self._value = None
@@ -845,9 +842,9 @@ class Points(Layer):
             cx = str(d[0])
             cy = str(d[1])
             r = str(s / 2)
-            face_color = (255 * self.face_colors[i].rgba).astype(np.int)
+            face_color = (255 * self.face_colors[i]).astype(np.int)
             fill = f'rgb{tuple(face_color[:3])}'
-            edge_color = (255 * self.edge_colors[i].rgba).astype(np.int)
+            edge_color = (255 * self.edge_colors[i]).astype(np.int)
             stroke = f'rgb{tuple(edge_color[:3])}'
 
             element = Element(
@@ -971,7 +968,7 @@ class Points(Layer):
             tiled = np.ones((data_len, 4), dtype=np.float32)
             return ColorArray(tiled)
         # All that's left is to deal with length=1 color inputs
-        tiled = np.tile(colors.rgba.ravel(), (data_len, 1))
+        tiled = np.tile(colors.ravel(), (data_len, 1))
         return ColorArray(tiled)
 
 

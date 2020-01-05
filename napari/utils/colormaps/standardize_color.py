@@ -308,5 +308,24 @@ def hsv_to_rgb():
     pass
 
 
-def rgb_to_hex():
-    pass
+def _check_color_dim(val):
+    """Ensure val is Nx(n_col), usually Nx3"""
+    val = np.atleast_2d(val)
+    if val.shape[1] not in (3, 4):
+        raise RuntimeError('Value must have second dimension of size 3 or 4')
+    if val.shape[1] == 3:
+        val = np.column_stack([val, np.float32(1.0)])
+    return val
+
+
+def rgb_to_hex(rgbs):
+    """Convert rgb to hex triplet. Taken from vispy with slight
+    modifications."""
+    rgbs = _check_color_dim(rgbs)
+    return np.array(
+        [
+            f'#{"%02x" * 4}' % tuple((255 * rgb).astype(np.uint8))
+            for rgb in rgbs
+        ],
+        '|U9',
+    )
