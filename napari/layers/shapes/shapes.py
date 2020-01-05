@@ -504,13 +504,17 @@ class Shapes(Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state['shape_type'] = self.shape_type
-        state['opacity'] = self.opacity
-        state['z_index'] = self.z_index
-        state['edge_width'] = self.edge_width
-        state['edge_color'] = self.edge_color
-        state['face_color'] = self.face_color
-        state['data'] = self.data
+        state.update(
+            {
+                'shape_type': self.shape_type,
+                'opacity': self.opacity,
+                'z_index': self.z_index,
+                'edge_width': self.edge_width,
+                'face_color': self.face_color,
+                'edge_color': self.edge_color,
+                'data': self.data,
+            }
+        )
         return state
 
     @property

@@ -157,10 +157,14 @@ class Vectors(Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state['edge_color'] = self.edge_color
-        state['edge_width'] = self.edge_width
-        state['length'] = self.length
-        state['data'] = self.data
+        state.update(
+            {
+                'length': self.length,
+                'edge_width': self.edge_width,
+                'edge_color': self.edge_color,
+                'data': self.data,
+            }
+        )
         return state
 
     def _get_ndim(self):

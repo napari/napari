@@ -346,15 +346,19 @@ class Image(IntensityVisualizationMixin, Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state['rgb'] = self.rgb
-        state['is_pyramid'] = self.is_pyramid
-        state['colormap'] = self.colormap[0]
-        state['contrast_limits'] = self.contrast_limits
-        state['interpolation'] = self.interpolation
-        state['rendering'] = self.rendering
-        state['iso_threshold'] = self.iso_threshold
-        state['gamma'] = self.gamma
-        state['data'] = self.data
+        state.update(
+            {
+                'rgb': self.rgb,
+                'is_pyramid': self.is_pyramid,
+                'colormap': self.colormap[0],
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'iso_threshold': self.iso_threshold,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
         return state
 
     def _raw_to_displayed(self, raw):

@@ -405,13 +405,17 @@ class Points(Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state['symbol'] = self.symbol
-        state['edge_width'] = self.edge_width
-        state['face_color'] = self.face_color
-        state['edge_color'] = self.edge_color
-        state['n_dimensional'] = self.n_dimensional
-        state['size'] = self.size
-        state['data'] = self.data
+        state.update(
+            {
+                'symbol': self.symbol,
+                'edge_width': self.edge_width,
+                'face_color': self.face_color,
+                'edge_color': self.edge_color,
+                'n_dimensional': self.n_dimensional,
+                'size': self.size,
+                'data': self.data,
+            }
+        )
         return state
 
     @property

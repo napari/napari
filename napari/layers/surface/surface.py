@@ -229,10 +229,14 @@ class Surface(IntensityVisualizationMixin, Layer):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state['colormap'] = self.colormap[0]
-        state['contrast_limits'] = self.contrast_limits
-        state['gamma'] = self.gamma
-        state['data'] = self.data
+        state.update(
+            {
+                'colormap': self.colormap[0],
+                'contrast_limits': self.contrast_limits,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
         return state
 
     def _set_view_slice(self):

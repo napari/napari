@@ -250,10 +250,14 @@ class Labels(Image):
             Dictionary of layer state.
         """
         state = self._get_base_state()
-        state['is_pyramid'] = self.is_pyramid
-        state['num_colors'] = self.num_colors
-        state['seed'] = self.seed
-        state['data'] = self.data
+        state.update(
+            {
+                'is_pyramid': self.is_pyramid,
+                'num_colors': self.num_colors,
+                'seed': self.seed,
+                'data': self.data,
+            }
+        )
         return state
 
     @property
