@@ -109,8 +109,11 @@ class QtBaseImageControls(QtLayerControls):
                 btn.setFixedWidth(65)
                 btn.clicked.connect(reset_range)
                 self.clim_pop.layout.addWidget(btn)
+                self.clim_pop.finished.connect(self.clim_pop.deleteLater)
 
             self.clim_pop.show_at('top')
+            self.clim_pop.curmin_label.update_position()
+            self.clim_pop.curmax_label.update_position()
         else:
             return QHRangeSlider.mousePressEvent(
                 self.contrastLimitsSlider, event
@@ -122,12 +125,16 @@ class QtBaseImageControls(QtLayerControls):
                 self.layer.contrast_limits_range
             )
             self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
-        if hasattr(self, 'clim_pop'):
+
+        try:
             self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
             with qt_signals_blocked(self.clim_pop.slider):
                 clims = self.layer.contrast_limits
                 self.clim_pop.slider.setValues(clims)
                 self.clim_pop._on_values_change(clims)
+        # if popup has been deleted or doesn't exist
+        except (AttributeError, RuntimeError):
+            pass
 
     def _on_colormap_change(self, event):
         name = self.layer.colormap[0]

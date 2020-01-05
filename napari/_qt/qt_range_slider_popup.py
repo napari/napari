@@ -1,3 +1,5 @@
+from functools import partial
+
 from qtpy.QtCore import Qt, QPoint
 from qtpy.QtGui import QDoubleValidator, QFontMetrics, QFont
 from qtpy.QtWidgets import QHBoxLayout, QLineEdit
@@ -8,20 +10,32 @@ from .utils import qt_signals_blocked
 
 
 class LabelEdit(QLineEdit):
-    # Just a helper class to minimize a lot of code duplication
-    min_width = 30
-    max_width = 300
+    def __init__(self, value='', parent=None, get_pos=None):
+        """Helper class to position LineEdits above the slider handle
 
-    def __init__(self, value='', parent=None):
+        Parameters
+        ----------
+        value : str, optional
+            starting value, by default ''
+        parent : QRangeSliderPopup, optional
+            required for proper label positioning above handle, by default None
+        get_pos : callable, optional
+            function that returns the position of the appropriate slider handle
+            by default None
+        """
         super().__init__(value, parent=parent)
         self.fm = QFontMetrics(QFont("", 0))
         self.setObjectName('slice_label')
-        self.setMouseTracking(True)
+        self.min_width = 30
+        self.max_width = 200
         self.setCursor(Qt.IBeamCursor)
         self.setValidator(QDoubleValidator(-9999999, 9999999, 4))
         self.textChanged.connect(self._on_text_changed)
         self._on_text_changed(value)
+
+        self.get_pos = get_pos
         if parent is not None:
+            self.min_width = 50
             self.slider = parent.slider
             self.setAlignment(Qt.AlignCenter)
 
@@ -33,10 +47,10 @@ class LabelEdit(QLineEdit):
             self.min_width = width
         self.setFixedWidth(width)
 
-    def _update_position(self, pos):
-        rad = self.slider.handle_radius + 6
-        pos = QPoint(pos - self.width() / 2, -rad) + self.slider.pos()
-        self.move(pos)
+    def update_position(self):
+        x = self.get_pos() - self.width() / 2
+        y = self.slider.handle_radius + 6
+        self.move(QPoint(x, -y) + self.slider.pos())
 
     def mouseDoubleClickEvent(self, event):
         self.selectAll()
@@ -71,15 +85,10 @@ class QRangeSliderPopup(QtPopup):
         self.frame.setLayout(layout)
         self.frame.setContentsMargins(0, 8, 0, 0)
         cmin, cmax = self.slider.values()
-        self.curmin_label = LabelEdit(self._numformat(cmin), self)
-        self.curmax_label = LabelEdit(self._numformat(cmax), self)
-        self.slider.minDisplayChanged.connect(
-            self.curmin_label._update_position
-        )
-
-        self.slider.maxDisplayChanged.connect(
-            self.curmax_label._update_position
-        )
+        get_min_pos = partial(getattr, self.slider, 'display_min')
+        get_max_pos = partial(getattr, self.slider, 'display_max')
+        self.curmin_label = LabelEdit(self._numformat(cmin), self, get_min_pos)
+        self.curmax_label = LabelEdit(self._numformat(cmax), self, get_max_pos)
         rmin, rmax = self.slider.range
         self.range_min_label = LabelEdit(self._numformat(rmin))
         self.range_max_label = LabelEdit(self._numformat(rmax))
@@ -101,6 +110,10 @@ class QRangeSliderPopup(QtPopup):
         self.range_min_label.setToolTip("minimum contrast range")
         self.range_max_label.setToolTip("maximum contrast range")
 
+        self.slider.update()
+        self.curmin_label.update_position()
+        self.curmax_label.update_position()
+
     def _numformat(self, number):
         if round(number) == number:
             return "{:.{}f}".format(number, 0)
@@ -112,8 +125,8 @@ class QRangeSliderPopup(QtPopup):
         with qt_signals_blocked(self.slider):
             self.curmin_label.setText(self._numformat(cmin_))
             self.curmax_label.setText(self._numformat(cmax_))
-            self.curmin_label._update_position(self.slider.display_min)
-            self.curmax_label._update_position(self.slider.display_max)
+            self.curmin_label.update_position()
+            self.curmax_label.update_position()
 
     def _on_range_change(self, values):
         cmin_, cmax_ = values
