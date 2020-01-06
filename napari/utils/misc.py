@@ -46,6 +46,11 @@ def is_iterable(arg, color=False):
         return True
 
 
+def is_complex(obj):
+    """Dask-safe way to check whether an array is complex."""
+    return getattr(obj, 'dtype', None) in (np.complex64, np.complex128)
+
+
 def formatdoc(obj):
     """Substitute globals and locals into an object's docstring."""
     frame = inspect.currentframe().f_back
