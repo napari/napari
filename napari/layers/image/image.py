@@ -337,6 +337,30 @@ class Image(IntensityVisualizationMixin, Layer):
         self._rendering = rendering
         self.events.rendering()
 
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'rgb': self.rgb,
+                'is_pyramid': self.is_pyramid,
+                'colormap': self.colormap[0],
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'iso_threshold': self.iso_threshold,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
+        return state
+
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
 

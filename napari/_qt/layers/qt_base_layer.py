@@ -24,11 +24,11 @@ class QtLayerControls(QFrame):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.setValue(self.layer.opacity * 100)
         sld.valueChanged[int].connect(
             lambda value=sld: self.changeOpacity(value)
         )
         self.opacitySilder = sld
+        self._on_opacity_change(None)
 
         blend_comboBox = QComboBox()
         for blend in Blending:
