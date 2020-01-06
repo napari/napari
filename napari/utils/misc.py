@@ -5,6 +5,13 @@ import re
 import inspect
 import itertools
 import numpy as np
+from copy import deepcopy
+
+try:
+    # SIGNIFICANTLY faster array hashing, but requires a new dependency
+    import xxhash
+except ImportError:
+    xxhash = None
 
 
 def str_to_rgb(arg):
@@ -162,3 +169,71 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
+
+
+# https://stackoverflow.com/questions/16589791/most-efficient-property-to-hash-for-numpy-array
+def hash_array(obj, complete=False):
+    """Hash a numpy array.
+
+    Parameters
+    ----------
+    obj : np.ndarray
+        the array to hash
+    complete : bool, optional
+        whether to take the whole array into account, or use str(obj), as a
+        shortcut. by default False
+
+    Returns
+    -------
+    int
+        the array hash
+    """
+    # XXX: This is a potential gotcha.  If we want to include data arrays in
+    # hashes (which would make it easier to know when to update, for instance,
+    # a remote viewer), then it can begin to take a long time (many seconds) to
+    # hash even moderately-sized arrays.  xxhash is very fast, but requires a
+    # new dependency.  However, if we *don't* ship with xxhash, then hashes of
+    # identical arrays will be different on two systems if one has xxhash.
+    # we should probably be either all-in or all-out.
+    if xxhash:
+        h = xxhash.xxh64()
+        h.update(obj)
+        return h.intdigest()
+    if complete:
+        # take whole array into account.  Can be slow on large arrays
+        return hash(obj.data.tobytes())
+    # otherwise hash just the string (does not take full array into account)
+    return hash(str(obj))
+
+
+# https://stackoverflow.com/a/8714242/1631624
+def recursive_hash(obj, skip_arrays=False):
+    """Recursively hash a (possibly nested) dictionary, list, tuple or set.
+
+    Only works if all (nested) values in object are also hashable types
+    (lists, tuples, sets, dictionaries, or np.arrays).
+
+    Parameters
+    ----------
+    obj : object
+        The object to hash
+
+    Returns
+    -------
+    int
+        the hash
+    """
+    if isinstance(obj, (set, tuple, list)):
+        return tuple([recursive_hash(e, skip_arrays=skip_arrays) for e in obj])
+    elif isinstance(obj, np.ndarray):
+        if skip_arrays:
+            return 0
+        else:
+            return hash_array(obj)
+    elif isinstance(obj, dict):
+        new_o = deepcopy(obj)
+        for k, v in new_o.items():
+            new_o[k] = recursive_hash(v, skip_arrays=skip_arrays)
+        return hash(tuple(frozenset(sorted(new_o.items()))))
+    else:
+        return hash(obj)

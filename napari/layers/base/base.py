@@ -10,6 +10,7 @@ from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.keybindings import KeymapMixin
 from ...utils.status_messages import status_format, format_float
+from ...utils.misc import recursive_hash
 
 
 class Layer(KeymapMixin, ABC):
@@ -434,6 +435,13 @@ class Layer(KeymapMixin, ABC):
     @abstractmethod
     def _get_state(self):
         raise NotImplementedError()
+
+    def __eq__(self, other):
+        # check ids first to avoid more expensive hash if possible
+        return (id(self) == id(other)) or (hash(self) == hash(other))
+
+    def __hash__(self):
+        return recursive_hash(self._get_state(), skip_arrays=False)
 
     @property
     def thumbnail(self):
