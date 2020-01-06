@@ -371,6 +371,7 @@ class Image(IntensityVisualizationMixin, Layer):
                 raise ValueError(
                     f"string values for `complex_func` must be one of {opt}"
                 )
+
         if not isinstance(value, ComplexRendering):
             test_arr = np.ones(1).astype(np.complex)
             if not (callable(value) and np.isrealobj(value(test_arr))):
@@ -379,11 +380,27 @@ class Image(IntensityVisualizationMixin, Layer):
                     "a callable function that accepts a complex array and "
                     "returns a real array."
                 )
+        elif value == ComplexRendering.MAP_COLORMAP:
+            self._previous_cmap = self._colormap_name
+            self.colormap = 'twilight_shifted'
+            self.events.contrast_limits.connect(self.refresh)
+            self.events.colormap.connect(self.refresh)
+            self.events.gamma.connect(self.refresh)
+        else:
+            if hasattr(self, '_previous_cmap'):
+                self.colormap = self._previous_cmap
+                del self._previous_cmap
+            self.events.contrast_limits.disconnect(self.refresh)
+            self.events.colormap.disconnect(self.refresh)
+            self.events.gamma.disconnect(self.refresh)
 
         self._complex_func = value
         if hasattr(self, '_data'):
-            if value == ComplexRendering.PHASE:
-                self.reset_contrast_limits()
+            if value in (
+                ComplexRendering.PHASE,
+                ComplexRendering.MAP_COLORMAP,
+            ):
+                self.contrast_limits = [-np.pi, np.pi]
                 self.contrast_limits_range = [-np.pi, np.pi]
             else:
                 self.reset_contrast_limits()
@@ -491,8 +508,22 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail = image
 
         if self.iscomplex:
-            image = self.complex_func(image)
-            thumbnail = self.complex_func(thumbnail)
+            if 'colormap' in self.complex_func.name.lower():
+                image = self.complex_func(
+                    image,
+                    colormap=self._colormap_name,
+                    gamma=self.gamma,
+                    phase_range=self.contrast_limits,
+                )
+                thumbnail = self.complex_func(
+                    thumbnail,
+                    colormap=self._colormap_name,
+                    gamma=self.gamma,
+                    phase_range=self.contrast_limits,
+                )
+            else:
+                image = self.complex_func(image)
+                thumbnail = self.complex_func(thumbnail)
             if 'map' in self.complex_func.name.lower():
                 self.rgb = True
                 self._data_thumbnail = self._raw_to_displayed(

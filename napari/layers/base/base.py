@@ -570,8 +570,10 @@ class Layer(KeymapMixin, ABC):
         """
         pass
 
-    def refresh(self):
+    def refresh(self, *args):
         """Refresh all layer data based on current view slice.
+
+        *args is added for eash of connecting refresh to events with arguments
         """
         if self.visible:
             self._set_view_slice()

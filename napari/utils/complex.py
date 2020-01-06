@@ -1,11 +1,13 @@
 import numpy as np
 from skimage.color import hsv2rgb
-from functools import partial
+from ..utils.colormaps.colormaps import (
+    vispy_or_mpl_colormap,
+    AVAILABLE_COLORMAPS,
+)
 
 
 def complex_ramp(size=256, phase_range=(-np.pi, np.pi), mag_range=(0, 10)):
     """Returns a complex array where X ramps phase and Y ramps magnitude."""
-    size = 256
     p0, p1 = phase_range
     phase_ramp = np.linspace(p0, p1 - 1 / size, size)
     m0, m1 = mag_range
@@ -69,4 +71,25 @@ def complex2rgb(
     return hsv2rgb(HSV)
 
 
-pm_hs1_2rgb = partial(complex2rgb, mapping=['p', 'm', None])
+def complex2colormap(
+    arr,
+    colormap='twilight_shifted',
+    rmax=None,
+    gamma=0.8,
+    phase_range=(-np.pi / 6, np.pi / 6),
+):
+    if colormap in AVAILABLE_COLORMAPS:
+        cmap = AVAILABLE_COLORMAPS[colormap]
+    else:
+        cmap = vispy_or_mpl_colormap(colormap)
+
+    p0, p1 = phase_range
+    phase = (np.angle(arr) - p0) / (p1 - p0)
+    # phase = (np.angle(arr) + phase_shift) / (2 * np.pi) % 1
+    RGB = cmap[phase.ravel()].RGBA.reshape(phase.shape + (4,))
+
+    absmax = rmax or np.abs(arr).max()
+    intensity = np.clip(np.abs(arr) / absmax, 0, 1) ** gamma
+    RGB = (RGB * np.expand_dims(intensity, 2)).astype(np.uint8)
+
+    return RGB

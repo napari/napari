@@ -2,7 +2,7 @@ from enum import auto, Enum
 from ...utils.misc import StringEnum
 import numpy as np
 from functools import partial
-from ...utils.complex import complex2rgb
+from ...utils.complex import complex2rgb, complex2colormap
 
 
 class Interpolation(StringEnum):
@@ -71,9 +71,10 @@ class ComplexRendering(Enum):
     MAP_M2H_P2S = partial(complex2rgb, mapping=['m', 'p', None])
     MAP_M2H_P2V = partial(complex2rgb, mapping=['m', None, 'p'])
     MAP_M2H_P2SV = partial(complex2rgb, mapping=['m', 'p', 'p'])
+    MAP_COLORMAP = partial(complex2colormap)
 
-    def __call__(self, *args):
-        return self.value(*args)
+    def __call__(self, *args, **kwargs):
+        return self.value(*args, **kwargs)
 
     @classmethod
     def lower_members(cls):
