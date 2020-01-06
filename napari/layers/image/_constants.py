@@ -2,6 +2,7 @@ from enum import auto, Enum
 from ...utils.misc import StringEnum
 import numpy as np
 from functools import partial
+from ...utils.complex import complex2rgb
 
 
 class Interpolation(StringEnum):
@@ -64,6 +65,12 @@ class ComplexRendering(Enum):
     PHASE = partial(np.angle)
     REAL = partial(np.real)
     IMAGINARY = partial(np.imag)
+    MAP_P2H_M2S = partial(complex2rgb, mapping=['p', 'm', None])
+    MAP_P2H_M2V = partial(complex2rgb, mapping=['p', None, 'm'])
+    MAP_P2H_M2SV = partial(complex2rgb, mapping=['p', 'm', 'v'])
+    MAP_M2H_P2S = partial(complex2rgb, mapping=['m', 'p', None])
+    MAP_M2H_P2V = partial(complex2rgb, mapping=['m', None, 'p'])
+    MAP_M2H_P2SV = partial(complex2rgb, mapping=['m', 'p', 'p'])
 
     def __call__(self, *args):
         return self.value(*args)

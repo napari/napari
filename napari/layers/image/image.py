@@ -413,6 +413,8 @@ class Image(IntensityVisualizationMixin, Layer):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
 
+        self.rgb = False if self.iscomplex else self.rgb
+
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
@@ -491,6 +493,13 @@ class Image(IntensityVisualizationMixin, Layer):
         if self.iscomplex:
             image = self.complex_func(image)
             thumbnail = self.complex_func(thumbnail)
+            if 'map' in self.complex_func.name.lower():
+                self.rgb = True
+                self._data_thumbnail = self._raw_to_displayed(
+                    np.clip(thumbnail, 0, 1)
+                )
+            else:
+                self.rgb = False
 
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
