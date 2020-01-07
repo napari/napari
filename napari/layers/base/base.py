@@ -564,8 +564,8 @@ class Layer(KeymapMixin, ABC):
         full_scale = np.multiply(self.scale, self._scale_view)
         full_translate = np.add(self.translate, self._translate_view)
 
-        if not all(
-            isinstance(n, int) for n in self.coordinates
+        if any(
+            isinstance(n, slice) for n in self.coordinates
         ):  # fixes bug where any element of self.coordinates is updated to a non-numeric value
             self.coordinates = (0,) * len(self.coordinates)
         full_coord = np.round(
