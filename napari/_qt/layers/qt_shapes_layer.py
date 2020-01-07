@@ -219,7 +219,7 @@ class QtShapesControls(QtLayerControls):
 
     def _on_opacity_change(self, event):
         with self.layer.events.opacity.blocker():
-            self.opacitySilder.setValue(self.layer.current_opacity * 100)
+            self.opacitySlider.setValue(self.layer.current_opacity * 100)
 
     def _on_editable_change(self, event):
         self.select_button.setEnabled(self.layer.editable)
