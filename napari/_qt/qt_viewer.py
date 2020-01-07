@@ -1,6 +1,7 @@
 import os.path
 import inspect
 from pathlib import Path
+import numpy as np
 
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
@@ -152,7 +153,7 @@ class QtViewer(QSplitter):
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
-        self.viewer.events.reset_view.connect(self._on_reset_view)
+        self.viewer.camera.events.update.connect(self._on_reset_view)
         self.viewer.events.palette.connect(
             lambda event: self._update_palette(event.palette)
         )
@@ -290,15 +291,20 @@ class QtViewer(QSplitter):
 
     def _on_reset_view(self, event):
         if isinstance(self.view.camera, ArcballCamera):
+            quaternion = [np.pi / 2, 1, 0, 0]
             quat = self.view.camera._quaternion.create_from_axis_angle(
-                *event.quaternion
+                *quaternion
             )
             self.view.camera._quaternion = quat
-            self.view.camera.center = event.center
-            self.view.camera.scale_factor = event.scale_factor
+            self.view.camera.center = self.viewer.camera.center
+            self.view.camera.scale_factor = self.viewer.camera.scale
         else:
             # Assumes default camera has the same properties as PanZoomCamera
-            self.view.camera.rect = event.rect
+            corner = np.subtract(
+                self.viewer.camera.center, self.viewer.camera.scale / 2
+            )
+            rectangle = tuple(corner) + (self.viewer.camera.scale,) * 2
+            self.view.camera.rect = rectangle
 
     def _update_palette(self, palette):
         # template and apply the primary stylesheet

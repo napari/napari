@@ -5,6 +5,7 @@ from xml.etree.ElementTree import Element, tostring
 
 from .dims import Dims
 from .layerlist import LayerList
+from .camera import Camera
 from .. import layers
 from ..utils import colormaps
 from ..utils.event import EmitterGroup, Event
@@ -58,7 +59,6 @@ class ViewerModel(KeymapMixin):
             title=Event,
             interactive=Event,
             cursor=Event,
-            reset_view=Event,
             active_layer=Event,
             palette=Event,
             grid=Event,
@@ -70,6 +70,7 @@ class ViewerModel(KeymapMixin):
         )
 
         self.layers = LayerList()
+        self.camera = Camera()
 
         self._status = 'Ready'
         self._help = ''
@@ -277,24 +278,13 @@ class ViewerModel(KeymapMixin):
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
-        centroid = np.add(corner, np.divide(size, 2))
+        center = np.add(corner, np.divide(size, 2))
 
-        if self.dims.ndisplay == 2:
-            # For a PanZoomCamera emit a 4-tuple of the rect
-            corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
-            size = np.multiply(1.1, size)[::-1]
-            rect = tuple(corner) + tuple(size)
-            self.events.reset_view(rect=rect)
-        else:
-            # For an ArcballCamera emit the center and scale_factor
-            center = centroid[::-1]
-            scale_factor = 1.1 * np.max(size[-2:])
-            # set initial camera angle so that it matches top layer of 2D view
-            # when transitioning to 3D view
-            quaternion = [np.pi / 2, 1, 0, 0]
-            self.events.reset_view(
-                center=center, scale_factor=scale_factor, quaternion=quaternion
-            )
+        self.camera.update(
+            center=center[-self.dims.ndisplay :],
+            scale=1.1 * np.max(size[-2:]),
+            angle=[0, 0],
+        )
 
     def to_svg(self, file=None, view_box=None):
         """Convert the viewer state to an SVG. Non visible layers will be
