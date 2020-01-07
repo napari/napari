@@ -8,6 +8,10 @@ from napari._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
 
 
 class Viewer(ViewerModel):
@@ -87,3 +91,44 @@ class Viewer(ViewerModel):
         t = QtUpdateUI(func, *args, **kwargs)
         self.window.qt_viewer.pool.start(t)
         return self.window.qt_viewer.pool  # returns threadpool object
+
+    def _get_state(self):
+        """Get dictionary of viewer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of viewer state.
+        """
+
+        if self.dims.ndisplay == 3:
+            camera = self.window.qt_viewer.view.camera
+            camera_dict = {
+                'center': camera.center,
+                'scale_factor': camera.scale_factor,
+                'quaternion': camera._quaternion.get_axis_angle(),
+            }
+        else:
+            r = self.window.qt_viewer.view.camera.rect
+            camera_dict = {'rect': [r.left, r.bottom, r.width, r.height]}
+
+        layer_list = []
+        for layer in self.layers:
+            layer_list.append(layer._get_state())
+
+        state = {
+            'napari': True,
+            'version': __version__,
+            'ndim': self.dims.ndim,
+            'ndisplay': self.dims.ndisplay,
+            'order': [int(o) for o in self.dims.order],
+            'axis_labels': [al for al in self.dims.axis_labels],
+            'dims_point': [int(p) for p in self.dims.point],
+            'title': self.title,
+            'theme': self.theme,
+            'metadata': {},
+            'camera': camera_dict,
+            'layers': layer_list,
+        }
+
+        return state
