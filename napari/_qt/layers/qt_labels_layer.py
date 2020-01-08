@@ -48,23 +48,19 @@ class QtLabelsControls(QtLayerControls):
         sld.setMinimum(1)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
+        sld.valueChanged.connect(self.changeSize)
         self.brushSizeSlider = sld
         self._on_brush_size_change(None)
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
-        contig_cb.stateChanged.connect(
-            lambda state=contig_cb: self.change_contig(state)
-        )
+        contig_cb.stateChanged.connect(self.change_contig)
         self.contigCheckBox = contig_cb
         self._on_contig_change(None)
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
-        ndim_cb.stateChanged.connect(
-            lambda state=ndim_cb: self.change_ndim(state)
-        )
+        ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change(None)
 
