@@ -103,7 +103,7 @@ class QRangeSliderPopup(QtPopup):
         self.curmax_label.setToolTip("current maximum contrast limit")
 
         # create range min/max labels (left & right of slider)
-        rmin, rmax = self.slider.range
+        rmin, rmax = self.slider.range()
         self.range_min_label = LabelEdit(self._numformat(rmin))
         self.range_max_label = LabelEdit(self._numformat(rmax))
         self.range_min_label.editingFinished.connect(self._range_label_changed)
