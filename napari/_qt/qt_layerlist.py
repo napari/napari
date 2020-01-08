@@ -388,16 +388,16 @@ class QtLayerWidget(QFrame):
     def mouseMoveEvent(self, event):
         event.ignore()
 
-    def _on_layer_name_change(self, event):
+    def _on_layer_name_change(self, event=None):
         with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
             self.nameTextBox.home(False)
 
-    def _on_visible_change(self, event):
+    def _on_visible_change(self, event=None):
         with self.layer.events.visible.blocker():
             self.visibleCheckBox.setChecked(self.layer.visible)
 
-    def _on_thumbnail_change(self, event):
+    def _on_thumbnail_change(self, event=None):
         thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height
         image = QImage(

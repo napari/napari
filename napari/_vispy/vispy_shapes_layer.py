@@ -27,7 +27,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self._on_data_change()
         self._on_highlight_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
@@ -101,5 +101,5 @@ class VispyShapesLayer(VispyBaseLayer):
             pos=pos, color=edge_color, width=width
         )
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self, event=None):
         pass

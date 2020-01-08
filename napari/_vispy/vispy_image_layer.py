@@ -59,7 +59,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = parent
         self.reset()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -152,7 +152,7 @@ class VispyImageLayer(VispyBaseLayer):
         elif rendering == Rendering.ATTENUATED_MIP:
             self.node.threshold = float(self.layer.attenuation)
 
-    def _on_scale_change(self):
+    def _on_scale_change(self, event=None):
         self.scale = [
             self.layer.scale[d] * self.layer._scale_view[d]
             for d in self.layer.dims.displayed[::-1]
@@ -161,7 +161,7 @@ class VispyImageLayer(VispyBaseLayer):
             self.layer.top_left = self.find_top_left()
         self.layer.position = self._transform_position(self._position)
 
-    def _on_translate_change(self):
+    def _on_translate_change(self, event=None):
         self.translate = [
             self.layer.translate[d]
             + self.layer._translate_view[d]

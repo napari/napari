@@ -41,7 +41,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.parent = parent
         self._reset_base()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         # Check if ndisplay has changed current node type needs updating
         if (
             self.layer.dims.ndisplay == 3

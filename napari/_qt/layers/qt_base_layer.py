@@ -26,7 +26,7 @@ class QtLayerControls(QFrame):
         sld.setSingleStep(1)
         sld.valueChanged.connect(self.changeOpacity)
         self.opacitySlider = sld
-        self._on_opacity_change(None)
+        self._on_opacity_change()
 
         blend_comboBox = QComboBox()
         blend_comboBox.addItems(Blending.keys())
@@ -44,11 +44,11 @@ class QtLayerControls(QFrame):
     def changeBlending(self, text):
         self.layer.blending = text
 
-    def _on_opacity_change(self, event):
+    def _on_opacity_change(self, event=None):
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.opacity * 100)
 
-    def _on_blending_change(self, event):
+    def _on_blending_change(self, event=None):
         with self.layer.events.blending.blocker():
             index = self.blendComboBox.findText(
                 self.layer.blending, Qt.MatchFixedString

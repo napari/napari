@@ -13,7 +13,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         self._reset_base()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         if (
             len(self.layer._view_vertices) == 0
             or len(self.layer._view_faces) == 0
