@@ -2,7 +2,7 @@ import os
 import sys
 from collections import abc, namedtuple
 
-from .utils.settings_formats.json import JSON_FORMAT
+from .utils.settings_formats import YAML_FORMAT
 from .vendored.appdirs import site_config_dir, user_config_dir
 
 # Read/Write funcs should accept a filename, Write funcs also take a dict
@@ -86,7 +86,7 @@ class Settings(abc.MutableMapping, QSettingsMixin):
         orgname='napari',
         appname='napari',
         scope='user',
-        format=JSON_FORMAT,
+        format=YAML_FORMAT,
         autosync=True,
     ):
         """Settings object to hold general application preferences & options.
