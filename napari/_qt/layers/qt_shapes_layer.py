@@ -169,7 +169,7 @@ class QtShapesControls(QtLayerControls):
         if event.mode in mode_buttons:
             mode_buttons[event.mode].setChecked(True)
         else:
-            raise ValueError(f"Mode '{event.mode}'not recongnized")
+            raise ValueError(f"Mode '{event.mode}'not recognized")
 
     def changeFaceColor(self, text):
         self.layer.current_face_color = text

@@ -330,7 +330,7 @@ class Labels(Image):
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
         self.status = str(mode)
         self._mode = mode
@@ -550,7 +550,7 @@ class Labels(Image):
             # Fill clicked on region with new label
             self.fill(self.coordinates, self._value, self.selected_label)
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

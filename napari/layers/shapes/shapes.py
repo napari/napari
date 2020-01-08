@@ -574,7 +574,7 @@ class Shapes(Layer):
                 'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
             )
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
         self.status = str(mode)
         self._mode = mode
@@ -1648,7 +1648,7 @@ class Shapes(Layer):
                         self._selected_box = self.interaction_box(shapes)
                 self.refresh()
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -1700,7 +1700,7 @@ class Shapes(Layer):
         elif self._mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self._set_highlight()
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -1767,4 +1767,4 @@ class Shapes(Layer):
         ):
             pass
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")

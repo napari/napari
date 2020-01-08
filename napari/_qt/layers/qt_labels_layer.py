@@ -127,7 +127,7 @@ class QtLabelsControls(QtLayerControls):
         elif mode == Mode.FILL:
             self.fill_button.setChecked(True)
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def changeColor(self):
         self.layer.new_colormap()

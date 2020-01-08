@@ -133,7 +133,7 @@ class QtPointsControls(QtLayerControls):
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def changeFaceColor(self, text):
         self.layer.current_face_color = text
