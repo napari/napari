@@ -50,11 +50,8 @@ class QtAboutKeybindings(QDialog):
 
         # layer type selection
         self.layerTypeComboBox = QComboBox()
-        for name in self.keybindings_strs:
-            self.layerTypeComboBox.addItem(name)
-        self.layerTypeComboBox.activated[str].connect(
-            lambda text=self.layerTypeComboBox: self.change_layer_type(text)
-        )
+        self.layerTypeComboBox.addItems(list(self.keybindings_strs))
+        self.layerTypeComboBox.activated[str].connect(self.change_layer_type)
         self.layerTypeComboBox.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
         # self.change_layer_type(current_layer)
         layer_type_layout = QHBoxLayout()
