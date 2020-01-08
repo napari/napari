@@ -10,7 +10,7 @@ class QtModeRadioButton(QRadioButton):
         self.setToolTip(tool_tip)
         self.setChecked(checked)
         self.setProperty('mode', button_name)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
+        self.toggled.connect(self._set_mode)
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
