@@ -296,14 +296,14 @@ class QtViewer(QSplitter):
                 *quaternion
             )
             self.view.camera._quaternion = quat
-            self.view.camera.center = self.viewer.camera.center
+            self.view.camera.center = self.viewer.camera.center[::-1]
             self.view.camera.scale_factor = self.viewer.camera.scale
         else:
             # Assumes default camera has the same properties as PanZoomCamera
             corner = np.subtract(
                 self.viewer.camera.center, self.viewer.camera.scale / 2
             )
-            rectangle = tuple(corner) + (self.viewer.camera.scale,) * 2
+            rectangle = tuple(corner[::-1]) + (self.viewer.camera.scale,) * 2
             self.view.camera.rect = rectangle
 
     def _update_palette(self, palette):
