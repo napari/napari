@@ -15,28 +15,22 @@ class QtImageControls(QtBaseImageControls):
         self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
 
         interp_comboBox = QComboBox()
-        for interp in Interpolation:
-            interp_comboBox.addItem(str(interp))
+        interp_comboBox.addItems([str(i) for i in Interpolation])
         index = interp_comboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString
         )
         interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(
-            lambda text=interp_comboBox: self.changeInterpolation(text)
-        )
+        interp_comboBox.activated[str].connect(self.changeInterpolation)
         self.interpComboBox = interp_comboBox
         self.interpLabel = QLabel('interpolation:')
 
         renderComboBox = QComboBox()
-        for render in Rendering:
-            renderComboBox.addItem(str(render))
+        renderComboBox.addItems([str(r) for r in Rendering])
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString
         )
         renderComboBox.setCurrentIndex(index)
-        renderComboBox.activated[str].connect(
-            lambda text=renderComboBox: self.changeRendering(text)
-        )
+        renderComboBox.activated[str].connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel('rendering:')
 
@@ -46,9 +40,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.iso_threshold * 100)
-        sld.valueChanged[int].connect(
-            lambda value=sld: self.changeIsoThreshold(value)
-        )
+        sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel('iso threshold:')
 
@@ -58,9 +50,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setMaximum(200)
         sld.setSingleStep(1)
         sld.setValue(self.layer.attenuation * 100)
-        sld.valueChanged[int].connect(
-            lambda value=sld: self.changeAttenuation(value)
-        )
+        sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
         self._on_ndisplay_change(None)
