@@ -37,36 +37,26 @@ class QtShapesControls(QtLayerControls):
                 value = np.asarray(value)
             value = value.mean()
         sld.setValue(int(value))
-        sld.valueChanged[int].connect(
-            lambda value=sld: self.changeWidth(value)
-        )
+        sld.valueChanged.connect(self.changeWidth)
         self.widthSlider = sld
 
         face_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            face_comboBox.addItem(c)
-        face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.changeFaceColor(text)
-        )
+        face_comboBox.addItems(self.layer._colors)
+        face_comboBox.activated[str].connect(self.changeFaceColor)
         self.faceComboBox = face_comboBox
         self.faceColorSwatch = QFrame()
         self.faceColorSwatch.setObjectName('swatch')
         self.faceColorSwatch.setToolTip('Face color swatch')
-        self._on_face_color_change(None)
+        self._on_face_color_change()
 
         edge_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            edge_comboBox.addItem(c)
-        edge_comboBox.activated[str].connect(
-            lambda text=edge_comboBox: self.changeEdgeColor(text)
-        )
+        edge_comboBox.addItems(self.layer._colors)
+        edge_comboBox.activated[str].connect(self.changeEdgeColor)
         self.edgeComboBox = edge_comboBox
         self.edgeColorSwatch = QFrame()
         self.edgeColorSwatch.setObjectName('swatch')
         self.edgeColorSwatch.setToolTip('Edge color swatch')
-        self._on_edge_color_change(None)
+        self._on_edge_color_change()
 
         self.select_button = QtModeRadio(
             layer, 'select', Mode.SELECT, 'Select shapes'
@@ -155,29 +145,23 @@ class QtShapesControls(QtLayerControls):
         self.layer.status = str(self.layer.mode)
 
     def set_mode(self, event):
-        mode = event.mode
-        if mode == Mode.SELECT:
-            self.select_button.setChecked(True)
-        elif mode == Mode.DIRECT:
-            self.direct_button.setChecked(True)
-        elif mode == Mode.PAN_ZOOM:
-            self.panzoom_button.setChecked(True)
-        elif mode == Mode.ADD_RECTANGLE:
-            self.rectangle_button.setChecked(True)
-        elif mode == Mode.ADD_ELLIPSE:
-            self.ellipse_button.setChecked(True)
-        elif mode == Mode.ADD_LINE:
-            self.line_button.setChecked(True)
-        elif mode == Mode.ADD_PATH:
-            self.path_button.setChecked(True)
-        elif mode == Mode.ADD_POLYGON:
-            self.polygon_button.setChecked(True)
-        elif mode == Mode.VERTEX_INSERT:
-            self.vertex_insert_button.setChecked(True)
-        elif mode == Mode.VERTEX_REMOVE:
-            self.vertex_remove_button.setChecked(True)
+        mode_buttons = {
+            Mode.SELECT: self.select_button,
+            Mode.DIRECT: self.direct_button,
+            Mode.PAN_ZOOM: self.panzoom_button,
+            Mode.ADD_RECTANGLE: self.rectangle_button,
+            Mode.ADD_ELLIPSE: self.ellipse_button,
+            Mode.ADD_LINE: self.line_button,
+            Mode.ADD_PATH: self.path_button,
+            Mode.ADD_POLYGON: self.polygon_button,
+            Mode.VERTEX_INSERT: self.vertex_insert_button,
+            Mode.VERTEX_REMOVE: self.vertex_remove_button,
+        }
+
+        if event.mode in mode_buttons:
+            mode_buttons[event.mode].setChecked(True)
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError(f"Mode '{event.mode}'not recongnized")
 
     def changeFaceColor(self, text):
         self.layer.current_face_color = text
@@ -192,13 +176,13 @@ class QtShapesControls(QtLayerControls):
         with self.layer.events.blocker(self._on_opacity_change):
             self.layer.current_opacity = value / 100
 
-    def _on_edge_width_change(self, event):
+    def _on_edge_width_change(self, event=None):
         with self.layer.events.edge_width.blocker():
             value = self.layer.current_edge_width
             value = np.clip(int(2 * value), 0, 40)
             self.widthSlider.setValue(value)
 
-    def _on_edge_color_change(self, event):
+    def _on_edge_color_change(self, event=None):
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
                 self.layer.current_edge_color, Qt.MatchFixedString
@@ -207,7 +191,7 @@ class QtShapesControls(QtLayerControls):
         color = Color(self.layer.current_edge_color).hex
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
-    def _on_face_color_change(self, event):
+    def _on_face_color_change(self, event=None):
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(
                 self.layer.current_face_color, Qt.MatchFixedString
@@ -216,11 +200,11 @@ class QtShapesControls(QtLayerControls):
         color = Color(self.layer.current_face_color).hex
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
-    def _on_opacity_change(self, event):
+    def _on_opacity_change(self, event=None):
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.current_opacity * 100)
 
-    def _on_editable_change(self, event):
+    def _on_editable_change(self, event=None):
         self.select_button.setEnabled(self.layer.editable)
         self.direct_button.setEnabled(self.layer.editable)
         self.rectangle_button.setEnabled(self.layer.editable)
