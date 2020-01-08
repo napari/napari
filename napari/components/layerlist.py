@@ -8,7 +8,7 @@ def _add(event):
     layers = event.source
     layer = event.item
     layer.name = layers._coerce_name(layer.name, layer)
-    layer.events.name.connect(lambda e: layers._update_name(e))
+    layer.events.name.connect(layers._update_name)
     layers.unselect_all(ignore=layer)
 
 
