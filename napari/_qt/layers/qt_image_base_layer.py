@@ -21,19 +21,15 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QComboBox()
-        for cmap in self.layer.colormaps:
-            comboBox.addItem(cmap)
+        comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
-        comboBox.activated[str].connect(
-            lambda text=comboBox: self.changeColor(text)
-        )
+        comboBox.activated[str].connect(self.changeColor)
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
             self.layer.contrast_limits, self.layer.contrast_limits_range
         )
-
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
         set_clim = partial(setattr, self.layer, 'contrast_limits')
         set_climrange = partial(setattr, self.layer, 'contrast_limits_range')
@@ -47,7 +43,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(200)
         sld.setSingleStep(2)
         sld.setValue(100)
-        sld.valueChanged[int].connect(self.gamma_slider_changed)
+        sld.valueChanged.connect(self.gamma_slider_changed)
         self.gammaSlider = sld
         self.gamma_slider_update()
 
