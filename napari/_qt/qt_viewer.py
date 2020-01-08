@@ -291,9 +291,8 @@ class QtViewer(QSplitter):
 
     def _on_reset_view(self, event):
         if isinstance(self.view.camera, ArcballCamera):
-            quaternion = [np.pi / 2, 1, 0, 0]
-            quat = self.view.camera._quaternion.create_from_axis_angle(
-                *quaternion
+            quat = self.view.camera._quaternion.create_from_euler_angles(
+                *self.viewer.camera.angles, degrees=True,
             )
             self.view.camera._quaternion = quat
             self.view.camera.center = self.viewer.camera.center[::-1]
@@ -420,6 +419,29 @@ class QtViewer(QSplitter):
     def on_draw(self, event):
         """Called whenever drawn in canvas. Called for all layers, not just top
         """
+        if isinstance(self.view.camera, ArcballCamera):
+            self.viewer.camera._center = self.view.camera.center[::-1]
+            self.viewer.camera._scale = self.view.camera.scale_factor
+
+            # Do conversion from quaternion representation to euler angles
+            q = self.view.camera._quaternion
+            angles = (
+                np.arctan2(
+                    2 * (q.w * q.x + q.y * q.z),
+                    1 - 2 * (q.x * q.x + q.y * q.y),
+                ),
+                np.arcsin(2 * (q.w * q.y - q.z * q.x)),
+                np.arctan2(
+                    2 * (q.w * q.z + q.y * q.x),
+                    1 - 2 * (q.y * q.y + q.z * q.z),
+                ),
+            )
+            self.viewer.camera._angles = tuple(np.degrees(angles))[::-1]
+        else:
+            # Assumes default camera has the same properties as PanZoomCamera
+            self.viewer.camera._center = self.view.camera.rect.center[::-1]
+            self.viewer.camera._scale = np.max(self.view.camera.rect.size)
+
         for visual in self.layer_to_visual.values():
             visual.on_draw(event)
 

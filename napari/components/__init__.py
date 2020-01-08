@@ -13,6 +13,7 @@ ViewerModel
     Data viewer displaying the currently rendered scene and
     layer-related controls.
 """
+from .camera import Camera
 from .dims import Dims
 from .layerlist import LayerList
 from .viewer_model import ViewerModel

@@ -283,7 +283,7 @@ class ViewerModel(KeymapMixin):
         self.camera.update(
             center=center[-self.dims.ndisplay :],
             scale=1.1 * np.max(size[-2:]),
-            angle=[0, 0],
+            angles=(0, 0, 90),
         )
 
     def to_svg(self, file=None, view_box=None):

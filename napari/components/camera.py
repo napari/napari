@@ -10,15 +10,15 @@ class Camera:
         Center point of camera view for 2D or 3D viewing.
     scale : float
         Zoom level.
-    angle : 2-tuple
-        Phi and Psi angles of camera view used in 3D viewing.
+    angles : 3-tuple
+        Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
     """
 
-    def __init__(self, *, center=(0, 0), scale=512, angle=(0, 0)):
+    def __init__(self, *, center=(0, 0), scale=512, angles=(0, 0, 90)):
 
         self._center = center
         self._scale = scale
-        self._angle = angle
+        self._angles = angles
 
         self.events = EmitterGroup(
             source=self, auto_connect=True, update=None, ndisplay=None,
@@ -62,18 +62,18 @@ class Camera:
         self.events.update()
 
     @property
-    def angle(self):
-        """2-tuple: Phi and Psi angles of camera view used in 3D viewing."""
-        return self._angle
+    def angles(self):
+        """3-tuple: Euler angles of camera in 3D viewing, in degrees."""
+        return self._angles
 
-    @angle.setter
-    def angle(self, angle):
-        if self._angle == angle:
+    @angles.setter
+    def angles(self, angles):
+        if self._angles == angles:
             return
-        self._angle = angle
+        self._angles = angles
         self.events.update()
 
-    def update(self, center=None, scale=None, angle=None):
+    def update(self, center=None, scale=None, angles=None):
         """Update camera position to new values.
 
         Parameters
@@ -83,16 +83,16 @@ class Camera:
             or 3.
         scale : float
             Zoom level.
-        angle : 2-tuple
-            Phi and Psi angles of camera view used in 3D viewing.
+        angles : 3-tuple
+            Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         """
         if center is not None:
             self.center = center
         if scale is not None:
             self.scale = scale
-        if angle is not None:
-            self.angle = angle
+        if angles is not None:
+            self.angles = angles
 
     def reset(self):
         """Reset camera position to initial values."""
-        self.update(center=(0,) * self.ndisplay, scale=512, angle=(0, 0))
+        self.update(center=(0,) * self.ndisplay, scale=512, angles=(0, 0, 90))

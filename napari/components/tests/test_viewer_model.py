@@ -315,3 +315,40 @@ def test_add_remove_layer_dims_change():
     viewer.layers.remove(layer)
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
+
+
+def test_camera():
+    """Test camera."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
+
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7.5, 10)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    assert viewer.camera.ndisplay == 3
+    assert viewer.camera.center == (5, 7.5, 10)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7.5, 10)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    center = (20, 45)
+    scale = 300
+    angles = (-20, 10, -45)
+    viewer.camera.update(center=center, scale=scale, angles=angles)
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == center
+    assert viewer.camera.scale == scale
+    assert viewer.camera.angles == angles
