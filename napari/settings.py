@@ -7,6 +7,7 @@ from .vendored.appdirs import site_config_dir, user_config_dir
 
 # Read/Write funcs should accept a filename, Write funcs also take a dict
 
+# FIXME: defaults only works for ≥ python 3.7
 _fields = ['key', 'default', 'description', 'type', 'callback']
 SettingTuple = namedtuple("Setting", _fields, defaults=(None,) * len(_fields))
 
