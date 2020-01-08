@@ -176,10 +176,10 @@ class Layer(KeymapMixin, ABC):
 
         self.events.data.connect(lambda e: self._set_editable())
         self.dims.events.ndisplay.connect(lambda e: self._set_editable())
-        self.dims.events.order.connect(lambda e: self.refresh())
-        self.dims.events.ndisplay.connect(lambda e: self._update_dims())
-        self.dims.events.order.connect(lambda e: self._update_dims())
-        self.dims.events.axis.connect(lambda e: self.refresh())
+        self.dims.events.order.connect(self.refresh)
+        self.dims.events.ndisplay.connect(self._update_dims)
+        self.dims.events.order.connect(self._update_dims)
+        self.dims.events.axis.connect(self.refresh)
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
@@ -330,7 +330,7 @@ class Layer(KeymapMixin, ABC):
         self._position = position
         self._update_coordinates()
 
-    def _update_dims(self):
+    def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
         ndisplay = self.dims.ndisplay
@@ -593,7 +593,7 @@ class Layer(KeymapMixin, ABC):
         """
         pass
 
-    def refresh(self):
+    def refresh(self, event=None):
         """Refresh all layer data based on current view slice.
         """
         if self.visible:

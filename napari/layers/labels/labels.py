@@ -177,9 +177,9 @@ class Labels(Image):
         self._update_dims()
         self._set_editable()
 
-        self.dims.events.ndisplay.connect(lambda e: self._reset_history())
-        self.dims.events.order.connect(lambda e: self._reset_history())
-        self.dims.events.axis.connect(lambda e: self._reset_history())
+        self.dims.events.ndisplay.connect(self._reset_history)
+        self.dims.events.order.connect(self._reset_history)
+        self.dims.events.axis.connect(self._reset_history)
 
     @property
     def contiguous(self):
@@ -383,7 +383,7 @@ class Labels(Image):
             col = self.colormap[1][val].rgba[0]
         return col
 
-    def _reset_history(self):
+    def _reset_history(self, event=None):
         self._undo_history = deque()
         self._redo_history = deque()
 
