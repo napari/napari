@@ -39,6 +39,7 @@ class Rendering(StringEnum):
             * attenuated_mip: attenuated maxiumum intensity projection. Cast a
               ray and attenuate values based on integral of encountered values,
               display the maximum value that was encountered after attenuation.
+              This will make nearer objects appear more prominent.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
