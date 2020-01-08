@@ -337,7 +337,7 @@ class QtLayerWidget(QFrame):
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.setProperty('mode', 'visibility')
-        cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
+        cb.stateChanged.connect(self.changeVisible)
         self.visibleCheckBox = cb
         self.layout.addWidget(cb)
 
