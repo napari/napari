@@ -5,14 +5,13 @@ from qtpy.QtWidgets import (
     QSlider,
     QCheckBox,
     QButtonGroup,
-    QPushButton,
     QFrame,
     QHBoxLayout,
 )
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.points._constants import Mode, Symbol
-from ..qt_mode_radio import QtModeRadio
+from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 
 
 class QtPointsControls(QtLayerControls):
@@ -70,16 +69,21 @@ class QtPointsControls(QtLayerControls):
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
 
-        self.select_button = QtModeRadio(
+        self.select_button = QtModeRadioButton(
             layer, 'select_points', Mode.SELECT, 'Select points'
         )
-        self.addition_button = QtModeRadio(
+        self.addition_button = QtModeRadioButton(
             layer, 'add_points', Mode.ADD, 'Add points'
         )
-        self.panzoom_button = QtModeRadio(
+        self.panzoom_button = QtModeRadioButton(
             layer, 'pan_zoom', Mode.PAN_ZOOM, 'Pan/zoom', checked=True
         )
-        self.delete_button = QtDeletePointsButton(layer)
+        self.delete_button = QtModePushButton(
+            layer,
+            'delete_shape',
+            'Delete selected points',
+            self.layer.remove_selected,
+        )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -187,14 +191,3 @@ class QtPointsControls(QtLayerControls):
         self.select_button.setEnabled(self.layer.editable)
         self.addition_button.setEnabled(self.layer.editable)
         self.delete_button.setEnabled(self.layer.editable)
-
-
-class QtDeletePointsButton(QPushButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
-        self.setToolTip('Delete selected points')
-        self.clicked.connect(self.layer.remove_selected)

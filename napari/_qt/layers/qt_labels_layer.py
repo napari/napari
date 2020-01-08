@@ -14,7 +14,7 @@ from qtpy.QtCore import Qt
 import numpy as np
 from .qt_base_layer import QtLayerControls
 from ...layers.labels._constants import Mode
-from ..qt_mode_radio import QtModeRadio
+from ..qt_mode_buttons import QtModeRadioButton
 
 
 class QtLabelsControls(QtLayerControls):
@@ -64,16 +64,18 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change(None)
 
-        self.panzoom_button = QtModeRadio(
+        self.panzoom_button = QtModeRadioButton(
             layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode', checked=True
         )
-        self.pick_button = QtModeRadio(
+        self.pick_button = QtModeRadioButton(
             layer, 'picker', Mode.PICKER, 'Pick mode'
         )
-        self.paint_button = QtModeRadio(
+        self.paint_button = QtModeRadioButton(
             layer, 'paint', Mode.PAINT, 'Paint mode'
         )
-        self.fill_button = QtModeRadio(layer, 'fill', Mode.FILL, 'Fill mode')
+        self.fill_button = QtModeRadioButton(
+            layer, 'fill', Mode.FILL, 'Fill mode'
+        )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)

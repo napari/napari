@@ -766,112 +766,109 @@ QtResetViewButton {
    border-radius: 3px;
 }
 
-QtModeRadio {
+QtModeRadioButton {
   background-color: {{ foreground }};
   border-radius: 3px;
 }
 
-QtModeRadio:disabled {
+QtModeRadioButton:disabled {
   background-color: {{ background }};
 }
 
-QtModeRadio::indicator {
+QtModeRadioButton::indicator {
   subcontrol-position:
   center center;
   subcontrol-origin: content;
   width: 28px; height: 28px;
 }
 
-QtModeRadio::indicator:checked {
+QtModeRadioButton::indicator:checked {
   background-color: {{ highlight }};
   border-radius: 3px;
 }
 
-QtModeRadio::indicator:unchecked:hover {
+QtModeRadioButton::indicator:unchecked:hover {
   background-color: {{ primary }};
   border-radius: 3px;
 }
 
-QtModeRadio[mode="zoom"]::indicator {
+QtModeRadioButton[mode="zoom"]::indicator {
   image: url(":/icons/{{ folder }}/zoom.svg");
 }
 
-QtModeRadio[mode="select"]::indicator {
+QtModeRadioButton[mode="select"]::indicator {
   image: url(":/icons/{{ folder }}/select.svg");
 }
 
-QtModeRadio[mode="direct"]::indicator {
+QtModeRadioButton[mode="direct"]::indicator {
   image: url(":/icons/{{ folder }}/direct.svg");
 }
 
-QtModeRadio[mode="rectangle"]::indicator {
+QtModeRadioButton[mode="rectangle"]::indicator {
   image: url(":/icons/{{ folder }}/rectangle.svg");
 }
 
-QtModeRadio[mode="ellipse"]::indicator {
+QtModeRadioButton[mode="ellipse"]::indicator {
   image: url(":/icons/{{ folder }}/ellipse.svg");
   color: red;
 }
 
-QtModeRadio[mode="line"]::indicator {
+QtModeRadioButton[mode="line"]::indicator {
   image: url(":/icons/{{ folder }}/line.svg");
 }
 
-QtModeRadio[mode="path"]::indicator {
+QtModeRadioButton[mode="path"]::indicator {
   image: url(":/icons/{{ folder }}/path.svg");
 }
 
-QtModeRadio[mode="polygon"]::indicator {
+QtModeRadioButton[mode="polygon"]::indicator {
   image: url(":/icons/{{ folder }}/polygon.svg");
 }
 
-QtModeRadio[mode="vertex_insert"]::indicator {
+QtModeRadioButton[mode="vertex_insert"]::indicator {
   image: url(":/icons/{{ folder }}/vertex_insert.svg");
 }
 
-QtModeRadio[mode="vertex_remove"]::indicator {
+QtModeRadioButton[mode="vertex_remove"]::indicator {
   image: url(":/icons/{{ folder }}/vertex_remove.svg");
 }
 
-QtModeRadio[mode="paint"]::indicator {
+QtModeRadioButton[mode="paint"]::indicator {
   image: url(":/icons/{{ folder }}/paint.svg");
 }
 
-QtModeRadio[mode="fill"]::indicator {
+QtModeRadioButton[mode="fill"]::indicator {
   image: url(":/icons/{{ folder }}/fill.svg");
 }
 
-QtModeRadio[mode="picker"]::indicator {
+QtModeRadioButton[mode="picker"]::indicator {
   image: url(":/icons/{{ folder }}/picker.svg");
 }
 
-QtModeRadio[mode="pan_zoom"]::indicator {
+QtModeRadioButton[mode="pan_zoom"]::indicator {
     image: url(":/icons/{{ folder }}/zoom.svg");
 }
 
-QtModeRadio[mode="select_points"]::indicator {
+QtModeRadioButton[mode="select_points"]::indicator {
     image: url(":/icons/{{ folder }}/select.svg");
 }
 
-QtModeRadio[mode="add_points"]::indicator {
+QtModeRadioButton[mode="add_points"]::indicator {
     image: url(":/icons/{{ folder }}/add.svg");
 }
 
-QtMoveBackButton {
+QtModePushButton[mode="move_back"] {
    image: url(":/icons/{{ folder }}/move_back.svg");
 }
 
-QtMoveFrontButton {
+QtModePushButton[mode="move_front"] {
    image: url(":/icons/{{ folder }}/move_front.svg");
 }
 
-QtDeleteShapeButton {
+QtModePushButton[mode="delete_shape"] {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
 
-QtDeletePointsButton {
-   image: url(":/icons/{{ folder }}/delete_shape.svg");
-}
 
 QtCopyToClipboardButton {
    background-color: {{ background }};

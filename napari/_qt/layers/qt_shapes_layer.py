@@ -3,7 +3,6 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QPushButton,
     QLabel,
     QComboBox,
     QSlider,
@@ -13,7 +12,7 @@ from qtpy.QtWidgets import (
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.shapes._constants import Mode
-from ..qt_mode_radio import QtModeRadio
+from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 
 
 class QtShapesControls(QtLayerControls):
@@ -58,40 +57,49 @@ class QtShapesControls(QtLayerControls):
         self.edgeColorSwatch.setToolTip('Edge color swatch')
         self._on_edge_color_change()
 
-        self.select_button = QtModeRadio(
+        self.select_button = QtModeRadioButton(
             layer, 'select', Mode.SELECT, 'Select shapes'
         )
-        self.direct_button = QtModeRadio(
+        self.direct_button = QtModeRadioButton(
             layer, 'direct', Mode.DIRECT, 'Select vertices'
         )
-        self.panzoom_button = QtModeRadio(
+        self.panzoom_button = QtModeRadioButton(
             layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom', checked=True
         )
-        self.rectangle_button = QtModeRadio(
+        self.rectangle_button = QtModeRadioButton(
             layer, 'rectangle', Mode.ADD_RECTANGLE, 'Add rectangles'
         )
-        self.ellipse_button = QtModeRadio(
+        self.ellipse_button = QtModeRadioButton(
             layer, 'ellipse', Mode.ADD_ELLIPSE, 'Add ellipses'
         )
-        self.line_button = QtModeRadio(
+        self.line_button = QtModeRadioButton(
             layer, 'line', Mode.ADD_LINE, 'Add lines'
         )
-        self.path_button = QtModeRadio(
+        self.path_button = QtModeRadioButton(
             layer, 'path', Mode.ADD_PATH, 'Add paths'
         )
-        self.polygon_button = QtModeRadio(
+        self.polygon_button = QtModeRadioButton(
             layer, 'polygon', Mode.ADD_POLYGON, 'Add polygons'
         )
-        self.vertex_insert_button = QtModeRadio(
+        self.vertex_insert_button = QtModeRadioButton(
             layer, 'vertex_insert', Mode.VERTEX_INSERT, 'Insert vertex'
         )
-        self.vertex_remove_button = QtModeRadio(
+        self.vertex_remove_button = QtModeRadioButton(
             layer, 'vertex_remove', Mode.VERTEX_REMOVE, 'Remove vertex'
         )
 
-        self.move_front_button = QtMoveFrontButton(layer)
-        self.move_back_button = QtMoveBackButton(layer)
-        self.delete_button = QtDeleteShapeButton(layer)
+        self.move_front_button = QtModePushButton(
+            layer, 'move_front', 'Move to front', self.layer.move_to_front
+        )
+        self.move_back_button = QtModePushButton(
+            layer, 'move_back', 'Move to back', self.layer.move_to_back
+        )
+        self.delete_button = QtModePushButton(
+            layer,
+            'delete_shape',
+            'Delete selected shapes',
+            self.layer.remove_selected,
+        )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -217,36 +225,3 @@ class QtShapesControls(QtLayerControls):
         self.delete_button.setEnabled(self.layer.editable)
         self.move_back_button.setEnabled(self.layer.editable)
         self.move_front_button.setEnabled(self.layer.editable)
-
-
-class QtDeleteShapeButton(QPushButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
-        self.setToolTip('Delete selected shapes')
-        self.clicked.connect(self.layer.remove_selected)
-
-
-class QtMoveBackButton(QPushButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
-        self.setToolTip('Move to back')
-        self.clicked.connect(self.layer.move_to_back)
-
-
-class QtMoveFrontButton(QPushButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
-        self.setToolTip('Move to front')
-        self.clicked.connect(self.layer.move_to_front)
