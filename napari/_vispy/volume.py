@@ -317,11 +317,35 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
+ATTENUATED_MIP_SNIPPETS = dict(
+    before_loop="""
+        float maxval = -99999.0; // The maximum encountered value
+        float sumval = 0.0; // The sum of the encountered values
+        float scaled = 0.0; // The scaled value
+        int maxi = 0;  // Where the maximum value was encountered
+        vec3 maxloc = vec3(0.0);  // Location where the maximum value was encountered
+        """,
+    in_loop="""
+        sumval = sumval + val;
+        scaled = val * exp(-u_threshold * (sumval - 1) / u_relative_step_size);
+        if( scaled > maxval ) {
+            maxval = scaled;
+            maxi = iter;
+            maxloc = loc;
+        }
+        """,
+    after_loop="""
+        gl_FragColor = $cmap(maxval);
+        """,
+)
+ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
+
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
     'translucent': TRANSLUCENT_FRAG_SHADER,
     'additive': ADDITIVE_FRAG_SHADER,
+    'attenuated_mip': ATTENUATED_MIP_FRAG_SHADER,
 }
 
 
@@ -331,6 +355,7 @@ class Volume(BaseVolume):
 
     def __init__(self, *args, **kwargs):
         self._interpolation = 'linear'
+        self._threshold = 0
         super().__init__(*args, **kwargs)
 
     @property
@@ -361,10 +386,6 @@ class Volume(BaseVolume):
                 % (known_methods, method)
             )
         self._method = method
-        # Get rid of specific variables - they may become invalid
-        if 'u_threshold' in self.shared_program:
-            self.shared_program['u_threshold'] = None
-
         self.shared_program.frag = frag_dict[method]
         self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
         self.shared_program.frag['sample'] = self._tex.glsl_sample
@@ -374,6 +395,21 @@ class Volume(BaseVolume):
             if (hasattr(self.cmap, 'texture_lut'))
             else None
         )
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = self.threshold
+        self.update()
+
+    @property
+    def threshold(self):
+        """ The threshold value to apply for the isosurface render method.
+        """
+        return self._threshold
+
+    @threshold.setter
+    def threshold(self, value):
+        self._threshold = float(value)
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = self._threshold
         self.update()
 
     @property

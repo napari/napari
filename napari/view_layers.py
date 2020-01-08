@@ -13,6 +13,7 @@ def view_image(
     interpolation='nearest',
     rendering='mip',
     iso_threshold=0.5,
+    attenuation=0.5,
     name=None,
     metadata=None,
     scale=None,
@@ -69,8 +70,13 @@ def view_image(
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
     iso_threshold : float
         Threshold for isosurface.
+    attenuation : float
+        Attenuation rate for attenuated maximum intensity projection.
     name : str
         Name of the layer.
     metadata : dict
@@ -120,6 +126,7 @@ def view_image(
         interpolation=interpolation,
         rendering=rendering,
         iso_threshold=iso_threshold,
+        attenuation=attenuation,
         name=name,
         metadata=metadata,
         scale=scale,

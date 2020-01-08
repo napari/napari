@@ -36,7 +36,10 @@ class VispyImageLayer(VispyBaseLayer):
         )
         self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
         self.layer.events.iso_threshold.connect(
-            lambda e: self._on_iso_threshold_change()
+            lambda e: self._on_threshold_change()
+        )
+        self.layer.events.attenuation.connect(
+            lambda e: self._on_threshold_change()
         )
 
         self._on_display_change()
@@ -113,7 +116,7 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_rendering_change(self):
         if self.layer.dims.ndisplay == 3:
             self.node.method = self.layer.rendering
-            self._on_iso_threshold_change()
+            self._on_threshold_change()
 
     def _on_colormap_change(self):
         cmap = self.layer.colormap[1]
@@ -138,13 +141,16 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_gamma_change(self):
         self._on_colormap_change()
 
-    def _on_iso_threshold_change(self):
+    def _on_threshold_change(self):
+        if self.layer.dims.ndisplay == 2:
+            return
         rendering = self.layer.rendering
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
-        if self.layer.dims.ndisplay == 3 and rendering == Rendering.ISO:
+        if rendering == Rendering.ISO:
             self.node.threshold = float(self.layer.iso_threshold)
-            self.node.shared_program['u_threshold'] = self.node.threshold
+        elif rendering == Rendering.ATTENUATED_MIP:
+            self.node.threshold = float(self.layer.attenuation)
 
     def _on_scale_change(self):
         self.scale = [

@@ -54,8 +54,13 @@ class Image(IntensityVisualizationMixin, Layer):
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
     iso_threshold : float
         Threshold for isosurface.
+    attenuation : float
+        Attenuation rate for attenuated maximum intensity projection.
     name : str
         Name of the layer.
     metadata : dict
@@ -106,10 +111,16 @@ class Image(IntensityVisualizationMixin, Layer):
         rgb the contrast_limits_range is ignored.
     gamma : float
         Gamma correction for determining colormap linearity.
+    interpolation : str
+        Interpolation mode used by vispy. Must be one of our supported
+        modes.
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
     iso_threshold : float
         Threshold for isosurface.
-    interpolation : str
-        Interpolation mode used by vispy. Must be one of our supported modes.
+    attenuation : float
+        Attenuation rate for attenuated maximum intensity projection.
 
     Extended Summary
     ----------
@@ -136,6 +147,7 @@ class Image(IntensityVisualizationMixin, Layer):
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
+        attenuation=0.5,
         name=None,
         metadata=None,
         scale=None,
@@ -163,7 +175,10 @@ class Image(IntensityVisualizationMixin, Layer):
         )
 
         self.events.add(
-            interpolation=Event, rendering=Event, iso_threshold=Event
+            interpolation=Event,
+            rendering=Event,
+            iso_threshold=Event,
+            attenuation=Event,
         )
 
         # Set data
@@ -190,6 +205,7 @@ class Image(IntensityVisualizationMixin, Layer):
         # Set contrast_limits and colormaps
         self._gamma = gamma
         self._iso_threshold = iso_threshold
+        self._attenuation = attenuation
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
@@ -296,6 +312,18 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.iso_threshold()
 
     @property
+    def attenuation(self):
+        """float: attenuation rate for attenuated_mip rendering."""
+        return self._attenuation
+
+    @attenuation.setter
+    def attenuation(self, value):
+        self.status = format_float(value)
+        self._attenuation = value
+        self._update_thumbnail()
+        self.events.attenuation()
+
+    @property
     def interpolation(self):
         """{
             'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
@@ -326,6 +354,10 @@ class Image(IntensityVisualizationMixin, Layer):
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
+            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
+              ray and attenuate values based on integral of encountered values,
+              display the maximum value that was encountered after attenuation.
+              This will make nearer objects appear more prominent.
         """
         return str(self._rendering)
 
@@ -355,6 +387,7 @@ class Image(IntensityVisualizationMixin, Layer):
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
                 'iso_threshold': self.iso_threshold,
+                'attenuation': self.attenuation,
                 'gamma': self.gamma,
                 'data': self.data,
             }
