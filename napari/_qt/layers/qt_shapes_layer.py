@@ -3,7 +3,6 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QRadioButton,
     QPushButton,
     QLabel,
     QComboBox,
@@ -14,6 +13,7 @@ from qtpy.QtWidgets import (
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.shapes._constants import Mode
+from ..qt_mode_radio import QtModeRadio
 
 
 class QtShapesControls(QtLayerControls):
@@ -68,41 +68,40 @@ class QtShapesControls(QtLayerControls):
         self.edgeColorSwatch.setToolTip('Edge color swatch')
         self._on_edge_color_change(None)
 
-        self.select_button = QtModeButton(
+        self.select_button = QtModeRadio(
             layer, 'select', Mode.SELECT, 'Select shapes'
         )
-        self.direct_button = QtModeButton(
+        self.direct_button = QtModeRadio(
             layer, 'direct', Mode.DIRECT, 'Select vertices'
         )
-        self.panzoom_button = QtModeButton(
-            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom'
+        self.panzoom_button = QtModeRadio(
+            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom', checked=True
         )
-        self.rectangle_button = QtModeButton(
+        self.rectangle_button = QtModeRadio(
             layer, 'rectangle', Mode.ADD_RECTANGLE, 'Add rectangles'
         )
-        self.ellipse_button = QtModeButton(
+        self.ellipse_button = QtModeRadio(
             layer, 'ellipse', Mode.ADD_ELLIPSE, 'Add ellipses'
         )
-        self.line_button = QtModeButton(
+        self.line_button = QtModeRadio(
             layer, 'line', Mode.ADD_LINE, 'Add lines'
         )
-        self.path_button = QtModeButton(
+        self.path_button = QtModeRadio(
             layer, 'path', Mode.ADD_PATH, 'Add paths'
         )
-        self.polygon_button = QtModeButton(
+        self.polygon_button = QtModeRadio(
             layer, 'polygon', Mode.ADD_POLYGON, 'Add polygons'
         )
-        self.vertex_insert_button = QtModeButton(
+        self.vertex_insert_button = QtModeRadio(
             layer, 'vertex_insert', Mode.VERTEX_INSERT, 'Insert vertex'
         )
-        self.vertex_remove_button = QtModeButton(
+        self.vertex_remove_button = QtModeRadio(
             layer, 'vertex_remove', Mode.VERTEX_REMOVE, 'Remove vertex'
         )
 
         self.move_front_button = QtMoveFrontButton(layer)
         self.move_back_button = QtMoveBackButton(layer)
         self.delete_button = QtDeleteShapeButton(layer)
-        self.panzoom_button.setChecked(True)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -234,24 +233,6 @@ class QtShapesControls(QtLayerControls):
         self.delete_button.setEnabled(self.layer.editable)
         self.move_back_button.setEnabled(self.layer.editable)
         self.move_front_button.setEnabled(self.layer.editable)
-
-
-class QtModeButton(QRadioButton):
-    def __init__(self, layer, button_name, mode, tool_tip):
-        super().__init__()
-
-        self.mode = mode
-        self.layer = layer
-        self.setToolTip(tool_tip)
-        self.setChecked(False)
-        self.setProperty('mode', button_name)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
-            if bool:
-                self.layer.mode = self.mode
 
 
 class QtDeleteShapeButton(QPushButton):

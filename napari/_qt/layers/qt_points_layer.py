@@ -5,7 +5,6 @@ from qtpy.QtWidgets import (
     QSlider,
     QCheckBox,
     QButtonGroup,
-    QRadioButton,
     QPushButton,
     QFrame,
     QHBoxLayout,
@@ -13,6 +12,7 @@ from qtpy.QtWidgets import (
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.points._constants import Mode, Symbol
+from ..qt_mode_radio import QtModeRadio
 
 
 class QtPointsControls(QtLayerControls):
@@ -70,14 +70,14 @@ class QtPointsControls(QtLayerControls):
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
 
-        self.select_button = ModeButton(
-            'QtSelectButton', layer, 'Select points', Mode.SELECT
+        self.select_button = QtModeRadio(
+            layer, 'select_points', Mode.SELECT, 'Select points'
         )
-        self.addition_button = ModeButton(
-            'QtAdditionButton', layer, 'Add points', Mode.ADD
+        self.addition_button = QtModeRadio(
+            layer, 'add_points', Mode.ADD, 'Add points'
         )
-        self.panzoom_button = ModeButton(
-            'QtPanZoomButton', layer, 'Pan/zoom', Mode.PAN_ZOOM, checked=True
+        self.panzoom_button = QtModeRadio(
+            layer, 'pan_zoom', Mode.PAN_ZOOM, 'Pan/zoom', checked=True
         )
         self.delete_button = QtDeletePointsButton(layer)
 
@@ -187,24 +187,6 @@ class QtPointsControls(QtLayerControls):
         self.select_button.setEnabled(self.layer.editable)
         self.addition_button.setEnabled(self.layer.editable)
         self.delete_button.setEnabled(self.layer.editable)
-
-
-class ModeButton(QRadioButton):
-    def __init__(self, name, layer, tooltip, mode, checked=False):
-        super().__init__()
-
-        self.setObjectName(name)
-        self.layer = layer
-        self.setToolTip(tooltip)
-        self._mode = mode
-        self.setChecked(checked)
-        self.toggled.connect(self._set_mode)
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker():
-            if bool:
-                self.layer.mode = self._mode
 
 
 class QtDeletePointsButton(QPushButton):

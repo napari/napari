@@ -1,7 +1,6 @@
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QRadioButton,
     QWidget,
     QPushButton,
     QSlider,
@@ -15,6 +14,7 @@ from qtpy.QtCore import Qt
 import numpy as np
 from .qt_base_layer import QtLayerControls
 from ...layers.labels._constants import Mode
+from ..qt_mode_radio import QtModeRadio
 
 
 class QtLabelsControls(QtLayerControls):
@@ -64,23 +64,22 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change(None)
 
-        self.panzoom_button = QtModeButton(
-            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode'
+        self.panzoom_button = QtModeRadio(
+            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode', checked=True
         )
-        self.pick_button = QtModeButton(
+        self.pick_button = QtModeRadio(
             layer, 'picker', Mode.PICKER, 'Pick mode'
         )
-        self.paint_button = QtModeButton(
+        self.paint_button = QtModeRadio(
             layer, 'paint', Mode.PAINT, 'Paint mode'
         )
-        self.fill_button = QtModeButton(layer, 'fill', Mode.FILL, 'Fill mode')
+        self.fill_button = QtModeRadio(layer, 'fill', Mode.FILL, 'Fill mode')
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
-        self.panzoom_button.setChecked(True)
         self._on_editable_change(None)
 
         button_row = QHBoxLayout()
@@ -174,24 +173,6 @@ class QtLabelsControls(QtLayerControls):
         self.pick_button.setEnabled(self.layer.editable)
         self.paint_button.setEnabled(self.layer.editable)
         self.fill_button.setEnabled(self.layer.editable)
-
-
-class QtModeButton(QRadioButton):
-    def __init__(self, layer, button_name, mode, tool_tip):
-        super().__init__()
-
-        self.mode = mode
-        self.layer = layer
-        self.setToolTip(tool_tip)
-        self.setChecked(False)
-        self.setProperty('mode', button_name)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
-            if bool:
-                self.layer.mode = self.mode
 
 
 class QtColorBox(QWidget):
