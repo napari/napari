@@ -395,7 +395,7 @@ class QtViewer(QSplitter):
         func = parent.keymap[comb]
         gen = func(parent)
 
-        if inspect.isgeneratorfunction(func):
+        if inspect.isgenerator(gen):
             try:
                 next(gen)
             except StopIteration:  # only one statement
