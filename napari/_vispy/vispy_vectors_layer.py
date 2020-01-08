@@ -8,8 +8,7 @@ class VispyVectorsLayer(VispyBaseLayer):
         node = Mesh()
         super().__init__(layer, node)
 
-        self.layer.events.edge_color.connect(lambda e: self._on_data_change())
-
+        self.layer.events.edge_color.connect(self._on_data_change)
         self._reset_base()
         self._on_data_change()
 
