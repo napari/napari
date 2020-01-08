@@ -63,6 +63,6 @@ def test_range_popup_clim_buttons(qtbot, layer):
     if np.issubdtype(layer.dtype, np.integer):
         qtbot.mouseClick(rangebtn, Qt.LeftButton)
         assert tuple(layer.contrast_limits_range) == (0, 2 ** 16 - 1)
-        assert tuple(qtctrl.contrastLimitsSlider.range) == (0, 2 ** 16 - 1)
+        assert tuple(qtctrl.contrastLimitsSlider.range()) == (0, 2 ** 16 - 1)
     else:
         assert rangebtn is None

@@ -24,7 +24,7 @@ def test_range_slider_popup_labels(qtbot, popup):
     """make sure labels are correct"""
     assert float(popup.curmin_label.text()) == initial[0]
     assert float(popup.curmax_label.text()) == initial[1]
-    assert np.all(popup.slider.range == range_)
+    assert np.all(popup.slider.range() == range_)
 
 
 def test_range_slider_changes_labels(qtbot, popup):
