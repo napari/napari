@@ -18,14 +18,11 @@ class VispyPointsLayer(VispyBaseLayer):
 
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(lambda e: self._on_data_change())
-        self.layer.events.edge_width.connect(lambda e: self._on_data_change())
-        self.layer.events.edge_color.connect(lambda e: self._on_data_change())
-        self.layer.events.face_color.connect(lambda e: self._on_data_change())
-        self.layer.events.highlight.connect(
-            lambda e: self._on_highlight_change()
-        )
-
+        self.layer.events.symbol.connect(self._on_data_change)
+        self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.face_color.connect(self._on_data_change)
+        self.layer.events.highlight.connect(self._on_highlight_change)
         self._on_display_change()
         self._on_data_change()
 
@@ -90,7 +87,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.node.update()
 
-    def _on_highlight_change(self):
+    def _on_highlight_change(self, event=None):
         if self.layer.dims.ndisplay == 3:
             return
 
