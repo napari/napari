@@ -9,9 +9,24 @@ class QtLayerButtons(QFrame):
 
         self.viewer = viewer
         self.deleteButton = QtDeleteButton(self.viewer)
-        self.newPointsButton = QtNewPointsButton(self.viewer)
-        self.newShapesButton = QtNewShapesButton(self.viewer)
-        self.newLabelsButton = QtNewLabelsButton(self.viewer)
+        self.newPointsButton = QtViewerPushButton(
+            self.viewer,
+            'New points layer',
+            'new_points',
+            lambda: self.viewer.add_points(data=None),
+        )
+        self.newShapesButton = QtViewerPushButton(
+            self.viewer,
+            'New shapes layer',
+            'new_shapes',
+            lambda: self.viewer.add_shapes(data=None),
+        )
+        self.newLabelsButton = QtViewerPushButton(
+            self.viewer,
+            'New labels layer',
+            'new_labels',
+            lambda: self.viewer._new_labels(),
+        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -28,12 +43,27 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
-        self.consoleButton = QtConsoleButton(self.viewer)
-        self.ndisplayButton = QtNDisplayButton(self.viewer)
-        self.rollDimsButton = QtRollDimsButton(self.viewer)
-        self.transposeDimsButton = QtTransposeDimsButton(self.viewer)
+        self.consoleButton = QtViewerPushButton(
+            self.viewer, 'Open IPython terminal', 'console'
+        )
+        self.consoleButton.setProperty('expanded', False)
+        self.rollDimsButton = QtViewerPushButton(
+            self.viewer,
+            'Roll dimensions order for display',
+            'roll',
+            lambda: self.viewer.dims._roll(),
+        )
+        self.transposeDimsButton = QtViewerPushButton(
+            self.viewer,
+            'Transpose displayed dimensions',
+            'transpose',
+            lambda: self.viewer.dims._transpose(),
+        )
+        self.resetViewButton = QtViewerPushButton(
+            self.viewer, 'Reset view', 'home', lambda: self.viewer.reset_view()
+        )
         self.gridViewButton = QtGridViewButton(self.viewer)
-        self.resetViewButton = QtResetViewButton(self.viewer)
+        self.ndisplayButton = QtNDisplayButton(self.viewer)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -76,67 +106,15 @@ class QtDeleteButton(QPushButton):
             self.viewer.layers.remove_selected()
 
 
-class QtNewPointsButton(QPushButton):
-    def __init__(self, viewer):
+class QtViewerPushButton(QPushButton):
+    def __init__(self, viewer, tooltip, button_name, slot=None):
         super().__init__()
 
         self.viewer = viewer
-        self.setToolTip('New points layer')
-        self.clicked.connect(lambda: self.viewer.add_points())
-
-
-class QtNewShapesButton(QPushButton):
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip('New shapes layer')
-        self.clicked.connect(lambda: self.viewer.add_shapes())
-
-
-class QtNewLabelsButton(QPushButton):
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip('New labels layer')
-        self.clicked.connect(lambda: self.viewer._new_labels())
-
-
-class QtResetViewButton(QPushButton):
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip('Reset view')
-        self.clicked.connect(lambda: self.viewer.reset_view())
-
-
-class QtRollDimsButton(QPushButton):
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip('Roll dimensions order for display')
-        self.clicked.connect(lambda: self.viewer.dims._roll())
-
-
-class QtTransposeDimsButton(QPushButton):
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip('Transpose displayed dimensions')
-        self.clicked.connect(lambda: self.viewer.dims._transpose())
-
-
-class QtConsoleButton(QPushButton):
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip('Open IPython terminal')
-        self.setProperty('expanded', False)
+        self.setToolTip(tooltip)
+        self.setProperty('mode', button_name)
+        if slot is not None:
+            self.clicked.connect(slot)
 
 
 class QtGridViewButton(QCheckBox):
@@ -146,7 +124,7 @@ class QtGridViewButton(QCheckBox):
         self.viewer = viewer
         self.setToolTip('Toggle grid view view')
         self.viewer.events.grid.connect(self._on_grid_change)
-        self.stateChanged.connect(lambda state=self: self.change_grid(state))
+        self.stateChanged.connect(self.change_grid)
         self._on_grid_change(None)
 
     def change_grid(self, state):

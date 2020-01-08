@@ -647,36 +647,39 @@ QtDeleteButton {
    max-height : 28px;
 }
 
-QtNewPointsButton {
-   image: url(":/icons/{{ folder }}/new_points.svg");
+QtViewerPushButton{
    min-width : 28px;
    max-width : 28px;
    min-height : 28px;
    max-height : 28px;
 }
 
-QtNewShapesButton {
-   image: url(":/icons/{{ folder }}/new_shapes.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
+QtViewerPushButton[mode="new_points"] {
+  image: url(":/icons/{{ folder }}/new_points.svg");
 }
 
-QtNewLabelsButton {
-   image: url(":/icons/{{ folder }}/new_labels.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
+QtViewerPushButton[mode="new_shapes"] {
+  image: url(":/icons/{{ folder }}/new_shapes.svg");
 }
 
-QtConsoleButton {
-  min-width : 28px;
-  max-width : 28px;
-  min-height : 28px;
-  max-height : 28px;
+QtViewerPushButton[mode="new_labels"] {
+  image: url(":/icons/{{ folder }}/new_labels.svg");
+}
+
+QtViewerPushButton[mode="console"] {
   image: url(":/icons/{{ folder }}/console.svg");
+}
+
+QtViewerPushButton[mode="roll"] {
+  image: url(":/icons/{{ folder }}/roll.svg");
+}
+
+QtViewerPushButton[mode="transpose"] {
+  image: url(":/icons/{{ folder }}/transpose.svg");
+}
+
+QtViewerPushButton[mode="home"] {
+  image: url(":/icons/{{ folder }}/home.svg");
 }
 
 QtNDisplayButton {
@@ -737,33 +740,6 @@ QtGridViewButton::indicator:checked {
 
 QtGridViewButton::indicator:hover {
   background-color: {{ primary }};
-}
-
-QtRollDimsButton {
-   image: url(":/icons/{{ folder }}/roll.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
-   border-radius: 3px;
-}
-
-QtTransposeDimsButton {
-   image: url(":/icons/{{ folder }}/transpose.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
-   border-radius: 3px;
-}
-
-QtResetViewButton {
-   image: url(":/icons/{{ folder }}/home.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
-   border-radius: 3px;
 }
 
 QtModeRadioButton {
