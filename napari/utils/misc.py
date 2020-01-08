@@ -93,6 +93,9 @@ class StringEnumMeta(EnumMeta):
             start=start,
         )
 
+    def keys(self):
+        return list(map(str, self))
+
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
     def _generate_next_value_(name, start, count, last_values):

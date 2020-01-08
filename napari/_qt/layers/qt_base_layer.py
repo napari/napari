@@ -29,7 +29,7 @@ class QtLayerControls(QFrame):
         self._on_opacity_change(None)
 
         blend_comboBox = QComboBox()
-        blend_comboBox.addItems([str(mode) for mode in Blending])
+        blend_comboBox.addItems(Blending.keys())
         index = blend_comboBox.findText(
             self.layer.blending, Qt.MatchFixedString
         )

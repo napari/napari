@@ -14,9 +14,7 @@ class QtVectorsControls(QtLayerControls):
 
         # vector color adjustment and widget
         edge_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            edge_comboBox.addItem(c)
+        edge_comboBox.addItems(self.layer._colors)
         edge_comboBox.activated[str].connect(
             lambda text=edge_comboBox: self.change_edge_color(text)
         )

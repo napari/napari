@@ -64,8 +64,7 @@ class QtPointsControls(QtLayerControls):
         self._on_edge_color_change(None)
 
         symbol_comboBox = QComboBox()
-        for s in Symbol:
-            symbol_comboBox.addItem(str(s))
+        symbol_comboBox.addItems([str(s) for s in Symbol])
         index = symbol_comboBox.findText(
             self.layer.symbol, Qt.MatchFixedString
         )
