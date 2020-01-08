@@ -34,16 +34,12 @@ class QtPointsControls(QtLayerControls):
         sld.setSingleStep(1)
         value = self.layer.current_size
         sld.setValue(int(value))
-        sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
+        sld.valueChanged.connect(self.changeSize)
         self.sizeSlider = sld
 
         face_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            face_comboBox.addItem(c)
-        face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.changeFaceColor(text)
-        )
+        face_comboBox.addItems(self.layer._colors)
+        face_comboBox.activated[str].connect(self.changeFaceColor)
         self.faceComboBox = face_comboBox
         self.faceColorSwatch = QFrame()
         self.faceColorSwatch.setObjectName('swatch')
@@ -51,12 +47,8 @@ class QtPointsControls(QtLayerControls):
         self._on_face_color_change(None)
 
         edge_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            edge_comboBox.addItem(c)
-        edge_comboBox.activated[str].connect(
-            lambda text=edge_comboBox: self.changeEdgeColor(text)
-        )
+        edge_comboBox.addItems(self.layer._colors)
+        edge_comboBox.activated[str].connect(self.changeEdgeColor)
         self.edgeComboBox = edge_comboBox
         self.edgeColorSwatch = QFrame()
         self.edgeColorSwatch.setObjectName('swatch')
@@ -69,22 +61,24 @@ class QtPointsControls(QtLayerControls):
             self.layer.symbol, Qt.MatchFixedString
         )
         symbol_comboBox.setCurrentIndex(index)
-        symbol_comboBox.activated[str].connect(
-            lambda text=symbol_comboBox: self.changeSymbol(text)
-        )
+        symbol_comboBox.activated[str].connect(self.changeSymbol)
         self.symbolComboBox = symbol_comboBox
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('N-dimensional points')
         ndim_cb.setChecked(self.layer.n_dimensional)
-        ndim_cb.stateChanged.connect(
-            lambda state=ndim_cb: self.change_ndim(state)
-        )
+        ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
 
-        self.select_button = QtSelectButton(layer)
-        self.addition_button = QtAdditionButton(layer)
-        self.panzoom_button = QtPanZoomButton(layer)
+        self.select_button = ModeButton(
+            'QtSelectButton', layer, 'Select points', Mode.SELECT
+        )
+        self.addition_button = ModeButton(
+            'QtAdditionButton', layer, 'Add points', Mode.ADD
+        )
+        self.panzoom_button = ModeButton(
+            'QtPanZoomButton', layer, 'Pan/zoom', Mode.PAN_ZOOM, checked=True
+        )
         self.delete_button = QtDeletePointsButton(layer)
 
         self.button_group = QButtonGroup(self)
@@ -195,52 +189,22 @@ class QtPointsControls(QtLayerControls):
         self.delete_button.setEnabled(self.layer.editable)
 
 
-class QtPanZoomButton(QRadioButton):
-    def __init__(self, layer):
+class ModeButton(QRadioButton):
+    def __init__(self, name, layer, tooltip, mode, checked=False):
         super().__init__()
 
+        self.setObjectName(name)
         self.layer = layer
-        self.setToolTip('Pan/zoom')
-        self.setChecked(True)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
+        self.setToolTip(tooltip)
+        self._mode = mode
+        self.setChecked(checked)
+        self.toggled.connect(self._set_mode)
         self.setFixedWidth(28)
 
     def _set_mode(self, bool):
         with self.layer.events.mode.blocker():
             if bool:
-                self.layer.mode = Mode.PAN_ZOOM
-
-
-class QtSelectButton(QRadioButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setToolTip('Select points')
-        self.setChecked(False)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker():
-            if bool:
-                self.layer.mode = Mode.SELECT
-
-
-class QtAdditionButton(QRadioButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setToolTip('Add points')
-        self.setChecked(False)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker():
-            if bool:
-                self.layer.mode = Mode.ADD
+                self.layer.mode = self._mode
 
 
 class QtDeletePointsButton(QPushButton):

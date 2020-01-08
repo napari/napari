@@ -614,15 +614,15 @@ QRadioButton::indicator:checked {
     border-radius: 3px;
 }
 
-QtPanZoomButton::indicator {
+#QtPanZoomButton::indicator {
     image: url(":/icons/{{ folder }}/zoom.svg");
 }
 
-QtSelectButton::indicator {
+#QtSelectButton::indicator {
     image: url(":/icons/{{ folder }}/select.svg");
 }
 
-QtAdditionButton::indicator {
+#QtAdditionButton::indicator {
     image: url(":/icons/{{ folder }}/add.svg");
 }
 
