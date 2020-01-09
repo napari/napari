@@ -53,7 +53,7 @@ class QtImageControls(QtBaseImageControls):
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
-        self._on_ndisplay_change(None)
+        self._on_ndisplay_change()
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
@@ -135,7 +135,7 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationSlider.hide()
             self.attenuationLabel.hide()
 
-    def _on_ndisplay_change(self, event):
+    def _on_ndisplay_change(self, event=None):
         if self.layer.dims.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()

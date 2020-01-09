@@ -51,7 +51,7 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip('Colorbar')
 
-        self._on_colormap_change(None)
+        self._on_colormap_change()
 
     def changeColor(self, text):
         self.layer.colormap = text
@@ -94,7 +94,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.clim_pop.slider.setValues(clims)
                 self.clim_pop._on_values_change(clims)
 
-    def _on_colormap_change(self, event):
+    def _on_colormap_change(self, event=None):
         name = self.layer.colormap[0]
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)

@@ -329,7 +329,7 @@ class QtLayerWidget(QFrame):
         tb.setObjectName('thumbmnail')
         tb.setToolTip('Layer thumbmnail')
         self.thumbnailLabel = tb
-        self._on_thumbnail_change(None)
+        self._on_thumbnail_change()
         self.layout.addWidget(tb)
 
         cb = QCheckBox(self)

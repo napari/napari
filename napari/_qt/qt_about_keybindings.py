@@ -64,12 +64,12 @@ class QtAboutKeybindings(QDialog):
 
         self.viewer.events.active_layer.connect(self.update_active_layer)
         self.viewer.events.palette.connect(self.update_active_layer)
-        self.update_active_layer(None)
+        self.update_active_layer()
 
     def change_layer_type(self, text):
         self.textEditBox.setHtml(self.keybindings_strs[text])
 
-    def update_active_layer(self, event):
+    def update_active_layer(self, event=None):
         col = self.viewer.palette['secondary']
         text = ''
         # Add class and instance viewer keybindings

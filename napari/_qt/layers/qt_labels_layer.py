@@ -41,7 +41,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.setMaximum(2147483647)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
-        self._on_selection_change(None)
+        self._on_selection_change()
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -50,19 +50,19 @@ class QtLabelsControls(QtLayerControls):
         sld.setSingleStep(1)
         sld.valueChanged.connect(self.changeSize)
         self.brushSizeSlider = sld
-        self._on_brush_size_change(None)
+        self._on_brush_size_change()
 
         contig_cb = QCheckBox()
         contig_cb.setToolTip('contiguous editing')
         contig_cb.stateChanged.connect(self.change_contig)
         self.contigCheckBox = contig_cb
-        self._on_contig_change(None)
+        self._on_contig_change()
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('n-dimensional editing')
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
-        self._on_n_dim_change(None)
+        self._on_n_dim_change()
 
         self.panzoom_button = QtModeRadioButton(
             layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom mode', checked=True
@@ -82,7 +82,7 @@ class QtLabelsControls(QtLayerControls):
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
-        self._on_editable_change(None)
+        self._on_editable_change()
 
         button_row = QHBoxLayout()
         button_row.addWidget(self.pick_button)
@@ -152,26 +152,26 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.n_dimensional = False
 
-    def _on_selection_change(self, event):
+    def _on_selection_change(self, event=None):
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
             self.selectionSpinBox.setValue(int(value))
 
-    def _on_brush_size_change(self, event):
+    def _on_brush_size_change(self, event=None):
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
             value = np.clip(int(value), 1, 40)
             self.brushSizeSlider.setValue(value)
 
-    def _on_n_dim_change(self, event):
+    def _on_n_dim_change(self, event=None):
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
-    def _on_contig_change(self, event):
+    def _on_contig_change(self, event=None):
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
-    def _on_editable_change(self, event):
+    def _on_editable_change(self, event=None):
         self.pick_button.setEnabled(self.layer.editable)
         self.paint_button.setEnabled(self.layer.editable)
         self.fill_button.setEnabled(self.layer.editable)

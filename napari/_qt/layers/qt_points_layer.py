@@ -43,7 +43,7 @@ class QtPointsControls(QtLayerControls):
         self.faceColorSwatch = QFrame()
         self.faceColorSwatch.setObjectName('swatch')
         self.faceColorSwatch.setToolTip('Face color swatch')
-        self._on_face_color_change(None)
+        self._on_face_color_change()
 
         edge_comboBox = QComboBox()
         edge_comboBox.addItems(self.layer._colors)
@@ -52,7 +52,7 @@ class QtPointsControls(QtLayerControls):
         self.edgeColorSwatch = QFrame()
         self.edgeColorSwatch.setObjectName('swatch')
         self.edgeColorSwatch.setToolTip('Edge color swatch')
-        self._on_edge_color_change(None)
+        self._on_edge_color_change()
 
         symbol_comboBox = QComboBox()
         symbol_comboBox.addItems([str(s) for s in Symbol])
@@ -164,12 +164,12 @@ class QtPointsControls(QtLayerControls):
             )
             self.symbolComboBox.setCurrentIndex(index)
 
-    def _on_size_change(self, event):
+    def _on_size_change(self, event=None):
         with self.layer.events.size.blocker():
             value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
 
-    def _on_edge_color_change(self, event):
+    def _on_edge_color_change(self, event=None):
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
                 self.layer.current_edge_color, Qt.MatchFixedString
@@ -178,7 +178,7 @@ class QtPointsControls(QtLayerControls):
         color = Color(self.layer.current_edge_color).hex
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
-    def _on_face_color_change(self, event):
+    def _on_face_color_change(self, event=None):
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(
                 self.layer.current_face_color, Qt.MatchFixedString
@@ -187,7 +187,7 @@ class QtPointsControls(QtLayerControls):
         color = Color(self.layer.current_face_color).hex
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
-    def _on_editable_change(self, event):
+    def _on_editable_change(self, event=None):
         self.select_button.setEnabled(self.layer.editable)
         self.addition_button.setEnabled(self.layer.editable)
         self.delete_button.setEnabled(self.layer.editable)

@@ -125,7 +125,7 @@ class QtGridViewButton(QCheckBox):
         self.setToolTip('Toggle grid view view')
         self.viewer.events.grid.connect(self._on_grid_change)
         self.stateChanged.connect(self.change_grid)
-        self._on_grid_change(None)
+        self._on_grid_change()
 
     def change_grid(self, state):
         if state == Qt.Checked:
@@ -133,7 +133,7 @@ class QtGridViewButton(QCheckBox):
         else:
             self.viewer.grid_view()
 
-    def _on_grid_change(self, event):
+    def _on_grid_change(self, event=None):
         with self.viewer.events.grid.blocker():
             self.setChecked(np.all(self.viewer.grid_size == (1, 1)))
 
@@ -147,9 +147,7 @@ class QtNDisplayButton(QCheckBox):
         self.viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
 
         self.setChecked(self.viewer.dims.ndisplay == 3)
-        self.stateChanged.connect(
-            lambda state=self: self.change_ndisplay(state)
-        )
+        self.stateChanged.connect(self.change_ndisplay)
 
     def change_ndisplay(self, state):
         if state == Qt.Checked:
@@ -157,6 +155,6 @@ class QtNDisplayButton(QCheckBox):
         else:
             self.viewer.dims.ndisplay = 2
 
-    def _on_ndisplay_change(self, event):
+    def _on_ndisplay_change(self, event=None):
         with self.viewer.dims.events.ndisplay.blocker():
             self.setChecked(self.viewer.dims.ndisplay == 3)
