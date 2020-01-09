@@ -11,20 +11,20 @@ class QtLayerButtons(QFrame):
         self.deleteButton = QtDeleteButton(self.viewer)
         self.newPointsButton = QtViewerPushButton(
             self.viewer,
-            'New points layer',
             'new_points',
+            'New points layer',
             lambda: self.viewer.add_points(data=None),
         )
         self.newShapesButton = QtViewerPushButton(
             self.viewer,
-            'New shapes layer',
             'new_shapes',
+            'New shapes layer',
             lambda: self.viewer.add_shapes(data=None),
         )
         self.newLabelsButton = QtViewerPushButton(
             self.viewer,
-            'New labels layer',
             'new_labels',
+            'New labels layer',
             lambda: self.viewer._new_labels(),
         )
 
@@ -44,23 +44,23 @@ class QtViewerButtons(QFrame):
 
         self.viewer = viewer
         self.consoleButton = QtViewerPushButton(
-            self.viewer, 'Open IPython terminal', 'console'
+            self.viewer, 'console', 'Open IPython terminal'
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
-            'Roll dimensions order for display',
             'roll',
+            'Roll dimensions order for display',
             lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
-            'Transpose displayed dimensions',
             'transpose',
+            'Transpose displayed dimensions',
             lambda: self.viewer.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
-            self.viewer, 'Reset view', 'home', lambda: self.viewer.reset_view()
+            self.viewer, 'home', 'Reset view', lambda: self.viewer.reset_view()
         )
         self.gridViewButton = QtGridViewButton(self.viewer)
         self.ndisplayButton = QtNDisplayButton(self.viewer)
@@ -107,11 +107,11 @@ class QtDeleteButton(QPushButton):
 
 
 class QtViewerPushButton(QPushButton):
-    def __init__(self, viewer, tooltip, button_name, slot=None):
+    def __init__(self, viewer, button_name, tooltip=None, slot=None):
         super().__init__()
 
         self.viewer = viewer
-        self.setToolTip(tooltip)
+        self.setToolTip(tooltip or button_name)
         self.setProperty('mode', button_name)
         if slot is not None:
             self.clicked.connect(slot)
