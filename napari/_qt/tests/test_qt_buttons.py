@@ -10,7 +10,7 @@ def test_radio_button(qtbot):
     layer = Points()
     assert layer.mode != Mode.ADD
 
-    btn = QtModeRadioButton(layer, 'test_button', Mode.ADD, 'tooltip')
+    btn = QtModeRadioButton(layer, 'test_button', Mode.ADD, tool_tip='tooltip')
     assert btn.property('mode') == 'test_button'
     assert btn.toolTip() == 'tooltip'
 
@@ -25,7 +25,9 @@ def test_push_button(qtbot):
     def set_test_prop():
         layer.test_prop = True
 
-    btn = QtModePushButton(layer, 'test_button', set_test_prop, 'tooltip')
+    btn = QtModePushButton(
+        layer, 'test_button', set_test_prop, tool_tip='tooltip'
+    )
     assert btn.property('mode') == 'test_button'
     assert btn.toolTip() == 'tooltip'
 

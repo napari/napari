@@ -3,7 +3,7 @@ from qtpy.QtWidgets import QRadioButton, QPushButton
 
 class QtModeRadioButton(QRadioButton):
     def __init__(
-        self, layer, button_name, mode=None, tool_tip=None, checked=False
+        self, layer, button_name, mode, *, tool_tip=None, checked=False
     ):
         """Creates a radio button that can enable a specific layer mode.
 

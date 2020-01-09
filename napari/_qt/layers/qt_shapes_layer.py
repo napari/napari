@@ -58,47 +58,59 @@ class QtShapesControls(QtLayerControls):
         self._on_edge_color_change()
 
         self.select_button = QtModeRadioButton(
-            layer, 'select', Mode.SELECT, 'Select shapes'
+            layer, 'select', Mode.SELECT, tool_tip='Select shapes'
         )
         self.direct_button = QtModeRadioButton(
-            layer, 'direct', Mode.DIRECT, 'Select vertices'
+            layer, 'direct', Mode.DIRECT, tool_tip='Select vertices'
         )
         self.panzoom_button = QtModeRadioButton(
-            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom', checked=True
+            layer, 'zoom', Mode.PAN_ZOOM, tool_tip='Pan/zoom', checked=True
         )
         self.rectangle_button = QtModeRadioButton(
-            layer, 'rectangle', Mode.ADD_RECTANGLE, 'Add rectangles'
+            layer, 'rectangle', Mode.ADD_RECTANGLE, tool_tip='Add rectangles'
         )
         self.ellipse_button = QtModeRadioButton(
-            layer, 'ellipse', Mode.ADD_ELLIPSE, 'Add ellipses'
+            layer, 'ellipse', Mode.ADD_ELLIPSE, tool_tip='Add ellipses'
         )
         self.line_button = QtModeRadioButton(
-            layer, 'line', Mode.ADD_LINE, 'Add lines'
+            layer, 'line', Mode.ADD_LINE, tool_tip='Add lines'
         )
         self.path_button = QtModeRadioButton(
-            layer, 'path', Mode.ADD_PATH, 'Add paths'
+            layer, 'path', Mode.ADD_PATH, tool_tip='Add paths'
         )
         self.polygon_button = QtModeRadioButton(
-            layer, 'polygon', Mode.ADD_POLYGON, 'Add polygons'
+            layer, 'polygon', Mode.ADD_POLYGON, tool_tip='Add polygons'
         )
         self.vertex_insert_button = QtModeRadioButton(
-            layer, 'vertex_insert', Mode.VERTEX_INSERT, 'Insert vertex'
+            layer,
+            'vertex_insert',
+            Mode.VERTEX_INSERT,
+            tool_tip='Insert vertex',
         )
         self.vertex_remove_button = QtModeRadioButton(
-            layer, 'vertex_remove', Mode.VERTEX_REMOVE, 'Remove vertex'
+            layer,
+            'vertex_remove',
+            Mode.VERTEX_REMOVE,
+            tool_tip='Remove vertex',
         )
 
         self.move_front_button = QtModePushButton(
-            layer, 'move_front', self.layer.move_to_front, 'Move to front'
+            layer,
+            'move_front',
+            self.layer.move_to_front,
+            tool_tip='Move to front',
         )
         self.move_back_button = QtModePushButton(
-            layer, 'move_back', self.layer.move_to_back, 'Move to back'
+            layer,
+            'move_back',
+            self.layer.move_to_back,
+            tool_tip='Move to back',
         )
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
             self.layer.remove_selected,
-            'Delete selected shapes',
+            tool_tip='Delete selected shapes',
         )
 
         self.button_group = QButtonGroup(self)

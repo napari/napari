@@ -70,13 +70,13 @@ class QtPointsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
 
         self.select_button = QtModeRadioButton(
-            layer, 'select_points', Mode.SELECT, 'Select points'
+            layer, 'select_points', Mode.SELECT, tool_tip='Select points'
         )
         self.addition_button = QtModeRadioButton(
-            layer, 'add_points', Mode.ADD, 'Add points'
+            layer, 'add_points', Mode.ADD, tool_tip='Add points'
         )
         self.panzoom_button = QtModeRadioButton(
-            layer, 'pan_zoom', Mode.PAN_ZOOM, 'Pan/zoom', checked=True
+            layer, 'pan_zoom', Mode.PAN_ZOOM, tool_tip='Pan/zoom', checked=True
         )
         self.delete_button = QtModePushButton(
             layer,
