@@ -81,8 +81,8 @@ class QtPointsControls(QtLayerControls):
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
-            'Delete selected points',
             self.layer.remove_selected,
+            'Delete selected points',
         )
 
         self.button_group = QButtonGroup(self)

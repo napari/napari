@@ -89,16 +89,16 @@ class QtShapesControls(QtLayerControls):
         )
 
         self.move_front_button = QtModePushButton(
-            layer, 'move_front', 'Move to front', self.layer.move_to_front
+            layer, 'move_front', self.layer.move_to_front, 'Move to front'
         )
         self.move_back_button = QtModePushButton(
-            layer, 'move_back', 'Move to back', self.layer.move_to_back
+            layer, 'move_back', self.layer.move_to_back, 'Move to back'
         )
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
-            'Delete selected shapes',
             self.layer.remove_selected,
+            'Delete selected shapes',
         )
 
         self.button_group = QButtonGroup(self)
