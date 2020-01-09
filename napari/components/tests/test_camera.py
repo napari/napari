@@ -1,3 +1,4 @@
+import pytest
 from napari.components import Camera
 
 
@@ -6,7 +7,7 @@ def test_camera():
     camera = Camera()
     assert camera.ndisplay == 2
     assert camera.center == (0, 0)
-    assert camera.scale == 512
+    assert camera.scale == 1
     assert camera.angles == (0, 0, 90)
 
     center = (10, 20, 30)
@@ -31,8 +32,5 @@ def test_camera():
     assert camera.scale == scale
     assert camera.angles == angles
 
-    camera.reset()
-    assert camera.ndisplay == 2
-    assert camera.center == (0, 0)
-    assert camera.scale == 512
-    assert camera.angles == (0, 0, 90)
+    with pytest.raises(ValueError):
+        camera.center = (0,)

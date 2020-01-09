@@ -32,7 +32,7 @@ from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
-from .._vispy import create_vispy_visual
+from .._vispy import create_vispy_visual, quaternion2euler
 
 
 # set vispy application to the appropriate qt backend
@@ -424,19 +424,8 @@ class QtViewer(QSplitter):
             self.viewer.camera._scale = self.view.camera.scale_factor
 
             # Do conversion from quaternion representation to euler angles
-            q = self.view.camera._quaternion
-            angles = (
-                np.arctan2(
-                    2 * (q.w * q.x + q.y * q.z),
-                    1 - 2 * (q.x * q.x + q.y * q.y),
-                ),
-                np.arcsin(2 * (q.w * q.y - q.z * q.x)),
-                np.arctan2(
-                    2 * (q.w * q.z + q.y * q.x),
-                    1 - 2 * (q.y * q.y + q.z * q.z),
-                ),
-            )
-            self.viewer.camera._angles = tuple(np.degrees(angles))[::-1]
+            ang = quaternion2euler(self.view.camera._quaternion, degrees=True)
+            self.viewer.camera._angles = ang
         else:
             # Assumes default camera has the same properties as PanZoomCamera
             self.viewer.camera._center = self.view.camera.rect.center[::-1]

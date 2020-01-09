@@ -9,12 +9,12 @@ class Camera:
     center : 2-tuple or 3-tuple
         Center point of camera view for 2D or 3D viewing.
     scale : float
-        Zoom level.
+        Max size of data to display in canvas in data units.
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
     """
 
-    def __init__(self, *, center=(0, 0), scale=512, angles=(0, 0, 90)):
+    def __init__(self, *, center=(0, 0), scale=1, angles=(0, 0, 90)):
 
         self._center = center
         self._scale = scale
@@ -51,7 +51,7 @@ class Camera:
 
     @property
     def scale(self):
-        """float: Zoom level."""
+        """float: Max size of data to display in canvas in data units.."""
         return self._scale
 
     @scale.setter
@@ -82,7 +82,7 @@ class Camera:
             Center point of camera view for 2D or 3D viewing, must be length 2
             or 3.
         scale : float
-            Zoom level.
+            Max size of data to display in canvas in data units.
         angles : 3-tuple
             Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         """
@@ -92,7 +92,3 @@ class Camera:
             self.scale = scale
         if angles is not None:
             self.angles = angles
-
-    def reset(self):
-        """Reset camera position to initial values."""
-        self.update(center=(0,) * self.ndisplay, scale=512, angles=(0, 0, 90))
