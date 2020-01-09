@@ -82,7 +82,7 @@ class QtPointsControls(QtLayerControls):
             layer,
             'delete_shape',
             self.layer.remove_selected,
-            'Delete selected points',
+            tool_tip='Delete selected points',
         )
 
         self.button_group = QButtonGroup(self)
