@@ -345,10 +345,10 @@ def test_camera():
     assert viewer.camera.angles == (0, 0, 90)
 
     center = (20, 45)
-    scale = 300
+    size = 300
     angles = (-20, 10, -45)
-    viewer.camera.update(center=center, scale=scale, angles=angles)
+    viewer.camera.update(center=center, size=size, angles=angles)
     assert viewer.camera.ndisplay == 2
     assert viewer.camera.center == center
-    assert viewer.camera.scale == scale
+    assert viewer.camera.size == size
     assert viewer.camera.angles == angles

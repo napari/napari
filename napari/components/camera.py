@@ -8,16 +8,16 @@ class Camera:
     ----------
     center : 2-tuple or 3-tuple
         Center point of camera view for 2D or 3D viewing.
-    scale : float
+    size : float
         Max size of data to display in canvas in data units.
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
     """
 
-    def __init__(self, *, center=(0, 0), scale=1, angles=(0, 0, 90)):
+    def __init__(self, *, center=(0, 0), size=1, angles=(0, 0, 90)):
 
         self._center = center
-        self._scale = scale
+        self._size = size
         self._angles = angles
 
         self.events = EmitterGroup(
@@ -50,15 +50,15 @@ class Camera:
         return len(self.center)
 
     @property
-    def scale(self):
+    def size(self):
         """float: Max size of data to display in canvas in data units.."""
-        return self._scale
+        return self._size
 
-    @scale.setter
-    def scale(self, scale):
-        if self._scale == scale:
+    @size.setter
+    def size(self, size):
+        if self._size == size:
             return
-        self._scale = scale
+        self._size = size
         self.events.update()
 
     @property
@@ -73,7 +73,7 @@ class Camera:
         self._angles = angles
         self.events.update()
 
-    def update(self, center=None, scale=None, angles=None):
+    def update(self, center=None, size=None, angles=None):
         """Update camera position to new values.
 
         Parameters
@@ -81,14 +81,14 @@ class Camera:
         center : tuple
             Center point of camera view for 2D or 3D viewing, must be length 2
             or 3.
-        scale : float
+        size : float
             Max size of data to display in canvas in data units.
         angles : 3-tuple
             Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         """
         if center is not None:
             self.center = center
-        if scale is not None:
-            self.scale = scale
+        if size is not None:
+            self.size = size
         if angles is not None:
             self.angles = angles

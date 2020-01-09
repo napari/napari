@@ -296,13 +296,13 @@ class QtViewer(QSplitter):
             )
             self.view.camera._quaternion = quat
             self.view.camera.center = self.viewer.camera.center[::-1]
-            self.view.camera.scale_factor = self.viewer.camera.scale
+            self.view.camera.scale_factor = self.viewer.camera.size
         else:
             # Assumes default camera has the same properties as PanZoomCamera
             corner = np.subtract(
-                self.viewer.camera.center, self.viewer.camera.scale / 2
+                self.viewer.camera.center, self.viewer.camera.size / 2
             )
-            rectangle = tuple(corner[::-1]) + (self.viewer.camera.scale,) * 2
+            rectangle = tuple(corner[::-1]) + (self.viewer.camera.size,) * 2
             self.view.camera.rect = rectangle
 
     def _update_palette(self, palette):
@@ -421,7 +421,7 @@ class QtViewer(QSplitter):
         """
         if isinstance(self.view.camera, ArcballCamera):
             self.viewer.camera._center = self.view.camera.center[::-1]
-            self.viewer.camera._scale = self.view.camera.scale_factor
+            self.viewer.camera._size = self.view.camera.scale_factor
 
             # Do conversion from quaternion representation to euler angles
             ang = quaternion2euler(self.view.camera._quaternion, degrees=True)
@@ -429,7 +429,7 @@ class QtViewer(QSplitter):
         else:
             # Assumes default camera has the same properties as PanZoomCamera
             self.viewer.camera._center = self.view.camera.rect.center[::-1]
-            self.viewer.camera._scale = np.max(self.view.camera.rect.size)
+            self.viewer.camera._size = np.max(self.view.camera.rect.size)
 
         for visual in self.layer_to_visual.values():
             visual.on_draw(event)

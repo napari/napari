@@ -36,12 +36,12 @@ def test_camera(qtbot):
 
     # Update camera model and check vispy camera changes in 3D
     center = (20, 10, 15)
-    scale = 100
+    size = 100
     angles = (-20, 10, -45)
-    viewer.camera.update(center=center, scale=scale, angles=angles)
+    viewer.camera.update(center=center, size=size, angles=angles)
     assert viewer.camera.ndisplay == 3
     assert viewer.camera.center == center
-    assert viewer.camera.scale == scale
+    assert viewer.camera.size == size
     assert viewer.camera.angles == angles
     assert isinstance(vispy_view.camera, ArcballCamera)
     assert vispy_view.camera.center == center[::-1]
@@ -52,7 +52,7 @@ def test_camera(qtbot):
     vispy_view.camera.scale_factor = 20
     viewer.window.qt_viewer.on_draw(None)
     assert viewer.camera.center == (8, -2, 12)
-    assert viewer.camera.scale == 20
+    assert viewer.camera.size == 20
 
     # Update angle and check roundtrip is correct
     angles = (12, 53, 92)
@@ -69,12 +69,12 @@ def test_camera(qtbot):
 
     # Update camera model and check vispy camera changes in 2D
     center = (20, 30)
-    scale = 200
+    size = 200
     angles = (-20, 10, -45)
-    viewer.camera.update(center=center, scale=scale, angles=angles)
+    viewer.camera.update(center=center, size=size, angles=angles)
     assert viewer.camera.ndisplay == 2
     assert viewer.camera.center == center
-    assert viewer.camera.scale == scale
+    assert viewer.camera.size == size
     assert viewer.camera.angles == angles
     assert isinstance(vispy_view.camera, PanZoomCamera)
     assert vispy_view.camera.rect.center == (30.0, 20.0)
@@ -84,17 +84,17 @@ def test_camera(qtbot):
     vispy_view.camera.zoom(2)
     viewer.window.qt_viewer.on_draw(None)
     assert vispy_view.camera.rect.size == (400.0, 400.0)
-    assert viewer.camera.scale == 400
+    assert viewer.camera.size == 400
 
     vispy_view.camera.zoom(0.5)
     viewer.window.qt_viewer.on_draw(None)
     assert vispy_view.camera.rect.size == (200.0, 200.0)
-    assert viewer.camera.scale == 200
+    assert viewer.camera.size == 200
 
     vispy_view.camera.rect = (-20, -30, 40, 10)
     viewer.window.qt_viewer.on_draw(None)
     assert viewer.camera.center == (-25, 0)
-    assert viewer.camera.scale == 40
+    assert viewer.camera.size == 40
 
     # Close the viewer
     viewer.window.close()
