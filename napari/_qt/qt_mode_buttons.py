@@ -40,7 +40,7 @@ class QtModeRadioButton(QRadioButton):
 
 
 class QtModePushButton(QPushButton):
-    def __init__(self, layer, button_name, slot=None, tool_tip=None):
+    def __init__(self, layer, button_name, slot=None, *, tool_tip=None):
         """Creates a radio button that can trigger a specific action.
 
         Parameters
