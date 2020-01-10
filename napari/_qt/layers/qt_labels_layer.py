@@ -65,20 +65,16 @@ class QtLabelsControls(QtLayerControls):
         self._on_n_dim_change()
 
         self.panzoom_button = QtModeRadioButton(
-            layer,
-            'zoom',
-            Mode.PAN_ZOOM,
-            tool_tip='Pan/zoom mode',
-            checked=True,
+            layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom mode', checked=True
         )
         self.pick_button = QtModeRadioButton(
-            layer, 'picker', Mode.PICKER, tool_tip='Pick mode'
+            layer, 'picker', Mode.PICKER, tooltip='Pick mode'
         )
         self.paint_button = QtModeRadioButton(
-            layer, 'paint', Mode.PAINT, tool_tip='Paint mode'
+            layer, 'paint', Mode.PAINT, tooltip='Paint mode'
         )
         self.fill_button = QtModeRadioButton(
-            layer, 'fill', Mode.FILL, tool_tip='Fill mode'
+            layer, 'fill', Mode.FILL, tooltip='Fill mode'
         )
 
         self.button_group = QButtonGroup(self)
