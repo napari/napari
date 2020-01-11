@@ -1,6 +1,7 @@
 from qtpy.QtCore import Qt, QPoint
 from qtpy.QtWidgets import QVBoxLayout, QDialog, QFrame
 from qtpy.QtGui import QCursor
+from .utils import find_ancestor_mainwindow
 
 
 class QtPopup(QDialog):
@@ -40,9 +41,28 @@ class QtPopup(QDialog):
         self.show()
 
     def show_at(self, position='top', *, width_ratio=0.9):
+        """Show popup at a position relative to the QMainWindow.
+
+        Parameters
+        ----------
+        position : str, {'top', 'bottom', 'left', 'right' } optional
+            position in the QMainWindow to show the pop, by default 'top'
+        width_ratio : float, optional
+            Fraction of the width (for position = top/bottom) or height (for
+            position = left/right) of the QMainWindow that the popup will
+            occupy,  by default 0.9
+
+        Raises
+        ------
+        NotImplementedError
+            if the QtPopup does not have a parent (not clear how to find main
+            window.)
+        ValueError
+            if position is not one of {'top', 'bottom', 'left', 'right' }
+        """
         if not self.parent():
-            raise NotImplementedError("cannot show_at without parent")
-        main_window = self.parent().window()
+            raise NotImplementedError("cannot use `show_at` without parent")
+        main_window = find_ancestor_mainwindow(self.parent())
         xy = main_window.pos()
         if position == 'top':
             width = main_window.width() * width_ratio

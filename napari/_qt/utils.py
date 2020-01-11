@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import numpy as np
 from qtpy import API_NAME
 from qtpy.QtCore import QObject, QThread
+from qtpy.QtWidgets import QMainWindow
 
 
 def QImg2array(img):
@@ -123,3 +124,17 @@ def qt_signals_blocked(obj):
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+def find_ancestor_mainwindow(widget):
+    """Bottom up approach for finding the parent QMainWindow.
+
+    An top down approach using QApplication.topLevelWidgets would find all
+    QMainWindows.  This one finds the MainWindow specific to the given widget.
+    """
+    par = widget.parent()
+    while par:
+        if isinstance(par, QMainWindow):
+            return par
+        par = par.parent()
+    return None
