@@ -98,16 +98,10 @@ QtAboutKeybindings {
   min-height: 605px;
 }
 
-QDialog#QtAbout {
-  min-width: 650px;
-  min-height: 320px;
-  max-height: 320px;
-}
-
 QtAbout > QTextEdit{
   margin: 0px;
   border: 0px;
-  padding: 0px;
+  padding: 2px;
 }
 
 QtAbout > QLabel {
@@ -420,8 +414,6 @@ QtLayerControls > QFrame#swatch {
 }
 
 QtLayerControls > QHRangeSlider {
-  min-height: 16px;
-  max-height: 16px;
   qproperty-barColor: {{ secondary }};
   qproperty-backgroundColor: {{ primary }};
   qproperty-handleColor: {{ secondary }};
@@ -1221,7 +1213,13 @@ QtPlayButton[playing=True] {
 }
 
 #QtPopupFrame > QPushButton {
+  font-size: 11pt;
+  color: {{ secondary }};
   min-height: 20px;
+}
+
+#QtPopupFrame > QPushButton::hover {
+  color: {{ text }};
 }
 
 #QtPopupFrame  > QComboBox {
@@ -1230,7 +1228,7 @@ QtPlayButton[playing=True] {
 }
 
 #slice_label {
-  background-color: {{ background }};
+  background-color: transparent;
   color: {{ secondary }};
   padding: 0;
   margin: 0;
@@ -1246,7 +1244,6 @@ QtPlayButton[playing=True] {
   background-color: {{ background }};
   border: 1px solid {{ primary }};
 }
-
 
 /* ------------- QtPlotWidget --------- */ 
 

@@ -402,6 +402,7 @@ class ViewerModel(KeymapMixin):
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
+        attenuation=0.5,
         name=None,
         metadata=None,
         scale=None,
@@ -454,8 +455,13 @@ class ViewerModel(KeymapMixin):
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        rendering : str
+            Rendering mode used by vispy. Must be one of our supported
+            modes.
         iso_threshold : float
             Threshold for isosurface.
+        attenuation : float
+            Attenuation rate for attenuated maximum intensity projection.
         name : str
             Name of the layer.
         metadata : dict
@@ -503,6 +509,7 @@ class ViewerModel(KeymapMixin):
                 interpolation=interpolation,
                 rendering=rendering,
                 iso_threshold=iso_threshold,
+                attenuation=attenuation,
                 name=name,
                 metadata=metadata,
                 scale=scale,
@@ -869,8 +876,9 @@ class ViewerModel(KeymapMixin):
         data : 3-tuple of array
             The first element of the tuple is an (N, D) array of vertices of
             mesh triangles. The second is an (M, 3) array of int of indices
-            of the mesh triangles. The third element is the (N, ) array of
-            values used to color vertices.
+            of the mesh triangles. The third element is the (K0, ..., KL, N)
+            array of values used to color vertices where the additional L
+            dimensions are used to color the same mesh with different values.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the

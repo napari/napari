@@ -37,25 +37,11 @@ with napari.gui_qt():
     # change the layer opacity
     layer.opacity = 0.9
 
-    # change the layer blending mode
-    layer.blending = 'opaque'
-    layer.blending = 'translucent'
-
-    # change the layer point face color
-    layer.face_color = 'white'
-
-    # change the layer point edge color
-    layer.edge_color = 'blue'
-
     # change the layer point symbol using an alias
     layer.symbol = '+'
 
     # change the layer point n_dimensional status
     layer.n_dimensional = True
-
-    # change the layer point size
-    layer.size = 20
-    layer.size_array = np.array([10, 50, 20])
 
     # change the layer mode
     layer.mode = 'add'

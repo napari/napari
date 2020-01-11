@@ -103,7 +103,7 @@ $ git commit -m "my message"
 ### Help us make sure it's you
 
 Each commit you make must have a [GitHub-registered email](https://github.com/settings/emails)
-as the `author`. You can read more [here](https://help.github.com/articles/about-commit-email-addresses/)
+as the `author`. You can read more [here](https://help.github.com/en/github/setting-up-and-managing-your-github-user-account/setting-your-commit-email-address).
 
 To set it, use `git config --global user.email your-address@example.com`.
 

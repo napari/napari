@@ -1,5 +1,10 @@
+import sys
+import time
+
 import numpy as np
 import pytest
+from qtpy.QtCore import QEventLoop
+from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari.tests.utils import (
@@ -41,7 +46,17 @@ def test_viewer(qtbot):
         if func.__name__ == 'play':
             func(viewer)
 
-    # Close the viewer
+    if sys.platform == 'darwin':
+        # on some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        start = time.time()
+        while time.time() < start + 1:
+            qapp = QApplication.instance()
+            qapp.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 0)
+
+        viewer.window._qt_window.showNormal()
+
     viewer.window.close()
 
 

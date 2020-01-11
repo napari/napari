@@ -412,6 +412,29 @@ class Layer(KeymapMixin, ABC):
             (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
         )
 
+    def _get_base_state(self):
+        """Get dictionary of attributes on base layer.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of attributes on base layer.
+        """
+        base_dict = {
+            'name': self.name,
+            'metadata': self.metadata,
+            'scale': list(self.scale),
+            'translate': list(self.translate),
+            'opacity': self.opacity,
+            'blending': self.blending,
+            'visible': self.visible,
+        }
+        return base_dict
+
+    @abstractmethod
+    def _get_state(self):
+        raise NotImplementedError()
+
     @property
     def thumbnail(self):
         """array: Integer array of thumbnail for the layer"""

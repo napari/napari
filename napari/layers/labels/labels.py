@@ -138,7 +138,7 @@ class Labels(Image):
             colormap=colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
-            rendering='mip',
+            rendering='translucent',
             name=name,
             metadata=metadata,
             scale=scale,
@@ -240,6 +240,25 @@ class Labels(Image):
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
+
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'is_pyramid': self.is_pyramid,
+                'num_colors': self.num_colors,
+                'seed': self.seed,
+                'data': self.data,
+            }
+        )
+        return state
 
     @property
     def selected_label(self):

@@ -47,7 +47,7 @@ class QtVectorsControls(QtLayerControls):
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 0, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('width:'), 1, 0)
         self.grid_layout.addWidget(self.widthSpinBox, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('length:'), 2, 0)
