@@ -82,11 +82,9 @@ task:
   test_pyside2_script:
     - pytest -v
 
-  switch_backend_script:
+  test_pyqt5_script:
     - pip uninstall -y pyside2
     - pip install pyqt5
-
-  test_pyqt5_script:
     - pytest -v
 
 
