@@ -6,7 +6,7 @@ from .cameras import PanZoom1DCamera
 # PlotWidget inherits from scene.Widget
 class NapariPlotWidget(PlotWidget):
     """Subclass of vispy.plot.PlotWidget.
-    
+
     Subclassing mostly to override styles (which are not exposed in the main
     class) and to override `_configure_2d` to allow more control over the
     layout.

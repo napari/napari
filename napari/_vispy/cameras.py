@@ -7,7 +7,7 @@ class PanZoom1DCamera(PanZoomCamera):
         """A camera that can only Pan/Zoom along one axis.
 
         Useful in a PlotWidget.
-        
+
         Parameters
         ----------
         axis : int, optional

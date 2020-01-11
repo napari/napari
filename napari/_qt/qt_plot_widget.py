@@ -20,7 +20,7 @@ class QtPlotWidget(QWidget):
             Whether the widget is oriented vertically, by default False
         parent : QWidget, optional
             parent widget, if applicable, by default None
-        **kwargs: 
+        **kwargs:
             all other kwargs are passed to the NapariPlotWidget.
         """
         super().__init__(parent)

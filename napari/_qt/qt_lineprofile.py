@@ -8,7 +8,7 @@ class QtLineProfile(QtPlotWidget):
 
     def __init__(self, data=None, styles=None, **kwargs):
         """A widget that plots a 1D dataset as a line.
-        
+
         Parameters
         ----------
         data : array-like
