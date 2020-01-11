@@ -4,6 +4,18 @@ import numpy as np
 
 class PanZoom1DCamera(PanZoomCamera):
     def __init__(self, axis=1, *args, **kwargs):
+        """A camera that can only Pan/Zoom along one axis.
+
+        Useful in a PlotWidget.
+        
+        Parameters
+        ----------
+        axis : int, optional
+            The axis to constrain. (This axis will NOT pan or zoom).
+                0 => lock x axis
+                1 => lock y axis
+                by default 1
+        """
         self.axis = axis
         super().__init__(*args, **kwargs)
 

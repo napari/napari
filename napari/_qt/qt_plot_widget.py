@@ -7,9 +7,22 @@ from .._vispy.vispy_plot import NapariPlotWidget
 
 
 class QtPlotWidget(QWidget):
-    """ kwargs are passed to NapariPlotWidget"""
+    """A QWidget that contains a vispy SceneCanvas and PlotWidget."""
 
     def __init__(self, viewer=None, vertical=False, parent=None, **kwargs):
+        """
+
+        Parameters
+        ----------
+        viewer : napari.Viewer, optional
+            the viewer instance to which this plot corresponds, by default None
+        vertical : bool, optional
+            Whether the widget is oriented vertically, by default False
+        parent : QWidget, optional
+            parent widget, if applicable, by default None
+        **kwargs: 
+            all other kwargs are passed to the NapariPlotWidget.
+        """
         super().__init__(parent)
 
         self.viewer = viewer

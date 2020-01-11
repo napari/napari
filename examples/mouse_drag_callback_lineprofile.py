@@ -22,7 +22,7 @@ with napari.gui_qt():
         face_color='royalblue',
     )
     shapes_layer.mode = 'select'
-    w = QtLineProfile(viewer=viewer)
+    w = QtLineProfile(viewer=viewer, lock_axis=1)
     w.show()
 
     def profile_lines(image, shape_layer):

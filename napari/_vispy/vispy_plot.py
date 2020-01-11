@@ -5,8 +5,14 @@ from .cameras import PanZoom1DCamera
 
 # PlotWidget inherits from scene.Widget
 class NapariPlotWidget(PlotWidget):
-    """Inspired by vispy.PlotWidget, with enough differences to not subclass"""
+    """Subclass of vispy.plot.PlotWidget.
+    
+    Subclassing mostly to override styles (which are not exposed in the main
+    class) and to override `_configure_2d` to allow more control over the
+    layout.
+    """
 
+    # default styles to use for the AxisVisuals
     AXIS_KWARGS = {
         'text_color': 'w',
         'axis_color': 'w',
@@ -20,6 +26,7 @@ class NapariPlotWidget(PlotWidget):
         'axis_width': 1,
         'axis_font_size': 9,
     }
+    # default styles to use for the title
     TITLE_KWARGS = {'font_size': 16, 'color': '#ff0000'}
 
     def __init__(
