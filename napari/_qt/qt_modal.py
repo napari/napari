@@ -45,47 +45,61 @@ class QtPopup(QDialog):
 
         Parameters
         ----------
-        position : str, {'top', 'bottom', 'left', 'right' } optional
+        position : {str, tuple}, optional
             position in the QMainWindow to show the pop, by default 'top'
+            if str: must be one of {'top', 'bottom', 'left', 'right' }
+            if tuple: must be length 4 with (left, top, width, height)
         width_ratio : float, optional
             Fraction of the width (for position = top/bottom) or height (for
             position = left/right) of the QMainWindow that the popup will
-            occupy,  by default 0.9
+            occupy.  Only valid when isinstance(position, str). 
+            by default 0.9
 
         Raises
         ------
-        NotImplementedError
-            if the QtPopup does not have a parent (not clear how to find main
-            window.)
         ValueError
-            if position is not one of {'top', 'bottom', 'left', 'right' }
+            if position is a string and not one of
+            {'top', 'bottom', 'left', 'right' }
         """
-        if not self.parent():
-            raise NotImplementedError("cannot use `show_at` without parent")
-        main_window = find_ancestor_mainwindow(self.parent())
-        xy = main_window.pos()
-        if position == 'top':
-            width = main_window.width() * width_ratio
-            height = self.sizeHint().height()
-            xy = xy + QPoint(main_window.width() * (1 - width_ratio) / 2, 24)
-        elif position == 'bottom':
-            width = main_window.width() * width_ratio
-            height = self.sizeHint().height()
-            y = main_window.height() - self.height() - 2
-            xy = xy + QPoint(main_window.width() * (1 - width_ratio) / 2, y)
-        elif position == 'left':
-            width = self.sizeHint().width()
-            height = main_window.height() * width_ratio
-            xy = xy + QPoint(12, main_window.height() * (1 - width_ratio) / 2)
-        elif position == 'right':
-            width = self.sizeHint().width()
-            height = main_window.height() * width_ratio
-            x = main_window.width() - width - 12
-            xy = xy + QPoint(x, main_window.height() * (1 - width_ratio) / 2)
-        else:
-            raise ValueError(
-                'position must be one of ["top", "left", "bottom", "right"]'
-            )
+        if isinstance(position, str):
+            main_window = find_ancestor_mainwindow(self)
+            if main_window:
+                xy = main_window.pos()
+                width = main_window.width()
+                height = main_window.height()
+            else:
+                # fallback... at least show something.  This partially to make
+                # testing easier
+                xy = QPoint(200, 200)
+                width = 600
+                height = 60
+            if position == 'top':
+                width = width * width_ratio
+                height = self.sizeHint().height()
+                xy = xy + QPoint(width * (1 - width_ratio) / 2, 24)
+            elif position == 'bottom':
+                width = width * width_ratio
+                height = self.sizeHint().height()
+                y = height - self.height() - 2
+                xy = xy + QPoint(width * (1 - width_ratio) / 2, y)
+            elif position == 'left':
+                width = self.sizeHint().width()
+                height = height * width_ratio
+                xy = xy + QPoint(12, height * (1 - width_ratio) / 2)
+            elif position == 'right':
+                width = self.sizeHint().width()
+                height = height * width_ratio
+                x = width - width - 12
+                xy = xy + QPoint(x, height * (1 - width_ratio) / 2)
+            else:
+                raise ValueError(
+                    'position must be one of '
+                    '["top", "left", "bottom", "right"]'
+                )
+        elif isinstance(position, (tuple, list)):
+            assert len(position) == 4, '`position` argument must have length 4'
+            x, y, width, height = position
+            xy = QPoint(x, y)
 
         # necessary for transparent round corners
         self.resize(self.sizeHint())
