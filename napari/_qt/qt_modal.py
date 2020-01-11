@@ -52,7 +52,7 @@ class QtPopup(QDialog):
         width_ratio : float, optional
             Fraction of the width (for position = top/bottom) or height (for
             position = left/right) of the QMainWindow that the popup will
-            occupy.  Only valid when isinstance(position, str). 
+            occupy.  Only valid when isinstance(position, str).
             by default 0.9
 
         Raises
