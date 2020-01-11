@@ -9,7 +9,6 @@ from skimage.io.collection import alphanumeric_key
 
 from dask import delayed
 from dask import array as da
-import zarr
 
 
 def magic_imread(filenames, *, use_dask=None, stack=True):
@@ -114,13 +113,14 @@ def read_zarr_dataset(filename):
     shape : tuple
         Shape of array or first array in list
     """
-    zr = zarr.open(filename, mode='r')
-    if isinstance(zr, zarr.core.Array):
-        # load zarr array
-        image = da.from_zarr(filename)
-        shape = image.shape
-    else:
-        # else load zarr all arrays inside file, useful for pyramid data
-        image = [da.from_zarr(filename, component=c) for c, a in zr.arrays()]
-        shape = image[0].shape
+    # try:
+    # load zarr array
+    image = da.from_zarr(filename)
+    shape = image.shape
+    # except:
+    #     # else load zarr all arrays inside file, useful for pyramid data
+    #     image = [da.from_zarr(filename, component=c) for c, a in zr.arrays()]
+    #     shape = image[0].shape
+    # finally:
+    #     raise ValueError('')
     return image, shape
