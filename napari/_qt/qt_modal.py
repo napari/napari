@@ -69,7 +69,7 @@ class QtPopup(QDialog):
 
         # necessary for transparent round corners
         self.resize(self.sizeHint())
-        self.setGeometry(*xy.toTuple(), max(width, 20), max(height, 20))
+        self.setGeometry(xy.x(), xy.y(), max(width, 20), max(height, 20))
         self.show()
 
     def keyPressEvent(self, event):
