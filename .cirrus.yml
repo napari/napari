@@ -83,7 +83,7 @@ task:
     - pytest -v
 
   switch_backend_script:
-    - pip uninstall pyside2
+    - pip uninstall -y pyside2
     - pip install pyqt5
 
   testpyqt_script:
