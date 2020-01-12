@@ -92,7 +92,7 @@ windows_task:
   auto_cancellation: true
   
   windows_container:
-    image: cirrusci/windowsservercore:2019
+    image: cirrusci/windowsservercore:cmake
     os_version: 2019
     
   env:
@@ -100,7 +100,7 @@ windows_task:
       PY_VER: "3.6"
       PY_VER: "3.7"
     ANACONDA_LOCATION: $USERPROFILE\anaconda
-    PATH: $PATH;$ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION
+    PATH: $ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION;$PATH
     # must set this to its default since it doesn't work in env variables
     # see https://github.com/cirruslabs/cirrus-ci-docs/issues/423
     CIRRUS_WORKING_DIR: C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build

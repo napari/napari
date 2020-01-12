@@ -1,6 +1,4 @@
 dask[array]>=2.1.0
-zarr>=2.3.0
-numcodecs!=0.6.4
 fsspec>=0.3.3
 imageio>=2.5.0
 ipykernel>=5.1.1
