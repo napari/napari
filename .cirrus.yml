@@ -85,7 +85,7 @@ task:
   test_pyqt5_script:
     - pip uninstall -y pyside2
     - pip install pyqt5
-    - pytest -v napari/_qt
+    - pytest -v
 
 
 windows_task:
