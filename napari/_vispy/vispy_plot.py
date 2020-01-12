@@ -300,3 +300,13 @@ class PlotWidget(VispyPlotWidget):
         if data is not None:
             self.view.camera.set_range()
         return line
+
+    def scatter(self, data, **kwargs):
+        self._configure_2d()
+        markers = scene.Markers(pos=data, **kwargs)
+        self.view.add(markers)
+        self.visuals.append(markers)
+
+        if data is not None:
+            self.view.camera.set_range()
+        return markers
