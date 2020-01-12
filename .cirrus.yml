@@ -87,7 +87,7 @@ windows_task:
   auto_cancellation: true
   
   windows_container:
-    image: cirrusci/windowsservercore:2019
+    image: cirrusci/windowsservercore:cmake
     os_version: 2019
     
   env:
