@@ -216,5 +216,7 @@ def test_hex_to_name_is_updated():
         "in vispy.color.get_color_dict. This not necessarily a bad thing, but make sure that "
         "nothing terrible has happened due to this change."
     )
-    new_hex_to_name = {v.lower(): k for k, v in get_color_dict().items()}
+    new_hex_to_name = {
+        f"{v.lower()}ff": k for k, v in get_color_dict().items()
+    }
     assert new_hex_to_name == hex_to_name, fail_msg

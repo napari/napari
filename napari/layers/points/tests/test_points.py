@@ -356,11 +356,13 @@ def test_edge_color():
     layer.selected_data = []
     layer.edge_color = 'blue'
     layer.add(coord)
-    ca_black.extend('blue')
+    ca_black = np.vstack([ca_black, transform_color('blue')])
     assert len(layer.edge_colors) == shape[0] + 1
     np.testing.assert_allclose(ca_green, layer.edge_colors[:2])
     np.testing.assert_allclose(ca_black[2:], layer.edge_colors[2:])
-    np.testing.assert_allclose(transform_color("blue"), layer.edge_colors[10])
+    np.testing.assert_allclose(
+        transform_color("blue"), np.atleast_2d(layer.edge_colors[10])
+    )
 
     # Instantiate with custom edge color
     layer = Points(data, edge_color='red')
@@ -389,7 +391,9 @@ def test_edge_color():
     assert len(layer.edge_colors) == shape[0] - 1
     np.testing.assert_allclose(
         layer.edge_colors,
-        np.vstack((col_list[1], col_list[3:], transform_color('blue'))),
+        np.vstack(
+            (col_list_arr[1], col_list_arr[3:], transform_color('blue'))
+        ),
     )
 
 
@@ -426,7 +430,9 @@ def test_face_color():
     assert len(layer.face_colors) == shape[0] + 1
     np.testing.assert_allclose(ca_green, layer.face_colors[:2])
     np.testing.assert_allclose(ca_white[2:], layer.face_colors[2:])
-    np.testing.assert_allclose(transform_color("blue"), layer.face_colors[10])
+    np.testing.assert_allclose(
+        transform_color("blue"), np.atleast_2d(layer.face_colors[10])
+    )
 
     # Instantiate with custom face color
     layer = Points(data, face_color='red')
@@ -748,7 +754,7 @@ def test_transform_color_basic():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     ca = layer._transform_color('r', 'edge_color', 'black')
-    assert ca == ColorArray('r')
+    np.testing.assert_array_equal(ca, ColorArray('r').rgba)
 
 
 def test_transform_color_wrong_colorname():
@@ -758,7 +764,7 @@ def test_transform_color_wrong_colorname():
     layer = Points(data)
     with pytest.warns(UserWarning):
         ca = layer._transform_color('rr', 'edge_color', 'black')
-    assert ca == ColorArray('black')
+    np.testing.assert_array_equal(ca, ColorArray('black').rgba)
 
 
 def test_transform_color_wrong_colorlen():
@@ -770,7 +776,7 @@ def test_transform_color_wrong_colorlen():
         ca = layer._transform_color(
             ColorArray(['r', 'r']), 'face_color', 'black'
         )
-    assert ca == ColorArray('black')
+    np.testing.assert_array_equal(ca, ColorArray('black').rgba)
 
 
 def test_tile_colors_basic():
@@ -778,7 +784,7 @@ def test_tile_colors_basic():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    colors = ColorArray(['w'] * shape[0])
+    colors = ColorArray(['w'] * shape[0]).rgba
     ca = layer._tile_colors(colors)
     np.testing.assert_array_equal(ca, colors)
 
@@ -788,7 +794,7 @@ def test_tile_colors_wrong_num():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    colors = ColorArray(['w'] * shape[0])
+    colors = ColorArray(['w'] * shape[0]).rgba
     with pytest.warns(UserWarning):
         ca = layer._tile_colors(colors[:-1])
     np.testing.assert_array_equal(ca, colors)
@@ -799,7 +805,7 @@ def test_tile_colors_zero_colors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    real = ColorArray(np.ones((shape[0], 4), dtype=np.float32))
+    real = np.ones((shape[0], 4), dtype=np.float32)
     with pytest.warns(UserWarning):
         ca = layer._tile_colors([])
     np.testing.assert_array_equal(ca, real)

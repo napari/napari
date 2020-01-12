@@ -284,7 +284,7 @@ def _convert_color_hex_to_name():
         Mapping from hexadecimal RGB ('#ff0000') to name ('red').
     """
     colordict = get_color_dict()
-    return {v.lower(): k for k, v in colordict.items()}
+    return {f"{v.lower()}ff": k for k, v in colordict.items()}
 
 
 def get_color_namelist():
