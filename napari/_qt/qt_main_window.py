@@ -185,6 +185,8 @@ class Window:
         area: str = 'bottom',
         allowed_areas=None,
         shortcut=None,
+        initial_width=None,
+        initial_height=None,
     ):
         """Convenience method to add a QDockWidget to the main window
 
@@ -203,12 +205,27 @@ class Window:
             By default, all areas are allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
+        initial_width : int, optional
+            Initial width for the docket widget.
+        initial_height : int, optional
+            Initial height for the docket widget.
 
         Returns
         -------
         dock_widget : QtViewerDockWidget
             `dock_widget` that can pass viewer events.
         """
+
+        if not isinstance(widget, QWidget):
+            if hasattr(widget, 'native') and isinstance(
+                widget.native, QWidget
+            ):
+                widget = widget.native
+            else:
+                raise TypeError(
+                    "widget must be a QWidget or vispy widget."
+                    f" Got: {type(widget)}"
+                )
 
         dock_widget = QtViewerDockWidget(
             self.qt_viewer,
@@ -218,8 +235,24 @@ class Window:
             allowed_areas=allowed_areas,
             shortcut=shortcut,
         )
+
         self._add_viewer_dock_widget(dock_widget)
+        if initial_width:
+            self._qt_window.resizeDocks(
+                [dock_widget], [initial_width], Qt.Horizontal
+            )
+        if initial_height:
+            self._qt_window.resizeDocks(
+                [dock_widget], [initial_height], Qt.Vertical
+            )
         return dock_widget
+
+    def add_docked_figure(self, **kwargs):
+        from .._vispy import Fig
+
+        fig = Fig()
+        dw = self.add_dock_widget(fig, **kwargs)
+        return fig, dw
 
     def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
         """Add a QtViewerDockWidget to the main window
