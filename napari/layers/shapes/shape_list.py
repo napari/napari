@@ -241,7 +241,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = ColorArray(shape.face_color).rgba
+        color = np.atleast_2d(ColorArray(shape.face_color).rgba)[0]
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -275,7 +275,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = shape.edge_color
+        color = np.atleast_2d(ColorArray(shape.edge_color).rgba)[0]
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(

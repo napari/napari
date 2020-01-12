@@ -374,7 +374,7 @@ class Points(Layer):
     @property
     def edge_color(self) -> str:
         """Edge color of marker for the next added point."""
-        hex_ = rgb_to_hex(self._edge_color)
+        hex_ = rgb_to_hex(self._edge_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @edge_color.setter
@@ -390,7 +390,7 @@ class Points(Layer):
     @property
     def face_color(self) -> str:
         """Face color of marker for the next added point."""
-        hex_ = rgb_to_hex(self._edge_color)
+        hex_ = rgb_to_hex(self._face_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @face_color.setter
@@ -423,13 +423,13 @@ class Points(Layer):
         if len(self._selected_data) == 0:
             return
         index = self._selected_data
-        edge_colors = ColorArray(np.unique(self.edge_colors[index], axis=0))
+        edge_colors = np.unique(self.edge_colors[index], axis=0)
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
                 self.edge_color = edge_color
 
-        face_colors = ColorArray(np.unique(self.face_colors[index], axis=0))
+        face_colors = np.unique(self.face_colors[index], axis=0)
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
@@ -720,9 +720,9 @@ class Points(Layer):
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
-            for i, c in enumerate(coords):
-                col = self.face_colors[self._indices_view[i]]
-                colormapped[c[0], c[1], :] = col
+            colors = self.face_colors[self._indices_view]
+            colormapped[coords[:, 0], coords[:, 1]] = colors
+
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -741,12 +741,8 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._sizes = np.delete(self._sizes, index, axis=0)
-            self.edge_colors = ColorArray(
-                np.delete(self.edge_colors, index, axis=0)
-            )
-            self.face_colors = ColorArray(
-                np.delete(self.face_colors, index, axis=0)
-            )
+            self.edge_colors = np.delete(self.edge_colors, index, axis=0)
+            self.face_colors = np.delete(self.face_colors, index, axis=0)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = []
@@ -804,11 +800,17 @@ class Points(Layer):
             self._sizes = np.append(
                 self.sizes, deepcopy(self._clipboard['size']), axis=0
             )
-            self.edge_colors = self.edge_colors.extend(
-                deepcopy(self._clipboard['edge_color'])
+            self.edge_colors = np.vstack(
+                (
+                    self.edge_colors,
+                    transform_color(deepcopy(self._clipboard['edge_color'])),
+                )
             )
-            self.face_colors = self.face_colors.extend(
-                deepcopy(self._clipboard['face_color'])
+            self.face_colors = np.vstack(
+                (
+                    self.face_colors,
+                    transform_color(deepcopy(self._clipboard['face_color'])),
+                )
             )
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
@@ -916,7 +918,7 @@ class Points(Layer):
 
     def _transform_color(
         self, colors: ColorType, elem_name: str, default: str
-    ) -> ColorArray:
+    ) -> np.ndarray:
         """Helper method to return a ColorArray from an arbitrary user input."""
         try:
             transformed = transform_color(colors)
@@ -925,7 +927,7 @@ class Points(Layer):
                 f"The provided {elem_name} parameter contained illegal values, "
                 f"reseting all {elem_name} values to {default}."
             )
-            transformed = ColorArray(default)
+            transformed = transform_color(default)
         else:
             if (len(transformed) != 1) and (
                 len(transformed) != len(self.data)
@@ -934,10 +936,10 @@ class Points(Layer):
                     f"The provided {elem_name} parameter has {len(colors)} entries, "
                     f"while the data contains {len(self.data)} entries. Setting {elem_name} to {default}."
                 )
-                transformed = ColorArray(default)
+                transformed = transform_color(default)
         return transformed
 
-    def _tile_colors(self, colors: ColorArray) -> ColorArray:
+    def _tile_colors(self, colors: ColorType) -> np.ndarray:
         """Takes an input color array and forces into being the length of self.data.
         Used when a single color is supplied for many input points, but we need
         self.face_colors \\ self.edge_colors to have the shape of the actual data.
@@ -949,13 +951,13 @@ class Points(Layer):
 
         Returns
         -----
-        tiled : ColorArray
+        tiled : np.ndarray
             A tiled version (if needed) of the original input
         """
         data_len = len(self.data)
         # len == 0 data is handled somewhere else
         if (len(colors) == data_len) or (data_len == 0):
-            return ColorArray(colors)
+            return np.asarray(colors)
         # If the user has supplied a list of colors, but its length doesn't
         # match the length of the data, we warn them and return a single
         # color for all inputs
@@ -966,10 +968,10 @@ class Points(Layer):
                 f" is {len(colors)}. Color for all points is resetted to white."
             )
             tiled = np.ones((data_len, 4), dtype=np.float32)
-            return ColorArray(tiled)
+            return tiled
         # All that's left is to deal with length=1 color inputs
         tiled = np.tile(colors.ravel(), (data_len, 1))
-        return ColorArray(tiled)
+        return tiled
 
 
 def create_box(data):

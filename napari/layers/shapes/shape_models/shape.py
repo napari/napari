@@ -221,6 +221,7 @@ class Shape(ABC):
         else:
             rgb = tuple([int(255 * x) for x in self._edge_color.rgba[:3]])
             self._edge_color_name = '#%02x%02x%02x' % rgb
+        self._edge_color = self._edge_color.rgba
 
     @property
     def face_color(self):
@@ -236,6 +237,7 @@ class Shape(ABC):
         else:
             rgb = tuple([int(255 * x) for x in self._face_color.rgba[:3]])
             self._face_color_name = '#%02x%02x%02x' % rgb
+        self._face_color = self._face_color.rgba
 
     @property
     def opacity(self):
@@ -252,9 +254,9 @@ class Shape(ABC):
         """dict: color and width properties in the svg specification
         """
         width = str(self.edge_width)
-        face_color = (255 * self.face_color.rgba).astype(np.int)
+        face_color = (255 * self.face_color).astype(np.int)
         fill = f'rgb{tuple(face_color[:3])}'
-        edge_color = (255 * self.edge_color.rgba).astype(np.int)
+        edge_color = (255 * self.edge_color).astype(np.int)
         stroke = f'rgb{tuple(edge_color[:3])}'
         opacity = str(self.opacity)
 
