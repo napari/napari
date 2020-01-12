@@ -4,3 +4,4 @@ pytest-qt
 pytest-ordering
 pytest-timeout
 xarray
+zarr
