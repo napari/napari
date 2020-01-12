@@ -113,14 +113,18 @@ def read_zarr_dataset(filename):
     shape : tuple
         Shape of array or first array in list
     """
-    # try:
-    # load zarr array
-    image = da.from_zarr(filename)
-    shape = image.shape
-    # except:
-    #     # else load zarr all arrays inside file, useful for pyramid data
-    #     image = [da.from_zarr(filename, component=c) for c, a in zr.arrays()]
-    #     shape = image[0].shape
-    # finally:
-    #     raise ValueError('')
+    if os.path.exists(os.path.join(filename, '.zarray')):
+        # load zarr array
+        image = da.from_zarr(filename)
+        shape = image.shape
+    elif os.path.exists(os.path.join(filename, '.zgroup')):
+        # else load zarr all arrays inside file, useful for pyramid data
+        image = []
+        for subd in os.listdir(filename):
+            full_subd = os.path.join(filename, subd)
+            if os.path.exists(os.path.join(full_subd, '.zarray')):
+                image.append(da.from_zarr(full_subd))
+        shape = image[0].shape
+    else:
+        raise ValueError("Not a zarr dataset or group")
     return image, shape
