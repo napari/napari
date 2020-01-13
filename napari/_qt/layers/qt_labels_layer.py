@@ -103,7 +103,7 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.selectionSpinBox, 1, 2)
         self.grid_layout.addWidget(QtColorBox(layer), 1, 1)
         self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 2, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
         self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('blending:'), 4, 0)

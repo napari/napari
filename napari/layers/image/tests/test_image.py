@@ -371,18 +371,18 @@ def test_contrast_limits():
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
-    assert layer.contrast_limits == layer._contrast_limits_range
+    assert layer.contrast_limits == layer.contrast_limits_range
 
     # Change contrast_limits property
     contrast_limits = [0, 2]
     layer.contrast_limits = contrast_limits
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
     # Set contrast_limits as keyword argument
     layer = Image(data, contrast_limits=contrast_limits)
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
 
 def test_contrast_limits_range():
@@ -390,16 +390,39 @@ def test_contrast_limits_range():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer._contrast_limits_range[0] >= 0
-    assert layer._contrast_limits_range[1] <= 1
-    assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
+    assert layer.contrast_limits_range[0] >= 0
+    assert layer.contrast_limits_range[1] <= 1
+    assert layer.contrast_limits_range[0] < layer.contrast_limits_range[1]
 
     # If all data is the same value the contrast_limits_range and
     # contrast_limits defaults to [0, 1]
     data = np.zeros((10, 15))
     layer = Image(data)
-    assert layer._contrast_limits_range == [0, 1]
+    assert layer.contrast_limits_range == [0, 1]
     assert layer.contrast_limits == [0.0, 1.0]
+
+
+def test_set_contrast_limits_range():
+    """Test setting color limits range."""
+    np.random.seed(0)
+    data = np.random.random((10, 15)) * 100
+    layer = Image(data)
+    layer.contrast_limits_range = [0, 100]
+    layer.contrast_limits = [20, 40]
+    assert layer.contrast_limits_range == [0, 100]
+    assert layer.contrast_limits == [20, 40]
+
+    # clim values should stay within the contrast limits range
+    layer.contrast_limits_range = [0, 30]
+    assert layer.contrast_limits == [20, 30]
+    # setting contrast limits range should clamp both of the clims values
+    layer.contrast_limits_range = [0, 10]
+    assert layer.contrast_limits == [10, 10]
+    # in both directions...
+    layer.contrast_limits_range = [0, 100]
+    layer.contrast_limits = [20, 40]
+    layer.contrast_limits_range = [60, 100]
+    assert layer.contrast_limits == [60, 60]
 
 
 def test_gamma():
@@ -419,6 +442,30 @@ def test_gamma():
     assert layer.gamma == gamma
 
 
+def test_rendering():
+    """Test setting rendering."""
+    np.random.seed(0)
+    data = np.random.random((20, 10, 15))
+    layer = Image(data)
+    assert layer.rendering == 'mip'
+
+    # Change rendering property
+    layer.rendering = 'translucent'
+    assert layer.rendering == 'translucent'
+
+    # Change rendering property
+    layer.rendering = 'attenuated_mip'
+    assert layer.rendering == 'attenuated_mip'
+
+    # Change rendering property
+    layer.rendering = 'iso'
+    assert layer.rendering == 'iso'
+
+    # Change rendering property
+    layer.rendering = 'additive'
+    assert layer.rendering == 'additive'
+
+
 def test_iso_threshold():
     """Test setting iso_threshold."""
     np.random.seed(0)
@@ -434,6 +481,23 @@ def test_iso_threshold():
     # Set iso_threshold as keyword argument
     layer = Image(data, iso_threshold=iso_threshold)
     assert layer.iso_threshold == iso_threshold
+
+
+def test_attenuation():
+    """Test setting attenuation."""
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    assert layer.attenuation == 0.5
+
+    # Change iso_threshold property
+    attenuation = 0.7
+    layer.attenuation = attenuation
+    assert layer.attenuation == attenuation
+
+    # Set attenuation as keyword argument
+    layer = Image(data, attenuation=attenuation)
+    assert layer.attenuation == attenuation
 
 
 def test_metadata():

@@ -7,10 +7,8 @@ from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy.QtCore import QThreadPool
-from qtpy import API_NAME
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
-from vispy.app import use_app
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
@@ -32,10 +30,6 @@ from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
-
-
-# set vispy application to the appropriate qt backend
-use_app(API_NAME)
 
 
 class QtViewer(QSplitter):
@@ -395,7 +389,7 @@ class QtViewer(QSplitter):
         func = parent.keymap[comb]
         gen = func(parent)
 
-        if inspect.isgeneratorfunction(func):
+        if inspect.isgenerator(gen):
             try:
                 next(gen)
             except StopIteration:  # only one statement

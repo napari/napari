@@ -18,7 +18,7 @@ def test_rectangles():
     assert layer.nshapes == shape[0]
     assert np.all(layer.data[0] == data[0])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
     # Test multiple four corner rectangles
     shape = (10, 4, 2)
@@ -27,7 +27,7 @@ def test_rectangles():
     assert layer.nshapes == shape[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
     # Test a single two corner rectangle, which gets converted into four
     # corner rectangle
@@ -37,7 +37,7 @@ def test_rectangles():
     assert layer.nshapes == 1
     assert len(layer.data[0]) == 4
     assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
     # Test multiple two corner rectangles
     shape = (10, 2, 2)
@@ -46,7 +46,7 @@ def test_rectangles():
     assert layer.nshapes == shape[0]
     assert np.all([len(ld) == 4 for ld in layer.data])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
 def test_rectangles_roundtrip():
@@ -68,7 +68,7 @@ def test_integer_rectangle():
     assert layer.nshapes == shape[0]
     assert np.all([len(ld) == 4 for ld in layer.data])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
 def test_negative_rectangle():
@@ -80,7 +80,7 @@ def test_negative_rectangle():
     assert layer.nshapes == shape[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
 def test_empty_rectangle():
@@ -92,7 +92,7 @@ def test_empty_rectangle():
     assert layer.nshapes == shape[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
 def test_3D_rectangles():
@@ -106,7 +106,7 @@ def test_3D_rectangles():
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 3
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
 def test_ellipses():
@@ -119,7 +119,7 @@ def test_ellipses():
     assert layer.nshapes == shape[0]
     assert np.all(layer.data[0] == data[0])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'ellipse' for s in layer.shape_types])
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
 
     # Test multiple four corner ellipses
     shape = (10, 4, 2)
@@ -129,7 +129,7 @@ def test_ellipses():
     assert layer.nshapes == shape[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'ellipse' for s in layer.shape_types])
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
 
     # Test a single ellipse center radii, which gets converted into four
     # corner ellipse
@@ -140,7 +140,7 @@ def test_ellipses():
     assert layer.nshapes == 1
     assert len(layer.data[0]) == 4
     assert layer.ndim == shape[2]
-    assert np.all([s == 'ellipse' for s in layer.shape_types])
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
 
     # Test multiple center radii ellipses
     shape = (10, 2, 2)
@@ -150,7 +150,7 @@ def test_ellipses():
     assert layer.nshapes == shape[0]
     assert np.all([len(ld) == 4 for ld in layer.data])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'ellipse' for s in layer.shape_types])
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
 
 
 def test_ellipses_roundtrip():
@@ -173,7 +173,7 @@ def test_lines():
     assert layer.nshapes == shape[0]
     assert np.all(layer.data[0] == data[0])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'line' for s in layer.shape_types])
+    assert np.all([s == 'line' for s in layer.shape_type])
 
     # Test multiple lines
     shape = (10, 2, 2)
@@ -183,7 +183,7 @@ def test_lines():
     assert layer.nshapes == shape[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'line' for s in layer.shape_types])
+    assert np.all([s == 'line' for s in layer.shape_type])
 
 
 def test_lines_roundtrip():
@@ -206,7 +206,7 @@ def test_paths():
     assert layer.nshapes == shape[0]
     assert np.all(layer.data[0] == data[0])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'path' for s in layer.shape_types])
+    assert np.all([s == 'path' for s in layer.shape_type])
 
     # Test multiple paths with different numbers of points
     data = [
@@ -216,7 +216,7 @@ def test_paths():
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 2
-    assert np.all([s == 'path' for s in layer.shape_types])
+    assert np.all([s == 'path' for s in layer.shape_type])
 
 
 def test_paths_roundtrip():
@@ -242,7 +242,7 @@ def test_polygons():
     assert layer.nshapes == shape[0]
     assert np.all(layer.data[0] == data[0])
     assert layer.ndim == shape[2]
-    assert np.all([s == 'polygon' for s in layer.shape_types])
+    assert np.all([s == 'polygon' for s in layer.shape_type])
 
     # Test multiple polygons with different numbers of points
     data = [
@@ -252,7 +252,7 @@ def test_polygons():
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 2
-    assert np.all([s == 'polygon' for s in layer.shape_types])
+    assert np.all([s == 'polygon' for s in layer.shape_type])
 
 
 def test_polygon_roundtrip():
@@ -280,15 +280,15 @@ def test_mixed_shapes():
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 2
-    assert np.all([s == so for s, so in zip(layer.shape_types, shape_type)])
+    assert np.all([s == so for s, so in zip(layer.shape_type, shape_type)])
 
     # Test roundtrip with mixed data
-    new_layer = Shapes(layer.data, shape_type=layer.shape_types)
+    new_layer = Shapes(layer.data, shape_type=layer.shape_type)
     assert np.all(
         [np.all(nd == d) for nd, d in zip(new_layer.data, layer.data)]
     )
     assert np.all(
-        [ns == s for ns, s in zip(new_layer.shape_types, layer.shape_types)]
+        [ns == s for ns, s in zip(new_layer.shape_type, layer.shape_type)]
     )
 
 
@@ -300,11 +300,12 @@ def test_changing_shapes():
     data_a = 20 * np.random.random(shape_a)
     data_b = 20 * np.random.random(shape_b)
     layer = Shapes(data_a)
+    assert layer.nshapes == shape_a[0]
     layer.data = data_b
     assert layer.nshapes == shape_b[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data_b)])
     assert layer.ndim == shape_b[2]
-    assert np.all([s == 'rectangle' for s in layer.shape_types])
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
 def test_adding_shapes():
@@ -317,16 +318,14 @@ def test_adding_shapes():
     # shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
     layer = Shapes(data, shape_type='polygon')
     new_data = np.random.random((5, 4, 2))
-    new_shape_types = ['rectangle'] * 3 + ['ellipse'] * 2
-    layer.add(new_data, shape_type=new_shape_types)
+    new_shape_type = ['rectangle'] * 3 + ['ellipse'] * 2
+    layer.add(new_data, shape_type=new_shape_type)
     all_data = data + list(new_data)
-    all_shape_types = ['polygon'] * 5 + new_shape_types
+    all_shape_type = ['polygon'] * 5 + new_shape_type
     assert layer.nshapes == len(all_data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, all_data)])
     assert layer.ndim == 2
-    assert np.all(
-        [s == so for s, so in zip(layer.shape_types, all_shape_types)]
-    )
+    assert np.all([s == so for s, so in zip(layer.shape_type, all_shape_type)])
 
 
 def test_adding_shapes_to_empty():
@@ -345,7 +344,7 @@ def test_adding_shapes_to_empty():
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 2
-    assert np.all([s == so for s, so in zip(layer.shape_types, shape_type)])
+    assert np.all([s == so for s, so in zip(layer.shape_type, shape_type)])
 
 
 def test_selecting_shapes():
@@ -387,7 +386,7 @@ def test_removing_selected_shapes():
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data_keep)])
     assert layer.ndim == 2
     assert np.all(
-        [s == so for s, so in zip(layer.shape_types, shape_type_keep)]
+        [s == so for s, so in zip(layer.shape_type, shape_type_keep)]
     )
 
 
@@ -471,21 +470,21 @@ def test_visiblity():
     assert layer.visible is True
 
 
-def test_opacity():
-    """Test setting layer opacity."""
+def test_current_opacity():
+    """Test setting current layer opacity."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
-    assert layer.opacity == 0.7
+    assert layer.current_opacity == 0.7
 
-    layer.opacity = 0.5
-    assert layer.opacity == 0.5
+    layer.current_opacity = 0.5
+    assert layer.current_opacity == 0.5
 
     layer = Shapes(data, opacity=0.6)
-    assert layer.opacity == 0.6
+    assert layer.current_opacity == 0.6
 
-    layer.opacity = 0.3
-    assert layer.opacity == 0.3
+    layer.current_opacity = 0.3
+    assert layer.current_opacity == 0.3
 
 
 def test_blending():
@@ -511,53 +510,53 @@ def test_edge_color():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer.edge_color == 'black'
-    assert len(layer.edge_colors) == shape[0]
-    assert layer.edge_colors == ['black'] * shape[0]
+    assert layer.current_edge_color == 'black'
+    assert len(layer.edge_color) == shape[0]
+    assert layer.edge_color == ['black'] * shape[0]
 
-    # With no data selected chaning edge color has no effect
-    layer.edge_color = 'blue'
-    assert layer.edge_color == 'blue'
-    assert layer.edge_colors == ['black'] * shape[0]
+    # With no data selected changing edge color has no effect
+    layer.current_edge_color = 'blue'
+    assert layer.current_edge_color == 'blue'
+    assert layer.edge_color == ['black'] * shape[0]
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
-    assert layer.edge_color == 'black'
-    layer.edge_color = 'green'
-    assert layer.edge_colors == ['green'] * 2 + ['black'] * (shape[0] - 2)
+    assert layer.current_edge_color == 'black'
+    layer.current_edge_color = 'green'
+    assert layer.edge_color == ['green'] * 2 + ['black'] * (shape[0] - 2)
 
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = []
-    layer.edge_color = 'blue'
+    layer.current_edge_color = 'blue'
     layer.add(new_shape)
-    assert len(layer.edge_colors) == shape[0] + 1
-    assert layer.edge_colors == ['green'] * 2 + ['black'] * (shape[0] - 2) + [
+    assert len(layer.edge_color) == shape[0] + 1
+    assert layer.edge_color == ['green'] * 2 + ['black'] * (shape[0] - 2) + [
         'blue'
     ]
 
     # Instantiate with custom edge color
     layer = Shapes(data, edge_color='red')
-    assert layer.edge_color == 'red'
+    assert layer.current_edge_color == 'red'
 
     # Instantiate with custom edge color list
     col_list = ['red', 'green'] * 5
     layer = Shapes(data, edge_color=col_list)
-    assert layer.edge_color == 'black'
-    assert layer.edge_colors == col_list
+    assert layer.current_edge_color == 'black'
+    assert layer.edge_color == col_list
 
     # Add new point and test its color
-    layer.edge_color = 'blue'
+    layer.current_edge_color = 'blue'
     layer.add(new_shape)
-    assert len(layer.edge_colors) == shape[0] + 1
-    assert layer.edge_colors == col_list + ['blue']
+    assert len(layer.edge_color) == shape[0] + 1
+    assert layer.edge_color == col_list + ['blue']
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.edge_colors) == shape[0] - 1
-    assert layer.edge_colors == [col_list[1]] + col_list[3:] + ['blue']
+    assert len(layer.edge_color) == shape[0] - 1
+    assert layer.edge_color == [col_list[1]] + col_list[3:] + ['blue']
 
 
 def test_face_color():
@@ -566,53 +565,53 @@ def test_face_color():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer.face_color == 'white'
-    assert len(layer.face_colors) == shape[0]
-    assert layer.face_colors == ['white'] * shape[0]
+    assert layer.current_face_color == 'white'
+    assert len(layer.face_color) == shape[0]
+    assert layer.face_color == ['white'] * shape[0]
 
-    # With no data selected chaning face color has no effect
-    layer.face_color = 'blue'
-    assert layer.face_color == 'blue'
-    assert layer.face_colors == ['white'] * shape[0]
+    # With no data selected changing face color has no effect
+    layer.current_face_color = 'blue'
+    assert layer.current_face_color == 'blue'
+    assert layer.face_color == ['white'] * shape[0]
 
     # Select data and change face color of selection
     layer.selected_data = [0, 1]
-    assert layer.face_color == 'white'
-    layer.face_color = 'green'
-    assert layer.face_colors == ['green'] * 2 + ['white'] * (shape[0] - 2)
+    assert layer.current_face_color == 'white'
+    layer.current_face_color = 'green'
+    assert layer.face_color == ['green'] * 2 + ['white'] * (shape[0] - 2)
 
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = []
-    layer.face_color = 'blue'
+    layer.current_face_color = 'blue'
     layer.add(new_shape)
-    assert len(layer.face_colors) == shape[0] + 1
-    assert layer.face_colors == ['green'] * 2 + ['white'] * (shape[0] - 2) + [
+    assert len(layer.face_color) == shape[0] + 1
+    assert layer.face_color == ['green'] * 2 + ['white'] * (shape[0] - 2) + [
         'blue'
     ]
 
     # Instantiate with custom face color
     layer = Shapes(data, face_color='red')
-    assert layer.face_color == 'red'
+    assert layer.current_face_color == 'red'
 
     # Instantiate with custom face color list
     col_list = ['red', 'green'] * 5
     layer = Shapes(data, face_color=col_list)
-    assert layer.face_color == 'white'
-    assert layer.face_colors == col_list
+    assert layer.current_face_color == 'white'
+    assert layer.face_color == col_list
 
     # Add new point and test its color
-    layer.face_color = 'blue'
+    layer.current_face_color = 'blue'
     layer.add(new_shape)
-    assert len(layer.face_colors) == shape[0] + 1
-    assert layer.face_colors == col_list + ['blue']
+    assert len(layer.face_color) == shape[0] + 1
+    assert layer.face_color == col_list + ['blue']
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.face_colors) == shape[0] - 1
-    assert layer.face_colors == [col_list[1]] + col_list[3:] + ['blue']
+    assert len(layer.face_color) == shape[0] - 1
+    assert layer.face_color == [col_list[1]] + col_list[3:] + ['blue']
 
 
 def test_edge_width():
@@ -621,103 +620,103 @@ def test_edge_width():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer.edge_width == 1
-    assert len(layer.edge_widths) == shape[0]
-    assert layer.edge_widths == [1] * shape[0]
+    assert layer.current_edge_width == 1
+    assert len(layer.edge_width) == shape[0]
+    assert layer.edge_width == [1] * shape[0]
 
-    # With no data selected chaning edge width has no effect
-    layer.edge_width = 2
-    assert layer.edge_width == 2
-    assert layer.edge_widths == [1] * shape[0]
+    # With no data selected changing edge width has no effect
+    layer.current_edge_width = 2
+    assert layer.current_edge_width == 2
+    assert layer.edge_width == [1] * shape[0]
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
-    assert layer.edge_width == 1
-    layer.edge_width = 3
-    assert layer.edge_widths == [3] * 2 + [1] * (shape[0] - 2)
+    assert layer.current_edge_width == 1
+    layer.current_edge_width = 3
+    assert layer.edge_width == [3] * 2 + [1] * (shape[0] - 2)
 
     # Add new shape and test its width
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = []
-    layer.edge_width = 4
+    layer.current_edge_width = 4
     layer.add(new_shape)
-    assert layer.edge_widths == [3] * 2 + [1] * (shape[0] - 2) + [4]
+    assert layer.edge_width == [3] * 2 + [1] * (shape[0] - 2) + [4]
 
     # Instantiate with custom edge width
     layer = Shapes(data, edge_width=5)
-    assert layer.edge_width == 5
+    assert layer.current_edge_width == 5
 
     # Instantiate with custom edge width list
     width_list = [2, 3] * 5
     layer = Shapes(data, edge_width=width_list)
-    assert layer.edge_width == 1
-    assert layer.edge_widths == width_list
+    assert layer.current_edge_width == 1
+    assert layer.edge_width == width_list
 
     # Add new shape and test its color
-    layer.edge_width = 4
+    layer.current_edge_width = 4
     layer.add(new_shape)
-    assert len(layer.edge_widths) == shape[0] + 1
-    assert layer.edge_widths == width_list + [4]
+    assert len(layer.edge_width) == shape[0] + 1
+    assert layer.edge_width == width_list + [4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.edge_widths) == shape[0] - 1
-    assert layer.edge_widths == [width_list[1]] + width_list[3:] + [4]
+    assert len(layer.edge_width) == shape[0] - 1
+    assert layer.edge_width == [width_list[1]] + width_list[3:] + [4]
 
 
-def test_opacities():
-    """Test setting opacities."""
+def test_opacity():
+    """Test setting opacity."""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
     # Check default opacity value of 0.7
-    assert layer.opacity == 0.7
-    assert len(layer.opacities) == shape[0]
-    assert layer.opacities == [0.7] * shape[0]
+    assert layer.current_opacity == 0.7
+    assert len(layer.opacity) == shape[0]
+    assert layer.opacity == [0.7] * shape[0]
 
-    # With no data selected chaning opacity has no effect
-    layer.opacity = 1
-    assert layer.opacity == 1
-    assert layer.opacities == [0.7] * shape[0]
+    # With no data selected changing opacity has no effect
+    layer.current_opacity = 1
+    assert layer.current_opacity == 1
+    assert layer.opacity == [0.7] * shape[0]
 
     # Select data and change opacity of selection
     layer.selected_data = [0, 1]
-    assert layer.opacity == 0.7
-    layer.opacity = 0.5
-    assert layer.opacities == [0.5] * 2 + [0.7] * (shape[0] - 2)
+    assert layer.current_opacity == 0.7
+    layer.current_opacity = 0.5
+    assert layer.opacity == [0.5] * 2 + [0.7] * (shape[0] - 2)
 
     # Add new shape and test its width
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = []
-    layer.opacity = 0.3
+    layer.current_opacity = 0.3
     layer.add(new_shape)
-    assert layer.opacities == [0.5] * 2 + [0.7] * (shape[0] - 2) + [0.3]
+    assert layer.opacity == [0.5] * 2 + [0.7] * (shape[0] - 2) + [0.3]
 
     # Instantiate with custom opacity
     layer = Shapes(data, opacity=0.2)
-    assert layer.opacity == 0.2
+    assert layer.current_opacity == 0.2
 
     # Instantiate with custom opacity list
     opacity_list = [0.1, 0.4] * 5
     layer = Shapes(data, opacity=opacity_list)
-    assert layer.opacity == 0.7
-    assert layer.opacities == opacity_list
+    assert layer.current_opacity == 0.7
+    assert layer.opacity == opacity_list
 
     # Add new shape and test its opacity
-    layer.opacity = 0.6
+    layer.current_opacity = 0.6
     layer.add(new_shape)
-    assert len(layer.opacities) == shape[0] + 1
-    assert layer.opacities == opacity_list + [0.6]
+    assert len(layer.opacity) == shape[0] + 1
+    assert layer.opacity == opacity_list + [0.6]
 
-    # Check removing data adjusts opacities correctly
+    # Check removing data adjusts opacity correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.opacities) == shape[0] - 1
-    assert layer.opacities == [opacity_list[1]] + opacity_list[3:] + [0.6]
+    assert len(layer.opacity) == shape[0] - 1
+    assert layer.opacity == [opacity_list[1]] + opacity_list[3:] + [0.6]
 
 
 def test_z_index():
@@ -726,29 +725,29 @@ def test_z_index():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer.z_indices == [0] * shape[0]
+    assert layer.z_index == [0] * shape[0]
 
     # Instantiate with custom z-index
     layer = Shapes(data, z_index=4)
-    assert layer.z_indices == [4] * shape[0]
+    assert layer.z_index == [4] * shape[0]
 
     # Instantiate with custom z-index list
     z_index_list = [2, 3] * 5
     layer = Shapes(data, z_index=z_index_list)
-    assert layer.z_indices == z_index_list
+    assert layer.z_index == z_index_list
 
     # Add new shape and its z-index
     new_shape = np.random.random((1, 4, 2))
     layer.add(new_shape)
-    assert len(layer.z_indices) == shape[0] + 1
-    assert layer.z_indices == z_index_list + [4]
+    assert len(layer.z_index) == shape[0] + 1
+    assert layer.z_index == z_index_list + [4]
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.z_indices) == shape[0] - 1
-    assert layer.z_indices == [z_index_list[1]] + z_index_list[3:] + [4]
+    assert len(layer.z_index) == shape[0] - 1
+    assert layer.z_index == [z_index_list[1]] + z_index_list[3:] + [4]
 
 
 def test_move_to_front():
@@ -758,12 +757,12 @@ def test_move_to_front():
     data = 20 * np.random.random(shape)
     z_index_list = [2, 3] * 5
     layer = Shapes(data, z_index=z_index_list)
-    assert layer.z_indices == z_index_list
+    assert layer.z_index == z_index_list
 
     # Move selected shapes to front
     layer.selected_data = [0, 2]
     layer.move_to_front()
-    assert layer.z_indices == [4] + [z_index_list[1]] + [4] + z_index_list[3:]
+    assert layer.z_index == [4] + [z_index_list[1]] + [4] + z_index_list[3:]
 
 
 def test_move_to_back():
@@ -773,12 +772,12 @@ def test_move_to_back():
     data = 20 * np.random.random(shape)
     z_index_list = [2, 3] * 5
     layer = Shapes(data, z_index=z_index_list)
-    assert layer.z_indices == z_index_list
+    assert layer.z_index == z_index_list
 
     # Move selected shapes to front
     layer.selected_data = [0, 2]
     layer.move_to_back()
-    assert layer.z_indices == [1] + [z_index_list[1]] + [1] + z_index_list[3:]
+    assert layer.z_index == [1] + [z_index_list[1]] + [1] + z_index_list[3:]
 
 
 def test_interaction_box():

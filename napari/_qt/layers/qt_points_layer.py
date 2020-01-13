@@ -32,7 +32,7 @@ class QtPointsControls(QtLayerControls):
         sld.setMinimum(1)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        value = self.layer.size
+        value = self.layer.current_size
         sld.setValue(int(value))
         sld.valueChanged[int].connect(lambda value=sld: self.changeSize(value))
         self.sizeSlider = sld
@@ -105,7 +105,7 @@ class QtPointsControls(QtLayerControls):
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('point size:'), 2, 0)
         self.grid_layout.addWidget(self.sizeSlider, 2, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
@@ -139,16 +139,16 @@ class QtPointsControls(QtLayerControls):
             raise ValueError("Mode not recongnized")
 
     def changeFaceColor(self, text):
-        self.layer.face_color = text
+        self.layer.current_face_color = text
 
     def changeEdgeColor(self, text):
-        self.layer.edge_color = text
+        self.layer.current_edge_color = text
 
     def changeSymbol(self, text):
         self.layer.symbol = text
 
     def changeSize(self, value):
-        self.layer.size = value
+        self.layer.current_size = value
 
     def change_ndim(self, state):
         if state == Qt.Checked:
@@ -169,7 +169,7 @@ class QtPointsControls(QtLayerControls):
 
     def _on_size_change(self, event):
         with self.layer.events.size.blocker():
-            value = self.layer.size
+            value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event):
