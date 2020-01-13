@@ -11,6 +11,9 @@ from napari.tests.utils import (
 
 from qtpy import API_NAME
 from sys import platform
+import os
+
+print(os.environ)
 
 
 @pytest.mark.skipif(
