@@ -1,7 +1,12 @@
 import numpy as np
 from napari import Viewer
+from napari.tests.utils import VIRTUAL_WIN_PYQT5
+import pytest
 
 
+@pytest.mark.skipif(
+    VIRTUAL_WIN_PYQT5, reason='rendering fails on virtualized (CI) PyQt5 win32'
+)
 def test_image_rendering(qtbot):
     """Test 3D image with different rendering."""
     viewer = Viewer()

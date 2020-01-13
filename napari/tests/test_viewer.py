@@ -11,6 +11,7 @@ from napari.tests.utils import (
     check_viewer_functioning,
     add_layer_by_type,
     layer_test_data,
+    VIRTUAL_WIN_PYQT5,
 )
 
 
@@ -91,6 +92,10 @@ def test_add_layer(qtbot, layer_class, data, ndim, visible):
     viewer.window.close()
 
 
+@pytest.mark.skipif(
+    VIRTUAL_WIN_PYQT5,
+    reason='screenshot fails on virtualized (CI) PyQt5 win32',
+)
 def test_screenshot(qtbot):
     "Test taking a screenshot"
     viewer = Viewer()
