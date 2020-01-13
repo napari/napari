@@ -9,7 +9,6 @@ from skimage.io.collection import alphanumeric_key
 
 from dask import delayed
 from dask import array as da
-import zarr
 
 
 def magic_imread(filenames, *, use_dask=None, stack=True):
@@ -99,13 +98,13 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     return image
 
 
-def read_zarr_dataset(filename):
+def read_zarr_dataset(path):
     """Read a zarr dataset, including an array or a group of arrays.
 
     Parameters
     --------
-    filename : str
-        Path to file ending in '.zarr'. File can contain either an array
+    path : str
+        Path to directory ending in '.zarr'. Path can contain either an array
         or a group of arrays in the case of pyramid data.
     Returns
     -------
@@ -114,13 +113,17 @@ def read_zarr_dataset(filename):
     shape : tuple
         Shape of array or first array in list
     """
-    zr = zarr.open(filename, mode='r')
-    if isinstance(zr, zarr.core.Array):
+    if os.path.exists(os.path.join(path, '.zarray')):
         # load zarr array
-        image = da.from_zarr(filename)
+        image = da.from_zarr(path)
         shape = image.shape
-    else:
+    elif os.path.exists(os.path.join(path, '.zgroup')):
         # else load zarr all arrays inside file, useful for pyramid data
-        image = [da.from_zarr(filename, component=c) for c, a in zr.arrays()]
+        image = []
+        for subpath in sorted(os.listdir(path)):
+            if not subpath.startswith('.'):
+                image.append(read_zarr_dataset(os.path.join(path, subpath))[0])
         shape = image[0].shape
+    else:
+        raise ValueError(f"Not a zarr dataset or group: {path}")
     return image, shape
