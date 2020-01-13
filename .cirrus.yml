@@ -132,7 +132,12 @@ windows_task:
     - pip list
     - python -c "import napari; print(napari.__version__)"
 
-  test_script:
+  test_pyside2_script:
+    - pytest -v -o qt_no_exception_capture=1
+
+  test_pyqt5_script:
+    - pip uninstall -y pyside2
+    - pip install pyqt5
     - pytest -v -o qt_no_exception_capture=1
 
 codecov_task:
