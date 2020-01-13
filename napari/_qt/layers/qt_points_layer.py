@@ -173,14 +173,14 @@ class QtPointsControls(QtLayerControls):
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event):
-        color = self.layer.edge_color
+        color = self.layer.current_edge_color
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
             self.edgeComboBox.setCurrentIndex(index)
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event):
-        color = self.layer.face_color
+        color = self.layer.current_face_color
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(color, Qt.MatchFixedString)
             self.faceComboBox.setCurrentIndex(index)

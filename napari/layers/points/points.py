@@ -226,9 +226,11 @@ class Points(Layer):
         self._is_selecting = False
         self._clipboard = {}
 
-        self.edge_color = self._tile_colors(self._edge_color)
-        self.face_color = self._tile_colors(self._face_color)
-        self.sizes = size
+        self.edge_color = self._tile_colors(self._current_edge_color)
+        self.face_color = self._tile_colors(self._current_face_color)
+        self._current_edge_color = self.edge_color[-1]
+        self._current_face_color = self.face_color[-1]
+        self.size = size
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -270,16 +272,12 @@ class Points(Layer):
                 new_edge_colors = np.tile(
                     self._current_edge_color, (adding, 1)
                 )
-                self.edge_color = np.vstack(
-                    (self.edge_color, new_edge_colors),
-                )
+                self.edge_color = np.vstack((self.edge_color, new_edge_colors))
                 new_face_colors = np.tile(
                     self._current_face_color, (adding, 1)
                 )
-                self.face_color = np.vstack(
-                    (self.face_color, new_face_colors),
-                )
-                self.sizes = np.concatenate((self._sizes, size), axis=0)
+                self.face_color = np.vstack((self.face_color, new_face_colors))
+                self.size = np.concatenate((self._size, size), axis=0)
         self._update_dims()
         self.events.data()
 
@@ -375,7 +373,7 @@ class Points(Layer):
     @property
     def current_edge_color(self) -> str:
         """Edge color of marker for the next added point."""
-        hex_ = rgb_to_hex(self._edge_color)[0]
+        hex_ = rgb_to_hex(self._current_edge_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
@@ -391,7 +389,7 @@ class Points(Layer):
     @property
     def current_face_color(self) -> str:
         """Face color of marker for the next added point."""
-        hex_ = rgb_to_hex(self._face_color)[0]
+        hex_ = rgb_to_hex(self._current_face_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
@@ -763,7 +761,7 @@ class Points(Layer):
         index = copy(self.selected_data)
         index.sort()
         if len(index) > 0:
-            self._sizes = np.delete(self._sizes, index, axis=0)
+            self._size = np.delete(self._size, index, axis=0)
             self.edge_color = np.delete(self.edge_color, index, axis=0)
             self.face_color = np.delete(self.face_color, index, axis=0)
             if self._value in self.selected_data:
@@ -793,18 +791,8 @@ class Points(Layer):
             )
             self.refresh()
 
-    def _copy_data(self):
-        """Copy selected points to clipboard."""
-        if len(self.selected_data) > 0:
-            self._clipboard = {
-                'data': deepcopy(self.data[self.selected_data]),
-                'edge_color': deepcopy(self.edge_color[self.selected_data]),
-                'face_color': deepcopy(self.face_color[self.selected_data]),
-                'size': deepcopy(self.size[self.selected_data]),
-                'indices': self.dims.indices,
-            }
-        else:
-            self._clipboard = {}
+    def _paste_data(self):
+        """Paste any point from clipboard and select them."""
         npoints = len(self._data_view)
         totpoints = len(self.data)
 
@@ -839,6 +827,19 @@ class Points(Layer):
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()
+
+    def _copy_data(self):
+        """Copy selected points to clipboard."""
+        if len(self.selected_data) > 0:
+            self._clipboard = {
+                'data': deepcopy(self.data[self.selected_data]),
+                'edge_color': deepcopy(self.edge_color[self.selected_data]),
+                'face_color': deepcopy(self.face_color[self.selected_data]),
+                'size': deepcopy(self.size[self.selected_data]),
+                'indices': self.dims.indices,
+            }
+        else:
+            self._clipboard = {}
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg
