@@ -7,12 +7,13 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
+This is a bugfix release to address issues that snuck through in 0.2.9.
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 Bugfixes
-*******
+********
 - remove calls to QPoint.toTuple which is invalid in PyQt5 (#866)
 - fix aspect ratio press (#871)
 - fix None label (#872)
