@@ -539,7 +539,7 @@ class Labels(Image):
             # If in pan/zoom mode do nothing
             pass
         elif self._mode == Mode.PICKER:
-            self.selected_label = self._value
+            self.selected_label = self._value or 0
         elif self._mode == Mode.PAINT:
             # Start painting with new label
             self._save_history()
