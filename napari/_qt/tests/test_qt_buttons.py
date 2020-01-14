@@ -14,7 +14,7 @@ def test_radio_button(qtbot):
     assert btn.property('mode') == 'test_button'
     assert btn.toolTip() == 'tooltip'
 
-    qtbot.mouseClick(btn, Qt.LeftButton)
+    btn.click()
     qtbot.wait(50)
     assert layer.mode == 'add'
 
@@ -32,6 +32,6 @@ def test_push_button(qtbot):
     assert btn.property('mode') == 'test_button'
     assert btn.toolTip() == 'tooltip'
 
-    qtbot.mouseClick(btn, Qt.LeftButton)
+    btn.click()
     qtbot.wait(50)
     assert layer.test_prop
