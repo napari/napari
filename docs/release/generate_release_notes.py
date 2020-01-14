@@ -227,6 +227,8 @@ contributors['reviewers'] = reviewers
 
 for section_name, contributor_set in contributors.items():
     print()
+    if None in contributor_set:
+        contributor_set.remove(None)
     committer_str = (
         f'{len(contributor_set)} {section_name} added to this '
         'release [alphabetical by first name or login]'

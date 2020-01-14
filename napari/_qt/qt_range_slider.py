@@ -84,7 +84,6 @@ class QRangeSlider(QWidget):
             else:
                 self.setGeometry(200, 200, 20, 200)
 
-    @property
     def range(self):
         """Min and max possible values for the slider range. In data units"""
         return self.data_range_min, self.data_range_max
@@ -93,7 +92,7 @@ class QRangeSlider(QWidget):
         """Min and max possible values for the slider range. In data units."""
         validate_2_tuple(values)
         self.data_range_min, self.data_range_max = values
-        self.rangeChanged.emit(values)
+        self.rangeChanged.emit(self.range())
         self.updateDisplayPositions()
 
     def values(self):
@@ -257,11 +256,11 @@ class QRangeSlider(QWidget):
         self.update()
 
     def _data_to_slider_value(self, value):
-        rmin, rmax = self.range
+        rmin, rmax = self.range()
         return (value - rmin) / self.scale
 
     def _slider_to_data_value(self, value):
-        rmin, rmax = self.range
+        rmin, rmax = self.range()
         return rmin + value * self.scale
 
     @property
