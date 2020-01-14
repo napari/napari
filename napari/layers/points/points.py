@@ -1,24 +1,24 @@
-from typing import Union, List, Tuple, AnyStr
-import warnings
+from typing import Union
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
 
-from vispy.color import Color, ColorArray
 import numpy as np
 
 from ..base import Layer
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
-from napari.utils.colormaps.standardize_color import (
+from ...utils.colormaps.standardize_color import (
     transform_color,
     hex_to_name,
     get_color_namelist,
     rgb_to_hex,
 )
-
-
-ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
+from ..utils.color_transformations import (
+    transform_color_with_defaults,
+    normalize_and_broadcast_colors,
+    ColorType,
+)
 
 
 class Points(Layer):
@@ -189,11 +189,11 @@ class Points(Layer):
         else:
             self._current_size = 10
 
-        self._current_edge_color = self._transform_color(
-            edge_color, "edge_color", "black"
+        self._current_edge_color = transform_color_with_defaults(
+            self.data, edge_color, "edge_color", "black"
         )
-        self._current_face_color = self._transform_color(
-            face_color, "face_color", "white"
+        self._current_face_color = transform_color_with_defaults(
+            self.data, face_color, "face_color", "white"
         )
 
         # Indices of selected points
@@ -226,8 +226,12 @@ class Points(Layer):
         self._is_selecting = False
         self._clipboard = {}
 
-        self.edge_color = self._tile_colors(self._current_edge_color)
-        self.face_color = self._tile_colors(self._current_face_color)
+        self.edge_color = normalize_and_broadcast_colors(
+            self.data, self._current_edge_color
+        )
+        self.face_color = normalize_and_broadcast_colors(
+            self.data, self._current_face_color
+        )
         self._current_edge_color = self.edge_color[-1]
         self._current_face_color = self.face_color[-1]
         self.size = size
@@ -372,7 +376,7 @@ class Points(Layer):
 
     @property
     def current_edge_color(self) -> str:
-        """Edge color of marker for the next added point."""
+        """Edge color of marker for the next added point or the selected point(s)."""
         hex_ = rgb_to_hex(self._current_edge_color)[0]
         return hex_to_name.get(hex_, hex_)
 
@@ -388,7 +392,7 @@ class Points(Layer):
 
     @property
     def current_face_color(self) -> str:
-        """Face color of marker for the next added point."""
+        """Face color of marker for the next added point or the selected point(s)."""
         hex_ = rgb_to_hex(self._current_face_color)[0]
         return hex_to_name.get(hex_, hex_)
 
@@ -936,63 +940,6 @@ class Points(Layer):
             else:
                 self.selected_data = []
             self._set_highlight(force=True)
-
-    def _transform_color(
-        self, colors: ColorType, elem_name: str, default: str
-    ) -> np.ndarray:
-        """Helper method to return a ColorArray from an arbitrary user input."""
-        try:
-            transformed = transform_color(colors)
-        except (AttributeError, ValueError, KeyError):
-            warnings.warn(
-                f"The provided {elem_name} parameter contained illegal values, "
-                f"reseting all {elem_name} values to {default}."
-            )
-            transformed = transform_color(default)
-        else:
-            if (len(transformed) != 1) and (
-                len(transformed) != len(self.data)
-            ):
-                warnings.warn(
-                    f"The provided {elem_name} parameter has {len(colors)} entries, "
-                    f"while the data contains {len(self.data)} entries. Setting {elem_name} to {default}."
-                )
-                transformed = transform_color(default)
-        return transformed
-
-    def _tile_colors(self, colors: ColorType) -> np.ndarray:
-        """Takes an input color array and forces into being the length of self.data.
-        Used when a single color is supplied for many input points, but we need
-        self.face_color \\ self.edge_color to have the shape of the actual data.
-
-        Parameters
-        --------
-        color : ColorType
-            The user's input after being normalized by self._transform_color
-
-        Returns
-        -----
-        tiled : np.ndarray
-            A tiled version (if needed) of the original input
-        """
-        data_len = len(self.data)
-        # len == 0 data is handled somewhere else
-        if (len(colors) == data_len) or (data_len == 0):
-            return np.asarray(colors)
-        # If the user has supplied a list of colors, but its length doesn't
-        # match the length of the data, we warn them and return a single
-        # color for all inputs
-        if len(colors) != 1:
-            warnings.warn(
-                f"The number of supplied colors mismatch the number of given"
-                f" data points. Length of data is {data_len}, while the number of colors"
-                f" is {len(colors)}. Color for all points is resetted to white."
-            )
-            tiled = np.ones((data_len, 4), dtype=np.float32)
-            return tiled
-        # All that's left is to deal with length=1 color inputs
-        tiled = np.tile(colors.ravel(), (data_len, 1))
-        return tiled
 
 
 def create_box(data):
