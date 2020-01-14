@@ -1,5 +1,3 @@
-from qtpy.QtCore import Qt
-
 from napari._qt.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from napari.layers import Points
 from napari.layers.points._constants import Mode
