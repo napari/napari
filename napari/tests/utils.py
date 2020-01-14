@@ -2,16 +2,6 @@ import napari
 import numpy as np
 from napari import Viewer
 from napari.layers import Image, Labels, Points, Shapes, Vectors, Surface
-from qtpy import API_NAME
-from sys import platform
-import os
-
-VIRTUAL_WIN_PYQT5 = (
-    os.environ.get('CI', False)
-    and (API_NAME == 'PyQt5')
-    and (platform == 'win32')
-)
-
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)

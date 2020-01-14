@@ -9,7 +9,17 @@ from napari.tests.utils import (
     layer_test_data,
 )
 
+from qtpy import API_NAME
+from sys import platform
+import os
 
+print(os.environ)
+
+
+@pytest.mark.skipif(
+    (API_NAME == 'PyQt5') and (platform == 'win32'),
+    reason='screenshot fails on virtualized (CI) PyQt5 win32',
+)
 def test_qt_viewer(qtbot):
     """Test instantiating viewer."""
     viewer = ViewerModel()
