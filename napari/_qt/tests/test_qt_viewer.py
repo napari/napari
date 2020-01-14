@@ -9,14 +9,7 @@ from napari.tests.utils import (
     layer_test_data,
 )
 
-from qtpy import API_NAME
-from sys import platform
 
-
-@pytest.mark.skipif(
-    (API_NAME == 'PyQt5') and (platform == 'win32'),
-    reason='screenshot fails on virtualized (CI) PyQt5 win32',
-)
 def test_qt_viewer(qtbot):
     """Test instantiating viewer."""
     viewer = ViewerModel()
@@ -148,6 +141,39 @@ def test_new_shapes(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+    view.shutdown()
+
+
+def test_screenshot(qtbot):
+    "Test taking a screenshot"
+    viewer = ViewerModel()
+    view = QtViewer(viewer)
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+
+    # Add labels
+    data = np.random.randint(20, size=(10, 15))
+    viewer.add_labels(data)
+
+    # Add points
+    data = 20 * np.random.random((10, 2))
+    viewer.add_points(data)
+
+    # Add vectors
+    data = 20 * np.random.random((10, 2, 2))
+    viewer.add_vectors(data)
+
+    # Add shapes
+    data = 20 * np.random.random((10, 4, 2))
+    viewer.add_shapes(data)
+
+    # Take screenshot
+    screenshot = view.screenshot()
+    assert screenshot.ndim == 3
     view.shutdown()
 
 
