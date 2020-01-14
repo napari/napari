@@ -393,7 +393,7 @@ def _check_color_dim(val):
 
     Returns
     ------
-    val_4cols : np.ndarray
+    val : np.ndarray
         A four columns version of the input array. If the original array
         was a missing the fourth channel, it's added as 1.0 values.
     """
@@ -401,8 +401,8 @@ def _check_color_dim(val):
     if val.shape[1] not in (3, 4):
         raise RuntimeError('Value must have second dimension of size 3 or 4')
     if val.shape[1] == 3:
-        val_4cols = np.column_stack([val, np.float32(1.0)])
-    return val_4cols
+        val = np.column_stack([val, np.float32(1.0)])
+    return val
 
 
 def rgb_to_hex(rgbs: Sequence) -> np.ndarray:
