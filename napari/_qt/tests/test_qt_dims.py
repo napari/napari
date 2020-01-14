@@ -210,7 +210,7 @@ def test_slider_press_updates_last_used(qtbot):
         assert view.last_used == i
 
 
-@pytest.skipif(
+@pytest.mark.skipif(
     os.environ.get('CI') and platform() == 'win32', 'not working in windows VM'
 )
 def test_play_button(qtbot):
