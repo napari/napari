@@ -332,33 +332,33 @@ def test_edge_color():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    ca_black = transform_color(['black'] * shape[0])
+    colorarray = transform_color(['black'] * shape[0])
     assert layer.current_edge_color == 'black'
     assert len(layer.edge_color) == shape[0]
-    np.testing.assert_allclose(ca_black, layer.edge_color)
+    np.testing.assert_allclose(colorarray, layer.edge_color)
 
     # With no data selected chaning edge color has no effect
     layer.current_edge_color = 'blue'
     assert layer.current_edge_color == 'blue'
-    np.testing.assert_allclose(ca_black, layer.edge_color)
+    np.testing.assert_allclose(colorarray, layer.edge_color)
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.current_edge_color == 'black'
     layer.current_edge_color = ColorArray('green')
-    ca_green = transform_color(['green'] * len(layer.selected_data))
-    np.testing.assert_allclose(ca_green, layer.edge_color[:2])
-    np.testing.assert_allclose(ca_black[2:], layer.edge_color[2:])
+    colorarray_green = transform_color(['green'] * len(layer.selected_data))
+    np.testing.assert_allclose(colorarray_green, layer.edge_color[:2])
+    np.testing.assert_allclose(colorarray[2:], layer.edge_color[2:])
 
     # Add new point and test its color
     coord = [18, 18]
     layer.selected_data = []
     layer.current_edge_color = 'blue'
     layer.add(coord)
-    ca_black = np.vstack([ca_black, transform_color('blue')])
+    colorarray = np.vstack([colorarray, transform_color('blue')])
     assert len(layer.edge_color) == shape[0] + 1
-    np.testing.assert_allclose(ca_green, layer.edge_color[:2])
-    np.testing.assert_allclose(ca_black[2:], layer.edge_color[2:])
+    np.testing.assert_allclose(colorarray_green, layer.edge_color[:2])
+    np.testing.assert_allclose(colorarray[2:], layer.edge_color[2:])
     np.testing.assert_allclose(
         transform_color("blue"), np.atleast_2d(layer.edge_color[10])
     )
@@ -402,33 +402,33 @@ def test_face_color():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
-    ca_white = transform_color(['white'] * shape[0])
+    colorarray = transform_color(['white'] * shape[0])
     assert layer.current_face_color == 'white'
     assert len(layer.face_color) == shape[0]
-    np.testing.assert_allclose(ca_white, layer.face_color)
+    np.testing.assert_allclose(colorarray, layer.face_color)
 
     # With no data selected chaning face color has no effect
     layer.current_face_color = 'blue'
     assert layer.current_face_color == 'blue'
-    np.testing.assert_allclose(ca_white, layer.face_color)
+    np.testing.assert_allclose(colorarray, layer.face_color)
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.current_face_color == 'white'
     layer.current_face_color = transform_color('green')
-    ca_green = transform_color(['green'] * len(layer.selected_data))
-    np.testing.assert_allclose(ca_green, layer.face_color[:2])
-    np.testing.assert_allclose(ca_white[2:], layer.face_color[2:])
+    colorarray_green = transform_color(['green'] * len(layer.selected_data))
+    np.testing.assert_allclose(colorarray_green, layer.face_color[:2])
+    np.testing.assert_allclose(colorarray[2:], layer.face_color[2:])
 
     # Add new point and test its color
     coord = [18, 18]
     layer.selected_data = []
     layer.current_face_color = 'blue'
     layer.add(coord)
-    ca_white = np.vstack((ca_white, transform_color('blue')))
+    colorarray = np.vstack((colorarray, transform_color('blue')))
     assert len(layer.face_color) == shape[0] + 1
-    np.testing.assert_allclose(ca_green, layer.face_color[:2])
-    np.testing.assert_allclose(ca_white[2:], layer.face_color[2:])
+    np.testing.assert_allclose(colorarray_green, layer.face_color[:2])
+    np.testing.assert_allclose(colorarray[2:], layer.face_color[2:])
     np.testing.assert_allclose(
         transform_color("blue"), np.atleast_2d(layer.face_color[10])
     )

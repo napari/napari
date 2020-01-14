@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from vispy.color import ColorArray
 
-from napari.layers.util.color_transformations import (
+from napari.layers.utils.color_transformations import (
     transform_color_with_defaults,
     normalize_and_broadcast_colors,
 )

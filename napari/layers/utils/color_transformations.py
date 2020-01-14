@@ -24,7 +24,7 @@ def transform_color_with_defaults(
     Parameters
     --------
     num_entries : int
-        The layer's number of data elements
+        The number of data elements in the layer
     colors : ColorType
         The wanted colors for each of the data points
     elem_name : str
@@ -61,12 +61,16 @@ def normalize_and_broadcast_colors(
     """Takes an input color array and forces into being the length of ``data``.
 
     Used when a single color is supplied for many input objects, but we need
-    Layer.current_face_color \\ Layer.current_edge_color to have the shape of the actual data.
+    Layer.current_face_color or Layer.current_edge_color to have the shape of
+    the actual data.
+
+    Note: This function can't successfully parse use input, and thus should
+    always be used on the output of ``transform_color_with_defaults``.
 
     Parameters
     --------
     num_entries : int
-        The layer's number of data elements
+        The number of data elements in the layer
     color : ColorType
         The user's input after being normalized by transform_color_with_defaults
 
@@ -85,7 +89,7 @@ def normalize_and_broadcast_colors(
         warnings.warn(
             f"The number of supplied colors mismatch the number of given"
             f" data points. Length of data is {num_entries}, while the number of colors"
-            f" is {len(colors)}. Color for all points is resetted to white."
+            f" is {len(colors)}. Color for all points is reset to white."
         )
         tiled = np.ones((num_entries, 4), dtype=np.float32)
         return tiled
