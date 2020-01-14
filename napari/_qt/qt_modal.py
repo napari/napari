@@ -1,7 +1,6 @@
-from qtpy.QtCore import Qt, QPoint
-from qtpy.QtWidgets import QVBoxLayout, QDialog, QFrame
-from qtpy.QtGui import QCursor
-from .utils import find_ancestor_mainwindow
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtGui import QCursor, QGuiApplication
+from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 
 
 class QtPopup(QDialog):
@@ -40,7 +39,7 @@ class QtPopup(QDialog):
         self.move(pos)
         self.show()
 
-    def show_at(self, position='top', *, width_ratio=0.9):
+    def show_at(self, position='top', *, win_ratio=0.9, min_length=0):
         """Show popup at a position relative to the QMainWindow.
 
         Parameters
@@ -49,11 +48,14 @@ class QtPopup(QDialog):
             position in the QMainWindow to show the pop, by default 'top'
             if str: must be one of {'top', 'bottom', 'left', 'right' }
             if tuple: must be length 4 with (left, top, width, height)
-        width_ratio : float, optional
+        win_ratio : float, optional
             Fraction of the width (for position = top/bottom) or height (for
             position = left/right) of the QMainWindow that the popup will
             occupy.  Only valid when isinstance(position, str).
             by default 0.9
+        min_length : int, optional
+            Minimum size of the long dimension (width for top/bottom or
+            height fort left/right).
 
         Raises
         ------
@@ -62,35 +64,33 @@ class QtPopup(QDialog):
             {'top', 'bottom', 'left', 'right' }
         """
         if isinstance(position, str):
-            main_window = find_ancestor_mainwindow(self)
-            if main_window:
-                xy = main_window.pos()
-                width = main_window.width()
-                height = main_window.height()
-            else:
-                # fallback... at least show something.  This partially to make
-                # testing easier
-                xy = QPoint(200, 200)
-                width = 600
-                height = 60
-            if position == 'top':
-                width = width * width_ratio
+            window = self.parent().window() if self.parent() else None
+            if not window:
+                raise ValueError(
+                    "Specifying position as a string is only posible if "
+                    "the popup has a parent"
+                )
+            left = window.pos().x()
+            top = window.pos().y()
+            if position in ('top', 'bottom'):
+                width = window.width() * win_ratio
+                width = max(width, min_length)
+                left += (window.width() - width) / 2
                 height = self.sizeHint().height()
-                xy = xy + QPoint(width * (1 - width_ratio) / 2, 24)
-            elif position == 'bottom':
-                width = width * width_ratio
-                height = self.sizeHint().height()
-                y = height - self.height() - 2
-                xy = xy + QPoint(width * (1 - width_ratio) / 2, y)
-            elif position == 'left':
+                top += (
+                    24
+                    if position == 'top'
+                    else (window.height() - height - 12)
+                )
+            elif position in ('left', 'right'):
+                height = window.height() * win_ratio
+                height = max(height, min_length)
+                # 22 is for the title bar
+                top += 22 + (window.height() - height) / 2
                 width = self.sizeHint().width()
-                height = height * width_ratio
-                xy = xy + QPoint(12, height * (1 - width_ratio) / 2)
-            elif position == 'right':
-                width = self.sizeHint().width()
-                height = height * width_ratio
-                x = width - width - 12
-                xy = xy + QPoint(x, height * (1 - width_ratio) / 2)
+                left += (
+                    12 if position == 'left' else (window.width() - width - 12)
+                )
             else:
                 raise ValueError(
                     'position must be one of '
@@ -98,12 +98,15 @@ class QtPopup(QDialog):
                 )
         elif isinstance(position, (tuple, list)):
             assert len(position) == 4, '`position` argument must have length 4'
-            x, y, width, height = position
-            xy = QPoint(x, y)
+            left, top, width, height = position
 
         # necessary for transparent round corners
         self.resize(self.sizeHint())
-        self.setGeometry(xy.x(), xy.y(), max(width, 20), max(height, 20))
+        # make sure the popup is completely on the screen
+        screen_size = QGuiApplication.screenAt(QCursor.pos()).size()
+        left = max(min(screen_size.width() - width, left), 0)
+        top = max(min(screen_size.height() - height, top), 0)
+        self.setGeometry(left, top, width, height)
         self.show()
 
     def keyPressEvent(self, event):
