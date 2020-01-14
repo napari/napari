@@ -190,10 +190,10 @@ class Points(Layer):
             self._current_size = 10
 
         self._current_edge_color = transform_color_with_defaults(
-            self.data, edge_color, "edge_color", "black"
+            len(self.data), edge_color, "edge_color", "black"
         )
         self._current_face_color = transform_color_with_defaults(
-            self.data, face_color, "face_color", "white"
+            len(self.data), face_color, "face_color", "white"
         )
 
         # Indices of selected points
@@ -227,10 +227,10 @@ class Points(Layer):
         self._clipboard = {}
 
         self.edge_color = normalize_and_broadcast_colors(
-            self.data, self._current_edge_color
+            len(self.data), self._current_edge_color
         )
         self.face_color = normalize_and_broadcast_colors(
-            self.data, self._current_face_color
+            len(self.data), self._current_face_color
         )
         self._current_edge_color = self.edge_color[-1]
         self._current_face_color = self.face_color[-1]

@@ -17,14 +17,14 @@ ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
 
 
 def transform_color_with_defaults(
-    data: np.ndarray, colors: ColorType, elem_name: str, default: str
+    num_entries: int, colors: ColorType, elem_name: str, default: str
 ) -> np.ndarray:
     """Helper method to return an Nx4 np.array from an arbitrary user input.
 
     Parameters
     --------
-    data : np.ndarray
-        The layer's data
+    num_entries : int
+        The layer's number of data elements
     colors : ColorType
         The wanted colors for each of the data points
     elem_name : str
@@ -46,17 +46,17 @@ def transform_color_with_defaults(
         )
         transformed = transform_color(default)
     else:
-        if (len(transformed) != 1) and (len(transformed) != len(data)):
+        if (len(transformed) != 1) and (len(transformed) != num_entries):
             warnings.warn(
                 f"The provided {elem_name} parameter has {len(colors)} entries, "
-                f"while the data contains {len(data)} entries. Setting {elem_name} to {default}."
+                f"while the data contains {num_entries} entries. Setting {elem_name} to {default}."
             )
             transformed = transform_color(default)
     return transformed
 
 
 def normalize_and_broadcast_colors(
-    data: np.ndarray, colors: ColorType
+    num_entries: int, colors: ColorType
 ) -> np.ndarray:
     """Takes an input color array and forces into being the length of ``data``.
 
@@ -65,6 +65,8 @@ def normalize_and_broadcast_colors(
 
     Parameters
     --------
+    num_entries : int
+        The layer's number of data elements
     color : ColorType
         The user's input after being normalized by transform_color_with_defaults
 
@@ -73,9 +75,8 @@ def normalize_and_broadcast_colors(
     tiled : np.ndarray
         A tiled version (if needed) of the original input
     """
-    data_len = len(data)
     # len == 0 data is handled somewhere else
-    if (len(colors) == data_len) or (data_len == 0):
+    if (len(colors) == num_entries) or (num_entries == 0):
         return np.asarray(colors)
     # If the user has supplied a list of colors, but its length doesn't
     # match the length of the data, we warn them and return a single
@@ -83,11 +84,11 @@ def normalize_and_broadcast_colors(
     if len(colors) != 1:
         warnings.warn(
             f"The number of supplied colors mismatch the number of given"
-            f" data points. Length of data is {data_len}, while the number of colors"
+            f" data points. Length of data is {num_entries}, while the number of colors"
             f" is {len(colors)}. Color for all points is resetted to white."
         )
-        tiled = np.ones((data_len, 4), dtype=np.float32)
+        tiled = np.ones((num_entries, 4), dtype=np.float32)
         return tiled
     # All that's left is to deal with length=1 color inputs
-    tiled = np.tile(colors.ravel(), (data_len, 1))
+    tiled = np.tile(colors.ravel(), (num_entries, 1))
     return tiled
