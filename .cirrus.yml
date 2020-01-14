@@ -79,7 +79,12 @@ task:
     - pip list
     - python -c "import napari; print(napari.__version__)"
 
-  test_script:
+  test_pyside2_script:
+    - pytest -v
+
+  test_pyqt5_script:
+    - pip uninstall -y pyside2
+    - pip install pyqt5
     - pytest -v
 
 
