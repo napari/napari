@@ -47,8 +47,8 @@ if sys.version_info < (3, 6):
         f'You are using Python '
         + "{'.'.join(str(v) for v in sys.version_info[:3])}.\n\n"
         + 'napari only supports Python 3.6 and above.\n\n'
-        + 'Please install Python 3.6 using:\n'
-        + '  $ pip install python==3.6\n\n'
+        + 'Please install Python 3.6 or later!\n'
+        + '(visit https://python.org/downloads)'
     )
     sys.exit(1)
 
