@@ -125,7 +125,7 @@ windows_task:
     - python -m pip install --retries 3 --upgrade pip
 
   pip_cache:
-    folder: %LOCALAPPDATA%\pip\Cache
+    folder: $LOCALAPPDATA\pip\Cache
     fingerprint_script: echo %PY_VER% && type requirements/default.txt && type requirements/development.txt && type requirements/test.txt
     populate_script: pip install --retries 3 -r requirements.txt
 
