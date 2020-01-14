@@ -221,7 +221,6 @@ class Shape(ABC):
         else:
             rgb = tuple([int(255 * x) for x in self._edge_color.rgba[:3]])
             self._edge_color_name = '#%02x%02x%02x' % rgb
-        self._edge_color = self._edge_color.rgba
 
     @property
     def face_color(self):
@@ -237,7 +236,6 @@ class Shape(ABC):
         else:
             rgb = tuple([int(255 * x) for x in self._face_color.rgba[:3]])
             self._face_color_name = '#%02x%02x%02x' % rgb
-        self._face_color = self._face_color.rgba
 
     @property
     def opacity(self):

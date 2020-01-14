@@ -4,10 +4,10 @@ which a user can try to use as an argument to face_color and edge_color
 in the relevant layers. The idea is to parameterize the tests over these
 options.
 
-Vispy has a few bugs that we're trying to overcome. First it doesn't
-parse lists like [Color('red'), Color('red')]. Second, the color of 'g' and
-'green' is different. We're consistent with vispy's behavior ATM, but it
-might change in a future release.
+Vispy has a few bugs/limitations that we're trying to overcome. First, it
+doesn't parse lists like [Color('red'), Color('red')]. Second, the color of
+'g' and 'green' is different. We're consistent with vispy's behavior ATM,
+but it might change in a future release.
 """
 from vispy.color import Color, ColorArray
 import numpy as np

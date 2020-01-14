@@ -1,31 +1,37 @@
 """This module contains functions that 'standardize' the color handling
 of napari layers by supplying functions that are able to convert most
 color representation the user had in mind into a single representation -
-a numpy Nx4 array of float32 values - that is used across the codebase.
+a numpy Nx4 array of float32 values between 0 and 1 - that is used across
+the codebase.
 
 The main function of the module is "transform_color", which might call
 a cascade of other, private, function in the module to do the hard work
-of converting the input.
+of converting the input. This function will either be called directly, or
+used by the function "transform_color_with_defaults", which is a helper
+function for the layer objects located in
+``layers.utils.color_transformations.py``.
 
-In general, we try to catch invalid color representations, warn the users
-of their misbehaving and return a default white color array, since it seems
-unreasonable to crash the entire napari session to mis-represented colors.
+In general, when handling colors we try to catch invalid color
+representations, warn the users of their misbehaving and return a default
+white color array, since it seems unreasonable to crash the entire napari
+session due to mis-represented colors.
 """
 
 import types
-from typing import Iterable, Union, Dict, Any, Callable
+from typing import Dict, Any, Callable, Sequence
 import functools
 import warnings
 
 import numpy as np
-from vispy.color import Color, ColorArray, get_color_dict, get_color_names
+from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
 
 def transform_color(colors: Any) -> np.ndarray:
-    """Receives the user-given colors and transforms them into an array of
-    Nx4 np.float32 values, with N being the number of colors. The function
-    (via its subfunctions, marked with _handle_X) is designed to parse all
+    """Transforms provided color(s) to an Nx4 array of RGBA np.float32
+    values.
+
+    N is the number of given colors. The function is designed to parse all
     valid color representations a user might have and convert them properly.
     That being said, combinations of different color representation in the
     same list of colors is prohibited, and will error. This means that a list
@@ -34,7 +40,7 @@ def transform_color(colors: Any) -> np.ndarray:
 
     Parameters
     --------
-    colors : string, array-like, Color and ColorArray instances, or a mix of the above.
+    colors : string and array-like.
         The color(s) to interpret and convert
 
     Returns
@@ -55,45 +61,68 @@ def transform_color(colors: Any) -> np.ndarray:
 
 @functools.lru_cache(maxsize=1024)
 def _handle_str(color: str) -> np.ndarray:
-    """Creates an array from a color that was given as a string."""
+    """Creates an array from a color of type string.
+
+    The function uses an LRU cache to enhance performance.
+
+    Parameters
+    --------
+    color : str
+        A single string as an input color. Can be a color name or a
+        hex representation of a color, with either 6 or 8 hex digits.
+
+    Returns
+    ------
+    colorarray : np.ndarray
+        1x4 array
+
+    """
+    if len(color) == 0:
+        warnings.warn("Empty string detected. Returning black instead.")
+        return np.zeros((1, 4), dtype=np.float32)
     # This line will stay here until vispy adds a "transparent" key
     # to their color dictionary. A PR was sent and approved, currently
     # waiting to be merged.
-    if len(color) == 0:
-        warnings.warn(
-            "Empty string detected. Returning a black color instead."
-        )
-        return np.zeros((1, 4), dtype=np.float32)
     color = color.replace("transparent", "#00000000")
-    as_arr = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
-    if as_arr.shape[1] == 3:
-        as_arr = np.column_stack([as_arr, np.float32(1.0)])
-    return as_arr
+    colorarray = np.atleast_2d(_string_to_rgb(color)).astype(np.float32)
+    if colorarray.shape[1] == 3:
+        colorarray = np.column_stack([colorarray, np.float32(1.0)])
+    return colorarray
 
 
-def _handle_list_like(colors: Iterable) -> np.ndarray:
-    """Handles all list-like containers of colors, using recursion. Numpy
-    arrays are handled in _handle_array. Lists which are known to contain
-    strings will be parsed with _handle_str_list_like.
+def _handle_list_like(colors: Sequence) -> np.ndarray:
+    """Parse a list-like container of colors into a numpy Nx4 array.
+
+    Handles all list-like containers of colors using recursion (if necessary).
+    The colors inside the container should all be represented in the same
+    manner. This means that a list containing ['r', (1., 1., 1.)] will raise
+    an error. Note that numpy arrays are handled in _handle_array. Lists which
+    are known to contain strings will be parsed with _handle_str_list_like.
+    Generators should first visit _handle_generator before arriving as input.
+
+    Parameters
+    --------
+    colors : Sequence
+        A list-like container of colors. The colors inside should be homogeneuous
+        in their representation.
+
+    Returns
+    ------
+    color_array : np.ndarray
+        Nx4 numpy array, with N being the length of ``colors``.
     """
     try:
         # The following conversion works for most cases, and so it's expected
         # that most valid inputs will pass this .asarray() call
-        # with ease. Those who don't are usually too cryptic to decipher. The
-        # only exception is a list-like container with Vispy's Color and
-        # ColorArray which is considered valid.
+        # with ease. Those who don't are usually too cryptic to decipher.
         color_array = np.atleast_2d(np.asarray(colors))
     except ValueError:
-        if type(colors[0]) in (Color, ColorArray):
-            color_array = np.vstack([c.rgba for c in colors])
-            return color_array
-        else:
-            warnings.warn(
-                "Coudln't convert input color array to a proper numpy array."
-                " Please make sure that your input data is in a parsable format."
-                " Converting input to a white color array."
-            )
-            return np.ones((max(len(colors), 1), 4), dtype=np.float32)
+        warnings.warn(
+            "Coudln't convert input color array to a proper numpy array."
+            " Please make sure that your input data is in a parsable format."
+            " Converting input to a white color array."
+        )
+        return np.ones((max(len(colors), 1), 4), dtype=np.float32)
 
     # Happy path - converted to a float\integer array
     if color_array.dtype.kind in ['f', 'i']:
@@ -102,11 +131,6 @@ def _handle_list_like(colors: Iterable) -> np.ndarray:
     # User input was an iterable with strings
     if color_array.dtype.kind in ['U', 'O']:
         return _handle_str_list_like(color_array.ravel())
-
-
-def _handle_vispy_color(colors: Union[Color, ColorArray]) -> np.ndarray:
-    """Convert vispy's types to plain numpy arrays."""
-    return np.atleast_2d(colors.rgba)
 
 
 def _handle_generator(colors) -> np.ndarray:
@@ -205,11 +229,23 @@ def _handle_array(colors: np.ndarray) -> np.ndarray:
 
 
 def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
-    """This function deals with arrays which are already 'well-behaved',
-    i.e have (almost) the correct number of columns and are able to represent
-    colors correctly, and then it makes sure that the array indeed has exactly
+    """Asserts shape, dtype and normalization of given color array.
+
+    This function deals with arrays which are already 'well-behaved',
+    i.e. have (almost) the correct number of columns and are able to represent
+    colors correctly. It then it makes sure that the array indeed has exactly
     four columns and that its values are normalized between 0 and 1, with a
     data type of float32.
+
+    Parameters
+    --------
+    colors : np.ndarray
+        Input color array, perhaps un-normalized and without the alpha channel.
+
+    Returns
+    ------
+    colors : np.ndarray
+        Nx4, float32 color array with values in the range [0, 1]
     """
     if colors.shape[1] == 3:
         colors = np.column_stack(
@@ -229,8 +265,20 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
     return np.atleast_2d(np.asarray(colors, dtype=np.float32))
 
 
-def _handle_str_list_like(colors: Iterable) -> np.ndarray:
-    """Handles lists or arrays filled with strings."""
+def _handle_str_list_like(colors: Sequence) -> np.ndarray:
+    """Converts lists or arrays filled with strings to the proper color array
+    format.
+
+    Parameters
+    ---------
+    colors : list-like
+        A sequence of string colors
+
+    Returns
+    ------
+    color_array : np.ndarray
+        Nx4, float32 color array
+    """
     color_array = np.empty((len(colors), 4), dtype=np.float32)
     for idx, c in enumerate(colors):
         try:
@@ -241,7 +289,19 @@ def _handle_str_list_like(colors: Iterable) -> np.ndarray:
 
 
 def _handle_none(color) -> np.ndarray:
-    """A None color is assumed to be black."""
+    """Converts color given as None to black.
+
+    Parameters
+    --------
+    color : NoneType
+        None value given as a color
+
+    Returns
+    ------
+    arr : np.ndarray
+        1x4 numpy array of float32 zeros
+
+    """
     return np.zeros((1, 4), dtype=np.float32)
 
 
@@ -249,8 +309,18 @@ def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     """Normalizes all array values in the range [0, 1].
 
     The added complexity here stems from the fact that if a row in the given
-    array contains four identical value a simple normalization will raise a
+    array contains four identical value a simple normalization might raise a
     division by zero exception.
+
+    Parameters
+    --------
+    colors : np.ndarray
+        A numpy array with values possibly outside the range of [0, 1]
+
+    Returns
+    ------
+    colors : np.ndarray
+        Same input array but with normalized values
     """
     colors = colors.astype(np.float32)
     out_of_bounds_idx = np.unique(np.where((colors > 1) | (colors < 0))[0])
@@ -268,14 +338,12 @@ _color_switch: Dict[Any, Callable] = {
     tuple: _handle_list_like,
     types.GeneratorType: _handle_generator,
     np.ndarray: _handle_array,
-    Color: _handle_vispy_color,
-    ColorArray: _handle_vispy_color,
     type(None): _handle_none,
 }
 
 
 def _convert_color_hex_to_name():
-    """Create a dictionary converting hexadecimal RGB colors into their
+    """Create a dictionary mapping hexadecimal RGB colors into their
     'official' name.
 
     Returns
@@ -288,12 +356,19 @@ def _convert_color_hex_to_name():
 
 
 def get_color_namelist():
-    """A simple wrapper around vispy's get_color_names. It also adds the
-    'transparent' color to that list. Once https://github.com/vispy/vispy/pull/1794
-    is merged this function is no longer necessary.
+    """A wrapper around vispy's get_color_names designed to add a
+    "transparent" (alpha = 0) color to it.
+
+    Once https://github.com/vispy/vispy/pull/1794 is merged this
+    function is no longer necessary.
+
+    Returns
+    ------
+    color_dict : list
+        A list of all valid vispy color names plus "transparent".
     """
     names = get_color_names()
-    names.append("transparent")
+    names.append('transparent')
     return names
 
 
@@ -309,18 +384,44 @@ def hsv_to_rgb():
 
 
 def _check_color_dim(val):
-    """Ensure val is Nx(n_col), usually Nx3"""
+    """Ensures input is Nx4.
+
+    Parameters
+    --------
+    val : np.ndarray
+        A color array of possibly less than 4 columns
+
+    Returns
+    ------
+    val_4cols : np.ndarray
+        A four columns version of the input array. If the original array
+        was a missing the fourth channel, it's added as 1.0 values.
+    """
     val = np.atleast_2d(val)
     if val.shape[1] not in (3, 4):
         raise RuntimeError('Value must have second dimension of size 3 or 4')
     if val.shape[1] == 3:
-        val = np.column_stack([val, np.float32(1.0)])
-    return val
+        val_4cols = np.column_stack([val, np.float32(1.0)])
+    return val_4cols
 
 
-def rgb_to_hex(rgbs):
-    """Convert rgb to hex triplet. Taken from vispy with slight
-    modifications."""
+def rgb_to_hex(rgbs: Sequence) -> np.ndarray:
+    """Convert RGB to hex quadruplet.
+
+    Taken from vispy with slight modifications.
+
+    Parameters
+    --------
+    rgbs : Sequence
+        A list-like container of colors in RGBA format with values
+        between [0, 1]
+
+    Returns
+    ------
+    arr : np.ndarray
+        An array of the hex representation of the input colors
+
+    """
     rgbs = _check_color_dim(rgbs)
     return np.array(
         [
