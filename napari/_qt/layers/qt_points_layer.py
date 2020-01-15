@@ -173,6 +173,16 @@ class QtPointsControls(QtLayerControls):
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event):
+        """Changes the element's edge color based on the new value provided
+        by the user.
+
+        The new color (read from layer.current_edge_color) is a string -
+        either the color's name or its hex representation. This color has
+        already been verified by "transform_color". This value has to be
+        looked up in the color list of the layer and displayed in the
+        combobox. If it's not in the combobox the method will add it and
+        then display it, for future use.
+        """
         color = self.layer.current_edge_color
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
@@ -183,6 +193,16 @@ class QtPointsControls(QtLayerControls):
         self.edgeColorSwatch.setStyleSheet(f"background-color: {color}")
 
     def _on_face_color_change(self, event):
+        """Changes the element's face color based on the new value provided
+        by the user.
+
+        The new color (read from layer.current_face_color) is a string -
+        either the color's name or its hex representation. This color has
+        already been verified by "transform_color". This value has to be
+        looked up in the color list of the layer and displayed in the
+        combobox. If it's not in the combobox the method will add it and
+        then display it, for future use.
+        """
         color = self.layer.current_face_color
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(color, Qt.MatchFixedString)
