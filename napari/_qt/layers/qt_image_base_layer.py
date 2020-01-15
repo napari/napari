@@ -71,7 +71,7 @@ class QtBaseImageControls(QtLayerControls):
             self.clim_pop.layout.addWidget(reset)
             if fullrange is not None:
                 self.clim_pop.layout.addWidget(fullrange)
-            self.clim_pop.show_at('top')
+            self.clim_pop.show_at('top', min_length=650)
         else:
             return QHRangeSlider.mousePressEvent(
                 self.contrastLimitsSlider, event
