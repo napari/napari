@@ -225,7 +225,7 @@ def test_play_button(qtbot):
     qtbot.wait(200)
     assert view.is_playing
     with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
-        button.click()
+        qtbot.mouseClick(button, Qt.LeftButton)
 
     qtbot.wait(200)
     assert not view.is_playing
