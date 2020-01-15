@@ -54,14 +54,16 @@ def test_range_popup_clim_buttons(qtbot, layer):
 
     # pressing the reset button returns the clims to the default values
     reset_button = qtctrl.clim_pop.findChild(QPushButton, "reset_clims_button")
-    qtbot.mouseClick(reset_button, Qt.LeftButton)
+    reset_button.click()
+    qtbot.wait(20)
     assert tuple(qtctrl.contrastLimitsSlider.values()) == original_clims
 
     rangebtn = qtctrl.clim_pop.findChild(QPushButton, "full_clim_range_button")
     # the data we created above was uint16 for Image, and float for Surface
     # Surface will not have a "full range button"
     if np.issubdtype(layer.dtype, np.integer):
-        qtbot.mouseClick(rangebtn, Qt.LeftButton)
+        rangebtn.click()
+        qtbot.wait(20)
         assert tuple(layer.contrast_limits_range) == (0, 2 ** 16 - 1)
         assert tuple(qtctrl.contrastLimitsSlider.range()) == (0, 2 ** 16 - 1)
     else:
