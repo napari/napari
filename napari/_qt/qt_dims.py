@@ -316,7 +316,7 @@ class QtDims(QWidget):
         # doing manual check here to avoid issue in StringEnum
         # see https://github.com/napari/napari/issues/754
         if loop_mode is not None:
-            _modes = [str(mode) for mode in LoopMode]
+            _modes = LoopMode.keys()
             if loop_mode not in _modes:
                 raise ValueError(
                     f'loop_mode must be one of {_modes}.  Got: {loop_mode}'

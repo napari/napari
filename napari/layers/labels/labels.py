@@ -177,9 +177,9 @@ class Labels(Image):
         self._update_dims()
         self._set_editable()
 
-        self.dims.events.ndisplay.connect(lambda e: self._reset_history())
-        self.dims.events.order.connect(lambda e: self._reset_history())
-        self.dims.events.axis.connect(lambda e: self._reset_history())
+        self.dims.events.ndisplay.connect(self._reset_history)
+        self.dims.events.order.connect(self._reset_history)
+        self.dims.events.axis.connect(self._reset_history)
 
     @property
     def contiguous(self):
@@ -330,7 +330,7 @@ class Labels(Image):
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
         self.status = str(mode)
         self._mode = mode
@@ -383,7 +383,7 @@ class Labels(Image):
             col = self.colormap[1][val].rgba[0]
         return col
 
-    def _reset_history(self):
+    def _reset_history(self, event=None):
         self._undo_history = deque()
         self._redo_history = deque()
 
@@ -539,7 +539,7 @@ class Labels(Image):
             # If in pan/zoom mode do nothing
             pass
         elif self._mode == Mode.PICKER:
-            self.selected_label = self._value
+            self.selected_label = self._value or 0
         elif self._mode == Mode.PAINT:
             # Start painting with new label
             self._save_history()
@@ -550,7 +550,7 @@ class Labels(Image):
             # Fill clicked on region with new label
             self.fill(self.coordinates, self._value, self.selected_label)
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.

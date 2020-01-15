@@ -75,10 +75,10 @@ class Shape(ABC):
     ----------
     _edge_color_name : str
         Name of edge color or six digit hex code representing edge color if not
-        recongnized
+        recognized
     _face_color_name : str
         Name of edge color or six digit hex code representing face color if not
-        recongnized
+        recognized
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray
