@@ -148,7 +148,7 @@ def test_play_api(qtbot, view):
     view.dims._frame = 0
 
     def increment(e):
-        view.dims._frame = e.value  # this is provided by the axis event
+        view.dims._frame += 1
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True
 

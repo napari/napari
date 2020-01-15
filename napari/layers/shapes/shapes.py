@@ -295,9 +295,9 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
-        self.events.deselect.connect(lambda x: self._finish_drawing())
-        self.events.face_color.connect(lambda e: self._update_thumbnail())
-        self.events.edge_color.connect(lambda e: self._update_thumbnail())
+        self.events.deselect.connect(self._finish_drawing)
+        self.events.face_color.connect(self._update_thumbnail)
+        self.events.edge_color.connect(self._update_thumbnail)
 
         self.add(
             data,
@@ -574,7 +574,7 @@ class Shapes(Layer):
                 'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
             )
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
         self.status = str(mode)
         self._mode = mode
@@ -925,7 +925,7 @@ class Shapes(Layer):
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()
 
-    def _finish_drawing(self):
+    def _finish_drawing(self, event=None):
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
         self._is_moving = False
@@ -954,7 +954,7 @@ class Shapes(Layer):
         self._is_creating = False
         self._update_dims()
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self, event=None):
         """Update thumbnail with current points and colors."""
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the shapes
@@ -1648,7 +1648,7 @@ class Shapes(Layer):
                         self._selected_box = self.interaction_box(shapes)
                 self.refresh()
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -1700,7 +1700,7 @@ class Shapes(Layer):
         elif self._mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self._set_highlight()
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -1767,4 +1767,4 @@ class Shapes(Layer):
         ):
             pass
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")

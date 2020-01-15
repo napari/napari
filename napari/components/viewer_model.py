@@ -85,18 +85,18 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(lambda e: self.reset_view())
-        self.dims.events.ndisplay.connect(lambda e: self._update_layers())
-        self.dims.events.order.connect(lambda e: self._update_layers())
-        self.dims.events.axis.connect(lambda e: self._update_layers())
+        self.dims.events.camera.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.order.connect(self._update_layers)
+        self.dims.events.axis.connect(self._update_layers)
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
         self.layers.events.added.connect(self._update_active_layer)
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
-        self.layers.events.added.connect(lambda e: self._update_grid())
-        self.layers.events.removed.connect(lambda e: self._update_grid())
-        self.layers.events.reordered.connect(lambda e: self._update_grid())
+        self.layers.events.added.connect(self._update_grid)
+        self.layers.events.removed.connect(self._update_grid)
+        self.layers.events.reordered.connect(self._update_grid)
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
@@ -268,7 +268,7 @@ class ViewerModel(KeymapMixin):
 
         return size, corner
 
-    def reset_view(self):
+    def reset_view(self, event=None):
         """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
@@ -1011,7 +1011,7 @@ class ViewerModel(KeymapMixin):
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
-    def _update_layers(self, layers=None):
+    def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.
 
         Parameters
@@ -1200,7 +1200,7 @@ class ViewerModel(KeymapMixin):
         """
         self.grid_view(n_row=1, n_column=1, stride=1)
 
-    def _update_grid(self):
+    def _update_grid(self, event=None):
         """Update grid with current grid values.
         """
         self.grid_view(
