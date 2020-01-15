@@ -252,9 +252,9 @@ class Shape(ABC):
         """dict: color and width properties in the svg specification
         """
         width = str(self.edge_width)
-        face_color = (255 * self.face_color).astype(np.int)
+        face_color = (255 * self.face_color.rgba).astype(np.int)
         fill = f'rgb{tuple(face_color[:3])}'
-        edge_color = (255 * self.edge_color).astype(np.int)
+        edge_color = (255 * self.edge_color.rgba).astype(np.int)
         stroke = f'rgb{tuple(edge_color[:3])}'
         opacity = str(self.opacity)
 

@@ -505,11 +505,11 @@ class ShapeList:
         """
         self.shapes[index].opacity = opacity
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
-        color = ColorArray(self.shapes[index].edge_color).rgba[0]
+        color = self.shapes[index].edge_color.rgba
         self._mesh.triangles_colors[indices, 3] = color[3] * opacity
 
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
-        color = self.shapes[index].face_color
+        color = self.shapes[index].face_color.rgba
         self._mesh.triangles_colors[indices, 3] = color[3] * opacity
         self._update_displayed()
 
@@ -839,10 +839,10 @@ class ShapeList:
                     colors_shape, zoom_factor=zoom_factor, offset=offset
                 )
                 if type(self.shapes[ind]) in [Path, Line]:
-                    col = self.shapes[ind].edge_color
+                    col = self.shapes[ind].edge_color.rgba
                     col[3] = col[3] * self.shapes[ind].opacity
                 else:
-                    col = self.shapes[ind].face_color
+                    col = self.shapes[ind].face_color.rgba
                     col[3] = col[3] * self.shapes[ind].opacity
                 colors[mask, :] = col
 

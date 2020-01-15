@@ -2,7 +2,6 @@ from copy import copy
 from xml.etree.ElementTree import Element
 
 import numpy as np
-from vispy.color import ColorArray
 
 from napari.layers import Points
 from napari.utils.colormaps.standardize_color import transform_color
@@ -345,7 +344,7 @@ def test_edge_color():
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.current_edge_color == 'black'
-    layer.current_edge_color = ColorArray('green')
+    layer.current_edge_color = 'green'
     colorarray_green = transform_color(['green'] * len(layer.selected_data))
     np.testing.assert_allclose(colorarray_green, layer.edge_color[:2])
     np.testing.assert_allclose(colorarray[2:], layer.edge_color[2:])

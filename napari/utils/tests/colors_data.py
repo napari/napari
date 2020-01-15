@@ -23,6 +23,8 @@ GREENV = Color('green').rgb[1]
 GREENA = (0.0, GREENV, 0.0, 1.0)
 GREEN = (0.0, GREENV, 0.0)
 GREENF = Color('green').hex
+REDARR = np.array([[1.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+GREENARR = np.array([[0.0, GREENV, 0.0, 1.0]], dtype=np.float32)
 
 single_color_options = [
     RED,
@@ -32,16 +34,16 @@ single_color_options = [
     'g',
     GREENF,
     '#ffccaa44',
-    Color('red'),
-    Color(REDA),
+    REDA,
+    REDARR[0, :3],
     Color(RED).rgb,
     Color(GREENF).rgba,
-    ColorArray('red'),
+    ColorArray('red').rgb,
     ColorArray(GREENA).rgba,
     ColorArray(GREEN).rgb,
     ColorArray([GREENA]).rgba,
-    ColorArray([GREEN]),
-    ColorArray(REDF),
+    GREENARR,
+    REDF,
     np.array([GREEN]),
     np.array([GREENF]),
     None,
@@ -80,9 +82,7 @@ two_color_options = [
     ['green', '#ff0000'],
     ['green', 'g'],
     ('r' for r in range(2)),
-    (Color('red'), Color('green')),
-    [ColorArray('green'), ColorArray('red')],
-    ColorArray(['r', 'r']),
+    ['r', 'r'],
     np.array(['r', 'r']),
     np.array([[1, 1, 1, 1], [0, GREENV, 0, 1]]),
     np.array([[3, 3, 3, 3], [0, 0, 0, 1]]),
@@ -97,8 +97,6 @@ two_colors_simple = [
     ['green', 'red'],
     ['green', 'g'],
     ['red', 'red'],
-    ['red', 'green'],
-    ['green', 'red'],
     ['red', 'red'],
     ['red', 'red'],
     ['white', 'green'],
@@ -121,6 +119,10 @@ invalid_colors = [
     (34, 342, 2334, 4343, 32, 0.1, -1),
     np.array([[1, 1, 1, 1, 1]]),
     np.array([[[0, 1, 1, 1]]]),
+    ColorArray(['r', 'r']),
+    Color('red'),
+    (REDARR, GREENARR),
+    [GREENARR[0, :3], REDARR[0, :3]],
 ]
 
 warning_colors = [

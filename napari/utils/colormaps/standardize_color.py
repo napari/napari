@@ -2,7 +2,8 @@
 of napari layers by supplying functions that are able to convert most
 color representation the user had in mind into a single representation -
 a numpy Nx4 array of float32 values between 0 and 1 - that is used across
-the codebase.
+the codebase. The color is always in an RGBA format. To handle colors in
+HSV, for example, we should point users to skimage, matplotlib and others.
 
 The main function of the module is "transform_color", which might call
 a cascade of other, private, function in the module to do the hard work
@@ -36,7 +37,10 @@ def transform_color(colors: Any) -> np.ndarray:
     That being said, combinations of different color representation in the
     same list of colors is prohibited, and will error. This means that a list
     of ['red', np.array([1, 0, 0])] cannot be parsed and has to be manually
-    pre-processed by the user before sent to this function.
+    pre-processed by the user before sent to this function. In addition, the
+    provided colors - if numeric - should already be in an RGB(A) format. To
+    convert an existing numeric color array to RGBA format use skimage before
+    calling this function.
 
     Parameters
     --------
@@ -259,7 +263,7 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
         warnings.warn(
             "Colors with values larger than one detected. napari"
             " will normalize these colors for you. If you'd like to convert these"
-            " yourself, please use the proper method from scikit-image.color."
+            " yourself, please use the proper method from skimage.color."
         )
         colors = _normalize_color_array(colors)
     return np.atleast_2d(np.asarray(colors, dtype=np.float32))
@@ -375,24 +379,16 @@ def get_color_namelist():
 hex_to_name = _convert_color_hex_to_name()
 
 
-def rgb_to_hsv():
-    pass
-
-
-def hsv_to_rgb():
-    pass
-
-
 def _check_color_dim(val):
     """Ensures input is Nx4.
 
     Parameters
-    --------
+    ----------
     val : np.ndarray
         A color array of possibly less than 4 columns
 
     Returns
-    ------
+    -------
     val : np.ndarray
         A four columns version of the input array. If the original array
         was a missing the fourth channel, it's added as 1.0 values.
@@ -411,13 +407,13 @@ def rgb_to_hex(rgbs: Sequence) -> np.ndarray:
     Taken from vispy with slight modifications.
 
     Parameters
-    --------
+    ----------
     rgbs : Sequence
         A list-like container of colors in RGBA format with values
         between [0, 1]
 
     Returns
-    ------
+    -------
     arr : np.ndarray
         An array of the hex representation of the input colors
 
