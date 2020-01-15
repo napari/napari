@@ -169,7 +169,7 @@ class QtPointsControls(QtLayerControls):
             value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
 
-    def _on_edge_color_change(self, event):
+    def _on_edge_color_change(self, event=None):
         """Changes the element's edge color based on the new value provided
         by the user.
 
@@ -189,7 +189,7 @@ class QtPointsControls(QtLayerControls):
             self.edgeComboBox.setCurrentIndex(index)
         self.edgeColorSwatch.setStyleSheet(f"background-color: {color}")
 
-    def _on_face_color_change(self, event):
+    def _on_face_color_change(self, event=None):
         """Changes the element's face color based on the new value provided
         by the user.
 

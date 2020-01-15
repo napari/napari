@@ -219,4 +219,5 @@ def test_hex_to_name_is_updated():
     new_hex_to_name = {
         f"{v.lower()}ff": k for k, v in get_color_dict().items()
     }
+    new_hex_to_name["#00000000"] = 'transparent'
     assert new_hex_to_name == hex_to_name, fail_msg
