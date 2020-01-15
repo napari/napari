@@ -1,6 +1,4 @@
 import numpy as np
-from vispy.color import ColorArray
-
 from .shape_models import Shape, Line, Path
 from .shape_utils import inside_triangles, triangles_intersect_box
 from .mesh import Mesh
@@ -241,7 +239,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = ColorArray(shape.face_color).rgba[0]
+        color = shape.face_color.rgba
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -275,7 +273,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = ColorArray(shape.edge_color).rgba[0]
+        color = shape.edge_color.rgba
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -469,7 +467,7 @@ class ShapeList:
         """
         self.shapes[index].edge_color = edge_color
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
-        color = ColorArray(self.shapes[index].edge_color).rgba[0]
+        color = self.shapes[index].edge_color.rgba
         color[3] = color[3] * self.shapes[index].opacity
         self._mesh.triangles_colors[indices] = color
         self._update_displayed()
@@ -488,7 +486,7 @@ class ShapeList:
         """
         self.shapes[index].face_color = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
-        color = ColorArray(self.shapes[index].face_color).rgba[0]
+        color = self.shapes[index].face_color.rgba
         color[3] = color[3] * self.shapes[index].opacity
         self._mesh.triangles_colors[indices] = color
         self._update_displayed()

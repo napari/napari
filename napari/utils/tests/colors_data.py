@@ -12,10 +12,10 @@ but it might change in a future release.
 from vispy.color import Color, ColorArray
 import numpy as np
 
-# Apparently there a re two types of greens - 'g' is represented by a
+# Apparently there are two types of greens - 'g' is represented by a
 # (0, 1, 0) tuple, while 'green' has an approximate value of
 # (0, 0.5, 0). This is why these two colors are treated differently
-# below
+# below.
 REDA = (1.0, 0.0, 0.0, 1.0)
 RED = (1.0, 0.0, 0.0)
 REDF = '#ff0000'
@@ -87,6 +87,7 @@ two_color_options = [
     np.array([[1, 1, 1, 1], [0, GREENV, 0, 1]]),
     np.array([[3, 3, 3, 3], [0, 0, 0, 1]]),
     (None, 'green'),
+    [GREENARR[0, :3], REDARR[0, :3]],
 ]
 # Some of the options below are commented out. When the bugs with
 # vispy described above are resolved, we can uncomment the lines
@@ -102,6 +103,7 @@ two_colors_simple = [
     ['white', 'green'],
     ['white', 'k'],
     (None, 'green'),
+    ['green', 'red'],
 ]
 
 two_colors_as_array = [ColorArray(color).rgba for color in two_colors_simple]
@@ -122,7 +124,6 @@ invalid_colors = [
     ColorArray(['r', 'r']),
     Color('red'),
     (REDARR, GREENARR),
-    [GREENARR[0, :3], REDARR[0, :3]],
 ]
 
 warning_colors = [

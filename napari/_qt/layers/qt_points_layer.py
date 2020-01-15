@@ -176,15 +176,21 @@ class QtPointsControls(QtLayerControls):
         color = self.layer.current_edge_color
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
+            if index == -1:
+                self.edgeComboBox.addItem(color)
+                index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
             self.edgeComboBox.setCurrentIndex(index)
-        self.edgeColorSwatch.setStyleSheet("background-color: " + color)
+        self.edgeColorSwatch.setStyleSheet(f"background-color: {color}")
 
     def _on_face_color_change(self, event):
         color = self.layer.current_face_color
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(color, Qt.MatchFixedString)
+            if index == -1:
+                self.faceComboBox.addItem(color)
+                index = self.faceComboBox.findText(color, Qt.MatchFixedString)
             self.faceComboBox.setCurrentIndex(index)
-        self.faceColorSwatch.setStyleSheet("background-color: " + color)
+        self.faceColorSwatch.setStyleSheet(f"background-color: {color}")
 
     def _on_editable_change(self, event):
         self.select_button.setEnabled(self.layer.editable)
