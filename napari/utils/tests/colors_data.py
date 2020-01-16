@@ -47,8 +47,6 @@ single_color_options = [
     np.array([GREEN]),
     np.array([GREENF]),
     None,
-    '',
-    (43, 3, 3, 3),
 ]
 
 single_colors_as_array = [
@@ -72,8 +70,6 @@ single_colors_as_array = [
     ColorArray(GREEN).rgba,
     ColorArray(GREEN).rgba,
     np.zeros((1, 4), dtype=np.float32),
-    np.zeros((1, 4), dtype=np.float32),
-    np.array([[1, 3 / 43, 3 / 43, 3 / 43]], dtype=np.float32),
 ]
 
 two_color_options = [
@@ -85,7 +81,6 @@ two_color_options = [
     ['r', 'r'],
     np.array(['r', 'r']),
     np.array([[1, 1, 1, 1], [0, GREENV, 0, 1]]),
-    np.array([[3, 3, 3, 3], [0, 0, 0, 1]]),
     (None, 'green'),
     [GREENARR[0, :3], REDARR[0, :3]],
 ]
@@ -101,7 +96,6 @@ two_colors_simple = [
     ['red', 'red'],
     ['red', 'red'],
     ['white', 'green'],
-    ['white', 'k'],
     (None, 'green'),
     ['green', 'red'],
 ]

@@ -324,9 +324,9 @@ def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     Returns
     -------
     colors : np.ndarray
-        Same input array but with normalized values
+        Copy of input array with normalized values
     """
-    colors = colors.astype(np.float32)
+    colors = colors.astype(np.float32, copy=True)
     out_of_bounds_idx = np.unique(np.where((colors > 1) | (colors < 0))[0])
     out_of_bounds = colors[out_of_bounds_idx]
     norm = np.linalg.norm(out_of_bounds, np.inf, axis=1)
