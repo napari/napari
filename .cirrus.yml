@@ -79,23 +79,28 @@ task:
     - pip list
     - python -c "import napari; print(napari.__version__)"
 
-  test_script:
+  test_pyside2_script:
+    - pytest -v
+
+  test_pyqt5_script:
+    - pip uninstall -y pyside2
+    - pip install pyqt5
     - pytest -v
 
 
 windows_task:
   auto_cancellation: true
-  
+
   windows_container:
-    image: cirrusci/windowsservercore:2019
+    image: cirrusci/windowsservercore:cmake
     os_version: 2019
-    
+
   env:
     matrix:
       PY_VER: "3.6"
       PY_VER: "3.7"
     ANACONDA_LOCATION: $USERPROFILE\anaconda
-    PATH: $PATH;$ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION
+    PATH: $ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION;$PATH
     # must set this to its default since it doesn't work in env variables
     # see https://github.com/cirruslabs/cirrus-ci-docs/issues/423
     CIRRUS_WORKING_DIR: C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build
@@ -172,7 +177,7 @@ push_docs_task:
   only_if: $CIRRUS_BRANCH == "master"
 
   env:
-    GH_REF: github.com/napari/napari.github.io
+    GH_REF: github.com/napari/docs
     GH_TOKEN: ENCRYPTED[bdbe1e34c8f2491f4c982798ed4bb5bfe61da8ecb1d7c5164bd97f6fccaa398818d2b788badd13651d8e1692cab10fec]
     CIRRUS_CLONE_DEPTH: 0  # unlimited depth allows versioneer to work properly
 
@@ -200,6 +205,6 @@ push_docs_task:
     - if [ -d dev ]; then git rm -r dev; fi
     - cp -r ../docs/build/html dev
     - git add dev
-    - if [[ -z $(git status --untracked-files=no --porcelain) ]]; then exit 0; fi  # repo is clean 
+    - if [[ -z $(git status --untracked-files=no --porcelain) ]]; then exit 0; fi  # repo is clean
     - git commit -m "dev docs v${VERSION}"
     - git push --quiet "https://${GH_TOKEN}@${GH_REF}" master > /dev/null 2>&1
