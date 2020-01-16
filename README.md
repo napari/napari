@@ -21,16 +21,12 @@ We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/
 
 ## installation
 
-**napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6 or 3.7 by calling
+**napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6 or 3.7
+
+Clone the repository locally and install in editable mode
 
 ```sh
-$ pip install napari
-```
-
-To clone the repository locally and install in editable mode use
-
-```sh
-$ git clone https://github.com/napari/napari.git
+$ git clone https://github.com/NeuroDataDesign/napari.git
 $ cd napari
 $ pip install -e .
 ```
