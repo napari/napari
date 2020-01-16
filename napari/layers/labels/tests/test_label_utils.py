@@ -5,10 +5,10 @@ from napari.layers.labels.labels_utils import interpolate_coordinates
 
 def test_interpolate_coordinates():
     # test when number of interpolated points > 1
-    old_coord = np.asarray([0, 1])
-    new_coord = np.asarray([0, 10])
+    old_coord = np.array([0, 1])
+    new_coord = np.array([0, 10])
     coords = interpolate_coordinates(old_coord, new_coord, brush_size=3)
-    expected_coords = np.asarray(
+    expected_coords = np.array(
         [
             [0, 1.75],
             [0, 2.5],

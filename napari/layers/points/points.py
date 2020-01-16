@@ -1,14 +1,24 @@
 from typing import Union
 from xml.etree.ElementTree import Element
-import numpy as np
-import itertools
 from copy import copy, deepcopy
+
+import numpy as np
+
 from ..base import Layer
 from ...utils.event import Event
-from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
-from vispy.color import get_color_names, Color
 from ._constants import Symbol, SYMBOL_ALIAS, Mode
+from ...utils.colormaps.standardize_color import (
+    transform_color,
+    hex_to_name,
+    get_color_namelist,
+    rgb_to_hex,
+)
+from ..utils.color_transformations import (
+    transform_color_with_defaults,
+    normalize_and_broadcast_colors,
+    ColorType,
+)
 
 
 class Points(Layer):
@@ -28,10 +38,10 @@ class Points(Layer):
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str
-        Color of the point marker border.
-    face_color : str
-        Color of the point marker body.
+    edge_color : str, array-like
+        Color of the point marker border. Numeric color values should be RGB(A).
+    face_color : str, array-like
+        Color of the point marker body. Numeric color values should be RGB(A).
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
@@ -63,10 +73,10 @@ class Points(Layer):
         shape as the layer `data`.
     edge_width : float
         Width of the marker edges in pixels for all points
-    edge_color : list of str (N,)
-        List of edge color strings, one for each point.
-    face_color : list of str (N,)
-        List of face color strings, one for each point.
+    edge_color : Nx4 numpy array
+        Array of edge color RGBA values, one for each point.
+    face_color : Nx4 numpy array
+        Array of face color RGBA values, one for each point.
     current_size : float
         Size of the marker for the next point to be added or the currently
         selected point.
@@ -135,6 +145,8 @@ class Points(Layer):
     ):
         if data is None:
             data = np.empty((0, 2))
+        else:
+            data = np.atleast_2d(data)
         ndim = data.shape[1]
         super().__init__(
             ndim,
@@ -157,7 +169,7 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
         )
-        self._colors = get_color_names()
+        self._colors = get_color_namelist()
 
         # Save the point coordinates
         self._data = np.asarray(data)
@@ -177,15 +189,18 @@ class Points(Layer):
         else:
             self._current_size = 10
 
-        if type(edge_color) is str:
-            self._current_edge_color = edge_color
-        else:
-            self._current_edge_color = 'black'
-
-        if type(face_color) is str:
-            self._current_face_color = face_color
-        else:
-            self._current_face_color = 'white'
+        self._current_edge_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=edge_color,
+            elem_name="edge_color",
+            default="black",
+        )
+        self._current_face_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=face_color,
+            elem_name="face_color",
+            default="white",
+        )
 
         # Indices of selected points
         self._selected_data = []
@@ -217,16 +232,14 @@ class Points(Layer):
         self._is_selecting = False
         self._clipboard = {}
 
-        self.edge_color = list(
-            itertools.islice(
-                ensure_iterable(edge_color, color=True), 0, len(self.data)
-            )
+        self.edge_color = normalize_and_broadcast_colors(
+            len(self.data), self._current_edge_color
         )
-        self.face_color = list(
-            itertools.islice(
-                ensure_iterable(face_color, color=True), 0, len(self.data)
-            )
+        self.face_color = normalize_and_broadcast_colors(
+            len(self.data), self._current_face_color
         )
+        self._current_edge_color = self.edge_color[-1]
+        self._current_face_color = self.face_color[-1]
         self.size = size
 
         # Trigger generation of view slice and thumbnail
@@ -266,12 +279,14 @@ class Points(Layer):
                         self.current_size, self._size.shape[1]
                     )
                 size = np.repeat([new_size], adding, axis=0)
-                self.edge_color += [
-                    self.current_edge_color for i in range(adding)
-                ]
-                self.face_color += [
-                    self.current_face_color for i in range(adding)
-                ]
+                new_edge_colors = np.tile(
+                    self._current_edge_color, (adding, 1)
+                )
+                self.edge_color = np.vstack((self.edge_color, new_edge_colors))
+                new_face_colors = np.tile(
+                    self._current_face_color, (adding, 1)
+                )
+                self.face_color = np.vstack((self.face_color, new_face_colors))
                 self.size = np.concatenate((self._size, size), axis=0)
         self._update_dims()
         self.events.data()
@@ -356,7 +371,6 @@ class Points(Layer):
     @property
     def edge_width(self) -> Union[None, int, float]:
         """float: width used for all point markers."""
-
         return self._edge_width
 
     @edge_width.setter
@@ -368,31 +382,33 @@ class Points(Layer):
 
     @property
     def current_edge_color(self) -> str:
-        """str: edge color of marker for the next added point."""
-
-        return self._current_edge_color
+        """Edge color of marker for the next added point or the selected point(s)."""
+        hex_ = rgb_to_hex(self._current_edge_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
-    def current_edge_color(self, edge_color: str) -> None:
-        self._current_edge_color = edge_color
+    def current_edge_color(self, edge_color: ColorType) -> None:
+        self._current_edge_color = transform_color(edge_color)
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.edge_color[i] = edge_color
+            cur_colors: np.ndarray = self.edge_color
+            cur_colors[self.selected_data] = self._current_edge_color
+            self.edge_color = cur_colors
         self.events.edge_color()
         self.events.highlight()
 
     @property
     def current_face_color(self) -> str:
-        """str: face color of marker for the next added point."""
-
-        return self._current_face_color
+        """Face color of marker for the next added point or the selected point(s)."""
+        hex_ = rgb_to_hex(self._current_face_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
-    def current_face_color(self, face_color: str) -> None:
-        self._current_face_color = face_color
+    def current_face_color(self, face_color: ColorType) -> None:
+        self._current_face_color = transform_color(face_color)
         if self._update_properties and len(self.selected_data) > 0:
-            for i in self.selected_data:
-                self.face_color[i] = face_color
+            cur_colors: np.ndarray = self.face_color
+            cur_colors[self.selected_data] = self._current_face_color
+            self.face_color = cur_colors
         self.events.face_color()
         self.events.highlight()
 
@@ -435,14 +451,16 @@ class Points(Layer):
         self._selected_box = self.interaction_box(self._selected_view)
 
         # Update properties based on selected points
+        if len(self._selected_data) == 0:
+            return
         index = self._selected_data
-        edge_colors = list(set([self.edge_color[i] for i in index]))
+        edge_colors = np.unique(self.edge_color[index], axis=0)
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
                 self.current_edge_color = edge_color
 
-        face_colors = list(set([self.face_color[i] for i in index]))
+        face_colors = np.unique(self.face_color[index], axis=0)
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
@@ -733,9 +751,9 @@ class Points(Layer):
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
-            for i, c in enumerate(coords):
-                col = self.face_color[self._indices_view[i]]
-                colormapped[c[0], c[1], :] = Color(col).rgba
+            colors = self.face_color[self._indices_view]
+            colormapped[coords[:, 0], coords[:, 1]] = colors
+
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -754,9 +772,8 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
-            for i in index[::-1]:
-                del self.edge_color[i]
-                del self.face_color[i]
+            self.edge_color = np.delete(self.edge_color, index, axis=0)
+            self.face_color = np.delete(self.face_color, index, axis=0)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = []
@@ -784,23 +801,6 @@ class Points(Layer):
             )
             self.refresh()
 
-    def _copy_data(self):
-        """Copy selected points to clipboard."""
-        if len(self.selected_data) > 0:
-            self._clipboard = {
-                'data': deepcopy(self.data[self.selected_data]),
-                'size': deepcopy(self.size[self.selected_data]),
-                'edge_color': deepcopy(
-                    [self.edge_color[i] for i in self.selected_data]
-                ),
-                'face_color': deepcopy(
-                    [self.face_color[i] for i in self.selected_data]
-                ),
-                'indices': self.dims.indices,
-            }
-        else:
-            self._clipboard = {}
-
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
         npoints = len(self._data_view)
@@ -818,11 +818,17 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self.edge_color = self.edge_color + deepcopy(
-                self._clipboard['edge_color']
+            self.edge_color = np.vstack(
+                (
+                    self.edge_color,
+                    transform_color(deepcopy(self._clipboard['edge_color'])),
+                )
             )
-            self.face_color = self.face_color + deepcopy(
-                self._clipboard['face_color']
+            self.face_color = np.vstack(
+                (
+                    self.face_color,
+                    transform_color(deepcopy(self._clipboard['face_color'])),
+                )
             )
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
@@ -831,6 +837,19 @@ class Points(Layer):
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()
+
+    def _copy_data(self):
+        """Copy selected points to clipboard."""
+        if len(self.selected_data) > 0:
+            self._clipboard = {
+                'data': deepcopy(self.data[self.selected_data]),
+                'edge_color': deepcopy(self.edge_color[self.selected_data]),
+                'face_color': deepcopy(self.face_color[self.selected_data]),
+                'size': deepcopy(self.size[self.selected_data]),
+                'indices': self.dims.indices,
+            }
+        else:
+            self._clipboard = {}
 
     def to_xml_list(self):
         """Convert the points to a list of xml elements according to the svg
@@ -856,9 +875,9 @@ class Points(Layer):
             cx = str(d[0])
             cy = str(d[1])
             r = str(s / 2)
-            face_color = (255 * Color(self.face_color[i]).rgba).astype(np.int)
+            face_color = (255 * self.face_color[i]).astype(np.int)
             fill = f'rgb{tuple(face_color[:3])}'
-            edge_color = (255 * Color(self.edge_color[i]).rgba).astype(np.int)
+            edge_color = (255 * self.edge_color[i]).astype(np.int)
             stroke = f'rgb{tuple(edge_color[:3])}'
 
             element = Element(
