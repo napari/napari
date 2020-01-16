@@ -22,7 +22,7 @@ def transform_color_with_defaults(
     """Helper method to return an Nx4 np.array from an arbitrary user input.
 
     Parameters
-    --------
+    ----------
     num_entries : int
         The number of data elements in the layer
     colors : ColorType
@@ -33,7 +33,7 @@ def transform_color_with_defaults(
         The default color for that element in the layer
 
     Returns
-    ------
+    -------
     transformed : np.ndarray
         Nx4 numpy array with a dtype of np.float32
     """
@@ -64,18 +64,18 @@ def normalize_and_broadcast_colors(
     Layer.current_face_color or Layer.current_edge_color to have the shape of
     the actual data.
 
-    Note: This function can't successfully parse use input, and thus should
+    Note: This function can't robustly parse user input, and thus should
     always be used on the output of ``transform_color_with_defaults``.
 
     Parameters
-    --------
+    ----------
     num_entries : int
         The number of data elements in the layer
     color : ColorType
         The user's input after being normalized by transform_color_with_defaults
 
     Returns
-    -----
+    -------
     tiled : np.ndarray
         A tiled version (if needed) of the original input
     """
