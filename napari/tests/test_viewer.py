@@ -1,7 +1,17 @@
+import sys
+import time
+
 import numpy as np
 import pytest
+from qtpy.QtCore import QEventLoop
+from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
+from napari.tests.utils import (
+    check_viewer_functioning,
+    add_layer_by_type,
+    layer_test_data,
+)
 
 
 def test_viewer(qtbot):
@@ -36,7 +46,17 @@ def test_viewer(qtbot):
         if func.__name__ == 'play':
             func(viewer)
 
-    # Close the viewer
+    if sys.platform == 'darwin':
+        # on some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        start = time.time()
+        while time.time() < start + 1:
+            qapp = QApplication.instance()
+            qapp.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 0)
+
+        viewer.window._qt_window.showNormal()
+
     viewer.window.close()
 
 
@@ -54,260 +74,14 @@ def test_no_qt_loop():
         _ = Viewer()
 
 
-def test_add_image(qtbot):
-    """Test adding image."""
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+@pytest.mark.parametrize('visible', [True, False])
+def test_add_layer(qtbot, layer_class, data, ndim, visible):
     viewer = Viewer()
     view = viewer.window.qt_viewer
     qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = np.random.random((10, 15))
-    layer = viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_volume(qtbot):
-    """Test adding volume."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = np.random.random((10, 15, 20))
-    layer = viewer.add_image(data)
-    viewer.dims.ndisplay = 3
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_pyramid(qtbot):
-    """Test adding image pyramid."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    np.random.seed(0)
-    data = [np.random.random(s) for s in shapes]
-    layer = viewer.add_image(data, is_pyramid=True)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_labels(qtbot):
-    """Test adding labels image."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = viewer.add_labels(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_points(qtbot):
-    """Test adding points."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 2))
-    layer = viewer.add_points(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_vectors(qtbot):
-    """Test adding vectors."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 2, 2))
-    layer = viewer.add_vectors(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_shapes(qtbot):
-    """Test adding shapes."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
-    layer = viewer.add_shapes(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
-
-    # Run all class keybindings
-    for func in layer.class_keymap.values():
-        func(layer)
-
-    # Close the viewer
-    viewer.window.close()
-
-
-def test_add_surface(qtbot):
-    """Test adding 3D surface."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    vertices = np.random.random((10, 3))
-    faces = np.random.randint(10, size=(6, 3))
-    values = np.random.random(10)
-    data = (vertices, faces, values)
-    layer = viewer.add_surface(data)
-    assert np.all(
-        [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
-    )
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 1
-
-    # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
+    layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
+    check_viewer_functioning(viewer, view, data, ndim)
 
     # Run all class keybindings
     for func in layer.class_keymap.values():

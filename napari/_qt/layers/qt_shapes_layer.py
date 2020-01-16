@@ -1,10 +1,8 @@
-from collections import Iterable
+from collections.abc import Iterable
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QButtonGroup,
-    QRadioButton,
-    QPushButton,
     QLabel,
     QComboBox,
     QSlider,
@@ -14,6 +12,7 @@ from qtpy.QtWidgets import (
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.shapes._constants import Mode
+from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 
 
 class QtShapesControls(QtLayerControls):
@@ -31,78 +30,82 @@ class QtShapesControls(QtLayerControls):
         sld.setMinimum(0)
         sld.setMaximum(40)
         sld.setSingleStep(1)
-        value = self.layer.edge_width
+        value = self.layer.current_edge_width
         if isinstance(value, Iterable):
             if isinstance(value, list):
                 value = np.asarray(value)
             value = value.mean()
         sld.setValue(int(value))
-        sld.valueChanged[int].connect(
-            lambda value=sld: self.changeWidth(value)
-        )
+        sld.valueChanged.connect(self.changeWidth)
         self.widthSlider = sld
 
         face_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            face_comboBox.addItem(c)
-        face_comboBox.activated[str].connect(
-            lambda text=face_comboBox: self.changeFaceColor(text)
-        )
+        face_comboBox.addItems(self.layer._colors)
+        face_comboBox.activated[str].connect(self.changeFaceColor)
         self.faceComboBox = face_comboBox
         self.faceColorSwatch = QFrame()
         self.faceColorSwatch.setObjectName('swatch')
         self.faceColorSwatch.setToolTip('Face color swatch')
-        self._on_face_color_change(None)
+        self._on_face_color_change()
 
         edge_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            edge_comboBox.addItem(c)
-        edge_comboBox.activated[str].connect(
-            lambda text=edge_comboBox: self.changeEdgeColor(text)
-        )
+        edge_comboBox.addItems(self.layer._colors)
+        edge_comboBox.activated[str].connect(self.changeEdgeColor)
         self.edgeComboBox = edge_comboBox
         self.edgeColorSwatch = QFrame()
         self.edgeColorSwatch.setObjectName('swatch')
         self.edgeColorSwatch.setToolTip('Edge color swatch')
-        self._on_edge_color_change(None)
+        self._on_edge_color_change()
 
-        self.select_button = QtModeButton(
-            layer, 'select', Mode.SELECT, 'Select shapes'
+        self.select_button = QtModeRadioButton(
+            layer, 'select', Mode.SELECT, tooltip='Select shapes'
         )
-        self.direct_button = QtModeButton(
-            layer, 'direct', Mode.DIRECT, 'Select vertices'
+        self.direct_button = QtModeRadioButton(
+            layer, 'direct', Mode.DIRECT, tooltip='Select vertices'
         )
-        self.panzoom_button = QtModeButton(
-            layer, 'zoom', Mode.PAN_ZOOM, 'Pan/zoom'
+        self.panzoom_button = QtModeRadioButton(
+            layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom', checked=True
         )
-        self.rectangle_button = QtModeButton(
-            layer, 'rectangle', Mode.ADD_RECTANGLE, 'Add rectangles'
+        self.rectangle_button = QtModeRadioButton(
+            layer, 'rectangle', Mode.ADD_RECTANGLE, tooltip='Add rectangles'
         )
-        self.ellipse_button = QtModeButton(
-            layer, 'ellipse', Mode.ADD_ELLIPSE, 'Add ellipses'
+        self.ellipse_button = QtModeRadioButton(
+            layer, 'ellipse', Mode.ADD_ELLIPSE, tooltip='Add ellipses'
         )
-        self.line_button = QtModeButton(
-            layer, 'line', Mode.ADD_LINE, 'Add lines'
+        self.line_button = QtModeRadioButton(
+            layer, 'line', Mode.ADD_LINE, tooltip='Add lines'
         )
-        self.path_button = QtModeButton(
-            layer, 'path', Mode.ADD_PATH, 'Add paths'
+        self.path_button = QtModeRadioButton(
+            layer, 'path', Mode.ADD_PATH, tooltip='Add paths'
         )
-        self.polygon_button = QtModeButton(
-            layer, 'polygon', Mode.ADD_POLYGON, 'Add polygons'
+        self.polygon_button = QtModeRadioButton(
+            layer, 'polygon', Mode.ADD_POLYGON, tooltip='Add polygons'
         )
-        self.vertex_insert_button = QtModeButton(
-            layer, 'vertex_insert', Mode.VERTEX_INSERT, 'Insert vertex'
+        self.vertex_insert_button = QtModeRadioButton(
+            layer, 'vertex_insert', Mode.VERTEX_INSERT, tooltip='Insert vertex'
         )
-        self.vertex_remove_button = QtModeButton(
-            layer, 'vertex_remove', Mode.VERTEX_REMOVE, 'Remove vertex'
+        self.vertex_remove_button = QtModeRadioButton(
+            layer, 'vertex_remove', Mode.VERTEX_REMOVE, tooltip='Remove vertex'
         )
 
-        self.move_front_button = QtMoveFrontButton(layer)
-        self.move_back_button = QtMoveBackButton(layer)
-        self.delete_button = QtDeleteShapeButton(layer)
-        self.panzoom_button.setChecked(True)
+        self.move_front_button = QtModePushButton(
+            layer,
+            'move_front',
+            slot=self.layer.move_to_front,
+            tooltip='Move to front',
+        )
+        self.move_back_button = QtModePushButton(
+            layer,
+            'move_back',
+            slot=self.layer.move_to_back,
+            tooltip='Move to back',
+        )
+        self.delete_button = QtModePushButton(
+            layer,
+            'delete_shape',
+            slot=self.layer.remove_selected,
+            tooltip='Delete selected shapes',
+        )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
@@ -137,7 +140,7 @@ class QtShapesControls(QtLayerControls):
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_grid, 0, 0, 1, 3)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('edge width:'), 2, 0)
         self.grid_layout.addWidget(self.widthSlider, 2, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
@@ -156,64 +159,66 @@ class QtShapesControls(QtLayerControls):
         self.layer.status = str(self.layer.mode)
 
     def set_mode(self, event):
-        mode = event.mode
-        if mode == Mode.SELECT:
-            self.select_button.setChecked(True)
-        elif mode == Mode.DIRECT:
-            self.direct_button.setChecked(True)
-        elif mode == Mode.PAN_ZOOM:
-            self.panzoom_button.setChecked(True)
-        elif mode == Mode.ADD_RECTANGLE:
-            self.rectangle_button.setChecked(True)
-        elif mode == Mode.ADD_ELLIPSE:
-            self.ellipse_button.setChecked(True)
-        elif mode == Mode.ADD_LINE:
-            self.line_button.setChecked(True)
-        elif mode == Mode.ADD_PATH:
-            self.path_button.setChecked(True)
-        elif mode == Mode.ADD_POLYGON:
-            self.polygon_button.setChecked(True)
-        elif mode == Mode.VERTEX_INSERT:
-            self.vertex_insert_button.setChecked(True)
-        elif mode == Mode.VERTEX_REMOVE:
-            self.vertex_remove_button.setChecked(True)
+        mode_buttons = {
+            Mode.SELECT: self.select_button,
+            Mode.DIRECT: self.direct_button,
+            Mode.PAN_ZOOM: self.panzoom_button,
+            Mode.ADD_RECTANGLE: self.rectangle_button,
+            Mode.ADD_ELLIPSE: self.ellipse_button,
+            Mode.ADD_LINE: self.line_button,
+            Mode.ADD_PATH: self.path_button,
+            Mode.ADD_POLYGON: self.polygon_button,
+            Mode.VERTEX_INSERT: self.vertex_insert_button,
+            Mode.VERTEX_REMOVE: self.vertex_remove_button,
+        }
+
+        if event.mode in mode_buttons:
+            mode_buttons[event.mode].setChecked(True)
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError(f"Mode '{event.mode}'not recognized")
 
     def changeFaceColor(self, text):
-        self.layer.face_color = text
+        self.layer.current_face_color = text
 
     def changeEdgeColor(self, text):
-        self.layer.edge_color = text
+        self.layer.current_edge_color = text
 
     def changeWidth(self, value):
-        self.layer.edge_width = float(value) / 2
+        self.layer.current_edge_width = float(value) / 2
 
-    def _on_edge_width_change(self, event):
+    def changeOpacity(self, value):
+        with self.layer.events.blocker(self._on_opacity_change):
+            self.layer.current_opacity = value / 100
+
+    def _on_edge_width_change(self, event=None):
         with self.layer.events.edge_width.blocker():
-            value = self.layer.edge_width
+            value = self.layer.current_edge_width
             value = np.clip(int(2 * value), 0, 40)
             self.widthSlider.setValue(value)
 
-    def _on_edge_color_change(self, event):
+    def _on_edge_color_change(self, event=None):
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
-                self.layer.edge_color, Qt.MatchFixedString
+                self.layer.current_edge_color, Qt.MatchFixedString
             )
             self.edgeComboBox.setCurrentIndex(index)
-        color = Color(self.layer.edge_color).hex
+        color = Color(self.layer.current_edge_color).hex
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
-    def _on_face_color_change(self, event):
+    def _on_face_color_change(self, event=None):
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(
-                self.layer.face_color, Qt.MatchFixedString
+                self.layer.current_face_color, Qt.MatchFixedString
             )
             self.faceComboBox.setCurrentIndex(index)
-        color = Color(self.layer.face_color).hex
+        color = Color(self.layer.current_face_color).hex
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
-    def _on_editable_change(self, event):
+    def _on_opacity_change(self, event=None):
+        with self.layer.events.opacity.blocker():
+            self.opacitySlider.setValue(self.layer.current_opacity * 100)
+
+    def _on_editable_change(self, event=None):
         self.select_button.setEnabled(self.layer.editable)
         self.direct_button.setEnabled(self.layer.editable)
         self.rectangle_button.setEnabled(self.layer.editable)
@@ -226,54 +231,3 @@ class QtShapesControls(QtLayerControls):
         self.delete_button.setEnabled(self.layer.editable)
         self.move_back_button.setEnabled(self.layer.editable)
         self.move_front_button.setEnabled(self.layer.editable)
-
-
-class QtModeButton(QRadioButton):
-    def __init__(self, layer, button_name, mode, tool_tip):
-        super().__init__()
-
-        self.mode = mode
-        self.layer = layer
-        self.setToolTip(tool_tip)
-        self.setChecked(False)
-        self.setProperty('mode', button_name)
-        self.toggled.connect(lambda state=self: self._set_mode(state))
-        self.setFixedWidth(28)
-
-    def _set_mode(self, bool):
-        with self.layer.events.mode.blocker(self._set_mode):
-            if bool:
-                self.layer.mode = self.mode
-
-
-class QtDeleteShapeButton(QPushButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
-        self.setToolTip('Delete selected shapes')
-        self.clicked.connect(self.layer.remove_selected)
-
-
-class QtMoveBackButton(QPushButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
-        self.setToolTip('Move to back')
-        self.clicked.connect(self.layer.move_to_back)
-
-
-class QtMoveFrontButton(QPushButton):
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        self.setFixedWidth(28)
-        self.setFixedHeight(28)
-        self.setToolTip('Move to front')
-        self.clicked.connect(self.layer.move_to_front)

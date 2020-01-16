@@ -3,9 +3,9 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from copy import copy
 from ..base import Layer
-from ...util.event import Event
-from ...util.status_messages import format_float
-from .vectors_util import vectors_to_coordinates, generate_vector_meshes
+from ...utils.event import Event
+from ...utils.status_messages import format_float
+from .vector_utils import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
 
 
@@ -117,6 +117,8 @@ class Vectors(Layer):
         # Data containing vectors in the currently viewed slice
         self._data_view = np.empty((0, 2, 2))
         self._displayed_stored = []
+        self._view_vertices = []
+        self._view_faces = []
 
         # length attribute
         self._length = length
@@ -145,6 +147,25 @@ class Vectors(Layer):
 
         self._update_dims()
         self.events.data()
+
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'length': self.length,
+                'edge_width': self.edge_width,
+                'edge_color': self.edge_color,
+                'data': self.data,
+            }
+        )
+        return state
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -183,7 +204,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.edge_width()
-        self._set_view_slice()
+        self.refresh()
         self.status = format_float(self.edge_width)
 
     @property
@@ -205,7 +226,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self.events.length()
-        self._set_view_slice()
+        self.refresh()
         self.status = format_float(self.length)
 
     @property
@@ -264,15 +285,11 @@ class Vectors(Layer):
             self._data_view = self.data[:, :, disp]
 
         if len(faces) == 0:
-            self._view_vertices = None
-            self._view_faces = None
+            self._view_vertices = []
+            self._view_faces = []
         else:
             self._view_vertices = vertices
             self._view_faces = faces
-
-        self._update_thumbnail()
-        self._update_coordinates()
-        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -347,7 +364,7 @@ class Vectors(Layer):
 
         return xml_list
 
-    def get_value(self):
+    def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 

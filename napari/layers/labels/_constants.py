@@ -1,7 +1,7 @@
 from enum import auto
 import sys
 
-from ...util.misc import StringEnum
+from ...utils.misc import StringEnum
 
 
 class Mode(StringEnum):

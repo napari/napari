@@ -3,6 +3,11 @@ import pytest
 
 from napari.components import ViewerModel
 from napari._qt.qt_viewer import QtViewer
+from napari.tests.utils import (
+    add_layer_by_type,
+    check_viewer_functioning,
+    layer_test_data,
+)
 
 
 def test_qt_viewer(qtbot):
@@ -23,144 +28,14 @@ def test_qt_viewer(qtbot):
     view.shutdown()
 
 
-def test_add_image(qtbot):
-    """Test adding image."""
-    viewer = ViewerModel()
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_add_layer(qtbot, layer_class, data, ndim):
+    viewer = ViewerModel(ndisplay=ndim)
     view = QtViewer(viewer)
     qtbot.addWidget(view)
 
-    np.random.seed(0)
-    data = np.random.random((10, 15))
-    viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
-
-
-def test_add_volume(qtbot):
-    """Test adding volume."""
-    viewer = ViewerModel(ndisplay=3)
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = np.random.random((10, 15, 20))
-    viewer.add_image(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
-
-
-def test_add_pyramid(qtbot):
-    """Test adding image pyramid."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
-
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    np.random.seed(0)
-    data = [np.random.random(s) for s in shapes]
-    viewer.add_image(data, is_pyramid=True)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
-
-
-def test_add_labels(qtbot):
-    """Test adding labels image."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    viewer.add_labels(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
-
-
-def test_add_points(qtbot):
-    """Test adding points."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 2))
-    viewer.add_points(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
-
-
-def test_add_vectors(qtbot):
-    """Test adding vectors."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 2, 2))
-    viewer.add_vectors(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
-
-
-def test_add_shapes(qtbot):
-    """Test adding vectors."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
-
-    np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
-    viewer.add_shapes(data)
-    assert np.all(viewer.layers[0].data == data)
-
-    assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
-
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
-    assert np.sum(view.dims._displayed_sliders) == 0
+    add_layer_by_type(viewer, layer_class, data)
+    check_viewer_functioning(viewer, view, data, ndim)
     view.shutdown()
 
 

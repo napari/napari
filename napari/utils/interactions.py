@@ -49,7 +49,7 @@ def mouse_press_callbacks(obj, event):
         # exectute function to run press event code
         gen = mouse_drag_func(obj, event)
         # if function returns a generator then try to iterate it
-        if inspect.isgeneratorfunction(mouse_drag_func):
+        if inspect.isgenerator(gen):
             try:
                 next(gen)
                 # now store iterated genenerator

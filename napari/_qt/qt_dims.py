@@ -172,7 +172,7 @@ class QtDims(QWidget):
         """
         fm = QFontMetrics(QFont("", 0))
         labels = self.findChildren(QLineEdit, 'axis_label')
-        newwidth = max([fm.width(lab.text()) for lab in labels])
+        newwidth = max([fm.boundingRect(lab.text()).width() for lab in labels])
 
         if any(self._displayed_sliders):
             # set maximum width to no more than 20% of slider width
@@ -195,7 +195,7 @@ class QtDims(QWidget):
                     width = length
         # gui width of a string of length `width`
         fm = QFontMetrics(QFont("", 0))
-        width = fm.width("8" * width)
+        width = fm.boundingRect("8" * width).width()
         for labl in self.findChildren(QWidget, 'slice_label'):
             labl.setFixedWidth(width + 6)
 
@@ -316,7 +316,7 @@ class QtDims(QWidget):
         # doing manual check here to avoid issue in StringEnum
         # see https://github.com/napari/napari/issues/754
         if loop_mode is not None:
-            _modes = [str(mode) for mode in LoopMode]
+            _modes = LoopMode.keys()
             if loop_mode not in _modes:
                 raise ValueError(
                     f'loop_mode must be one of {_modes}.  Got: {loop_mode}'

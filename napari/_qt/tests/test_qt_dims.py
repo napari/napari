@@ -1,10 +1,13 @@
-import numpy as np
+import os
+from sys import platform
 
-from napari.components import Dims
-from napari._qt.qt_dims import QtDims
+import numpy as np
+import pytest
 from qtpy.QtCore import Qt
+
+from napari._qt.qt_dims import QtDims
 from napari._qt.qt_viewer import QtViewer
-from napari.components import ViewerModel
+from napari.components import Dims, ViewerModel
 
 
 def test_creating_view(qtbot):
@@ -207,6 +210,10 @@ def test_slider_press_updates_last_used(qtbot):
         assert view.last_used == i
 
 
+@pytest.mark.skipif(
+    os.environ.get('CI') and platform == 'win32',
+    reason='not working in windows VM',
+)
 def test_play_button(qtbot):
     """test that the play button and its popup dialog work"""
     ndim = 3
@@ -219,6 +226,7 @@ def test_play_button(qtbot):
     assert view.is_playing
     with qtbot.waitSignal(view._animation_thread.finished, timeout=7000):
         qtbot.mouseClick(button, Qt.LeftButton)
+
     qtbot.wait(200)
     assert not view.is_playing
 

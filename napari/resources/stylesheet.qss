@@ -89,16 +89,19 @@ QStatusBar > QLabel { /* Help QLabel */
   background-color: {{ background }};
 }
 
+QMenuBar::item:selected {
+   background-color: {{ secondary }};
+}
+
 QtAboutKeybindings {
   min-width: 600px;
   min-height: 605px;
 }
 
-QDialog#QtAbout {
-  min-width: 620px;
-  max-width: 620px;
-  min-height: 320px;
-  max-height: 320px;
+QtAbout > QTextEdit{
+  margin: 0px;
+  border: 0px;
+  padding: 2px;
 }
 
 QtAbout > QLabel {
@@ -411,8 +414,6 @@ QtLayerControls > QFrame#swatch {
 }
 
 QtLayerControls > QHRangeSlider {
-  min-height: 16px;
-  max-height: 16px;
   qproperty-barColor: {{ secondary }};
   qproperty-backgroundColor: {{ primary }};
   qproperty-handleColor: {{ secondary }};
@@ -613,18 +614,6 @@ QRadioButton::indicator:checked {
     border-radius: 3px;
 }
 
-QtPanZoomButton::indicator {
-    image: url(":/icons/{{ folder }}/zoom.svg");
-}
-
-QtSelectButton::indicator {
-    image: url(":/icons/{{ folder }}/select.svg");
-}
-
-QtAdditionButton::indicator {
-    image: url(":/icons/{{ folder }}/add.svg");
-}
-
 QtLayerButtons {
   min-width: 242px;
   max-width: 242px;
@@ -658,36 +647,39 @@ QtDeleteButton {
    max-height : 28px;
 }
 
-QtNewPointsButton {
-   image: url(":/icons/{{ folder }}/new_points.svg");
+QtViewerPushButton{
    min-width : 28px;
    max-width : 28px;
    min-height : 28px;
    max-height : 28px;
 }
 
-QtNewShapesButton {
-   image: url(":/icons/{{ folder }}/new_shapes.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
+QtViewerPushButton[mode="new_points"] {
+  image: url(":/icons/{{ folder }}/new_points.svg");
 }
 
-QtNewLabelsButton {
-   image: url(":/icons/{{ folder }}/new_labels.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
+QtViewerPushButton[mode="new_shapes"] {
+  image: url(":/icons/{{ folder }}/new_shapes.svg");
 }
 
-QtConsoleButton {
-  min-width : 28px;
-  max-width : 28px;
-  min-height : 28px;
-  max-height : 28px;
+QtViewerPushButton[mode="new_labels"] {
+  image: url(":/icons/{{ folder }}/new_labels.svg");
+}
+
+QtViewerPushButton[mode="console"] {
   image: url(":/icons/{{ folder }}/console.svg");
+}
+
+QtViewerPushButton[mode="roll"] {
+  image: url(":/icons/{{ folder }}/roll.svg");
+}
+
+QtViewerPushButton[mode="transpose"] {
+  image: url(":/icons/{{ folder }}/transpose.svg");
+}
+
+QtViewerPushButton[mode="home"] {
+  image: url(":/icons/{{ folder }}/home.svg");
 }
 
 QtNDisplayButton {
@@ -750,126 +742,121 @@ QtGridViewButton::indicator:hover {
   background-color: {{ primary }};
 }
 
-QtRollDimsButton {
-   image: url(":/icons/{{ folder }}/roll.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
-   border-radius: 3px;
-}
-
-QtTransposeDimsButton {
-   image: url(":/icons/{{ folder }}/transpose.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
-   border-radius: 3px;
-}
-
-QtResetViewButton {
-   image: url(":/icons/{{ folder }}/home.svg");
-   min-width : 28px;
-   max-width : 28px;
-   min-height : 28px;
-   max-height : 28px;
-   border-radius: 3px;
-}
-
-QtModeButton {
+QtModeRadioButton {
   background-color: {{ foreground }};
   border-radius: 3px;
 }
 
-QtModeButton:disabled {
+QtModeRadioButton:disabled {
   background-color: {{ background }};
 }
 
-QtModeButton::indicator {
+QtModeRadioButton::indicator {
   subcontrol-position:
   center center;
   subcontrol-origin: content;
   width: 28px; height: 28px;
 }
 
-QtModeButton::indicator:checked {
+QtModeRadioButton::indicator:checked {
   background-color: {{ highlight }};
   border-radius: 3px;
 }
 
-QtModeButton::indicator:unchecked:hover {
+QtModeRadioButton::indicator:unchecked:hover {
   background-color: {{ primary }};
   border-radius: 3px;
 }
 
-QtModeButton[mode="zoom"]::indicator {
+QtModeRadioButton[mode="zoom"]::indicator {
   image: url(":/icons/{{ folder }}/zoom.svg");
 }
 
-QtModeButton[mode="select"]::indicator {
+QtModeRadioButton[mode="select"]::indicator {
   image: url(":/icons/{{ folder }}/select.svg");
 }
 
-QtModeButton[mode="direct"]::indicator {
+QtModeRadioButton[mode="direct"]::indicator {
   image: url(":/icons/{{ folder }}/direct.svg");
 }
 
-QtModeButton[mode="rectangle"]::indicator {
+QtModeRadioButton[mode="rectangle"]::indicator {
   image: url(":/icons/{{ folder }}/rectangle.svg");
 }
 
-QtModeButton[mode="ellipse"]::indicator {
+QtModeRadioButton[mode="ellipse"]::indicator {
   image: url(":/icons/{{ folder }}/ellipse.svg");
   color: red;
 }
 
-QtModeButton[mode="line"]::indicator {
+QtModeRadioButton[mode="line"]::indicator {
   image: url(":/icons/{{ folder }}/line.svg");
 }
 
-QtModeButton[mode="path"]::indicator {
+QtModeRadioButton[mode="path"]::indicator {
   image: url(":/icons/{{ folder }}/path.svg");
 }
 
-QtModeButton[mode="polygon"]::indicator {
+QtModeRadioButton[mode="polygon"]::indicator {
   image: url(":/icons/{{ folder }}/polygon.svg");
 }
 
-QtModeButton[mode="vertex_insert"]::indicator {
+QtModeRadioButton[mode="vertex_insert"]::indicator {
   image: url(":/icons/{{ folder }}/vertex_insert.svg");
 }
 
-QtModeButton[mode="vertex_remove"]::indicator {
+QtModeRadioButton[mode="vertex_remove"]::indicator {
   image: url(":/icons/{{ folder }}/vertex_remove.svg");
 }
 
-QtModeButton[mode="paint"]::indicator {
+QtModeRadioButton[mode="paint"]::indicator {
   image: url(":/icons/{{ folder }}/paint.svg");
 }
 
-QtModeButton[mode="fill"]::indicator {
+QtModeRadioButton[mode="fill"]::indicator {
   image: url(":/icons/{{ folder }}/fill.svg");
 }
 
-QtModeButton[mode="picker"]::indicator {
+QtModeRadioButton[mode="picker"]::indicator {
   image: url(":/icons/{{ folder }}/picker.svg");
 }
 
-QtMoveBackButton {
+QtModeRadioButton[mode="pan_zoom"]::indicator {
+    image: url(":/icons/{{ folder }}/zoom.svg");
+}
+
+QtModeRadioButton[mode="select_points"]::indicator {
+    image: url(":/icons/{{ folder }}/select.svg");
+}
+
+QtModeRadioButton[mode="add_points"]::indicator {
+    image: url(":/icons/{{ folder }}/add.svg");
+}
+
+QtModePushButton[mode="move_back"] {
    image: url(":/icons/{{ folder }}/move_back.svg");
 }
 
-QtMoveFrontButton {
+QtModePushButton[mode="move_front"] {
    image: url(":/icons/{{ folder }}/move_front.svg");
 }
 
-QtDeleteShapeButton {
+QtModePushButton[mode="delete_shape"] {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
 
-QtDeletePointsButton {
-   image: url(":/icons/{{ folder }}/delete_shape.svg");
+
+QtCopyToClipboardButton {
+   background-color: {{ background }};
+   margin: 0px;
+   padding: 1px 1px 3px 2px;
+   border: 0px;
+   min-width: 16px;
+   max-width: 16px;
+   min-height: 16px;
+   max-height: 16px;
+   border-radius: 3px;
+   image: url(":/icons/{{ folder }}/copy_to_clipboard.svg");
 }
 
 /* ------------- QMainWindow --------- */
@@ -1199,7 +1186,13 @@ QtPlayButton[playing=True] {
 }
 
 #QtPopupFrame > QPushButton {
+  font-size: 11pt;
+  color: {{ secondary }};
   min-height: 20px;
+}
+
+#QtPopupFrame > QPushButton::hover {
+  color: {{ text }};
 }
 
 #QtPopupFrame  > QComboBox {
@@ -1208,7 +1201,7 @@ QtPlayButton[playing=True] {
 }
 
 #slice_label {
-  background-color: {{ background }};
+  background-color: transparent;
   color: {{ secondary }};
   padding: 0;
   margin: 0;
@@ -1224,3 +1217,4 @@ QtPlayButton[playing=True] {
   background-color: {{ background }};
   border: 1px solid {{ primary }};
 }
+

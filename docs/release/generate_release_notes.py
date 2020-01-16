@@ -150,6 +150,7 @@ authors.discard('Azure Pipelines Bot')
 
 highlights = OrderedDict()
 
+highlights['Highlight'] = {}
 highlights['New Feature'] = {}
 highlights['Improvement'] = {}
 highlights['Bugfix'] = {}
@@ -195,10 +196,10 @@ print('=' * len(announcement_title))
 
 print(
     f"""
-We're happy to announce the release of napari v{args.version}!
+We're happy to announce the release of napari {args.version}!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-base
+images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 """
 )
@@ -226,6 +227,8 @@ contributors['reviewers'] = reviewers
 
 for section_name, contributor_set in contributors.items():
     print()
+    if None in contributor_set:
+        contributor_set.remove(None)
     committer_str = (
         f'{len(contributor_set)} {section_name} added to this '
         'release [alphabetical by first name or login]'

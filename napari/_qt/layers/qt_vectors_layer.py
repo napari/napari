@@ -14,40 +14,34 @@ class QtVectorsControls(QtLayerControls):
 
         # vector color adjustment and widget
         edge_comboBox = QComboBox()
-        colors = self.layer._colors
-        for c in colors:
-            edge_comboBox.addItem(c)
-        edge_comboBox.activated[str].connect(
-            lambda text=edge_comboBox: self.change_edge_color(text)
-        )
+        edge_comboBox.addItems(self.layer._colors)
+        edge_comboBox.activated[str].connect(self.change_edge_color)
         self.edgeComboBox = edge_comboBox
         self.edgeColorSwatch = QFrame()
         self.edgeColorSwatch.setObjectName('swatch')
         self.edgeColorSwatch.setToolTip('Edge color swatch')
-        self._on_edge_color_change(None)
+        self._on_edge_color_change()
 
         # line width in pixels
         self.widthSpinBox = QDoubleSpinBox()
         self.widthSpinBox.setKeyboardTracking(False)
         self.widthSpinBox.setSingleStep(0.1)
         self.widthSpinBox.setMinimum(0.1)
-        value = self.layer.edge_width
-        self.widthSpinBox.setValue(value)
+        self.widthSpinBox.setValue(self.layer.edge_width)
         self.widthSpinBox.valueChanged.connect(self.change_width)
 
         # line length
         self.lengthSpinBox = QDoubleSpinBox()
         self.lengthSpinBox.setKeyboardTracking(False)
         self.lengthSpinBox.setSingleStep(0.1)
-        value = self.layer.length
-        self.lengthSpinBox.setValue(value)
+        self.lengthSpinBox.setValue(self.layer.length)
         self.lengthSpinBox.setMinimum(0.1)
         self.lengthSpinBox.valueChanged.connect(self.change_length)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
-        self.grid_layout.addWidget(self.opacitySilder, 0, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('width:'), 1, 0)
         self.grid_layout.addWidget(self.widthSpinBox, 1, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('length:'), 2, 0)
@@ -64,9 +58,6 @@ class QtVectorsControls(QtLayerControls):
     def change_edge_color(self, text):
         self.layer.edge_color = text
 
-    def change_connector_type(self, text):
-        self.layer.connector = text
-
     def change_width(self, value):
         self.layer.edge_width = value
         self.widthSpinBox.clearFocus()
@@ -77,15 +68,15 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.clearFocus()
         self.setFocus()
 
-    def _on_len_change(self, event):
+    def _on_len_change(self, event=None):
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
-    def _on_width_change(self, event):
+    def _on_width_change(self, event=None):
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
 
-    def _on_edge_color_change(self, event):
+    def _on_edge_color_change(self, event=None):
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
                 self.layer.edge_color, Qt.MatchFixedString
