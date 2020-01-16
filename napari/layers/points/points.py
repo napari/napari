@@ -190,10 +190,16 @@ class Points(Layer):
             self._current_size = 10
 
         self._current_edge_color = transform_color_with_defaults(
-            len(self.data), edge_color, "edge_color", "black"
+            num_entries=len(self.data),
+            colors=edge_color,
+            elem_name="edge_color",
+            default="black",
         )
         self._current_face_color = transform_color_with_defaults(
-            len(self.data), face_color, "face_color", "white"
+            num_entries=len(self.data),
+            colors=face_color,
+            elem_name="face_color",
+            default="white",
         )
 
         # Indices of selected points

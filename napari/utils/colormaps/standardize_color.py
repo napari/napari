@@ -310,19 +310,19 @@ def _handle_none(color) -> np.ndarray:
 
 
 def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
-    """Normalizes all array values in the range [0, 1].
+    """Normalize all array values to the range [0, 1].
 
     The added complexity here stems from the fact that if a row in the given
     array contains four identical value a simple normalization might raise a
     division by zero exception.
 
     Parameters
-    --------
+    ----------
     colors : np.ndarray
         A numpy array with values possibly outside the range of [0, 1]
 
     Returns
-    ------
+    -------
     colors : np.ndarray
         Same input array but with normalized values
     """
@@ -346,7 +346,7 @@ _color_switch: Dict[Any, Callable] = {
 }
 
 
-def _convert_color_hex_to_name():
+def _create_hex_to_name_dict():
     """Create a dictionary mapping hexadecimal RGB colors into their
     'official' name.
 
@@ -378,7 +378,7 @@ def get_color_namelist():
     return names
 
 
-hex_to_name = _convert_color_hex_to_name()
+hex_to_name = _create_hex_to_name_dict()
 
 
 def _check_color_dim(val):

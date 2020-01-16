@@ -170,8 +170,7 @@ class QtPointsControls(QtLayerControls):
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event=None):
-        """Changes the element's edge color based on the new value provided
-        by the user.
+        """Change element's edge color based on user-provided value.
 
         The new color (read from layer.current_edge_color) is a string -
         either the color's name or its hex representation. This color has
@@ -190,8 +189,7 @@ class QtPointsControls(QtLayerControls):
         self.edgeColorSwatch.setStyleSheet(f"background-color: {color}")
 
     def _on_face_color_change(self, event=None):
-        """Changes the element's face color based on the new value provided
-        by the user.
+        """Change element's face color based user-provided value.
 
         The new color (read from layer.current_face_color) is a string -
         either the color's name or its hex representation. This color has
