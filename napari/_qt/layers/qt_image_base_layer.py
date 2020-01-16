@@ -153,11 +153,17 @@ def create_range_popup(layer, attr, parent=None):
         )
     is_integer_type = np.issubdtype(layer.dtype, np.integer)
 
+    d_range = getattr(layer, range_attr)
     popup = QRangeSliderPopup(
         initial_values=getattr(layer, attr),
-        data_range=getattr(layer, range_attr),
+        data_range=d_range,
         collapsible=False,
-        precision=(0 if is_integer_type else 2),
+        precision=(
+            0
+            if is_integer_type
+            # scale precision with the log of the data range
+            else int(max(3 - np.log10(max(d_range[1] - d_range[0], 0.01)), 0))
+        ),
         parent=parent,
     )
 
