@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from copy import copy
 from vispy.color import Color
-from ..shape_util import (
+from ..shape_utils import (
     triangulate_edge,
     triangulate_face,
     is_collinear,
@@ -75,10 +75,10 @@ class Shape(ABC):
     ----------
     _edge_color_name : str
         Name of edge color or six digit hex code representing edge color if not
-        recongnized
+        recognized
     _face_color_name : str
         Name of edge color or six digit hex code representing face color if not
-        recongnized
+        recognized
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray

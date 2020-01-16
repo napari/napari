@@ -1,4 +1,4 @@
-from ...util.event import EmitterGroup
+from ...utils.event import EmitterGroup
 
 from ._multi import MultiIndexList
 from ._typed import TypedList
@@ -47,13 +47,13 @@ class ListModel(MultiIndexList, TypedList):
         super().__setitem__(indices, new_indices)
         self.events.reordered()
 
-    def insert(self, index, object):
-        super().insert(index, object)
-        self.events.added(item=object, index=self.__locitem__(index))
+    def insert(self, index, obj):
+        super().insert(index, obj)
+        self.events.added(item=obj, index=self.__locitem__(index))
 
-    def append(self, object):
-        super(TypedList, self).append(object)
-        self.events.added(item=object, index=len(self) - 1)
+    def append(self, obj):
+        super(TypedList, self).append(obj)
+        self.events.added(item=obj, index=len(self) - 1)
 
     def pop(self, key):
         obj = super().pop(key)

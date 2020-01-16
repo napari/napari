@@ -1,7 +1,8 @@
 import numpy as np
 import dask.array as da
 from napari.components import ViewerModel
-from napari.util import colormaps
+from napari.utils.colormaps import colormaps
+
 
 base_colormaps = colormaps.CYMRGB
 two_colormaps = colormaps.MAGENTA_GREEN

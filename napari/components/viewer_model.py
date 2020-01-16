@@ -1,17 +1,18 @@
-import numpy as np
 from math import inf
 import itertools
 from xml.etree.ElementTree import Element, tostring
 
+import numpy as np
+
 from .dims import Dims
 from .layerlist import LayerList
 from .. import layers
-from ..util import colormaps
-from ..util.event import EmitterGroup, Event
-from ..util.keybindings import KeymapMixin
-from ..util.theme import palettes
-from ..util.misc import ensure_iterable, is_iterable
-from ..util import io
+from ..utils import colormaps
+from ..utils.event import EmitterGroup, Event
+from ..utils.keybindings import KeymapMixin
+from ..utils.theme import palettes
+from ..utils.misc import ensure_iterable, is_iterable
+from ..utils import io
 
 
 class ViewerModel(KeymapMixin):
@@ -84,18 +85,18 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(lambda e: self.reset_view())
-        self.dims.events.ndisplay.connect(lambda e: self._update_layers())
-        self.dims.events.order.connect(lambda e: self._update_layers())
-        self.dims.events.axis.connect(lambda e: self._update_layers())
+        self.dims.events.camera.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.order.connect(self._update_layers)
+        self.dims.events.axis.connect(self._update_layers)
         self.layers.events.added.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
         self.layers.events.added.connect(self._update_active_layer)
         self.layers.events.removed.connect(self._update_active_layer)
         self.layers.events.reordered.connect(self._update_active_layer)
-        self.layers.events.added.connect(lambda e: self._update_grid())
-        self.layers.events.removed.connect(lambda e: self._update_grid())
-        self.layers.events.reordered.connect(lambda e: self._update_grid())
+        self.layers.events.added.connect(self._update_grid)
+        self.layers.events.removed.connect(self._update_grid)
+        self.layers.events.reordered.connect(self._update_grid)
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
@@ -267,7 +268,7 @@ class ViewerModel(KeymapMixin):
 
         return size, corner
 
-    def reset_view(self):
+    def reset_view(self, event=None):
         """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
@@ -402,6 +403,7 @@ class ViewerModel(KeymapMixin):
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
+        attenuation=0.5,
         name=None,
         metadata=None,
         scale=None,
@@ -454,8 +456,13 @@ class ViewerModel(KeymapMixin):
         interpolation : str
             Interpolation mode used by vispy. Must be one of our supported
             modes.
+        rendering : str
+            Rendering mode used by vispy. Must be one of our supported
+            modes.
         iso_threshold : float
             Threshold for isosurface.
+        attenuation : float
+            Attenuation rate for attenuated maximum intensity projection.
         name : str
             Name of the layer.
         metadata : dict
@@ -503,6 +510,7 @@ class ViewerModel(KeymapMixin):
                 interpolation=interpolation,
                 rendering=rendering,
                 iso_threshold=iso_threshold,
+                attenuation=attenuation,
                 name=name,
                 metadata=metadata,
                 scale=scale,
@@ -609,10 +617,10 @@ class ViewerModel(KeymapMixin):
             broadcastable to the same shape as the data.
         edge_width : float
             Width of the symbol edge in pixels.
-        edge_color : str
-            Color of the point marker border.
-        face_color : str
-            Color of the point marker body.
+        edge_color : str, array-like
+            Color of the point marker border. Numeric color values should be RGB(A).
+        face_color : str, array-like
+            Color of the point marker body. Numeric color values should be RGB(A).
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.
@@ -673,7 +681,6 @@ class ViewerModel(KeymapMixin):
         is_pyramid=None,
         num_colors=50,
         seed=0.5,
-        n_dimensional=False,
         name=None,
         metadata=None,
         scale=None,
@@ -702,8 +709,6 @@ class ViewerModel(KeymapMixin):
             Number of unique colors to use in colormap.
         seed : float
             Seed for colormap random generator.
-        n_dimensional : bool
-            If `True`, paint and fill edit labels across all dimensions.
         name : str
             Name of the layer.
         metadata : dict
@@ -741,7 +746,6 @@ class ViewerModel(KeymapMixin):
             is_pyramid=is_pyramid,
             num_colors=num_colors,
             seed=seed,
-            n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -873,8 +877,9 @@ class ViewerModel(KeymapMixin):
         data : 3-tuple of array
             The first element of the tuple is an (N, D) array of vertices of
             mesh triangles. The second is an (M, 3) array of int of indices
-            of the mesh triangles. The third element is the (N, ) array of
-            values used to color vertices.
+            of the mesh triangles. The third element is the (K0, ..., KL, N)
+            array of values used to color vertices where the additional L
+            dimensions are used to color the same mesh with different values.
         colormap : str, vispy.Color.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -1124,7 +1129,7 @@ class ViewerModel(KeymapMixin):
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
-    def _update_layers(self, layers=None):
+    def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.
 
         Parameters
@@ -1313,7 +1318,7 @@ class ViewerModel(KeymapMixin):
         """
         self.grid_view(n_row=1, n_column=1, stride=1)
 
-    def _update_grid(self):
+    def _update_grid(self, event=None):
         """Update grid with current grid values.
         """
         self.grid_view(

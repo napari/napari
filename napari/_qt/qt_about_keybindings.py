@@ -8,7 +8,7 @@ from qtpy.QtWidgets import (
 )
 from collections import OrderedDict
 import napari
-from ..util.interactions import get_keybindings_summary
+from ..utils.interactions import get_keybindings_summary
 
 
 class QtAboutKeybindings(QDialog):
@@ -50,11 +50,8 @@ class QtAboutKeybindings(QDialog):
 
         # layer type selection
         self.layerTypeComboBox = QComboBox()
-        for name in self.keybindings_strs:
-            self.layerTypeComboBox.addItem(name)
-        self.layerTypeComboBox.activated[str].connect(
-            lambda text=self.layerTypeComboBox: self.change_layer_type(text)
-        )
+        self.layerTypeComboBox.addItems(list(self.keybindings_strs))
+        self.layerTypeComboBox.activated[str].connect(self.change_layer_type)
         self.layerTypeComboBox.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
         # self.change_layer_type(current_layer)
         layer_type_layout = QHBoxLayout()
@@ -67,12 +64,12 @@ class QtAboutKeybindings(QDialog):
 
         self.viewer.events.active_layer.connect(self.update_active_layer)
         self.viewer.events.palette.connect(self.update_active_layer)
-        self.update_active_layer(None)
+        self.update_active_layer()
 
     def change_layer_type(self, text):
         self.textEditBox.setHtml(self.keybindings_strs[text])
 
-    def update_active_layer(self, event):
+    def update_active_layer(self, event=None):
         col = self.viewer.palette['secondary']
         text = ''
         # Add class and instance viewer keybindings

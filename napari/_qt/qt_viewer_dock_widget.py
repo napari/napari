@@ -13,6 +13,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .utils import qt_signals_blocked
+
 
 class QtViewerDockWidget(QDockWidget):
     """Wrap a QWidget in a QDockWidget and forward viewer events
@@ -115,13 +117,16 @@ class QtViewerDockWidget(QDockWidget):
                 )
         return self.size().height() > self.size().width()
 
-    def _on_visibility_changed(self):
-        self.blockSignals(True)
-        self.setTitleBarWidget(None)
-        if not self.isFloating():
-            self.title = QtCustomTitleBar(self, vertical=not self.is_vertical)
-            self.setTitleBarWidget(self.title)
-        self.blockSignals(False)
+    def _on_visibility_changed(self, visible):
+        if not visible:
+            return
+        with qt_signals_blocked(self):
+            self.setTitleBarWidget(None)
+            if not self.isFloating():
+                self.title = QtCustomTitleBar(
+                    self, vertical=not self.is_vertical
+                )
+                self.setTitleBarWidget(self.title)
 
 
 class QtCustomTitleBar(QLabel):

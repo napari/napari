@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
+    QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -17,11 +18,11 @@ from qtpy.QtWidgets import (
 )
 
 from ..components.dims_constants import DimsMode
-from ..util.event import Event
+from ..utils.event import Event
 from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
-from .util import new_worker_qthread
+from .utils import new_worker_qthread
 
 
 class QtDimSliderWidget(QWidget):
@@ -360,19 +361,24 @@ class QtPlayButton(QPushButton):
         # build popup modal form
 
         self.popup = QtPopup(self)
+        form_layout = QFormLayout()
+        self.popup.frame.setLayout(form_layout)
+
         fpsspin = QtCustomDoubleSpinBox(self.popup)
         fpsspin.setAlignment(Qt.AlignCenter)
         fpsspin.setValue(self.fps)
-        fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
+        if hasattr(fpsspin, 'setStepType'):
+            # this was introduced in Qt 5.12.  Totally optional, just nice.
+            fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
-        self.popup.form_layout.insertRow(
+        form_layout.insertRow(
             0, QLabel('frames per second:', parent=self.popup), fpsspin
         )
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
-        self.popup.form_layout.insertRow(
+        form_layout.insertRow(
             1, QLabel('play direction:', parent=self.popup), revcheck
         )
         self.reverse_check = revcheck
@@ -383,7 +389,7 @@ class QtPlayButton(QPushButton):
         # minspin.setAlignment(Qt.AlignCenter)
         # minspin.setValue(dimsrange[0])
         # minspin.valueChanged.connect(self.set_minframe)
-        # self.popup.form_layout.insertRow(
+        # form_layout.insertRow(
         #     1, QLabel('start frame:', parent=self.popup), minspin
         # )
 
@@ -391,13 +397,13 @@ class QtPlayButton(QPushButton):
         # maxspin.setAlignment(Qt.AlignCenter)
         # maxspin.setValue(dimsrange[1] * dimsrange[2])
         # maxspin.valueChanged.connect(self.set_maxframe)
-        # self.popup.form_layout.insertRow(
+        # form_layout.insertRow(
         #     2, QLabel('end frame:', parent=self.popup), maxspin
         # )
 
         mode_combo = QComboBox(self.popup)
         mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
-        self.popup.form_layout.insertRow(
+        form_layout.insertRow(
             2, QLabel('play mode:', parent=self.popup), mode_combo
         )
         mode_combo.setCurrentText(str(self.mode))

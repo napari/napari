@@ -1,6 +1,6 @@
 from ..layers import Layer
-from ..util.naming import inc_name_count
-from ..util.list import ListModel
+from ..utils.naming import inc_name_count
+from ..utils.list import ListModel
 
 
 def _add(event):

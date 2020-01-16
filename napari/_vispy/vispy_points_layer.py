@@ -1,6 +1,8 @@
 import numpy as np
-from vispy.scene.visuals import Line, Compound, Markers
+from vispy.scene.visuals import Line, Compound
+from .markers import Markers
 from vispy.visuals.transforms import ChainTransform
+
 from .vispy_base_layer import VispyBaseLayer
 
 
@@ -17,14 +19,11 @@ class VispyPointsLayer(VispyBaseLayer):
 
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(lambda e: self._on_data_change())
-        self.layer.events.edge_width.connect(lambda e: self._on_data_change())
-        self.layer.events.edge_color.connect(lambda e: self._on_data_change())
-        self.layer.events.face_color.connect(lambda e: self._on_data_change())
-        self.layer.events.highlight.connect(
-            lambda e: self._on_highlight_change()
-        )
-
+        self.layer.events.symbol.connect(self._on_data_change)
+        self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.face_color.connect(self._on_data_change)
+        self.layer.events.highlight.connect(self._on_highlight_change)
         self._on_display_change()
         self._on_data_change()
 
@@ -37,11 +36,10 @@ class VispyPointsLayer(VispyBaseLayer):
             self.node = Compound([Markers(), Markers(), Line()])
         else:
             self.node = Markers()
-
         self.node.parent = parent
         self._reset_base()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         # Check if ndisplay has changed current node type needs updating
         if (
             self.layer.dims.ndisplay == 3
@@ -54,15 +52,11 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_highlight_change()
 
         if len(self.layer._data_view) > 0:
-            edge_color = [
-                self.layer.edge_colors[i] for i in self.layer._indices_view
-            ]
-            face_color = [
-                self.layer.face_colors[i] for i in self.layer._indices_view
-            ]
+            edge_color = self.layer.edge_color[self.layer._indices_view]
+            face_color = self.layer.face_color[self.layer._indices_view]
         else:
-            edge_color = 'white'
-            face_color = 'white'
+            edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
 
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
@@ -72,7 +66,7 @@ class VispyPointsLayer(VispyBaseLayer):
             size = [0]
         else:
             data = self.layer._data_view
-            size = self.layer._sizes_view
+            size = self.layer._size_view
 
         if self.layer.dims.ndisplay == 2:
             set_data = self.node._subvisuals[0].set_data
@@ -90,7 +84,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.node.update()
 
-    def _on_highlight_change(self):
+    def _on_highlight_change(self, event=None):
         if self.layer.dims.ndisplay == 3:
             return
 
@@ -99,15 +93,14 @@ class VispyPointsLayer(VispyBaseLayer):
             data = self.layer._data_view[self.layer._highlight_index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer._sizes_view[self.layer._highlight_index]
-            face_color = [
-                self.layer.face_colors[i]
-                for i in self.layer._indices_view[self.layer._highlight_index]
+            size = self.layer._size_view[self.layer._highlight_index]
+            face_color = self.layer.face_color[
+                self.layer._indices_view[self.layer._highlight_index]
             ]
         else:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = 0
-            face_color = 'white'
+            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1] + 0.5,
@@ -119,8 +112,11 @@ class VispyPointsLayer(VispyBaseLayer):
             scaling=True,
         )
 
-        if 0 in self.layer._highlight_box.shape:
-            pos = np.zeros((1, 2))
+        if (
+            self.layer._highlight_box is None
+            or 0 in self.layer._highlight_box.shape
+        ):
+            pos = np.zeros((1, self.layer.dims.ndisplay))
             width = 0
         else:
             pos = self.layer._highlight_box

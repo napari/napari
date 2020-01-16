@@ -6,13 +6,43 @@ import sys
 
 import numpy as np
 
-from .util import io
-from . import Viewer, gui_qt
+from . import Viewer, __version__, gui_qt
+from .utils import io, sys_info, citation_text
+
+
+class InfoAction(argparse.Action):
+    def __call__(self, *args, **kwargs):
+        print(sys_info())
+        sys.exit()
+
+
+class CitationAction(argparse.Action):
+    def __call__(self, *args, **kwargs):
+        print(citation_text)
+        sys.exit()
 
 
 def main():
     parser = argparse.ArgumentParser(usage=__doc__)
     parser.add_argument('images', nargs='*', help='Images to view.')
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=f'napari version {__version__}',
+    )
+    parser.add_argument(
+        '--info',
+        action=InfoAction,
+        nargs=0,
+        help='show system information and exit',
+    )
+    parser.add_argument(
+        '--citation',
+        action=CitationAction,
+        nargs=0,
+        help='show citation information and exit',
+    )
     parser.add_argument(
         '--layers',
         action='store_true',

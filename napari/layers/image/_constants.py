@@ -1,5 +1,5 @@
 from enum import auto
-from ...util.misc import StringEnum
+from ...utils.misc import StringEnum
 
 
 class Interpolation(StringEnum):
@@ -36,6 +36,10 @@ class Rendering(StringEnum):
               the result is opaque.
             * mip: maxiumum intensity projection. Cast a ray and display the
               maximum value that was encountered.
+            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
+              ray and attenuate values based on integral of encountered values,
+              display the maximum value that was encountered after attenuation.
+              This will make nearer objects appear more prominent.
             * additive: voxel colors are added along the view ray until
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
@@ -47,3 +51,4 @@ class Rendering(StringEnum):
     ADDITIVE = auto()
     ISO = auto()
     MIP = auto()
+    ATTENUATED_MIP = auto()

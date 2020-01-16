@@ -1,4 +1,6 @@
 from napari._qt.qt_console import QtConsole
+from IPython.terminal.interactiveshell import TerminalInteractiveShell
+from unittest import mock
 
 
 def test_console(qtbot):
@@ -34,3 +36,18 @@ def test_multiple_consoles(qtbot):
     assert 'var_b' in console_a.shell.user_ns
     console_a.shutdown()
     console_b.shutdown()
+
+
+def test_ipython_console(qtbot):
+    """Test mock-creating a console from within ipython."""
+
+    def mock_get_ipython():
+        return TerminalInteractiveShell()
+
+    with mock.patch(
+        'napari._qt.qt_console.get_ipython', side_effect=mock_get_ipython
+    ):
+        console = QtConsole()
+        qtbot.addWidget(console)
+        assert console.kernel_client is None
+        console.shutdown()

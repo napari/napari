@@ -24,22 +24,17 @@ class QtLayerControls(QFrame):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.setValue(self.layer.opacity * 100)
-        sld.valueChanged[int].connect(
-            lambda value=sld: self.changeOpacity(value)
-        )
-        self.opacitySilder = sld
+        sld.valueChanged.connect(self.changeOpacity)
+        self.opacitySlider = sld
+        self._on_opacity_change()
 
         blend_comboBox = QComboBox()
-        for blend in Blending:
-            blend_comboBox.addItem(str(blend))
+        blend_comboBox.addItems(Blending.keys())
         index = blend_comboBox.findText(
             self.layer.blending, Qt.MatchFixedString
         )
         blend_comboBox.setCurrentIndex(index)
-        blend_comboBox.activated[str].connect(
-            lambda text=blend_comboBox: self.changeBlending(text)
-        )
+        blend_comboBox.activated[str].connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
 
     def changeOpacity(self, value):
@@ -49,11 +44,11 @@ class QtLayerControls(QFrame):
     def changeBlending(self, text):
         self.layer.blending = text
 
-    def _on_opacity_change(self, event):
+    def _on_opacity_change(self, event=None):
         with self.layer.events.opacity.blocker():
-            self.opacitySilder.setValue(self.layer.opacity * 100)
+            self.opacitySlider.setValue(self.layer.opacity * 100)
 
-    def _on_blending_change(self, event):
+    def _on_blending_change(self, event=None):
         with self.layer.events.blending.blocker():
             index = self.blendComboBox.findText(
                 self.layer.blending, Qt.MatchFixedString
