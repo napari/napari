@@ -82,10 +82,14 @@ task:
   test_pyside2_script:
     - pytest -v
 
-  test_pyqt5_script:
-    - pip uninstall -y pyside2
-    - pip install pyqt5
-    - pytest -v
+  test_pyqt5_script: |
+    if [ "$PY_VER" == "3.6" ] || [ $OS == "linux" ]; then
+      pip uninstall -y pyside2
+      pip install pyqt5
+      pytest -v
+    fi
+  
+
 
 
 windows_task:
