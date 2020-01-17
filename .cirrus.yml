@@ -88,8 +88,6 @@ task:
       pip install pyqt5
       pytest -v
     fi
-  
-
 
 
 windows_task:
