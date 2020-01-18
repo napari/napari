@@ -30,6 +30,7 @@ from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
+from ..plugins import plugin_manager
 
 
 class QtViewer(QSplitter):
@@ -260,6 +261,16 @@ class QtViewer(QSplitter):
             List of filenames to be opened
         """
         if len(filenames) > 0:
+            # FIXME: haven't decided how to handle lists of filenames yet in a
+            # way that also falls back gracefully to add_image(path=filenames)
+            # ALSO: need a GUI option (with persistence) to let the users
+            # change the order of reader plugins (because the first plugin
+            # to claim a path wins)
+            for fname in filenames:
+                for check, read in plugin_manager.readers:
+                    if check(fname):
+                        read(fname, self.viewer)
+                        return
             self.viewer.add_image(path=filenames)
             self._last_visited_dir = os.path.dirname(filenames[0])
 
