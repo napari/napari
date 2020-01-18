@@ -102,11 +102,11 @@ windows_task:
   matrix:
     - only_if: $CIRRUS_PR != ""
     - only_if: $CIRRUS_PR == ""
-        env:
-          matrix:
-            PY_VER: "3.6"
-            PY_VER: "3.7"
-            PY_VER: "3.8"
+      env:
+        matrix:
+          PY_VER: "3.6"
+          PY_VER: "3.7"
+          PY_VER: "3.8"
   env:
       ANACONDA_LOCATION: $USERPROFILE\anaconda
       PATH: $ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION;$PATH
