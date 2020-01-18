@@ -30,10 +30,14 @@ nix_test_task:
 task:
   auto_cancellation: true
 
-  env:
-    matrix:
-      PY_VER: "3.6"
-      PY_VER: "3.7"
+  matrix:
+    - only_if: $CIRRUS_PR == ""
+      env:
+        matrix:
+          PY_VER: "3.6"
+          PY_VER: "3.7"
+    - only_if: $CIRRUS_PR != ""
+     
 
   matrix:
     - name: linux
