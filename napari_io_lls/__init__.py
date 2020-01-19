@@ -29,16 +29,21 @@ def is_lls_folder(path):
 # two options here... the reader can either accept the viewer instance, and
 # call viewer.add_image (or even other layers) itself,
 # or it can return args and kwargs that would be passed to viewer.add_image
-# the first case is implemented here
-def read_lls_folder(directory, viewer):
-    """Take a directory and load images in the viewer
+# the second case is implemented here
+def read_lls_folder(directory):
+    """Take a directory and return image data and metadata
     
     Parameters
     ----------
     directory : str
         Path to directory
-    viewer : napari.Viewer
-        viewer instance
+    
+    Returns
+    -------
+    data : array
+        Image array data
+    meta : dict
+        Image metadata dictionary.
     """
     i = 0
     channels = []
@@ -73,8 +78,13 @@ def read_lls_folder(directory, viewer):
     stack = da.stack(channels)
     scale = [1] * stack.ndim
     scale[-3] = dz / dx
-    viewer.add_image(stack, channel_axis=0, rgb=False, scale=scale, name=waves)
-    viewer.dims.ndisplay = 3
+    meta = {
+        'channel_axis': 0,
+        'rgb': False,
+        'scale': scale,
+        'name': waves,
+    }
+    return stack, meta
 
 
 """

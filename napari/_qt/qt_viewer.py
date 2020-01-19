@@ -269,7 +269,8 @@ class QtViewer(QSplitter):
             for fname in filenames:
                 for check, read in plugin_manager.readers:
                     if check(fname):
-                        read(fname, self.viewer)
+                        data, meta = read(fname)
+                        self.viewer.add_image(data, **meta)
                         return
             self.viewer.add_image(path=filenames)
             self._last_visited_dir = os.path.dirname(filenames[0])
