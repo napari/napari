@@ -10,6 +10,16 @@ from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
 from .shape_list import ShapeList
 from .shape_utils import create_box, point_to_lines
 from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
+from ...utils.colormaps.standardize_color import (
+    transform_color,
+    hex_to_name,
+    rgb_to_hex,
+)
+from ..utils.color_transformations import (
+    transform_color_with_defaults,
+    normalize_and_broadcast_colors,
+    ColorType,
+)
 
 
 class Shapes(Layer):
@@ -32,18 +42,16 @@ class Shapes(Layer):
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_color : str or list
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements. If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape
-        otherwise the same value will be used for all shapes.
-    face_color : str or list
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3
-        or 4 elements. If a list is supplied it must be the same length as
-        the length of `data` and each element will be applied to each shape
-        otherwise the same value will be used for all shapes.
+    edge_color : str or array-like
+        Color of the shape marker border. Strings can be color names or hex
+        values (starting with `#`). Array-like should have 3 or 4 elements
+        per row in an RGB(A) format, and can either be of length 1 or the
+        exact length of `data`.
+    face_color : str or array-like
+        Color of the shape marker body. Strings can be color names or hex
+        values (starting with `#`). Array-like should have 3 or 4 elements
+        per row in an RGB(A) format, and can either be of length 1 or the
+        exact length of `data`.
     z_index : int or list
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
@@ -74,10 +82,11 @@ class Shapes(Layer):
         N vertices of a shape in D dimensions.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
-    edge_color : (N, ) list of str
+    edge_color : Nx4 numpy array
+        Array of edge color RGBA values, one for each point.
         Name of edge color for each shape.
-    face_color : (N, ) list of str
-        Name of face color for each shape.
+    face_color : Nx4 numpy array
+        Array of face color RGBA values, one for each point.
     edge_width : (N, ) list of float
         Edge width for each shape.
     opacity : (N, ) list of float
@@ -250,15 +259,27 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        if type(edge_color) is str:
-            self._current_edge_color = edge_color
-        else:
-            self._current_edge_color = 'black'
+        self._current_edge_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=edge_color,
+            elem_name="edge_color",
+            default="black",
+        )
+        self._current_face_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=face_color,
+            elem_name="face_color",
+            default="white",
+        )
 
-        if type(face_color) is str:
-            self._current_face_color = face_color
-        else:
-            self._current_face_color = 'white'
+        self.edge_color = normalize_and_broadcast_colors(
+            len(self.data), self._current_edge_color
+        )
+        self.face_color = normalize_and_broadcast_colors(
+            len(self.data), self._current_face_color
+        )
+        self._current_edge_color = self.edge_color[-1]
+        self._current_face_color = self.face_color[-1]
 
         if np.isscalar(opacity):
             self._current_opacity = opacity
@@ -366,31 +387,35 @@ class Shapes(Layer):
 
     @property
     def current_edge_color(self):
-        """str: color of shape edges including lines and paths."""
-        return self._current_edge_color
+        """Edge color of marker for next added shape of the selected shape(s)."""
+        hex_ = rgb_to_hex(self._current_edge_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
-    def current_edge_color(self, edge_color):
-        self._current_edge_color = edge_color
-        if self._update_properties:
-            index = self.selected_data
-            for i in index:
-                self._data_view.update_edge_color(i, edge_color)
+    def current_edge_color(self, edge_color: ColorType) -> None:
+        self._current_edge_color = transform_color(edge_color)
+        if self._update_properties and len(self.selected_data) > 0:
+            cur_colors: np.ndarray = self.edge_color
+            cur_colors[self.selected_data] = self._current_edge_color
+            self.edge_color = cur_colors
         self.events.edge_color()
+        self.events.highlight()
 
     @property
-    def current_face_color(self):
-        """str: color of shape faces."""
-        return self._current_face_color
+    def current_face_color(self) -> str:
+        """Face color of marker for the next added point or the selected point(s)."""
+        hex_ = rgb_to_hex(self._current_face_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
-    def current_face_color(self, face_color):
-        self._current_face_color = face_color
-        if self._update_properties:
-            index = self.selected_data
-            for i in index:
-                self._data_view.update_face_color(i, face_color)
+    def current_face_color(self, face_color: ColorType) -> None:
+        self._current_face_color = transform_color(face_color)
+        if self._update_properties and len(self.selected_data) > 0:
+            cur_colors: np.ndarray = self.face_color
+            cur_colors[self.selected_data] = self._current_face_color
+            self.face_color = cur_colors
         self.events.face_color()
+        self.events.highlight()
 
     @property
     def current_opacity(self):
@@ -418,16 +443,6 @@ class Shapes(Layer):
         return self._data_view.shape_types
 
     @property
-    def edge_color(self):
-        """list of str: name of edge color for each shape."""
-        return self._data_view.edge_colors
-
-    @property
-    def face_color(self):
-        """list of str: name of face color for each shape."""
-        return self._data_view.face_colors
-
-    @property
     def edge_width(self):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
@@ -453,27 +468,13 @@ class Shapes(Layer):
         self._selected_box = self.interaction_box(selected_data)
 
         # Update properties based on selected shapes
-        face_colors = list(
-            set(
-                [
-                    self._data_view.shapes[i]._face_color_name
-                    for i in selected_data
-                ]
-            )
-        )
+        face_colors = np.unique(self.face_color[selected_data], axis=0)
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
                 self.current_face_color = face_color
 
-        edge_colors = list(
-            set(
-                [
-                    self._data_view.shapes[i]._edge_color_name
-                    for i in selected_data
-                ]
-            )
-        )
+        edge_colors = np.unique(self.edge_color[selected_data], axis=0)
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
@@ -617,7 +618,7 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
+        data : list | array
             List of shape data, where each element is an (N, D) array of the
             N vertices of a shape in D dimensions. Can be an 3-dimensional
             array if each shape has the same number of vertices.
@@ -632,18 +633,16 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str | tuple | list
-            If string can be any color name recognized by vispy or hex value if
-            starting with `#`. If array-like must be 1-dimensional array with 3
-            or 4 elements. If a list is supplied it must be the same length as
-            the length of `data` and each element will be applied to each shape
-            otherwise the same value will be used for all shapes.
-        face_color : str | tuple | list
-            If string can be any color name recognized by vispy or hex value if
-            starting with `#`. If array-like must be 1-dimensional array with 3
-            or 4 elements. If a list is supplied it must be the same length as
-            the length of `data` and each element will be applied to each shape
-            otherwise the same value will be used for all shapes.
+        edge_color : str | array-like
+            Color of the shape marker border. Strings can be color names or hex
+            values (starting with `#`). Array-like should have 3 or 4 elements
+            per row in an RGB(A) format, and can either be of length 1 or the
+            exact length of `data`.
+        face_color : str | array-like
+            Color of the shape marker body. Strings can be color names or hex
+            values (starting with `#`). Array-like should have 3 or 4 elements
+            per row in an RGB(A) format, and can either be of length 1 or the
+            exact length of `data`.
         opacity : float | list
             Opacity of the shapes, must be between 0 and 1.
         z_index : int | list
