@@ -28,6 +28,9 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    annotations : dict
+        Annotations for each point. Each annotation should be an array of length N,
+        where N is the number of points.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -66,6 +69,9 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    annotations : dict
+        Annotations for each point. Each annotation should be an array of length N,
+        where N is the number of points.
     symbol : str
         Symbol used for all point markers.
     size : array (N, D)
@@ -129,6 +135,7 @@ class Points(Layer):
         self,
         data=None,
         *,
+        annotations={},
         symbol='o',
         size=10,
         edge_width=1,
@@ -170,6 +177,9 @@ class Points(Layer):
             highlight=Event,
         )
         self._colors = get_color_namelist()
+
+        # Save the annotations
+        self._annotations = annotations
 
         # Save the point coordinates
         self._data = np.asarray(data)
@@ -242,6 +252,10 @@ class Points(Layer):
         self._current_face_color = self.face_color[-1]
         self.size = size
 
+        self.current_annotations = {
+            k: v[-1] for k, v in self.annotations.items()
+        }
+
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
@@ -263,6 +277,9 @@ class Points(Layer):
                 self.edge_color = self.edge_color[: len(data)]
                 self.face_color = self.face_color[: len(data)]
                 self.size = self._size[: len(data)]
+
+                for k in self.annotations:
+                    self.annotations[k] = self.annotations[k][: len(data)]
 
         elif len(data) > cur_npoints:
             # If there are now more points, add the size and colors of the
@@ -288,8 +305,25 @@ class Points(Layer):
                 )
                 self.face_color = np.vstack((self.face_color, new_face_colors))
                 self.size = np.concatenate((self._size, size), axis=0)
+
+                for k in self.annotations:
+                    new_annotation = np.repeat(
+                        self.current_annotations[k], adding, axis=0
+                    )
+                    self.annotations[k] = np.concatenate(
+                        (self.annotations[k], new_annotation), axis=0
+                    )
         self._update_dims()
         self.events.data()
+
+    @property
+    def annotations(self):
+        """Annotations for each point"""
+        return self._annotations
+
+    @annotations.setter
+    def annotations(self, annotations):
+        self._annotations = annotations
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -427,6 +461,7 @@ class Points(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'edge_color': self.edge_color,
+                'annotations': self.annotations,
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'data': self.data,
@@ -473,6 +508,13 @@ class Points(Layer):
             size = size[0]
             with self.block_update_properties():
                 self.current_size = size
+
+        annotations = {
+            k: np.unique(v[index], axis=0) for k, v in self.annotations.items()
+        }
+        n_unique_annotations = np.array([len(v) for v in annotations.values()])
+        if np.all(n_unique_annotations == 1):
+            self.current_annotations = annotations
 
     def interaction_box(self, index):
         """Create the interaction box around a list of points in view.
@@ -774,6 +816,10 @@ class Points(Layer):
             self._size = np.delete(self._size, index, axis=0)
             self.edge_color = np.delete(self.edge_color, index, axis=0)
             self.face_color = np.delete(self.face_color, index, axis=0)
+            for k in self.annotations:
+                self.annotations[k] = np.delete(
+                    self.annotations[k], index, axis=0
+                )
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = []
@@ -830,6 +876,11 @@ class Points(Layer):
                     transform_color(deepcopy(self._clipboard['face_color'])),
                 )
             )
+            for k in self.annotations:
+                self.annotations[k] = np.concatenate(
+                    (self.annotations[k], self._clipboard['annotations'][k]),
+                    axis=0,
+                )
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
@@ -846,6 +897,10 @@ class Points(Layer):
                 'edge_color': deepcopy(self.edge_color[self.selected_data]),
                 'face_color': deepcopy(self.face_color[self.selected_data]),
                 'size': deepcopy(self.size[self.selected_data]),
+                'annotations': {
+                    k: deepcopy(v[self.selected_data])
+                    for k, v in self.annotations.items()
+                },
                 'indices': self.dims.indices,
             }
         else:

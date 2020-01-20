@@ -15,7 +15,11 @@ with napari.gui_qt():
     # add the points
     points = np.array([[100, 100], [200, 200], [333, 111]])
     size = np.array([10, 20, 20])
-    viewer.add_points(points, size=size)
+    annotations = {
+        'point_class': np.array(['A', 'A', 'B']),
+        'best_point': np.array([True, False, False])
+    }
+    viewer.add_points(points, size=size, annotations=annotations)
 
     # unselect the image layer
     viewer.layers[0].selected = False

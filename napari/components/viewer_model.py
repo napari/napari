@@ -587,6 +587,7 @@ class ViewerModel(KeymapMixin):
         self,
         data=None,
         *,
+        annotations={},
         symbol='o',
         size=10,
         edge_width=1,
@@ -607,6 +608,9 @@ class ViewerModel(KeymapMixin):
         ----------
         data : array (N, D)
             Coordinates for N points in D dimensions.
+        annotations : dict
+            Annotations for each point. Each annotation should be an array of length N,
+            where N is the number of points.
         symbol : str
             Symbol to be used for the point markers. Must be one of the
             following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -657,6 +661,7 @@ class ViewerModel(KeymapMixin):
 
         layer = layers.Points(
             data=data,
+            annotations=annotations,
             symbol=symbol,
             size=size,
             edge_width=edge_width,

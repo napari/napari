@@ -142,6 +142,7 @@ def view_image(
 def view_points(
     data=None,
     *,
+    annotations={},
     symbol='o',
     size=10,
     edge_width=1,
@@ -166,6 +167,9 @@ def view_points(
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    annotations : dict
+        Annotations for each point. Each annotation should be an array of length N,
+        where N is the number of points.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -225,6 +229,7 @@ def view_points(
     )
     viewer.add_points(
         data=data,
+        annotations=annotations,
         symbol=symbol,
         size=size,
         edge_width=edge_width,
