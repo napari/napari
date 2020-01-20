@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
 
@@ -178,12 +178,12 @@ class Points(Layer):
         )
         self._colors = get_color_namelist()
 
-        # Save the annotations
-        self._annotations = annotations
-
         # Save the point coordinates
         self._data = np.asarray(data)
         self.dims.clip = False
+
+        # Save the annotations
+        self._annotations = self._validate_annotations(annotations)
 
         # Save the point style params
         self.symbol = symbol
@@ -322,8 +322,21 @@ class Points(Layer):
         return self._annotations
 
     @annotations.setter
-    def annotations(self, annotations):
-        self._annotations = annotations
+    def annotations(self, annotations: Dict[str, np.ndarray]):
+
+        self._annotations = self._validate_annotations(annotations)
+
+    def _validate_annotations(self, annotations: Dict[str, np.ndarray]):
+        """Validates the type and size of the annotations"""
+        for v in annotations.values():
+            if not isinstance(v, np.ndarray):
+                raise TypeError('all annotations should numpy arrays')
+            if len(v) != len(self.data):
+                raise ValueError(
+                    'the number of annotations must equal the number of points'
+                )
+
+        return annotations
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""

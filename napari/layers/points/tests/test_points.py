@@ -2,6 +2,7 @@ from copy import copy
 from xml.etree.ElementTree import Element
 
 import numpy as np
+import pytest
 
 from napari.layers import Points
 from napari.utils.colormaps.standardize_color import transform_color
@@ -318,6 +319,19 @@ def test_annotations():
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.annotations['point_type'] == paste_annotations)
+
+
+def test_annotations_errors():
+    shape = (3, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+
+    with pytest.raises(ValueError):
+        annotations = {'point_type': np.array(['A', 'B'])}
+        Points(data, annotations=copy(annotations))
+    with pytest.raises(TypeError):
+        annotations = {'point_type': ['A', 'B', 'C']}
+        Points(data, annotations=copy(annotations))
 
 
 def test_edge_width():
