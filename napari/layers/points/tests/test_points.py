@@ -284,6 +284,42 @@ def test_symbol():
     assert layer.symbol == 'star'
 
 
+def test_annotations():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, annotations=copy(annotations))
+    assert layer.annotations == annotations
+
+    # test removing points
+    layer.selected_data = [0, 1]
+    layer.remove_selected()
+    remove_annotations = annotations['point_type'][2::]
+    assert len(layer.annotations['point_type']) == (shape[0] - 2)
+    assert np.all(layer.annotations['point_type'] == remove_annotations)
+
+    # test selection of annotations
+    layer.selected_data = [0]
+    selected_annotation = layer.current_annotations['point_type']
+    assert len(selected_annotation) == 1
+    assert selected_annotation[0] == 'A'
+
+    # test adding annotations
+    layer.add([10, 10])
+    add_annotations = np.concatenate((remove_annotations, ['A']), axis=0)
+    assert np.all(layer.annotations['point_type'] == add_annotations)
+
+    # test copy/paste
+    layer.selected_data = [0, 1]
+    layer._copy_data()
+    assert np.all(layer._clipboard['annotations']['point_type'] == ['A', 'B'])
+
+    layer._paste_data()
+    paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
+    assert np.all(layer.annotations['point_type'] == paste_annotations)
+
+
 def test_edge_width():
     """Test setting edge width."""
     shape = (10, 2)
