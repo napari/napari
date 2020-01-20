@@ -7,7 +7,7 @@ import numpy as np
 from ..base import Layer
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._constants import Symbol, SYMBOL_ALIAS, Mode
+from ._constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ...utils.colormaps.standardize_color import (
     transform_color,
     hex_to_name,
@@ -106,6 +106,14 @@ class Points(Layer):
         In SELECT mode the cursor can select points by clicking on them or
         by dragging a box around them. Once selected points can be moved,
         have their properties edited, or be deleted.
+    face_color_mode : str
+        Face color setting mode.
+
+        DIRECT (default mode) allows each point to be set arbitrarily
+
+        CYCLE allows the color to be set via a color cycle over an attribute
+
+        CMAP allows color to be set via a color map over an attribute
 
     Extended Summary
     ----------
@@ -245,9 +253,10 @@ class Points(Layer):
         self.edge_color = normalize_and_broadcast_colors(
             len(self.data), self._current_edge_color
         )
-        self.face_color = normalize_and_broadcast_colors(
+        self._face_color = normalize_and_broadcast_colors(
             len(self.data), self._current_face_color
         )
+        self._face_color_mode = ColorMode.DIRECT
         self._current_edge_color = self.edge_color[-1]
         self._current_face_color = self.face_color[-1]
         self.size = size
@@ -444,6 +453,16 @@ class Points(Layer):
         self.events.highlight()
 
     @property
+    def face_color(self):
+        return self._face_color
+
+    @face_color.setter
+    def face_color(self, face_color):
+        self._face_color = normalize_and_broadcast_colors(
+            len(self.data), face_color
+        )
+
+    @property
     def current_face_color(self) -> str:
         """Face color of marker for the next added point or the selected point(s)."""
         hex_ = rgb_to_hex(self._current_face_color)[0]
@@ -458,6 +477,24 @@ class Points(Layer):
             self.face_color = cur_colors
         self.events.face_color()
         self.events.highlight()
+
+    @property
+    def face_color_mode(self):
+        """str: Face color setting mode
+
+        DIRECT (default mode) allows each point to be set arbitrarily
+
+        CYCLE allows the color to be set via a color cycle over an attribute
+
+        CMAP allows color to be set via a color map over an attribute
+        """
+        return str(self._face_color_mode)
+
+    @face_color_mode.setter
+    def face_color_mode(self, face_color_mode):
+        if isinstance(face_color_mode, str):
+            face_color_mode = ColorMode(face_color_mode)
+        self._face_color_mode = face_color_mode
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -828,7 +865,7 @@ class Points(Layer):
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
             self.edge_color = np.delete(self.edge_color, index, axis=0)
-            self.face_color = np.delete(self.face_color, index, axis=0)
+            self._face_color = np.delete(self.face_color, index, axis=0)
             for k in self.annotations:
                 self.annotations[k] = np.delete(
                     self.annotations[k], index, axis=0
