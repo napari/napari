@@ -12,7 +12,7 @@ from ..shape_utils import (
 
 
 class Shape(ABC):
-    """Base class for a single shape
+    """Base class for a single shape.
 
     Parameters
     ----------
@@ -20,14 +20,16 @@ class Shape(ABC):
         Vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
+    edge_color : str or array-like
+        Color of the shape marker border. Strings can be color names or hex
+        values (starting with `#`). Array-like should have 3 or 4 elements
+        per row in an RGB(A) format, and can either be of length 1 or the
+        exact length of `data`.
+    face_color : str or array-like
+        Color of the shape marker body. Strings can be color names or hex
+        values (starting with `#`). Array-like should have 3 or 4 elements
+        per row in an RGB(A) format, and can either be of length 1 or the
+        exact length of `data`.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
     z_index : int
@@ -47,9 +49,9 @@ class Shape(ABC):
         currently supported.
     edge_width : float
         thickness of lines and edges.
-    edge_color : ColorArray
+    edge_color : np.ndarray
         Color of the shape edge
-    face_color : ColorArray
+    face_color : np.ndarray
         Color of the shape face
     opacity : float
         Opacity of the shape, must be between 0 and 1.
@@ -74,10 +76,10 @@ class Shape(ABC):
     Extended Summary
     ----------
     _edge_color_name : str
-        Name of edge color or six digit hex code representing edge color if not
+        Name of edge color or eight digit hex code representing edge color if not
         recognized
     _face_color_name : str
-        Name of edge color or six digit hex code representing face color if not
+        Name of edge color or eight digit hex code representing face color if not
         recognized
     _closed : bool
         Bool if shape edge is a closed path or not
@@ -208,13 +210,13 @@ class Shape(ABC):
         self._edge_width = edge_width
 
     @property
-    def edge_color(self):
-        """Color, ColorArray: color of edges
-        """
+    def edge_color(self) -> np.ndarray:
+        """RGBA array of the color of the shape's edges."""
         return self._edge_color
 
     @edge_color.setter
     def edge_color(self, edge_color):
+        # FIXME
         self._edge_color = Color(edge_color)
         if type(edge_color) is str:
             self._edge_color_name = edge_color
@@ -224,12 +226,12 @@ class Shape(ABC):
 
     @property
     def face_color(self):
-        """Color, ColorArray: color of faces
-        """
+        """RGBA array of the color of the shape's body."""
         return self._face_color
 
     @face_color.setter
     def face_color(self, face_color):
+        # FIXME
         self._face_color = Color(face_color)
         if type(face_color) is str:
             self._face_color_name = face_color

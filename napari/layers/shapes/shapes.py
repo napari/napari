@@ -259,28 +259,6 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        self._current_edge_color = transform_color_with_defaults(
-            num_entries=len(self.data),
-            colors=edge_color,
-            elem_name="edge_color",
-            default="black",
-        )
-        self._current_face_color = transform_color_with_defaults(
-            num_entries=len(self.data),
-            colors=face_color,
-            elem_name="face_color",
-            default="white",
-        )
-
-        self.edge_color = normalize_and_broadcast_colors(
-            len(self.data), self._current_edge_color
-        )
-        self.face_color = normalize_and_broadcast_colors(
-            len(self.data), self._current_face_color
-        )
-        self._current_edge_color = self.edge_color[-1]
-        self._current_face_color = self.face_color[-1]
-
         if np.isscalar(opacity):
             self._current_opacity = opacity
         else:
@@ -329,6 +307,28 @@ class Shapes(Layer):
             opacity=opacity,
             z_index=z_index,
         )
+
+        self._current_edge_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=edge_color,
+            elem_name="edge_color",
+            default="black",
+        )
+        self._current_face_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=face_color,
+            elem_name="face_color",
+            default="white",
+        )
+
+        self.edge_color = normalize_and_broadcast_colors(
+            len(self.data), self._current_edge_color
+        )
+        self.face_color = normalize_and_broadcast_colors(
+            len(self.data), self._current_face_color
+        )
+        self._current_edge_color = self.edge_color[-1]
+        self._current_face_color = self.face_color[-1]
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -468,6 +468,8 @@ class Shapes(Layer):
         self._selected_box = self.interaction_box(selected_data)
 
         # Update properties based on selected shapes
+        if len(self._selected_data) == 0:
+            return
         face_colors = np.unique(self.face_color[selected_data], axis=0)
         if len(face_colors) == 1:
             face_color = face_colors[0]

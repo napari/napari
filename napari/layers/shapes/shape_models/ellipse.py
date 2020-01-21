@@ -20,14 +20,16 @@ class Ellipse(Shape):
         boudning box that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
+    edge_color : str or array-like
+        Color of the shape marker border. Strings can be color names or hex
+        values (starting with `#`). Array-like should have 3 or 4 elements
+        per row in an RGB(A) format, and can either be of length 1 or the
+        exact length of `data`.
+    face_color : str or array-like
+        Color of the shape marker body. Strings can be color names or hex
+        values (starting with `#`). Array-like should have 3 or 4 elements
+        per row in an RGB(A) format, and can either be of length 1 or the
+        exact length of `data`.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
     z_index : int
@@ -67,8 +69,7 @@ class Ellipse(Shape):
 
     @property
     def data(self):
-        """(4, D) array: ellipse vertices.
-        """
+        """(4, D) array: ellipse vertices."""
         return self._data
 
     @data.setter

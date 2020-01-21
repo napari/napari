@@ -1,6 +1,9 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
+from vispy.color import Color
+
+GREEN = Color('green').rgb[1]
 
 
 def test_empty_shapes():
@@ -510,30 +513,35 @@ def test_edge_color():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
+    colorarray = np.zeros((shape[0], 4), dtype=np.float32)
+    colorarray[:, -1] = 1.0
     assert layer.current_edge_color == 'black'
     assert len(layer.edge_color) == shape[0]
-    assert layer.edge_color == ['black'] * shape[0]
+    np.testing.assert_array_equal(layer.edge_color, colorarray)
 
     # With no data selected changing edge color has no effect
     layer.current_edge_color = 'blue'
     assert layer.current_edge_color == 'blue'
-    assert layer.edge_color == ['black'] * shape[0]
+    np.testing.assert_array_equal(layer.edge_color, colorarray)
 
     # Select data and change edge color of selection
     layer.selected_data = [0, 1]
     assert layer.current_edge_color == 'black'
     layer.current_edge_color = 'green'
-    assert layer.edge_color == ['green'] * 2 + ['black'] * (shape[0] - 2)
+    greens = np.array([[0, GREEN, 0, 1], [0, GREEN, 0, 1]], dtype=np.float32)
+    colorarray[:2] = greens
+    np.testing.assert_array_equal(layer.edge_color, colorarray)
 
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = []
     layer.current_edge_color = 'blue'
     layer.add(new_shape)
+    colorarray = np.vstack(
+        (colorarray, np.array([[0, 0, 1, 1]], dtype=np.float32))
+    )
     assert len(layer.edge_color) == shape[0] + 1
-    assert layer.edge_color == ['green'] * 2 + ['black'] * (shape[0] - 2) + [
-        'blue'
-    ]
+    np.testing.assert_array_equal(layer.edge_color, colorarray)
 
     # Instantiate with custom edge color
     layer = Shapes(data, edge_color='red')
@@ -543,20 +551,27 @@ def test_edge_color():
     col_list = ['red', 'green'] * 5
     layer = Shapes(data, edge_color=col_list)
     assert layer.current_edge_color == 'black'
-    assert layer.edge_color == col_list
+    colorarray = np.tile(
+        np.array([[1, 0, 0, 1], [0, GREEN, 0, 1]], dtype=np.float32), (5, 1)
+    )
+    np.testing.assert_array_equal(layer.edge_color, colorarray)
 
     # Add new point and test its color
     layer.current_edge_color = 'blue'
     layer.add(new_shape)
     assert len(layer.edge_color) == shape[0] + 1
-    assert layer.edge_color == col_list + ['blue']
+    colorarray = np.vstack(
+        (colorarray, np.array([[0, 0, 1, 1]], dtype=np.float32))
+    )
+    np.testing.assert_array_equal(layer.edge_color, colorarray)
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.edge_color) == shape[0] - 1
-    assert layer.edge_color == [col_list[1]] + col_list[3:] + ['blue']
+    colorarray = np.delete(colorarray, [0, 2])
+    np.testing.assert_array_equal(layer.edge_color, colorarray)
 
 
 def test_face_color():
