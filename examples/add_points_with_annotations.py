@@ -17,7 +17,7 @@ with napari.gui_qt():
     size = np.array([10, 20, 20])
     annotations = {
         'point_class': np.array(['A', 'A', 'B']),
-        'best_point': np.array([True, False, False])
+        'good_point': np.array([True, False, False])
     }
     face_color_cycle = ['blue', 'green']
     points_layer = viewer.add_points(
@@ -27,4 +27,18 @@ with napari.gui_qt():
         face_color='point_class',
         face_color_cycle=face_color_cycle
     )
-    #points_layer.face_color = 'point_class'
+
+    # change the annotation that sets the face_color
+    points_layer.face_color = 'good_point'
+
+    # bind a function to toggle the good_point annotation of the selected points
+    @viewer.bind_key('t')
+    def toggle_point_annotation(viewer):
+        selected_points = viewer.layers[1].selected_data
+        if selected_points:
+            selected_annotations = viewer.layers[1].annotations['good_point'][selected_points]
+            toggled_annotations = np.logical_not(selected_annotations)
+            viewer.layers[1].annotations['good_point'][selected_points] = toggled_annotations
+
+            # we need to manually refresh since we did not use the Points.annotations setter
+            points_layer._refresh_face_color()
