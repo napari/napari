@@ -299,7 +299,7 @@ class Points(Layer):
 
         # Adjust the size array when the number of points has changed
         if len(data) < cur_npoints:
-            # If there are now less points, remove the size and colors of the
+            # If there are now fewer points, remove the size and colors of the
             # extra ones
             with self.events.set_data.blocker():
                 self.edge_color = self.edge_color[: len(data)]
@@ -324,15 +324,6 @@ class Points(Layer):
                         self.current_size, self._size.shape[1]
                     )
                 size = np.repeat([new_size], adding, axis=0)
-                new_edge_colors = np.tile(
-                    self._current_edge_color, (adding, 1)
-                )
-                self.edge_color = np.vstack((self.edge_color, new_edge_colors))
-                new_face_colors = np.tile(
-                    self._current_face_color, (adding, 1)
-                )
-                self.face_color = np.vstack((self.face_color, new_face_colors))
-                self.size = np.concatenate((self._size, size), axis=0)
 
                 for k in self.annotations:
                     new_annotation = np.repeat(
@@ -341,6 +332,26 @@ class Points(Layer):
                     self.annotations[k] = np.concatenate(
                         (self.annotations[k], new_annotation), axis=0
                     )
+
+                new_edge_colors = np.tile(
+                    self._current_edge_color, (adding, 1)
+                )
+                self.edge_color = np.vstack((self.edge_color, new_edge_colors))
+                if self._face_color_mode == ColorMode.DIRECT:
+                    new_face_colors = np.tile(
+                        self._current_face_color, (adding, 1)
+                    )
+                elif self._face_color_mode == ColorMode.CYCLE:
+                    face_color_annotation = self.current_annotations[
+                        self._face_color_annotation
+                    ][0]
+                    new_face_colors = np.tile(
+                        self.face_color_cycle_map[face_color_annotation],
+                        (adding, 1),
+                    )
+                self.face_color = np.vstack((self.face_color, new_face_colors))
+                self.size = np.concatenate((self._size, size), axis=0)
+
         self._update_dims()
         self.events.data()
 
@@ -351,11 +362,10 @@ class Points(Layer):
 
     @annotations.setter
     def annotations(self, annotations: Dict[str, np.ndarray]):
-
         self._annotations = self._validate_annotations(annotations)
         if self._face_color_annotation not in self._annotations:
             self._face_color_annotation = ''
-            warnings.warn('annotation used for face color dropped')
+            warnings.warn('annotation used for face_color dropped')
 
     def _validate_annotations(self, annotations: Dict[str, np.ndarray]):
         """Validates the type and size of the annotations"""
