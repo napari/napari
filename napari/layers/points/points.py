@@ -1,6 +1,7 @@
 from typing import Union, Dict
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
+from itertools import cycle
 
 import numpy as np
 
@@ -45,6 +46,9 @@ class Points(Layer):
         Color of the point marker border. Numeric color values should be RGB(A).
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
+    face_color_cycle : np.ndarray
+        Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
+        to set face_color.
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
@@ -83,6 +87,9 @@ class Points(Layer):
         Array of edge color RGBA values, one for each point.
     face_color : Nx4 numpy array
         Array of face color RGBA values, one for each point.
+    face_color_cycle : np.ndarray
+        Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
+        to set face_color.
     current_size : float
         Size of the marker for the next point to be added or the currently
         selected point.
@@ -143,12 +150,13 @@ class Points(Layer):
         self,
         data=None,
         *,
-        annotations={},
+        annotations=None,
         symbol='o',
         size=10,
         edge_width=1,
         edge_color='black',
         face_color='white',
+        face_color_cycle=None,
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -191,7 +199,10 @@ class Points(Layer):
         self.dims.clip = False
 
         # Save the annotations
-        self._annotations = self._validate_annotations(annotations)
+        if annotations is None:
+            self._annotations = {}
+        else:
+            self._annotations = self._validate_annotations(annotations)
 
         # Save the point style params
         self.symbol = symbol
@@ -257,6 +268,13 @@ class Points(Layer):
             len(self.data), self._current_face_color
         )
         self._face_color_mode = ColorMode.DIRECT
+        if face_color_cycle is None:
+            self._face_color_cycle = cycle(
+                np.array([[1, 1, 0, 1], [0, 1, 0, 1]])
+            )
+        else:
+            self._face_color_cycle = face_color_cycle
+        self._face_color_annotation = ''
         self._current_edge_color = self.edge_color[-1]
         self._current_face_color = self.face_color[-1]
         self.size = size
@@ -458,9 +476,72 @@ class Points(Layer):
 
     @face_color.setter
     def face_color(self, face_color):
-        self._face_color = normalize_and_broadcast_colors(
-            len(self.data), face_color
-        )
+        if isinstance(face_color, str):
+            # if the provided face color is a string, first check if it is a key in the annotations.
+            # otherwise, assume it is the name of a color
+            if face_color in self.annotations:
+                self._face_color_annotation = face_color
+                self.face_color_mode = ColorMode.CYCLE
+                self._refresh_face_color()
+
+            else:
+                transformed_color = transform_color_with_defaults(
+                    num_entries=len(self.data),
+                    colors=face_color,
+                    elem_name="face_color",
+                    default="white",
+                )
+                self._face_color = normalize_and_broadcast_colors(
+                    len(self.data), transformed_color
+                )
+                self.face_color_mode = ColorMode.DIRECT
+
+                self.events.face_color()
+                self.events.highlight()
+
+        elif isinstance(face_color, (list, np.ndarray)):
+            # if an array like object is provided, assume it is an array of colors
+            transformed_color = transform_color_with_defaults(
+                num_entries=len(self.data),
+                colors=face_color,
+                elem_name="face_color",
+                default="white",
+            )
+            self._face_color = normalize_and_broadcast_colors(
+                len(self.data), transformed_color
+            )
+            self.face_color_mode = ColorMode.DIRECT
+
+            self.events.face_color()
+            self.events.highlight()
+        else:
+            raise ValueError(
+                'face_color should be the name of a color, an array of colors, or the name of an attribute'
+            )
+
+    @property
+    def face_color_cycle(self):
+        """Color cycle """
+        return self._face_color_cycle
+
+    @face_color_cycle.setter
+    def face_color_cycle(self, face_color_cycle):
+        self._face_color_cycle = face_color_cycle
+
+    def _refresh_face_color(self):
+        """ calculate face color if using a cycle or color map"""
+        if self._face_color_mode in (ColorMode.CMAP, ColorMode.CYCLE):
+            color_annotations = self.annotations[self._face_color_annotation]
+            self.face_color_cycle_map = {
+                k: c
+                for k, c in zip(
+                    np.unique(color_annotations), self.face_color_cycle
+                )
+            }
+            colors = np.array(
+                [self.face_color_cycle_map[x] for x in color_annotations]
+            )
+            self.face_color = colors
 
     @property
     def current_face_color(self) -> str:
@@ -510,6 +591,7 @@ class Points(Layer):
                 'symbol': self.symbol,
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
+                'face_color_cycle': self.face_color_cycle,
                 'edge_color': self.edge_color,
                 'annotations': self.annotations,
                 'n_dimensional': self.n_dimensional,

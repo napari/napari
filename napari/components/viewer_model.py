@@ -587,12 +587,13 @@ class ViewerModel(KeymapMixin):
         self,
         data=None,
         *,
-        annotations={},
+        annotations=None,
         symbol='o',
         size=10,
         edge_width=1,
         edge_color='black',
         face_color='white',
+        face_color_cycle=None,
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -625,6 +626,9 @@ class ViewerModel(KeymapMixin):
             Color of the point marker border. Numeric color values should be RGB(A).
         face_color : str, array-like
             Color of the point marker body. Numeric color values should be RGB(A).
+        face_color_cycle : np.ndarray
+            Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
+            to set face_color.
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.
@@ -667,6 +671,7 @@ class ViewerModel(KeymapMixin):
             edge_width=edge_width,
             edge_color=edge_color,
             face_color=face_color,
+            face_color_cycle=face_color_cycle,
             n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,
