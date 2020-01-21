@@ -1,3 +1,4 @@
+# default container
 container:
   image: python:3.8
 
@@ -31,13 +32,17 @@ task:
   auto_cancellation: true
 
   matrix:
+    # not a pull request, run full suite
     - only_if: $CIRRUS_PR == ""
       env:
         matrix:
           PY_VER: "3.6"
           PY_VER: "3.7"
+          PY_VER: "3.8"
+    # is a pull request, only run python 3.8
     - only_if: $CIRRUS_PR != ""
-
+      env:
+        PY_VER: "3.8"
 
   matrix:
     - name: linux
@@ -63,7 +68,7 @@ task:
 
     - name: osx
       osx_instance:
-        image: mojave-xcode-10.3
+        image: mojave-xcode-11.3
       env:
         PATH: $HOME/conda/bin:$PATH
       conda_script:
@@ -100,7 +105,11 @@ windows_task:
     os_version: 2019
 
   matrix:
+    # PR, only run on 3.8
     - only_if: $CIRRUS_PR != ""
+      env:
+        PY_VER: "3.8"
+    # not a PR, run full suite
     - only_if: $CIRRUS_PR == ""
       env:
         matrix:
@@ -143,6 +152,7 @@ windows_task:
 
   test_script:
     - pytest -v -o qt_no_exception_capture=1
+
 
 codecov_task:
   auto_cancellation: true
