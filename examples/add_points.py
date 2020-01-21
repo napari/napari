@@ -21,4 +21,32 @@ with napari.gui_qt():
     }
     viewer.add_points(points, size=size, annotations=annotations)
 
+    # unselect the image layer
+    viewer.layers[0].selected = False
+
+    # adjust some of the points layer properties
+    layer = viewer.layers[1]
+
+    # change the layer name
+    layer.name = 'points'
+
+    # change the layer visibility
+    layer.visible = False
+    layer.visible = True
+
+    # change the layer selection
+    layer.selected = False
+    layer.selected = True
+
+    # change the layer opacity
+    layer.opacity = 0.9
+
+    # change the layer point symbol using an alias
+    layer.symbol = '+'
+
+    # change the layer point n_dimensional status
+    layer.n_dimensional = True
+
+    # change the layer mode
+    layer.mode = 'add'
 

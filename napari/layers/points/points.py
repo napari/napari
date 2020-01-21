@@ -476,31 +476,16 @@ class Points(Layer):
 
     @face_color.setter
     def face_color(self, face_color):
-        if isinstance(face_color, str):
-            # if the provided face color is a string, first check if it is a key in the annotations.
-            # otherwise, assume it is the name of a color
-            if face_color in self.annotations:
-                self._face_color_annotation = face_color
-                self.face_color_mode = ColorMode.CYCLE
-                self._refresh_face_color()
+        # if the provided face color is a string, first check if it is a key in the annotations.
+        # otherwise, assume it is the name of a color
+        if self._is_color_mapped(face_color):
+            self._face_color_annotation = face_color
+            self.face_color_mode = ColorMode.CYCLE
+            self._refresh_face_color()
+            self.events.face_color()
+            self.events.highlight()
 
-            else:
-                transformed_color = transform_color_with_defaults(
-                    num_entries=len(self.data),
-                    colors=face_color,
-                    elem_name="face_color",
-                    default="white",
-                )
-                self._face_color = normalize_and_broadcast_colors(
-                    len(self.data), transformed_color
-                )
-                self.face_color_mode = ColorMode.DIRECT
-
-                self.events.face_color()
-                self.events.highlight()
-
-        elif isinstance(face_color, (list, np.ndarray)):
-            # if an array like object is provided, assume it is an array of colors
+        else:
             transformed_color = transform_color_with_defaults(
                 num_entries=len(self.data),
                 colors=face_color,
@@ -514,6 +499,15 @@ class Points(Layer):
 
             self.events.face_color()
             self.events.highlight()
+
+    def _is_color_mapped(self, color):
+        if isinstance(color, str):
+            if color in self.annotations:
+                return True
+            else:
+                return False
+        elif isinstance(color, (list, np.ndarray)):
+            return False
         else:
             raise ValueError(
                 'face_color should be the name of a color, an array of colors, or the name of an attribute'
@@ -541,7 +535,7 @@ class Points(Layer):
             colors = np.array(
                 [self.face_color_cycle_map[x] for x in color_annotations]
             )
-            self.face_color = colors
+            self._face_color = colors
 
     @property
     def current_face_color(self) -> str:
