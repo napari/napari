@@ -270,6 +270,8 @@ class Points(Layer):
             self._face_color_cycle = cycle(
                 np.array([[1, 1, 0, 1], [0, 1, 0, 1]])
             )
+        elif isinstance(face_color_cycle, cycle):
+            self._face_color_cycle = face_color_cycle
         else:
             self._face_color_cycle = transform_color_cycle(
                 color_cycle=face_color_cycle,
