@@ -321,14 +321,36 @@ def test_annotations():
     assert np.all(layer.annotations['point_type'] == paste_annotations)
 
 
+def test_adding_annotations():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data)
+    assert layer.annotations == {}
+
+    # add annotations
+    layer.annotations = copy(annotations)
+    assert layer.annotations == annotations
+
+    # change annotations
+    new_annotations = {
+        'other_type': np.array(['C', 'D'] * int((shape[0] / 2)))
+    }
+    layer.annotations = copy(new_annotations)
+    assert layer.annotations == new_annotations
+
+
 def test_annotations_errors():
     shape = (3, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
 
+    # try adding annotations with the wrong number of annotations
     with pytest.raises(ValueError):
         annotations = {'point_type': np.array(['A', 'B'])}
         Points(data, annotations=copy(annotations))
+    # try adding annotations with the wrong type
     with pytest.raises(TypeError):
         annotations = {'point_type': ['A', 'B', 'C']}
         Points(data, annotations=copy(annotations))
@@ -375,7 +397,7 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
-def test_edge_color():
+def test_edge_color_direct():
     """Test setting edge color."""
     shape = (10, 2)
     np.random.seed(0)
@@ -445,7 +467,57 @@ def test_edge_color():
     )
 
 
-def test_face_color():
+def test_edge_color_cycle():
+    # create Points using list color cycle
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        data,
+        annotations=annotations,
+        edge_color='point_type',
+        edge_color_cycle=color_cycle,
+    )
+    assert layer.annotations == annotations
+    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    assert np.all(layer.edge_color == edge_color_array)
+
+    # create Points using color array color cycle
+    color_cycle_array = transform_color(color_cycle)
+    layer2 = Points(
+        data,
+        annotations=annotations,
+        edge_color='point_type',
+        edge_color_cycle=color_cycle_array,
+    )
+    assert np.all(layer2.edge_color == edge_color_array)
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer2.selected_data = [0]
+    layer2.add(coord)
+    assert len(layer2.edge_color) == shape[0] + 1
+    np.testing.assert_allclose(
+        layer2.edge_color,
+        np.vstack((edge_color_array, transform_color('red'))),
+    )
+
+    # Check removing data adjusts colors correctly
+    layer2.selected_data = [0, 2]
+    layer2.remove_selected()
+    assert len(layer2.data) == shape[0] - 1
+    assert len(layer2.edge_color) == shape[0] - 1
+    np.testing.assert_allclose(
+        layer2.edge_color,
+        np.vstack(
+            (edge_color_array[1], edge_color_array[3:], transform_color('red'))
+        ),
+    )
+
+
+def test_face_color_direct():
     """Test setting face color."""
     shape = (10, 2)
     np.random.seed(0)
@@ -509,6 +581,56 @@ def test_face_color():
     np.testing.assert_allclose(
         layer.face_color,
         np.vstack((col_list[1], col_list[3:], transform_color('blue'))),
+    )
+
+
+def test_face_color_cycle():
+    # create Points using list color cycle
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        data,
+        annotations=annotations,
+        face_color='point_type',
+        face_color_cycle=color_cycle,
+    )
+    assert layer.annotations == annotations
+    face_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    assert np.all(layer.face_color == face_color_array)
+
+    # create Points using color array color cycle
+    color_cycle_array = transform_color(color_cycle)
+    layer2 = Points(
+        data,
+        annotations=annotations,
+        face_color='point_type',
+        face_color_cycle=color_cycle_array,
+    )
+    assert np.all(layer2.face_color == face_color_array)
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer2.selected_data = [0]
+    layer2.add(coord)
+    assert len(layer2.face_color) == shape[0] + 1
+    np.testing.assert_allclose(
+        layer2.face_color,
+        np.vstack((face_color_array, transform_color('red'))),
+    )
+
+    # Check removing data adjusts colors correctly
+    layer2.selected_data = [0, 2]
+    layer2.remove_selected()
+    assert len(layer2.data) == shape[0] - 1
+    assert len(layer2.face_color) == shape[0] - 1
+    np.testing.assert_allclose(
+        layer2.face_color,
+        np.vstack(
+            (face_color_array[1], face_color_array[3:], transform_color('red'))
+        ),
     )
 
 

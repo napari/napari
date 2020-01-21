@@ -403,7 +403,9 @@ class Points(Layer):
     @annotations.setter
     def annotations(self, annotations: Dict[str, np.ndarray]):
         self._annotations = self._validate_annotations(annotations)
-        if self._face_color_annotation not in self._annotations:
+        if self._face_color_annotation and (
+            self._face_color_annotation not in self._annotations
+        ):
             self._face_color_annotation = ''
             warnings.warn('annotation used for face_color dropped')
 
@@ -533,6 +535,7 @@ class Points(Layer):
                 len(self.data), transformed_color
             )
             self.edge_color_mode = ColorMode.DIRECT
+            self._edge_color_annotation = ''
 
             self.events.edge_color()
             self.events.highlight()
@@ -653,6 +656,7 @@ class Points(Layer):
                 len(self.data), transformed_color
             )
             self.face_color_mode = ColorMode.DIRECT
+            self._face_color_annotation = ''
 
             self.events.face_color()
             self.events.highlight()
