@@ -19,5 +19,10 @@ with napari.gui_qt():
         'point_class': np.array(['A', 'A', 'B']),
         'best_point': np.array([True, False, False])
     }
-    points_layer = viewer.add_points(points, size=size, annotations=annotations)
-    points_layer.face_color = 'point_class'
+    points_layer = viewer.add_points(
+        points,
+        size=size,
+        annotations=annotations,
+        face_color='point_class'
+    )
+    #points_layer.face_color = 'point_class'

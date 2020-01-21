@@ -225,12 +225,6 @@ class Points(Layer):
             elem_name="edge_color",
             default="black",
         )
-        self._current_face_color = transform_color_with_defaults(
-            num_entries=len(self.data),
-            colors=face_color,
-            elem_name="face_color",
-            default="white",
-        )
 
         # Indices of selected points
         self._selected_data = []
@@ -265,21 +259,20 @@ class Points(Layer):
         self.edge_color = normalize_and_broadcast_colors(
             len(self.data), self._current_edge_color
         )
-        self._face_color = normalize_and_broadcast_colors(
-            len(self.data), self._current_face_color
-        )
-        self._face_color_mode = ColorMode.DIRECT
+
+        # set the face color properties
         if face_color_cycle is None:
             self._face_color_cycle = cycle(
                 np.array([[1, 1, 0, 1], [0, 1, 0, 1]])
             )
         else:
             self._face_color_cycle = face_color_cycle
-        self._face_color_annotation = ''
+        self.face_color = face_color
+
+        # set the current_* properties
         self._current_edge_color = self.edge_color[-1]
         self._current_face_color = self.face_color[-1]
         self.size = size
-
         self.current_annotations = {
             k: v[-1] for k, v in self.annotations.items()
         }
