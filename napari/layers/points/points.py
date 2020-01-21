@@ -18,6 +18,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ..utils.color_transformations import (
     transform_color_with_defaults,
+    transform_color_cycle,
     normalize_and_broadcast_colors,
     ColorType,
 )
@@ -261,12 +262,20 @@ class Points(Layer):
         )
 
         # set the face color properties
+        if self._is_color_mapped(face_color):
+            self._face_color_mode = ColorMode.CYCLE
+        else:
+            self._face_color_mode = ColorMode.DIRECT
         if face_color_cycle is None:
             self._face_color_cycle = cycle(
                 np.array([[1, 1, 0, 1], [0, 1, 0, 1]])
             )
         else:
-            self._face_color_cycle = face_color_cycle
+            self._face_color_cycle = transform_color_cycle(
+                color_cycle=face_color_cycle,
+                elem_name='face_color_cycle',
+                default='white',
+            )
         self.face_color = face_color
 
         # set the current_* properties
@@ -507,21 +516,19 @@ class Points(Layer):
 
     @property
     def face_color_cycle(self):
-        """Color cycle """
+        """Union[np.ndarray, cycle]:  Color cycle for face_color"""
         return self._face_color_cycle
 
     @face_color_cycle.setter
-    def face_color_cycle(self, face_color_cycle):
+    def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
         if isinstance(face_color_cycle, cycle):
             self._face_color_cycle = face_color_cycle
         else:
-            transformed_face_color_cycle = transform_color_with_defaults(
-                num_entries=len(face_color_cycle),
-                colors=face_color_cycle,
+            self._face_color_cycle = transform_color_cycle(
+                color_cycle=face_color_cycle,
                 elem_name="face_color_cycle",
                 default="white",
             )
-            self._face_color_cycle = cycle(transformed_face_color_cycle)
         if self._face_color_mode == ColorMode.CYCLE:
             self._refresh_face_color()
 
