@@ -482,8 +482,6 @@ class Points(Layer):
             self._face_color_annotation = face_color
             self.face_color_mode = ColorMode.CYCLE
             self._refresh_face_color()
-            self.events.face_color()
-            self.events.highlight()
 
         else:
             transformed_color = transform_color_with_defaults(
@@ -499,19 +497,6 @@ class Points(Layer):
 
             self.events.face_color()
             self.events.highlight()
-
-    def _is_color_mapped(self, color):
-        if isinstance(color, str):
-            if color in self.annotations:
-                return True
-            else:
-                return False
-        elif isinstance(color, (list, np.ndarray)):
-            return False
-        else:
-            raise ValueError(
-                'face_color should be the name of a color, an array of colors, or the name of an attribute'
-            )
 
     @property
     def face_color_cycle(self):
@@ -536,6 +521,9 @@ class Points(Layer):
                 [self.face_color_cycle_map[x] for x in color_annotations]
             )
             self._face_color = colors
+
+            self.events.face_color()
+            self.events.highlight()
 
     @property
     def current_face_color(self) -> str:
@@ -570,6 +558,20 @@ class Points(Layer):
         if isinstance(face_color_mode, str):
             face_color_mode = ColorMode(face_color_mode)
         self._face_color_mode = face_color_mode
+
+    def _is_color_mapped(self, color):
+        """ determines if the new color argument is for directly setting or cycle/cmap"""
+        if isinstance(color, str):
+            if color in self.annotations:
+                return True
+            else:
+                return False
+        elif isinstance(color, (list, np.ndarray)):
+            return False
+        else:
+            raise ValueError(
+                'face_color should be the name of a color, an array of colors, or the name of an attribute'
+            )
 
     def _get_state(self):
         """Get dictionary of layer state.
