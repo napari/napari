@@ -592,6 +592,7 @@ class ViewerModel(KeymapMixin):
         size=10,
         edge_width=1,
         edge_color='black',
+        edge_color_cycle=None,
         face_color='white',
         face_color_cycle=None,
         n_dimensional=False,
@@ -624,6 +625,9 @@ class ViewerModel(KeymapMixin):
             Width of the symbol edge in pixels.
         edge_color : str, array-like
             Color of the point marker border. Numeric color values should be RGB(A).
+        edge_color_cycle : np.ndarray
+            Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
+            to set face_color.
         face_color : str, array-like
             Color of the point marker body. Numeric color values should be RGB(A).
         face_color_cycle : np.ndarray
@@ -670,6 +674,7 @@ class ViewerModel(KeymapMixin):
             size=size,
             edge_width=edge_width,
             edge_color=edge_color,
+            edge_color_cycle=edge_color_cycle,
             face_color=face_color,
             face_color_cycle=face_color_cycle,
             n_dimensional=n_dimensional,

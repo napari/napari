@@ -46,6 +46,9 @@ class Points(Layer):
         Width of the symbol edge in pixels.
     edge_color : str, array-like
         Color of the point marker border. Numeric color values should be RGB(A).
+    edge_color_cycle : np.ndarray
+        Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
+        to set face_color.
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray
@@ -87,6 +90,9 @@ class Points(Layer):
         Width of the marker edges in pixels for all points
     edge_color : Nx4 numpy array
         Array of edge color RGBA values, one for each point.
+    edge_color_cycle : np.ndarray
+        Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
+        to set face_color.
     face_color : Nx4 numpy array
         Array of face color RGBA values, one for each point.
     face_color_cycle : np.ndarray
@@ -117,6 +123,14 @@ class Points(Layer):
         have their properties edited, or be deleted.
     face_color_mode : str
         Face color setting mode.
+
+        DIRECT (default mode) allows each point to be set arbitrarily
+
+        CYCLE allows the color to be set via a color cycle over an attribute
+
+        CMAP allows color to be set via a color map over an attribute
+    edge_color_mode : str
+        Edge color setting mode.
 
         DIRECT (default mode) allows each point to be set arbitrarily
 
@@ -157,6 +171,7 @@ class Points(Layer):
         size=10,
         edge_width=1,
         edge_color='black',
+        edge_color_cycle=None,
         face_color='white',
         face_color_cycle=None,
         n_dimensional=False,
@@ -220,13 +235,6 @@ class Points(Layer):
         else:
             self._current_size = 10
 
-        self._current_edge_color = transform_color_with_defaults(
-            num_entries=len(self.data),
-            colors=edge_color,
-            elem_name="edge_color",
-            default="black",
-        )
-
         # Indices of selected points
         self._selected_data = []
         self._selected_data_stored = []
@@ -257,9 +265,24 @@ class Points(Layer):
         self._is_selecting = False
         self._clipboard = {}
 
-        self.edge_color = normalize_and_broadcast_colors(
-            len(self.data), self._current_edge_color
-        )
+        # set the edge color properties
+        if self._is_color_mapped(edge_color):
+            self._edge_color_mode = ColorMode.CYCLE
+        else:
+            self._edge_color_mode = ColorMode.DIRECT
+        if edge_color_cycle is None:
+            self._edge_color_cycle = cycle(
+                np.array([[1, 1, 0, 1], [0, 1, 0, 1]])
+            )
+        elif isinstance(edge_color_cycle, cycle):
+            self._edge_color_cycle = edge_color_cycle
+        else:
+            self._edge_color_cycle = transform_color_cycle(
+                color_cycle=edge_color_cycle,
+                elem_name='edge_color_cycle',
+                default='white',
+            )
+        self.edge_color = edge_color
 
         # set the face color properties
         if self._is_color_mapped(face_color):
@@ -337,10 +360,22 @@ class Points(Layer):
                         (self.annotations[k], new_annotation), axis=0
                     )
 
-                new_edge_colors = np.tile(
-                    self._current_edge_color, (adding, 1)
-                )
+                # add new edge colors
+                if self._edge_color_mode == ColorMode.DIRECT:
+                    new_edge_colors = np.tile(
+                        self._current_edge_color, (adding, 1)
+                    )
+                elif self._edge_color_mode == ColorMode.CYCLE:
+                    edge_color_annotation = self.current_annotations[
+                        self._edge_color_annotation
+                    ][0]
+                    new_edge_colors = np.tile(
+                        self.edge_color_cycle_map[edge_color_annotation],
+                        (adding, 1),
+                    )
                 self.edge_color = np.vstack((self.edge_color, new_edge_colors))
+
+                # add new face colors
                 if self._face_color_mode == ColorMode.DIRECT:
                     new_face_colors = np.tile(
                         self._current_face_color, (adding, 1)
@@ -354,6 +389,7 @@ class Points(Layer):
                         (adding, 1),
                     )
                 self.face_color = np.vstack((self.face_color, new_face_colors))
+
                 self.size = np.concatenate((self._size, size), axis=0)
 
         self._update_dims()
@@ -399,7 +435,7 @@ class Points(Layer):
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
     @property
-    def n_dimensional(self) -> str:
+    def n_dimensional(self) -> bool:
         """bool: renders points as n-dimensionsal."""
         return self._n_dimensional
 
@@ -473,6 +509,73 @@ class Points(Layer):
         self.events.highlight()
 
     @property
+    def edge_color(self):
+        """(N x 4) np.ndarray: Array of RGBA edge colors for each point"""
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color):
+        # if the provided face color is a string, first check if it is a key in the annotations.
+        # otherwise, assume it is the name of a color
+        if self._is_color_mapped(edge_color):
+            self._edge_color_annotation = edge_color
+            self.edge_color_mode = ColorMode.CYCLE
+            self._refresh_edge_color()
+
+        else:
+            transformed_color = transform_color_with_defaults(
+                num_entries=len(self.data),
+                colors=edge_color,
+                elem_name="edge_color",
+                default="white",
+            )
+            self._edge_color = normalize_and_broadcast_colors(
+                len(self.data), transformed_color
+            )
+            self.edge_color_mode = ColorMode.DIRECT
+
+            self.events.edge_color()
+            self.events.highlight()
+
+    @property
+    def edge_color_cycle(self):
+        """Union[np.ndarray, cycle]:  Color cycle for edge_color"""
+        return self._edge_color_cycle
+
+    @edge_color_cycle.setter
+    def edge_color_cycle(
+        self, edge_color_cycle: Union[list, np.ndarray, cycle]
+    ):
+        if isinstance(edge_color_cycle, cycle):
+            self._edge_color_cycle = edge_color_cycle
+        else:
+            self._edge_color_cycle = transform_color_cycle(
+                color_cycle=edge_color_cycle,
+                elem_name="edge_color_cycle",
+                default="white",
+            )
+        if self._edge_color_mode == ColorMode.CYCLE:
+            self._refresh_edge_color()
+
+    def _refresh_edge_color(self):
+        """ calculate edge color if using a cycle or color map"""
+        if self._edge_color_mode in (ColorMode.CMAP, ColorMode.CYCLE):
+            color_annotations = self.annotations[self._edge_color_annotation]
+            self.edge_color_cycle_map = {
+                k: c
+                for k, c in zip(
+                    np.unique(color_annotations), self.edge_color_cycle
+                )
+            }
+            colors = np.array(
+                [self.edge_color_cycle_map[x] for x in color_annotations]
+            )
+            self._edge_color = colors
+
+            self.events.edge_color()
+            self.events.highlight()
+
+    @property
     def current_edge_color(self) -> str:
         """Edge color of marker for the next added point or the selected point(s)."""
         hex_ = rgb_to_hex(self._current_edge_color)[0]
@@ -487,6 +590,44 @@ class Points(Layer):
             self.edge_color = cur_colors
         self.events.edge_color()
         self.events.highlight()
+
+    @property
+    def edge_color_mode(self):
+        """str: Edge color setting mode
+
+        DIRECT (default mode) allows each point to be set arbitrarily
+
+        CYCLE allows the color to be set via a color cycle over an attribute
+
+        CMAP allows color to be set via a color map over an attribute
+        """
+        return str(self._edge_color_mode)
+
+    @edge_color_mode.setter
+    def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
+        if isinstance(edge_color_mode, str):
+            edge_color_mode = ColorMode(edge_color_mode)
+
+        if edge_color_mode == ColorMode.DIRECT:
+            self._edge_color_mode = edge_color_mode
+        elif edge_color_mode == ColorMode.CYCLE:
+            if self._edge_color_annotation == '':
+                if self.annotations:
+                    self._edge_color_annotation = next(iter(self.annotations))
+                    warnings.warn(
+                        'Edge color was not set, setting to: %s'
+                        % self._face_color_annotation
+                    )
+                else:
+                    raise ValueError(
+                        'There must be a valid Points.annotations to use ColorMode.Cycle'
+                    )
+            self._edge_color_mode = edge_color_mode
+            self._refresh_edge_color()
+        elif edge_color_mode == ColorMode.CMAP:
+            raise NotImplementedError(
+                'colormapped attributes not implented yet'
+            )
 
     @property
     def face_color(self):
@@ -636,6 +777,7 @@ class Points(Layer):
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
                 'edge_color': self.edge_color,
+                'edge_color_cycle': self.edge_color_cycle,
                 'annotations': self.annotations,
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
@@ -989,7 +1131,7 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
-            self.edge_color = np.delete(self.edge_color, index, axis=0)
+            self._edge_color = np.delete(self.edge_color, index, axis=0)
             self._face_color = np.delete(self.face_color, index, axis=0)
             for k in self.annotations:
                 self.annotations[k] = np.delete(
