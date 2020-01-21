@@ -45,7 +45,7 @@ task:
         PY_VER: "3.8"
 
   matrix:
-    - name: linux
+    - name: linux ${PY_VER}
       container:
         image: gcc:latest
       env:
@@ -66,7 +66,7 @@ task:
       # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
       herbstluftwm_start_background_script: herbstluftwm
 
-    - name: osx
+    - name: macos ${PY_VER}
       osx_instance:
         image: mojave-xcode-11.3
       env:
@@ -97,7 +97,8 @@ task:
     - pytest -v
 
 
-windows_task:
+task:
+  name: windows ${PY_VER}
   auto_cancellation: true
 
   windows_container:
