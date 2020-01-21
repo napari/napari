@@ -610,7 +610,7 @@ class ViewerModel(KeymapMixin):
         ----------
         data : array (N, D)
             Coordinates for N points in D dimensions.
-        annotations : dict
+        annotations : dict {str: array (N,)}
             Annotations for each point. Each annotation should be an array of length N,
             where N is the number of points.
         symbol : str
