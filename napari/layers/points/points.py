@@ -2,6 +2,7 @@ from typing import Union, Dict
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
 from itertools import cycle
+import warnings
 
 import numpy as np
 
@@ -352,6 +353,9 @@ class Points(Layer):
     def annotations(self, annotations: Dict[str, np.ndarray]):
 
         self._annotations = self._validate_annotations(annotations)
+        if self._face_color_annotation not in self._annotations:
+            self._face_color_annotation = ''
+            warnings.warn('annotation used for face color dropped')
 
     def _validate_annotations(self, annotations: Dict[str, np.ndarray]):
         """Validates the type and size of the annotations"""
@@ -557,7 +561,27 @@ class Points(Layer):
     def face_color_mode(self, face_color_mode):
         if isinstance(face_color_mode, str):
             face_color_mode = ColorMode(face_color_mode)
-        self._face_color_mode = face_color_mode
+
+        if face_color_mode == ColorMode.DIRECT:
+            self._face_color_mode = face_color_mode
+        elif face_color_mode == ColorMode.CYCLE:
+            if self._face_color_annotation == '':
+                if self.annotations:
+                    self._face_color_annotation = next(iter(self.annotations))
+                    warnings.warn(
+                        'Face color was not set, setting to: %s'
+                        % self._face_color_annotation
+                    )
+                else:
+                    raise ValueError(
+                        'There must be a valid Points.annotations to use ColorMode.Cycle'
+                    )
+            self._face_color_mode = face_color_mode
+            self._refresh_face_color()
+        elif face_color_mode == ColorMode.CMAP:
+            raise NotImplementedError(
+                'colormapped attributes not implented yet'
+            )
 
     def _is_color_mapped(self, color):
         """ determines if the new color argument is for directly setting or cycle/cmap"""
