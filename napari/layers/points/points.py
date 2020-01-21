@@ -519,7 +519,18 @@ class Points(Layer):
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle):
-        self._face_color_cycle = face_color_cycle
+        if isinstance(face_color_cycle, cycle):
+            self._face_color_cycle = face_color_cycle
+        else:
+            transformed_face_color_cycle = transform_color_with_defaults(
+                num_entries=len(face_color_cycle),
+                colors=face_color_cycle,
+                elem_name="face_color_cycle",
+                default="white",
+            )
+            self._face_color_cycle = cycle(transformed_face_color_cycle)
+        if self._face_color_mode == ColorMode.CYCLE:
+            self._refresh_face_color()
 
     def _refresh_face_color(self):
         """ calculate face color if using a cycle or color map"""
