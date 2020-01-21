@@ -15,7 +15,7 @@ task:
     - black --check .
 
 
-nix_test_task:
+task:
   auto_cancellation: true
 
   name: Flake8 Linting
@@ -159,9 +159,9 @@ codecov_task:
   auto_cancellation: true
 
   depends_on:
-    - linux
-    - osx
-    - windows
+    - linux 3.8
+    - macos 3.8
+    - windows 3.8
 
   env:
     CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
