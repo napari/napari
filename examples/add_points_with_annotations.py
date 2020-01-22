@@ -14,11 +14,18 @@ with napari.gui_qt():
     viewer = napari.view_image(rgb2gray(data.astronaut()))
     # add the points
     points = np.array([[100, 100], [200, 200], [333, 111]])
+
+    # create annotations for each point
     annotations = {
         'confidence': np.array([1, 0.5, 0]),
         'good_point': np.array([True, False, False])
     }
+
+    # define the color cycle for the face_color annotation
     face_color_cycle = ['blue', 'green']
+
+    # create a points layer where the face_color is set by the good_point annotation
+    # and the edge_color is set via a color map (grayscale) on the confidence annotation.
     points_layer = viewer.add_points(
         points,
         size=20,
@@ -43,4 +50,6 @@ with napari.gui_qt():
             viewer.layers[1].annotations['good_point'][selected_points] = toggled_annotations
 
             # we need to manually refresh since we did not use the Points.annotations setter
-            points_layer._refresh_face_color()
+            # to avoid changing the color map if all points get toggled to the same class,
+            # we set update_colors=False (only re-colors the point using the previously-determined color mapping).
+            points_layer._refresh_face_color(update_colors=False)

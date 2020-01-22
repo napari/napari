@@ -620,17 +620,18 @@ class Points(Layer):
     def edge_color_cmap(self, cmap: Union[str, Colormap]):
         self._edge_color_cmap = get_colormap(cmap)
 
-    def _refresh_edge_color(self):
+    def _refresh_edge_color(self, update_colors: bool = True):
         """ calculate edge color if using a cycle or color map"""
         color_annotations = self.annotations[self._edge_color_annotation]
         if self._edge_color_mode == ColorMode.CYCLE:
             color_annotations = self.annotations[self._edge_color_annotation]
-            self.edge_color_cycle_map = {
-                k: c
-                for k, c in zip(
-                    np.unique(color_annotations), self.edge_color_cycle
-                )
-            }
+            if update_colors:
+                self.edge_color_cycle_map = {
+                    k: c
+                    for k, c in zip(
+                        np.unique(color_annotations), self.edge_color_cycle
+                    )
+                }
             colors = np.array(
                 [self.edge_color_cycle_map[x] for x in color_annotations]
             )
@@ -766,17 +767,18 @@ class Points(Layer):
     def face_color_cmap(self, cmap: Union[str, Colormap]):
         self._face_color_cmap = get_colormap(cmap)
 
-    def _refresh_face_color(self):
+    def _refresh_face_color(self, update_colors: bool = True):
         """ calculate face color if using a cycle or color map"""
         color_annotations = self.annotations[self._face_color_annotation]
 
         if self._face_color_mode == ColorMode.CYCLE:
-            self.face_color_cycle_map = {
-                k: c
-                for k, c in zip(
-                    np.unique(color_annotations), self.face_color_cycle
-                )
-            }
+            if update_colors:
+                self.face_color_cycle_map = {
+                    k: c
+                    for k, c in zip(
+                        np.unique(color_annotations), self.face_color_cycle
+                    )
+                }
             colors = np.array(
                 [self.face_color_cycle_map[x] for x in color_annotations]
             )
