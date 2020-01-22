@@ -518,6 +518,61 @@ def test_edge_color_cycle():
     )
 
 
+def test_edge_color_cmap():
+    # create Points using with face_color cmap
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
+    layer = Points(
+        data,
+        annotations=annotations,
+        edge_color='point_type',
+        edge_color_cmap='gray',
+    )
+    assert layer.annotations == annotations
+    assert layer.edge_color_mode == 'cmap'
+    edge_color_array = transform_color(
+        ['black', 'white'] * int((shape[0] / 2))
+    )
+    assert np.all(layer.edge_color == edge_color_array)
+
+    # change the color cycle - face_color should not change
+    layer.edge_color_cycle = ['red', 'blue']
+    assert np.all(layer.edge_color == edge_color_array)
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer.selected_data = [0]
+    layer.add(coord)
+    assert len(layer.edge_color) == shape[0] + 1
+    np.testing.assert_allclose(
+        layer.edge_color,
+        np.vstack((edge_color_array, transform_color('black'))),
+    )
+
+    # change the cmap
+    new_cmap = 'viridis'
+    layer.edge_color_cmap = new_cmap
+    assert layer.edge_color_cmap == get_colormap(new_cmap)
+
+    # Check removing data adjusts colors correctly
+    layer.selected_data = [0, 2]
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 1
+    assert len(layer.edge_color) == shape[0] - 1
+    np.testing.assert_allclose(
+        layer.edge_color,
+        np.vstack(
+            (
+                edge_color_array[1],
+                edge_color_array[3:],
+                transform_color('black'),
+            )
+        ),
+    )
+
+
 def test_face_color_direct():
     """Test setting face color."""
     shape = (10, 2)

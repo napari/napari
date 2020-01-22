@@ -51,6 +51,9 @@ class Points(Layer):
     edge_color_cycle : np.ndarray
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
+    edge_color_cmap : str, vispy.color.colormap.Colormap
+        Colormap to set edge_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray
@@ -98,6 +101,9 @@ class Points(Layer):
     edge_color_cycle : np.ndarray
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
+    edge_color_cmap : str, vispy.color.colormap.Colormap
+        Colormap to set edge_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_color : Nx4 numpy array
         Array of face color RGBA values, one for each point.
     face_color_cycle : np.ndarray
@@ -180,6 +186,7 @@ class Points(Layer):
         edge_width=1,
         edge_color='black',
         edge_color_cycle=None,
+        edge_color_cmap='viridis',
         face_color='white',
         face_color_cycle=None,
         face_color_cmap='viridis',
@@ -291,6 +298,7 @@ class Points(Layer):
                 elem_name='edge_color_cycle',
                 default='white',
             )
+        self._edge_color_cmap = get_colormap(edge_color_cmap)
         self.edge_color = edge_color
 
         # set the face color properties
@@ -381,6 +389,21 @@ class Points(Layer):
                     ][0]
                     new_edge_colors = np.tile(
                         self.edge_color_cycle_map[edge_color_annotation],
+                        (adding, 1),
+                    )
+                elif self._edge_color_mode == ColorMode.CMAP:
+                    edge_color_annotation_value = self.current_annotations[
+                        self._edge_color_annotation
+                    ][0]
+
+                    annotations = self.annotations[self._edge_color_annotation]
+                    clims = (annotations.min(), annotations.max())
+                    new_edge_colors = np.tile(
+                        self._map_annotation(
+                            edge_color_annotation_value,
+                            self.edge_color_cmap,
+                            clims=clims,
+                        ),
                         (adding, 1),
                     )
                 self.edge_color = np.vstack((self.edge_color, new_edge_colors))
@@ -545,8 +568,11 @@ class Points(Layer):
         # if the provided face color is a string, first check if it is a key in the annotations.
         # otherwise, assume it is the name of a color
         if self._is_color_mapped(edge_color):
+            if self._guess_continuous(self.annotations[edge_color]):
+                self._edge_color_mode = ColorMode.CMAP
+            else:
+                self._edge_color_mode = ColorMode.CYCLE
             self._edge_color_annotation = edge_color
-            self.edge_color_mode = ColorMode.CYCLE
             self._refresh_edge_color()
 
         else:
@@ -585,9 +611,19 @@ class Points(Layer):
         if self._edge_color_mode == ColorMode.CYCLE:
             self._refresh_edge_color()
 
+    @property
+    def edge_color_cmap(self):
+        """colormap to be applied to an annotation to set edge_color"""
+        return self._edge_color_cmap
+
+    @edge_color_cmap.setter
+    def edge_color_cmap(self, cmap: Union[str, Colormap]):
+        self._edge_color_cmap = get_colormap(cmap)
+
     def _refresh_edge_color(self):
         """ calculate edge color if using a cycle or color map"""
-        if self._edge_color_mode in (ColorMode.CMAP, ColorMode.CYCLE):
+        color_annotations = self.annotations[self._edge_color_annotation]
+        if self._edge_color_mode == ColorMode.CYCLE:
             color_annotations = self.annotations[self._edge_color_annotation]
             self.edge_color_cycle_map = {
                 k: c
@@ -599,9 +635,14 @@ class Points(Layer):
                 [self.edge_color_cycle_map[x] for x in color_annotations]
             )
             self._edge_color = colors
+        elif self._edge_color_mode == ColorMode.CMAP:
+            colors = self._map_annotation(
+                annotations=color_annotations, cmap=self.edge_color_cmap
+            )
+            self._edge_color = colors
 
-            self.events.edge_color()
-            self.events.highlight()
+        self.events.edge_color()
+        self.events.highlight()
 
     @property
     def current_edge_color(self) -> str:
@@ -638,7 +679,7 @@ class Points(Layer):
 
         if edge_color_mode == ColorMode.DIRECT:
             self._edge_color_mode = edge_color_mode
-        elif edge_color_mode == ColorMode.CYCLE:
+        elif edge_color_mode in (ColorMode.CYCLE, ColorMode.CMAP):
             if self._edge_color_annotation == '':
                 if self.annotations:
                     self._edge_color_annotation = next(iter(self.annotations))
@@ -650,6 +691,15 @@ class Points(Layer):
                     raise ValueError(
                         'There must be a valid Points.annotations to use ColorMode.Cycle'
                     )
+            # ColorMode.CMAP can only be applied to numeric annotations
+            if (edge_color_mode == ColorMode.CMAP) and not issubclass(
+                self.annotations[self._edge_color_annotation].dtype.type,
+                np.number,
+            ):
+                raise TypeError(
+                    'selected annotation must be numeric to use ColorMode.CMAP'
+                )
+
             self._edge_color_mode = edge_color_mode
             self._refresh_edge_color()
         elif edge_color_mode == ColorMode.CMAP:
@@ -857,6 +907,7 @@ class Points(Layer):
                 'face_color_cmap': self.face_color_cmap,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
+                'edge_color_cmap': self.edge_color_cmap,
                 'annotations': self.annotations,
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,

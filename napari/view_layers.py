@@ -148,6 +148,7 @@ def view_points(
     edge_width=1,
     edge_color="black",
     edge_color_cycle=None,
+    edge_color_cmap='viridis',
     face_color="white",
     face_color_cycle=None,
     face_color_cmap='viridis',
@@ -188,6 +189,9 @@ def view_points(
     edge_color_cycle : np.ndarray
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
+    edge_color_cmap : str, vispy.color.colormap.Colormap
+        Colormap to set edge_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray
@@ -247,6 +251,7 @@ def view_points(
         edge_width=edge_width,
         edge_color=edge_color,
         edge_color_cycle=edge_color_cycle,
+        edge_color_cmap=edge_color_cmap,
         face_color=face_color,
         face_color_cycle=face_color_cycle,
         face_color_cmap=face_color_cmap,
