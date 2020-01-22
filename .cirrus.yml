@@ -2,6 +2,7 @@
 container:
   image: python:3.8
 
+
 task:
   auto_cancellation: true
 
@@ -38,11 +39,10 @@ task:
         matrix:
           PY_VER: "3.6"
           PY_VER: "3.7"
-          PY_VER: "3.8"
     # is a pull request, only run python 3.8
     - only_if: $CIRRUS_PR != ""
       env:
-        PY_VER: "3.8"
+        PY_VER: "3.7"
 
   matrix:
     - name: linux ${PY_VER}
@@ -106,17 +106,16 @@ task:
     os_version: 2019
 
   matrix:
-    # PR, only run on 3.8
+    # PR, only run on 3.7
     - only_if: $CIRRUS_PR != ""
       env:
-        PY_VER: "3.8"
+        PY_VER: "3.7"
     # not a PR, run full suite
     - only_if: $CIRRUS_PR == ""
       env:
         matrix:
           PY_VER: "3.6"
           PY_VER: "3.7"
-          PY_VER: "3.8"
   env:
       ANACONDA_LOCATION: $USERPROFILE\anaconda
       PATH: $ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION;$PATH
@@ -159,9 +158,9 @@ codecov_task:
   auto_cancellation: true
 
   depends_on:
-    - linux 3.8
-    - macos 3.8
-    - windows 3.8
+    - linux 3.7
+    - macos 3.7
+    - windows 3.7
 
   env:
     CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
