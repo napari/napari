@@ -22,7 +22,7 @@ task:
   name: Flake8 Linting
 
   install_script:
-    - python -m pip install --retries 3 --upgrade pip
+    - python3 -m pip install --retries 3 --upgrade pip
     - pip install `cat requirements/development.txt | grep flake8`
 
   test_script:
@@ -116,15 +116,16 @@ task:
         matrix:
           PY_VER: "3.6"
           PY_VER: "3.7"
+
   env:
-      ANACONDA_LOCATION: $USERPROFILE\anaconda
-      PATH: $ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION;$PATH
-      # must set this to its default since it doesn't work in env variables
-      # see https://github.com/cirruslabs/cirrus-ci-docs/issues/423
-      CIRRUS_WORKING_DIR: C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build
-      # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
-      VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
-      PYTHON_ARCH: 64
+    ANACONDA_LOCATION: $USERPROFILE\anaconda
+    PATH: $ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION;$PATH
+    # must set this to its default since it doesn't work in env variables
+    # see https://github.com/cirruslabs/cirrus-ci-docs/issues/423
+    CIRRUS_WORKING_DIR: C:\Users\ContainerAdministrator\AppData\Local\Temp\cirrus-ci-build
+    # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
+    VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
+    PYTHON_ARCH: 64
 
   system_script:
     # install OpenSSL
