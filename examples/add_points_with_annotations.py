@@ -14,22 +14,24 @@ with napari.gui_qt():
     viewer = napari.view_image(rgb2gray(data.astronaut()))
     # add the points
     points = np.array([[100, 100], [200, 200], [333, 111]])
-    size = np.array([10, 20, 20])
     annotations = {
-        'point_class': np.array(['A', 'A', 'B']),
+        'confidence': np.array([1, 0.5, 0]),
         'good_point': np.array([True, False, False])
     }
-    face_color_cycle = ['blue', 'green']
+    edge_color_cycle = ['blue', 'green']
     points_layer = viewer.add_points(
         points,
-        size=size,
+        size=20,
         annotations=annotations,
-        face_color='point_class',
-        face_color_cycle=face_color_cycle
+        face_color='confidence',
+        face_color_cmap='gray',
+        edge_color='good_point',
+        edge_color_cycle=edge_color_cycle,
+        edge_width=7
     )
 
-    # change the annotation that sets the face_color
-    points_layer.face_color = 'good_point'
+    # set the face_color mode to cmap
+    points_layer.face_color_mode = 'cmap'
 
     # bind a function to toggle the good_point annotation of the selected points
     @viewer.bind_key('t')
@@ -41,4 +43,4 @@ with napari.gui_qt():
             viewer.layers[1].annotations['good_point'][selected_points] = toggled_annotations
 
             # we need to manually refresh since we did not use the Points.annotations setter
-            points_layer._refresh_face_color()
+            points_layer._refresh_edge_color()

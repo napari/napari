@@ -595,6 +595,7 @@ class ViewerModel(KeymapMixin):
         edge_color_cycle=None,
         face_color='white',
         face_color_cycle=None,
+        face_color_cmap='viridis',
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -633,6 +634,9 @@ class ViewerModel(KeymapMixin):
         face_color_cycle : np.ndarray
             Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
             to set face_color.
+        face_color_cmap : str, vispy.color.colormap.Colormap
+            Colormap to set face_color if a continuous attribute is used to set face_color.
+            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.
@@ -677,6 +681,7 @@ class ViewerModel(KeymapMixin):
             edge_color_cycle=edge_color_cycle,
             face_color=face_color,
             face_color_cycle=face_color_cycle,
+            face_color_cmap=face_color_cmap,
             n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,

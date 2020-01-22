@@ -3,6 +3,7 @@ from xml.etree.ElementTree import Element
 
 import numpy as np
 import pytest
+from vispy.color import get_colormap
 
 from napari.layers import Points
 from napari.utils.colormaps.standardize_color import transform_color
@@ -630,6 +631,61 @@ def test_face_color_cycle():
         layer2.face_color,
         np.vstack(
             (face_color_array[1], face_color_array[3:], transform_color('red'))
+        ),
+    )
+
+
+def test_face_color_cmap():
+    # create Points using with face_color cmap
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
+    layer = Points(
+        data,
+        annotations=annotations,
+        face_color='point_type',
+        face_color_cmap='gray',
+    )
+    assert layer.annotations == annotations
+    assert layer.face_color_mode == 'cmap'
+    face_color_array = transform_color(
+        ['black', 'white'] * int((shape[0] / 2))
+    )
+    assert np.all(layer.face_color == face_color_array)
+
+    # change the color cycle - face_color should not change
+    layer.face_color_cycle = ['red', 'blue']
+    assert np.all(layer.face_color == face_color_array)
+
+    # Add new point and test its color
+    coord = [18, 18]
+    layer.selected_data = [0]
+    layer.add(coord)
+    assert len(layer.face_color) == shape[0] + 1
+    np.testing.assert_allclose(
+        layer.face_color,
+        np.vstack((face_color_array, transform_color('black'))),
+    )
+
+    # change the cmap
+    new_cmap = 'viridis'
+    layer.face_color_cmap = new_cmap
+    assert layer.face_color_cmap == get_colormap(new_cmap)
+
+    # Check removing data adjusts colors correctly
+    layer.selected_data = [0, 2]
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 1
+    assert len(layer.face_color) == shape[0] - 1
+    np.testing.assert_allclose(
+        layer.face_color,
+        np.vstack(
+            (
+                face_color_array[1],
+                face_color_array[3:],
+                transform_color('black'),
+            )
         ),
     )
 
