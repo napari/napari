@@ -594,9 +594,11 @@ class ViewerModel(KeymapMixin):
         edge_color='black',
         edge_color_cycle=None,
         edge_color_cmap='viridis',
+        edge_color_clims=None,
         face_color='white',
         face_color_cycle=None,
         face_color_cmap='viridis',
+        face_color_clims=None,
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -633,6 +635,10 @@ class ViewerModel(KeymapMixin):
         edge_color_cmap : str, vispy.color.colormap.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+        edge_color_clims : None, (float, float)
+            clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
+            that are mapped to 0 and 1, respectively. The default value is None.
+            If set the none, the clims will be set to (annotation.min(), annotation.max())
         face_color : str, array-like
             Color of the point marker body. Numeric color values should be RGB(A).
         face_color_cycle : np.ndarray
@@ -641,6 +647,10 @@ class ViewerModel(KeymapMixin):
         face_color_cmap : str, vispy.color.colormap.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+        face_color_clims : None, (float, float)
+            clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
+            that are mapped to 0 and 1, respectively. The default value is None.
+            If set the none, the clims will be set to (annotation.min(), annotation.max())
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.
@@ -684,9 +694,11 @@ class ViewerModel(KeymapMixin):
             edge_color=edge_color,
             edge_color_cycle=edge_color_cycle,
             edge_color_cmap=edge_color_cmap,
+            edge_color_clims=edge_color_clims,
             face_color=face_color,
             face_color_cycle=face_color_cycle,
             face_color_cmap=face_color_cmap,
+            face_color_clims=face_color_clims,
             n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,
