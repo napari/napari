@@ -48,7 +48,7 @@ class Points(Layer):
         Width of the symbol edge in pixels.
     edge_color : str, array-like
         Color of the point marker border. Numeric color values should be RGB(A).
-    edge_color_cycle : np.ndarray
+    edge_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
     edge_color_cmap : str, vispy.color.colormap.Colormap
@@ -60,7 +60,7 @@ class Points(Layer):
         If set the none, the clims will be set to (annotation.min(), annotation.max())
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
-    face_color_cycle : np.ndarray
+    face_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
         to set face_color.
     face_color_cmap : str, vispy.color.colormap.Colormap
@@ -106,7 +106,7 @@ class Points(Layer):
         Width of the marker edges in pixels for all points
     edge_color : Nx4 numpy array
         Array of edge color RGBA values, one for each point.
-    edge_color_cycle : np.ndarray
+    edge_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
     edge_color_cmap : str, vispy.color.colormap.Colormap
@@ -118,7 +118,7 @@ class Points(Layer):
         If set the none, the clims will be set to (annotation.min(), annotation.max())
     face_color : Nx4 numpy array
         Array of face color RGBA values, one for each point.
-    face_color_cycle : np.ndarray
+    face_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
         to set face_color.
     face_color_cmap : str, vispy.color.colormap.Colormap
@@ -645,7 +645,6 @@ class Points(Layer):
         """ calculate edge color if using a cycle or color map"""
         color_annotations = self.annotations[self._edge_color_annotation]
         if self._edge_color_mode == ColorMode.CYCLE:
-            color_annotations = self.annotations[self._edge_color_annotation]
             if update_colors:
                 self.edge_color_cycle_map = {
                     k: c
@@ -913,10 +912,11 @@ class Points(Layer):
             return False
         else:
             raise ValueError(
-                'face_color should be the name of a color, an array of colors, or the name of an attribute'
+                'face_color should be the name of a color, an array of colors, or the name of an annotation'
             )
 
-    def _guess_continuous(self, annotation: np.ndarray) -> bool:
+    @staticmethod
+    def _guess_continuous(annotation: np.ndarray) -> bool:
         """guess if the annotation is continuous (return True) or categorical (return False)"""
         # if the annotation is a floating type, guess continuous
         if issubclass(annotation.dtype.type, np.floating):

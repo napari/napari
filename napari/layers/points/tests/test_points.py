@@ -357,6 +357,38 @@ def test_annotations_errors():
         Points(data, annotations=copy(annotations))
 
 
+def test_is_color_mapped():
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, annotations=annotations)
+
+    # giving the name of an annotation should return True
+    assert layer._is_color_mapped('point_type')
+
+    # giving a list should return false (i.e., could be an RGBA color)
+    assert not layer._is_color_mapped([1, 1, 1, 1])
+
+    # giving an ndarray should return false (i.e., could be an RGBA color)
+    assert not layer._is_color_mapped(np.array([1, 1, 1, 1]))
+
+    # give an invalid color argument
+    with pytest.raises(ValueError):
+        layer._is_color_mapped((123, 323))
+
+
+def test_is_continuous():
+    continuous_annotation = np.array([1, 2, 3], dtype=np.float32)
+    assert Points._guess_continuous(continuous_annotation)
+
+    categorical_annotation_1 = np.array([True, False], dtype=np.bool)
+    assert not Points._guess_continuous(categorical_annotation_1)
+
+    categorical_annotation_2 = np.array([1, 2, 3], dtype=np.int)
+    assert not Points._guess_continuous(categorical_annotation_2)
+
+
 def test_edge_width():
     """Test setting edge width."""
     shape = (10, 2)

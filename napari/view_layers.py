@@ -188,7 +188,7 @@ def view_points(
         Width of the symbol edge in pixels.
     edge_color : str, array-like
         Color of the point marker border. Numeric color values should be RGB(A).
-    edge_color_cycle : np.ndarray
+    edge_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
     edge_color_cmap : str, vispy.color.colormap.Colormap
@@ -200,7 +200,7 @@ def view_points(
         If set the none, the clims will be set to (annotation.min(), annotation.max())
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
-    face_color_cycle : np.ndarray
+    face_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
         to set face_color.
     face_color_cmap : str, vispy.color.colormap.Colormap
