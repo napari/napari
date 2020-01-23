@@ -8,7 +8,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
 )
-from vispy.color import Color
+
 from .qt_base_layer import QtLayerControls
 from ...layers.points._constants import Mode, Symbol
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
@@ -170,22 +170,42 @@ class QtPointsControls(QtLayerControls):
             self.sizeSlider.setValue(int(value))
 
     def _on_edge_color_change(self, event=None):
+        """Change element's edge color based on user-provided value.
+
+        The new color (read from layer.current_edge_color) is a string -
+        either the color's name or its hex representation. This color has
+        already been verified by "transform_color". This value has to be
+        looked up in the color list of the layer and displayed in the
+        combobox. If it's not in the combobox the method will add it and
+        then display it, for future use.
+        """
+        color = self.layer.current_edge_color
         with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(
-                self.layer.current_edge_color, Qt.MatchFixedString
-            )
+            index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
+            if index == -1:
+                self.edgeComboBox.addItem(color)
+                index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
             self.edgeComboBox.setCurrentIndex(index)
-        color = Color(self.layer.current_edge_color).hex
-        self.edgeColorSwatch.setStyleSheet("background-color: " + color)
+        self.edgeColorSwatch.setStyleSheet(f"background-color: {color}")
 
     def _on_face_color_change(self, event=None):
+        """Change element's face color based user-provided value.
+
+        The new color (read from layer.current_face_color) is a string -
+        either the color's name or its hex representation. This color has
+        already been verified by "transform_color". This value has to be
+        looked up in the color list of the layer and displayed in the
+        combobox. If it's not in the combobox the method will add it and
+        then display it, for future use.
+        """
+        color = self.layer.current_face_color
         with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(
-                self.layer.current_face_color, Qt.MatchFixedString
-            )
+            index = self.faceComboBox.findText(color, Qt.MatchFixedString)
+            if index == -1:
+                self.faceComboBox.addItem(color)
+                index = self.faceComboBox.findText(color, Qt.MatchFixedString)
             self.faceComboBox.setCurrentIndex(index)
-        color = Color(self.layer.current_face_color).hex
-        self.faceColorSwatch.setStyleSheet("background-color: " + color)
+        self.faceColorSwatch.setStyleSheet(f"background-color: {color}")
 
     def _on_editable_change(self, event=None):
         self.select_button.setEnabled(self.layer.editable)

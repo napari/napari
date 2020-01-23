@@ -1,7 +1,8 @@
-import numpy as np
 from math import inf
 import itertools
 from xml.etree.ElementTree import Element, tostring
+
+import numpy as np
 
 from .dims import Dims
 from .layerlist import LayerList
@@ -616,10 +617,10 @@ class ViewerModel(KeymapMixin):
             broadcastable to the same shape as the data.
         edge_width : float
             Width of the symbol edge in pixels.
-        edge_color : str
-            Color of the point marker border.
-        face_color : str
-            Color of the point marker body.
+        edge_color : str, array-like
+            Color of the point marker border. Numeric color values should be RGB(A).
+        face_color : str, array-like
+            Color of the point marker body. Numeric color values should be RGB(A).
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.

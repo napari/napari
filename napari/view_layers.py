@@ -145,8 +145,8 @@ def view_points(
     symbol='o',
     size=10,
     edge_width=1,
-    edge_color='black',
-    face_color='white',
+    edge_color="black",
+    face_color="white",
     n_dimensional=False,
     name=None,
     metadata=None,
@@ -176,10 +176,10 @@ def view_points(
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str
-        Color of the point marker border.
-    face_color : str
-        Color of the point marker body.
+    edge_color : str, array-like
+        Color of the point marker border. Numeric color values should be RGB(A).
+    face_color : str, array-like
+        Color of the point marker body. Numeric color values should be RGB(A).
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
