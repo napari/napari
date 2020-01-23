@@ -3,7 +3,7 @@ import pkgutil
 import re
 import warnings
 from collections import abc
-from typing import Iterator
+from typing import Iterator, Tuple, Callable, List
 
 import pkg_resources
 import requests
@@ -22,6 +22,15 @@ https://packaging.python.org/guides/creating-and-discovering-plugins/
     plugins that declare a special key (e.g. "napari.plugins") in their
     setup.py `entry_points` can be discovered using `pkg_resources`.
 """
+
+# defining some type aliases
+Checker = Callable[[str], bool]
+Reader = Callable[[str], List[Tuple]]
+# numpy doesn't offer typing yet: https://github.com/numpy/numpy/issues/7370
+# but a return type from a reader plugin would really look something like this
+# (and someday some of this will be replaced with imtypes)
+# LayerInfo = Union[Tuple[np.ndarray], Tuple[np.ndarray, dict]]
+# ReaderReturn = List[LayerInfo]
 
 
 class PluginManager(abc.Mapping):
@@ -90,7 +99,7 @@ class PluginManager(abc.Mapping):
         self._plugins.update({name: importlib.import_module(name)})
 
     @property
-    def readers(self) -> Iterator[tuple]:
+    def readers(self) -> Iterator[Tuple[Checker, Reader]]:
         """Generator that yields all readers declared in plugins.
 
         Plugins may declare a top level variable `READERS` which is a list of
@@ -102,8 +111,8 @@ class PluginManager(abc.Mapping):
 
         Yields
         -------
-        tuple
-            (name, module) for all plugins
+        Generator of tuples
+            [(checker, reader) ... ] for all plugins
         """
         for name, module in self.items():
             for item in getattr(module, 'READERS', []):
