@@ -1,77 +1,76 @@
 import importlib
 import pkgutil
 import re
+import warnings
+from collections import abc
+from typing import Iterator
 
 import pkg_resources
 import requests
 
+
 """
-This proposal for plugin discovery follows two of the recommendations here:
+Plugin discovery follows two of the conventions here:
 https://packaging.python.org/guides/creating-and-discovering-plugins/
 
 1) Using naming convention:
     plugins installed in the environment that follow a naming convention
-    (e.g. "napari_fancy_plugin"), can be discovered using `pkgutil`.
+    (e.g. "napari_plugin"), can be discovered using `pkgutil`.
     This also enables easy discovery on pypi
 
 2) Using package metadata:
     plugins that declare a special key (e.g. "napari.plugins") in their
     setup.py `entry_points` can be discovered using `pkg_resources`.
-    (this is used by pytest, for example)
 """
 
 
-class PluginManager:
-    PREFIX = 'napari_'  # for discovery using naming convention
+class PluginManager(abc.Mapping):
+    PLUGIN_PREFIX = 'napari_'  # for discovery using naming convention
     PLUGIN_ENTRY_POINT = "napari.plugins"  # for discovery using entry_points
-    IO_PLUGINS = "napari_io_"  # plugin subtype... this couple be an enum?
-    PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
 
-    def __init__(self, discover=True):
-        self.plugins = {}
-        if discover:
-            self.discover_plugins()
+    def __init__(self, autodiscover: bool = True):
+        """Mapping between plugin module names and imported modules.
 
-    @property
-    def readers(self):
-        """only plugins that declare themselves as io plugins.
-
-        the super basic API example I'm using here is that io plugins may
-        declare:
-            plugin.READERS : a list of 2-tuples (checker, reader)
-                `checker` is a function that returns True if it recognizes a
-                directory as something it can handle
-                `reader` is a function that accepts args (path, viewer) and
-                adds layers to the viewer given a path.
-            plugin.WRITERS : not implemented...
-
-        Yields
-        -------
-        tuple
-            (name, module) for all plugins
+        Parameters
+        ----------
+        autodiscover : bool, optional
+            Whether to autodiscover plugin modules on init, by default True
         """
-        for name, module in self.plugins.items():
-            if name.startswith(self.IO_PLUGINS):
-                for item in getattr(module, 'READERS', []):
-                    yield item
+        self._plugins = {}
+        if autodiscover:
+            self.discover()
 
-    def discover_plugins(self):
-        # using naming convention: http://bit.ly/pynaming-convention
-        # looks for all installed packages starting with self.PREFIX
-        # propsed convention for plugins is: napari_<plugin-name>
-        # coupld potentially have subclasses like napari_io_readerplugin
-        self.plugins.update(
+    def __getitem__(self, item):
+        return self._plugins[item]
+
+    def __iter__(self):
+        return iter(self._plugins)
+
+    def __len__(self):
+        return len(self._plugins)
+
+    def discover(self):
+        """Discover napari plugins in the environment.
+
+        This uses two methods:
+            1. naming convention: http://bit.ly/pynaming-convention
+                looks for all installed packages starting with self.PREFIX
+                convention for plugins is: napari_<pluginname>
+            2. package metadata: http://bit.ly/pypackage-meta
+                installed packages can register themselves for discovery by
+                providing the `entry_points` argument in setup.py using
+                self.PLUGIN_ENTRY_POINT
+        """
+        # discover plugins using naming convention
+        self._plugins.update(
             {
                 name: importlib.import_module(name)
                 for finder, name, ispkg in pkgutil.iter_modules()
-                if name.startswith(self.PREFIX)
+                if name.startswith(self.PLUGIN_PREFIX)
             }
         )
-
-        # using package metadata: http://bit.ly/pypackage-meta
-        # installed packages can register themselves for discovery by providing
-        # the `entry_points` argument in setup.py using self.PLUGIN_ENTRY_POINT
-        self.plugins.update(
+        # discover plugins using package metadata
+        self._plugins.update(
             {
                 entry.name: entry.load()
                 for entry in pkg_resources.iter_entry_points(
@@ -80,23 +79,73 @@ class PluginManager:
             }
         )
 
+    def register(self, name: str):
+        """Manually register a module name as a plugin
+
+        Parameters
+        ----------
+        name : str
+            name of an importable module
+        """
+        self._plugins.update({name: importlib.import_module(name)})
+
     @property
-    def pypi_plugins(self):
-        # packages using naming convention: http://bit.ly/pynaming-convention
-        # can be autodiscovered on pypi using the SIMPLE API:
-        # https://www.python.org/dev/peps/pep-0503/
+    def readers(self) -> Iterator[tuple]:
+        """Generator that yields all readers declared in plugins.
+
+        Plugins may declare a top level variable `READERS` which is a list of
+        2-tuples [(checker, reader) ...] where:
+            `checker` is a function that returns True if it recognizes a
+            directory as something it can handle
+            `reader` is a function that accepts args (path, viewer) and
+            adds layers to the viewer given a path.
+
+        Yields
+        -------
+        tuple
+            (name, module) for all plugins
+        """
+        for name, module in self.items():
+            for item in getattr(module, 'READERS', []):
+                if (
+                    isinstance(item, tuple)
+                    and len(item) == 2
+                    and all([callable(i) for i in item])
+                ):
+                    yield item
+                else:
+                    warnings.warn(
+                        'Reader {item} from plugin {name} was not loaded '
+                        'because it is not a 2-tuple of callables. If you did '
+                        'not write this plugin, please alert the developer.'
+                    )
+
+    def get_pypi_plugins(self) -> dict:
+        """Search for napari plugins on pypi.
+
+        Packages using naming convention: http://bit.ly/pynaming-convention
+        can be autodiscovered on pypi using the SIMPLE API:
+        https://www.python.org/dev/peps/pep-0503/
+
+        Returns
+        -------
+        dict
+            {name: url} for all modules at pypi that start with self.PREFIX
+        """
+        PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
+
         if not hasattr(self, '_pypi_plugins'):
-            response = requests.get(self.PYPI_SIMPLE_API_URL)
+            response = requests.get(PYPI_SIMPLE_API_URL)
             if response.status_code == 200:
                 pattern = f'<a href="/simple/(.+)">({self.PREFIX}.*)</a>'
                 self._pypi_plugins = {
-                    name: self.PYPI_SIMPLE_API_URL + url
+                    name: PYPI_SIMPLE_API_URL + url
                     for url, name in re.findall(pattern, response.text)
                 }
         return self._pypi_plugins
 
-    def fetch_plugin_versions(self, name):
-        """fetch versions for a plugin.
+    def fetch_plugin_versions(self, name: str) -> tuple:
+        """Fetch available pypi versions for a plugin name
 
         Parameters
         ----------
@@ -112,16 +161,18 @@ class PluginManager:
         KeyError
             if the plugin name is not found on pypi
         """
-        if name not in self.pypi_plugins and not name.startswith(self.PREFIX):
+        if name not in self.pypi_plugins and not name.startswith(
+            self.PPLUGIN_PREFIXREFIX
+        ):
             # also search for plugin preceeded by self.PREFIX
             name = f'{self.PREFIX}-{name}'
         if name not in self.pypi_plugins:
             raise KeyError(f'"{name}"" is not a recognized plugin name')
 
         response = requests.get(self.pypi_plugins.get(name))
-        if response.status_code == 200:
-            versions = re.findall(f'>{name}-(.+).tar', response.text)
-            return tuple(set(versions))
+        response.raise_for_status()
+        versions = re.findall(f'>{name}-(.+).tar', response.text)
+        return tuple(set(versions))
 
 
-plugin_manager = PluginManager()
+plugins = PluginManager()

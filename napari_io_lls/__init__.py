@@ -78,12 +78,7 @@ def read_lls_folder(directory):
     stack = da.stack(channels)
     scale = [1] * stack.ndim
     scale[-3] = dz / dx
-    meta = {
-        'channel_axis': 0,
-        'rgb': False,
-        'scale': scale,
-        'name': waves,
-    }
+    meta = {'channel_axis': 0, 'rgb': False, 'scale': scale, 'name': waves}
     return stack, meta
 
 

@@ -1,17 +1,17 @@
-import os.path
 import inspect
+import os.path
 from pathlib import Path
 
 from qtpy import QtGui
-from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
+from qtpy.QtCore import QCoreApplication, QSize, Qt, QThreadPool
 from qtpy.QtGui import QCursor, QPixmap
-from qtpy.QtCore import QThreadPool
-from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from vispy.scene import ArcballCamera, PanZoomCamera, SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
+from ..plugins import plugins
 from ..resources import resources_dir
 from ..utils.theme import template
 from ..utils.misc import str_to_rgb
@@ -30,7 +30,15 @@ from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
-from ..plugins import plugin_manager
+
+
+def add_plugin_layer(viewer, data, meta=None, dims=None):
+    meta = meta or {}
+    layer_type = meta.pop('layer_type', 'image').lower()
+    # layer2addmethod from #723
+    layer = layer2addmethod[layer_type](viewer, data, **meta)
+    # could use dims argument here to modify dims properties
+    return layer
 
 
 class QtViewer(QSplitter):
@@ -267,11 +275,13 @@ class QtViewer(QSplitter):
             # change the order of reader plugins (because the first plugin
             # to claim a path wins)
             for fname in filenames:
-                for check, read in plugin_manager.readers:
+                for check, read in plugins.readers:
                     if check(fname):
-                        data, meta = read(fname)
-                        self.viewer.add_image(data, **meta)
-                        return
+                        new_layers = [
+                            add_plugin_layer(self.viewer, *layer_info)
+                            for layer_info in read(fname)
+                        ]
+                        return new_layers
             self.viewer.add_image(path=filenames)
             self._last_visited_dir = os.path.dirname(filenames[0])
 
