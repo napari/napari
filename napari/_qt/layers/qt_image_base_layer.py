@@ -6,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider, QPushButton
 
+from napari._qt.qt_qslider_popup import QSliderPopup
 from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
 from ..utils import qt_signals_blocked
@@ -43,6 +44,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(200)
         sld.setSingleStep(2)
         sld.setValue(100)
+        sld.mousePressEvent = self._gamma_mousepress
         sld.valueChanged.connect(self.gamma_slider_changed)
         self.gammaSlider = sld
         self.gamma_slider_update()
@@ -55,6 +57,23 @@ class QtBaseImageControls(QtLayerControls):
 
     def changeColor(self, text):
         self.layer.colormap = text
+
+    def _gamma_mousepress(self, event):
+        if event.button() == Qt.RightButton:
+            self.gamma_pop = create_qslider_popup(
+                self.layer,
+                'gamma',
+                self,
+                gamma_change=self.gamma_slider_changed,
+            )
+            self.gamma_pop.finished.connect(self.gamma_pop.deleteLater)
+            reset, fullrange = create_clim_reset_buttons(self.layer)
+            self.gamma_pop.layout.addWidget(reset)
+            if fullrange is not None:
+                self.gamma_pop.layout.addWidget(fullrange)
+            self.gamma_pop.show_at('top', min_length=650)
+        else:
+            return QSlider.mousePressEvent(self.gammaSlider, event)
 
     def _clim_mousepress(self, event):
         """Update the slider, or, on right-click, pop-up an expanded slider.
@@ -120,6 +139,46 @@ class QtBaseImageControls(QtLayerControls):
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
+
+
+def create_qslider_popup(layer, attr, parent=None, gamma_change=None):
+    """Create a QSliderPopup linked to a specific layer attribute.
+
+    This assumes the layer has an attribute named both `attr` and `attr`_range.
+
+    Parameters
+    ----------
+    layer : napari.Layer
+        probably an instance of Image or Surface layer
+    attr : str
+        the attribute to control with the slider.
+    parent : QWidget
+        probably an instance of QtLayerControls. important for styling.
+
+    Returns
+    -------
+    QSliderPopup
+
+    Raises
+    ------
+    AttributeError
+        if `layer` does not have an attribute named `{attr}_range`
+    """
+    is_integer_type = np.issubdtype(layer.dtype, np.integer)
+
+    popup = QSliderPopup(
+        initial_values=getattr(layer, attr),
+        collapsible=False,
+        precision=(0 if is_integer_type else 2),
+        parent=parent,
+    )
+
+    set_values = gamma_change
+    # set_values = partial(setattr, layer, attr)
+    # set_range = partial(setattr, layer, range_attr)
+    popup.slider.valueChanged.connect(set_values)
+    # popup.slider.rangeChanged.connect(set_range)
+    return popup
 
 
 def create_range_popup(layer, attr, parent=None):
