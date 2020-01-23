@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-import numpy as np
 from copy import copy
+
+import numpy as np
 from vispy.color import Color
+
 from ..shape_utils import (
     triangulate_edge,
     triangulate_face,
@@ -9,6 +11,7 @@ from ..shape_utils import (
     poly_to_mask,
     path_to_mask,
 )
+from ...utils.colormaps.standardize_colors import transform_color
 
 
 class Shape(ABC):
@@ -217,7 +220,7 @@ class Shape(ABC):
     @edge_color.setter
     def edge_color(self, edge_color):
         # FIXME
-        self._edge_color = Color(edge_color)
+        self._edge_color = transform_color(edge_color)
         if type(edge_color) is str:
             self._edge_color_name = edge_color
         else:

@@ -240,7 +240,7 @@ class ShapeList:
             self._mesh.triangles_index, index, axis=0
         )
         color = shape.face_color
-        # TODO gixe the next lines for edges and faces
+        # TODO fix the next lines for edges and faces
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
