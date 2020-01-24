@@ -24,6 +24,11 @@ from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
     ColorType,
 )
+from .points_utils import (
+    dataframe_to_properties,
+    guess_continuous,
+    map_properties,
+)
 
 
 class Points(Layer):
@@ -253,7 +258,7 @@ class Points(Layer):
         if properties is None:
             properties = {}
         elif not isinstance(properties, dict):
-            properties = self._dataframe_to_properties(properties)
+            properties = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
 
         # Save the point style params
@@ -417,7 +422,7 @@ class Points(Layer):
                         self._edge_color_property
                     ][0]
 
-                    ec, _ = self._map_properties(
+                    ec, _ = map_properties(
                         properties=edge_color_property_value,
                         colormap=self.edge_color_colormap,
                         contrast_limits=self._edge_color_contrast_limits,
@@ -443,7 +448,7 @@ class Points(Layer):
                         self._face_color_property
                     ][0]
 
-                    fc, _ = self._map_properties(
+                    fc, _ = map_properties(
                         properties=face_color_property_value,
                         colormap=self.face_color_colormap,
                         contrast_limits=self._face_color_contrast_limits,
@@ -464,7 +469,7 @@ class Points(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         if not isinstance(properties, dict):
-            properties = self._dataframe_to_properties(properties)
+            properties = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
         if self._face_color_property and (
             self._face_color_property not in self._properties
@@ -482,13 +487,6 @@ class Points(Layer):
                     'the number of properties must equal the number of points'
                 )
 
-        return properties
-
-    @staticmethod
-    def _dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
-        """ converts a dataframe to Points.properties formatted dictionary"""
-
-        properties = {col: np.asarray(dataframe[col]) for col in dataframe}
         return properties
 
     def _get_ndim(self):
@@ -590,7 +588,7 @@ class Points(Layer):
         # if the provided face color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
         if self._is_color_mapped(edge_color):
-            if self._guess_continuous(self.properties[edge_color]):
+            if guess_continuous(self.properties[edge_color]):
                 self._edge_color_mode = ColorMode.COLORMAP
             else:
                 self._edge_color_mode = ColorMode.CYCLE
@@ -670,13 +668,13 @@ class Points(Layer):
             self._edge_color = colors
         elif self._edge_color_mode == ColorMode.COLORMAP:
             if update_colors:
-                colors, contrast_limits = self._map_properties(
+                colors, contrast_limits = map_properties(
                     properties=color_properties,
                     colormap=self.edge_color_colormap,
                 )
                 self.edge_color_contrast_limits = contrast_limits
             else:
-                colors, _ = self._map_properties(
+                colors, _ = map_properties(
                     properties=color_properties,
                     colormap=self.edge_color_colormap,
                     contrast_limits=self.edge_color_contrast_limits,
@@ -759,7 +757,7 @@ class Points(Layer):
         # if the provided face color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
         if self._is_color_mapped(face_color):
-            if self._guess_continuous(self.properties[face_color]):
+            if guess_continuous(self.properties[face_color]):
                 self._face_color_mode = ColorMode.COLORMAP
             else:
                 self._face_color_mode = ColorMode.CYCLE
@@ -841,13 +839,13 @@ class Points(Layer):
             self.events.highlight()
         elif self._face_color_mode == ColorMode.COLORMAP:
             if update_colors:
-                colors, contrast_limits = self._map_properties(
+                colors, contrast_limits = map_properties(
                     properties=color_properties,
                     colormap=self.face_color_colormap,
                 )
                 self.face_color_contrast_limits = contrast_limits
             else:
-                colors, _ = self._map_properties(
+                colors, _ = map_properties(
                     properties=color_properties,
                     colormap=self.face_color_colormap,
                     contrast_limits=self.face_color_contrast_limits,
@@ -930,29 +928,6 @@ class Points(Layer):
             raise ValueError(
                 'face_color should be the name of a color, an array of colors, or the name of an property'
             )
-
-    @staticmethod
-    def _guess_continuous(property: np.ndarray) -> bool:
-        """guess if the property is continuous (return True) or categorical (return False)"""
-        # if the property is a floating type, guess continuous
-        if issubclass(property.dtype.type, np.floating):
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def _map_properties(
-        properties: np.ndarray,
-        colormap: Colormap,
-        contrast_limits: Union[None, Tuple[float, float]] = None,
-    ) -> Tuple[np.ndarray, Tuple[float, float]]:
-
-        if contrast_limits is None:
-            contrast_limits = (properties.min(), properties.max())
-        normalized_properties = np.interp(properties, contrast_limits, (0, 1))
-        mapped_properties = colormap.map(normalized_properties)
-
-        return mapped_properties, contrast_limits
 
     def _get_state(self):
         """Get dictionary of layer state.
