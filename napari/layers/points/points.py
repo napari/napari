@@ -306,6 +306,7 @@ class Points(Layer):
         self._clipboard = {}
 
         # set the edge color properties
+        self._edge_color_property = ''
         if self._is_color_mapped(edge_color):
             self._edge_color_mode = ColorMode.CYCLE
         else:
@@ -327,6 +328,7 @@ class Points(Layer):
         self.edge_color = edge_color
 
         # set the face color properties
+        self._face_color_property = ''
         if self._is_color_mapped(face_color):
             self._face_color_mode = ColorMode.CYCLE
         else:
@@ -775,7 +777,6 @@ class Points(Layer):
                 len(self.data), transformed_color
             )
             self.face_color_mode = ColorMode.DIRECT
-            self._face_color_property = ''
 
             self.events.face_color()
             self.events.highlight()
