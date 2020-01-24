@@ -593,12 +593,12 @@ class ViewerModel(KeymapMixin):
         edge_width=1,
         edge_color='black',
         edge_color_cycle=None,
-        edge_color_colormap='viridis',
-        edge_color_contrast_limits=None,
+        edge_colormap='viridis',
+        edge_contrast_limits=None,
         face_color='white',
         face_color_cycle=None,
-        face_color_colormap='viridis',
-        face_color_contrast_limits=None,
+        face_colormap='viridis',
+        face_contrast_limits=None,
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -632,10 +632,10 @@ class ViewerModel(KeymapMixin):
         edge_color_cycle : np.ndarray, list, cycle
             Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
             to set face_color.
-        edge_color_colormap : str, vispy.color.colormap.Colormap
+        edge_colormap : str, vispy.color.colormap.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-        edge_color_contrast_limits : None, (float, float)
+        edge_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value of the specified property
             that are mapped to 0 and 1, respectively. The default value is None.
             If set the none, the clims will be set to (property.min(), property.max())
@@ -644,10 +644,10 @@ class ViewerModel(KeymapMixin):
         face_color_cycle : np.ndarray, list, cycle
             Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
             to set face_color.
-        face_color_colormap : str, vispy.color.colormap.Colormap
+        face_colormap : str, vispy.color.colormap.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-        face_color_contrast_limits : None, (float, float)
+        face_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value of the specified property
             that are mapped to 0 and 1, respectively. The default value is None.
             If set the none, the clims will be set to (property.min(), property.max())
@@ -693,12 +693,12 @@ class ViewerModel(KeymapMixin):
             edge_width=edge_width,
             edge_color=edge_color,
             edge_color_cycle=edge_color_cycle,
-            edge_color_colormap=edge_color_colormap,
-            edge_color_contrast_limits=edge_color_contrast_limits,
+            edge_colormap=edge_colormap,
+            edge_contrast_limits=edge_contrast_limits,
             face_color=face_color,
             face_color_cycle=face_color_cycle,
-            face_color_colormap=face_color_colormap,
-            face_color_contrast_limits=face_color_contrast_limits,
+            face_colormap=face_colormap,
+            face_contrast_limits=face_contrast_limits,
             n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,

@@ -36,13 +36,12 @@ with napari.gui_qt():
     }
 
     points_layer = viewer.add_points(
-        points,
+        points, properties=properties,
         size=3,
-        face_color='face_property',
+        edge_width=5,
         edge_color='edge_property',
-        properties=properties,
-        n_dimensional=False,
-        edge_width=5
+        face_color='face_property',
+        n_dimensional=False
     )
 
     # change the color cycles

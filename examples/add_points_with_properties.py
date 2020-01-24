@@ -28,13 +28,13 @@ with napari.gui_qt():
     # and the edge_color is set via a color map (grayscale) on the confidence property.
     points_layer = viewer.add_points(
         points,
-        size=20,
         properties=properties,
-        face_color='good_point',
-        face_color_cycle=face_color_cycle,
+        size=20,
+        edge_width=7,
         edge_color='confidence',
-        edge_color_colormap='gray',
-        edge_width=7
+        edge_colormap='gray',
+        face_color='good_point',
+        face_color_cycle=face_color_cycle
     )
 
     # set the face_color mode to colormap

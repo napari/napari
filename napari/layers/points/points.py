@@ -56,10 +56,10 @@ class Points(Layer):
     edge_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
-    edge_color_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    edge_color_contrast_limits : None, (float, float)
+    edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value of the specified property
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (property.min(), property.max())
@@ -68,10 +68,10 @@ class Points(Layer):
     face_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
         to set face_color.
-    face_color_colormap : str, vispy.color.colormap.Colormap
+    face_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    face_color_contrast_limits : None, (float, float)
+    face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value of the specified property
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (property.min(), property.max())
@@ -114,10 +114,10 @@ class Points(Layer):
     edge_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
-    edge_color_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    edge_color_contrast_limits : None, (float, float)
+    edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value of the specified property
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (property.min(), property.max())
@@ -126,10 +126,10 @@ class Points(Layer):
     face_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
         to set face_color.
-    face_color_colormap : str, vispy.color.colormap.Colormap
+    face_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    face_color_contrast_limits : None, (float, float)
+    face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value of the specified property
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (property.min(), property.max())
@@ -207,12 +207,12 @@ class Points(Layer):
         edge_width=1,
         edge_color='black',
         edge_color_cycle=None,
-        edge_color_colormap='viridis',
-        edge_color_contrast_limits=None,
+        edge_colormap='viridis',
+        edge_contrast_limits=None,
         face_color='white',
         face_color_cycle=None,
-        face_color_colormap='viridis',
-        face_color_contrast_limits=None,
+        face_colormap='viridis',
+        face_contrast_limits=None,
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -323,12 +323,12 @@ class Points(Layer):
                 elem_name='edge_color_cycle',
                 default='white',
             )
-        self._edge_color_colormap = get_colormap(edge_color_colormap)
-        if isinstance(edge_color_colormap, str):
-            self._edge_color_colormap_name = edge_color_colormap
+        self._edge_colormap = get_colormap(edge_colormap)
+        if isinstance(edge_colormap, str):
+            self._edge_colormap_name = edge_colormap
         else:
-            self._edge_color_colormap_name = 'unknown_colormap'
-        self._edge_color_contrast_limits = edge_color_contrast_limits
+            self._edge_colormap_name = 'unknown_colormap'
+        self._edge_contrast_limits = edge_contrast_limits
         self.edge_color = edge_color
 
         # set the face color properties
@@ -349,12 +349,12 @@ class Points(Layer):
                 elem_name='face_color_cycle',
                 default='white',
             )
-        self._face_color_cmap = get_colormap(face_color_colormap)
-        if isinstance(face_color_colormap, str):
-            self._face_color_colormap_name = face_color_colormap
+        self._face_colormap = get_colormap(face_colormap)
+        if isinstance(face_colormap, str):
+            self._face_colormap_name = face_colormap
         else:
-            self._face_color_colormap_name = 'unknown_colormap'
-        self._face_color_contrast_limits = face_color_contrast_limits
+            self._face_colormap_name = 'unknown_colormap'
+        self._face_contrast_limits = face_contrast_limits
         self.face_color = face_color
 
         # set the current_* properties
@@ -434,8 +434,8 @@ class Points(Layer):
 
                     ec, _ = map_property(
                         prop=edge_color_property_value,
-                        colormap=self.edge_color_colormap[1],
-                        contrast_limits=self._edge_color_contrast_limits,
+                        colormap=self.edge_colormap[1],
+                        contrast_limits=self._edge_contrast_limits,
                     )
                     new_edge_colors = np.tile(ec, (adding, 1))
                 self.edge_color = np.vstack((self.edge_color, new_edge_colors))
@@ -460,8 +460,8 @@ class Points(Layer):
 
                     fc, _ = map_property(
                         prop=face_color_property_value,
-                        colormap=self.face_color_colormap[1],
-                        contrast_limits=self._face_color_contrast_limits,
+                        colormap=self.face_colormap[1],
+                        contrast_limits=self._face_contrast_limits,
                     )
                     new_face_colors = np.tile(fc, (adding, 1))
                 self.face_color = np.vstack((self.face_color, new_face_colors))
@@ -642,28 +642,28 @@ class Points(Layer):
             self._refresh_edge_color()
 
     @property
-    def edge_color_colormap(self):
+    def edge_colormap(self):
         """(str, vispy.color.Colormap) colormap to be applied to a property to set edge_color"""
-        return self._edge_color_colormap_name, self._edge_color_colormap
+        return self._edge_colormap_name, self._edge_colormap
 
-    @edge_color_colormap.setter
-    def edge_color_colormap(self, colormap: Union[str, Colormap]):
-        self._edge_color_colormap = get_colormap(colormap)
+    @edge_colormap.setter
+    def edge_colormap(self, colormap: Union[str, Colormap]):
+        self._edge_colormap = get_colormap(colormap)
         if isinstance(colormap, str):
-            self._edge_color_colormap_name = colormap
+            self._edge_colormap_name = colormap
         else:
-            self._edge_color_colormap_name = 'unknown_colormap'
+            self._edge_colormap_name = 'unknown_colormap'
 
     @property
-    def edge_color_contrast_limits(self):
+    def edge_contrast_limits(self):
         """None, (float, float) : clims for mapping the edge_color colormap property to 0 and 1"""
-        return self._edge_color_contrast_limits
+        return self._edge_contrast_limits
 
-    @edge_color_contrast_limits.setter
-    def edge_color_contrast_limits(
+    @edge_contrast_limits.setter
+    def edge_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._edge_color_contrast_limits = contrast_limits
+        self._edge_contrast_limits = contrast_limits
 
     def _refresh_edge_color(self, update_colors: bool = True):
         """ calculate edge color if using a cycle or color map"""
@@ -683,14 +683,14 @@ class Points(Layer):
         elif self._edge_color_mode == ColorMode.COLORMAP:
             if update_colors:
                 colors, contrast_limits = map_property(
-                    prop=color_properties, colormap=self.edge_color_colormap[1]
+                    prop=color_properties, colormap=self.edge_colormap[1]
                 )
-                self.edge_color_contrast_limits = contrast_limits
+                self.edge_contrast_limits = contrast_limits
             else:
                 colors, _ = map_property(
                     prop=color_properties,
-                    colormap=self.edge_color_colormap[1],
-                    contrast_limits=self.edge_color_contrast_limits,
+                    colormap=self.edge_colormap[1],
+                    contrast_limits=self.edge_contrast_limits,
                 )
 
             self._edge_color = colors
@@ -812,28 +812,28 @@ class Points(Layer):
             self._refresh_face_color()
 
     @property
-    def face_color_colormap(self):
+    def face_colormap(self):
         """(str, vispy.color.Colormap) colormap to be applied to a property to set edge_color"""
-        return self._face_color_colormap_name, self._face_color_cmap
+        return self._face_colormap_name, self._face_colormap
 
-    @face_color_colormap.setter
-    def face_color_colormap(self, colormap: Union[str, Colormap]):
-        self._face_color_cmap = get_colormap(colormap)
+    @face_colormap.setter
+    def face_colormap(self, colormap: Union[str, Colormap]):
+        self._face_colormap = get_colormap(colormap)
         if isinstance(colormap, str):
-            self._face_color_colormap_name = colormap
+            self._face_colormap_name = colormap
         else:
-            self._face_color_colormap_name = 'unknown_colormap'
+            self._face_colormap_name = 'unknown_colormap'
 
     @property
-    def face_color_contrast_limits(self):
+    def face_contrast_limits(self):
         """None, (float, float) : clims for mapping the face_color colormap property to 0 and 1"""
-        return self._face_color_contrast_limits
+        return self._face_contrast_limits
 
-    @face_color_contrast_limits.setter
-    def face_color_contrast_limits(
+    @face_contrast_limits.setter
+    def face_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._face_color_contrast_limits = contrast_limits
+        self._face_contrast_limits = contrast_limits
 
     def _refresh_face_color(self, update_colors: bool = True):
         """ calculate face color if using a cycle or color map"""
@@ -857,14 +857,14 @@ class Points(Layer):
         elif self._face_color_mode == ColorMode.COLORMAP:
             if update_colors:
                 colors, contrast_limits = map_property(
-                    prop=color_properties, colormap=self.face_color_colormap[1]
+                    prop=color_properties, colormap=self.face_colormap[1]
                 )
-                self.face_color_contrast_limits = contrast_limits
+                self.face_contrast_limits = contrast_limits
             else:
                 colors, _ = map_property(
                     prop=color_properties,
-                    colormap=self.face_color_colormap[1],
-                    contrast_limits=self.face_color_contrast_limits,
+                    colormap=self.face_colormap[1],
+                    contrast_limits=self.face_contrast_limits,
                 )
             self._face_color = colors
 
@@ -960,12 +960,12 @@ class Points(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_color_colormap': self.face_color_colormap[0],
-                'face_color_contrast_limits': self.face_color_contrast_limits,
+                'face_colormap': self.face_colormap[0],
+                'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_color_colormap': self.edge_color_colormap[0],
-                'edge_color_contrast_limits': self.edge_color_contrast_limits,
+                'edge_colormap': self.edge_colormap[0],
+                'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
