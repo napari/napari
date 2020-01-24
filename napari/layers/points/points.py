@@ -448,7 +448,8 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        self._selected_box = self.interaction_box(self._selected_view)
+        if self.dims.ndisplay == 2:
+            self._selected_box = self.interaction_box(self._selected_view)
 
         # Update properties based on selected points
         if len(self._selected_data) == 0:
@@ -543,11 +544,11 @@ class Points(Layer):
             raise ValueError("Mode not recognized")
 
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
-            self.selected_data = []
-            self._set_highlight()
+            self._selected_data_stored = []
 
         self.status = str(mode)
         self._mode = mode
+        self._set_highlight()
 
         self.events.mode(mode=mode)
 
@@ -674,55 +675,63 @@ class Points(Layer):
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
-        interaction boxes, and the drag selection box when appropriate
+        interaction boxes, and the drag selection box when appropriate.
+        Highlighting only occurs in Mode.SELECT.
 
         Parameters
         ----------
         force : bool
             Bool that forces a redraw to occur when `True`
         """
-        # Check if any point ids have changed since last call
-        if (
-            self.selected_data == self._selected_data_stored
-            and self._value == self._value_stored
-            and np.all(self._drag_box == self._drag_box_stored)
-        ) and not force:
-            return
-        self._selected_data_stored = copy(self.selected_data)
-        self._value_stored = copy(self._value)
-        self._drag_box_stored = copy(self._drag_box)
+        if self._mode == Mode.SELECT:
+            # Check if any point ids have changed since last call
+            if (
+                self.selected_data == self._selected_data_stored
+                and self._value == self._value_stored
+                and np.all(self._drag_box == self._drag_box_stored)
+            ) and not force:
+                return
+            self._selected_data_stored = copy(self.selected_data)
+            self._value_stored = copy(self._value)
+            self._drag_box_stored = copy(self._drag_box)
 
-        if self._mode == Mode.SELECT and (
-            self._value is not None or len(self._selected_view) > 0
-        ):
-            if len(self._selected_view) > 0:
-                index = copy(self._selected_view)
-                if self._value is not None:
+            if self._mode == Mode.SELECT and (
+                self._value is not None or len(self._selected_view) > 0
+            ):
+                if len(self._selected_view) > 0:
+                    index = copy(self._selected_view)
+                    if self._value is not None:
+                        hover_point = list(self._indices_view).index(
+                            self._value
+                        )
+                        if hover_point in index:
+                            pass
+                        else:
+                            index.append(hover_point)
+                    index.sort()
+                else:
                     hover_point = list(self._indices_view).index(self._value)
-                    if hover_point in index:
-                        pass
-                    else:
-                        index.append(hover_point)
-                index.sort()
+                    index = [hover_point]
+
+                self._highlight_index = index
             else:
-                hover_point = list(self._indices_view).index(self._value)
-                index = [hover_point]
+                self._highlight_index = []
 
-            self._highlight_index = index
+            pos = self._selected_box
+            if pos is None and not self._is_selecting:
+                pos = np.zeros((0, 2))
+            elif self._is_selecting:
+                pos = create_box(self._drag_box)
+                pos = pos[list(range(4)) + [0]]
+            else:
+                pos = pos[list(range(4)) + [0]]
+
+            self._highlight_box = pos
+            self.events.highlight()
         else:
+            self._highlight_box = None
             self._highlight_index = []
-
-        pos = self._selected_box
-        if pos is None and not self._is_selecting:
-            pos = np.zeros((0, 2))
-        elif self._is_selecting:
-            pos = create_box(self._drag_box)
-            pos = pos[list(range(4)) + [0]]
-        else:
-            pos = pos[list(range(4)) + [0]]
-
-        self._highlight_box = pos
-        self.events.highlight()
+            self.events.highlight()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""

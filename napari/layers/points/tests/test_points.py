@@ -106,12 +106,30 @@ def test_selecting_points():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     layer.mode = 'select'
-    layer.selected_data = [0, 1]
-    assert layer.selected_data == [0, 1]
+    data_to_select = [1, 2]
+    layer.selected_data = data_to_select
+    assert layer.selected_data == data_to_select
 
     # test switching to 3D
     layer.dims.ndisplay = 3
-    assert layer.selected_data == []
+    assert layer.selected_data == data_to_select
+
+    # select different points while in 3D mode
+    other_data_to_select = [0]
+    layer.selected_data = other_data_to_select
+    assert layer.selected_data == other_data_to_select
+
+    # selection should persist when going back to 2D mode
+    layer.dims.ndisplay = 2
+    assert layer.selected_data == other_data_to_select
+
+    # selection should persist when switching between modes
+    layer.mode = 'add'
+    assert layer.selected_data == other_data_to_select
+    layer.mode = 'select'
+    assert layer.selected_data == other_data_to_select
+    layer.mode = 'pan_zoom'
+    assert layer.selected_data == other_data_to_select
 
 
 def test_adding_points():
