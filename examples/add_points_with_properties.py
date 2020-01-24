@@ -52,4 +52,4 @@ with napari.gui_qt():
             # we need to manually refresh since we did not use the Points.properties setter
             # to avoid changing the color map if all points get toggled to the same class,
             # we set update_colors=False (only re-colors the point using the previously-determined color mapping).
-            points_layer._refresh_face_color(update_colors=False)
+            points_layer.refresh_face_color(update_color_mapping=False)

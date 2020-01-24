@@ -603,7 +603,7 @@ class Points(Layer):
             else:
                 self._edge_color_mode = ColorMode.CYCLE
             self._edge_color_property = edge_color
-            self._refresh_edge_color()
+            self.refresh_edge_color()
 
         else:
             transformed_color = transform_color_with_defaults(
@@ -639,7 +639,7 @@ class Points(Layer):
                 default="white",
             )
         if self._edge_color_mode == ColorMode.CYCLE:
-            self._refresh_edge_color()
+            self.refresh_edge_color()
 
     @property
     def edge_colormap(self):
@@ -665,11 +665,21 @@ class Points(Layer):
     ):
         self._edge_contrast_limits = contrast_limits
 
-    def _refresh_edge_color(self, update_colors: bool = True):
-        """ calculate edge color if using a cycle or color map"""
+    def refresh_edge_color(self, update_color_mapping: bool = True):
+        """ Calculate and update edge color if using a cycle or color map
+
+            Parameters
+            ----------
+            update_color_mapping : bool
+                If set to True, the function will recalculate the color cycle map or colormap
+                (whichever is being used). If set to False, the function will use the current color cycle map or
+                color map. For example, if you are adding/modifying points and want them to be colored with the same
+                mapping as the other points (i.e., the new points shouldn't affect the color cycle map or colormap),
+                set update_color_mapping=False. Default value is True.
+        """
         color_properties = self.properties[self._edge_color_property]
         if self._edge_color_mode == ColorMode.CYCLE:
-            if update_colors:
+            if update_color_mapping:
                 self.edge_color_cycle_map = {
                     k: c
                     for k, c in zip(
@@ -681,7 +691,7 @@ class Points(Layer):
             )
             self._edge_color = colors
         elif self._edge_color_mode == ColorMode.COLORMAP:
-            if update_colors:
+            if update_color_mapping:
                 colors, contrast_limits = map_property(
                     prop=color_properties, colormap=self.edge_colormap[1]
                 )
@@ -755,7 +765,7 @@ class Points(Layer):
                 )
 
             self._edge_color_mode = edge_color_mode
-            self._refresh_edge_color()
+            self.refresh_edge_color()
         elif edge_color_mode == ColorMode.COLORMAP:
             raise NotImplementedError(
                 'colormapped attributes not implented yet'
@@ -776,7 +786,7 @@ class Points(Layer):
             else:
                 self._face_color_mode = ColorMode.CYCLE
             self._face_color_property = face_color
-            self._refresh_face_color()
+            self.refresh_face_color()
 
         else:
             transformed_color = transform_color_with_defaults(
@@ -809,7 +819,7 @@ class Points(Layer):
                 default="white",
             )
         if self._face_color_mode == ColorMode.CYCLE:
-            self._refresh_face_color()
+            self.refresh_face_color()
 
     @property
     def face_colormap(self):
@@ -835,12 +845,22 @@ class Points(Layer):
     ):
         self._face_contrast_limits = contrast_limits
 
-    def _refresh_face_color(self, update_colors: bool = True):
-        """ calculate face color if using a cycle or color map"""
+    def refresh_face_color(self, update_color_mapping: bool = True):
+        """ Calculate and update face color if using a cycle or color map
+
+            Parameters
+            ----------
+            update_color_mapping : bool
+                If set to True, the function will recalculate the color cycle map or colormap
+                (whichever is being used). If set to False, the function will use the current color cycle map or
+                color map. For example, if you are adding/modifying points and want them to be colored with the same
+                mapping as the other points (i.e., the new points shouldn't affect the color cycle map or colormap),
+                set update_color_mapping=False. Default value is True.
+        """
         color_properties = self.properties[self._face_color_property]
 
         if self._face_color_mode == ColorMode.CYCLE:
-            if update_colors:
+            if update_color_mapping:
                 self.face_color_cycle_map = {
                     k: c
                     for k, c in zip(
@@ -855,7 +875,7 @@ class Points(Layer):
             self.events.face_color()
             self.events.highlight()
         elif self._face_color_mode == ColorMode.COLORMAP:
-            if update_colors:
+            if update_color_mapping:
                 colors, contrast_limits = map_property(
                     prop=color_properties, colormap=self.face_colormap[1]
                 )
@@ -929,7 +949,7 @@ class Points(Layer):
                     'selected property must be numeric to use ColorMode.COLORMAP'
                 )
             self._face_color_mode = face_color_mode
-            self._refresh_face_color()
+            self.refresh_face_color()
 
     def _is_color_mapped(self, color):
         """ determines if the new color argument is for directly setting or cycle/colormap"""
