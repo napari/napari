@@ -15,8 +15,8 @@ with napari.gui_qt():
     # add the points
     points = np.array([[100, 100], [200, 200], [333, 111]])
 
-    # create annotations for each point
-    annotations = {
+    # create properties for each point
+    properties = {
         'confidence': np.array([1, 0.5, 0]),
         'good_point': np.array([True, False, False])
     }
@@ -24,32 +24,32 @@ with napari.gui_qt():
     # define the color cycle for the face_color annotation
     face_color_cycle = ['blue', 'green']
 
-    # create a points layer where the face_color is set by the good_point annotation
-    # and the edge_color is set via a color map (grayscale) on the confidence annotation.
+    # create a points layer where the face_color is set by the good_point property
+    # and the edge_color is set via a color map (grayscale) on the confidence property.
     points_layer = viewer.add_points(
         points,
         size=20,
-        annotations=annotations,
+        properties=properties,
         face_color='good_point',
         face_color_cycle=face_color_cycle,
         edge_color='confidence',
-        edge_color_cmap='gray',
+        edge_color_colormap='gray',
         edge_width=7
     )
 
-    # set the face_color mode to cmap
-    points_layer.edge_color_mode = 'cmap'
+    # set the face_color mode to colormap
+    points_layer.edge_color_mode = 'colormap'
 
     # bind a function to toggle the good_point annotation of the selected points
     @viewer.bind_key('t')
     def toggle_point_annotation(viewer):
         selected_points = viewer.layers[1].selected_data
         if selected_points:
-            selected_annotations = viewer.layers[1].annotations['good_point'][selected_points]
+            selected_annotations = viewer.layers[1].properties['good_point'][selected_points]
             toggled_annotations = np.logical_not(selected_annotations)
-            viewer.layers[1].annotations['good_point'][selected_points] = toggled_annotations
+            viewer.layers[1].properties['good_point'][selected_points] = toggled_annotations
 
-            # we need to manually refresh since we did not use the Points.annotations setter
+            # we need to manually refresh since we did not use the Points.properties setter
             # to avoid changing the color map if all points get toggled to the same class,
             # we set update_colors=False (only re-colors the point using the previously-determined color mapping).
             points_layer._refresh_face_color(update_colors=False)

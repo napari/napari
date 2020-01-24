@@ -291,35 +291,35 @@ def test_annotations():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
-    layer = Points(data, annotations=copy(annotations))
-    assert layer.annotations == annotations
+    layer = Points(data, properties=copy(annotations))
+    assert layer.properties == annotations
 
     # test removing points
     layer.selected_data = [0, 1]
     layer.remove_selected()
     remove_annotations = annotations['point_type'][2::]
-    assert len(layer.annotations['point_type']) == (shape[0] - 2)
-    assert np.all(layer.annotations['point_type'] == remove_annotations)
+    assert len(layer.properties['point_type']) == (shape[0] - 2)
+    assert np.all(layer.properties['point_type'] == remove_annotations)
 
-    # test selection of annotations
+    # test selection of properties
     layer.selected_data = [0]
     selected_annotation = layer.current_annotations['point_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
 
-    # test adding annotations
+    # test adding properties
     layer.add([10, 10])
     add_annotations = np.concatenate((remove_annotations, ['A']), axis=0)
-    assert np.all(layer.annotations['point_type'] == add_annotations)
+    assert np.all(layer.properties['point_type'] == add_annotations)
 
     # test copy/paste
     layer.selected_data = [0, 1]
     layer._copy_data()
-    assert np.all(layer._clipboard['annotations']['point_type'] == ['A', 'B'])
+    assert np.all(layer._clipboard['properties']['point_type'] == ['A', 'B'])
 
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
-    assert np.all(layer.annotations['point_type'] == paste_annotations)
+    assert np.all(layer.properties['point_type'] == paste_annotations)
 
 
 def test_adding_annotations():
@@ -328,18 +328,18 @@ def test_adding_annotations():
     data = 20 * np.random.random(shape)
     annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
     layer = Points(data)
-    assert layer.annotations == {}
+    assert layer.properties == {}
 
-    # add annotations
-    layer.annotations = copy(annotations)
-    assert layer.annotations == annotations
+    # add properties
+    layer.properties = copy(annotations)
+    assert layer.properties == annotations
 
-    # change annotations
+    # change properties
     new_annotations = {
         'other_type': np.array(['C', 'D'] * int((shape[0] / 2)))
     }
-    layer.annotations = copy(new_annotations)
-    assert layer.annotations == new_annotations
+    layer.properties = copy(new_annotations)
+    assert layer.properties == new_annotations
 
 
 def test_annotations_errors():
@@ -347,14 +347,14 @@ def test_annotations_errors():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
 
-    # try adding annotations with the wrong number of annotations
+    # try adding properties with the wrong number of properties
     with pytest.raises(ValueError):
         annotations = {'point_type': np.array(['A', 'B'])}
-        Points(data, annotations=copy(annotations))
-    # try adding annotations with the wrong type
+        Points(data, properties=copy(annotations))
+    # try adding properties with the wrong type
     with pytest.raises(TypeError):
         annotations = {'point_type': ['A', 'B', 'C']}
-        Points(data, annotations=copy(annotations))
+        Points(data, properties=copy(annotations))
 
 
 def test_is_color_mapped():
@@ -362,7 +362,7 @@ def test_is_color_mapped():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
-    layer = Points(data, annotations=annotations)
+    layer = Points(data, properties=annotations)
 
     # giving the name of an annotation should return True
     assert layer._is_color_mapped('point_type')
@@ -509,11 +509,11 @@ def test_edge_color_cycle():
     color_cycle = ['red', 'blue']
     layer = Points(
         data,
-        annotations=annotations,
+        properties=annotations,
         edge_color='point_type',
         edge_color_cycle=color_cycle,
     )
-    assert layer.annotations == annotations
+    assert layer.properties == annotations
     edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
     assert np.all(layer.edge_color == edge_color_array)
 
@@ -521,7 +521,7 @@ def test_edge_color_cycle():
     color_cycle_array = transform_color(color_cycle)
     layer2 = Points(
         data,
-        annotations=annotations,
+        properties=annotations,
         edge_color='point_type',
         edge_color_cycle=color_cycle_array,
     )
@@ -550,20 +550,20 @@ def test_edge_color_cycle():
     )
 
 
-def test_edge_color_cmap():
-    # create Points using with face_color cmap
+def test_edge_color_colormap():
+    # create Points using with face_color colormap
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
     layer = Points(
         data,
-        annotations=annotations,
+        properties=annotations,
         edge_color='point_type',
-        edge_color_cmap='gray',
+        edge_color_colormap='gray',
     )
-    assert layer.annotations == annotations
-    assert layer.edge_color_mode == 'cmap'
+    assert layer.properties == annotations
+    assert layer.edge_color_mode == 'colormap'
     edge_color_array = transform_color(
         ['black', 'white'] * int((shape[0] / 2))
     )
@@ -583,10 +583,10 @@ def test_edge_color_cmap():
         np.vstack((edge_color_array, transform_color('black'))),
     )
 
-    # change the cmap
-    new_cmap = 'viridis'
-    layer.edge_color_cmap = new_cmap
-    assert layer.edge_color_cmap == get_colormap(new_cmap)
+    # change the colormap
+    new_colormap = 'viridis'
+    layer.edge_color_colormap = new_colormap
+    assert layer.edge_color_colormap == get_colormap(new_colormap)
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
@@ -681,11 +681,11 @@ def test_face_color_cycle():
     color_cycle = ['red', 'blue']
     layer = Points(
         data,
-        annotations=annotations,
+        properties=annotations,
         face_color='point_type',
         face_color_cycle=color_cycle,
     )
-    assert layer.annotations == annotations
+    assert layer.properties == annotations
     face_color_array = transform_color(color_cycle * int((shape[0] / 2)))
     assert np.all(layer.face_color == face_color_array)
 
@@ -693,7 +693,7 @@ def test_face_color_cycle():
     color_cycle_array = transform_color(color_cycle)
     layer2 = Points(
         data,
-        annotations=annotations,
+        properties=annotations,
         face_color='point_type',
         face_color_cycle=color_cycle_array,
     )
@@ -722,20 +722,20 @@ def test_face_color_cycle():
     )
 
 
-def test_face_color_cmap():
-    # create Points using with face_color cmap
+def test_face_color_colormap():
+    # create Points using with face_color colormap
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
     layer = Points(
         data,
-        annotations=annotations,
+        properties=annotations,
         face_color='point_type',
-        face_color_cmap='gray',
+        face_color_colormap='gray',
     )
-    assert layer.annotations == annotations
-    assert layer.face_color_mode == 'cmap'
+    assert layer.properties == annotations
+    assert layer.face_color_mode == 'colormap'
     face_color_array = transform_color(
         ['black', 'white'] * int((shape[0] / 2))
     )
@@ -755,10 +755,10 @@ def test_face_color_cmap():
         np.vstack((face_color_array, transform_color('black'))),
     )
 
-    # change the cmap
-    new_cmap = 'viridis'
-    layer.face_color_cmap = new_cmap
-    assert layer.face_color_cmap == get_colormap(new_cmap)
+    # change the colormap
+    new_colormap = 'viridis'
+    layer.face_color_colormap = new_colormap
+    assert layer.face_color_colormap == get_colormap(new_colormap)
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]

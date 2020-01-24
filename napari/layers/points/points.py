@@ -33,7 +33,7 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
-    annotations : dict {str: array (N,)}
+    properties : dict {str: array (N,)}
         Annotations for each point. Each annotation should be an array of length N,
         where N is the number of points.
     symbol : str
@@ -51,10 +51,10 @@ class Points(Layer):
     edge_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
-    edge_color_cmap : str, vispy.color.colormap.Colormap
+    edge_color_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    edge_color_clims : None, (float, float)
+    edge_color_contrast_limits : None, (float, float)
         clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (annotation.min(), annotation.max())
@@ -63,10 +63,10 @@ class Points(Layer):
     face_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
         to set face_color.
-    face_color_cmap : str, vispy.color.colormap.Colormap
+    face_color_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    face_color_clims : None, (float, float)
+    face_color_contrast_limits : None, (float, float)
         clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (annotation.min(), annotation.max())
@@ -94,7 +94,7 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
-    annotations : dict {str: array (N,)}
+    properties : dict {str: array (N,)}
         Annotations for each point. Each annotation should be an array of length N,
         where N is the number of points.
     symbol : str
@@ -109,10 +109,10 @@ class Points(Layer):
     edge_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
         to set face_color.
-    edge_color_cmap : str, vispy.color.colormap.Colormap
+    edge_color_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    edge_color_clims : None, (float, float)
+    edge_color_contrast_limits : None, (float, float)
         clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (annotation.min(), annotation.max())
@@ -121,10 +121,10 @@ class Points(Layer):
     face_color_cycle : np.ndarray, list, cycle
         Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
         to set face_color.
-    face_color_cmap : str, vispy.color.colormap.Colormap
+    face_color_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    face_color_clims : None, (float, float)
+    face_color_contrast_limits : None, (float, float)
         clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
         that are mapped to 0 and 1, respectively. The default value is None.
         If set the none, the clims will be set to (annotation.min(), annotation.max())
@@ -158,7 +158,7 @@ class Points(Layer):
 
         CYCLE allows the color to be set via a color cycle over an attribute
 
-        CMAP allows color to be set via a color map over an attribute
+        COLORMAP allows color to be set via a color map over an attribute
     edge_color_mode : str
         Edge color setting mode.
 
@@ -166,7 +166,7 @@ class Points(Layer):
 
         CYCLE allows the color to be set via a color cycle over an attribute
 
-        CMAP allows color to be set via a color map over an attribute
+        COLORMAP allows color to be set via a color map over an attribute
 
     Extended Summary
     ----------
@@ -196,18 +196,18 @@ class Points(Layer):
         self,
         data=None,
         *,
-        annotations=None,
+        properties=None,
         symbol='o',
         size=10,
         edge_width=1,
         edge_color='black',
         edge_color_cycle=None,
-        edge_color_cmap='viridis',
-        edge_color_clims=None,
+        edge_color_colormap='viridis',
+        edge_color_contrast_limits=None,
         face_color='white',
         face_color_cycle=None,
-        face_color_cmap='viridis',
-        face_color_clims=None,
+        face_color_colormap='viridis',
+        face_color_contrast_limits=None,
         n_dimensional=False,
         name=None,
         metadata=None,
@@ -249,11 +249,11 @@ class Points(Layer):
         self._data = np.asarray(data)
         self.dims.clip = False
 
-        # Save the annotations
-        if annotations is None:
-            self._annotations = {}
+        # Save the properties
+        if properties is None:
+            self._properties = {}
         else:
-            self._annotations = self._validate_annotations(annotations)
+            self._properties = self._validate_properties(properties)
 
         # Save the point style params
         self.symbol = symbol
@@ -316,8 +316,8 @@ class Points(Layer):
                 elem_name='edge_color_cycle',
                 default='white',
             )
-        self._edge_color_cmap = get_colormap(edge_color_cmap)
-        self._edge_color_clims = edge_color_clims
+        self._edge_color_colormap = get_colormap(edge_color_colormap)
+        self._edge_color_contrast_limits = edge_color_contrast_limits
         self.edge_color = edge_color
 
         # set the face color properties
@@ -337,8 +337,8 @@ class Points(Layer):
                 elem_name='face_color_cycle',
                 default='white',
             )
-        self._face_color_cmap = get_colormap(face_color_cmap)
-        self._face_color_clims = face_color_clims
+        self._face_color_colormap = get_colormap(face_color_colormap)
+        self._face_color_contrast_limits = face_color_contrast_limits
         self.face_color = face_color
 
         # set the current_* properties
@@ -346,7 +346,7 @@ class Points(Layer):
         self._current_face_color = self.face_color[-1]
         self.size = size
         self.current_annotations = {
-            k: v[-1] for k, v in self.annotations.items()
+            k: v[-1] for k, v in self.properties.items()
         }
 
         # Trigger generation of view slice and thumbnail
@@ -371,8 +371,8 @@ class Points(Layer):
                 self.face_color = self.face_color[: len(data)]
                 self.size = self._size[: len(data)]
 
-                for k in self.annotations:
-                    self.annotations[k] = self.annotations[k][: len(data)]
+                for k in self.properties:
+                    self.properties[k] = self.properties[k][: len(data)]
 
         elif len(data) > cur_npoints:
             # If there are now more points, add the size and colors of the
@@ -390,12 +390,12 @@ class Points(Layer):
                     )
                 size = np.repeat([new_size], adding, axis=0)
 
-                for k in self.annotations:
+                for k in self.properties:
                     new_annotation = np.repeat(
                         self.current_annotations[k], adding, axis=0
                     )
-                    self.annotations[k] = np.concatenate(
-                        (self.annotations[k], new_annotation), axis=0
+                    self.properties[k] = np.concatenate(
+                        (self.properties[k], new_annotation), axis=0
                     )
 
                 # add new edge colors
@@ -411,15 +411,15 @@ class Points(Layer):
                         self.edge_color_cycle_map[edge_color_annotation],
                         (adding, 1),
                     )
-                elif self._edge_color_mode == ColorMode.CMAP:
+                elif self._edge_color_mode == ColorMode.COLORMAP:
                     edge_color_annotation_value = self.current_annotations[
                         self._edge_color_annotation
                     ][0]
 
                     ec, _ = self._map_annotation(
                         annotations=edge_color_annotation_value,
-                        cmap=self.edge_color_cmap,
-                        clims=self._edge_color_clims,
+                        colormap=self.edge_color_colormap,
+                        contrast_limits=self._edge_color_contrast_limits,
                     )
                     new_edge_colors = np.tile(ec, (adding, 1))
                 self.edge_color = np.vstack((self.edge_color, new_edge_colors))
@@ -437,15 +437,15 @@ class Points(Layer):
                         self.face_color_cycle_map[face_color_annotation_value],
                         (adding, 1),
                     )
-                elif self._face_color_mode == ColorMode.CMAP:
+                elif self._face_color_mode == ColorMode.COLORMAP:
                     face_color_annotation_value = self.current_annotations[
                         self._face_color_annotation
                     ][0]
 
                     fc, _ = self._map_annotation(
                         annotations=face_color_annotation_value,
-                        cmap=self.face_color_cmap,
-                        clims=self._face_color_clims,
+                        colormap=self.face_color_colormap,
+                        contrast_limits=self._face_color_contrast_limits,
                     )
                     new_face_colors = np.tile(fc, (adding, 1))
                 self.face_color = np.vstack((self.face_color, new_face_colors))
@@ -456,27 +456,27 @@ class Points(Layer):
         self.events.data()
 
     @property
-    def annotations(self):
+    def properties(self):
         """Annotations for each point"""
-        return self._annotations
+        return self._properties
 
-    @annotations.setter
-    def annotations(self, annotations: Dict[str, np.ndarray]):
-        self._annotations = self._validate_annotations(annotations)
+    @properties.setter
+    def properties(self, annotations: Dict[str, np.ndarray]):
+        self._properties = self._validate_properties(annotations)
         if self._face_color_annotation and (
-            self._face_color_annotation not in self._annotations
+            self._face_color_annotation not in self._properties
         ):
             self._face_color_annotation = ''
             warnings.warn('annotation used for face_color dropped')
 
-    def _validate_annotations(self, annotations: Dict[str, np.ndarray]):
-        """Validates the type and size of the annotations"""
+    def _validate_properties(self, annotations: Dict[str, np.ndarray]):
+        """Validates the type and size of the properties"""
         for v in annotations.values():
             if not isinstance(v, np.ndarray):
-                raise TypeError('all annotations should numpy arrays')
+                raise TypeError('all properties should numpy arrays')
             if len(v) != len(self.data):
                 raise ValueError(
-                    'the number of annotations must equal the number of points'
+                    'the number of properties must equal the number of points'
                 )
 
         return annotations
@@ -577,11 +577,11 @@ class Points(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        # if the provided face color is a string, first check if it is a key in the annotations.
+        # if the provided face color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
         if self._is_color_mapped(edge_color):
-            if self._guess_continuous(self.annotations[edge_color]):
-                self._edge_color_mode = ColorMode.CMAP
+            if self._guess_continuous(self.properties[edge_color]):
+                self._edge_color_mode = ColorMode.COLORMAP
             else:
                 self._edge_color_mode = ColorMode.CYCLE
             self._edge_color_annotation = edge_color
@@ -624,26 +624,28 @@ class Points(Layer):
             self._refresh_edge_color()
 
     @property
-    def edge_color_cmap(self):
+    def edge_color_colormap(self):
         """colormap to be applied to an annotation to set edge_color"""
-        return self._edge_color_cmap
+        return self._edge_color_colormap
 
-    @edge_color_cmap.setter
-    def edge_color_cmap(self, cmap: Union[str, Colormap]):
-        self._edge_color_cmap = get_colormap(cmap)
+    @edge_color_colormap.setter
+    def edge_color_colormap(self, colormap: Union[str, Colormap]):
+        self._edge_color_colormap = get_colormap(colormap)
 
     @property
-    def edge_color_clims(self):
-        """None, (float, float) : clims for mapping the edge_color cmap annotation to 0 and 1"""
-        return self._edge_color_clims
+    def edge_color_contrast_limits(self):
+        """None, (float, float) : clims for mapping the edge_color colormap annotation to 0 and 1"""
+        return self._edge_color_contrast_limits
 
-    @edge_color_clims.setter
-    def edge_color_clims(self, clims: Union[None, Tuple[float, float]]):
-        self._edge_color_clims = clims
+    @edge_color_contrast_limits.setter
+    def edge_color_contrast_limits(
+        self, contrast_limits: Union[None, Tuple[float, float]]
+    ):
+        self._edge_color_contrast_limits = contrast_limits
 
     def _refresh_edge_color(self, update_colors: bool = True):
         """ calculate edge color if using a cycle or color map"""
-        color_annotations = self.annotations[self._edge_color_annotation]
+        color_annotations = self.properties[self._edge_color_annotation]
         if self._edge_color_mode == ColorMode.CYCLE:
             if update_colors:
                 self.edge_color_cycle_map = {
@@ -656,17 +658,18 @@ class Points(Layer):
                 [self.edge_color_cycle_map[x] for x in color_annotations]
             )
             self._edge_color = colors
-        elif self._edge_color_mode == ColorMode.CMAP:
+        elif self._edge_color_mode == ColorMode.COLORMAP:
             if update_colors:
-                colors, clims = self._map_annotation(
-                    annotations=color_annotations, cmap=self.edge_color_cmap
+                colors, contrast_limits = self._map_annotation(
+                    annotations=color_annotations,
+                    colormap=self.edge_color_colormap,
                 )
-                self.edge_color_clims = clims
+                self.edge_color_contrast_limits = contrast_limits
             else:
                 colors, _ = self._map_annotation(
                     annotations=color_annotations,
-                    cmap=self.edge_color_cmap,
-                    clims=self.edge_color_clims,
+                    colormap=self.edge_color_colormap,
+                    contrast_limits=self.edge_color_contrast_limits,
                 )
 
             self._edge_color = colors
@@ -698,7 +701,7 @@ class Points(Layer):
 
         CYCLE allows the color to be set via a color cycle over an attribute
 
-        CMAP allows color to be set via a color map over an attribute
+        COLORMAP allows color to be set via a color map over an attribute
         """
         return str(self._edge_color_mode)
 
@@ -709,30 +712,30 @@ class Points(Layer):
 
         if edge_color_mode == ColorMode.DIRECT:
             self._edge_color_mode = edge_color_mode
-        elif edge_color_mode in (ColorMode.CYCLE, ColorMode.CMAP):
+        elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._edge_color_annotation == '':
-                if self.annotations:
-                    self._edge_color_annotation = next(iter(self.annotations))
+                if self.properties:
+                    self._edge_color_annotation = next(iter(self.properties))
                     warnings.warn(
                         'Edge color was not set, setting to: %s'
                         % self._face_color_annotation
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.annotations to use ColorMode.Cycle'
+                        'There must be a valid Points.properties to use ColorMode.Cycle'
                     )
-            # ColorMode.CMAP can only be applied to numeric annotations
-            if (edge_color_mode == ColorMode.CMAP) and not issubclass(
-                self.annotations[self._edge_color_annotation].dtype.type,
+            # ColorMode.COLORMAP can only be applied to numeric properties
+            if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
+                self.properties[self._edge_color_annotation].dtype.type,
                 np.number,
             ):
                 raise TypeError(
-                    'selected annotation must be numeric to use ColorMode.CMAP'
+                    'selected annotation must be numeric to use ColorMode.COLORMAP'
                 )
 
             self._edge_color_mode = edge_color_mode
             self._refresh_edge_color()
-        elif edge_color_mode == ColorMode.CMAP:
+        elif edge_color_mode == ColorMode.COLORMAP:
             raise NotImplementedError(
                 'colormapped attributes not implented yet'
             )
@@ -743,11 +746,11 @@ class Points(Layer):
 
     @face_color.setter
     def face_color(self, face_color):
-        # if the provided face color is a string, first check if it is a key in the annotations.
+        # if the provided face color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
         if self._is_color_mapped(face_color):
-            if self._guess_continuous(self.annotations[face_color]):
-                self._face_color_mode = ColorMode.CMAP
+            if self._guess_continuous(self.properties[face_color]):
+                self._face_color_mode = ColorMode.COLORMAP
             else:
                 self._face_color_mode = ColorMode.CYCLE
             self._face_color_annotation = face_color
@@ -788,26 +791,28 @@ class Points(Layer):
             self._refresh_face_color()
 
     @property
-    def face_color_cmap(self):
+    def face_color_colormap(self):
         """colormap to be applied to an annotation to set face_color"""
-        return self._face_color_cmap
+        return self._face_color_colormap
 
-    @face_color_cmap.setter
-    def face_color_cmap(self, cmap: Union[str, Colormap]):
-        self._face_color_cmap = get_colormap(cmap)
+    @face_color_colormap.setter
+    def face_color_colormap(self, colormap: Union[str, Colormap]):
+        self._face_color_colormap = get_colormap(colormap)
 
     @property
-    def face_color_clims(self):
-        """None, (float, float) : clims for mapping the face_color cmap annotation to 0 and 1"""
-        return self._face_color_clims
+    def face_color_contrast_limits(self):
+        """None, (float, float) : clims for mapping the face_color colormap annotation to 0 and 1"""
+        return self._face_color_contrast_limits
 
-    @face_color_clims.setter
-    def face_color_clims(self, clims: Union[None, Tuple[float, float]]):
-        self._face_color_clims = clims
+    @face_color_contrast_limits.setter
+    def face_color_contrast_limits(
+        self, contrast_limits: Union[None, Tuple[float, float]]
+    ):
+        self._face_color_contrast_limits = contrast_limits
 
     def _refresh_face_color(self, update_colors: bool = True):
         """ calculate face color if using a cycle or color map"""
-        color_annotations = self.annotations[self._face_color_annotation]
+        color_annotations = self.properties[self._face_color_annotation]
 
         if self._face_color_mode == ColorMode.CYCLE:
             if update_colors:
@@ -824,17 +829,18 @@ class Points(Layer):
 
             self.events.face_color()
             self.events.highlight()
-        elif self._face_color_mode == ColorMode.CMAP:
+        elif self._face_color_mode == ColorMode.COLORMAP:
             if update_colors:
-                colors, clims = self._map_annotation(
-                    annotations=color_annotations, cmap=self.face_color_cmap
+                colors, contrast_limits = self._map_annotation(
+                    annotations=color_annotations,
+                    colormap=self.face_color_colormap,
                 )
-                self.face_color_clims = clims
+                self.face_color_contrast_limits = contrast_limits
             else:
                 colors, _ = self._map_annotation(
                     annotations=color_annotations,
-                    cmap=self.face_color_cmap,
-                    clims=self.face_color_clims,
+                    colormap=self.face_color_colormap,
+                    contrast_limits=self.face_color_contrast_limits,
                 )
             self._face_color = colors
 
@@ -865,7 +871,7 @@ class Points(Layer):
 
         CYCLE allows the color to be set via a color cycle over an attribute
 
-        CMAP allows color to be set via a color map over an attribute
+        COLORMAP allows color to be set via a color map over an attribute
         """
         return str(self._face_color_mode)
 
@@ -876,35 +882,35 @@ class Points(Layer):
 
         if face_color_mode == ColorMode.DIRECT:
             self._face_color_mode = face_color_mode
-        elif face_color_mode in (ColorMode.CYCLE, ColorMode.CMAP):
+        elif face_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if self._face_color_annotation == '':
-                if self.annotations:
-                    self._face_color_annotation = next(iter(self.annotations))
+                if self.properties:
+                    self._face_color_annotation = next(iter(self.properties))
                     warnings.warn(
                         'Face color was not set, setting to: %s'
                         % self._face_color_annotation
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.annotations to use %s'
+                        'There must be a valid Points.properties to use %s'
                         % face_color_mode
                     )
 
-            # ColorMode.CMAP can only be applied to numeric annotations
-            if (face_color_mode == ColorMode.CMAP) and not issubclass(
-                self.annotations[self._face_color_annotation].dtype.type,
+            # ColorMode.COLORMAP can only be applied to numeric properties
+            if (face_color_mode == ColorMode.COLORMAP) and not issubclass(
+                self.properties[self._face_color_annotation].dtype.type,
                 np.number,
             ):
                 raise TypeError(
-                    'selected annotation must be numeric to use ColorMode.CMAP'
+                    'selected annotation must be numeric to use ColorMode.COLORMAP'
                 )
             self._face_color_mode = face_color_mode
             self._refresh_face_color()
 
     def _is_color_mapped(self, color):
-        """ determines if the new color argument is for directly setting or cycle/cmap"""
+        """ determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
-            if color in self.annotations:
+            if color in self.properties:
                 return True
             else:
                 return False
@@ -927,16 +933,16 @@ class Points(Layer):
     @staticmethod
     def _map_annotation(
         annotations: np.ndarray,
-        cmap: Colormap,
-        clims: Union[None, Tuple[float, float]] = None,
+        colormap: Colormap,
+        contrast_limits: Union[None, Tuple[float, float]] = None,
     ) -> Tuple[np.ndarray, Tuple[float, float]]:
 
-        if clims is None:
-            clims = (annotations.min(), annotations.max())
-        normalized_annotation = np.interp(annotations, clims, (0, 1))
-        mapped_annotations = cmap.map(normalized_annotation)
+        if contrast_limits is None:
+            contrast_limits = (annotations.min(), annotations.max())
+        normalized_annotation = np.interp(annotations, contrast_limits, (0, 1))
+        mapped_annotations = colormap.map(normalized_annotation)
 
-        return mapped_annotations, clims
+        return mapped_annotations, contrast_limits
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -953,13 +959,13 @@ class Points(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_color_cmap': self.face_color_cmap,
-                'face_color_clims': self.face_color_clims,
+                'face_color_colormap': self.face_color_colormap,
+                'face_color_contrast_limits': self.face_color_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_color_cmap': self.edge_color_cmap,
-                'edge_color_clims': self.edge_color_clims,
-                'annotations': self.annotations,
+                'edge_color_colormap': self.edge_color_colormap,
+                'edge_color_contrast_limits': self.edge_color_contrast_limits,
+                'properties': self.properties,
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'data': self.data,
@@ -1008,7 +1014,7 @@ class Points(Layer):
                 self.current_size = size
 
         annotations = {
-            k: np.unique(v[index], axis=0) for k, v in self.annotations.items()
+            k: np.unique(v[index], axis=0) for k, v in self.properties.items()
         }
         n_unique_annotations = np.array([len(v) for v in annotations.values()])
         if np.all(n_unique_annotations == 1):
@@ -1314,9 +1320,9 @@ class Points(Layer):
             self._size = np.delete(self._size, index, axis=0)
             self._edge_color = np.delete(self.edge_color, index, axis=0)
             self._face_color = np.delete(self.face_color, index, axis=0)
-            for k in self.annotations:
-                self.annotations[k] = np.delete(
-                    self.annotations[k], index, axis=0
+            for k in self.properties:
+                self.properties[k] = np.delete(
+                    self.properties[k], index, axis=0
                 )
             if self._value in self.selected_data:
                 self._value = None
@@ -1374,9 +1380,9 @@ class Points(Layer):
                     transform_color(deepcopy(self._clipboard['face_color'])),
                 )
             )
-            for k in self.annotations:
-                self.annotations[k] = np.concatenate(
-                    (self.annotations[k], self._clipboard['annotations'][k]),
+            for k in self.properties:
+                self.properties[k] = np.concatenate(
+                    (self.properties[k], self._clipboard['properties'][k]),
                     axis=0,
                 )
             self._selected_view = list(
@@ -1395,9 +1401,9 @@ class Points(Layer):
                 'edge_color': deepcopy(self.edge_color[self.selected_data]),
                 'face_color': deepcopy(self.face_color[self.selected_data]),
                 'size': deepcopy(self.size[self.selected_data]),
-                'annotations': {
+                'properties': {
                     k: deepcopy(v[self.selected_data])
-                    for k, v in self.annotations.items()
+                    for k, v in self.properties.items()
                 },
                 'indices': self.dims.indices,
             }

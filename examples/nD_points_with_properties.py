@@ -27,20 +27,20 @@ with napari.gui_qt():
                 [z, 86, 86]
         ]
 
-    face_annotation = np.array([True, True, True, True, False, False, False, False] * int((blobs.shape[0] / 2)))
-    edge_annotation = np.array(['A', 'B', 'C', 'D', 'E'] * ceil(len(points) / 5))[0:len(points)]
+    face_property = np.array([True, True, True, True, False, False, False, False] * int((blobs.shape[0] / 2)))
+    edge_property = np.array(['A', 'B', 'C', 'D', 'E'] * ceil(len(points) / 5))[0:len(points)]
 
-    annotations = {
-        'face_annotation': face_annotation,
-        'edge_annotation': edge_annotation
+    properties = {
+        'face_property': face_property,
+        'edge_property': edge_property
     }
 
     points_layer = viewer.add_points(
         points,
         size=3,
-        face_color='face_annotation',
-        edge_color='edge_annotation',
-        annotations=annotations,
+        face_color='face_property',
+        edge_color='edge_property',
+        properties=properties,
         n_dimensional=False,
         edge_width=5
     )

@@ -11,12 +11,12 @@ class ColorMode(StringEnum):
 
     CYCLE allows the color to be set via a color cycle over an attribute
 
-    CMAP allows color to be set via a color map over an attribute
+    COLORMAP allows color to be set via a color map over an attribute
     """
 
     DIRECT = auto()
     CYCLE = auto()
-    CMAP = auto()
+    COLORMAP = auto()
 
 
 class Mode(StringEnum):
