@@ -614,8 +614,8 @@ class ViewerModel(KeymapMixin):
         ----------
         data : array (N, D)
             Coordinates for N points in D dimensions.
-        properties : dict {str: array (N,)}
-            Annotations for each point. Each annotation should be an array of length N,
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each point. Each property should be an array of length N,
             where N is the number of points.
         symbol : str
             Symbol to be used for the point markers. Must be one of the
@@ -636,9 +636,9 @@ class ViewerModel(KeymapMixin):
             Colormap to set edge_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         edge_color_contrast_limits : None, (float, float)
-            clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
+            clims for mapping the property to a color map. These are the min and max value of the specified property
             that are mapped to 0 and 1, respectively. The default value is None.
-            If set the none, the clims will be set to (annotation.min(), annotation.max())
+            If set the none, the clims will be set to (property.min(), property.max())
         face_color : str, array-like
             Color of the point marker body. Numeric color values should be RGB(A).
         face_color_cycle : np.ndarray, list, cycle
@@ -648,9 +648,9 @@ class ViewerModel(KeymapMixin):
             Colormap to set face_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         face_color_contrast_limits : None, (float, float)
-            clims for mapping the annotation to a color map. These are the min and max value of the specified annotation
+            clims for mapping the property to a color map. These are the min and max value of the specified property
             that are mapped to 0 and 1, respectively. The default value is None.
-            If set the none, the clims will be set to (annotation.min(), annotation.max())
+            If set the none, the clims will be set to (property.min(), property.max())
         n_dimensional : bool
             If True, renders points not just in central plane but also in all
             n-dimensions according to specified point marker size.

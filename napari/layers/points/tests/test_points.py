@@ -2,6 +2,7 @@ from copy import copy
 from xml.etree.ElementTree import Element
 
 import numpy as np
+import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
@@ -286,30 +287,30 @@ def test_symbol():
     assert layer.symbol == 'star'
 
 
-def test_annotations():
+def test_properties():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
-    layer = Points(data, properties=copy(annotations))
-    assert layer.properties == annotations
+    properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    layer = Points(data, properties=copy(properties))
+    assert layer.properties == properties
 
     # test removing points
     layer.selected_data = [0, 1]
     layer.remove_selected()
-    remove_annotations = annotations['point_type'][2::]
+    remove_properties = properties['point_type'][2::]
     assert len(layer.properties['point_type']) == (shape[0] - 2)
-    assert np.all(layer.properties['point_type'] == remove_annotations)
+    assert np.all(layer.properties['point_type'] == remove_properties)
 
     # test selection of properties
     layer.selected_data = [0]
-    selected_annotation = layer.current_annotations['point_type']
+    selected_annotation = layer.current_properties['point_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
 
     # test adding properties
     layer.add([10, 10])
-    add_annotations = np.concatenate((remove_annotations, ['A']), axis=0)
+    add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
     assert np.all(layer.properties['point_type'] == add_annotations)
 
     # test copy/paste
@@ -320,6 +321,18 @@ def test_annotations():
     layer._paste_data()
     paste_annotations = np.concatenate((add_annotations, ['A', 'B']), axis=0)
     assert np.all(layer.properties['point_type'] == paste_annotations)
+
+
+def test_properties_dataframe():
+    """test if properties can be provided as a DataFrame"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    properties_df = pd.DataFrame(properties)
+    properties_df = properties_df.astype(properties['point_type'].dtype)
+    layer = Points(data, properties=properties_df)
+    np.testing.assert_equal(layer.properties, properties)
 
 
 def test_adding_annotations():
