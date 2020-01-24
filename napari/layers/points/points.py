@@ -27,7 +27,7 @@ from ..utils.color_transformations import (
 from .points_utils import (
     dataframe_to_properties,
     guess_continuous,
-    map_properties,
+    map_property,
 )
 
 
@@ -424,8 +424,8 @@ class Points(Layer):
                         self._edge_color_property
                     ][0]
 
-                    ec, _ = map_properties(
-                        properties=edge_color_property_value,
+                    ec, _ = map_property(
+                        property=edge_color_property_value,
                         colormap=self.edge_color_colormap,
                         contrast_limits=self._edge_color_contrast_limits,
                     )
@@ -450,8 +450,8 @@ class Points(Layer):
                         self._face_color_property
                     ][0]
 
-                    fc, _ = map_properties(
-                        properties=face_color_property_value,
+                    fc, _ = map_property(
+                        property=face_color_property_value,
                         colormap=self.face_color_colormap,
                         contrast_limits=self._face_color_contrast_limits,
                     )
@@ -465,7 +465,7 @@ class Points(Layer):
 
     @property
     def properties(self):
-        """Annotations for each point"""
+        """ dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
     @properties.setter
@@ -615,7 +615,7 @@ class Points(Layer):
 
     @property
     def edge_color_cycle(self):
-        """Union[np.ndarray, cycle]:  Color cycle for edge_color"""
+        """Union[list, np.ndarray, cycle]:  Color cycle for edge_color. Can be a list of colors or a cycle of colors"""
         return self._edge_color_cycle
 
     @edge_color_cycle.setter
@@ -635,7 +635,7 @@ class Points(Layer):
 
     @property
     def edge_color_colormap(self):
-        """colormap to be applied to a property to set edge_color"""
+        """(str, vispy.color.Colormap) colormap to be applied to a property to set edge_color"""
         return self._edge_color_colormap
 
     @edge_color_colormap.setter
@@ -670,14 +670,14 @@ class Points(Layer):
             self._edge_color = colors
         elif self._edge_color_mode == ColorMode.COLORMAP:
             if update_colors:
-                colors, contrast_limits = map_properties(
-                    properties=color_properties,
+                colors, contrast_limits = map_property(
+                    property=color_properties,
                     colormap=self.edge_color_colormap,
                 )
                 self.edge_color_contrast_limits = contrast_limits
             else:
-                colors, _ = map_properties(
-                    properties=color_properties,
+                colors, _ = map_property(
+                    property=color_properties,
                     colormap=self.edge_color_colormap,
                     contrast_limits=self.edge_color_contrast_limits,
                 )
@@ -752,6 +752,7 @@ class Points(Layer):
 
     @property
     def face_color(self):
+        """(N x 4) np.ndarray: Array of RGBA face colors for each point"""
         return self._face_color
 
     @face_color.setter
@@ -840,14 +841,14 @@ class Points(Layer):
             self.events.highlight()
         elif self._face_color_mode == ColorMode.COLORMAP:
             if update_colors:
-                colors, contrast_limits = map_properties(
-                    properties=color_properties,
+                colors, contrast_limits = map_property(
+                    property=color_properties,
                     colormap=self.face_color_colormap,
                 )
                 self.face_color_contrast_limits = contrast_limits
             else:
-                colors, _ = map_properties(
-                    properties=color_properties,
+                colors, _ = map_property(
+                    property=color_properties,
                     colormap=self.face_color_colormap,
                     contrast_limits=self.face_color_contrast_limits,
                 )
