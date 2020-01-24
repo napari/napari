@@ -1335,7 +1335,6 @@ class Points(Layer):
 
     def remove_selected(self):
         """Removes selected points if any."""
-        print('hi')
         index = copy(self.selected_data)
         index.sort()
         if len(index) > 0:
