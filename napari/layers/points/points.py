@@ -324,6 +324,10 @@ class Points(Layer):
                 default='white',
             )
         self._edge_color_colormap = get_colormap(edge_color_colormap)
+        if isinstance(edge_color_colormap, str):
+            self._edge_color_colormap_name = edge_color_colormap
+        else:
+            self._edge_color_colormap_name = 'unknown_colormap'
         self._edge_color_contrast_limits = edge_color_contrast_limits
         self.edge_color = edge_color
 
@@ -345,7 +349,11 @@ class Points(Layer):
                 elem_name='face_color_cycle',
                 default='white',
             )
-        self._face_color_colormap = get_colormap(face_color_colormap)
+        self._face_color_cmap = get_colormap(face_color_colormap)
+        if isinstance(face_color_colormap, str):
+            self._face_color_colormap_name = face_color_colormap
+        else:
+            self._face_color_colormap_name = 'unknown_colormap'
         self._face_color_contrast_limits = face_color_contrast_limits
         self.face_color = face_color
 
@@ -425,8 +433,8 @@ class Points(Layer):
                     ][0]
 
                     ec, _ = map_property(
-                        property=edge_color_property_value,
-                        colormap=self.edge_color_colormap,
+                        prop=edge_color_property_value,
+                        colormap=self.edge_color_colormap[1],
                         contrast_limits=self._edge_color_contrast_limits,
                     )
                     new_edge_colors = np.tile(ec, (adding, 1))
@@ -451,8 +459,8 @@ class Points(Layer):
                     ][0]
 
                     fc, _ = map_property(
-                        property=face_color_property_value,
-                        colormap=self.face_color_colormap,
+                        prop=face_color_property_value,
+                        colormap=self.face_color_colormap[1],
                         contrast_limits=self._face_color_contrast_limits,
                     )
                     new_face_colors = np.tile(fc, (adding, 1))
@@ -636,11 +644,15 @@ class Points(Layer):
     @property
     def edge_color_colormap(self):
         """(str, vispy.color.Colormap) colormap to be applied to a property to set edge_color"""
-        return self._edge_color_colormap
+        return self._edge_color_colormap_name, self._edge_color_colormap
 
     @edge_color_colormap.setter
     def edge_color_colormap(self, colormap: Union[str, Colormap]):
         self._edge_color_colormap = get_colormap(colormap)
+        if isinstance(colormap, str):
+            self._edge_color_colormap_name = colormap
+        else:
+            self._edge_color_colormap_name = 'unknown_colormap'
 
     @property
     def edge_color_contrast_limits(self):
@@ -671,14 +683,13 @@ class Points(Layer):
         elif self._edge_color_mode == ColorMode.COLORMAP:
             if update_colors:
                 colors, contrast_limits = map_property(
-                    property=color_properties,
-                    colormap=self.edge_color_colormap,
+                    prop=color_properties, colormap=self.edge_color_colormap[1]
                 )
                 self.edge_color_contrast_limits = contrast_limits
             else:
                 colors, _ = map_property(
-                    property=color_properties,
-                    colormap=self.edge_color_colormap,
+                    prop=color_properties,
+                    colormap=self.edge_color_colormap[1],
                     contrast_limits=self.edge_color_contrast_limits,
                 )
 
@@ -802,12 +813,16 @@ class Points(Layer):
 
     @property
     def face_color_colormap(self):
-        """colormap to be applied to an property to set face_color"""
-        return self._face_color_colormap
+        """(str, vispy.color.Colormap) colormap to be applied to a property to set edge_color"""
+        return self._face_color_colormap_name, self._face_color_cmap
 
     @face_color_colormap.setter
     def face_color_colormap(self, colormap: Union[str, Colormap]):
-        self._face_color_colormap = get_colormap(colormap)
+        self._face_color_cmap = get_colormap(colormap)
+        if isinstance(colormap, str):
+            self._face_color_colormap_name = colormap
+        else:
+            self._face_color_colormap_name = 'unknown_colormap'
 
     @property
     def face_color_contrast_limits(self):
@@ -842,14 +857,13 @@ class Points(Layer):
         elif self._face_color_mode == ColorMode.COLORMAP:
             if update_colors:
                 colors, contrast_limits = map_property(
-                    property=color_properties,
-                    colormap=self.face_color_colormap,
+                    prop=color_properties, colormap=self.face_color_colormap[1]
                 )
                 self.face_color_contrast_limits = contrast_limits
             else:
                 colors, _ = map_property(
-                    property=color_properties,
-                    colormap=self.face_color_colormap,
+                    prop=color_properties,
+                    colormap=self.face_color_colormap[1],
                     contrast_limits=self.face_color_contrast_limits,
                 )
             self._face_color = colors
@@ -946,11 +960,11 @@ class Points(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_color_colormap': self.face_color_colormap,
+                'face_color_colormap': self.face_color_colormap[0],
                 'face_color_contrast_limits': self.face_color_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_color_colormap': self.edge_color_colormap,
+                'edge_color_colormap': self.edge_color_colormap[0],
                 'edge_color_contrast_limits': self.edge_color_contrast_limits,
                 'properties': self.properties,
                 'n_dimensional': self.n_dimensional,

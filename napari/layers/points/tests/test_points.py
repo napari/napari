@@ -588,7 +588,7 @@ def test_edge_color_colormap():
     # change the colormap
     new_colormap = 'viridis'
     layer.edge_color_colormap = new_colormap
-    assert layer.edge_color_colormap == get_colormap(new_colormap)
+    assert layer.edge_color_colormap[1] == get_colormap(new_colormap)
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]
@@ -760,7 +760,7 @@ def test_face_color_colormap():
     # change the colormap
     new_colormap = 'viridis'
     layer.face_color_colormap = new_colormap
-    assert layer.face_color_colormap == get_colormap(new_colormap)
+    assert layer.face_color_colormap[1] == get_colormap(new_colormap)
 
     # Check removing data adjusts colors correctly
     layer.selected_data = [0, 2]

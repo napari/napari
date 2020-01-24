@@ -33,7 +33,7 @@ def guess_continuous(property: np.ndarray) -> bool:
 
 
 def map_property(
-    property: np.ndarray,
+    prop: np.ndarray,
     colormap: Colormap,
     contrast_limits: Union[None, Tuple[float, float]] = None,
 ) -> Tuple[np.ndarray, Tuple[float, float]]:
@@ -41,7 +41,7 @@ def map_property(
 
     Parameters
     ----------
-    property : np.ndarray
+    prop : np.ndarray
         The property to be colormapped
     colormap : vispy.color.Colormap
         The vispy colormap object to apply to the property
@@ -53,8 +53,8 @@ def map_property(
     """
 
     if contrast_limits is None:
-        contrast_limits = (property.min(), property.max())
-    normalized_properties = np.interp(property, contrast_limits, (0, 1))
+        contrast_limits = (prop.min(), prop.max())
+    normalized_properties = np.interp(prop, contrast_limits, (0, 1))
     mapped_properties = colormap.map(normalized_properties)
 
     return mapped_properties, contrast_limits
