@@ -383,9 +383,9 @@ class Points(Layer):
             # If there are now fewer points, remove the size and colors of the
             # extra ones
             with self.events.set_data.blocker():
-                self.edge_color = self.edge_color[: len(data)]
-                self.face_color = self.face_color[: len(data)]
-                self.size = self._size[: len(data)]
+                self._edge_color = self.edge_color[: len(data)]
+                self._face_color = self.face_color[: len(data)]
+                self._size = self._size[: len(data)]
 
                 for k in self.properties:
                     self.properties[k] = self.properties[k][: len(data)]
@@ -1335,6 +1335,7 @@ class Points(Layer):
 
     def remove_selected(self):
         """Removes selected points if any."""
+        print('hi')
         index = copy(self.selected_data)
         index.sort()
         if len(index) > 0:
