@@ -1,0 +1,31 @@
+import pluggy
+from typing import Callable, Optional, List, Tuple, Union, Any, Dict
+
+hookspec = pluggy.HookspecMarker("napari")
+
+LayerData = Union[Tuple[Any], Tuple[Any, Dict]]
+ReaderFunction = Callable[[str], List[LayerData]]
+
+
+@hookspec(firstresult=True)
+def napari_get_reader(path: str) -> Optional[ReaderFunction]:
+    """Return function capable of loading `path` into napari, or None.
+
+    This function will be called on File -> Open... or when a user drags and
+    drops a file/folder onto the viewer. This function must execute QUICKLY,
+    and should return ``None`` if the filepath is of an unrecognized format
+    for this reader plugin.  If the filepath is a recognized format, this
+    function should return a callable that accepts the same filepath, and
+    returns a list of layer_data tuples: Union[Tuple[Any], Tuple[Any, Dict]].
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL)
+
+    Returns
+    -------
+    {function, None}
+        A function that can read the path, and return napari layer_data.
+        Must return None (not False) if unable to read the path.
+    """

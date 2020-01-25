@@ -1000,6 +1000,52 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
+    def _add_layer_data(self, data, meta=None, layer_type='image'):
+        """Add arbitrary layer data to the viewer.
+
+        Primarily intended for usage by reader plugin hooks.
+
+        Parameters
+        ----------
+        data : Any
+            data in a format that is valid for the add_* method of the
+            corresponding layer_type.
+        meta : dict, optional
+            dict of keyword arguments that will be passed to the corresponding
+            add_* method.  MUST NOT contain any keyword arguments that are not
+            valid for the corresponding method.
+        layer_type : str
+            type of layer to add.  MUST have a corresponding add_* method on
+            on the viewer instance.
+
+        Raises
+        ------
+        ValueError
+            if layer_type is not one of the recognized layer types.
+        TypeError
+            If any keyword arguments in ``meta`` are unexpected for the
+            corresponding add_* method for this layer_type.
+        """
+        try:
+            add_method = getattr(self, 'add_' + layer_type)
+        except AttributeError:
+            valid_types = {
+                i.lstrip("add_") for i in dir(self) if i.startswith("add_")
+            }
+            raise ValueError(
+                f"Unrecognized layer_type: {layer_type}. "
+                f"Must be one of: {valid_types}."
+            )
+        try:
+            add_method(data, **(meta or {}))
+        except TypeError as exc:
+            if 'unexpected keyword argument' in str(exc):
+                bad_key = str(exc).split('keyword argument ')[-1]
+                raise TypeError(
+                    "_add_layer_data received an unexpected keyword argument "
+                    f"({bad_key}) for layer type {layer_type}"
+                ) from exc
+
     def _new_labels(self):
         if self.dims.ndim == 0:
             dims = (512, 512)
