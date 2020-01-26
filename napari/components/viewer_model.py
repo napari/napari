@@ -1043,16 +1043,20 @@ class ViewerModel(KeymapMixin):
 
         """
 
+        if layer_type not in layers.names:
+            raise ValueError(
+                f"Unrecognized layer_type: '{layer_type}'. "
+                f"Must be one of: {layers.names}."
+            )
+
         try:
             add_method = getattr(self, 'add_' + layer_type)
         except AttributeError:
-            valid_types = {
-                i.lstrip("add_") for i in dir(self) if i.startswith("add_")
-            }
-            raise ValueError(
-                f"Unrecognized layer_type: {layer_type}. "
-                f"Must be one of: {valid_types}."
+            raise NotImplementedError(
+                f"Sorry! {layer_type} is a valid layer type, but there is no "
+                f"viewer.add_{layer_type} available yet."
             )
+
         try:
             add_method(data, **(meta or {}))
         except TypeError as exc:

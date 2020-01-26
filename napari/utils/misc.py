@@ -165,3 +165,16 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
+
+
+def all_subclasses(cls):
+    """Recursively find all subclasses of class ``cls``.
+
+    Returns
+    -------
+    set
+        the set of all classes that are subclassed from ``cls``
+    """
+    return set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)]
+    )

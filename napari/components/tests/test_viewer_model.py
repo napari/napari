@@ -356,8 +356,9 @@ def test_add_layer_data_raises():
     viewer = ViewerModel()
     # unrecognized layer type raises Value Error
     with pytest.raises(ValueError):
-        # 'imag' is not a layer type
-        viewer._add_layer_data(np.random.random((10, 10)), layer_type='imag')
+        # 'layer' is not a valid type
+        # (even though there is an add_layer method)
+        viewer._add_layer_data(np.random.random((10, 10)), layer_type='layer')
 
     # even with the correct meta kwargs, the underlying add_* method may raise
     with pytest.raises(ValueError):
