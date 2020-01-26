@@ -344,7 +344,11 @@ def test_add_layer_data(data):
     # method for all layer types
     viewer = ViewerModel()
     viewer._add_layer_data(*data)
+
+    # make sure a layer of the correct type got added
     assert len(viewer.layers) == 1
+    expected_layer_type = data[2] if len(data) > 2 else 'image'
+    assert viewer.layers[0].__class__.__name__.lower() == expected_layer_type
 
 
 def test_add_layer_data_raises():
