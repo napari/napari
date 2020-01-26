@@ -1,4 +1,6 @@
 import numpy as np
+import pytest
+
 from napari.components import ViewerModel
 
 
@@ -315,3 +317,54 @@ def test_add_remove_layer_dims_change():
     viewer.layers.remove(layer)
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
+
+
+good_layer_data = [
+    (np.random.random((10, 10)),),
+    (np.random.random((10, 10, 3)), {'rgb': True}),
+    (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
+    (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
+    (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
+    (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
+    (
+        (
+            np.random.random((10, 3)),
+            np.random.randint(10, size=(6, 3)),
+            np.random.random(10),
+        ),
+        {'name': 'some surface'},
+        'surface',
+    ),
+]
+
+
+@pytest.mark.parametrize('data', good_layer_data)
+def test_add_layer_data(data):
+    # make sure adding valid layer data calls the proper corresponding add_*
+    # method for all layer types
+    viewer = ViewerModel()
+    viewer._add_layer_data(*data)
+    assert len(viewer.layers) == 1
+
+
+def test_add_layer_data_raises():
+    # make sure that adding invalid data or kwargs raises the right errors
+    viewer = ViewerModel()
+    # unrecognized layer type raises Value Error
+    with pytest.raises(ValueError):
+        # 'imag' is not a layer type
+        viewer._add_layer_data(np.random.random((10, 10)), layer_type='imag')
+
+    # even with the correct meta kwargs, the underlying add_* method may raise
+    with pytest.raises(ValueError):
+        # improper dims for rgb data
+        viewer._add_layer_data(np.random.random((10, 10, 6)), {'rgb': True})
+
+    # using a kwarg in the meta dict that is invalid for the corresponding
+    # add_* method raises a TypeError
+    with pytest.raises(TypeError):
+        viewer._add_layer_data(
+            np.random.random((10, 2, 2)) * 20,
+            {'rgb': True},  # vectors do not have an 'rgb' kwarg
+            layer_type='vectors',
+        )
