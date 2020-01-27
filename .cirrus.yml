@@ -1,6 +1,6 @@
 # default container
 container:
-  image: python:3.8
+  image: python:3.7
 
 
 task:
@@ -39,7 +39,7 @@ task:
         matrix:
           PY_VER: "3.6"
           PY_VER: "3.7"
-    # is a pull request, only run python 3.8
+    # is a pull request, only run python 3.7
     - only_if: $CIRRUS_PR != ""
       env:
         PY_VER: "3.7"
