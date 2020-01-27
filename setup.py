@@ -54,7 +54,7 @@ if sys.version_info < (3, 6):
 
 
 PACKAGES = [
-    package for package in find_packages() if not package.startswith('gui')
+    package for package in find_packages(exclude=['benchmarks']) if not package.startswith('gui')
 ]
 
 
