@@ -108,8 +108,13 @@ def test_selecting_points():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Points(data)
+    layer.mode = 'select'
     layer.selected_data = [0, 1]
     assert layer.selected_data == [0, 1]
+
+    # test switching to 3D
+    layer.dims.ndisplay = 3
+    assert layer.selected_data == []
 
 
 def test_adding_points():
