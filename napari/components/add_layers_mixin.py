@@ -674,10 +674,10 @@ class AddLayersMixin:
         """
 
         layer_type = layer_type.lower()
-        if layer_type not in layers.names:
+        if layer_type not in layers.NAMES:
             raise ValueError(
                 f"Unrecognized layer_type: '{layer_type}'. "
-                f"Must be one of: {layers.names}."
+                f"Must be one of: {layers.NAMES}."
             )
 
         try:
