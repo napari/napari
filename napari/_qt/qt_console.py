@@ -9,10 +9,19 @@ from qtconsole.client import QtKernelClient
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 
-# FIXME: if/when tornado supports the defaults in asyncio,
-# remove and bump tornado requirement for py38
-# borrowed from ipykernel:
-# https://github.com/ipython/ipykernel/blob/7b2727d827a95d2059c9d9d9354899feabb642ee/ipykernel/kernelapp.py#L521-L535
+"""
+set default asyncio policy to be compatible with tornado
+
+Tornado 6 (at least) is not compatible with the default
+asyncio implementation on Windows
+
+Pick the older SelectorEventLoopPolicy on Windows
+if the known-incompatible default policy is in use.
+
+FIXME: if/when tornado supports the defaults in asyncio,
+remove and bump tornado requirement for py38
+borrowed from ipykernel:  https://github.com/ipython/ipykernel/pull/456
+"""
 if sys.platform.startswith("win") and sys.version_info >= (3, 8):
     import asyncio
     try:
