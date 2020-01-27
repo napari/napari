@@ -24,6 +24,7 @@ borrowed from ipykernel:  https://github.com/ipython/ipykernel/pull/456
 """
 if sys.platform.startswith("win") and sys.version_info >= (3, 8):
     import asyncio
+
     try:
         from asyncio import (
             WindowsProactorEventLoopPolicy,
@@ -33,7 +34,10 @@ if sys.platform.startswith("win") and sys.version_info >= (3, 8):
         pass
         # not affected
     else:
-        if type(asyncio.get_event_loop_policy()) is WindowsProactorEventLoopPolicy:
+        if (
+            type(asyncio.get_event_loop_policy())
+            is WindowsProactorEventLoopPolicy
+        ):
             # WindowsProactorEventLoopPolicy is not compatible with tornado 6
             # fallback to the pre-3.8 default of Selector
             asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
