@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from napari.components import ViewerModel
+from napari.tests.utils import good_layer_data
 
 
 def test_viewer_model():
@@ -317,25 +318,6 @@ def test_add_remove_layer_dims_change():
     viewer.layers.remove(layer)
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
-
-
-good_layer_data = [
-    (np.random.random((10, 10)),),
-    (np.random.random((10, 10, 3)), {'rgb': True}),
-    (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
-    (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
-    (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
-    (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
-    (
-        (
-            np.random.random((10, 3)),
-            np.random.randint(10, size=(6, 3)),
-            np.random.random(10),
-        ),
-        {'name': 'some surface'},
-        'surface',
-    ),
-]
 
 
 @pytest.mark.parametrize('data', good_layer_data)
