@@ -5,6 +5,7 @@ import re
 import inspect
 import itertools
 import numpy as np
+from typing import Type
 
 
 def str_to_rgb(arg):
@@ -167,8 +168,13 @@ class CallSignature(inspect.Signature):
 callsignature = CallSignature.from_callable
 
 
-def all_subclasses(cls):
+def all_subclasses(cls: Type) -> set:
     """Recursively find all subclasses of class ``cls``.
+
+    Parameters
+    ----------
+    cls : class
+        A python class (or anything that implements a __subclasses__ method).
 
     Returns
     -------
