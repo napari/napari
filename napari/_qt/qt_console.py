@@ -1,11 +1,33 @@
-from qtconsole.rich_jupyter_widget import RichJupyterWidget
-from qtconsole.inprocess import QtInProcessKernelManager
-from qtconsole.client import QtKernelClient
-from IPython import get_ipython
-from IPython.terminal.interactiveshell import TerminalInteractiveShell
+import sys
+
+from ipykernel.connect import get_connection_file
 from ipykernel.inprocess.ipkernel import InProcessInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
-from ipykernel.connect import get_connection_file
+from IPython import get_ipython
+from IPython.terminal.interactiveshell import TerminalInteractiveShell
+from qtconsole.client import QtKernelClient
+from qtconsole.inprocess import QtInProcessKernelManager
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+# FIXME: if/when tornado supports the defaults in asyncio,
+# remove and bump tornado requirement for py38
+# borrowed from ipykernel:
+# https://github.com/ipython/ipykernel/blob/7b2727d827a95d2059c9d9d9354899feabb642ee/ipykernel/kernelapp.py#L521-L535
+if sys.platform.startswith("win") and sys.version_info >= (3, 8):
+    import asyncio
+    try:
+        from asyncio import (
+            WindowsProactorEventLoopPolicy,
+            WindowsSelectorEventLoopPolicy,
+        )
+    except ImportError:
+        pass
+        # not affected
+    else:
+        if type(asyncio.get_event_loop_policy()) is WindowsProactorEventLoopPolicy:
+            # WindowsProactorEventLoopPolicy is not compatible with tornado 6
+            # fallback to the pre-3.8 default of Selector
+            asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 
 
 class QtConsole(RichJupyterWidget):
