@@ -1000,7 +1000,7 @@ class ViewerModel(KeymapMixin):
         self.add_layer(layer)
         return layer
 
-    def _add_layer_data(
+    def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: str = 'image'
     ):
         """Add arbitrary layer data to the viewer.
@@ -1039,7 +1039,7 @@ class ViewerModel(KeymapMixin):
         ...     {'face_color': 'blue'},
         ...     'points',
         ... )
-        >>> viewer._add_layer_data(*data)
+        >>> viewer._add_layer_from_data(*data)
 
         """
 
@@ -1063,8 +1063,8 @@ class ViewerModel(KeymapMixin):
             if 'unexpected keyword argument' in str(exc):
                 bad_key = str(exc).split('keyword argument ')[-1]
                 raise TypeError(
-                    "_add_layer_data received an unexpected keyword argument "
-                    f"({bad_key}) for layer type {layer_type}"
+                    "_add_layer_from_data received an unexpected keyword "
+                    f"argument ({bad_key}) for layer type {layer_type}"
                 ) from exc
 
     def _new_labels(self):

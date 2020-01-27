@@ -339,11 +339,11 @@ good_layer_data = [
 
 
 @pytest.mark.parametrize('data', good_layer_data)
-def test_add_layer_data(data):
+def test_add_layer_from_data(data):
     # make sure adding valid layer data calls the proper corresponding add_*
     # method for all layer types
     viewer = ViewerModel()
-    viewer._add_layer_data(*data)
+    viewer._add_layer_from_data(*data)
 
     # make sure a layer of the correct type got added
     assert len(viewer.layers) == 1
@@ -351,24 +351,28 @@ def test_add_layer_data(data):
     assert viewer.layers[0].__class__.__name__.lower() == expected_layer_type
 
 
-def test_add_layer_data_raises():
+def test_add_layer_from_data_raises():
     # make sure that adding invalid data or kwargs raises the right errors
     viewer = ViewerModel()
     # unrecognized layer type raises Value Error
     with pytest.raises(ValueError):
         # 'layer' is not a valid type
         # (even though there is an add_layer method)
-        viewer._add_layer_data(np.random.random((10, 10)), layer_type='layer')
+        viewer._add_layer_from_data(
+            np.random.random((10, 10)), layer_type='layer'
+        )
 
     # even with the correct meta kwargs, the underlying add_* method may raise
     with pytest.raises(ValueError):
         # improper dims for rgb data
-        viewer._add_layer_data(np.random.random((10, 10, 6)), {'rgb': True})
+        viewer._add_layer_from_data(
+            np.random.random((10, 10, 6)), {'rgb': True}
+        )
 
     # using a kwarg in the meta dict that is invalid for the corresponding
     # add_* method raises a TypeError
     with pytest.raises(TypeError):
-        viewer._add_layer_data(
+        viewer._add_layer_from_data(
             np.random.random((10, 2, 2)) * 20,
             {'rgb': True},  # vectors do not have an 'rgb' kwarg
             layer_type='vectors',
