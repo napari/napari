@@ -61,10 +61,10 @@ linux_task:
   herbstluftwm_start_background_script: herbstluftwm
 
   pip_cache:
-      folder: ~/.cache/pip
-      populate_script: 
-        - python -m pip install --retries 3 --upgrade pip
-        - pip install --retries 3 -r requirements.txt
+    folder: ~/.cache/pip
+    populate_script: 
+      - python -m pip install --retries 3 --upgrade pip
+      - pip install --retries 3 -r requirements.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
@@ -112,10 +112,10 @@ mac_task:
     - rm install.sh
 
   pip_cache:
-      folder: $HOME/Library/Caches/pip
-      populate_script: 
-        - python -m pip install --retries 3 --upgrade pip
-        - pip install -r requirements.txt
+    folder: $HOME/Library/Caches/pip
+    populate_script: 
+      - python -m pip install --retries 3 --upgrade pip
+      - pip install -r requirements.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
@@ -173,10 +173,10 @@ win_task:
     - pip install setuptools-scm
     
   pip_cache:
-      folder: $LOCALAPPDATA\pip\Cache
-      populate_script: 
-        - python -m pip install --retries 3 --upgrade pip
-        - pip install -r requirements.txt
+    folder: $LOCALAPPDATA\pip\Cache
+    populate_script: 
+      - python -m pip install --retries 3 --upgrade pip
+      - pip install -r requirements.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
