@@ -3,16 +3,24 @@ container:
   image: python:3.8
 
 
-lint_task:
+black_task:
   auto_cancellation: true
-  name: linting & formatting
+  name: Black Formatting
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - pip install `cat requirements/development.txt | grep black`
-    - pip install `cat requirements/development.txt | grep flake8`
+  test_script:
+    - black --check .
 
-  black_script: black --check .
-  flake8_script: flake8 napari
+
+lint_task:
+  auto_cancellation: true
+  name: Flake8 Linting
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - pip install `cat requirements/development.txt | grep flake8`
+  test_script:
+    - flake8 napari
 
 
 linux_task:
