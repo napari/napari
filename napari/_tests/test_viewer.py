@@ -7,7 +7,7 @@ from qtpy.QtCore import QEventLoop
 from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
-from napari.tests.utils import (
+from napari._tests.utils import (
     check_viewer_functioning,
     add_layer_by_type,
     layer_test_data,
