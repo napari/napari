@@ -4,6 +4,12 @@
 GUI component of Napari.
 """
 
+import os.path as osp
+import sys
+from setuptools import setup, find_packages
+
+import versioneer
+
 MIN_PY_VER = '3.6'
 DISTNAME = 'napari'
 DESCRIPTION = 'n-dimensional array viewer in Python.'
@@ -33,22 +39,12 @@ CLASSIFIERS = [
     'Operating System :: MacOS',
 ]
 
-
-import os
-import os.path as osp
-import sys
-from setuptools import setup, find_packages
-
-import versioneer
-
-
 if sys.version_info < (3, 6):
     sys.stderr.write(
         f'You are using Python '
         + "{'.'.join(str(v) for v in sys.version_info[:3])}.\n\n"
         + 'napari only supports Python 3.6 and above.\n\n'
-        + 'Please install Python 3.6 or later!\n'
-        + '(visit https://python.org/downloads)'
+        + 'Please install Python 3.6 or later.\n'
     )
     sys.exit(1)
 
