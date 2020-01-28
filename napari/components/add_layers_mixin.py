@@ -20,6 +20,31 @@ class AddLayersMixin:
     easier to read and make these methods easier to maintain.
     """
 
+    def add_layer(self, layer):
+        """Add a layer to the viewer.
+
+        Parameters
+        ----------
+        layer : Layer
+            Layer to add.
+        """
+        layer.events.select.connect(self._update_active_layer)
+        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.status.connect(self._update_status)
+        layer.events.help.connect(self._update_help)
+        layer.events.interactive.connect(self._update_interactive)
+        layer.events.cursor.connect(self._update_cursor)
+        layer.events.cursor_size.connect(self._update_cursor_size)
+        layer.events.data.connect(self._on_layers_change)
+        layer.dims.events.ndisplay.connect(self._on_layers_change)
+        layer.dims.events.order.connect(self._on_layers_change)
+        layer.dims.events.range.connect(self._on_layers_change)
+        self.layers.append(layer)
+        self._update_layers(layers=[layer])
+
+        if len(self.layers) == 1:
+            self.reset_view()
+
     def add_image(
         self,
         data=None,
@@ -666,3 +691,71 @@ class AddLayersMixin:
         )
         self.add_layer(layer)
         return layer
+
+    def _add_layer_from_data(
+        self, data, meta: dict = None, layer_type: str = 'image'
+    ):
+        """Add arbitrary layer data to the viewer.
+
+        Primarily intended for usage by reader plugin hooks.
+
+        Parameters
+        ----------
+        data : Any
+            Data in a format that is valid for the corresponding `add_*` method
+            of the specified ``layer_type``.
+        meta : dict, optional
+            Dict of keyword arguments that will be passed to the corresponding
+            `add_*` method.  MUST NOT contain any keyword arguments that are
+            not valid for the corresponding method.
+        layer_type : str
+            Type of layer to add.  MUST have a corresponding add_* method on
+            on the viewer instance.
+
+        Raises
+        ------
+        ValueError
+            If ``layer_type`` is not one of the recognized layer types.
+        TypeError
+            If any keyword arguments in ``meta`` are unexpected for the
+            corresponding `add_*` method for this layer_type.
+
+        Examples
+        --------
+        A typical use case might be to upack a tuple of layer data with a
+        specified layer_type.
+
+        >>> viewer = napari.Viewer()
+        >>> data = (
+        ...     np.random.random((10, 2)) * 20,
+        ...     {'face_color': 'blue'},
+        ...     'points',
+        ... )
+        >>> viewer._add_layer_from_data(*data)
+
+        """
+
+        layer_type = layer_type.lower()
+        if layer_type not in layers.NAMES:
+            raise ValueError(
+                f"Unrecognized layer_type: '{layer_type}'. "
+                f"Must be one of: {layers.NAMES}."
+            )
+
+        try:
+            add_method = getattr(self, 'add_' + layer_type)
+        except AttributeError:
+            raise NotImplementedError(
+                f"Sorry! {layer_type} is a valid layer type, but there is no "
+                f"viewer.add_{layer_type} available yet."
+            )
+
+        try:
+            add_method(data, **(meta or {}))
+        except TypeError as exc:
+            if 'unexpected keyword argument' in str(exc):
+                bad_key = str(exc).split('keyword argument ')[-1]
+                raise TypeError(
+                    "_add_layer_from_data received an unexpected keyword "
+                    f"argument ({bad_key}) for layer type {layer_type}"
+                ) from exc
