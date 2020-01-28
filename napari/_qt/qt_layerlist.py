@@ -46,7 +46,7 @@ class QtLayerList(QScrollArea):
 
         self.layers.events.added.connect(self._add)
         self.layers.events.removed.connect(self._remove)
-        self.layers.events.reordered.connect(lambda e: self._reorder())
+        self.layers.events.reordered.connect(self._reorder)
 
         self.drag_start_position = np.zeros(2)
         self.drag_name = None
@@ -74,7 +74,7 @@ class QtLayerList(QScrollArea):
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
 
-    def _reorder(self):
+    def _reorder(self, event=None):
         """Reorders list of layer widgets by looping through all
         widgets in list sequentially removing them and inserting
         them into the correct place in final list.
@@ -329,7 +329,7 @@ class QtLayerWidget(QFrame):
         tb.setObjectName('thumbmnail')
         tb.setToolTip('Layer thumbmnail')
         self.thumbnailLabel = tb
-        self._on_thumbnail_change(None)
+        self._on_thumbnail_change()
         self.layout.addWidget(tb)
 
         cb = QCheckBox(self)
@@ -337,7 +337,7 @@ class QtLayerWidget(QFrame):
         cb.setToolTip('Layer visibility')
         cb.setChecked(self.layer.visible)
         cb.setProperty('mode', 'visibility')
-        cb.stateChanged.connect(lambda state=cb: self.changeVisible(state))
+        cb.stateChanged.connect(self.changeVisible)
         self.visibleCheckBox = cb
         self.layout.addWidget(cb)
 
@@ -388,16 +388,16 @@ class QtLayerWidget(QFrame):
     def mouseMoveEvent(self, event):
         event.ignore()
 
-    def _on_layer_name_change(self, event):
+    def _on_layer_name_change(self, event=None):
         with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
             self.nameTextBox.home(False)
 
-    def _on_visible_change(self, event):
+    def _on_visible_change(self, event=None):
         with self.layer.events.visible.blocker():
             self.visibleCheckBox.setChecked(self.layer.visible)
 
-    def _on_thumbnail_change(self, event):
+    def _on_thumbnail_change(self, event=None):
         thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height
         image = QImage(
