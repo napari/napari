@@ -837,7 +837,10 @@ class Points(Layer):
 
     @property
     def face_contrast_limits(self):
-        """None, (float, float) : clims for mapping the face_color colormap property to 0 and 1"""
+        """
+            None, (float, float) : clims for mapping the face_color
+                colormap property to 0 and 1
+        """
         return self._face_contrast_limits
 
     @face_contrast_limits.setter
@@ -852,11 +855,15 @@ class Points(Layer):
             Parameters
             ----------
             update_color_mapping : bool
-                If set to True, the function will recalculate the color cycle map or colormap
-                (whichever is being used). If set to False, the function will use the current color cycle map or
-                color map. For example, if you are adding/modifying points and want them to be colored with the same
-                mapping as the other points (i.e., the new points shouldn't affect the color cycle map or colormap),
-                set update_color_mapping=False. Default value is True.
+                If set to True, the function will recalculate the
+                color cycle map or colormap (whichever is being used).
+                If set to False, the function will use the current
+                color cycle map or color map. For example, if you
+                are adding/modifying points and want them to be
+                colored with the same mapping as the other
+                points (i.e., the new points shouldn't affect
+                the color cycle map or colormap), set update_color_mapping=False.
+                Default value is True.
         """
         color_properties = self.properties[self._face_color_property]
 
