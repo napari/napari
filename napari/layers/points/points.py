@@ -627,14 +627,11 @@ class Points(Layer):
     def edge_color_cycle(
         self, edge_color_cycle: Union[list, np.ndarray, cycle]
     ):
-        if isinstance(edge_color_cycle, cycle):
-            self._edge_color_cycle = edge_color_cycle
-        else:
-            self._edge_color_cycle = transform_color_cycle(
-                color_cycle=edge_color_cycle,
-                elem_name="edge_color_cycle",
-                default="white",
-            )
+        self._edge_color_cycle = transform_color_cycle(
+            color_cycle=edge_color_cycle,
+            elem_name="edge_color_cycle",
+            default="white",
+        )
         if self._edge_color_mode == ColorMode.CYCLE:
             self.refresh_edge_color()
 
@@ -807,14 +804,11 @@ class Points(Layer):
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
-        if isinstance(face_color_cycle, cycle):
-            self._face_color_cycle = face_color_cycle
-        else:
-            self._face_color_cycle = transform_color_cycle(
-                color_cycle=face_color_cycle,
-                elem_name="face_color_cycle",
-                default="white",
-            )
+        self._face_color_cycle = transform_color_cycle(
+            color_cycle=face_color_cycle,
+            elem_name="face_color_cycle",
+            default="white",
+        )
         if self._face_color_mode == ColorMode.CYCLE:
             self.refresh_face_color()
 
