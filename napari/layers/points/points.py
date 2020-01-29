@@ -57,27 +57,29 @@ class Points(Layer):
     edge_color : str, array-like
         Color of the point marker border. Numeric color values should be RGB(A).
     edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
-        to set face_color.
+        Cycle of colors (provided as RGBA) to map to edge_color if a
+        categorical attribute is used to set face_color.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
-        clims for mapping the property to a color map. These are the min and max value of the specified property
-        that are mapped to 0 and 1, respectively. The default value is None.
-        If set the none, the clims will be set to (property.min(), property.max())
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
-        to set face_color.
+        Cycle of colors (provided as RGBA) to map to face_color if a
+        categorical attribute is used to set face_color.
     face_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_contrast_limits : None, (float, float)
-        clims for mapping the property to a color map. These are the min and max value of the specified property
-        that are mapped to 0 and 1, respectively. The default value is None.
-        If set the none, the clims will be set to (property.min(), property.max())
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
@@ -115,27 +117,29 @@ class Points(Layer):
     edge_color : Nx4 numpy array
         Array of edge color RGBA values, one for each point.
     edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
-        to set face_color.
+        Cycle of colors (provided as RGBA) to map to edge_color if a
+        categorical attribute is used to set face_color.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
-        clims for mapping the property to a color map. These are the min and max value of the specified property
-        that are mapped to 0 and 1, respectively. The default value is None.
-        If set the none, the clims will be set to (property.min(), property.max())
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     face_color : Nx4 numpy array
         Array of face color RGBA values, one for each point.
     face_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
-        to set face_color.
+        Cycle of colors (provided as RGBA) to map to face_color if a
+        categorical attribute is used to set face_color.
     face_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_contrast_limits : None, (float, float)
-        clims for mapping the property to a color map. These are the min and max value of the specified property
-        that are mapped to 0 and 1, respectively. The default value is None.
-        If set the none, the clims will be set to (property.min(), property.max())
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     current_size : float
         Size of the marker for the next point to be added or the currently
         selected point.
@@ -595,7 +599,10 @@ class Points(Layer):
 
     @property
     def edge_color_cycle(self):
-        """Union[list, np.ndarray, cycle]:  Color cycle for edge_color. Can be a list of colors or a cycle of colors"""
+        """
+            Union[list, np.ndarray, cycle] :  Color cycle for edge_color.
+                Can be a list of colors or a cycle of colors
+        """
         return self._edge_color_cycle
 
     @edge_color_cycle.setter
@@ -625,7 +632,10 @@ class Points(Layer):
 
     @property
     def edge_contrast_limits(self):
-        """None, (float, float) : clims for mapping the edge_color colormap property to 0 and 1"""
+        """
+            None, (float, float)
+                contrast limits for mapping the edge_color colormap property to 0 and 1
+        """
         return self._edge_contrast_limits
 
     @edge_contrast_limits.setter

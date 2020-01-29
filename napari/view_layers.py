@@ -189,27 +189,29 @@ def view_points(
     edge_color : str, array-like
         Color of the point marker border. Numeric color values should be RGB(A).
     edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a categorical attribute is used
-        to set face_color.
+        Cycle of colors (provided as RGBA) to map to edge_color if a
+        categorical attribute is used to set face_color.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
-        clims for mapping the property to a color map. These are the min and max value of the specified property
-        that are mapped to 0 and 1, respectively. The default value is None.
-        If set the none, the clims will be set to (property.min(), property.max())
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to face_color if a categorical attribute is used
-        to set face_color.
+        Cycle of colors (provided as RGBA) to map to face_color if a
+        categorical attribute is used to set face_color.
     face_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_contrast_limits : None, (float, float)
-        clims for mapping the property to a color map. These are the min and max value of the specified property
-        that are mapped to 0 and 1, respectively. The default value is None.
-        If set the none, the clims will be set to (property.min(), property.max())
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
