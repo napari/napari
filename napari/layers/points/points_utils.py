@@ -5,7 +5,7 @@ from vispy.color.colormap import Colormap
 
 
 def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
-    """ Converts a dataframe to Points.properties formatted dictionary
+    """Convert a dataframe to Points.properties formatted dictionary.
 
     Parameters
     ----------
