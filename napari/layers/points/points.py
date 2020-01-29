@@ -438,7 +438,9 @@ class Points(Layer):
                         contrast_limits=self._edge_contrast_limits,
                     )
                     new_edge_colors = np.tile(ec, (adding, 1))
-                self.edge_color = np.vstack((self.edge_color, new_edge_colors))
+                self._edge_color = np.vstack(
+                    (self.edge_color, new_edge_colors)
+                )
 
                 # add new face colors
                 if self._face_color_mode == ColorMode.DIRECT:
@@ -464,7 +466,9 @@ class Points(Layer):
                         contrast_limits=self._face_contrast_limits,
                     )
                     new_face_colors = np.tile(fc, (adding, 1))
-                self.face_color = np.vstack((self.face_color, new_face_colors))
+                self._face_color = np.vstack(
+                    (self.face_color, new_face_colors)
+                )
 
                 self.size = np.concatenate((self._size, size), axis=0)
 
@@ -1390,13 +1394,13 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self.edge_color = np.vstack(
+            self._edge_color = np.vstack(
                 (
                     self.edge_color,
                     transform_color(deepcopy(self._clipboard['edge_color'])),
                 )
             )
-            self.face_color = np.vstack(
+            self._face_color = np.vstack(
                 (
                     self.face_color,
                     transform_color(deepcopy(self._clipboard['face_color'])),
