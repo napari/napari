@@ -57,14 +57,14 @@ def transform_color_with_defaults(
 
 
 def transform_color_cycle(
-    color_cycle: ColorType, elem_name: str, default: str
+    color_cycle: Union[ColorType, cycle], elem_name: str, default: str
 ) -> cycle:
     """Helper method to return an Nx4 np.array from an arbitrary user input.
 
     Parameters
     ----------
-    colors : ColorType
-        The wanted colors for each of the data points
+    colors : ColorType, cycle
+        The desired colors for each of the data points
     elem_name : str
         Whether we're trying to set the face color or edge color of the layer
     default : str
@@ -76,13 +76,16 @@ def transform_color_cycle(
         cycle of Nx4 numpy arrays with a dtype of np.float32
     """
 
-    transformed_color_cycle = transform_color_with_defaults(
-        num_entries=len(color_cycle),
-        colors=color_cycle,
-        elem_name=elem_name,
-        default=default,
-    )
-    transformed = cycle(transformed_color_cycle)
+    if isinstance(color_cycle, cycle):
+        transformed = color_cycle
+    else:
+        transformed_color_cycle = transform_color_with_defaults(
+            num_entries=len(color_cycle),
+            colors=color_cycle,
+            elem_name=elem_name,
+            default=default,
+        )
+        transformed = cycle(transformed_color_cycle)
 
     return transformed
 

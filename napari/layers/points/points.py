@@ -316,8 +316,6 @@ class Points(Layer):
             self._edge_color_mode = ColorMode.DIRECT
         if edge_color_cycle is None:
             self._edge_color_cycle = DEFAULT_COLOR_CYCLE
-        elif isinstance(edge_color_cycle, cycle):
-            self._edge_color_cycle = edge_color_cycle
         else:
             self._edge_color_cycle = transform_color_cycle(
                 color_cycle=edge_color_cycle,
@@ -340,8 +338,6 @@ class Points(Layer):
             self._face_color_mode = ColorMode.DIRECT
         if face_color_cycle is None:
             self._face_color_cycle = DEFAULT_COLOR_CYCLE
-        elif isinstance(face_color_cycle, cycle):
-            self._face_color_cycle = face_color_cycle
         else:
             self._face_color_cycle = transform_color_cycle(
                 color_cycle=face_color_cycle,
