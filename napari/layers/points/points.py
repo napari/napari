@@ -31,6 +31,9 @@ from .points_utils import (
 )
 
 
+DEFAULT_COLOR_CYCLE = cycle(np.array([[1, 0, 1, 1], [0, 1, 0, 1]]))
+
+
 class Points(Layer):
     """Points layer.
 
@@ -312,9 +315,7 @@ class Points(Layer):
         else:
             self._edge_color_mode = ColorMode.DIRECT
         if edge_color_cycle is None:
-            self._edge_color_cycle = cycle(
-                np.array([[1, 1, 0, 1], [0, 1, 0, 1]])
-            )
+            self._edge_color_cycle = DEFAULT_COLOR_CYCLE
         elif isinstance(edge_color_cycle, cycle):
             self._edge_color_cycle = edge_color_cycle
         else:
@@ -338,9 +339,7 @@ class Points(Layer):
         else:
             self._face_color_mode = ColorMode.DIRECT
         if face_color_cycle is None:
-            self._face_color_cycle = cycle(
-                np.array([[1, 1, 0, 1], [0, 1, 0, 1]])
-            )
+            self._face_color_cycle = DEFAULT_COLOR_CYCLE
         elif isinstance(face_color_cycle, cycle):
             self._face_color_cycle = face_color_cycle
         else:
