@@ -369,10 +369,6 @@ def test_annotations_errors():
     with pytest.raises(ValueError):
         annotations = {'point_type': np.array(['A', 'B'])}
         Points(data, properties=copy(annotations))
-    # try adding properties with the wrong type
-    with pytest.raises(TypeError):
-        annotations = {'point_type': ['A', 'B', 'C']}
-        Points(data, properties=copy(annotations))
 
 
 def test_is_color_mapped():
