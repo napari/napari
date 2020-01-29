@@ -838,7 +838,7 @@ class Points(Layer):
             self.refresh_colors()
 
     def refresh_colors(self, update_color_mapping: bool = True):
-        """ Calculate and update face and edge colors if using a cycle or color map
+        """Calculate and update face and edge colors if using a cycle or color map
 
         Parameters
         ----------
