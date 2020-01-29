@@ -599,9 +599,9 @@ class Points(Layer):
 
     @property
     def edge_color_cycle(self):
-        """
-            Union[list, np.ndarray, cycle] :  Color cycle for edge_color.
-                Can be a list of colors or a cycle of colors
+        """Union[list, np.ndarray, cycle] :  Color cycle for edge_color.
+        Can be a list of colors or a cycle of colors
+
         """
         return self._edge_color_cycle
 
@@ -619,7 +619,7 @@ class Points(Layer):
 
     @property
     def edge_colormap(self):
-        """(str, vispy.color.Colormap) colormap to be applied to a property to set edge_color"""
+        """(str, vispy.color.Colormap): colormap to be applied to a property to set edge_color"""
         return self._edge_colormap_name, self._edge_colormap
 
     @edge_colormap.setter
@@ -632,9 +632,8 @@ class Points(Layer):
 
     @property
     def edge_contrast_limits(self):
-        """
-            None, (float, float)
-                contrast limits for mapping the edge_color colormap property to 0 and 1
+        """ None, (float, float): contrast limits for mapping
+        the edge_color colormap property to 0 and 1
         """
         return self._edge_contrast_limits
 
@@ -765,9 +764,8 @@ class Points(Layer):
 
     @property
     def face_contrast_limits(self):
-        """
-            None, (float, float) : clims for mapping the face_color
-                colormap property to 0 and 1
+        """None, (float, float) : clims for mapping the face_color
+        colormap property to 0 and 1
         """
         return self._face_contrast_limits
 
