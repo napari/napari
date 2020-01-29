@@ -186,7 +186,7 @@ class QtDimSliderWidget(QWidget):
             if _range[1] == 0:
                 displayed_sliders[self.axis] = False
                 self.qt_dims.last_used = None
-                self.slider.hide()
+                self.hide()
             else:
                 if (
                     not displayed_sliders[self.axis]
@@ -194,7 +194,7 @@ class QtDimSliderWidget(QWidget):
                 ):
                     displayed_sliders[self.axis] = True
                     self.last_used = self.axis
-                    self.slider.show()
+                    self.show()
                 self.slider.setMinimum(_range[0])
                 self.slider.setMaximum(_range[1])
                 self.slider.setSingleStep(_range[2])
@@ -205,7 +205,7 @@ class QtDimSliderWidget(QWidget):
                 self._update_slice_labels()
         else:
             displayed_sliders[self.axis] = False
-            self.slider.hide()
+            self.hide()
 
     def _update_slider(self):
         mode = self.dims.mode[self.axis]
