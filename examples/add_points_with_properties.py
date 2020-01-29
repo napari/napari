@@ -37,17 +37,17 @@ with napari.gui_qt():
         face_color_cycle=face_color_cycle
     )
 
-    # set the face_color mode to colormap
+    # set the edge_color mode to colormap
     points_layer.edge_color_mode = 'colormap'
 
     # bind a function to toggle the good_point annotation of the selected points
     @viewer.bind_key('t')
     def toggle_point_annotation(viewer):
-        selected_points = viewer.layers[1].selected_data
-        if selected_points:
-            selected_annotations = viewer.layers[1].properties['good_point'][selected_points]
-            toggled_annotations = np.logical_not(selected_annotations)
-            viewer.layers[1].properties['good_point'][selected_points] = toggled_annotations
+        selected_points = points_layer.selected_data
+        if len(selected_points) > 0:
+            good_point = points_layer.properties['good_point']
+            good_point[selected_points] = ~good_point[selected_points]
+            points_layer.properties['good_point'] = good_point
 
             # we need to manually refresh since we did not use the Points.properties setter
             # to avoid changing the color map if all points get toggled to the same class,
