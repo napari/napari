@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from napari.components import ViewerModel
-from napari.tests.utils import good_layer_data
+from napari._tests.utils import good_layer_data
 
 
 def test_viewer_model():
