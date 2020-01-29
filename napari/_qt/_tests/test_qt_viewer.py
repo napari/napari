@@ -3,7 +3,7 @@ import pytest
 
 from napari.components import ViewerModel
 from napari._qt.qt_viewer import QtViewer
-from napari.tests.utils import (
+from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
