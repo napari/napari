@@ -1,7 +1,7 @@
 # See "Writing benchmarks" in the asv docs for more information.
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
-# https://github.com/napari/napari/blob/master/BENCHMARKS.md
+# https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import napari
 from qtpy.QtWidgets import QApplication
 
