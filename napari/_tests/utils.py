@@ -3,6 +3,14 @@ import numpy as np
 from napari import Viewer
 from napari.layers import Image, Labels, Points, Shapes, Vectors, Surface
 
+# this unused import is here to fix a very strange bug.
+# there is some mysterious magical goodness in scipy stats that needs
+# to be imported early.
+# see: https://github.com/napari/napari/issues/925
+from scipy import stats  # noqa: F401
+
+del stats
+
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
 """
