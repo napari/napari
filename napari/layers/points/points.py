@@ -451,7 +451,7 @@ class Points(Layer):
 
     @property
     def properties(self):
-        """ dict {str: array (N,)}, DataFrame: Annotations for each point"""
+        """dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
     @properties.setter
@@ -619,7 +619,15 @@ class Points(Layer):
 
     @property
     def edge_colormap(self):
-        """(str, vispy.color.Colormap): colormap to be applied to a property to set edge_color"""
+        """Return the colormap to be applied to a property to get the edge color.
+
+        Returns
+        -------
+        colormap_name : str
+            The name of the current colormap.
+        colormap : vispy.color.Colormap
+            The vispy colormap object.
+        """
         return self._edge_colormap_name, self._edge_colormap
 
     @edge_colormap.setter
@@ -645,7 +653,7 @@ class Points(Layer):
 
     @property
     def current_edge_color(self) -> str:
-        """Edge color of marker for the next added point or the selected point(s)."""
+        """str: Edge color of marker for the next added point or the selected point(s)."""
         hex_ = rgb_to_hex(self._current_edge_color)[0]
         return hex_to_name.get(hex_, hex_)
 
@@ -751,7 +759,15 @@ class Points(Layer):
 
     @property
     def face_colormap(self):
-        """(str, vispy.color.Colormap) colormap to be applied to a property to set edge_color"""
+        """Return the colormap to be applied to a property to get the edge color.
+
+        Returns
+        -------
+        colormap_name : str
+            The name of the current colormap.
+        colormap : vispy.color.Colormap
+            The vispy colormap object.
+        """
         return self._face_colormap_name, self._face_colormap
 
     @face_colormap.setter
