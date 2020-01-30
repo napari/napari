@@ -3,14 +3,12 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import napari
-from qtpy.QtWidgets import QApplication
 
 
 class QtViewerSuite:
     """Benchmarks for viewing images in the viewer."""
 
     def setup(self):
-        app = QApplication.instance() or QApplication([])
         self.viewer = None
 
     def teardown(self):
