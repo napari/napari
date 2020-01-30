@@ -3,6 +3,22 @@ from enum import Enum, auto
 from ...utils.misc import StringEnum
 
 
+class ColorMode(StringEnum):
+    """
+    ColorMode: Color setting mode.
+
+    DIRECT (default mode) allows each point to be set arbitrarily
+
+    CYCLE allows the color to be set via a color cycle over an attribute
+
+    COLORMAP allows color to be set via a color map over an attribute
+    """
+
+    DIRECT = auto()
+    CYCLE = auto()
+    COLORMAP = auto()
+
+
 class Mode(StringEnum):
     """
     Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which

@@ -19,6 +19,7 @@ def test_creating_view(qtbot):
     view = QtDims(dims)
 
     qtbot.addWidget(view)
+    view.show()
 
     # Check that the dims model has been appended to the dims view
     assert view.dims == dims
@@ -27,6 +28,12 @@ def test_creating_view(qtbot):
     # dimensions
     assert view.nsliders == view.dims.ndim
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
+    assert np.all(
+        [
+            s.isVisible() == d
+            for s, d in zip(view.slider_widgets, view._displayed_sliders)
+        ]
+    )
 
 
 def test_changing_ndim(qtbot):
@@ -37,16 +44,29 @@ def test_changing_ndim(qtbot):
     view = QtDims(Dims(ndim))
 
     qtbot.addWidget(view)
+    view.show()
 
     # Check that adding dimensions adds sliders
     view.dims.ndim = 5
     assert view.nsliders == view.dims.ndim
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
+    assert np.all(
+        [
+            s.isVisible() == d
+            for s, d in zip(view.slider_widgets, view._displayed_sliders)
+        ]
+    )
 
     # Check that removing dimensions removes sliders
     view.dims.ndim = 2
     assert view.nsliders == view.dims.ndim
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
+    assert np.all(
+        [
+            s.isVisible() == d
+            for s, d in zip(view.slider_widgets, view._displayed_sliders)
+        ]
+    )
 
 
 def test_changing_focus(qtbot):
@@ -79,14 +99,27 @@ def test_changing_display(qtbot):
     view = QtDims(Dims(ndim))
 
     qtbot.addWidget(view)
+    view.show()
 
     assert view.nsliders == view.dims.ndim
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
+    assert np.all(
+        [
+            s.isVisible() == d
+            for s, d in zip(view.slider_widgets, view._displayed_sliders)
+        ]
+    )
 
     # Check changing displayed removes a slider
     view.dims.ndisplay = 3
     assert view.nsliders == view.dims.ndim
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 3
+    assert np.all(
+        [
+            s.isVisible() == d
+            for s, d in zip(view.slider_widgets, view._displayed_sliders)
+        ]
+    )
 
 
 def test_slider_values(qtbot):
@@ -140,6 +173,32 @@ def test_slider_range(qtbot):
         first_slider.maximum() == view.dims.range[0][1] - view.dims.range[0][2]
     )
     assert first_slider.singleStep() == view.dims.range[0][2]
+
+
+def test_singleton_dims(qtbot):
+    """
+    Test singleton dims causes no slider.
+    """
+    ndim = 4
+    dims = Dims(ndim)
+    dims.set_range(0, (0, 1, 1))
+    view = QtDims(dims)
+
+    qtbot.addWidget(view)
+    view.show()
+
+    # Check that the dims model has been appended to the dims view
+    assert view.dims == dims
+
+    # Check the number of displayed sliders is only one
+    assert view.nsliders == 4
+    assert np.sum(view._displayed_sliders) == 1
+    assert np.all(
+        [
+            s.isVisible() == d
+            for s, d in zip(view.slider_widgets, view._displayed_sliders)
+        ]
+    )
 
 
 def test_order_when_changing_ndim(qtbot):

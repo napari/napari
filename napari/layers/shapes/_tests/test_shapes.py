@@ -912,6 +912,20 @@ def test_to_labels():
     assert len(np.unique(labels)) <= 11
 
 
+def test_to_labels_3D():
+    """Test label generation for 3D data"""
+    data = [
+        [[0, 100, 100], [0, 100, 200], [0, 200, 200], [0, 200, 100]],
+        [[1, 125, 125], [1, 125, 175], [1, 175, 175], [1, 175, 125]],
+        [[2, 100, 100], [2, 100, 200], [2, 200, 200], [2, 200, 100]],
+    ]
+    labels_shape = (3, 300, 300)
+    layer = Shapes(np.array(data), shape_type='polygon')
+    labels = layer.to_labels(labels_shape=labels_shape)
+    assert np.all(labels.shape == labels_shape)
+    assert np.all(np.unique(labels) == [0, 1, 2, 3])
+
+
 def test_xml_list():
     """Test the xml generation."""
     shape = (10, 4, 2)
