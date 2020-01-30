@@ -521,7 +521,7 @@ class Shape(ABC):
             displayed_order[np.argsort(displayed_order)] = list(
                 range(len(displayed_order))
             )
-            mask[tuple(slice_key)] == mask_p.transpose(displayed_order)
+            mask[tuple(slice_key)] = mask_p.transpose(displayed_order)
         else:
             mask = mask_p
 

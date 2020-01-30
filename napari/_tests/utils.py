@@ -39,6 +39,25 @@ layer2viewmethod = {
     cls: getattr(napari, 'view_' + name) for cls, name in zip(classes, names)
 }
 
+# examples of valid tuples that might be passed to viewer._add_layer_from_data
+good_layer_data = [
+    (np.random.random((10, 10)),),
+    (np.random.random((10, 10, 3)), {'rgb': True}),
+    (np.random.randint(20, size=(10, 15)), {'seed': 0.3}, 'labels'),
+    (np.random.random((10, 2)) * 20, {'face_color': 'blue'}, 'points'),
+    (np.random.random((10, 2, 2)) * 20, {}, 'vectors'),
+    (np.random.random((10, 4, 2)) * 20, {'opacity': 1}, 'shapes'),
+    (
+        (
+            np.random.random((10, 3)),
+            np.random.randint(10, size=(6, 3)),
+            np.random.random(10),
+        ),
+        {'name': 'some surface'},
+        'surface',
+    ),
+]
+
 
 def add_layer_by_type(viewer, layer_type, data, visible=True):
     """
