@@ -13,34 +13,41 @@ https://github.com/napari/napari
 
 Highlights
 **********
-- Allow Points display properties to be set by point properties (#895)
-- Python 3.8 support (#878)
+- Point face color and edge color are now settable as a property
+in a columnar data table, mapped using a colormap (continuous values)
+or a color cycle (categorical values). See
+`this example <https://github.com/napari/napari/blob/master/examples/add_points_with_properties.py>`_ 
+for syntax details.
+- Python 3.8 is now supported 
 
 Improvements
 ************
 - Represent color as Nx4 array in Points  (#782)
 - Qt/Vispy connection & lambda refactor (#859)
-- Add PyQt5 tests to Linux and OSX CI (#867)
-- Bump tests to python 3.8, general tests fix (#878)
+- Clean up setup.py (#880)
 - Improve slider step precision based on data range (#884)
 - Allow Points display properties to be set by point properties (#895)
 - Refactor add_* methods (#897)
 - Add _add_layer_data method and tests (#909)
-- Add Python 3.8 to PyPI tags (#917)
-- Relocate existing tests for appropriate discoverability. (#918)
 
 Bugfixes
 ********
 - Fix clim popup position in floating widgets (#869)
-- Change autodevdoc script to use new git reference (#876)
-- Fix invalid instructions in setup.py (#877)
-- Clean up setup.py (#880)
+- Bump tests to python 3.8, general tests fix (#878)
 - Fix points selection (#902)
 - Move benchmarks under napari directory but not distributed (#913)
 - Patch py3.8 on windows (#915)
 - Fix osx py3.6 tests (#916)
-- Fix nD Shapes.to_labels() (#920)
+- Fix nD Shapes.to_labels (#920)
 - Fix singleton dims (#923)
+
+Support
+*******
+- Add PyQt5 tests to Linux and OSX CI (#867)
+- Change autodevdoc script to use new git reference (#876)
+- Fix invalid instructions in setup.py (#877)
+- Add Python 3.8 to PyPI tags (#917)
+- Relocate existing tests for appropriate discoverability. (#918)
 - Import scipy stats to prevent strange bug in tests (#927)
 
 7 authors added to this release [alphabetical by first name or login]
