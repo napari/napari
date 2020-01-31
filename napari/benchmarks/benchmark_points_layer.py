@@ -1,28 +1,24 @@
 # See "Writing benchmarks" in the asv docs for more information.
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
-# https://github.com/napari/napari/blob/master/BENCHMARKS.md
+# https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import numpy as np
-from napari.layers import Surface
+from napari.layers import Points
 
 
-class Surface2DSuite:
-    """Benchmarks for the Surface layer with 2D data"""
+class Points2DSuite:
+    """Benchmarks for the Points layer with 2D data"""
 
     params = [2 ** i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
-        self.data = (
-            np.random.random((n, 2)),
-            np.random.randint(n, size=(n, 3)),
-            np.random.random(n),
-        )
-        self.layer = Surface(self.data)
+        self.data = np.random.random((n, 2))
+        self.layer = Points(self.data)
 
     def time_create_layer(self, n):
-        """Time to create an image layer."""
-        Surface(self.data)
+        """Time to create layer."""
+        Points(self.data)
 
     def time_refresh(self, n):
         """Time to refresh view."""
@@ -49,23 +45,19 @@ class Surface2DSuite:
         return self.data
 
 
-class Surface3DSuite:
-    """Benchmarks for the Surface layer with 3D data."""
+class Points3DSuite:
+    """Benchmarks for the Points layer with 3D data."""
 
     params = [2 ** i for i in range(4, 18, 2)]
 
     def setup(self, n):
         np.random.seed(0)
-        self.data = (
-            np.random.random((n, 3)),
-            np.random.randint(n, size=(n, 3)),
-            np.random.random(n),
-        )
-        self.layer = Surface(self.data)
+        self.data = np.random.random((n, 3))
+        self.layer = Points(self.data)
 
     def time_create_layer(self, n):
-        """Time to create a layer."""
-        Surface(self.data)
+        """Time to create layer."""
+        Points(self.data)
 
     def time_refresh(self, n):
         """Time to refresh view."""
