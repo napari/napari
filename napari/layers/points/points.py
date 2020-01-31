@@ -336,7 +336,7 @@ class Points(Layer):
         self._current_face_color = self.face_color[-1]
         self.size = size
         self.current_properties = {
-            k: v[-1] for k, v in self.properties.items()
+            k: np.asarray([v[-1]]) for k, v in self.properties.items()
         }
 
         # Trigger generation of view slice and thumbnail
