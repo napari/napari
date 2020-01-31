@@ -300,6 +300,9 @@ def test_properties():
     layer = Points(data, properties=copy(properties))
     assert layer.properties == properties
 
+    current_prop = {'point_type': np.array(['B'])}
+    assert layer.current_properties == current_prop
+
     # test removing points
     layer.selected_data = [0, 1]
     layer.remove_selected()
@@ -344,13 +347,13 @@ def test_adding_annotations():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
     layer = Points(data)
     assert layer.properties == {}
 
     # add properties
-    layer.properties = copy(annotations)
-    assert layer.properties == annotations
+    layer.properties = copy(properties)
+    assert layer.properties == properties
 
     # change properties
     new_annotations = {
@@ -358,6 +361,20 @@ def test_adding_annotations():
     }
     layer.properties = copy(new_annotations)
     assert layer.properties == new_annotations
+
+
+def test_add_points_with_properties():
+    # test adding points initialized with properties
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, properties=copy(properties))
+
+    coord = [18, 18]
+    layer.add(coord)
+    new_prop = {'point_type': np.append(properties['point_type'], 'B')}
+    np.testing.assert_equal(layer.properties, new_prop)
 
 
 def test_annotations_errors():
