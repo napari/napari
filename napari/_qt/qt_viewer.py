@@ -30,7 +30,6 @@ from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
-from ..plugins import plugin_manager
 
 
 class QtViewer(QSplitter):
@@ -249,25 +248,6 @@ class QtViewer(QSplitter):
         if folder not in {'', None}:
             self._add_files([folder])
 
-    def _add_path(self, path):
-        """Add filename, directory, or URL to the viewer.
-
-        Will look for first plugin implementing napari_get_reader that
-        recognizes ``path`` as a compatible format, and then use it to add
-        data to the viewer.
-
-        Parameters
-        -------
-        paths : str
-            path to filename, directory, or URL to add to the viewer.
-        """
-        if path:
-            reader = plugin_manager.hook.napari_get_reader(path=path)
-            layer_data = reader(path)
-            for data in layer_data:
-                self.viewer._add_layer_data(*data)
-            self._last_visited_dir = os.path.dirname(path)
-
     def _add_files(self, filenames):
         """Add an image layer to the viewer.
 
@@ -447,9 +427,13 @@ class QtViewer(QSplitter):
 
     def dropEvent(self, event):
         """Add local files and web URLS with drag and drop."""
+        filenames = []
         for url in event.mimeData().urls():
-            path = url.toLocalFile() if url.isLocalFile() else url.toString()
-            self._add_path(path)
+            if url.isLocalFile():
+                filenames.append(url.toLocalFile())
+            else:
+                filenames.append(url.toString())
+        self._add_files(filenames)
 
     def closeEvent(self, event):
         if self.pool.activeThreadCount() > 0:
