@@ -52,3 +52,4 @@ def test_disable_autodiscover_with_env_var():
     os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"] = '1'
     pm = NapariPluginManager()
     assert 'napari_test_plugin' not in pm._name2plugin
+    del os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"]
