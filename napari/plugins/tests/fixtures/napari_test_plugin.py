@@ -1,5 +1,5 @@
 """
-Example plugin structure for testing plugin discovery
+Example plugin for testing plugin discovery and loading
 """
 import pluggy
 
@@ -10,7 +10,7 @@ def reader_function():
     raise IOError('it worked')
 
 
-@hookimpl()
-def napari_get_reader(path, df):
-    if str.endswith('true'):
+@hookimpl
+def napari_get_reader(path):
+    if path.endswith('true'):
         return reader_function
