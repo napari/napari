@@ -1,4 +1,5 @@
-"""Internal hooks to be registered by the plugin manager
+"""
+Internal napari hook implementations to be registered by the plugin manager
 """
 import pluggy
 

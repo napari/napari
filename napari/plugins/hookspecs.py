@@ -1,3 +1,19 @@
+"""
+All hook specifications for pluggable functionality should be defined here.
+
+A hook specification (hookspec) is a function signature (with documentation)
+that declares an API that plugin developers must adhere to when providing
+hook implementations (hookimpl).  Hook implementations provided by plugins (and
+internally by napari) will then be invoked in various places throughout the
+code base.
+
+hookspecs are a feature of pluggy:
+https://pluggy.readthedocs.io/en/latest/#specs
+
+These hookspecs also serve as the API reference for plugin developrs, so
+comprehensive documentation with complete type annotations is imperative.
+"""
+
 import pluggy
 from typing import Callable, Optional, List, Tuple, Union, Any, Dict
 
