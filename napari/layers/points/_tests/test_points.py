@@ -1051,14 +1051,14 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
     # test with n_points > _max_max_points_thumbnail in 2D
-    max_points = Points._max_points_thumbnail
-    bigger_data = np.random.randint(10, 100, (max_points * 2, 2))
+    max_points = Points._max_points_thumbnail * 2
+    bigger_data = np.random.randint(10, 100, (max_points, 2))
     big_layer = Points(bigger_data)
     big_layer._update_thumbnail()
     assert big_layer.thumbnail.shape == big_layer._thumbnail_shape
 
     # test with n_points > _max_max_points_thumbnail in 3D
-    bigger_data_3d = np.random.randint(10, 100, (max_points * 2, 3))
+    bigger_data_3d = np.random.randint(10, 100, (max_points, 3))
     bigger_layer_3d = Points(bigger_data_3d)
     bigger_layer_3d.dims.ndisplay = 3
     bigger_layer_3d._update_thumbnail()
