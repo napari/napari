@@ -1,11 +1,13 @@
 """Miscellaneous utility functions.
 """
-from enum import Enum, EnumMeta
-import re
 import inspect
 import itertools
-import numpy as np
+import re
+import signal
+from enum import Enum, EnumMeta
 from typing import Type
+
+import numpy as np
 
 
 def str_to_rgb(arg):
@@ -184,3 +186,36 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+class TimeLimit:
+    """Context manager that raises a TimeoutError if the context runs too long.
+
+    https://docs.python.org/3/library/signal.html#example
+    https://stackoverflow.com/a/22348885/1631624
+
+    Raises
+    ------
+    TimeoutError
+        If the contained context takes longer than the specified value
+
+    Example
+    -------
+
+    >>> with timeout(seconds=3, msg='took too long!'):
+    >>>     time.sleep(4)
+    """
+
+    def __init__(self, seconds=1, msg='Timeout'):
+        self.seconds = seconds
+        self.msg = msg
+
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.msg)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.setitimer(signal.ITIMER_REAL, self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
