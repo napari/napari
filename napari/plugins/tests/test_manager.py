@@ -54,6 +54,11 @@ def test_disable_autodiscover_with_env_var():
     assert 'napari_test_plugin' not in pm._name2plugin
     del os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"]
 
+    os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"] = '1'
+    pm = NapariPluginManager()
+    assert 'napari_test_plugin' not in pm._name2plugin
+    del os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"]
+
 
 def test_hookimpl_validation():
     """make sure that hookimplementations that pass the API check but fail
