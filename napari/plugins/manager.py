@@ -1,12 +1,11 @@
 import importlib
 import os
 import pkgutil
-import warnings
 from logging import Logger
 
 import pluggy
 
-from . import _builtins, hookspecs, validators
+from . import _builtins, hookspecs
 
 logger = Logger(__name__)
 
@@ -28,11 +27,6 @@ class NapariPluginManager(pluggy.PluginManager):
 
         # define hook specifications and validators
         self.add_hookspecs(hookspecs)
-def get_plugin_manager():
-    # instantiate the plugin manager
-    pm = pluggy.PluginManager("napari")
-    # define hook specifications
-    pm.add_hookspecs(hookspecs)
 
         # register our own built plugins
         self.register(_builtins, name='builtins')
@@ -42,8 +36,6 @@ def get_plugin_manager():
             and autodiscover
         ):
             self.discover()
-
-    pm.register(_builtins)
 
     def discover(self):
         # avoid circular import

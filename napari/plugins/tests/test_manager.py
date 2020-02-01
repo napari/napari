@@ -52,12 +52,3 @@ def test_disable_autodiscover_with_env_var():
     os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"] = '1'
     pm = NapariPluginManager()
     assert 'napari_test_plugin' not in pm._name2plugin
-
-
-
-def test_naming_convention_discovery():
-    path = os.path.join(os.path.dirname(__file__), 'fixtures')
-    sys.path.append(path)
-    module_names = [m.__name__ for m in find_module_by_prefix()]
-    assert 'napari_test_plugin' in module_names
-    sys.path.pop(sys.path.index(path))
