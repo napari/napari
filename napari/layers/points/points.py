@@ -1034,11 +1034,8 @@ class Points(Layer):
             k: np.unique(v[index], axis=0) for k, v in self.properties.items()
         }
         n_unique_properties = np.array([len(v) for v in properties.values()])
-        self.current_properties = {}
-        # only include the properties that common across all selected points
-        for n, prop in zip(n_unique_properties, properties):
-            if n == 1:
-                self.current_properties[prop] = properties[prop]
+        if np.all(n_unique_properties == 1):
+            self.current_properties = properties
 
     def interaction_box(self, index):
         """Create the interaction box around a list of points in view.
