@@ -27,9 +27,8 @@ class NapariPluginManager(pluggy.PluginManager):
             Whether to immediately validate hookimpls upon registration,
             by default False
         """
-        self._initialized = False
+        self.greedy_validation = False
         super().__init__("napari")
-        self.greedy_validation = greedy_validation
 
         # define hook specifications and validators
         self.add_hookspecs(hookspecs)
@@ -42,10 +41,11 @@ class NapariPluginManager(pluggy.PluginManager):
             if autodiscover:
                 self.discover()
 
-        # validate registered hookimplementations
+        # leave this here so as not duplicate validations during __init__
+        self.greedy_validation = greedy_validation
         if greedy_validation:
+            # validate hookimplementations that were registered during __init__
             self.validate_hookimpls()
-        self._initialized = True
 
     def register(self, plugin, name=None):
         """Register a plugin and return its canonical name.
@@ -66,7 +66,7 @@ class NapariPluginManager(pluggy.PluginManager):
             if the plugin is already registered
         """
         plugin_name = super().register(plugin, name=name)
-        if self.greedy_validation and self._initialized:
+        if self.greedy_validation:
             self.validate_hookimpls(plugin_name=plugin_name)
 
     def discover(self):
