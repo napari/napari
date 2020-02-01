@@ -1306,19 +1306,20 @@ class Points(Layer):
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
             if len(self._data_view) > self._max_points_thumbnail:
-                inds = np.random.randint(
+                thumbnail_indices = np.random.randint(
                     0, len(self._data_view), self._max_points_thumbnail
                 )
-                points = self._data_view[inds]
+                points = self._data_view[thumbnail_indices]
             else:
                 points = self._data_view
+                thumbnail_indices = self._indices_view
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
             ).astype(int)
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
-            colors = self.face_color[self._indices_view]
+            colors = self.face_color[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors
 
         colormapped[..., 3] *= self.opacity
