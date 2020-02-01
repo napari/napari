@@ -52,13 +52,15 @@ def test_disable_autodiscover_with_env_var():
     os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"] = '1'
     pm = NapariPluginManager()
     assert 'napari_test_plugin' not in pm._name2plugin
+    del os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"]
 
 
-def test_hookimpl_validation(pm):
+def test_hookimpl_validation():
     """make sure that hookimplementations that pass the API check but fail
     functional validation checkes are excluded.
     """
-    # napari_bad_plugin will
+    # napari_bad_plugin will be loaded at first
+    pm = NapariPluginManager(greedy_validation=False)
     names = [h.plugin_name for h in pm.hook.napari_get_reader.get_hookimpls()]
     assert 'napari_bad_plugin' in names
     assert 'napari_test_plugin' in names
