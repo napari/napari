@@ -1,12 +1,12 @@
 import pluggy
 from .manager import NapariPluginManager
 
-PLUGIN_ENTRYPOINT = "napari.plugin"
-PLUGIN_PREFIX = "napari_"
-
 hookimpl = pluggy.HookimplMarker("napari")
-"""Marker to be imported and used in plugins (and for own implementations)"""
+"""Marker to be imported and used in plugins (and for own implementations)
+Note: plugins may also just import pluggy directly and make their own
+napari hookimpl.
+"""
 
-# a singleton... but doesn't need to be.  Could have seperate plugin managers
-# for different interfaces if desired.
+# a singleton... but doesn't need to be.
+# Could have seperate plugin managers for different interfaces if desired.
 plugin_manager = NapariPluginManager()

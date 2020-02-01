@@ -11,8 +11,11 @@ logger = Logger(__name__)
 
 
 class NapariPluginManager(pluggy.PluginManager):
+    PLUGIN_ENTRYPOINT = "napari.plugin"
+    PLUGIN_PREFIX = "napari_"
+
     def __init__(self, autodiscover=True):
-        """pluggy.PluginManager with napari-specific functionality
+        """pluggy.PluginManager subclass with napari-specific functionality
 
         In addition to the pluggy functionality, this subclass adds
         autodiscovery using package naming convention.
@@ -36,16 +39,31 @@ class NapariPluginManager(pluggy.PluginManager):
                 self.discover()
 
     def discover(self):
-        # avoid circular import
-        from . import PLUGIN_ENTRYPOINT, PLUGIN_PREFIX
+        """Discover modules by both naming convention and entry_points
 
+        1) Using naming convention:
+            plugins installed in the environment that follow a naming
+            convention (e.g. "napari_plugin"), can be discovered using
+            `pkgutil`. This also enables easy discovery on pypi
+
+        2) Using package metadata:
+            plugins that declare a special key (self.PLUGIN_ENTRYPOINT) in
+            their setup.py `entry_points`.  discovered using `pkg_resources`.
+
+        https://packaging.python.org/guides/creating-and-discovering-plugins/
+
+        Returns
+        -------
+        int
+            The number of modules successfully loaded.
+        """
         count = 0
         if not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
             # register modules defining the napari entry_point in setup.py
-            count += self.load_setuptools_entrypoints(PLUGIN_ENTRYPOINT)
+            count += self.load_setuptools_entrypoints(self.PLUGIN_ENTRYPOINT)
         if not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
             # register modules using naming convention
-            count += self.load_modules_by_prefix(PLUGIN_PREFIX)
+            count += self.load_modules_by_prefix(self.PLUGIN_PREFIX)
 
         if count:
             msg = f'loaded {count} plugins:\n  '
@@ -54,6 +72,18 @@ class NapariPluginManager(pluggy.PluginManager):
         return count
 
     def load_modules_by_prefix(self, prefix):
+        """Find and load modules whose names start with ``prefix``
+
+        Parameters
+        ----------
+        prefix : str
+            The prefix that a module must have in order to be discovered.
+
+        Returns
+        -------
+        int
+            The number of modules successfully loaded.
+        """
         count = 0
         for finder, name, ispkg in pkgutil.iter_modules():
             if (
@@ -72,6 +102,7 @@ class NapariPluginManager(pluggy.PluginManager):
         return count
 
 
+# for easy try/catch availability
 NapariPluginManager.PluginValidationError = (
     pluggy.manager.PluginValidationError
 )
