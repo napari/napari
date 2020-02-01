@@ -38,11 +38,9 @@ class NapariPluginManager(pluggy.PluginManager):
         # register our own built plugins
         self.register(_builtins, name='builtins')
         # discover external plugins
-        if (
-            not os.environ.get("NAPARI_DISABLE_PLUGIN_AUTOLOAD")
-            and autodiscover
-        ):
-            self.discover()
+        if not os.environ.get("NAPARI_DISABLE_PLUGIN_AUTOLOAD"):
+            if autodiscover:
+                self.discover()
 
         # validate registered hookimplementations
         if greedy_validation:
