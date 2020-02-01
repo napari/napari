@@ -4,7 +4,7 @@ moment of hookimpl registration.  They do NOT validate whether the hookimpl
 obeys the specification signature (that is handled automatically by pluggy),
 instead, they offer additional validation for correctly registered hookimpls.
 
-The utility of this will certainly depend on the hookspec: it may only be 
+The utility of this will certainly depend on the hookspec: it may only be
 useful for hooks that are designed to return quickly, otherwise the time it
 costs to eagerly validate the implementation at registration time may outweigh
 the benefits.  However, even if validators aren't called immediately after
