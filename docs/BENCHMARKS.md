@@ -35,8 +35,9 @@ To let airspeed velocity know more information about your machine.
 
 ## Writing a benchmark
 
-To write  benchmark, add a file in the ``benchmarks`` directory which contains a
-a class with one ``setup`` method and at least one method prefixed with ``time_``.
+To write  benchmark, add a file in the ``napari/_benchmarks`` directory which
+contains a class with one ``setup`` method and at least one method prefixed
+with ``time_``.
 
 The ``time_`` method should only contain code you wish to benchmark.
 Therefore it is useful to move everything that prepares the benchmark scenario
