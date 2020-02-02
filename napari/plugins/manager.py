@@ -94,6 +94,9 @@ class NapariPluginManager(pluggy.PluginManager):
                 continue
             try:
                 mod = importlib.import_module(name)
+                # prevent double registration (e.g. from entry_points)
+                if self.is_registered(mod):
+                    continue
                 self.register(mod, name=name)
                 count += 1
             except Exception as e:
