@@ -22,8 +22,12 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
-        self.layer.events.face_color.connect(self._on_face_color_change)
+        self.layer.events.current_edge_color.connect(
+            self._on_edge_color_change
+        )
+        self.layer.events.current_face_color.connect(
+            self._on_face_color_change
+        )
         self.layer.events.editable.connect(self._on_editable_change)
 
         sld = QSlider(Qt.Horizontal)

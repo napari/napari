@@ -250,7 +250,9 @@ class Points(Layer):
             size=Event,
             edge_width=Event,
             face_color=Event,
+            current_face_color=Event,
             edge_color=Event,
+            current_edge_color=Event,
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
@@ -545,12 +547,16 @@ class Points(Layer):
     @current_size.setter
     def current_size(self, size: Union[None, float]) -> None:
         self._current_size = size
-        if self._update_properties and len(self.selected_data) > 0:
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
+            self.events.size()
         self.status = format_float(self.current_size)
-        self.events.size()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -562,7 +568,7 @@ class Points(Layer):
         self._edge_width = edge_width
         self.status = format_float(self.edge_width)
         self.events.edge_width()
-        self.events.highlight()
+        # self.events.highlight()
 
     @property
     def edge_color(self):
@@ -595,7 +601,7 @@ class Points(Layer):
             self._edge_color_property = ''
 
             self.events.edge_color()
-            self.events.highlight()
+            # self.events.highlight()
 
     @property
     def edge_color_cycle(self):
@@ -660,12 +666,16 @@ class Points(Layer):
     @current_edge_color.setter
     def current_edge_color(self, edge_color: ColorType) -> None:
         self._current_edge_color = transform_color(edge_color)
-        if self._update_properties and len(self.selected_data) > 0:
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
             cur_colors: np.ndarray = self.edge_color
             cur_colors[self.selected_data] = self._current_edge_color
             self.edge_color = cur_colors
-        self.events.edge_color()
-        self.events.highlight()
+        self.events.current_edge_color()
+        # self.events.highlight()
 
     @property
     def edge_color_mode(self):
@@ -740,7 +750,7 @@ class Points(Layer):
             self.face_color_mode = ColorMode.DIRECT
 
             self.events.face_color()
-            self.events.highlight()
+            # self.events.highlight()
 
     @property
     def face_color_cycle(self):
@@ -800,12 +810,18 @@ class Points(Layer):
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
         self._current_face_color = transform_color(face_color)
-        if self._update_properties and len(self.selected_data) > 0:
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
             cur_colors: np.ndarray = self.face_color
             cur_colors[self.selected_data] = self._current_face_color
             self.face_color = cur_colors
-        self.events.face_color()
-        self.events.highlight()
+
+        self.events.current_face_color()
+
+        # self.events.highlight()
 
     @property
     def face_color_mode(self):
@@ -887,7 +903,7 @@ class Points(Layer):
                 self._face_color = face_colors
 
                 self.events.face_color()
-                self.events.highlight()
+                # self.events.highlight()
             elif self._face_color_mode == ColorMode.COLORMAP:
                 face_color_properties = self.properties[
                     self._face_color_property
@@ -945,7 +961,7 @@ class Points(Layer):
                 self._edge_color = edge_colors
             self.events.face_color()
             self.events.edge_color()
-            self.events.highlight()
+            # self.events.highlight()
 
     def _is_color_mapped(self, color):
         """ determines if the new color argument is for directly setting or cycle/colormap"""
@@ -1249,40 +1265,47 @@ class Points(Layer):
         force : bool
             Bool that forces a redraw to occur when `True`
         """
-        if self._mode == Mode.SELECT:
-            # Check if any point ids have changed since last call
-            if (
-                self.selected_data == self._selected_data_stored
-                and self._value == self._value_stored
-                and np.all(self._drag_box == self._drag_box_stored)
-            ) and not force:
-                return
-            self._selected_data_stored = copy(self.selected_data)
-            self._value_stored = copy(self._value)
-            self._drag_box_stored = copy(self._drag_box)
+        # if self._mode == Mode.SELECT:
+        # Check if any point ids have changed since last call
+        if (
+            self.selected_data == self._selected_data_stored
+            and self._value == self._value_stored
+            and np.all(self._drag_box == self._drag_box_stored)
+        ) and not force:
+            return
+        self._selected_data_stored = copy(self.selected_data)
+        self._value_stored = copy(self._value)
+        self._drag_box_stored = copy(self._drag_box)
 
-            if self._mode == Mode.SELECT and (
-                self._value is not None or len(self._selected_view) > 0
-            ):
-                if len(self._selected_view) > 0:
-                    index = copy(self._selected_view)
-                    if self._value is not None:
-                        hover_point = list(self._indices_view).index(
-                            self._value
-                        )
-                        if hover_point in index:
-                            pass
-                        else:
-                            index.append(hover_point)
-                    index.sort()
-                else:
+        # if self._mode == Mode.SELECT and (
+        #     self._value is not None or len(self._selected_view) > 0
+        # ):
+
+        if self._value is not None or len(self._selected_view) > 0:
+            if len(self._selected_view) > 0:
+                index = copy(self._selected_view)
+                # highlight the hovered point if not in adding mode
+                if self._value is not None and self._mode != Mode.ADD:
+                    hover_point = list(self._indices_view).index(self._value)
+                    if hover_point in index:
+                        pass
+                    else:
+                        index.append(hover_point)
+                index.sort()
+            else:
+                # don't highlight hovered points in add mode
+                if self._mode != Mode.ADD:
                     hover_point = list(self._indices_view).index(self._value)
                     index = [hover_point]
+                else:
+                    index = []
 
-                self._highlight_index = index
-            else:
-                self._highlight_index = []
+            self._highlight_index = index
+        else:
+            self._highlight_index = []
 
+        # only display box in 3D
+        if self.dims.ndisplay == 2:
             pos = self._selected_box
             if pos is None and not self._is_selecting:
                 pos = np.zeros((0, 2))
@@ -1291,13 +1314,15 @@ class Points(Layer):
                 pos = pos[list(range(4)) + [0]]
             else:
                 pos = pos[list(range(4)) + [0]]
-
-            self._highlight_box = pos
-            self.events.highlight()
         else:
-            self._highlight_box = None
-            self._highlight_index = []
-            self.events.highlight()
+            pos = None
+
+        self._highlight_box = pos
+        self.events.highlight()
+        # else:
+        #     self._highlight_box = None
+        #     self._highlight_index = []
+        #     self.events.highlight()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
