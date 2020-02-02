@@ -5,6 +5,8 @@ from .. import layers
 from ..utils import colormaps
 from ..utils.misc import ensure_iterable, is_iterable
 from ..utils import io
+from typing import Union, List, Optional
+from napari.plugins import plugin_manager
 
 
 class AddLayersMixin:
@@ -44,6 +46,36 @@ class AddLayersMixin:
 
         if len(self.layers) == 1:
             self.reset_view()
+
+    def add_files(
+        self,
+        files: Union[str, List[str]],
+        stack: bool = False,
+        use_dask: Optional[bool] = None,
+    ):
+        """[summary]
+
+        Parameters
+        ----------
+        files : str or list of str
+            Images to view.
+        stack : bool, optional
+            Concatenate multiple input files into a single stack,
+            by default False
+        use_dask : bool, optional
+            Whether to use dask to create a lazy array, rather than NumPy.
+            If ``None``, will resolve to True if filenames contains more than
+            one image, False otherwise.  by default None.
+        """
+        if stack:
+            images = io.magic_imread(files, use_dask=use_dask, stack=stack)
+            self.add_image(images)
+        else:
+            for file in files:
+                reader = plugin_manager.hook.napari_get_reader(path=file)
+                layer_data = reader(file)
+                for data in layer_data:
+                    self._add_layer_from_data(*data)
 
     def add_image(
         self,

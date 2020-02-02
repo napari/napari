@@ -139,6 +139,52 @@ def view_image(
     return viewer
 
 
+def view_files(
+    files,
+    *,
+    stack=False,
+    use_dask=None,
+    title='napari',
+    ndisplay=2,
+    order=None,
+    axis_labels=None,
+):
+    """Create a viewer and add an image layer.
+
+    Parameters
+    ----------
+    files : str or list of str
+        Images to view.
+    stack : bool, optional
+        Concatenate multiple input files into a single stack,
+        by default False
+    use_dask : bool, optional
+        Whether to use dask to create a lazy array, rather than NumPy.
+        If ``None``, will resolve to True if filenames contains more than
+        one image, False otherwise.  by default None.
+    title : string, optional
+        The title of the viewer window. by default 'napari'
+    ndisplay : {2, 3}, optional
+        Number of displayed dimensions, by default 2
+    order : tuple of int, optional
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3. by default None
+    axis_labels : list of str, optional
+        Dimension names. by default None
+
+    Returns
+    -------
+    viewer : :class:`napari.Viewer`
+        The newly-created viewer.
+    """
+    viewer = Viewer(
+        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+    )
+    viewer.add_files(files=files, stack=stack, use_dask=use_dask)
+    return viewer
+
+
 def view_points(
     data=None,
     *,

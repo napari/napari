@@ -4,10 +4,8 @@ napari command line viewer.
 import argparse
 import sys
 
-import numpy as np
-
-from . import Viewer, __version__, gui_qt
-from .utils import io, sys_info, citation_text
+from . import __version__, gui_qt, view_files
+from .utils import citation_text, sys_info
 
 
 class InfoAction(argparse.Action):
@@ -44,9 +42,9 @@ def main():
         help='show citation information and exit',
     )
     parser.add_argument(
-        '--layers',
+        '--stack',
         action='store_true',
-        help='Treat multiple input images as layers.',
+        help='Concatenate multiple input files into a single stack.',
     )
     parser.add_argument(
         '-r',
@@ -81,24 +79,26 @@ def main():
     )
     args = parser.parse_args()
     with gui_qt(startup_logo=True):
-        v = Viewer()
-        if len(args.images) > 0:
-            images = io.magic_imread(
-                args.images, use_dask=args.use_dask, stack=not args.layers
-            )
-            if args.layers:
-                for layer in images:
-                    if layer.dtype in (
-                        np.int32,
-                        np.uint32,
-                        np.int64,
-                        np.uint64,
-                    ):
-                        v.add_labels(layer)
-                    else:
-                        v.add_image(layer, rgb=args.rgb)
-            else:
-                v.add_image(images, rgb=args.rgb)
+        view_files(args.images, stack=args.stack, use_dask=args.use_dask)
+
+        # here as a reminder to discuss with @jni
+        # if len(args.images) > 0:
+        #     images = io.magic_imread(
+        #         args.images, use_dask=args.use_dask, stack=not args.layers
+        #     )
+        #     if args.layers:
+        #         for layer in images:
+        #             if layer.dtype in (
+        #                 np.int32,
+        #                 np.uint32,
+        #                 np.int64,
+        #                 np.uint64,
+        #             ):
+        #                 v.add_labels(layer)
+        #             else:
+        #                 v.add_image(layer, rgb=args.rgb)
+        #     else:
+        #         v.add_image(images, rgb=args.rgb)
 
 
 if __name__ == '__main__':
