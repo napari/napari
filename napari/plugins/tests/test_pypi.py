@@ -33,7 +33,7 @@ def mocked_pypi_api(*args, **kwargs):
 
 @mock.patch('napari.plugins.pypi.requests.get', side_effect=mocked_pypi_api)
 def test_get_packages_by_prefix(mock_get):
-    urls = pypi.get_pypi_packages_by_prefix('package')
+    urls = pypi.gget_packages_by_prefixet_pypi_packages_by_prefix('package')
     assert 'package1' in urls
     assert urls['package1'] == 'https://pypi.org/simple/package1/'
 

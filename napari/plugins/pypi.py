@@ -18,7 +18,7 @@ def clear_cache():
     VERSION_CACHE = {}
 
 
-def get_pypi_packages_by_prefix(prefix) -> dict:
+def get_packages_by_prefix(prefix) -> dict:
     """Search for packages starting with ``prefix`` on pypi.
 
     Packages using naming convention: http://bit.ly/pynaming-convention
