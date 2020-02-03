@@ -236,7 +236,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
-            self.viewer.add_files(filenames)
+            self.viewer.add_path(filenames)
 
     def _open_images_as_stack(self):
         """Add image files as a stack, from the menubar."""
@@ -246,7 +246,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
-            self.viewer.add_files(filenames, stack=True)
+            self.viewer.add_path(filenames, stack=True)
 
     def _open_folder(self):
         """Add a folder of files from the menubar."""
@@ -256,7 +256,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if folder not in {'', None}:
-            self.viewer.add_files([folder])
+            self.viewer.add_path([folder])
 
     def _on_interactive(self, event):
         self.view.interactive = self.viewer.interactive
@@ -428,7 +428,7 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self.viewer.add_files(filenames)
+        self.viewer.add_path(filenames)
 
     def closeEvent(self, event):
         if self.pool.activeThreadCount() > 0:

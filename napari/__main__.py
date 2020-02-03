@@ -4,7 +4,7 @@ napari command line viewer.
 import argparse
 import sys
 
-from . import __version__, gui_qt, view_files
+from . import __version__, gui_qt, view_path
 from .utils import citation_text, sys_info
 
 
@@ -79,7 +79,7 @@ def main():
     )
     args = parser.parse_args()
     with gui_qt(startup_logo=True):
-        view_files(args.images, stack=args.stack, use_dask=args.use_dask)
+        view_path(args.images, stack=args.stack, use_dask=args.use_dask)
 
         # here as a reminder to discuss with @jni
         # if len(args.images) > 0:

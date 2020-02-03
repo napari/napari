@@ -39,7 +39,7 @@ vispy_logger.setLevel(logging.WARNING)
 from .viewer import Viewer
 from . import keybindings
 from .view_layers import (
-    view_files,
+    view_path,
     view_image,
     view_labels,
     view_surface,

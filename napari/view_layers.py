@@ -139,8 +139,8 @@ def view_image(
     return viewer
 
 
-def view_files(
-    files,
+def view_path(
+    path,
     *,
     stack=False,
     use_dask=None,
@@ -153,8 +153,8 @@ def view_files(
 
     Parameters
     ----------
-    files : str or list of str
-        Images to view.
+    path : str or list of str
+        Path(s) to view.
     stack : bool, optional
         Concatenate multiple input files into a single stack,
         by default False
@@ -181,7 +181,7 @@ def view_files(
     viewer = Viewer(
         title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
     )
-    viewer.add_files(files=files, stack=stack, use_dask=use_dask)
+    viewer.add_path(path=path, stack=stack, use_dask=use_dask)
     return viewer
 
 

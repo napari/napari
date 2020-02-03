@@ -47,9 +47,9 @@ class AddLayersMixin:
         if len(self.layers) == 1:
             self.reset_view()
 
-    def add_files(
+    def add_path(
         self,
-        files: Union[str, List[str]],
+        path: Union[str, List[str]],
         stack: bool = False,
         use_dask: Optional[bool] = None,
     ):
@@ -57,8 +57,8 @@ class AddLayersMixin:
 
         Parameters
         ----------
-        files : str or list of str
-            Images to view.
+        path : str or list of str
+            path(s) to view.
         stack : bool, optional
             Concatenate multiple input files into a single stack,
             by default False
@@ -67,13 +67,18 @@ class AddLayersMixin:
             If ``None``, will resolve to True if filenames contains more than
             one image, False otherwise.  by default None.
         """
+        paths = [path] if isinstance(path, str) else path
+        if not isinstance(path, (tuple, list)):
+            raise ValueError(
+                "'path' argument must be a string, list, or tuple"
+            )
         if stack:
-            images = io.magic_imread(files, use_dask=use_dask, stack=stack)
+            images = io.magic_imread(path, use_dask=use_dask, stack=stack)
             self.add_image(images)
         else:
-            for file in files:
-                reader = plugin_manager.hook.napari_get_reader(path=file)
-                layer_data = reader(file)
+            for path in paths:
+                reader = plugin_manager.hook.napari_get_reader(path=path)
+                layer_data = reader(path)
                 for data in layer_data:
                     self._add_layer_from_data(*data)
 
