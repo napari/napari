@@ -257,6 +257,10 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
         )
+        # update highlights when the layer is selected/deselected
+        self.events.select.connect(self._set_highlight)
+        self.events.deselect.connect(self._set_highlight)
+
         self._colors = get_color_namelist()
 
         # Save the point coordinates
@@ -1267,62 +1271,67 @@ class Points(Layer):
         """
         # if self._mode == Mode.SELECT:
         # Check if any point ids have changed since last call
-        if (
-            self.selected_data == self._selected_data_stored
-            and self._value == self._value_stored
-            and np.all(self._drag_box == self._drag_box_stored)
-        ) and not force:
-            return
-        self._selected_data_stored = copy(self.selected_data)
-        self._value_stored = copy(self._value)
-        self._drag_box_stored = copy(self._drag_box)
+        if self.selected:
+            if (
+                self.selected_data == self._selected_data_stored
+                and self._value == self._value_stored
+                and np.all(self._drag_box == self._drag_box_stored)
+            ) and not force:
+                return
+            self._selected_data_stored = copy(self.selected_data)
+            self._value_stored = copy(self._value)
+            self._drag_box_stored = copy(self._drag_box)
 
-        # if self._mode == Mode.SELECT and (
-        #     self._value is not None or len(self._selected_view) > 0
-        # ):
+            # if self._mode == Mode.SELECT and (
+            #     self._value is not None or len(self._selected_view) > 0
+            # ):
 
-        if self._value is not None or len(self._selected_view) > 0:
-            if len(self._selected_view) > 0:
-                index = copy(self._selected_view)
-                # highlight the hovered point if not in adding mode
-                if self._value is not None and self._mode != Mode.ADD:
-                    hover_point = list(self._indices_view).index(self._value)
-                    if hover_point in index:
-                        pass
-                    else:
-                        index.append(hover_point)
-                index.sort()
-            else:
-                # don't highlight hovered points in add mode
-                if self._mode != Mode.ADD:
-                    hover_point = list(self._indices_view).index(self._value)
-                    index = [hover_point]
+            if self._value is not None or len(self._selected_view) > 0:
+                if len(self._selected_view) > 0:
+                    index = copy(self._selected_view)
+                    # highlight the hovered point if not in adding mode
+                    if self._value is not None and self._mode != Mode.ADD:
+                        hover_point = list(self._indices_view).index(
+                            self._value
+                        )
+                        if hover_point in index:
+                            pass
+                        else:
+                            index.append(hover_point)
+                    index.sort()
                 else:
-                    index = []
+                    # don't highlight hovered points in add mode
+                    if self._mode != Mode.ADD:
+                        hover_point = list(self._indices_view).index(
+                            self._value
+                        )
+                        index = [hover_point]
+                    else:
+                        index = []
 
-            self._highlight_index = index
-        else:
-            self._highlight_index = []
-
-        # only display box in 3D
-        if self.dims.ndisplay == 2:
-            pos = self._selected_box
-            if pos is None and not self._is_selecting:
-                pos = np.zeros((0, 2))
-            elif self._is_selecting:
-                pos = create_box(self._drag_box)
-                pos = pos[list(range(4)) + [0]]
+                self._highlight_index = index
             else:
-                pos = pos[list(range(4)) + [0]]
-        else:
-            pos = None
+                self._highlight_index = []
 
-        self._highlight_box = pos
-        self.events.highlight()
-        # else:
-        #     self._highlight_box = None
-        #     self._highlight_index = []
-        #     self.events.highlight()
+            # only display box in 3D
+            if self.dims.ndisplay == 2:
+                pos = self._selected_box
+                if pos is None and not self._is_selecting:
+                    pos = np.zeros((0, 2))
+                elif self._is_selecting:
+                    pos = create_box(self._drag_box)
+                    pos = pos[list(range(4)) + [0]]
+                else:
+                    pos = pos[list(range(4)) + [0]]
+            else:
+                pos = None
+
+            self._highlight_box = pos
+            self.events.highlight()
+        else:
+            self._highlight_box = None
+            self._highlight_index = []
+            self.events.highlight()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
