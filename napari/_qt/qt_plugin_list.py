@@ -64,7 +64,7 @@ class QtPluginSorter(QDialog):
         plugin_manager=None,
         parent=None,
         *,
-        initial_hook=None,
+        initial_hook='napari_get_reader',
         firstresult_only=True,
     ):
         plugin_manager = plugin_manager or napari_plugin_manager
@@ -87,6 +87,7 @@ class QtPluginSorter(QDialog):
         self.layout.addWidget(self.hookList)
         if initial_hook is not None:
             self.hookComboBox.setCurrentText(initial_hook.lstrip('napari_'))
+            self.change_hook(initial_hook.lstrip('napari_'))
 
     def change_hook(self, hook):
         if hook == self.NULL_OPTION:
