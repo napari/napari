@@ -43,7 +43,7 @@ def napari_get_reader(path: str) -> Optional[ReaderFunction]:
 
     Returns
     -------
-    {function, None}
+    Callable or None
         A function that accepts the path, and returns a list of layer_data
         (where layer_data is one of (data,), (data, meta), or
         (data, meta, layer_type)).
