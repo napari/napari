@@ -3,6 +3,7 @@ normalize and broadcast the color inputs they receive into a more standardized f
 a numpy array with N rows, N being the number of data points, and a dtype of np.float32.
 
 """
+from itertools import cycle
 from typing import Union, List, Tuple, AnyStr
 import warnings
 
@@ -52,6 +53,40 @@ def transform_color_with_defaults(
                 f"while the data contains {num_entries} entries. Setting {elem_name} to {default}."
             )
             transformed = transform_color(default)
+    return transformed
+
+
+def transform_color_cycle(
+    color_cycle: Union[ColorType, cycle], elem_name: str, default: str
+) -> cycle:
+    """Helper method to return an Nx4 np.array from an arbitrary user input.
+
+    Parameters
+    ----------
+    colors : ColorType, cycle
+        The desired colors for each of the data points
+    elem_name : str
+        Whether we're trying to set the face color or edge color of the layer
+    default : str
+        The default color for that element in the layer
+
+    Returns
+    -------
+    transformed : cycle
+        cycle of Nx4 numpy arrays with a dtype of np.float32
+    """
+
+    if isinstance(color_cycle, cycle):
+        transformed = color_cycle
+    else:
+        transformed_color_cycle = transform_color_with_defaults(
+            num_entries=len(color_cycle),
+            colors=color_cycle,
+            elem_name=elem_name,
+            default=default,
+        )
+        transformed = cycle(transformed_color_cycle)
+
     return transformed
 
 
