@@ -1,4 +1,6 @@
 from copy import copy
+import csv
+import os
 from xml.etree.ElementTree import Element
 
 import numpy as np
@@ -1081,3 +1083,20 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == shape[0]
     assert np.all([type(x) == Element for x in xml])
+
+
+def test_points_to_csv(tmpdir):
+    """Test saving point coordinates to a csv file."""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    points = Points(data)
+    output_filename = os.path.join(tmpdir, 'points.csv')
+    points.to_csv(output_filename)
+    assert os.path.exists(output_filename)
+    with open(output_filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        for row_index, row in enumerate(output_csv):
+            if row_index >= 1:
+                row_data = [float(i) for i in row.split(',')]
+                assert np.allclose(data[row_index - 1], np.array(row_data[1:]))

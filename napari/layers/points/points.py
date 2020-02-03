@@ -1,3 +1,4 @@
+import csv
 from typing import Union, Dict, Tuple
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
@@ -1527,6 +1528,27 @@ class Points(Layer):
             else:
                 self.selected_data = []
             self._set_highlight(force=True)
+
+    def to_csv(self, filename):
+        """Save point coordinates to csv file.
+
+        Parameters
+        ----------
+        filename : str
+            Output csv filename
+        """
+        with open(filename, mode='w') as file:
+            writer = csv.writer(
+                file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
+            n_dimensions = self.data.shape[1]
+            header = ['id'] + [
+                'dimension_' + str(n) for n in range(n_dimensions)
+            ]
+            writer.writerow(header)
+            for idx, row in enumerate(self.data):
+                point_data = [idx] + list(row)
+                writer.writerow(point_data)
 
 
 def create_box(data):
