@@ -6,6 +6,7 @@ wrap.
 import os
 
 from .qt_about import QtAbout
+from .qt_plugin_list import QtPluginSorter
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
 
@@ -67,6 +68,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -162,6 +164,17 @@ class Window:
         exit_action.triggered.connect(self._qt_window.close)
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
+
+    def _add_plugins_menu(self):
+        order_plugin_action = QAction("Plugin call order...", self._qt_window)
+        order_plugin_action.setStatusTip('Change call order for plugins')
+        order_plugin_action.triggered.connect(self._show_plugin_sorter)
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+        self.plugins_menu.addAction(order_plugin_action)
+
+    def _show_plugin_sorter(self):
+        plugin_sorter = QtPluginSorter(parent=self._qt_window)
+        plugin_sorter.exec_()
 
     def _add_help_menu(self):
         self.help_menu = self.main_menu.addMenu('&Help')
