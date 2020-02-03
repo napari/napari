@@ -1,3 +1,4 @@
+import csv
 import numpy as np
 from copy import copy, deepcopy
 
@@ -1768,3 +1769,19 @@ class Shapes(Layer):
             pass
         else:
             raise ValueError("Mode not recognized")
+
+    def to_csv(self, filename):
+        with open(filename, mode='w') as file:
+            writer = csv.writer(
+                file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
+            )
+            n_dimensions = max([i.shape[1] for i in self.data])
+            header = ['shape_id', 'shape_type', 'coord_id'] + [
+                'dimension_' + str(n) for n in range(n_dimensions)
+            ]
+            writer.writerow(header)
+            for idx_shape, shape in enumerate(self.data):
+                shape_type = self.shape_type[idx_shape]
+                for idx, row in enumerate(shape):
+                    shape_data = [idx_shape, shape_type, idx] + list(row)
+                    writer.writerow(shape_data)

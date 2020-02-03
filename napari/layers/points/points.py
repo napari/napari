@@ -1542,7 +1542,7 @@ class Points(Layer):
                 file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
             )
             n_dimensions = self.data.shape[1]
-            header = ['id'] + [
+            header = ['coord_id'] + [
                 'dimension_' + str(n) for n in range(n_dimensions)
             ]
             writer.writerow(header)
