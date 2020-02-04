@@ -572,7 +572,6 @@ class Points(Layer):
         self._edge_width = edge_width
         self.status = format_float(self.edge_width)
         self.events.edge_width()
-        # self.events.highlight()
 
     @property
     def edge_color(self):
@@ -605,7 +604,6 @@ class Points(Layer):
             self._edge_color_property = ''
 
             self.events.edge_color()
-            # self.events.highlight()
 
     @property
     def edge_color_cycle(self):
@@ -679,7 +677,6 @@ class Points(Layer):
             cur_colors[self.selected_data] = self._current_edge_color
             self.edge_color = cur_colors
         self.events.current_edge_color()
-        # self.events.highlight()
 
     @property
     def edge_color_mode(self):
@@ -754,7 +751,6 @@ class Points(Layer):
             self.face_color_mode = ColorMode.DIRECT
 
             self.events.face_color()
-            # self.events.highlight()
 
     @property
     def face_color_cycle(self):
@@ -824,8 +820,6 @@ class Points(Layer):
             self.face_color = cur_colors
 
         self.events.current_face_color()
-
-        # self.events.highlight()
 
     @property
     def face_color_mode(self):
@@ -907,7 +901,6 @@ class Points(Layer):
                 self._face_color = face_colors
 
                 self.events.face_color()
-                # self.events.highlight()
             elif self._face_color_mode == ColorMode.COLORMAP:
                 face_color_properties = self.properties[
                     self._face_color_property
@@ -965,7 +958,6 @@ class Points(Layer):
                 self._edge_color = edge_colors
             self.events.face_color()
             self.events.edge_color()
-            # self.events.highlight()
 
     def _is_color_mapped(self, color):
         """ determines if the new color argument is for directly setting or cycle/colormap"""
@@ -1281,10 +1273,6 @@ class Points(Layer):
             self._selected_data_stored = copy(self.selected_data)
             self._value_stored = copy(self._value)
             self._drag_box_stored = copy(self._drag_box)
-
-            # if self._mode == Mode.SELECT and (
-            #     self._value is not None or len(self._selected_view) > 0
-            # ):
 
             if self._value is not None or len(self._selected_view) > 0:
                 if len(self._selected_view) > 0:
