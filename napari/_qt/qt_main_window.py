@@ -123,12 +123,13 @@ class Window:
         else:
             self.main_menu.setVisible(True)
             self._main_menu_shortcut.setEnabled(False)
-    
+
     def _toggle_theme(self):
         if self.qt_viewer.viewer.theme == "dark":
             self.qt_viewer.viewer.theme = "light"
         elif self.qt_viewer.viewer.theme == "light":
             self.qt_viewer.viewer.theme = "dark"
+
     def _add_file_menu(self):
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
@@ -309,6 +310,7 @@ class Window:
         for action in self.view_menu.actions():
             if action.text() == "Dark mode":
                 action.setChecked(self.qt_viewer.viewer.theme == "dark")
+
     def _status_changed(self, event):
         """Update status bar.
         """
