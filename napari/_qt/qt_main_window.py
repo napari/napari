@@ -306,7 +306,9 @@ class Window:
             template('QWidget { background: {{ background }}; }', **palette)
         )
         self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
-
+        for action in self.view_menu.actions():
+            if action.text() == "Dark mode":
+                action.setChecked(self.qt_viewer.viewer.theme == "dark")
     def _status_changed(self, event):
         """Update status bar.
         """
