@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 from ..plugins import plugin_manager as napari_plugin_manager
+from ..plugins.manager import permute_hookimpls
 
 
 class QtHookImplItem(QListWidgetItem):
@@ -17,6 +18,7 @@ class QtHookImplItem(QListWidgetItem):
             self.plugin_name = 'napari built-in'
         super().__init__(self.plugin_name, parent)
         self.hookimpl = hookimpl
+        self.setBackground(Qt.black)
 
 
 class QtHookImplListWidget(QListWidget):
@@ -41,8 +43,8 @@ class QtHookImplListWidget(QListWidget):
         self.hook = hook
         if not hook:
             return
-        for hookimpl in hook._nonwrappers:
-            self.insertItem(0, QtHookImplItem(hookimpl))
+        for hookimpl in reversed(hook.get_hookimpls()):
+            self.addItem(QtHookImplItem(hookimpl))
 
     def dropEvent(self, event):
         super().dropEvent(event)
@@ -52,8 +54,7 @@ class QtHookImplListWidget(QListWidget):
     def transpose_hook(self, order):
         if not self.hook:
             return
-        idx = [self.hook._nonwrappers.index(hookimpl) for hookimpl in order]
-        self.hook._nonwrappers = [self.hook._nonwrappers[i] for i in idx]
+        permute_hookimpls(self.hook, order)
 
 
 class QtPluginSorter(QDialog):
@@ -64,7 +65,7 @@ class QtPluginSorter(QDialog):
         plugin_manager=None,
         parent=None,
         *,
-        initial_hook='napari_get_reader',
+        initial_hook=None,
         firstresult_only=True,
     ):
         plugin_manager = plugin_manager or napari_plugin_manager
@@ -79,21 +80,21 @@ class QtPluginSorter(QDialog):
             if firstresult_only:
                 if not hook_caller.spec.opts.get('firstresult', False):
                     continue
-            hooks.append(name.lstrip('napari_'))
+            hooks.append(name)
         self.hookComboBox.addItems(hooks)
         self.hookComboBox.activated[str].connect(self.change_hook)
         self.hookList = QtHookImplListWidget()
         self.layout.addWidget(self.hookComboBox)
         self.layout.addWidget(self.hookList)
         if initial_hook is not None:
-            self.hookComboBox.setCurrentText(initial_hook.lstrip('napari_'))
-            self.change_hook(initial_hook.lstrip('napari_'))
+            self.hookComboBox.setCurrentText(initial_hook)
+            self.change_hook(initial_hook)
 
     def change_hook(self, hook):
         if hook == self.NULL_OPTION:
             self.hookList.set_hook(None)
         else:
-            self.hookList.set_hook(getattr(self.pm.hook, f'napari_{hook}'))
+            self.hookList.set_hook(getattr(self.pm.hook, hook))
 
 
 if __name__ == "__main__":

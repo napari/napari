@@ -115,7 +115,7 @@ NapariPluginManager.PluginValidationError = (
 
 def permute_hookimpls(
     hook_caller: pluggy.hooks._HookCaller,
-    order: Union[List[str], List[ModuleType]],
+    order: Union[List[str], List[ModuleType], List[pluggy.hooks.HookImpl]],
 ):
     """Change the call order of hookimplementations for a pluggy HookCaller.
 
@@ -129,8 +129,8 @@ def permute_hookimpls(
     hook_caller : pluggy.hooks._HookCaller
         The hook caller to reorder
     order : list
-        A list of str or module_or_class, with the desired CALL ORDER of the
-        hook implementations.
+        A list of str, hookimpls, or module_or_class, with the desired
+        CALL ORDER of the hook implementations.
 
     Raises
     ------
@@ -140,7 +140,9 @@ def permute_hookimpls(
     ValueError
         if 'order' argument has multiple entries for the same hookimpl
     """
-    if all(isinstance(o, str) for o in order):
+    if all(isinstance(o, pluggy.hooks.HookImpl) for o in order):
+        attr = None
+    elif all(isinstance(o, str) for o in order):
         attr = 'plugin_name'
     elif any(isinstance(o, str) for o in order):
         raise TypeError(
@@ -154,7 +156,10 @@ def permute_hookimpls(
         raise ValueError(
             f"too many values ({len(order)} > {len(hookimpls)}) in order."
         )
-    hookattrs = [getattr(hookimpl, attr) for hookimpl in hookimpls]
+    if attr:
+        hookattrs = [getattr(hookimpl, attr) for hookimpl in hookimpls]
+    else:
+        hookattrs = hookimpls
 
     # find the current position of items specified in `order`
     indices = []
@@ -172,7 +177,7 @@ def permute_hookimpls(
             if attr != 'plugin_name':
                 msg += (
                     " If all items in `order` "
-                    "argument are not strings, they are assumed to be the "
+                    "argument are not strings, they are assumed to be an "
                     "imported plugin module or class."
                 )
             raise ValueError(msg) from e
