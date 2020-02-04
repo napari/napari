@@ -4,6 +4,7 @@ from qtpy.QtWidgets import (
     QDialog,
     QListWidget,
     QListWidgetItem,
+    QLabel,
     QSizePolicy,
     QVBoxLayout,
 )
@@ -84,6 +85,24 @@ class QtPluginSorter(QDialog):
         self.hookComboBox.addItems(hooks)
         self.hookComboBox.activated[str].connect(self.change_hook)
         self.hookList = QtHookImplListWidget()
+
+        title = QLabel('Plugin Sorter')
+        title.setStyleSheet(
+            "QLabel { background-color : rgb(38, 41, 47); "
+            "color : #ddd; font-size: 18pt; }"
+        )
+        self.layout.addWidget(title)
+
+        descript = QLabel(
+            'select a hook to rearrange, then drag and \n'
+            'drop plugins into the desired call order'
+        )
+        descript.setStyleSheet(
+            "QLabel { background-color : rgb(38, 41, 47); "
+            "color : #bbb; font-size: 12pt; }"
+        )
+        self.layout.addWidget(descript)
+
         self.layout.addWidget(self.hookComboBox)
         self.layout.addWidget(self.hookList)
         if initial_hook is not None:
