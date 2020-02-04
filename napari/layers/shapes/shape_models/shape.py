@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from copy import copy
 
 import numpy as np
-from vispy.color import Color
 
 from ..shape_utils import (
     triangulate_edge,
@@ -11,7 +10,10 @@ from ..shape_utils import (
     poly_to_mask,
     path_to_mask,
 )
-from ...utils.colormaps.standardize_colors import transform_color
+from ....utils.colormaps.standardize_color import (
+    hex_to_name,
+    rgb_to_hex,
+)
 
 
 class Shape(ABC):
@@ -24,15 +26,13 @@ class Shape(ABC):
     edge_width : float
         thickness of lines and edges.
     edge_color : str or array-like
-        Color of the shape marker border. Strings can be color names or hex
-        values (starting with `#`). Array-like should have 3 or 4 elements
-        per row in an RGB(A) format, and can either be of length 1 or the
-        exact length of `data`.
+        A single color for all of the shape marker borders. A string can be
+        the color name or its hex values (starting with `#`). Array-like should
+        have 3 or 4 elements in a single row (can be 2D) in a RGB(A) format.
     face_color : str or array-like
-        Color of the shape marker body. Strings can be color names or hex
-        values (starting with `#`). Array-like should have 3 or 4 elements
-        per row in an RGB(A) format, and can either be of length 1 or the
-        exact length of `data`.
+        Color of the shape marker body. A string can be the color name or its
+        hex value (starting with `#`). Array-like should have 3 or 4 elements
+        in a single row (can be 2D) in a RGB(A) format.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
     z_index : int
@@ -218,14 +218,17 @@ class Shape(ABC):
         return self._edge_color
 
     @edge_color.setter
-    def edge_color(self, edge_color):
-        # FIXME
-        self._edge_color = transform_color(edge_color)
-        if type(edge_color) is str:
-            self._edge_color_name = edge_color
-        else:
-            rgb = tuple([int(255 * x) for x in self._edge_color.rgba[:3]])
-            self._edge_color_name = '#%02x%02x%02x' % rgb
+    def edge_color(self, edge_color: np.ndarray):
+        """Change the edge color of the shape.
+
+        This method assumes that the incoming data passed through
+        transformation (``transform_color_with_defaults``) and
+        normalization (``normalize_and_broadcast_colors``) which
+        means it's already an 1x4 numpy array.
+        """
+        self._edge_color = edge_color
+        hexval = rgb_to_hex(self._edge_color)
+        self._edge_color_name = hex_to_name.get(hexval, hexval)
 
     @property
     def face_color(self):
@@ -233,19 +236,21 @@ class Shape(ABC):
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color):
-        # FIXME
-        self._face_color = Color(face_color)
-        if type(face_color) is str:
-            self._face_color_name = face_color
-        else:
-            rgb = tuple([int(255 * x) for x in self._face_color.rgba[:3]])
-            self._face_color_name = '#%02x%02x%02x' % rgb
+    def face_color(self, face_color: np.ndarray):
+        """Change the face color of the shape.
+
+        This method assumes that the incoming data passed through
+        transformation (``transform_color_with_defaults``) and
+        normalization (``normalize_and_broadcast_colors``) which
+        means it's already an 1x4 numpy array.
+        """
+        self._face_color = face_color
+        hexval = rgb_to_hex(self._face_color)
+        self._face_color_name = hex_to_name.get(hexval, hexval)
 
     @property
     def opacity(self):
-        """float: opacity of shape
-        """
+        """float: opacity of shape"""
         return self._opacity
 
     @opacity.setter
@@ -254,8 +259,7 @@ class Shape(ABC):
 
     @property
     def svg_props(self):
-        """dict: color and width properties in the svg specification
-        """
+        """dict: color and width properties in the svg specification"""
         width = str(self.edge_width)
         face_color = (255 * self.face_color.rgba).astype(np.int)
         fill = f'rgb{tuple(face_color[:3])}'

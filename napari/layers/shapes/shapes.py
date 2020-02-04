@@ -83,10 +83,9 @@ class Shapes(Layer):
     shape_type : (N, ) list of str
         Name of shape type for each shape.
     edge_color : Nx4 numpy array
-        Array of edge color RGBA values, one for each point.
-        Name of edge color for each shape.
+        Array of edge color RGBA values, one for each shape.
     face_color : Nx4 numpy array
-        Array of face color RGBA values, one for each point.
+        Array of face color RGBA values, one for each shape.
     edge_width : (N, ) list of float
         Edge width for each shape.
     opacity : (N, ) list of float
@@ -298,16 +297,6 @@ class Shapes(Layer):
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
-        self.add(
-            data,
-            shape_type=shape_type,
-            edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            opacity=opacity,
-            z_index=z_index,
-        )
-
         self._current_edge_color = transform_color_with_defaults(
             num_entries=len(self.data),
             colors=edge_color,
@@ -329,6 +318,16 @@ class Shapes(Layer):
         )
         self._current_edge_color = self.edge_color[-1]
         self._current_face_color = self.face_color[-1]
+
+        self.add(
+            data,
+            shape_type=shape_type,
+            edge_width=edge_width,
+            edge_color=self.edge_color,
+            face_color=self.face_color,
+            opacity=opacity,
+            z_index=z_index,
+        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
