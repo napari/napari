@@ -7,6 +7,7 @@ from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy.QtCore import QThreadPool
+from skimage.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
 
@@ -227,6 +228,23 @@ class QtViewer(QSplitter):
         """
         img = self.canvas.native.grabFramebuffer()
         return QImg2array(img)
+
+    def _save_screenshot(self):
+        """Save screenshot of currently displayed screen to file.
+
+        Returns
+        -------
+        filename : str
+            File path of the saved screenshot.
+        """
+        filename, _ = QFileDialog.getSaveFileName(
+            parent=self,
+            caption='',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if (filename != '') and (filename is not None):
+            imsave(filename, self.screenshot())  # scikit-image imsave method
+            return filename
 
     def _open_images(self):
         """Add image files from the menubar."""
