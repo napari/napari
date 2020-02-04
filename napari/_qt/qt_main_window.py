@@ -137,9 +137,15 @@ class Window:
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
+        screenshot = QAction('Screenshot', self._qt_window)
+        screenshot.setShortcut('Ctrl+P')
+        screenshot.setStatusTip('Take screenshot')
+        screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
