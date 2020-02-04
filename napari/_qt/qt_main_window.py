@@ -138,7 +138,6 @@ class Window:
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
         screenshot = QAction('Screenshot', self._qt_window)
-        screenshot.setShortcut('Ctrl+P')
         screenshot.setStatusTip('Take screenshot')
         screenshot.triggered.connect(self.qt_viewer._save_screenshot)
 
