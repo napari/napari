@@ -123,7 +123,12 @@ class Window:
         else:
             self.main_menu.setVisible(True)
             self._main_menu_shortcut.setEnabled(False)
-
+    
+    def _toggle_theme(self):
+        if self.qt_viewer.viewer.theme == "dark":
+            self.qt_viewer.viewer.theme = "light"
+        elif self.qt_viewer.viewer.theme == "light":
+            self.qt_viewer.viewer.theme = "dark"
     def _add_file_menu(self):
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
@@ -146,8 +151,14 @@ class Window:
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
+        dark_mode = QAction("Dark mode", self._qt_window)
+        dark_mode.setStatusTip("Toggle dark/light modes")
+        dark_mode.setCheckable(True)
+        dark_mode.triggered.connect(self._toggle_theme)
+        dark_mode.setChecked(self.qt_viewer.viewer.theme == "dark")
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
+        self.view_menu.addAction(dark_mode)
 
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
