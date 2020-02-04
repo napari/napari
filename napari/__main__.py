@@ -81,25 +81,6 @@ def main():
     with gui_qt(startup_logo=True):
         view_path(args.images, stack=args.stack, use_dask=args.use_dask)
 
-        # here as a reminder to discuss with @jni
-        # if len(args.images) > 0:
-        #     images = io.magic_imread(
-        #         args.images, use_dask=args.use_dask, stack=not args.layers
-        #     )
-        #     if args.layers:
-        #         for layer in images:
-        #             if layer.dtype in (
-        #                 np.int32,
-        #                 np.uint32,
-        #                 np.int64,
-        #                 np.uint64,
-        #             ):
-        #                 v.add_labels(layer)
-        #             else:
-        #                 v.add_image(layer, rgb=args.rgb)
-        #     else:
-        #         v.add_image(images, rgb=args.rgb)
-
 
 if __name__ == '__main__':
     sys.exit(main())

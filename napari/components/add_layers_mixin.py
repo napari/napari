@@ -732,7 +732,7 @@ class AddLayersMixin:
         return layer
 
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: str = 'image'
+        self, data, meta: dict = None, layer_type: Optional[str] = None
     ):
         """Add arbitrary layer data to the viewer.
 
@@ -749,7 +749,9 @@ class AddLayersMixin:
             not valid for the corresponding method.
         layer_type : str
             Type of layer to add.  MUST have a corresponding add_* method on
-            on the viewer instance.
+            on the viewer instance.  If not provided, the layer is assumed to
+            be "image", unless data.dtype is one of (np.int32, np.uint32,
+            np.int64, np.uint64), in which case it is assumed to be "labels".
 
         Raises
         ------
@@ -774,7 +776,16 @@ class AddLayersMixin:
 
         """
 
-        layer_type = layer_type.lower()
+        layer_type = (layer_type or '').lower()
+
+        # this came from __main__.py
+        # assumes that big integer type arrays are likely labels.
+        if not layer_type:
+            if data.dtype in (np.int32, np.uint32, np.int64, np.uint64):
+                layer_type == 'labels'
+            else:
+                layer_type == 'image'
+
         if layer_type not in layers.NAMES:
             raise ValueError(
                 f"Unrecognized layer_type: '{layer_type}'. "
