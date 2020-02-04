@@ -12,5 +12,3 @@ The :class:`~napari.viewer.Viewer` object contains, among other things:
 - the main canvas
 - an instance of :class:`~napari.components.layerlist.LayerList` - a list of
   layer objects that have been added to the :class:`~napari.viewer.Viewer`
-- an instance of
-

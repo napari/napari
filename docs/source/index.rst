@@ -7,8 +7,6 @@
    :maxdepth: 1
    :hidden:
 
-   concepts
-   Writing Plugins <plugins>
    api
 
 
@@ -45,8 +43,8 @@ here is more technical and focuses on understanding how napari works.
 developer introduction
 ----------------------
 
-If you would like to understand core concepts in the organization of napari,
-see :doc:`concepts`.  A complete :doc:`api` is also available
+Information on specific functions, classes, and methods is available in the
+:doc:`api`.
 
 Indices and tables
 ==================
