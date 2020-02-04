@@ -126,13 +126,15 @@ def test_selecting_points():
     layer.dims.ndisplay = 2
     assert layer.selected_data == other_data_to_select
 
-    # selection should persist when switching between modes
-    layer.mode = 'add'
+    # selection should persist when switching between between select and pan_zoom
+    layer.mode = 'pan_zoom'
     assert layer.selected_data == other_data_to_select
     layer.mode = 'select'
     assert layer.selected_data == other_data_to_select
-    layer.mode = 'pan_zoom'
-    assert layer.selected_data == other_data_to_select
+
+    # add mode should clear the selection
+    layer.mode = 'add'
+    assert layer.selected_data == []
 
 
 def test_adding_points():
@@ -147,6 +149,14 @@ def test_adding_points():
     layer.add(coord)
     assert len(layer.data) == 11
     assert np.all(layer.data[10] == coord)
+    # the added point should be selected
+    assert layer.selected_data == [10]
+
+    # test adding multiple points
+    coords = [[10, 10], [15, 15]]
+    layer.add(coords)
+    assert len(layer.data) == 13
+    assert np.all(layer.data[11:, :] == coords)
 
 
 def test_adding_points_to_empty():
