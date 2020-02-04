@@ -451,6 +451,7 @@ class Points(Layer):
                 )
 
                 self.size = np.concatenate((self._size, size), axis=0)
+                self.selected_data = list(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self.events.data()
@@ -1110,6 +1111,8 @@ class Points(Layer):
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
+            self.selected_data = []
+            self._set_highlight()
         elif mode == Mode.SELECT:
             self.cursor = 'standard'
             self.interactive = False
@@ -1363,7 +1366,7 @@ class Points(Layer):
         ----------
         coord : sequence of indices to add point at
         """
-        self.data = np.append(self.data, [coord], axis=0)
+        self.data = np.append(self.data, np.atleast_2d(coord), axis=0)
 
     def remove_selected(self):
         """Removes selected points if any."""
