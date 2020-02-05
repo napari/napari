@@ -297,7 +297,6 @@ class Points(Layer):
         # Index of hovered point
         self._value = None
         self._value_stored = None
-        self._selected_box = None
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
@@ -1017,8 +1016,6 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        if self.dims.ndisplay == 2:
-            self._selected_box = self.interaction_box(self._selected_view)
 
         # Update properties based on selected points
         if len(self._selected_data) == 0:
@@ -1249,10 +1246,6 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        if self.dims.ndisplay == 2:
-            self._selected_box = self.interaction_box(self._selected_view)
-        else:
-            self._selected_box = None
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
@@ -1304,16 +1297,10 @@ class Points(Layer):
             else:
                 self._highlight_index = []
 
-            # only display box in 3D
-            if self.dims.ndisplay == 2:
-                pos = self._selected_box
-                if pos is None and not self._is_selecting:
-                    pos = np.zeros((0, 2))
-                elif self._is_selecting:
-                    pos = create_box(self._drag_box)
-                    pos = pos[list(range(4)) + [0]]
-                else:
-                    pos = pos[list(range(4)) + [0]]
+            # only display dragging selection box in 2D
+            if self.dims.ndisplay == 2 and self._is_selecting:
+                pos = create_box(self._drag_box)
+                pos = pos[list(range(4)) + [0]]
             else:
                 pos = None
 
