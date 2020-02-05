@@ -1246,6 +1246,7 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
+        self._set_highlight()
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
