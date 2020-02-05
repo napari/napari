@@ -1118,6 +1118,28 @@ class Points(Layer):
         self.events.mode(mode=mode)
 
     @property
+    def view_data(self):
+        """Get the coords of the points in view
+
+        Returns
+        -------
+        view_data : (N x D) np.ndarray
+            Array of coordinates for the N points in view
+        """
+        return self._data_view
+
+    @property
+    def view_size(self):
+        """Get the sizes of the points in view
+
+       Returns
+       -------
+       view_size : (N x D) np.ndarray
+           Array of sizes for the N points in view
+        """
+        return self._size_view
+
+    @property
     def view_face_color(self) -> np.ndarray:
         """Get the face colors of the points in view
 

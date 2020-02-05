@@ -61,12 +61,12 @@ class VispyPointsLayer(VispyBaseLayer):
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
-        if len(self.layer._data_view) == 0:
+        if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = [0]
         else:
-            data = self.layer._data_view
-            size = self.layer._size_view
+            data = self.layer.view_data
+            size = self.layer.view_size
 
         if self.layer.dims.ndisplay == 2:
             set_data = self.node._subvisuals[0].set_data
@@ -90,10 +90,10 @@ class VispyPointsLayer(VispyBaseLayer):
 
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
-            data = self.layer._data_view[self.layer._highlight_index]
+            data = self.layer.view_data[self.layer._highlight_index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer._size_view[self.layer._highlight_index]
+            size = self.layer.view_size[self.layer._highlight_index]
             face_color = self.layer.face_color[
                 self.layer._indices_view[self.layer._highlight_index]
             ]
