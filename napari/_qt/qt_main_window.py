@@ -5,6 +5,8 @@ wrap.
 # set vispy to use same backend as qtpy
 import os
 
+from skimage.io import imsave
+
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
@@ -317,7 +319,7 @@ class Window:
         """
         self._help.setText(event.text)
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
 
         Returns
@@ -327,6 +329,8 @@ class Window:
             upper-left corner of the rendered region.
         """
         img = self._qt_window.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
     def closeEvent(self, event):

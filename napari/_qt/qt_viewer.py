@@ -217,7 +217,7 @@ class QtViewer(QSplitter):
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
 
         Returns
@@ -227,6 +227,8 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         img = self.canvas.native.grabFramebuffer()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
     def _save_screenshot(self):
@@ -243,8 +245,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filename != '') and (filename is not None):
-            imsave(filename, self.screenshot())  # scikit-image imsave method
-            return filename
+            self.screenshot(path=filename)
 
     def _open_images(self):
         """Add image files from the menubar."""
