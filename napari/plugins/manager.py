@@ -1,13 +1,20 @@
 import importlib
 import os
 import pkgutil
+import sys
 from logging import Logger
 
 import pluggy
+from pluggy.manager import DistFacade
 
 from . import _builtins, hookspecs
 
 logger = Logger(__name__)
+
+if sys.version_info >= (3, 8):
+    from importlib import metadata as importlib_metadata
+else:
+    import importlib_metadata
 
 
 class NapariPluginManager(pluggy.PluginManager):
@@ -71,6 +78,47 @@ class NapariPluginManager(pluggy.PluginManager):
             logger.info(msg)
         return count
 
+    def load_setuptools_entrypoints(self, group, name=None):
+        """Load modules from querying the specified setuptools ``group``
+
+        Overrides the pluggy method in order to insert try/catch statements.
+
+        Parameters
+        ----------
+        group : str
+            entry point group to load plugins
+        name : str, optional
+            if given, loads only plugins with the given ``name``.
+            by default None
+
+        Returns
+        -------
+        count : int
+            the number of loaded plugins by this call.
+        """
+        count = 0
+        for dist in importlib_metadata.distributions():
+            for ep in dist.entry_points:
+                if (
+                    ep.group != group
+                    or (name is not None and ep.name != name)
+                    # already registered
+                    or self.get_plugin(ep.name)
+                    or self.is_blocked(ep.name)
+                ):
+                    continue
+                try:
+                    plugin = ep.load()
+                    self.register(plugin, name=ep.name)
+                    self._plugin_distinfo.append((plugin, DistFacade(dist)))
+                except Exception as e:
+                    logger.error(
+                        f'failed to import plugin: {ep.name}: {str(e)}'
+                    )
+                    self.unregister(name=ep.name)
+                count += 1
+        return count
+
     def load_modules_by_prefix(self, prefix):
         """Find and load modules whose names start with ``prefix``
 
@@ -81,7 +129,7 @@ class NapariPluginManager(pluggy.PluginManager):
 
         Returns
         -------
-        int
+        count : int
             The number of modules successfully loaded.
         """
         count = 0
