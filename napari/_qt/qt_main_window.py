@@ -138,7 +138,7 @@ class Window:
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
         screenshot = QAction('Screenshot', self._qt_window)
-        screenshot.setStatusTip('Take screenshot')
+        screenshot.setShortcut('Ctrl+Alt+S')
         screenshot.triggered.connect(self.qt_viewer._save_screenshot)
 
         self.file_menu = self.main_menu.addMenu('&File')
