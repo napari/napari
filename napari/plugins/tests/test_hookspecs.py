@@ -6,6 +6,17 @@ from numpydoc.docscrape import FunctionDoc
 
 from napari.plugins import hookspecs
 
+# 1. we first create a hookspec decorator:
+#    ``hookspec = pluggy.HookspecMarker("napari")```
+# 2. when it decorates a function, that function object gets a new attribute
+#    called "napari_spec"
+# 3. that attribute is what makes them discoverable when you run
+#    ```plugin_manager.add_hookspecs(module)```
+#
+# here, we are using that attribute to discover all of our internal hookspecs
+# (in module ``napari.plugins.hookspecs``) so as to make sure that they conform
+# to our own internal rules about documentation and type annotations, etc...
+
 HOOKSPECS = []
 for name, func in vars(hookspecs).items():
     if hasattr(func, 'napari_spec'):
