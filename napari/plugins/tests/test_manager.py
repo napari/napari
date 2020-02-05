@@ -6,8 +6,6 @@ import pytest
 
 from napari.plugins import NapariPluginManager
 
-# from napari.plugins.manager import load_modules_by_prefix, validate_hookimpls
-
 
 @pytest.fixture
 def pm():
