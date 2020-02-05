@@ -10,7 +10,7 @@ code base.
 hookspecs are a feature of pluggy:
 https://pluggy.readthedocs.io/en/latest/#specs
 
-These hookspecs also serve as the API reference for plugin developrs, so
+These hookspecs also serve as the API reference for plugin developers, so
 comprehensive documentation with complete type annotations is imperative.
 """
 
