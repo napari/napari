@@ -124,12 +124,6 @@ class Window:
             self.main_menu.setVisible(True)
             self._main_menu_shortcut.setEnabled(False)
 
-    def _toggle_theme(self):
-        if self.qt_viewer.viewer.theme == "dark":
-            self.qt_viewer.viewer.theme = "light"
-        elif self.qt_viewer.viewer.theme == "light":
-            self.qt_viewer.viewer.theme = "dark"
-
     def _add_file_menu(self):
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
@@ -137,7 +131,7 @@ class Window:
         open_images.triggered.connect(self.qt_viewer._open_images)
 
         open_folder = QAction('Open Folder...', self._qt_window)
-        open_folder.setShortcut('Ctrl-Shift-O')
+        open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip(
             'Open a folder of image file(s) or a zarr file'
         )
@@ -152,14 +146,13 @@ class Window:
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
-        dark_mode = QAction("Dark mode", self._qt_window)
-        dark_mode.setStatusTip("Toggle dark/light modes")
-        dark_mode.setCheckable(True)
-        dark_mode.triggered.connect(self._toggle_theme)
-        dark_mode.setChecked(self.qt_viewer.viewer.theme == "dark")
+        toggle_theme = QAction('Toggle theme', self._qt_window)
+        toggle_theme.setShortcut('Ctrl+Shift+T')
+        toggle_theme.setStatusTip('Toggle theme')
+        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
-        self.view_menu.addAction(dark_mode)
+        self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
@@ -307,9 +300,6 @@ class Window:
             template('QWidget { background: {{ background }}; }', **palette)
         )
         self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
-        for action in self.view_menu.actions():
-            if action.text() == "Dark mode":
-                action.setChecked(self.qt_viewer.viewer.theme == "dark")
 
     def _status_changed(self, event):
         """Update status bar.
