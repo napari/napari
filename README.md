@@ -17,7 +17,7 @@
 
 We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
 
-We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/), but you can also quickly get started by looking below.
+We're working on [in-depth tutorials](https://napari.org/tutorials/), but you can also quickly get started by looking below.
 
 ## installation
 
@@ -35,7 +35,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-For more information or troubleshooting see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
+For more information or troubleshooting see our [installation tutorial](https://napari.org/tutorials/fundamentals/installation)
 
 ## simple example
 
@@ -73,7 +73,7 @@ You can extend **napari** using custom shortcuts, key bindings, and mouse functi
 
 ## tutorials
 
-For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/). These are still a work in progress, but we'll be updating them regularly.
+For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.org/tutorials/). These are still a work in progress, but we'll be updating them regularly.
 
 ## mission and values
 
