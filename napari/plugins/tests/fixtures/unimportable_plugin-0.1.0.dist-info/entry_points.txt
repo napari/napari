@@ -1,0 +1,2 @@
+[napari.plugin]
+unimportable = unimportable_plugin

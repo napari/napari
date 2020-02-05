@@ -6,38 +6,35 @@ import pytest
 
 from napari.plugins import NapariPluginManager
 
-# from napari.plugins.manager import load_modules_by_prefix, validate_hookimpls
-
-PATH = os.path.join(os.path.dirname(__file__), 'fixtures')
-
-
-def setup_module():
-    """adding plugin test fixtures to path for autodiscovery"""
-    sys.path.append(PATH)
-
-
-def teardown_module():
-    sys.path.pop(sys.path.index(PATH))
-
 
 @pytest.fixture
 def pm():
-    pm = NapariPluginManager()
+    fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
+    pm = NapariPluginManager(autodiscover=fixture_path)
+    assert fixture_path not in sys.path, 'discover path leaked into sys.path'
     return pm
 
 
 def test_naming_convention_discovery(pm):
     """make sure loading by naming convention works, and doesn't crash on
     invalid plugins.
-
-    Note: loading by setuptools entry_point is tested in pluggy and is not
-    tested here.
     """
     assert 'napari_test_plugin' in pm._name2plugin
     assert 'napari_bad_plugin' in pm._name2plugin
 
     # napari_invalid_plugin has an invalid hookimpl, and will not get loaded
     assert 'napari_invalid_plugin' not in pm._name2plugin
+
+
+def test_entry_points_discovery(pm):
+    """make sure loading by entry_point works, and doesn't crash on invalid
+    plugins.
+    """
+    assert 'working' in pm._name2plugin
+    # invalid_plugin has an invalid hookimpl, and will not get loaded
+    assert 'invalid' not in pm._name2plugin
+    # unimportable raises an exception during import... shouldn't make it.
+    assert 'unimportable' not in pm._name2plugin
 
 
 def test_invalid_plugin_raises(pm):

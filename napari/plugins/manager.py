@@ -1,15 +1,22 @@
 import importlib
 import os
 import pkgutil
+import sys
 from logging import Logger
 from types import ModuleType
 from typing import List, Union
 
 import pluggy
+from pluggy.manager import DistFacade
 
 from . import _builtins, hookspecs
 
 logger = Logger(__name__)
+
+if sys.version_info >= (3, 8):
+    from importlib import metadata as importlib_metadata
+else:
+    import importlib_metadata
 
 
 class NapariPluginManager(pluggy.PluginManager):
@@ -24,9 +31,11 @@ class NapariPluginManager(pluggy.PluginManager):
 
         Parameters
         ----------
-        autodiscover : bool, optional
+        autodiscover : bool or str, optional
             Whether to autodiscover plugins by naming convention and setuptools
-            entry_points, by default True
+            entry_points.  If a string is provided, it is added to sys.path
+            before importing, and removed at the end. Any other "truthy" value
+            will simply search the current sys.path.  by default True
         """
         super().__init__("napari")
 
@@ -38,9 +47,9 @@ class NapariPluginManager(pluggy.PluginManager):
         # discover external plugins
         if not os.environ.get("NAPARI_DISABLE_PLUGIN_AUTOLOAD"):
             if autodiscover:
-                self.discover()
+                self.discover(autodiscover)
 
-    def discover(self):
+    def discover(self, path=None):
         """Discover modules by both naming convention and entry_points
 
         1) Using naming convention:
@@ -54,11 +63,20 @@ class NapariPluginManager(pluggy.PluginManager):
 
         https://packaging.python.org/guides/creating-and-discovering-plugins/
 
+        Parameters
+        ----------
+        path : str, optional
+            If a string is provided, it is added to sys.path before importing,
+            and removed at the end. by default True
+
         Returns
         -------
         int
             The number of modules successfully loaded.
         """
+        if path and isinstance(path, str):
+            sys.path.insert(0, path)
+
         count = 0
         if not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
             # register modules defining the napari entry_point in setup.py
@@ -71,6 +89,51 @@ class NapariPluginManager(pluggy.PluginManager):
             msg = f'loaded {count} plugins:\n  '
             msg += "\n  ".join([n for n, m in self.list_name_plugin()])
             logger.info(msg)
+
+        if path and isinstance(path, str):
+            sys.path.remove(path)
+
+        return count
+
+    def load_setuptools_entrypoints(self, group, name=None):
+        """Load modules from querying the specified setuptools ``group``
+
+        Overrides the pluggy method in order to insert try/catch statements.
+
+        Parameters
+        ----------
+        group : str
+            entry point group to load plugins
+        name : str, optional
+            if given, loads only plugins with the given ``name``.
+            by default None
+
+        Returns
+        -------
+        count : int
+            the number of loaded plugins by this call.
+        """
+        count = 0
+        for dist in importlib_metadata.distributions():
+            for ep in dist.entry_points:
+                if (
+                    ep.group != group
+                    or (name is not None and ep.name != name)
+                    # already registered
+                    or self.get_plugin(ep.name)
+                    or self.is_blocked(ep.name)
+                ):
+                    continue
+                try:
+                    plugin = ep.load()
+                    self.register(plugin, name=ep.name)
+                    self._plugin_distinfo.append((plugin, DistFacade(dist)))
+                except Exception as e:
+                    logger.error(
+                        f'failed to import plugin: {ep.name}: {str(e)}'
+                    )
+                    self.unregister(name=ep.name)
+                count += 1
         return count
 
     def load_modules_by_prefix(self, prefix):
@@ -83,7 +146,7 @@ class NapariPluginManager(pluggy.PluginManager):
 
         Returns
         -------
-        int
+        count : int
             The number of modules successfully loaded.
         """
         count = 0
@@ -103,11 +166,12 @@ class NapariPluginManager(pluggy.PluginManager):
                 count += 1
             except Exception as e:
                 logger.error(f'failed to import plugin: {name}: {str(e)}')
-                self.unregister(mod)
+                self.unregister(name=name)
         return count
 
 
-# for easy try/catch availability
+# for easy availability in try/catch statements without having to import pluggy
+# e.g.: except plugin_manager.PluginValidationError
 NapariPluginManager.PluginValidationError = (
     pluggy.manager.PluginValidationError
 )

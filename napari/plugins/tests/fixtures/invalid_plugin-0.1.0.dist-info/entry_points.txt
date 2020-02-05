@@ -1,0 +1,2 @@
+[napari.plugin]
+invalid = invalid_plugin

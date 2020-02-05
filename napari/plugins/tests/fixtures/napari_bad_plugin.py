@@ -8,7 +8,7 @@ hookimpl = pluggy.HookimplMarker("napari")
 
 
 def reader_function():
-    raise IOError('it worked')
+    pass
 
 
 @hookimpl
