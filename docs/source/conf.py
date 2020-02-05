@@ -12,6 +12,7 @@
 #
 import os
 import sys
+import fileinput
 
 sys.path.insert(0, os.path.abspath('../..'))
 from napari import __version__  # noqa: E402
@@ -26,6 +27,26 @@ author = 'napari contributors'
 release = __version__
 version = __version__
 
+
+def clean_release_notes():
+    dirname = os.path.join(os.path.dirname(__file__), 'release')
+    for rel in os.listdir(dirname):
+        for line in fileinput.input(os.path.join(dirname, rel), inplace=True):
+            if line.startswith("Announcement: napari"):
+                line = line.replace("Announcement: ", "")
+            if not line.startswith(
+                (
+                    "We're happy",
+                    'napari is a fast',
+                    "It's designed for",
+                    "images. It's built",
+                    "rendering), and ",
+                )
+            ):
+                print(line, end='')
+
+
+clean_release_notes()
 
 # -- General configuration ---------------------------------------------------
 

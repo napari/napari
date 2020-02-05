@@ -7,7 +7,9 @@
    :maxdepth: 1
    :hidden:
 
+   releases
    api
+   Source <https://github.com/napari/napari>
 
 
 napari
