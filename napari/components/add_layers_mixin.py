@@ -782,9 +782,9 @@ class AddLayersMixin:
         # assumes that big integer type arrays are likely labels.
         if not layer_type:
             if data.dtype in (np.int32, np.uint32, np.int64, np.uint64):
-                layer_type == 'labels'
+                layer_type = 'labels'
             else:
-                layer_type == 'image'
+                layer_type = 'image'
 
         if layer_type not in layers.NAMES:
             raise ValueError(
