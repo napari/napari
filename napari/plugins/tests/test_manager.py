@@ -22,7 +22,7 @@ def teardown_module():
 
 @pytest.fixture
 def pm():
-    pm = NapariPluginManager()
+    pm = NapariPluginManager(autodiscover=True)
     return pm
 
 
