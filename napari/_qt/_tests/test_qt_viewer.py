@@ -181,7 +181,7 @@ def test_screenshot(qtbot):
     view.shutdown()
 
 
-def test__save_screenshot(qtbot, tmpdir):
+def test_save_screenshot(qtbot, tmpdir):
     """Test save screenshot functionality."""
     viewer = ViewerModel()
     view = QtViewer(viewer)
