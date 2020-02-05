@@ -34,16 +34,17 @@ def clean_release_notes():
         for line in fileinput.input(os.path.join(dirname, rel), inplace=True):
             if line.startswith("Announcement: napari"):
                 line = line.replace("Announcement: ", "")
-            if not line.startswith(
-                (
-                    "We're happy",
-                    'napari is a fast',
-                    "It's designed for",
-                    "images. It's built",
-                    "rendering), and ",
-                )
-            ):
-                print(line, end='')
+            # uncomment to remove the standard announcement paragraph.
+            # if not line.startswith(
+            #     (
+            #         "We're happy",
+            #         'napari is a fast',
+            #         "It's designed for",
+            #         "images. It's built",
+            #         "rendering), and ",
+            #     )
+            # ):
+            print(line, end='')
 
 
 clean_release_notes()
