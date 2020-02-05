@@ -2,14 +2,14 @@ import importlib
 import os
 import pkgutil
 import sys
-from logging import Logger
+from logging import getLogger
 
 import pluggy
 from pluggy.manager import DistFacade
 
 from . import _builtins, hookspecs
 
-logger = Logger(__name__)
+logger = getLogger(__name__)
 
 if sys.version_info >= (3, 8):
     from importlib import metadata as importlib_metadata
