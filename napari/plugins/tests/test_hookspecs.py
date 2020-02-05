@@ -78,11 +78,10 @@ def test_docs_match_signature(name, func):
         name = getattr(sig_param.annotation, '_name', None)
         name = name or getattr(sig_param.annotation, '__name__', None)
         if doc_param.type != name:
-            warnings.warn(
-                SyntaxWarning(
-                    f'The type ({name}) for parameter '
-                    f'"{sig_param.name}" in hookspec "{name}" does not '
-                    'match the type specified in the docstring '
-                    f'({doc_param.type})'
-                )
+            msg = (
+                f'The type ({name}) for parameter '
+                f'"{sig_param.name}" in hookspec "{name}" does not '
+                'match the type specified in the docstring '
+                f'({doc_param.type})'
             )
+            warnings.warn(msg)
