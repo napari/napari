@@ -983,24 +983,6 @@ def test_size_with_3D_arrays():
     assert np.all(layer.size[0] == [0, 16, 16])
 
 
-def test_interaction_box():
-    """Test the creation of the interaction box."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer._selected_box is None
-
-    layer.selected_data = [0]
-    assert len(layer._selected_box) == 4
-
-    layer.selected_data = [0, 1]
-    assert len(layer._selected_box) == 4
-
-    layer.selected_data = []
-    assert layer._selected_box is None
-
-
 def test_copy_and_paste():
     """Test copying and pasting selected points."""
     shape = (10, 2)
