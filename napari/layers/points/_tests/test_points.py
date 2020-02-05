@@ -1088,15 +1088,27 @@ def test_view_colors():
         [0, 1, 1],
         [0, 2, 2],
         [1, 3, 3],
+        [3, 3, 3],
     ]
-    face_color = np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    edge_color = np.array([[0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1]])
+    face_color = np.array(
+        [[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [0, 0, 1, 1]]
+    )
+    edge_color = np.array(
+        [[0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
+    )
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
     layer.dims.set_point(0, 0)
-    assert np.all(layer.view_face_color() == face_color[[0, 1]])
-    assert np.all(layer.view_edge_color() == edge_color[[0, 1]])
+    print(layer.face_color)
+    print(layer.view_face_color)
+    assert np.all(layer.view_face_color == face_color[[0, 1]])
+    assert np.all(layer.view_edge_color == edge_color[[0, 1]])
 
     layer.dims.set_point(0, 1)
-    assert np.all(layer.view_face_color() == face_color[[2]])
-    assert np.all(layer.view_edge_color() == edge_color[[2]])
+    assert np.all(layer.view_face_color == face_color[[2]])
+    assert np.all(layer.view_edge_color == edge_color[[2]])
+
+    # view colors should return empty array if there are no points
+    layer.dims.set_point(0, 2)
+    assert len(layer.view_face_color) == 0
+    assert len(layer.view_edge_color) == 0

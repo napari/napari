@@ -1117,6 +1117,7 @@ class Points(Layer):
 
         self.events.mode(mode=mode)
 
+    @property
     def view_face_color(self) -> np.ndarray:
         """Get the face colors of the points in view
 
@@ -1124,10 +1125,11 @@ class Points(Layer):
         -------
         view_face_color : (N x 4) np.ndarray
             RGBA color array for the face colors of the N points in view.
-            If there are no points in view, returns transparent.
+            If there are no points in view, returns array of length 0.
         """
         return self.face_color[self._indices_view]
 
+    @property
     def view_edge_color(self) -> np.ndarray:
         """Get the edge colors of the points in view
 
@@ -1135,7 +1137,7 @@ class Points(Layer):
         -------
         view_edge_color : (N x 4) np.ndarray
             RGBA color array for the edge colors of the N points in view.
-            If there are no points in view, returns transparent.
+            If there are no points in view, returns array of length 0.
         """
         return self.edge_color[self._indices_view]
 
