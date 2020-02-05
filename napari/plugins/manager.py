@@ -168,7 +168,8 @@ class NapariPluginManager(pluggy.PluginManager):
         return count
 
 
-# for easy try/catch availability
+# for easy availability in try/catch statements without having to import pluggy
+# e.g.: except plugin_manager.PluginValidationError
 NapariPluginManager.PluginValidationError = (
     pluggy.manager.PluginValidationError
 )
