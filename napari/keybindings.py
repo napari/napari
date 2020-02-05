@@ -11,14 +11,6 @@ def toggle_fullscreen(viewer):
         viewer.window._qt_window.showFullScreen()
 
 
-@Viewer.bind_key('Control-Shift-T')
-def toggle_theme(viewer):
-    """Toggle viewer theme."""
-    theme_names = list(viewer.themes.keys())
-    cur_theme = theme_names.index(viewer.theme)
-    viewer.theme = theme_names[(cur_theme + 1) % len(theme_names)]
-
-
 @Viewer.bind_key('Control-Y')
 def toggle_ndisplay(viewer):
     """Toggle ndisplay."""
