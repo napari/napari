@@ -1117,6 +1117,28 @@ class Points(Layer):
 
         self.events.mode(mode=mode)
 
+    def view_face_color(self) -> np.ndarray:
+        """Get the face colors of the points in view
+
+        Returns
+        -------
+        view_face_color : (N x 4) np.ndarray
+            RGBA color array for the face colors of the N points in view.
+            If there are no points in view, returns transparent.
+        """
+        return self.face_color[self._indices_view]
+
+    def view_edge_color(self) -> np.ndarray:
+        """Get the edge colors of the points in view
+
+        Returns
+        -------
+        view_edge_color : (N x 4) np.ndarray
+            RGBA color array for the edge colors of the N points in view.
+            If there are no points in view, returns transparent.
+        """
+        return self.edge_color[self._indices_view]
+
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:

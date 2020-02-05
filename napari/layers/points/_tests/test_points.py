@@ -1081,3 +1081,22 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == shape[0]
     assert np.all([type(x) == Element for x in xml])
+
+
+def test_view_colors():
+    coords = [
+        [0, 1, 1],
+        [0, 2, 2],
+        [1, 3, 3],
+    ]
+    face_color = np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
+    edge_color = np.array([[0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1]])
+
+    layer = Points(coords, face_color=face_color, edge_color=edge_color)
+    layer.dims.set_point(0, 0)
+    assert np.all(layer.view_face_color() == face_color[[0, 1]])
+    assert np.all(layer.view_edge_color() == edge_color[[0, 1]])
+
+    layer.dims.set_point(0, 1)
+    assert np.all(layer.view_face_color() == face_color[[2]])
+    assert np.all(layer.view_edge_color() == edge_color[[2]])
