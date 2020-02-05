@@ -2,7 +2,8 @@
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
-import requests
+from urllib import request
+from typing import Tuple, Dict
 import re
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
@@ -18,7 +19,7 @@ def clear_cache():
     VERSION_CACHE = {}
 
 
-def get_packages_by_prefix(prefix) -> dict:
+def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
     """Search for packages starting with ``prefix`` on pypi.
 
     Packages using naming convention: http://bit.ly/pynaming-convention
@@ -31,23 +32,24 @@ def get_packages_by_prefix(prefix) -> dict:
         {name: url} for all packages at pypi that start with ``prefix``
     """
 
-    response = requests.get(PYPI_SIMPLE_API_URL)
-    if response.status_code == 200:
-        pattern = f'<a href="/simple/(.+)">({prefix}.*)</a>'
-        urls = {
-            name: PYPI_SIMPLE_API_URL + url
-            for url, name in re.findall(pattern, response.text)
-        }
-        URL_CACHE.update(urls)
-        return urls
+    with request.urlopen(PYPI_SIMPLE_API_URL) as response:
+        html = response.read()
+
+    pattern = f'<a href="/simple/(.+)">({prefix}.*)</a>'
+    urls = {
+        name: PYPI_SIMPLE_API_URL + url
+        for url, name in re.findall(pattern, html.decode())
+    }
+    URL_CACHE.update(urls)
+    return urls
 
 
-def get_package_versions(name: str = None) -> tuple:
+def get_package_versions(name: str) -> Tuple[str]:
     """Get available versions of a package on pypi
 
     Parameters
     ----------
-    name : str, optional
+    name : str
         name of the package
 
     Returns
@@ -56,8 +58,9 @@ def get_package_versions(name: str = None) -> tuple:
         versions available on pypi
     """
     url = URL_CACHE.get(name, PYPI_SIMPLE_API_URL + name)
-    response = requests.get(url)
-    response.raise_for_status()
-    versions = tuple(set(re.findall(f'>{name}-(.+).tar', response.text)))
+    with request.urlopen(url) as response:
+        html = response.read()
+
+    versions = tuple(set(re.findall(f'>{name}-(.+).tar', html.decode())))
     VERSION_CACHE[name] = versions
     return versions
