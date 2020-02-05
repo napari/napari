@@ -1,11 +1,9 @@
 """
 Internal napari hook implementations to be registered by the plugin manager
 """
-import pluggy
+from pluggy import HookimplMarker
 
-
-hookimpl = pluggy.HookimplMarker("napari")
-"""Marker to be imported and used in plugins (and for own implementations)"""
+hookimpl = HookimplMarker("napari")
 
 
 @hookimpl(trylast=True)

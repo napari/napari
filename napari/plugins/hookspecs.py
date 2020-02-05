@@ -10,7 +10,7 @@ code base.
 hookspecs are a feature of pluggy:
 https://pluggy.readthedocs.io/en/latest/#specs
 
-These hookspecs also serve as the API reference for plugin developrs, so
+These hookspecs also serve as the API reference for plugin developers, so
 comprehensive documentation with complete type annotations is imperative.
 """
 
@@ -43,7 +43,7 @@ def napari_get_reader(path: str) -> Optional[ReaderFunction]:
 
     Returns
     -------
-    {function, None}
+    Callable or None
         A function that accepts the path, and returns a list of layer_data
         (where layer_data is one of (data,), (data, meta), or
         (data, meta, layer_type)).

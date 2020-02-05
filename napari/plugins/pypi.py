@@ -47,12 +47,13 @@ def get_package_versions(name: str = None) -> tuple:
 
     Parameters
     ----------
-    name : str
+    name : str, optional
         name of the package
 
     Returns
     -------
-    tuple of versions availabe on pypi
+    tuple
+        versions available on pypi
     """
     url = URL_CACHE.get(name, PYPI_SIMPLE_API_URL + name)
     response = requests.get(url)
