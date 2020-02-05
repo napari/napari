@@ -1057,8 +1057,8 @@ class Points(Layer):
         if len(index) == 0:
             box = None
         else:
-            data = self._data_view[index]
-            size = self._size_view[index]
+            data = self.view_data[index]
+            size = self.view_size[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             data = points_to_squares(data, size)
@@ -1228,14 +1228,14 @@ class Points(Layer):
             Index of point that is at the current coordinate if any.
         """
         # Display points if there are any in this slice
-        if len(self._data_view) > 0:
+        if len(self.view_data) > 0:
             # Get the point sizes
             distances = abs(
-                self._data_view
+                self.view_data
                 - [self.coordinates[d] for d in self.dims.displayed]
             )
             in_slice_matches = np.all(
-                distances <= np.expand_dims(self._size_view, axis=1) / 2,
+                distances <= np.expand_dims(self.view_size, axis=1) / 2,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1340,7 +1340,7 @@ class Points(Layer):
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        if len(self._data_view) > 0:
+        if len(self.view_data) > 0:
             min_vals = [self.dims.range[i][0] for i in self.dims.displayed]
             shape = np.ceil(
                 [
@@ -1351,13 +1351,13 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
-            if len(self._data_view) > self._max_points_thumbnail:
+            if len(self.view_data) > self._max_points_thumbnail:
                 thumbnail_indices = np.random.randint(
-                    0, len(self._data_view), self._max_points_thumbnail
+                    0, len(self.view_data), self._max_points_thumbnail
                 )
-                points = self._data_view[thumbnail_indices]
+                points = self.view_data[thumbnail_indices]
             else:
-                points = self._data_view
+                points = self.view_data
                 thumbnail_indices = self._indices_view
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
@@ -1421,7 +1421,7 @@ class Points(Layer):
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
-        npoints = len(self._data_view)
+        npoints = len(self.view_data)
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
@@ -1495,9 +1495,7 @@ class Points(Layer):
         opacity = str(self.opacity)
         props = {'stroke-width': width, 'opacity': opacity}
 
-        for i, d, s in zip(
-            self._indices_view, self._data_view, self._size_view
-        ):
+        for i, d, s in zip(self._indices_view, self.view_data, self.view_size):
             d = d[::-1]
             cx = str(d[0])
             cy = str(d[1])
@@ -1565,9 +1563,9 @@ class Points(Layer):
         self._drag_start = None
         if self._is_selecting:
             self._is_selecting = False
-            if len(self._data_view) > 0:
+            if len(self.view_data) > 0:
                 selection = points_in_box(
-                    self._drag_box, self._data_view, self._size_view
+                    self._drag_box, self.view_data, self.view_size
                 )
                 self.selected_data = self._indices_view[selection]
             else:
