@@ -77,19 +77,19 @@ For more details on how to use `napari` checkout our [in-depth tutorials](https:
 
 ## mission and values
 
-For more information about our plans for `napari` you can read our [mission and values statement](./docs/md/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari.
+For more information about our plans for `napari` you can read our [mission and values statement](./docs/developers/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari.
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](./docs/md/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](./docs/developers/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## code of conduct
 
-`napari` has a [Code of Conduct](./docs/md/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](./docs/developers/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](./docs/md/GOVERNANCE.md), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](./docs/developers/GOVERNANCE.md), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
 
 ## citing napari
 
