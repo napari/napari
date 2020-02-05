@@ -101,7 +101,7 @@ class NapariPluginManager(pluggy.PluginManager):
                 count += 1
             except Exception as e:
                 logger.error(f'failed to import plugin: {name}: {str(e)}')
-                self.unregister(mod)
+                self.unregister(name=name)
         return count
 
 
