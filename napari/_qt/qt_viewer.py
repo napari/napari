@@ -244,7 +244,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filename != '') and (filename is not None):
-            self.screenshot(path=filename+'.png')
+            self.screenshot(path=filename + '.png')
 
     def _open_images(self):
         """Add image files from the menubar."""
