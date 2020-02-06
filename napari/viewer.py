@@ -61,7 +61,7 @@ class Viewer(ViewerModel):
         self.window = Window(qt_viewer)
         self.update_console = self.window.qt_viewer.console.push
 
-    def screenshot(self, path=None, with_viewer=False):
+    def screenshot(self, path=None, *, with_viewer=False):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
