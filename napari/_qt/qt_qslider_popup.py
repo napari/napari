@@ -48,8 +48,8 @@ class LabelEdit(QLineEdit):
         self.setFixedWidth(width)
 
     def update_position(self):
-        x = self.get_pos() - self.width() / 2
-        y = 16 + 6
+        x = self.get_pos() * 4 - self.width() / 2
+        y = 8 + 6
         self.move(QPoint(x, -y) + self.slider.pos())
 
     def mouseDoubleClickEvent(self, event):
@@ -82,34 +82,25 @@ class QSliderPopup(QtPopup):
         )
         self.slider.setMinimum(2)
         self.slider.setMaximum(200)
-        self.slider.setSingleStep(2)
+        self.slider.setSingleStep(1)
         self.slider.setValue(100)
         self.slider.setMinimumHeight(18)
         self.slider.setFocus()
         self.slider.valueChanged.connect(self._on_value_change)
-        # self.slider.rangeChanged.connect(self._on_range_change)
-        # self.slider.resized.connect(self._update_cur_label_positions)
+        # self.slider.resized.connect(self._update_cur_label_positions) # no resized signal yet
 
-        # create "floating" min/max value labels
-        current_value = self.slider.value()
-        # self.curmin_label = LabelEdit(self._numformat(cmin), self, get_min_pos)
-        self.current_value_label = LabelEdit(
-            self._numformat(current_value), self, self.slider.value
-        )
-        # self.curmin_label.editingFinished.connect(self._curmin_label_changed)
-        self.current_value_label.editingFinished.connect(
-            self._curmax_label_changed
-        )
-        # self.curmin_label.setToolTip("current minimum contrast limit")
-        self.current_value_label.setToolTip("current maximum contrast limit")
+        # create "floating" value label
+        cval = self.slider.value()
+        get_val_pos = self.slider.value  # TODO: validate
+        self.cval_label = LabelEdit(self._numformat(cval), self, get_val_pos)
+        self.cval_label.editingFinished.connect(self._curval_label_changed)
+        self.cval_label.setToolTip("current gamma")
 
         # add widgets to layout
         self.layout = QHBoxLayout()
         self.frame.setLayout(self.layout)
         self.frame.setContentsMargins(0, 8, 0, 0)
-        # self.layout.addWidget(self.range_min_label)
         self.layout.addWidget(self.slider, 50)
-        # self.layout.addWidget(self.range_max_label)
 
     def _numformat(self, number):
         if round(number) == number:
@@ -118,26 +109,16 @@ class QSliderPopup(QtPopup):
             return "{:.{}f}".format(number, self.precision)
 
     def _update_cur_label_positions(self):
-        self.current_value_label.update_position()
+        self.cval_label.update_position()
 
     def _on_value_change(self, value):
         with qt_signals_blocked(self.slider):
-            self.current_value_label.setText(self._numformat(value))
+            self.cval_label.setText(str(float(value) / 100.0))
             self._update_cur_label_positions()
 
-    def _curmin_label_changed(self):
-        cmin = float(self.curmin_label.text())
-        cmax = float(self.curmax_label.text())
-        if cmin > cmax:
-            cmin = cmax
-        self.slider.setValues((cmin, cmax))
-
-    def _curmax_label_changed(self):
-        cmin = float(self.curmin_label.text())
-        cmax = float(self.curmax_label.text())
-        if cmax < cmin:
-            cmax = cmin
-        self.slider.setValues((cmin, cmax))
+    def _curval_label_changed(self):
+        cval = int(self.curmin_label.text())  # TODO: check int casting here
+        self.slider.setValue(cval)
 
     def keyPressEvent(self, event):
         # we override the parent keyPressEvent so that hitting enter does not
