@@ -237,20 +237,14 @@ class QtViewer(QSplitter):
         return QImg2array(img)
 
     def _save_screenshot(self):
-        """Save screenshot of currently displayed screen to file.
-
-        Returns
-        -------
-        filename : str
-            File path of the saved screenshot.
-        """
+        """Save screenshot of current display as a .png file."""
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
             caption='',
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filename != '') and (filename is not None):
-            self.screenshot(path=filename)
+            self.screenshot(path=filename+'.png')
 
     def _open_images(self):
         """Add image files from the menubar."""
