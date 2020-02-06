@@ -3,6 +3,7 @@ import numpy as np
 from copy import copy, deepcopy
 
 from ...utils.event import Event
+from ...utils.io import write_csv
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -1770,18 +1771,37 @@ class Shapes(Layer):
         else:
             raise ValueError("Mode not recognized")
 
-    def to_csv(self, filename):
-        with open(filename, mode='w') as file:
-            writer = csv.writer(
-                file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
-            )
-            n_dimensions = max([i.shape[1] for i in self.data])
-            header = ['shape_id', 'shape_type', 'coord_id'] + [
-                'dimension_' + str(n) for n in range(n_dimensions)
-            ]
-            writer.writerow(header)
-            for idx_shape, shape in enumerate(self.data):
-                shape_type = self.shape_type[idx_shape]
-                for idx, row in enumerate(shape):
-                    shape_data = [idx_shape, shape_type, idx] + list(row)
-                    writer.writerow(shape_data)
+    def to_table(self, path=None):
+        """Constructs a table of shape coordinate data.
+
+        Parameters
+        ----------
+        path : str, optional
+            If a filename is provided, the table will be saved as a csv file.
+
+        Returns
+        -------
+        tuple
+            (table, column_names) where table is a list of lists, and
+            column_names is a list of strings.
+
+        Notes
+        -----
+        You can construct a pandas dataframe from the results like this:
+        ```
+        table, column_names = my_shapes.to_table()
+        points_dataframe = pandas.DataFrame(table, columns=column_names)
+        ```
+        """
+        n_dimensions = max([i.shape[1] for i in self.data])
+        column_names = ['shape_id', 'shape_type', 'coord_id'] + [
+            'dim_' + str(n) for n in range(n_dimensions)
+        ]
+        table = []
+        for idx, row in enumerate(self.data):
+            data = [idx_shape, shape_type, idx] + list(row)
+            table.append[data]
+        if path is not None:
+            write_csv(path, table, column_names)
+        return table, column_names
+

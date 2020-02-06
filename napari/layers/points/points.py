@@ -11,6 +11,7 @@ from vispy.color.colormap import Colormap
 
 from ..base import Layer
 from ...utils.event import Event
+from ...utils.io import write_csv
 from ...utils.status_messages import format_float
 from ._constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ...utils.colormaps.standardize_color import (
@@ -1529,26 +1530,39 @@ class Points(Layer):
                 self.selected_data = []
             self._set_highlight(force=True)
 
-    def to_csv(self, filename):
-        """Save point coordinates to csv file.
+    def to_table(self, path=None):
+        """Constructs a table of point coordinate data.
 
         Parameters
         ----------
-        filename : str
-            Output csv filename
+        path : str, optional
+            If a filename is provided, the table will be saved as a csv file.
+
+        Returns
+        -------
+        tuple
+            (table, column_names) where table is a list of lists, and
+            column_names is a list of strings.
+
+        Notes
+        -----
+        You can construct a pandas dataframe from the results like this:
+        ```
+        table, column_names = my_points.to_table()
+        points_dataframe = pandas.DataFrame(table, columns=column_names)
+        ```
         """
-        with open(filename, mode='w') as file:
-            writer = csv.writer(
-                file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
-            )
-            n_dimensions = self.data.shape[1]
-            header = ['coord_id'] + [
-                'dimension_' + str(n) for n in range(n_dimensions)
-            ]
-            writer.writerow(header)
-            for idx, row in enumerate(self.data):
-                point_data = [idx] + list(row)
-                writer.writerow(point_data)
+        n_dimensions = self.data.shape[1]
+        column_names = ['coord_id'] + [
+            'dim_' + str(n) for n in range(n_dimensions)
+        ]
+        table = []
+        for idx, row in enumerate(self.data):
+            data = [idx] + list(row)
+            table.append(data)
+        if path is not None:
+            write_csv(path, table, column_names)
+        return table, column_names
 
 
 def create_box(data):
