@@ -209,14 +209,15 @@ def test_save_screenshot(qtbot, tmpdir):
     viewer.add_shapes(data)
 
     # Save screenshot
-    expected_filename = os.path.join(tmpdir, 'test-save-screenshot.png')
-    mock_return = (expected_filename, '')
+    input_filepath = os.path.join(tmpdir, 'test-save-screenshot')
+    mock_return = (input_filepath, '')
     with mock.patch('napari._qt.qt_viewer.QFileDialog') as mocker:
         mocker.getSaveFileName.return_value = mock_return
         view._save_screenshot()
     # Assert behaviour is correct
-    assert os.path.exists(expected_filename)
-    output_data = imread(expected_filename)
+    expected_filepath = input_filepath + '.png'  # add default file extension
+    assert os.path.exists(expected_filepath)
+    output_data = imread(expected_filepath)
     expected_data = view.screenshot()
     assert np.allclose(output_data, expected_data)
     view.shutdown()
