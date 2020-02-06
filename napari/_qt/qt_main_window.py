@@ -322,6 +322,11 @@ class Window:
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
 
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
+
         Returns
         -------
         image : array

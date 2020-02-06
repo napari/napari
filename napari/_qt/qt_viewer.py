@@ -220,6 +220,11 @@ class QtViewer(QSplitter):
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
 
+        Parmeters
+        ---------
+        path : str
+            Filename for saving screenshot image.
+
         Returns
         -------
         image : array
