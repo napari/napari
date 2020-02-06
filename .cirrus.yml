@@ -251,9 +251,10 @@ push_docs_task:
     - cd doc_repo
     - git config --global user.email "cirrus@cirrus-ci.org"
     - git config --global user.name "Cirrus Bot"
-    - if [ -d dev ]; then git rm -r dev; fi
-    - cp -r ../docs/build/html dev
-    - git add dev
+    - git rm -rq .
+    - cp -r ../docs/build/html/ .
+    - touch .nojekyll
+    - git add .
     - if [[ -z $(git status --untracked-files=no --porcelain) ]]; then exit 0; fi  # repo is clean 
     - git commit -m "dev docs v${VERSION}"
     - git push --quiet "https://${GH_TOKEN}@${GH_REF}" master > /dev/null 2>&1
