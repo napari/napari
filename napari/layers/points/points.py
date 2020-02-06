@@ -250,11 +250,17 @@ class Points(Layer):
             size=Event,
             edge_width=Event,
             face_color=Event,
+            current_face_color=Event,
             edge_color=Event,
+            current_edge_color=Event,
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
         )
+        # update highlights when the layer is selected/deselected
+        self.events.select.connect(self._set_highlight)
+        self.events.deselect.connect(self._set_highlight)
+
         self._colors = get_color_namelist()
 
         # Save the point coordinates
@@ -291,7 +297,6 @@ class Points(Layer):
         # Index of hovered point
         self._value = None
         self._value_stored = None
-        self._selected_box = None
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
@@ -336,7 +341,7 @@ class Points(Layer):
         self._current_face_color = self.face_color[-1]
         self.size = size
         self.current_properties = {
-            k: v[-1] for k, v in self.properties.items()
+            k: np.asarray([v[-1]]) for k, v in self.properties.items()
         }
 
         # Trigger generation of view slice and thumbnail
@@ -445,6 +450,7 @@ class Points(Layer):
                 )
 
                 self.size = np.concatenate((self._size, size), axis=0)
+                self.selected_data = list(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self.events.data()
@@ -545,12 +551,16 @@ class Points(Layer):
     @current_size.setter
     def current_size(self, size: Union[None, float]) -> None:
         self._current_size = size
-        if self._update_properties and len(self.selected_data) > 0:
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
+            self.events.size()
         self.status = format_float(self.current_size)
-        self.events.size()
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -562,7 +572,6 @@ class Points(Layer):
         self._edge_width = edge_width
         self.status = format_float(self.edge_width)
         self.events.edge_width()
-        self.events.highlight()
 
     @property
     def edge_color(self):
@@ -595,7 +604,6 @@ class Points(Layer):
             self._edge_color_property = ''
 
             self.events.edge_color()
-            self.events.highlight()
 
     @property
     def edge_color_cycle(self):
@@ -660,12 +668,15 @@ class Points(Layer):
     @current_edge_color.setter
     def current_edge_color(self, edge_color: ColorType) -> None:
         self._current_edge_color = transform_color(edge_color)
-        if self._update_properties and len(self.selected_data) > 0:
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
             cur_colors: np.ndarray = self.edge_color
             cur_colors[self.selected_data] = self._current_edge_color
             self.edge_color = cur_colors
-        self.events.edge_color()
-        self.events.highlight()
+        self.events.current_edge_color()
 
     @property
     def edge_color_mode(self):
@@ -740,7 +751,6 @@ class Points(Layer):
             self.face_color_mode = ColorMode.DIRECT
 
             self.events.face_color()
-            self.events.highlight()
 
     @property
     def face_color_cycle(self):
@@ -800,12 +810,16 @@ class Points(Layer):
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
         self._current_face_color = transform_color(face_color)
-        if self._update_properties and len(self.selected_data) > 0:
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
             cur_colors: np.ndarray = self.face_color
             cur_colors[self.selected_data] = self._current_face_color
             self.face_color = cur_colors
-        self.events.face_color()
-        self.events.highlight()
+
+        self.events.current_face_color()
 
     @property
     def face_color_mode(self):
@@ -887,7 +901,6 @@ class Points(Layer):
                 self._face_color = face_colors
 
                 self.events.face_color()
-                self.events.highlight()
             elif self._face_color_mode == ColorMode.COLORMAP:
                 face_color_properties = self.properties[
                     self._face_color_property
@@ -945,7 +958,6 @@ class Points(Layer):
                 self._edge_color = edge_colors
             self.events.face_color()
             self.events.edge_color()
-            self.events.highlight()
 
     def _is_color_mapped(self, color):
         """ determines if the new color argument is for directly setting or cycle/colormap"""
@@ -1004,7 +1016,6 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        self._selected_box = self.interaction_box(self._selected_view)
 
         # Update properties based on selected points
         if len(self._selected_data) == 0:
@@ -1034,11 +1045,8 @@ class Points(Layer):
             k: np.unique(v[index], axis=0) for k, v in self.properties.items()
         }
         n_unique_properties = np.array([len(v) for v in properties.values()])
-        self.current_properties = {}
-        # only include the properties that common across all selected points
-        for n, prop in zip(n_unique_properties, properties):
-            if n == 1:
-                self.current_properties[prop] = properties[prop]
+        if np.all(n_unique_properties == 1):
+            self.current_properties = properties
 
     def interaction_box(self, index):
         """Create the interaction box around a list of points in view.
@@ -1097,6 +1105,8 @@ class Points(Layer):
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
+            self.selected_data = []
+            self._set_highlight()
         elif mode == Mode.SELECT:
             self.cursor = 'standard'
             self.interactive = False
@@ -1109,11 +1119,11 @@ class Points(Layer):
             raise ValueError("Mode not recognized")
 
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
-            self.selected_data = []
-            self._set_highlight()
+            self._selected_data_stored = []
 
         self.status = str(mode)
         self._mode = mode
+        self._set_highlight()
 
         self.events.mode(mode=mode)
 
@@ -1279,62 +1289,71 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        if self.dims.ndisplay == 2:
-            self._selected_box = self.interaction_box(self._selected_view)
-        else:
-            self._selected_box = None
+        self._set_highlight()
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
-        interaction boxes, and the drag selection box when appropriate
+        interaction boxes, and the drag selection box when appropriate.
+        Highlighting only occurs in Mode.SELECT.
 
         Parameters
         ----------
         force : bool
             Bool that forces a redraw to occur when `True`
         """
+        # if self._mode == Mode.SELECT:
         # Check if any point ids have changed since last call
-        if (
-            self.selected_data == self._selected_data_stored
-            and self._value == self._value_stored
-            and np.all(self._drag_box == self._drag_box_stored)
-        ) and not force:
-            return
-        self._selected_data_stored = copy(self.selected_data)
-        self._value_stored = copy(self._value)
-        self._drag_box_stored = copy(self._drag_box)
+        if self.selected:
+            if (
+                self.selected_data == self._selected_data_stored
+                and self._value == self._value_stored
+                and np.all(self._drag_box == self._drag_box_stored)
+            ) and not force:
+                return
+            self._selected_data_stored = copy(self.selected_data)
+            self._value_stored = copy(self._value)
+            self._drag_box_stored = copy(self._drag_box)
 
-        if self._mode == Mode.SELECT and (
-            self._value is not None or len(self._selected_view) > 0
-        ):
-            if len(self._selected_view) > 0:
-                index = copy(self._selected_view)
-                if self._value is not None:
-                    hover_point = list(self._indices_view).index(self._value)
-                    if hover_point in index:
-                        pass
+            if self._value is not None or len(self._selected_view) > 0:
+                if len(self._selected_view) > 0:
+                    index = copy(self._selected_view)
+                    # highlight the hovered point if not in adding mode
+                    if self._value is not None and self._mode != Mode.ADD:
+                        hover_point = list(self._indices_view).index(
+                            self._value
+                        )
+                        if hover_point in index:
+                            pass
+                        else:
+                            index.append(hover_point)
+                    index.sort()
+                else:
+                    # don't highlight hovered points in add mode
+                    if self._mode != Mode.ADD:
+                        hover_point = list(self._indices_view).index(
+                            self._value
+                        )
+                        index = [hover_point]
                     else:
-                        index.append(hover_point)
-                index.sort()
+                        index = []
+
+                self._highlight_index = index
             else:
-                hover_point = list(self._indices_view).index(self._value)
-                index = [hover_point]
+                self._highlight_index = []
 
-            self._highlight_index = index
+            # only display dragging selection box in 2D
+            if self.dims.ndisplay == 2 and self._is_selecting:
+                pos = create_box(self._drag_box)
+                pos = pos[list(range(4)) + [0]]
+            else:
+                pos = None
+
+            self._highlight_box = pos
+            self.events.highlight()
         else:
+            self._highlight_box = None
             self._highlight_index = []
-
-        pos = self._selected_box
-        if pos is None and not self._is_selecting:
-            pos = np.zeros((0, 2))
-        elif self._is_selecting:
-            pos = create_box(self._drag_box)
-            pos = pos[list(range(4)) + [0]]
-        else:
-            pos = pos[list(range(4)) + [0]]
-
-        self._highlight_box = pos
-        self.events.highlight()
+            self.events.highlight()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -1378,7 +1397,7 @@ class Points(Layer):
         ----------
         coord : sequence of indices to add point at
         """
-        self.data = np.append(self.data, [coord], axis=0)
+        self.data = np.append(self.data, np.atleast_2d(coord), axis=0)
 
     def remove_selected(self):
         """Removes selected points if any."""

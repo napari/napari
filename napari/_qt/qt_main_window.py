@@ -131,7 +131,7 @@ class Window:
         open_images.triggered.connect(self.qt_viewer._open_images)
 
         open_folder = QAction('Open Folder...', self._qt_window)
-        open_folder.setShortcut('Ctrl-Shift-O')
+        open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip(
             'Open a folder of image file(s) or a zarr file'
         )
@@ -146,8 +146,13 @@ class Window:
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
+        toggle_theme = QAction('Toggle theme', self._qt_window)
+        toggle_theme.setShortcut('Ctrl+Shift+T')
+        toggle_theme.setStatusTip('Toggle theme')
+        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
+        self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
