@@ -252,7 +252,7 @@ push_docs_task:
     - git config --global user.email "cirrus@cirrus-ci.org"
     - git config --global user.name "Cirrus Bot"
     - git rm -rq .
-    - cp -r ../docs/build/html/ .
+    - cp -r ../docs/build/html/* .
     - touch .nojekyll
     - git add .
     - if [[ -z $(git status --untracked-files=no --porcelain) ]]; then exit 0; fi  # repo is clean 
