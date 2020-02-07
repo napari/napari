@@ -143,8 +143,8 @@ def write_csv(path, data, column_names=None):
         List of column names for table data.
     """
     with open(path, mode='w') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',', quotechar='"',
-            quoting=csv.QUOTE_MINIMAL
+        writer = csv.writer(
+            csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
         )
         if column_names is not None:
             writer.writerow(column_names)

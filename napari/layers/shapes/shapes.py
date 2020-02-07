@@ -1,4 +1,3 @@
-import csv
 import numpy as np
 from copy import copy, deepcopy
 
@@ -1797,11 +1796,12 @@ class Shapes(Layer):
         column_names = ['shape_id', 'shape_type', 'coord_id'] + [
             'dim_' + str(n) for n in range(n_dimensions)
         ]
-        table = []
-        for idx, row in enumerate(self.data):
-            data = [idx_shape, shape_type, idx] + list(row)
-            table.append[data]
+        table_data = []
+        for idx_shape, shape in enumerate(self.data):
+            shape_type = self.shape_type[idx_shape]
+            for idx, row in enumerate(shape):
+                data = [idx_shape, shape_type, idx] + list(row)
+                table_data.append(data)
         if path is not None:
-            write_csv(path, table, column_names)
-        return table, column_names
-
+            write_csv(path, table_data, column_names)
+        return table_data, column_names

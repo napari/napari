@@ -1,3 +1,6 @@
+import csv
+import os
+
 import numpy as np
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
@@ -936,3 +939,45 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == shape[0]
     assert np.all([type(x) == Element for x in xml])
+
+
+def test_shapes_to_table(tmpdir):
+    """Test shapes layer saved to csv format."""
+    expected_data = [[0, 0], [0, 100], [100, 100], [100, 0]]
+    shapes_layer = Shapes(
+        [expected_data, expected_data], shape_type=['rectangle', 'ellipse']
+    )
+    output_filename = os.path.join(tmpdir, 'shapes.csv')
+    shapes_layer.to_table(output_filename)
+    assert os.path.exists(output_filename)
+    with open(output_filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        for row_index, row in enumerate(output_csv):
+            if row_index == 0:
+                assert row == "shape_id,shape_type,coord_id,dim_0,dim_1\n"
+            else:
+                output_row_data = []
+                for i in row.split(','):
+                    try:
+                        i = float(i)
+                    except ValueError:
+                        pass
+                    finally:
+                        output_row_data.append(i)
+                # Check results
+                if 1 <= row_index <= 4:
+                    assert output_row_data[0] == 0  # shape_id index
+                    assert output_row_data[1] == 'rectangle'  # shape_type
+                    assert output_row_data[2] == row_index - 1  # coord_id
+                    assert np.allclose(
+                        np.array(output_row_data[3:]),
+                        expected_data[row_index - 1],
+                    )
+                elif 5 <= row_index <= 8:
+                    assert output_row_data[0] == 1  # shape_id index
+                    assert output_row_data[1] == 'ellipse'  # shape_type
+                    assert output_row_data[2] == row_index - 5  # coord_id
+                    assert np.allclose(
+                        np.array(output_row_data[3:]),
+                        expected_data[row_index - 5],
+                    )
