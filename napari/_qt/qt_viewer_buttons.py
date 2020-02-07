@@ -4,6 +4,27 @@ import numpy as np
 
 
 class QtLayerButtons(QFrame):
+    """Button controls for napari layers.
+
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+
+    Attributes
+    ----------
+    deleteButton : QtDeleteButton
+        Button to delete layer.
+    newLabelsButton : QtViewerPushButton
+        Button to add new Label layer.
+    newPointsButton : QtViewerPushButton
+        Button to add new Points layer.
+    newShapesButton : QtViewerPushButton
+        Button to add new Shapes layer.
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    """
+
     def __init__(self, viewer):
         super().__init__()
 
@@ -39,6 +60,31 @@ class QtLayerButtons(QFrame):
 
 
 class QtViewerButtons(QFrame):
+    """Button controls for the napari viewer.
+
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+
+    Attributes
+    ----------
+    consoleButton : QtViewerPushButton
+        Button to open iPython console within napari.
+    rollDimsButton : QtViewerPushButton
+        Button to roll orientation of spatial dimensions in the napari viewer.
+    transposeDimsButton : QtViewerPushButton
+        Button to transpose dimensions in the napari viewer.
+    resetViewButton : QtViewerPushButton
+        Button resetting the view of the rendered scene.
+    gridViewButton : QtGridViewButton
+        Button to toggle grid view of layers.
+    ndisplayButton : QtNDisplayButton
+        Button to toggle number of displayed dimensions.
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    """
+
     def __init__(self, viewer):
         super().__init__()
 
@@ -122,7 +168,7 @@ class QtGridViewButton(QCheckBox):
         super().__init__()
 
         self.viewer = viewer
-        self.setToolTip('Toggle grid view view')
+        self.setToolTip('Toggle grid view')
         self.viewer.events.grid.connect(self._on_grid_change)
         self.stateChanged.connect(self.change_grid)
         self._on_grid_change()
