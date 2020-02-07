@@ -32,6 +32,7 @@ from .points_utils import (
 
 
 DEFAULT_COLOR_CYCLE = cycle(np.array([[1, 0, 1, 1], [0, 1, 0, 1]]))
+DEFAULT_COLOR_MODE = 'direct'
 
 
 class Points(Layer):
@@ -214,10 +215,12 @@ class Points(Layer):
         edge_width=1,
         edge_color='black',
         edge_color_cycle=None,
+        edge_color_mode=None,
         edge_colormap='viridis',
         edge_contrast_limits=None,
         face_color='white',
         face_color_cycle=None,
+        face_color_mode=None,
         face_colormap='viridis',
         face_contrast_limits=None,
         n_dimensional=False,
@@ -323,6 +326,9 @@ class Points(Layer):
             if edge_color_cycle is None:
                 edge_color_cycle = DEFAULT_COLOR_CYCLE
             self.edge_color_cycle = edge_color_cycle
+            if edge_color_mode is None:
+                edge_color_mode = DEFAULT_COLOR_MODE
+            self.edge_color_mode = edge_color_mode
             self.edge_colormap = edge_colormap
             self._edge_contrast_limits = edge_contrast_limits
 
@@ -331,6 +337,9 @@ class Points(Layer):
             if face_color_cycle is None:
                 face_color_cycle = DEFAULT_COLOR_CYCLE
             self.face_color_cycle = face_color_cycle
+            if face_color_mode is None:
+                face_color_mode = DEFAULT_COLOR_MODE
+            self.face_color_mode = face_color_mode
             self.face_colormap = face_colormap
             self._face_contrast_limits = face_contrast_limits
 
@@ -988,10 +997,12 @@ class Points(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
+                'face_color_mode': self.face_color_mode,
                 'face_colormap': self.face_colormap[0],
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
+                'edge_color_mode': self.edge_color_mode,
                 'edge_colormap': self.edge_colormap[0],
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
