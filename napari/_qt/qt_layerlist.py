@@ -111,10 +111,10 @@ class QtLayerList(QScrollArea):
         divider.deleteLater()
 
     def _reorder(self, event=None):
-        """Reorders list of layer widgets.
+        """Reorder list of layer widgets.
 
         Loops through all widgets in list, sequentially removing them
-        and inserting them into the correct place in final list.
+        and inserting them into the correct place in the final list.
 
         Parameters
         ----------
@@ -193,7 +193,7 @@ class QtLayerList(QScrollArea):
         self.ensureWidgetVisible(widget)
 
     def keyPressEvent(self, event):
-        """Ignores key press event.
+        """Ignore a key press event.
 
         Parameters
         ----------
@@ -203,7 +203,7 @@ class QtLayerList(QScrollArea):
         event.ignore()
 
     def keyReleaseEvent(self, event):
-        """Ignores key relase event.
+        """Ignore key relase event.
 
         Parameters
         ----------
