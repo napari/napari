@@ -44,7 +44,7 @@ if sys.platform.startswith("win") and sys.version_info >= (3, 8):
 
 
 class QtConsole(RichJupyterWidget):
-    """Qt view for console.
+    """Qt view for the console, an integrated iPython terminal in napari.
 
     Parameters
     ----------
