@@ -193,7 +193,7 @@ class QtLayerList(QScrollArea):
         self.ensureWidgetVisible(widget)
 
     def keyPressEvent(self, event):
-        """Ignores key press event.
+        """Ignore a key press event.
 
         Parameters
         ----------
