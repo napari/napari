@@ -22,7 +22,7 @@ class QtLayerList(QScrollArea):
     Parameters
     ----------
     layers : napari.components.LayerList
-        Layer widget list class instance.
+        The layer list to track and display.
 
     Attributes
     ----------
@@ -30,15 +30,15 @@ class QtLayerList(QScrollArea):
         List of layer widgets center coordinates.
     drag_name : str
         Name attribute of the dragged layer.
-    drag_start_position : Two element array
+    drag_start_position : array, shape (2,)
         Mouse coordinates at the beginning of the mouse drag event.
     dragTimer : QTimer
         Timer for autoscrolling layers list up/down when dragging a layer
         near the end of the displayed area.
     layers : napari.components.LayerList
-        Layer widget list class instance.
+        The layer list to track and display.
     vbox_layout : QVBoxLayout
-        Layout of the layer list widgets.
+        The layout instance in which the layouts appear.
     """
 
     def __init__(self, layers):
