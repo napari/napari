@@ -12,14 +12,14 @@ static_analysis_task:
   black_script: black --check .
   flake8_script: flake8 napari
   perf_analysis_script: |
-    perf-analysis -d napari
-    perf-analysis -d napari/_qt
-    perf-analysis -d napari/_vispy
-    perf-analysis -d napari/benchmarks
-    perf-analysis -d napari/components
-    perf-analysis -d napari/layers
-    perf-analysis -d napari/resources
-    perf-analysis -d napari/utils
+    analyze-perf -d napari
+    analyze-perf -d napari/_qt
+    analyze-perf -d napari/_vispy
+    analyze-perf -d napari/benchmarks
+    analyze-perf -d napari/components
+    analyze-perf -d napari/layers
+    analyze-perf -d napari/resources
+    analyze-perf -d napari/utils
 
 
 linux_task:
