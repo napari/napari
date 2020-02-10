@@ -17,7 +17,7 @@ import numpy as np
 
 
 class QtLayerList(QScrollArea):
-    """QtLayerList class
+    """Widget storing a list of all the layers present in the current window.
 
     Parameters
     ----------
