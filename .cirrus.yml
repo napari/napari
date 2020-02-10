@@ -3,24 +3,23 @@ container:
   image: python:3.8
 
 
-black_task:
+static_analysis_task:
   auto_cancellation: true
-  name: Black Formatting
+  name: Static Analysis
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install `cat requirements/development.txt | grep black`
-  test_script:
-    - black --check .
-
-
-lint_task:
-  auto_cancellation: true
-  name: Flake8 Linting
-  install_script:
-    - python -m pip install --retries 3 --upgrade pip
-    - pip install `cat requirements/development.txt | grep flake8`
-  test_script:
-    - flake8 napari
+    - pip install -r requirements/development.txt
+  black_script: black --check .
+  flake8_script: flake8 napari
+  perf_analysis_script: |
+    perf-analysis -d napari
+    perf-analysis -d napari/_qt
+    perf-analysis -d napari/_vispy
+    perf-analysis -d napari/benchmarks
+    perf-analysis -d napari/components
+    perf-analysis -d napari/layers
+    perf-analysis -d napari/resources
+    perf-analysis -d napari/utils
 
 
 linux_task:
