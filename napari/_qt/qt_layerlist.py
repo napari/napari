@@ -114,7 +114,7 @@ class QtLayerList(QScrollArea):
         """Reorder list of layer widgets.
 
         Loops through all widgets in list, sequentially removing them
-        and inserting them into the correct place in final list.
+        and inserting them into the correct place in the final list.
 
         Parameters
         ----------
