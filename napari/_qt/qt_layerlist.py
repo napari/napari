@@ -203,7 +203,7 @@ class QtLayerList(QScrollArea):
         event.ignore()
 
     def keyReleaseEvent(self, event):
-        """Ignores key relase event.
+        """Ignore key relase event.
 
         Parameters
         ----------
