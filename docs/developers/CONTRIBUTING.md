@@ -35,7 +35,7 @@ $ pip install -e .
 We use
 [`pre-commit`](https://pre-commit.com) to run [`black`](https://github.com/psf/black) formatting and [`flake8`](https://github.com/PyCQA/flake8) linting automatically prior to each commit.  Please install it in your environment as follows:
 ```sh
-pre-commit install
+$ pre-commit install
 ```
 Upon committing, your code will be formatted according to our [`black` configuration](../pyproject.toml),
 which includes the settings `skip-string-normalization = true` and `max-line-length = 79`.
