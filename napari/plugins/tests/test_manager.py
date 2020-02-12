@@ -22,7 +22,7 @@ def test_naming_convention_discovery(pm):
     assert 'napari_test_plugin' in pm._name2plugin
     assert 'napari_bad_plugin' in pm._name2plugin
 
-    # napari_invalid_plugin has an invalid hookimpl, and will not get loaded
+    # napari_invalid_plugin has an invalid hook implementation, and will load
     assert 'napari_invalid_plugin' not in pm._name2plugin
 
 
@@ -31,7 +31,7 @@ def test_entry_points_discovery(pm):
     plugins.
     """
     assert 'working' in pm._name2plugin
-    # invalid_plugin has an invalid hookimpl, and will not get loaded
+    # invalid_plugin has an invalid hook implementation, and will not load
     assert 'invalid' not in pm._name2plugin
     # unimportable raises an exception during import... shouldn't make it.
     assert 'unimportable' not in pm._name2plugin

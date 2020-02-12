@@ -1,23 +1,28 @@
 """
 All hook specifications for pluggable functionality should be defined here.
 
-A hook specification (hookspec) is a function signature (with documentation)
-that declares an API that plugin developers must adhere to when providing
-hook implementations (hookimpl).  Hook implementations provided by plugins (and
-internally by napari) will then be invoked in various places throughout the
-code base.
+A hook specification is a function signature (with documentation) that declares
+an API that plugin developers must adhere to when providing hook
+implementations.  Hook implementations provided by plugins (and internally by
+napari) will then be invoked in various places throughout the code base.
 
-hookspecs are a feature of pluggy:
+NOTE: in pluggy documentation, hook specification marker instances are named
+"hookspec" by convention, and hook implementation marker instances are named
+"hookimpl".  The convention in napari is to name them more explicity:
+"napari_hook_spcification" and "napari_hook_implementation", respectively.
+
+hook specifications are a feature of pluggy:
 https://pluggy.readthedocs.io/en/latest/#specs
 
-These hookspecs also serve as the API reference for plugin developers, so
-comprehensive documentation with complete type annotations is imperative.
+These hook specifications also serve as the API reference for plugin
+developers, so comprehensive documentation with complete type annotations is
+imperative.
 """
 
 import pluggy
 from typing import Callable, Optional, List, Tuple, Union, Any, Dict
 
-hookspec = pluggy.HookspecMarker("napari")
+napari_hook_specification = pluggy.HookspecMarker("napari")
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type for now
@@ -25,7 +30,7 @@ LayerData = Union[Tuple[Any], Tuple[Any, Dict], Tuple[Any, Dict, str]]
 ReaderFunction = Callable[[str], List[LayerData]]
 
 
-@hookspec(firstresult=True)
+@napari_hook_specification(firstresult=True)
 def napari_get_reader(path: str) -> Optional[ReaderFunction]:
     """Return function capable of loading `path` into napari, or None.
 

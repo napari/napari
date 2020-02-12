@@ -3,10 +3,10 @@ Internal napari hook implementations to be registered by the plugin manager
 """
 from pluggy import HookimplMarker
 
-hookimpl = HookimplMarker("napari")
+napari_hook_implementation = HookimplMarker("napari")
 
 
-@hookimpl(trylast=True)
+@napari_hook_implementation(trylast=True)
 def napari_get_reader(path: str):
     """Our internal fallback file reader at the end of the reader plugin chain.
 

@@ -3,14 +3,14 @@ Test plugin that would fail to load.
 """
 import pluggy
 
-hookimpl = pluggy.HookimplMarker("napari")
+napari_hook_implementation = pluggy.HookimplMarker("napari")
 
 
 def reader_function():
     pass
 
 
-@hookimpl
+@napari_hook_implementation
 def napari_get_reader(path, arg1, arg2, i_just_love_args):
     # this has too many arguments!
 
