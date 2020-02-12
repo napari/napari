@@ -93,3 +93,7 @@ class Viewer(ViewerModel):
         t = QtUpdateUI(func, *args, **kwargs)
         self.window.qt_viewer.pool.start(t)
         return self.window.qt_viewer.pool  # returns threadpool object
+
+    def show(self):
+        """Resize, show, and raise the viewer window."""
+        self.window.show()
