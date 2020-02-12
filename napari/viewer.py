@@ -1,7 +1,8 @@
 from os.path import dirname, join
+import sys
 
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QApplication
+from qtpy.QtGui import QIcon, QPixmap
+from qtpy.QtWidgets import QApplication, QSplashScreen
 
 from ._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
@@ -27,29 +28,16 @@ class Viewer(ViewerModel):
     """
 
     def __init__(
-        self, title='napari', ndisplay=2, order=None, axis_labels=None
+        self, title='napari', ndisplay=2, order=None, axis_labels=None, startup_logo=False,
     ):
         # instance() returns the singleton instance if it exists, or None
-        app = QApplication.instance()
-        # if None, raise a RuntimeError with the appropriate message
-        if app is None:
-            message = (
-                "napari requires a Qt event loop to run. To create one, "
-                "try one of the following: \n"
-                "  - use the `napari.gui_qt()` context manager. See "
-                "https://github.com/napari/napari/tree/master/examples for"
-                " usage examples.\n"
-                "  - In IPython or a local Jupyter instance, use the "
-                "`%gui qt` magic command.\n"
-                "  - Launch IPython with the option `--gui=qt`.\n"
-                "  - (recommended) in your IPython configuration file, add"
-                " or uncomment the line `c.TerminalIPythonApp.gui = 'qt'`."
-                " Then, restart IPython."
-            )
-            raise RuntimeError(message)
+        self._app = QApplication.instance()
+        if self._app is None:
+            self._app = QApplication(sys.argv)
+            self._app.setApplicationName('napari')
 
         logopath = join(dirname(__file__), 'resources', 'logo.png')
-        app.setWindowIcon(QIcon(logopath))
+        self._app.setWindowIcon(QIcon(logopath))
 
         super().__init__(
             title=title,
@@ -57,9 +45,30 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+        self._startup_logo = startup_logo
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer)
         self.update_console = self.window.qt_viewer.console.push
+
+    def __enter__(self):
+        if self._startup_logo:
+            self._splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
+            self._splash_widget.show()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self._startup_logo:
+            self._splash_widget.close()
+        self._app.exec_()
+
+    def show(self):
+        """Start the Qt event loop.
+        Used when the viewer was instatiated outside of a
+        context manager.
+        """
+        if self._app is None:
+            return
+        self._app.exec_()
 
     def screenshot(self, with_viewer=False):
         """Take currently displayed screen and convert to an image array.
