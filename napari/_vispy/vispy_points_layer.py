@@ -4,11 +4,12 @@ from .markers import Markers
 from vispy.visuals.transforms import ChainTransform
 
 from .vispy_base_layer import VispyBaseLayer
+from ..utils.colormaps.standardize_color import transform_color
 
 
 class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
-    _highlight_width = 1.5
+    _highlight_width = 5
 
     def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:
@@ -35,18 +36,16 @@ class VispyPointsLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 2:
             self.node = Compound([Markers(), Markers(), Line()])
         else:
-            self.node = Markers()
+            self.node = Compound([Markers(), Markers()])
         self.node.parent = parent
         self._reset_base()
 
     def _on_data_change(self, event=None):
         # Check if ndisplay has changed current node type needs updating
         if (
-            self.layer.dims.ndisplay == 3
-            and not isinstance(self.node, Markers)
+            self.layer.dims.ndisplay == 3 and len(self.node._subvisuals) != 2
         ) or (
-            self.layer.dims.ndisplay == 2
-            and not isinstance(self.node, Compound)
+            self.layer.dims.ndisplay == 2 and len(self.node._subvisuals) != 3
         ):
             self._on_display_change()
             self._on_highlight_change()
@@ -68,10 +67,7 @@ class VispyPointsLayer(VispyBaseLayer):
             data = self.layer._data_view
             size = self.layer._size_view
 
-        if self.layer.dims.ndisplay == 2:
-            set_data = self.node._subvisuals[0].set_data
-        else:
-            set_data = self.node.set_data
+        set_data = self.node._subvisuals[0].set_data
 
         set_data(
             data[:, ::-1] + 0.5,
@@ -85,22 +81,15 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_highlight_change(self, event=None):
-        if self.layer.dims.ndisplay == 3:
-            return
-
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
             data = self.layer._data_view[self.layer._highlight_index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             size = self.layer._size_view[self.layer._highlight_index]
-            face_color = self.layer.face_color[
-                self.layer._indices_view[self.layer._highlight_index]
-            ]
         else:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = 0
-            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1] + 0.5,
@@ -108,20 +97,26 @@ class VispyPointsLayer(VispyBaseLayer):
             edge_width=self._highlight_width,
             symbol=self.layer.symbol,
             edge_color=self._highlight_color,
-            face_color=face_color,
+            face_color=transform_color('transparent'),
             scaling=True,
         )
 
-        if (
-            self.layer._highlight_box is None
-            or 0 in self.layer._highlight_box.shape
-        ):
-            pos = np.zeros((1, self.layer.dims.ndisplay))
-            width = 0
-        else:
-            pos = self.layer._highlight_box
-            width = self._highlight_width
+        # only draw a box in 2D
+        if self.layer.dims.ndisplay == 2:
+            if (
+                self.layer._highlight_box is None
+                or 0 in self.layer._highlight_box.shape
+            ):
+                pos = np.zeros((1, self.layer.dims.ndisplay))
+                width = 0
+            else:
+                pos = self.layer._highlight_box
+                width = self._highlight_width
 
-        self.node._subvisuals[2].set_data(
-            pos=pos[:, ::-1] + 0.5, color=self._highlight_color, width=width
-        )
+            self.node._subvisuals[2].set_data(
+                pos=pos[:, ::-1] + 0.5,
+                color=self._highlight_color,
+                width=width,
+            )
+
+        self.node.update()

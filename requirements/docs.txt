@@ -1,2 +1,2 @@
-Sphinx
+Sphinx!=2.4.0  # 2.4.0 is bugged, see https://github.com/sphinx-doc/sphinx/issues/7126
 sphinx-rtd-theme
