@@ -54,6 +54,13 @@ class QtBaseImageControls(QtLayerControls):
         self._on_colormap_change()
 
     def changeColor(self, text):
+        """Change layer colormap.
+
+        Parameters
+        ----------
+        text : str
+            Colormap name.
+        """
         self.layer.colormap = text
 
     def _clim_mousepress(self, event):
@@ -61,6 +68,11 @@ class QtBaseImageControls(QtLayerControls):
 
         The expanded slider provides finer control, directly editable values,
         and the ability to change the available range of the sliders.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         if event.button() == Qt.RightButton:
             self.clim_pop = create_range_popup(

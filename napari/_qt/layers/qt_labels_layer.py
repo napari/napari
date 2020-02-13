@@ -18,6 +18,42 @@ from ..qt_mode_buttons import QtModeRadioButton
 
 
 class QtLabelsControls(QtLayerControls):
+    """$TODO
+
+    Parameters
+    ----------
+    layer : #TODO
+        #TODO
+
+    Attributes
+    ----------
+    button_group : QButtonGroup
+        Button group of label layer controls: PAN_ZOOM, PICKER, PAINT, or FILL.
+    colormapUpdate : QPushButton
+        Button to update colormap of label layer.
+    contigCheckBox : QCheckBox
+        Checkbox to control if label layer is contiguous.
+    fill_button : QtModeRadioButton
+        PAN_ZOOM, PICKER, PAINT, or FILL
+    grid_layout : Layout of Qt widget controls of the label layer.
+    layer :
+    ndimCheckBox : QCheckBox
+        Checkbox to control if label layer is n-dimensional.
+    paint_button : QtModeRadioButton
+        PAN_ZOOM, PICKER, PAINT, or FILL
+    panzoom_button : QtModeRadioButton
+        PAN_ZOOM, PICKER, PAINT, or FILL
+    pick_button : QtModeRadioButton
+        PAN_ZOOM, PICKER, PAINT, or FILL
+    selectionSpinBox : QSpinBox
+
+
+    Raises
+    ------
+    ValueError
+        Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, or FILL.
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -114,6 +150,13 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.layer.status = str(self.layer.mode)
 
     def _on_mode_change(self, event):
@@ -230,16 +273,38 @@ class QtLabelsControls(QtLayerControls):
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_contig_change(self, event=None):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
     def _on_editable_change(self, event=None):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         self.pick_button.setEnabled(self.layer.editable)
         self.paint_button.setEnabled(self.layer.editable)
         self.fill_button.setEnabled(self.layer.editable)
 
 
 class QtColorBox(QWidget):
+    """QtColorBox class
+
+    Parameters
+    ----------
+    layer : #TODO
+        #TODO
+    """
+
     def __init__(self, layer):
         super().__init__()
 
@@ -252,6 +317,13 @@ class QtColorBox(QWidget):
         self.layer.events.selected_label.connect(self.update_color)
 
     def update_color(self, event):
+        """Update the colorbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.update()
 
     def paintEvent(self, event):

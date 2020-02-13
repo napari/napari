@@ -415,7 +415,7 @@ class QtLayerList(QScrollArea):
 
 
 class QtDivider(QFrame):
-    """QtDivider class
+    """QtDivider class #TODO
 
     Attributes
     ----------
@@ -448,12 +448,12 @@ class QtDivider(QFrame):
 
 
 class QtLayerWidget(QFrame):
-    """QtLayerWidget class
+    """QtLayerWidget class #TODO
 
     Attributes
     ----------
-    layer : [type]
-        [description]
+    layer : [type] #TODO
+        [description] #TODO
     layout : QVBoxLayout
         Layout of the widget.
     nameTextBox : QLineEdit

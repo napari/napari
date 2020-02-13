@@ -5,6 +5,27 @@ from vispy.color import Color
 
 
 class QtVectorsControls(QtLayerControls):
+    """#TODO
+
+    Parameters
+    ----------
+    layer : #TODO
+        #TODO
+
+    Attributes
+    ----------
+    edgeColorSwatch : QFrame
+    edgeComboBox : QComboBox
+    grid_layout :
+        grid_layout created in QtLayerControls
+        addWidget(widget, row, column, [row_span, column_span])
+    layer : #TODO
+        #TODO
+    lengthSpinBox : QDoubleSpinBox
+    widthSpinBox : QDoubleSpinBox
+
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -56,27 +77,70 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.setSpacing(4)
 
     def change_edge_color(self, text):
+        """Change edge color of vectors.
+
+        Parameters
+        ----------
+        text : str
+            Edge color for vectors, color name or hex string.
+            Eg: 'white', 'red', 'blue', '#00ff00', etc.
+        """
         self.layer.edge_color = text
 
     def change_width(self, value):
+        """Change edge line width of vectors.
+
+        Parameters
+        ----------
+        value : float
+            Line width of vectors.
+        """
         self.layer.edge_width = value
         self.widthSpinBox.clearFocus()
         self.setFocus()
 
     def change_length(self, value):
+        """Change length of vectors.
+
+        Parameters
+        ----------
+        value : float
+            Length of vectors.
+        """
         self.layer.length = value
         self.lengthSpinBox.clearFocus()
         self.setFocus()
 
     def _on_len_change(self, event=None):
+        """Change length of vectors.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
     def _on_width_change(self, event=None):
+        """"Change edge line width of vectors.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
 
     def _on_edge_color_change(self, event=None):
+        """Change edge color of vectors.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
                 self.layer.edge_color, Qt.MatchFixedString

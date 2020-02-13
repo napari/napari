@@ -3,6 +3,21 @@ from .layers import create_qt_controls
 
 
 class QtControls(QStackedWidget):
+    """QtControls class #TODO
+    #TODO
+
+    Parameters
+    ----------
+    viewer : #TODO
+        #TODO
+
+    Attributes
+    ----------
+    empty_widget :
+    viewer :
+    widgets :
+    """
+
     def __init__(self, viewer):
         super().__init__()
 
