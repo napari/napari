@@ -1,11 +1,13 @@
 import importlib
 import os
 import pkgutil
+import re
 import sys
 from logging import getLogger
+from typing import Optional
 
 import pluggy
-from pluggy.manager import DistFacade
+from napari import __version__
 
 from . import _builtins, hookspecs
 
@@ -15,6 +17,94 @@ if sys.version_info >= (3, 8):
     from importlib import metadata as importlib_metadata
 else:
     import importlib_metadata
+
+entry_point_pattern = re.compile(
+    r'(?P<module>[\w.]+)\s*'
+    r'(:\s*(?P<attr>[\w.]+))?\s*'
+    r'(?P<extras>\[.*\])?\s*$'
+)
+
+
+class PluginError(Exception):
+    def __init__(self, message, plugin_name=None, plugin_module=None):
+        super().__init__(message)
+        self.plugin_name = plugin_name
+        self.plugin_module = plugin_module
+
+
+class PluginImportError(PluginError):
+    """Raised when a plugin fails to import."""
+
+    def __init__(self, plugin_name, plugin_module):
+        msg = f'Failed to import plugin: "{plugin_name}""'
+        super().__init__(msg, plugin_name, plugin_module)
+
+
+class PluginRegistrationError(PluginError):
+    """Raised when a plugin fails to register with pluggy."""
+
+    def __init__(self, plugin_name, plugin_module):
+        msg = f'Failed to register plugin: "{plugin_name}""'
+        super().__init__(msg, plugin_module)
+
+
+def entry_points_for(group: str):
+    for dist in importlib_metadata.distributions():
+        for ep in dist.entry_points:
+            if ep.group == group:
+                yield ep
+
+
+def modules_starting_with(prefix: str):
+    for finder, name, ispkg in pkgutil.iter_modules():
+        if name.startswith(prefix):
+            yield name
+
+
+def yield_plugin_modules(
+    prefix: Optional[str] = None, group: Optional[str] = None
+):
+    seen_modules = set()
+    if group and not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
+        for ep in entry_points_for(group):
+            module = entry_point_pattern.match(ep.value).group('module')
+            seen_modules.add(module.split(".")[0])
+            yield ep.name, module
+    if prefix and not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
+        for module in modules_starting_with(prefix):
+            if module not in seen_modules:
+                try:
+                    name = importlib_metadata.metadata(module).get('Name')
+                except Exception:
+                    name = None
+                yield name or module, module
+
+
+def fetch_contact_info(distname):
+    try:
+        meta = importlib_metadata.metadata(distname)
+    except importlib_metadata.PackageNotFoundError:
+        return None
+    return {
+        'name': meta.get('Name'),
+        'version': meta.get('Version'),
+        'email': meta.get('Author-Email') or meta.get('Maintainer-Email'),
+        'url': meta.get('Home-page') or meta.get('Download-Url'),
+    }
+
+
+def log_plugin_error(exc):
+    msg = f'\nPluginError: {exc}'
+    if exc.__cause__:
+        cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
+        msg += f'\n  Cause was: {cause}'
+    contact = fetch_contact_info(exc.plugin_module)
+    if contact:
+        msg += "\n  Please notify the plugin developer:\n"
+        extra = [f'{k: >11}: {v}' for k, v in contact.items()]
+        extra += [f'{"napari": >11}: v{__version__}']
+        msg += "\n".join(extra)
+    logger.error(msg)
 
 
 class NapariPluginManager(pluggy.PluginManager):
@@ -76,12 +166,32 @@ class NapariPluginManager(pluggy.PluginManager):
             sys.path.insert(0, path)
 
         count = 0
-        if not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
-            # register modules defining the napari entry_point in setup.py
-            count += self.load_setuptools_entrypoints(self.PLUGIN_ENTRYPOINT)
-        if not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
-            # register modules using naming convention
-            count += self.load_modules_by_prefix(self.PLUGIN_PREFIX)
+        for plugin_name, module in yield_plugin_modules(
+            prefix=self.PLUGIN_PREFIX, group=self.PLUGIN_ENTRYPOINT
+        ):
+            if self.get_plugin(plugin_name) or self.is_blocked(plugin_name):
+                continue
+            try:
+                try:
+                    mod = importlib.import_module(module)
+                except Exception as exc:
+                    raise PluginImportError(plugin_name, module) from exc
+                try:
+                    # prevent double registration (e.g. from entry_points)
+                    if self.is_registered(mod):
+                        continue
+                    self.register(mod, name=plugin_name)
+                except Exception as exc:
+                    raise PluginRegistrationError(plugin_name, module) from exc
+                count += 1
+            except PluginError as exc:
+                log_plugin_error(exc)
+                self.unregister(name=plugin_name)
+            except Exception as exc:
+                logger.error(
+                    f'Unexpected error loading plugin "{plugin_name}": {exc}'
+                )
+                self.unregister(name=plugin_name)
 
         if count:
             msg = f'loaded {count} plugins:\n  '
@@ -91,80 +201,6 @@ class NapariPluginManager(pluggy.PluginManager):
         if path and isinstance(path, str):
             sys.path.remove(path)
 
-        return count
-
-    def load_setuptools_entrypoints(self, group, name=None):
-        """Load modules from querying the specified setuptools ``group``
-
-        Overrides the pluggy method in order to insert try/catch statements.
-
-        Parameters
-        ----------
-        group : str
-            entry point group to load plugins
-        name : str, optional
-            if given, loads only plugins with the given ``name``.
-            by default None
-
-        Returns
-        -------
-        count : int
-            the number of loaded plugins by this call.
-        """
-        count = 0
-        for dist in importlib_metadata.distributions():
-            for ep in dist.entry_points:
-                if (
-                    ep.group != group
-                    or (name is not None and ep.name != name)
-                    # already registered
-                    or self.get_plugin(ep.name)
-                    or self.is_blocked(ep.name)
-                ):
-                    continue
-                try:
-                    plugin = ep.load()
-                    self.register(plugin, name=ep.name)
-                    self._plugin_distinfo.append((plugin, DistFacade(dist)))
-                except Exception as e:
-                    logger.error(
-                        f'failed to import plugin: {ep.name}: {str(e)}'
-                    )
-                    self.unregister(name=ep.name)
-                count += 1
-        return count
-
-    def load_modules_by_prefix(self, prefix):
-        """Find and load modules whose names start with ``prefix``
-
-        Parameters
-        ----------
-        prefix : str
-            The prefix that a module must have in order to be discovered.
-
-        Returns
-        -------
-        count : int
-            The number of modules successfully loaded.
-        """
-        count = 0
-        for finder, name, ispkg in pkgutil.iter_modules():
-            if (
-                not name.startswith(prefix)
-                or self.get_plugin(name)
-                or self.is_blocked(name)
-            ):
-                continue
-            try:
-                mod = importlib.import_module(name)
-                # prevent double registration (e.g. from entry_points)
-                if self.is_registered(mod):
-                    continue
-                self.register(mod, name=name)
-                count += 1
-            except Exception as e:
-                logger.error(f'failed to import plugin: {name}: {str(e)}')
-                self.unregister(name=name)
         return count
 
 
