@@ -33,7 +33,7 @@ from .._vispy import create_vispy_visual
 
 
 class QtViewer(QSplitter):
-    """QtViewer class
+    """Qt view for the napari Viewer model.
 
     Parameters
     ----------

@@ -415,7 +415,7 @@ class QtLayerList(QScrollArea):
 
 
 class QtDivider(QFrame):
-    """QtDivider class
+    """Qt divider used to separate Qt widgets visually.
 
     Attributes
     ----------
@@ -448,7 +448,7 @@ class QtDivider(QFrame):
 
 
 class QtLayerWidget(QFrame):
-    """QtLayerWidget class
+    """Qt view for Layer model.
 
     Attributes
     ----------
