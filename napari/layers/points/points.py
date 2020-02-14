@@ -1019,6 +1019,7 @@ class Points(Layer):
 
         # Update properties based on selected points
         if len(self._selected_data) == 0:
+            self._set_highlight()
             return
         index = self._selected_data
         edge_colors = np.unique(self.edge_color[index], axis=0)
@@ -1047,6 +1048,7 @@ class Points(Layer):
         n_unique_properties = np.array([len(v) for v in properties.values()])
         if np.all(n_unique_properties == 1):
             self.current_properties = properties
+        self._set_highlight()
 
     def interaction_box(self, index):
         """Create the interaction box around a list of points in view.
@@ -1243,7 +1245,8 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        self._set_highlight()
+        with self.events.highlight.blocker():
+            self._set_highlight(force=True)
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
