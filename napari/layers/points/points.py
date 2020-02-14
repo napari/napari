@@ -1193,8 +1193,8 @@ class Points(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        # Display points if there are any in this slice (only 2D)
-        if len(self._data_view) > 0 and self.dims.ndisplay == 2:
+        # Display points if there are any in this slice
+        if len(self._data_view) > 0:
             # Get the point sizes
             distances = abs(
                 self._data_view
@@ -1275,7 +1275,10 @@ class Points(Layer):
                 if len(self._selected_view) > 0:
                     index = copy(self._selected_view)
                     # highlight the hovered point if not in adding mode
-                    if self._value is not None and self._mode != Mode.ADD:
+                    if (
+                        self._value in self._indices_view
+                        and self._mode == Mode.SELECT
+                    ):
                         hover_point = list(self._indices_view).index(
                             self._value
                         )
@@ -1285,8 +1288,11 @@ class Points(Layer):
                             index.append(hover_point)
                     index.sort()
                 else:
-                    # don't highlight hovered points in add mode
-                    if self._mode != Mode.ADD:
+                    # only highlight hovered points in select mode
+                    if (
+                        self._value in self._indices_view
+                        and self._mode == Mode.SELECT
+                    ):
                         hover_point = list(self._indices_view).index(
                             self._value
                         )
@@ -1512,6 +1518,8 @@ class Points(Layer):
                     self._set_highlight()
             else:
                 self._set_highlight()
+        else:
+            self._set_highlight()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
