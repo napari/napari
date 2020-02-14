@@ -1,17 +1,19 @@
 import importlib
 import os
 import pkgutil
+import re
 import sys
-from logging import Logger
+from logging import getLogger
 from types import ModuleType
-from typing import List, Union
+from typing import Dict, Generator, List, Optional, Tuple, Union
 
 import pluggy
-from pluggy.manager import DistFacade
+
+from napari import __version__
 
 from . import _builtins, hookspecs
 
-logger = Logger(__name__)
+logger = getLogger(__name__)
 
 if sys.version_info >= (3, 8):
     from importlib import metadata as importlib_metadata
@@ -19,11 +21,42 @@ else:
     import importlib_metadata
 
 
+class PluginError(Exception):
+    def __init__(
+        self, message: str, plugin_name: str, plugin_module: str
+    ) -> None:
+        super().__init__(message)
+        self.plugin_name = plugin_name
+        self.plugin_module = plugin_module
+
+
+class PluginImportError(PluginError):
+    """Raised when a plugin fails to import."""
+
+    def __init__(self, plugin_name: str, plugin_module: str) -> None:
+        msg = f'Failed to import plugin: "{plugin_name}""'
+        super().__init__(msg, plugin_name, plugin_module)
+
+
+class PluginRegistrationError(PluginError):
+    """Raised when a plugin fails to register with pluggy."""
+
+    def __init__(self, plugin_name: str, plugin_module: str) -> None:
+        msg = f'Failed to register plugin: "{plugin_name}""'
+        super().__init__(msg, plugin_name, plugin_module)
+
+
 class NapariPluginManager(pluggy.PluginManager):
     PLUGIN_ENTRYPOINT = "napari.plugin"
     PLUGIN_PREFIX = "napari_"
 
-    def __init__(self, autodiscover=True):
+    # for easy availability in try/catch statements without having to import
+    # pluggy ... e.g.: except plugin_manager.PluginValidationError
+    PluginValidationError = pluggy.manager.PluginValidationError
+
+    def __init__(
+        self, autodiscover: Optional[Union[bool, str]] = True
+    ) -> None:
         """pluggy.PluginManager subclass with napari-specific functionality
 
         In addition to the pluggy functionality, this subclass adds
@@ -44,12 +77,16 @@ class NapariPluginManager(pluggy.PluginManager):
 
         # register our own built plugins
         self.register(_builtins, name='builtins')
+
         # discover external plugins
         if not os.environ.get("NAPARI_DISABLE_PLUGIN_AUTOLOAD"):
             if autodiscover:
-                self.discover(autodiscover)
+                if isinstance(autodiscover, str):
+                    self.discover(autodiscover)
+                else:
+                    self.discover()
 
-    def discover(self, path=None):
+    def discover(self, path: Optional[str] = None) -> int:
         """Discover modules by both naming convention and entry_points
 
         1) Using naming convention:
@@ -71,109 +108,119 @@ class NapariPluginManager(pluggy.PluginManager):
 
         Returns
         -------
-        int
-            The number of modules successfully loaded.
+        count : int
+            The number of plugin modules successfully loaded.
         """
-        if path and isinstance(path, str):
+        if path:
             sys.path.insert(0, path)
 
         count = 0
-        if not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
-            # register modules defining the napari entry_point in setup.py
-            count += self.load_setuptools_entrypoints(self.PLUGIN_ENTRYPOINT)
-        if not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
-            # register modules using naming convention
-            count += self.load_modules_by_prefix(self.PLUGIN_PREFIX)
+        for plugin_name, module_name in iter_plugin_modules(
+            prefix=self.PLUGIN_PREFIX, group=self.PLUGIN_ENTRYPOINT
+        ):
+            if self.get_plugin(plugin_name) or self.is_blocked(plugin_name):
+                continue
+            try:
+                self._register_module(plugin_name, module_name)
+                count += 1
+            except PluginError as exc:
+                log_plugin_error(exc)
+                self.unregister(name=plugin_name)
+            except Exception as exc:
+                logger.error(
+                    f'Unexpected error loading plugin "{plugin_name}": {exc}'
+                )
+                self.unregister(name=plugin_name)
 
         if count:
             msg = f'loaded {count} plugins:\n  '
             msg += "\n  ".join([n for n, m in self.list_name_plugin()])
             logger.info(msg)
 
-        if path and isinstance(path, str):
+        if path:
             sys.path.remove(path)
 
         return count
 
-    def load_setuptools_entrypoints(self, group, name=None):
-        """Load modules from querying the specified setuptools ``group``
-
-        Overrides the pluggy method in order to insert try/catch statements.
+    def _register_module(self, plugin_name: str, module_name: str) -> None:
+        """Try to register `module_name` as a plugin named `plugin_name`.
 
         Parameters
         ----------
-        group : str
-            entry point group to load plugins
-        name : str, optional
-            if given, loads only plugins with the given ``name``.
-            by default None
+        plugin_name : str
+            The name given to the plugin in the plugin manager.
+        module_name : str
+            The importable module name
 
-        Returns
-        -------
-        count : int
-            the number of loaded plugins by this call.
+        Raises
+        ------
+        PluginImportError
+            If an error is raised when trying to import `module_name`
+        PluginRegistrationError
+            If an error is raised when trying to register the plugin (such as
+            a PluginValidationError.)
         """
-        count = 0
-        for dist in importlib_metadata.distributions():
-            for ep in dist.entry_points:
-                if (
-                    ep.group != group
-                    or (name is not None and ep.name != name)
-                    # already registered
-                    or self.get_plugin(ep.name)
-                    or self.is_blocked(ep.name)
-                ):
-                    continue
-                try:
-                    plugin = ep.load()
-                    self.register(plugin, name=ep.name)
-                    self._plugin_distinfo.append((plugin, DistFacade(dist)))
-                except Exception as e:
-                    logger.error(
-                        f'failed to import plugin: {ep.name}: {str(e)}'
-                    )
-                    self.unregister(name=ep.name)
-                count += 1
-        return count
-
-    def load_modules_by_prefix(self, prefix):
-        """Find and load modules whose names start with ``prefix``
-
-        Parameters
-        ----------
-        prefix : str
-            The prefix that a module must have in order to be discovered.
-
-        Returns
-        -------
-        count : int
-            The number of modules successfully loaded.
-        """
-        count = 0
-        for finder, name, ispkg in pkgutil.iter_modules():
-            if (
-                not name.startswith(prefix)
-                or self.get_plugin(name)
-                or self.is_blocked(name)
-            ):
-                continue
-            try:
-                mod = importlib.import_module(name)
-                # prevent double registration (e.g. from entry_points)
-                if self.is_registered(mod):
-                    continue
-                self.register(mod, name=name)
-                count += 1
-            except Exception as e:
-                logger.error(f'failed to import plugin: {name}: {str(e)}')
-                self.unregister(name=name)
-        return count
+        try:
+            mod = importlib.import_module(module_name)
+        except Exception as exc:
+            raise PluginImportError(plugin_name, module_name) from exc
+        try:
+            # prevent double registration (e.g. from entry_points)
+            if self.is_registered(mod):
+                return
+            self.register(mod, name=plugin_name)
+        except Exception as exc:
+            raise PluginRegistrationError(plugin_name, module_name) from exc
 
 
-# for easy availability in try/catch statements without having to import pluggy
-# e.g.: except plugin_manager.PluginValidationError
-NapariPluginManager.PluginValidationError = (
-    pluggy.manager.PluginValidationError
+def entry_points_for(
+    group: str,
+) -> Generator[importlib_metadata.EntryPoint, None, None]:
+    """Yield all entry_points for dists that provide entry point `group`
+
+    Note: a single package may provide multiple entrypoints for a given group.
+
+    Parameters
+    ----------
+    group : str
+        The name of the entry point to search.
+
+    Yields
+    -------
+    Generator[importlib_metadata.EntryPoint, None, None]
+        [description]
+    """
+    for dist in importlib_metadata.distributions():
+        for ep in dist.entry_points:
+            if ep.group == group:
+                yield ep
+
+
+def modules_starting_with(prefix: str) -> Generator[str, None, None]:
+    """Yields all module names in sys.path that begin with `prefix`.
+
+    Parameters
+    ----------
+    prefix : str
+        The prefix to search
+
+    Yields
+    -------
+    module_name : str
+        Yields names of modules that start with prefix
+
+    """
+    for finder, name, ispkg in pkgutil.iter_modules():
+        if name.startswith(prefix):
+            yield name
+
+
+# regex to parse importlib_metadata.EntryPoint.value strings
+# entry point format:  "name = module.with.periods:attr [extras]"
+entry_point_pattern = re.compile(
+    r'(?P<module>[\w.]+)\s*'
+    r'(:\s*(?P<attr>[\w.]+))?\s*'
+    r'(?P<extras>\[.*\])?\s*$'
 )
 
 
@@ -265,3 +312,117 @@ def permute_hookimpls(
 
     hook_caller._wrappers = _wrappers
     hook_caller._nonwrappers = _nonwraps
+
+
+def iter_plugin_modules(
+    prefix: Optional[str] = None, group: Optional[str] = None
+) -> Generator[Tuple[str, str], None, None]:
+    """Discovers unique plugin using naming convention and/or entry points.
+
+    This function makes sure that packages that *both* follow the naming
+    convention (i.e. starting with `prefix`) *and* provide and an entry point
+    `group` will only be yielded once.  Precedence is given to entry points:
+    that is, if a package satisfies both critera, only the modules specifically
+    listed in the entry points will be yielded.  These MAY or MAY NOT be the
+    top level module in the package... whereas with naming convention, it is
+    always the top level module that gets imported and registered with the
+    plugin manager.
+
+    The NAME of yielded plugins will be the name of the package provided in
+    the package METADATA file when found.  This allows for the possibility that
+    the plugin name and the module name are not the same: for instance...
+    ("napari-plugin", "napari_plugin").
+
+    Plugin packages may also provide multiple entry points, which will be
+    registered as plugins of different names.  For instance, the following
+    setup.py entry would register two plugins under the names
+    "plugin_package.register" and "plugin_package.segment"
+
+    setup(
+        name="napari-plugin-package",
+        entry_points={
+            "napari.plugin": [
+                "plugin_package.register = napari_plugin_package.registration",
+                "plugin_package.segment = napari_plugin_package.segmentation"
+            ],
+        },
+        packages=find_packages(),
+    )
+
+
+    Parameters
+    ----------
+    prefix : str, optional
+        A prefix by which to search module names.  If None, discovery by naming
+        convention is disabled., by default None
+    group : str, optional
+        An entry point group string to search.  If None, discovery by Entry
+        Points is disabled, by default None
+
+    Yields
+    -------
+    plugin_info : tuple
+        (plugin_name, module_name)
+    """
+    seen_modules = set()
+    if group and not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
+        for ep in entry_points_for(group):
+            module = entry_point_pattern.match(ep.value).group('module')
+            seen_modules.add(module.split(".")[0])
+            yield ep.name, module
+    if prefix and not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
+        for module in modules_starting_with(prefix):
+            if module not in seen_modules:
+                try:
+                    name = importlib_metadata.metadata(module).get('Name')
+                except Exception:
+                    name = None
+                yield name or module, module
+
+
+def fetch_contact_info(distname: str) -> Optional[Dict[str, str]]:
+    """Attempt to retrieve name, version, contact email & url for a package.
+
+    Parameters
+    ----------
+    distname : str
+        Name of a distribution.  Note: this must match the *name* of the
+        package in the METADATA file... not the name of the module.
+
+    Returns
+    -------
+    package_info : dict or None
+        A dict with keys 'name', 'version', 'email', and 'url'.
+        Returns None of the distname cannot be found.
+    """
+    try:
+        meta = importlib_metadata.metadata(distname)
+    except importlib_metadata.PackageNotFoundError:
+        return None
+    return {
+        'name': meta.get('Name'),
+        'version': meta.get('Version'),
+        'email': meta.get('Author-Email') or meta.get('Maintainer-Email'),
+        'url': meta.get('Home-page') or meta.get('Download-Url'),
+    }
+
+
+def log_plugin_error(exc: PluginError) -> None:
+    """Log PluginError to logger, with helpful contact info if possible.
+
+    Parameters
+    ----------
+    exc : PluginError
+        An instance of a PluginError
+    """
+    msg = f'\nPluginError: {exc}'
+    if exc.__cause__:
+        cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
+        msg += f'\n  Cause was: {cause}'
+    contact = fetch_contact_info(exc.plugin_module)
+    if contact:
+        msg += "\n  Please notify the plugin developer:\n"
+        extra = [f'{k: >11}: {v}' for k, v in contact.items()]
+        extra += [f'{"napari": >11}: v{__version__}']
+        msg += "\n".join(extra)
+    logger.error(msg)

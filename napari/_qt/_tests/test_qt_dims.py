@@ -6,8 +6,7 @@ import pytest
 from qtpy.QtCore import Qt
 
 from napari._qt.qt_dims import QtDims
-from napari._qt.qt_viewer import QtViewer
-from napari.components import Dims, ViewerModel
+from napari.components import Dims
 
 
 def test_creating_view(qtbot):
@@ -294,10 +293,8 @@ def test_play_button(qtbot):
     assert button.popup.isVisible()
 
 
-def test_slice_labels(qtbot):
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+def test_slice_labels(viewermodel_factory):
+    view, viewer = viewermodel_factory()
     np.random.seed(0)
     data = np.random.random((20, 10, 10))
     viewer.add_image(data)

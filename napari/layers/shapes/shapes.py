@@ -266,9 +266,9 @@ class Shapes(Layer):
             self._current_opacity = 0.7
 
         self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
-        self._data_slice_keys = np.empty(
-            (0, 2, len(self.dims.not_displayed)), dtype=int
-        )
+        self._data_view.slice_key = np.array(self.dims.indices)[
+            list(self.dims.not_displayed)
+        ]
 
         self._value = (None, None)
         self._value_stored = (None, None)

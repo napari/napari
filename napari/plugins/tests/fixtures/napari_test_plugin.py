@@ -3,14 +3,14 @@ Example plugin for testing plugin discovery and loading
 """
 import pluggy
 
-hookimpl = pluggy.HookimplMarker("napari")
+napari_hook_implementation = pluggy.HookimplMarker("napari")
 
 
 def reader_function():
     pass
 
 
-@hookimpl
+@napari_hook_implementation
 def napari_get_reader(path):
     if path.endswith('true'):
         return reader_function

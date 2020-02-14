@@ -405,6 +405,13 @@ class ViewerModel(AddLayersMixin, KeymapMixin):
                 point = self.dims.point[axis + offset]
                 layer.dims.set_point(axis, point)
 
+    def _toggle_theme(self):
+        """Switch to next theme in list of themes
+        """
+        theme_names = list(self.themes.keys())
+        cur_theme = theme_names.index(self.theme)
+        self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
+
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and
         finding the first selected layer. If multiple layers are selected the
