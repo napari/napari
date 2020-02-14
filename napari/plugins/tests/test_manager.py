@@ -9,6 +9,7 @@ from napari.plugins import NapariPluginManager, manager
 
 @pytest.fixture
 def pm():
+    """PluginManager fixture that loads some test plugins"""
     fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
     pm = NapariPluginManager(autodiscover=fixture_path)
     assert fixture_path not in sys.path, 'discover path leaked into sys.path'
@@ -58,10 +59,11 @@ def test_disable_autodiscover_with_env_var():
 
 
 def test_iter_plugins():
+    """Test that plugin discovery is working."""
     fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
     sys.path.append(fixture_path)
 
-    #
+    # Search by entry_point group only
     assert set(manager.iter_plugin_modules(group='napari.plugin')).issuperset(
         {
             ('unimportable', 'unimportable_plugin'),
@@ -70,6 +72,7 @@ def test_iter_plugins():
         }
     )
 
+    # Search by name_convention only
     assert set(manager.iter_plugin_modules(prefix='napari_')).issuperset(
         {
             ('napari_bad_plugin', 'napari_bad_plugin'),
@@ -79,6 +82,9 @@ def test_iter_plugins():
         }
     )
 
+    # Search by BOTH name_convention and entry_point...
+    # note that the plugin name for plugin "working" is taken from the
+    # entry_point, and not from the module name...
     assert set(
         manager.iter_plugin_modules(prefix='napari', group='napari.plugin')
     ).issuperset(

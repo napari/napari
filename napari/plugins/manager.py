@@ -106,8 +106,8 @@ class NapariPluginManager(pluggy.PluginManager):
 
         Returns
         -------
-        int
-            The number of modules successfully loaded.
+        count : int
+            The number of plugin modules successfully loaded.
         """
         if path:
             sys.path.insert(0, path)
@@ -141,6 +141,23 @@ class NapariPluginManager(pluggy.PluginManager):
         return count
 
     def _register_module(self, plugin_name: str, module_name: str) -> None:
+        """Try to register `module_name` as a plugin named `plugin_name`.
+
+        Parameters
+        ----------
+        plugin_name : str
+            The name given to the plugin in the plugin manager.
+        module_name : str
+            The importable module name
+
+        Raises
+        ------
+        PluginImportError
+            If an error is raised when trying to import `module_name`
+        PluginRegistrationError
+            If an error is raised when trying to register the plugin (such as
+            a PluginValidationError.)
+        """
         try:
             mod = importlib.import_module(module_name)
         except Exception as exc:
@@ -157,6 +174,20 @@ class NapariPluginManager(pluggy.PluginManager):
 def entry_points_for(
     group: str,
 ) -> Generator[importlib_metadata.EntryPoint, None, None]:
+    """Yield all entry_points for dists that provide entry point `group`
+
+    Note: a single package may provide multiple entrypoints for a given group.
+
+    Parameters
+    ----------
+    group : str
+        The name of the entry point to search.
+
+    Yields
+    -------
+    Generator[importlib_metadata.EntryPoint, None, None]
+        [description]
+    """
     for dist in importlib_metadata.distributions():
         for ep in dist.entry_points:
             if ep.group == group:
@@ -164,11 +195,26 @@ def entry_points_for(
 
 
 def modules_starting_with(prefix: str) -> Generator[str, None, None]:
+    """Yields all module names in sys.path that begin with `prefix`.
+
+    Parameters
+    ----------
+    prefix : str
+        The prefix to search
+
+    Yields
+    -------
+    module_name : str
+        Yields names of modules that start with prefix
+
+    """
     for finder, name, ispkg in pkgutil.iter_modules():
         if name.startswith(prefix):
             yield name
 
 
+# regex to parse importlib_metadata.EntryPoint.value strings
+# entry point format:  "name = module.with.periods:attr [extras]"
 entry_point_pattern = re.compile(
     r'(?P<module>[\w.]+)\s*'
     r'(:\s*(?P<attr>[\w.]+))?\s*'
@@ -179,6 +225,53 @@ entry_point_pattern = re.compile(
 def iter_plugin_modules(
     prefix: Optional[str] = None, group: Optional[str] = None
 ) -> Generator[Tuple[str, str], None, None]:
+    """Discovers unique plugin using naming convention and/or entry points.
+
+    This function makes sure that packages that *both* follow the naming
+    convention (i.e. starting with `prefix`) *and* provide and an entry point
+    `group` will only be yielded once.  Precedence is given to entry points:
+    that is, if a package satisfies both critera, only the modules specifically
+    listed in the entry points will be yielded.  These MAY or MAY NOT be the
+    top level module in the package... whereas with naming convention, it is
+    always the top level module that gets imported and registered with the
+    plugin manager.
+
+    The NAME of yielded plugins will be the name of the package provided in
+    the package METADATA file when found.  This allows for the possibility that
+    the plugin name and the module name are not the same: for instance...
+    ("napari-plugin", "napari_plugin").
+
+    Plugin packages may also provide multiple entry points, which will be
+    registered as plugins of different names.  For instance, the following
+    setup.py entry would register two plugins under the names
+    "plugin_package.register" and "plugin_package.segment"
+
+    setup(
+        name="napari-plugin-package",
+        entry_points={
+            "napari.plugin": [
+                "plugin_package.register = napari_plugin_package.registration",
+                "plugin_package.segment = napari_plugin_package.segmentation"
+            ],
+        },
+        packages=find_packages(),
+    )
+
+
+    Parameters
+    ----------
+    prefix : str, optional
+        A prefix by which to search module names.  If None, discovery by naming
+        convention is disabled., by default None
+    group : str, optional
+        An entry point group string to search.  If None, discovery by Entry
+        Points is disabled, by default None
+
+    Yields
+    -------
+    plugin_info : tuple
+        (plugin_name, module_name)
+    """
     seen_modules = set()
     if group and not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
         for ep in entry_points_for(group):
@@ -196,6 +289,20 @@ def iter_plugin_modules(
 
 
 def fetch_contact_info(distname: str) -> Optional[Dict[str, str]]:
+    """Attempt to retrieve name, version, contact email & url for a package.
+
+    Parameters
+    ----------
+    distname : str
+        Name of a distribution.  Note: this must match the *name* of the
+        package in the METADATA file... not the name of the module.
+
+    Returns
+    -------
+    package_info : dict or None
+        A dict with keys 'name', 'version', 'email', and 'url'.
+        Returns None of the distname cannot be found.
+    """
     try:
         meta = importlib_metadata.metadata(distname)
     except importlib_metadata.PackageNotFoundError:
@@ -209,6 +316,13 @@ def fetch_contact_info(distname: str) -> Optional[Dict[str, str]]:
 
 
 def log_plugin_error(exc: PluginError) -> None:
+    """Log PluginError to logger, with helpful contact info if possible.
+
+    Parameters
+    ----------
+    exc : PluginError
+        An instance of a PluginError
+    """
     msg = f'\nPluginError: {exc}'
     if exc.__cause__:
         cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
