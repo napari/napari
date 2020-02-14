@@ -7,7 +7,6 @@ from logging import getLogger
 from typing import Dict, Generator, Optional, Tuple, Union
 
 import pluggy
-from napari import __version__
 
 from . import _builtins, hookspecs
 
@@ -323,6 +322,8 @@ def log_plugin_error(exc: PluginError) -> None:
     exc : PluginError
         An instance of a PluginError
     """
+    from napari import __version__
+
     msg = f'\nPluginError: {exc}'
     if exc.__cause__:
         cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
