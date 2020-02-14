@@ -1,4 +1,3 @@
-import csv
 from typing import Union, Dict, Tuple
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
