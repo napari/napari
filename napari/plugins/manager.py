@@ -173,7 +173,7 @@ class NapariPluginManager(pluggy.PluginManager):
 def entry_points_for(
     group: str,
 ) -> Generator[importlib_metadata.EntryPoint, None, None]:
-    """Yield all entry_points for dists that provide entry point `group`
+    """Yield all entry_points matching "group", from any distribution.
 
     Note: a single package may provide multiple entrypoints for a given group.
 
@@ -224,7 +224,7 @@ entry_point_pattern = re.compile(
 def iter_plugin_modules(
     prefix: Optional[str] = None, group: Optional[str] = None
 ) -> Generator[Tuple[str, str], None, None]:
-    """Discovers unique plugin using naming convention and/or entry points.
+    """Discovers unique plugins using naming convention and/or entry points.
 
     This function makes sure that packages that *both* follow the naming
     convention (i.e. starting with `prefix`) *and* provide and an entry point
