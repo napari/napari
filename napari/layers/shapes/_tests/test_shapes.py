@@ -156,6 +156,25 @@ def test_ellipses():
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
 
+def test_4D_ellispse():
+    """Test instantiating Shapes layer with 4D planar ellipse."""
+    # Test a single 4D ellipse
+    np.random.seed(0)
+    data = [
+        [
+            [3, 5, 108, 108],
+            [3, 5, 108, 148],
+            [3, 5, 148, 148],
+            [3, 5, 148, 108],
+        ]
+    ]
+    layer = Shapes(data, shape_type='ellipse')
+    assert layer.nshapes == len(data)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == 4
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+
 def test_ellipses_roundtrip():
     """Test a full roundtrip with ellipss data."""
     shape = (10, 4, 2)

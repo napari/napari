@@ -111,11 +111,31 @@ def test_selecting_points():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     layer.mode = 'select'
-    layer.selected_data = [0, 1]
-    assert layer.selected_data == [0, 1]
+    data_to_select = [1, 2]
+    layer.selected_data = data_to_select
+    assert layer.selected_data == data_to_select
 
     # test switching to 3D
     layer.dims.ndisplay = 3
+    assert layer.selected_data == data_to_select
+
+    # select different points while in 3D mode
+    other_data_to_select = [0]
+    layer.selected_data = other_data_to_select
+    assert layer.selected_data == other_data_to_select
+
+    # selection should persist when going back to 2D mode
+    layer.dims.ndisplay = 2
+    assert layer.selected_data == other_data_to_select
+
+    # selection should persist when switching between between select and pan_zoom
+    layer.mode = 'pan_zoom'
+    assert layer.selected_data == other_data_to_select
+    layer.mode = 'select'
+    assert layer.selected_data == other_data_to_select
+
+    # add mode should clear the selection
+    layer.mode = 'add'
     assert layer.selected_data == []
 
 
@@ -131,6 +151,14 @@ def test_adding_points():
     layer.add(coord)
     assert len(layer.data) == 11
     assert np.all(layer.data[10] == coord)
+    # the added point should be selected
+    assert layer.selected_data == [10]
+
+    # test adding multiple points
+    coords = [[10, 10], [15, 15]]
+    layer.add(coords)
+    assert len(layer.data) == 13
+    assert np.all(layer.data[11:, :] == coords)
 
 
 def test_adding_points_to_empty():
@@ -302,6 +330,9 @@ def test_properties():
     layer = Points(data, properties=copy(properties))
     assert layer.properties == properties
 
+    current_prop = {'point_type': np.array(['B'])}
+    assert layer.current_properties == current_prop
+
     # test removing points
     layer.selected_data = [0, 1]
     layer.remove_selected()
@@ -346,13 +377,13 @@ def test_adding_annotations():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
     layer = Points(data)
     assert layer.properties == {}
 
     # add properties
-    layer.properties = copy(annotations)
-    assert layer.properties == annotations
+    layer.properties = copy(properties)
+    assert layer.properties == properties
 
     # change properties
     new_annotations = {
@@ -360,6 +391,20 @@ def test_adding_annotations():
     }
     layer.properties = copy(new_annotations)
     assert layer.properties == new_annotations
+
+
+def test_add_points_with_properties():
+    # test adding points initialized with properties
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, properties=copy(properties))
+
+    coord = [18, 18]
+    layer.add(coord)
+    new_prop = {'point_type': np.append(properties['point_type'], 'B')}
+    np.testing.assert_equal(layer.properties, new_prop)
 
 
 def test_annotations_errors():
@@ -955,24 +1000,6 @@ def test_size_with_3D_arrays():
     assert layer.size.shape == (11, 3)
     assert np.unique(layer.size[2:10, 1:])[0] == 5
     assert np.all(layer.size[0] == [0, 16, 16])
-
-
-def test_interaction_box():
-    """Test the creation of the interaction box."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    assert layer._selected_box is None
-
-    layer.selected_data = [0]
-    assert len(layer._selected_box) == 4
-
-    layer.selected_data = [0, 1]
-    assert len(layer._selected_box) == 4
-
-    layer.selected_data = []
-    assert layer._selected_box is None
 
 
 def test_copy_and_paste():
