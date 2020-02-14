@@ -1245,6 +1245,7 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
+        self._update_coordinates()
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
 
