@@ -1193,8 +1193,8 @@ class Points(Layer):
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
-        # Display points if there are any in this slice
-        if len(self._data_view) > 0:
+        # Display points if there are any in this slice (only 2D)
+        if len(self._data_view) > 0 and self.dims.ndisplay == 2:
             # Get the point sizes
             distances = abs(
                 self._data_view
@@ -1245,7 +1245,6 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        self._update_coordinates()
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
 
