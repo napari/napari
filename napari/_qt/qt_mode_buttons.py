@@ -9,7 +9,7 @@ class QtModeRadioButton(QRadioButton):
 
         Parameters
         ----------
-        layer : Layer
+        layer : napari.layers.Layer
             The layer instance that this button controls.
         button_name : str
             Name for the button.  This is mostly used to identify the button
@@ -46,7 +46,7 @@ class QtModePushButton(QPushButton):
 
         Parameters
         ----------
-        layer : Layer
+        layer : napari.layers.Layer
             The layer instance that this button controls.
         button_name : str
             Name for the button.  This is mostly used to identify the button

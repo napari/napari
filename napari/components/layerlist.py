@@ -41,7 +41,7 @@ class LayerList(ListModel):
         ----------
         name : str
             Original name.
-        layer : Layer, optional
+        layer : napari.layers.Layer, optional
             Layer for which name is generated.
 
         Returns

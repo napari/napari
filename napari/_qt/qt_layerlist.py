@@ -182,7 +182,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        layer : napari.components.LayerList
+        layer : napari.layers.Layer
+            An instance of a napari layer.
 
         """
         total = len(self.layers)
@@ -452,8 +453,8 @@ class QtLayerWidget(QFrame):
 
     Attributes
     ----------
-    layer : [type]
-        [description]
+    layer : napari.layers.Layer
+        An instance of a napari layer.
     layout : QVBoxLayout
         Layout of the widget.
     nameTextBox : QLineEdit
