@@ -131,5 +131,5 @@ class QtConsole(RichJupyterWidget):
     def shutdown(self):
         if self.kernel_client is not None:
             self.kernel_client.stop_channels()
-        if self.kernel_manager is not None:
+        if self.kernel_manager is not None and self.kernel_manager.has_kernel:
             self.kernel_manager.shutdown_kernel()
