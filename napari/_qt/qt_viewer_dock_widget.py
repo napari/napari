@@ -49,7 +49,6 @@ class QtViewerDockWidget(QDockWidget):
         shortcut=None,
     ):
         self.qt_viewer = qt_viewer
-        self.viewer = qt_viewer.viewer  # convenience access to viewer model
         super().__init__(name)
         self.name = name
 
