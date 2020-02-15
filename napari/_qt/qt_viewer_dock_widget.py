@@ -21,6 +21,8 @@ class QtViewerDockWidget(QDockWidget):
 
     Parameters
     ----------
+    qt_viewer : QtViewer
+        The QtViewer instance that this dock widget will belong to.
     widget : QWidget
         `widget` that will be added as QDockWidget's main widget.
     name : str
@@ -38,7 +40,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def __init__(
         self,
-        viewer,
+        qt_viewer,
         widget: QWidget,
         *,
         name: str = '',
@@ -46,7 +48,8 @@ class QtViewerDockWidget(QDockWidget):
         allowed_areas: Optional[List[str]] = None,
         shortcut=None,
     ):
-        self.viewer = viewer
+        self.qt_viewer = qt_viewer
+        self.viewer = qt_viewer.viewer  # convenience access to viewer model
         super().__init__(name)
         self.name = name
 
@@ -95,7 +98,7 @@ class QtViewerDockWidget(QDockWidget):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
-        return self.viewer.keyPressEvent(event)
+        return self.qt_viewer.keyPressEvent(event)
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
