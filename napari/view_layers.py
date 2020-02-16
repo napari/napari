@@ -26,7 +26,7 @@ def _build_view_method(layer_string: str) -> Callable:
     view_func : Callable
         The complete view_* function
     """
-    add_string = f'add_{layer_string}'  # name of the new function
+    add_string = f'add_{layer_string}'  # name of the corresponding add_* func
     try:
         add_method = getattr(AddLayersMixin, add_string)
     except AttributeError:
