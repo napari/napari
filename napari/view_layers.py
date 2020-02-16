@@ -116,7 +116,11 @@ def view_image(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_image(
         data=data,
@@ -259,7 +263,11 @@ def view_points(
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_points(
         data=data,
@@ -364,7 +372,11 @@ def view_labels(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_labels(
         data=data,
@@ -476,7 +488,11 @@ def view_shapes(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_shapes(
         data=data,
@@ -573,7 +589,11 @@ def view_surface(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_surface(
         data,
@@ -661,7 +681,11 @@ def view_vectors(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_vectors(
         data,
