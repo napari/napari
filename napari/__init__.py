@@ -60,3 +60,7 @@ del get_versions
 from scipy import stats  # noqa: F401
 
 del stats
+
+from . import _magicgui
+
+del _magicgui
