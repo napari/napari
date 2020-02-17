@@ -34,6 +34,9 @@ class ListModel(MultiIndexList, TypedList):
             reordered=None,
             changed=None,
         )
+        self.events.added.connect(self.events.changed)
+        self.events.removed.connect(self.events.changed)
+        self.events.reordered.connect(self.events.changed)
 
     def __setitem__(self, query, values):
         indices = tuple(self.__prsitem__(query))
@@ -47,20 +50,16 @@ class ListModel(MultiIndexList, TypedList):
 
         super().__setitem__(indices, new_indices)
         self.events.reordered()
-        self.events.changed()
 
     def insert(self, index, obj):
         super().insert(index, obj)
         self.events.added(item=obj, index=self.__locitem__(index))
-        self.events.changed()
 
     def append(self, obj):
         super(TypedList, self).append(obj)
         self.events.added(item=obj, index=len(self) - 1)
-        self.events.changed()
 
     def pop(self, key):
         obj = super().pop(key)
         self.events.removed(item=obj, index=key)
-        self.events.changed()
         return obj
