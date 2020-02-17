@@ -47,10 +47,6 @@ class NapariPluginManager(pluggy.PluginManager):
     PLUGIN_ENTRYPOINT = "napari.plugin"
     PLUGIN_PREFIX = "napari_"
 
-    # for easy availability in try/catch statements without having to import
-    # pluggy ... e.g.: except plugin_manager.PluginValidationError
-    PluginValidationError = pluggy.manager.PluginValidationError
-
     def __init__(
         self, autodiscover: Optional[Union[bool, str]] = True
     ) -> None:

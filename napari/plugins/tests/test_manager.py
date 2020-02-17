@@ -3,6 +3,7 @@ import os
 import sys
 
 import pytest
+from pluggy import PluginValidationError
 
 from napari.plugins import NapariPluginManager, manager
 
@@ -40,7 +41,7 @@ def test_plugin_autodiscovery(pm):
 
 def test_invalid_plugin_raises(pm):
     """Plugins that break the hookspec API will raise PluginValidationError."""
-    with pytest.raises(NapariPluginManager.PluginValidationError):
+    with pytest.raises(PluginValidationError):
         bad = importlib.import_module('napari_invalid_plugin')
         pm.register(bad)
 
