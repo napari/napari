@@ -9,17 +9,18 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
+from typing import Tuple, Type
 from .layers import Layer
 
 try:
     from magicgui import register_type
 
-    def get_layers(magicgui, layer_type):
+    def get_layers(magicgui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
         """Retrieve layers of type `layer_type`, from the Viewer the gui is in.
 
         Parameters
         ----------
-        magicgui : object
+        magicgui : MagicGui or QWidget
             The instantiated MagicGui widget.  May or may not be docked in a
             dock widget.
         layer_type : type
