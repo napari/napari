@@ -90,7 +90,7 @@ class Scale(Transform):
     def __call__(self, coords):
         if coords.shape[1] > len(self.scale):
             scale = np.concatenate(
-                ([1.0] * coords.shape[1] - len(self.scale)), self.scale
+                ([1.0] * (coords.shape[1] - len(self.scale)), self.scale)
             )
         return coords * scale
 
