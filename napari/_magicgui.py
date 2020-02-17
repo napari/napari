@@ -30,6 +30,16 @@ try:
         -------
         tuple
             Tuple of layers of type ``layer_type``
+
+        Example
+        -------
+        This allows the user to do this, and get a dropdown box in their GUI
+        that shows the available image layers.
+
+        >>> @magicgui
+        ... def get_layer_mean(layer: napari.layers.Image) -> float:
+        ...     return layer.data.mean()
+
         """
         try:
             # look for the parent Viewer based on where the magicgui is docked.
