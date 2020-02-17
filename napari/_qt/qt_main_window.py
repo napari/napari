@@ -141,7 +141,9 @@ class Window:
 
         screenshot = QAction('Screenshot', self._qt_window)
         screenshot.setShortcut('Ctrl+Alt+S')
-        screenshot.setStatusTip('Save .png screenshot of current display')
+        screenshot.setStatusTip(
+            'Save screenshot of current display, default .png'
+        )
         screenshot.triggered.connect(self.qt_viewer._save_screenshot)
 
         self.file_menu = self.main_menu.addMenu('&File')

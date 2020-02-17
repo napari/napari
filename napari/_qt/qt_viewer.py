@@ -242,19 +242,10 @@ class QtViewer(QSplitter):
             parent=self,
             caption='',
             directory=self._last_visited_dir,  # home dir by default
+            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
+            # jpg and jpeg not included as they don't support an alpha channel
         )
         if (filename != '') and (filename is not None):
-            image_extensions = (
-                '.bmp',
-                '.gif',
-                '.jpeg',
-                '.jpg',
-                '.png',
-                '.tif',
-                '.tiff',
-            )
-            if not filename.endswith(image_extensions):
-                filename = filename + '.png'
             self.screenshot(path=filename)
 
     def _open_images(self):
