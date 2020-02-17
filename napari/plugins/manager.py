@@ -27,7 +27,7 @@ class PluginError(Exception):
         self.plugin_module = plugin_module
 
 
-class PluginImportError(PluginError):
+class PluginImportError(PluginError, ImportError):
     """Raised when a plugin fails to import."""
 
     def __init__(self, plugin_name: str, plugin_module: str) -> None:
