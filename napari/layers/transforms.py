@@ -56,7 +56,6 @@ class TransformChain(ListModel, Transform):
         return ListModel(self._basetype, iterable, self._lookup)
 
     def set_slice(self, axes: Sequence[int]) -> TransformChain:
-        self._set_transform_attributes()
         return TransformChain([tf.set_slice(axes) for tf in self])
 
 
