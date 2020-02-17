@@ -117,6 +117,18 @@ class QtLabelsControls(QtLayerControls):
         self.layer.status = str(self.layer.mode)
 
     def _on_mode_change(self, event):
+        """Update ticks in checkbox widgets when label layer mode is changed.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not PAN_ZOOM, PICKER, PAINT, or FILL
+        """
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
@@ -130,40 +142,90 @@ class QtLabelsControls(QtLayerControls):
             raise ValueError("Mode not recognized")
 
     def changeColor(self):
+        """Change colormap of the label layer."""
         self.layer.new_colormap()
 
     def changeSelection(self, value):
+        """Change currently selected label.
+
+        Parameters
+        ----------
+        value : int
+            Index of label to select.
+        """
         self.layer.selected_label = value
         self.selectionSpinBox.clearFocus()
         self.setFocus()
 
     def changeSize(self, value):
+        """Change paint brush size.
+
+        Parameters
+        ----------
+        value : float
+            Size of the paint brush.
+        """
         self.layer.brush_size = value
 
     def change_contig(self, state):
+        """Toggle contiguous state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if labels are contiguous.
+        """
         if state == Qt.Checked:
             self.layer.contiguous = True
         else:
             self.layer.contiguous = False
 
     def change_ndim(self, state):
+        """Toggle n-dimensional state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if label layer is n-dimensional.
+        """
         if state == Qt.Checked:
             self.layer.n_dimensional = True
         else:
             self.layer.n_dimensional = False
 
     def _on_selection_change(self, event=None):
+        """Switch currently selected selected label.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
             self.selectionSpinBox.setValue(int(value))
 
     def _on_brush_size_change(self, event=None):
+        """Update brush size for the label layer.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
             value = np.clip(int(value), 1, 40)
             self.brushSizeSlider.setValue(value)
 
     def _on_n_dim_change(self, event=None):
+        """Toggle n-dimensional state.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
