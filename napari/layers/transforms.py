@@ -18,11 +18,12 @@ class Transform:
         A function converting an NxD array of coordinates to NxD'.
     """
 
-    def __init__(self, func=tz.identity, inverse=None):
+    def __init__(self, func=tz.identity, inverse=None, name=None):
         self.func = func
         self._inverse_func = inverse
         if func is tz.identity:
             self._inverse_func = tz.identity
+        self.name == name
 
     def __call__(self, coords):
         """Transform input coordinates to output."""
@@ -61,7 +62,8 @@ class Translate(Transform):
     [0, 4, 18, 34] in 4D without modification.
     """
 
-    def __init__(self, vector=(0.0,)):
+    def __init__(self, vector=(0.0,), name='translate'):
+        super().__init__(name=name)
         self.vector = np.array(vector)
 
     def __call__(self, coords):
@@ -85,7 +87,8 @@ class Scale(Transform):
     An empty scale class implies a scale of 1.
     """
 
-    def __init__(self, scale=(1.0,)):
+    def __init__(self, scale=(1.0,), name='scale'):
+        super().__init__(name=name)
         self.scale = np.array(scale)
 
     def __call__(self, coords):
