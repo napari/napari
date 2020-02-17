@@ -194,7 +194,7 @@ def entry_points_for(
 
 
 def modules_starting_with(prefix: str) -> Generator[str, None, None]:
-    """Yields all module names in sys.path that begin with `prefix`.
+    """Yield all module names in sys.path that begin with `prefix`.
 
     Parameters
     ----------
@@ -224,7 +224,7 @@ entry_point_pattern = re.compile(
 def iter_plugin_modules(
     prefix: Optional[str] = None, group: Optional[str] = None
 ) -> Generator[Tuple[str, str], None, None]:
-    """Discovers unique plugins using naming convention and/or entry points.
+    """Discover unique plugins using naming convention and/or entry points.
 
     This function makes sure that packages that *both* follow the naming
     convention (i.e. starting with `prefix`) *and* provide and an entry point
