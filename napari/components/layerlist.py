@@ -24,9 +24,11 @@ class LayerList(ListModel):
             * reordered(): whenever the list is reordered
     """
 
-    def __init__(self):
+    def __init__(self, iterable=()):
         super().__init__(
-            basetype=Layer, lookup={str: lambda q, e: q == e.name}
+            basetype=Layer,
+            iterable=iterable,
+            lookup={str: lambda q, e: q == e.name},
         )
 
         self.events.added.connect(_add)
