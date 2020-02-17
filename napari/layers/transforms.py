@@ -62,7 +62,7 @@ class Translate(Transform):
     """
 
     def __init__(self, vector=(0.0,)):
-        self.vector = vector
+        self.vector = np.array(vector)
 
     def __call__(self, coords):
         vector = np.concatenate(
@@ -85,7 +85,7 @@ class Scale(Transform):
     """
 
     def __init__(self, scales=(1.0,)):
-        self.scales = scales
+        self.scales = np.array(scales)
 
     def __call__(self, coords):
         if coords.shape[1] > len(self.scales):
@@ -93,3 +93,6 @@ class Scale(Transform):
                 ([1.0] * coords.shape[1] - len(self.scales)), self.scales
             )
         return coords * scales
+
+    def inverse(self):
+        return Scale(1 / self.scales)
