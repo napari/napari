@@ -28,13 +28,6 @@ class QtLayerList(QScrollArea):
     ----------
     centers : list
         List of layer widgets center coordinates.
-    drag_name : str
-        Name attribute of the dragged layer.
-    drag_start_position : array, shape (2,)
-        Mouse coordinates at the beginning of the mouse drag event.
-    dragTimer : QTimer
-        Timer for autoscrolling layers list up/down when dragging a layer
-        near the end of the displayed area.
     layers : napari.components.LayerList
         The layer list to track and display.
     vbox_layout : QVBoxLayout
