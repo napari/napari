@@ -65,6 +65,7 @@ class Translate(Transform):
         self.vector = np.array(vector)
 
     def __call__(self, coords):
+        coords = np.atleast_2d(coords)
         vector = np.concatenate(
             ([0.0] * (coords.shape[1] - len(self.vector)), self.vector)
         )
@@ -88,6 +89,7 @@ class Scale(Transform):
         self.scale = np.array(scale)
 
     def __call__(self, coords):
+        coords = np.atleast_2d(coords)
         if coords.shape[1] > len(self.scale):
             scale = np.concatenate(
                 ([1.0] * (coords.shape[1] - len(self.scale)), self.scale)
