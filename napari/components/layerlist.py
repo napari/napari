@@ -15,6 +15,11 @@ def _add(event):
 class LayerList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
+    Parameters
+    ----------
+    iterable : iterable
+        Iterable of napari.layer.Layer
+
     Attributes
     ----------
     events : vispy.util.event.EmitterGroup
