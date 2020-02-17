@@ -16,3 +16,16 @@ from .vectors import Vectors
 
 NAMES = [subclass.__name__.lower() for subclass in all_subclasses(Layer)]
 del all_subclasses
+
+try:
+    from magicgui import register_type
+
+    def get_layers(gui, layer_type):
+        if hasattr(gui, 'qt_viewer'):
+            viewer = gui.qt_viewer.viewer
+            return tuple(l for l in viewer.layers if isinstance(l, layer_type))
+
+    register_type(Layer, choices=get_layers)
+
+except Exception:
+    pass
