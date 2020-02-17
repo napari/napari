@@ -21,9 +21,9 @@ class Transform:
     def __init__(self, func=tz.identity, inverse=None, name=None):
         self.func = func
         self._inverse_func = inverse
+        self.name = name
         if func is tz.identity:
             self._inverse_func = tz.identity
-        self.name == name
 
     def __call__(self, coords):
         """Transform input coordinates to output."""
@@ -41,12 +41,19 @@ class Transform:
             raise ValueError('Inverse function was not provided.')
 
 
-class TransformChain(Transform, ListModel):
+class TransformChain(ListModel, Transform):
     def __init__(self, transforms=[]):
-        super().__init__(basetype=Transform, iterable=transforms, lookup=id)
+        super().__init__(
+            basetype=Transform,
+            iterable=transforms,
+            lookup={str: lambda q, e: q == e.name},
+        )
 
     def __call__(self, coords):
         return tz.pipe(coords, *self)
+
+    def __newlike__(self, iterable):
+        return ListModel(self._basetype, iterable, self._lookup)
 
     def set_slice(self, axes: Sequence[int]) -> TransformChain:
         return TransformChain([tf.set_slice(axes) for tf in self])
@@ -62,23 +69,23 @@ class Translate(Transform):
     [0, 4, 18, 34] in 4D without modification.
     """
 
-    def __init__(self, vector=(0.0,), name='translate'):
+    def __init__(self, translate=(0.0,), name='translate'):
         super().__init__(name=name)
-        self.vector = np.array(vector)
+        self.translate = np.array(translate)
 
     def __call__(self, coords):
         coords = np.atleast_2d(coords)
-        vector = np.concatenate(
-            ([0.0] * (coords.shape[1] - len(self.vector)), self.vector)
+        translate = np.concatenate(
+            ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
         )
-        return coords + vector
+        return coords + translate
 
     @property
     def inverse(self):
-        return Translate(-self.vector)
+        return Translate(-self.translate)
 
     def set_slice(self, axes: Sequence[int]) -> Translate:
-        return Translate(self.vector[axes])
+        return Translate(self.translate[axes])
 
 
 class Scale(Transform):
