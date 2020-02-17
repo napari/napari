@@ -9,53 +9,53 @@ from napari.plugins import NapariPluginManager, manager
 
 
 @pytest.fixture
-def pm():
+def plugin_manager():
     """PluginManager fixture that loads some test plugins"""
     fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
-    pm = NapariPluginManager(autodiscover=fixture_path)
+    plugin_manager = NapariPluginManager(autodiscover=fixture_path)
     assert fixture_path not in sys.path, 'discover path leaked into sys.path'
-    return pm
+    return plugin_manager
 
 
-def test_plugin_autodiscovery(pm):
+def test_plugin_autodiscovery(plugin_manager):
     """make sure loading by naming convention works, and doesn't crash on
     invalid plugins.
     """
-    assert 'working' in pm._name2plugin
+    assert 'working' in plugin_manager._name2plugin
     # note, entry_points supercede naming convention
     # the "napari_working_plugin" distribution points to "napari_test_plugin"
     # but the name of the distribution is "working"...
     # so while the "napari_test_plugin" *module* fits the naming convention
     # it will appear in the plugins using the entry_points entry instead.
-    assert 'napari_test_plugin' not in pm._name2plugin
+    assert 'napari_test_plugin' not in plugin_manager._name2plugin
 
-    assert 'napari_bad_plugin' in pm._name2plugin
+    assert 'napari_bad_plugin' in plugin_manager._name2plugin
 
     # napari_invalid_plugin has an invalid hook implementation, and will load
-    assert 'napari_invalid_plugin' not in pm._name2plugin
+    assert 'napari_invalid_plugin' not in plugin_manager._name2plugin
     # invalid_plugin has an invalid hook implementation, and will not load
-    assert 'invalid' not in pm._name2plugin
+    assert 'invalid' not in plugin_manager._name2plugin
     # unimportable raises an exception during import... shouldn't make it.
-    assert 'unimportable' not in pm._name2plugin
+    assert 'unimportable' not in plugin_manager._name2plugin
 
 
-def test_invalid_plugin_raises(pm):
+def test_invalid_plugin_raises(plugin_manager):
     """Plugins that break the hookspec API will raise PluginValidationError."""
     with pytest.raises(PluginValidationError):
         bad = importlib.import_module('napari_invalid_plugin')
-        pm.register(bad)
+        plugin_manager.register(bad)
 
 
 def test_disable_autodiscover_with_env_var():
     """Test that plugin discovery can be disabled with env var"""
     os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"] = '1'
-    pm = NapariPluginManager()
-    assert 'napari_test_plugin' not in pm._name2plugin
+    plugin_manager = NapariPluginManager()
+    assert 'napari_test_plugin' not in plugin_manager._name2plugin
     del os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"]
 
     os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"] = '1'
-    pm = NapariPluginManager()
-    assert 'napari_test_plugin' not in pm._name2plugin
+    plugin_manager = NapariPluginManager()
+    assert 'napari_test_plugin' not in plugin_manager._name2plugin
     del os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"]
 
 
