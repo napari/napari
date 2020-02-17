@@ -43,5 +43,5 @@ try:
     # where the items are the current Viewer.layers of a certain type.
     register_type(Layer, choices=get_layers)
 
-except Exception:
+except ImportError:
     pass
