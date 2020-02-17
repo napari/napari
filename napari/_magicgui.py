@@ -44,6 +44,8 @@ try:
         """
         try:
             # look for the parent Viewer based on where the magicgui is docked.
+            # if the magicgui widget does not have a parent, it is unattached
+            # to any viewers, and therefore we cannot return a list of layers
             viewer = magicgui.parent().qt_viewer.viewer
             return tuple(l for l in viewer.layers if isinstance(l, layer_type))
         except AttributeError:
