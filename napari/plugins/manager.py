@@ -175,6 +175,11 @@ def entry_points_for(
 ) -> Generator[importlib_metadata.EntryPoint, None, None]:
     """Yield all entry_points matching "group", from any distribution.
 
+    Distribution here refers more specifically to the information in the
+    dist-info folder that usually accompanies an installed package.  If a
+    package in the environment does *not* have a ``dist-info/entry_points.txt``
+    file, then in will not be discovered by this function.
+
     Note: a single package may provide multiple entrypoints for a given group.
 
     Parameters
@@ -186,6 +191,13 @@ def entry_points_for(
     -------
     Generator[importlib_metadata.EntryPoint, None, None]
         [description]
+
+    Example
+    -------
+    >>> list(entry_points_for('napari.plugin'))
+    [EntryPoint(name='napari-reg', value='napari_reg', group='napari.plugin'),
+     EntryPoint(name='myplug', value='another.module', group='napari.plugin')]
+
     """
     for dist in importlib_metadata.distributions():
         for ep in dist.entry_points:
