@@ -8,7 +8,7 @@ from typing import Dict, Generator, Optional, Tuple, Union
 
 import pluggy
 
-from . import _builtins, hookspecs
+from . import _builtins, hook_specifications
 
 logger = getLogger(__name__)
 
@@ -66,7 +66,7 @@ class NapariPluginManager(pluggy.PluginManager):
         super().__init__("napari")
 
         # define hook specifications and validators
-        self.add_hookspecs(hookspecs)
+        self.add_hookspecs(hook_specifications)
 
         # register our own built plugins
         self.register(_builtins, name='builtins')
