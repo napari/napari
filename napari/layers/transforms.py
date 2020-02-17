@@ -84,15 +84,19 @@ class Scale(Transform):
     An empty scale class implies a scale of 1.
     """
 
-    def __init__(self, scales=(1.0,)):
-        self.scales = np.array(scales)
+    def __init__(self, scale=(1.0,)):
+        self.scale = np.array(scale)
 
     def __call__(self, coords):
-        if coords.shape[1] > len(self.scales):
-            scales = np.concatenate(
-                ([1.0] * coords.shape[1] - len(self.scales)), self.scales
+        if coords.shape[1] > len(self.scale):
+            scale = np.concatenate(
+                ([1.0] * coords.shape[1] - len(self.scale)), self.scale
             )
-        return coords * scales
+        return coords * scale
 
+    @property
     def inverse(self):
-        return Scale(1 / self.scales)
+        return Scale(1 / self.scale)
+
+    def set_slice(self, axes: Sequence[int]) -> Scale:
+        return Scale(self.scale[axes])
