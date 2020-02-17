@@ -1,3 +1,23 @@
+"""Methods to create a new viewer instance and add a particular layer type.
+
+This module autogenerates a number of convenience functions, such as
+"view_image", or "view_surface", that both instantiate a new viewer instance,
+and add a new layer of a specific type to the viewer.  Each convenience
+function signature is essentially just a merged version of one of the
+``Viewer.add_<layer_type>`` methods, along with the signature of the
+``Viewer.__init__`` method.  The final generated functions follow this pattern
+(where <layer_type> is replaced with one of the layer types):
+
+    def view_<layer_type>(*args, **kwargs):
+        # pop all of the viewer kwargs out of kwargs into viewer_kwargs
+        viewer = Viewer(**viewer_kwargs)
+        add_method = getattr(viewer, f"add_{<layer_type>}")
+        add_method(*args, **kwargs)
+        return viewer
+
+Note however: the real function signatures and documentation are maintained in
+the final functions, along with introspection, and tab autocompletion, etc...
+"""
 import inspect
 import sys
 from typing import Callable
@@ -8,13 +28,12 @@ from .components.add_layers_mixin import AddLayersMixin
 from .viewer import Viewer
 
 
-def _build_view_method(layer_string: str) -> Callable:
+def _build_view_function(layer_string: str) -> Callable:
     """Autogenerate a ``view_<layer_string>`` method.
 
     Combines the signatures and docs of ``Viewer`` and
     ``Viewer.add_<layer_string>``.  The returned function is compatible with
     IPython help, introspection, tab completion, and autodocs.
-
 
     Parameters
     ----------
@@ -84,4 +103,4 @@ def _build_view_method(layer_string: str) -> Callable:
 
 module = sys.modules[__name__]
 for _layer in ['image', 'points', 'labels', 'shapes', 'surface', 'vectors']:
-    setattr(module, f'view_{_layer}', _build_view_method(_layer))
+    setattr(module, f'view_{_layer}', _build_view_function(_layer))
