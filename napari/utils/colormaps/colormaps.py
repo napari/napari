@@ -98,8 +98,8 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
         The set of ``labels`` remapped to [0, 1] quasirandomly.
 
     """
-    phi_inv = 1 / 1.6180339887498948482
-    image_float = seed + image * phi_inv
+    phi_mod = 0.6180339887498948482
+    image_float = seed + image * phi_mod
     # We now map the floats to the range [0 + margin, 1 - margin]
     image_out = margin + (1 - 2 * margin) * (
         image_float - np.floor(image_float)
