@@ -1,5 +1,9 @@
+import os
+from unittest import mock
+
 import numpy as np
 import pytest
+from skimage.io import imread
 
 from napari._tests.utils import (
     add_layer_by_type,
@@ -150,6 +154,47 @@ def test_screenshot(viewermodel_factory):
     # Take screenshot
     screenshot = view.screenshot()
     assert screenshot.ndim == 3
+    view.shutdown()
+
+
+def test_save_screenshot(viewermodel_factory, qtbot, tmpdir):
+    """Test save screenshot functionality."""
+    view, viewer = viewermodel_factory()
+    qtbot.addWidget(view)
+
+    np.random.seed(0)
+    # Add image
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+
+    # Add labels
+    data = np.random.randint(20, size=(10, 15))
+    viewer.add_labels(data)
+
+    # Add points
+    data = 20 * np.random.random((10, 2))
+    viewer.add_points(data)
+
+    # Add vectors
+    data = 20 * np.random.random((10, 2, 2))
+    viewer.add_vectors(data)
+
+    # Add shapes
+    data = 20 * np.random.random((10, 4, 2))
+    viewer.add_shapes(data)
+
+    # Save screenshot
+    input_filepath = os.path.join(tmpdir, 'test-save-screenshot')
+    mock_return = (input_filepath, '')
+    with mock.patch('napari._qt.qt_viewer.QFileDialog') as mocker:
+        mocker.getSaveFileName.return_value = mock_return
+        view._save_screenshot()
+    # Assert behaviour is correct
+    expected_filepath = input_filepath + '.png'  # add default file extension
+    assert os.path.exists(expected_filepath)
+    output_data = imread(expected_filepath)
+    expected_data = view.screenshot()
+    assert np.allclose(output_data, expected_data)
     view.shutdown()
 
 

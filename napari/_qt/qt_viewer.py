@@ -7,6 +7,7 @@ from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QPixmap
 from qtpy.QtCore import QThreadPool
+from skimage.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
 
@@ -282,8 +283,13 @@ class QtViewer(QSplitter):
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
+
+        Parmeters
+        ---------
+        path : str
+            Filename for saving screenshot image.
 
         Returns
         -------
@@ -292,7 +298,33 @@ class QtViewer(QSplitter):
             upper-left corner of the rendered region.
         """
         img = self.canvas.native.grabFramebuffer()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
+
+    def _save_screenshot(self):
+        """Save screenshot of current display, default .png"""
+        filename, _ = QFileDialog.getSaveFileName(
+            parent=self,
+            caption='',
+            directory=self._last_visited_dir,  # home dir by default
+            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
+            # jpg and jpeg not included as they don't support an alpha channel
+        )
+        if (filename != '') and (filename is not None):
+            # double check that an appropriate extension has been added as the filter
+            # filter option does not always add an extension on linux and windows
+            # see https://bugreports.qt.io/browse/QTBUG-27186
+            image_extensions = (
+                '.bmp',
+                '.gif',
+                '.png',
+                '.tif',
+                '.tiff',
+            )
+            if not filename.endswith(image_extensions):
+                filename = filename + '.png'
+            self.screenshot(path=filename)
 
     def _open_images(self):
         """Add image files from the menubar."""
