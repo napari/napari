@@ -5,8 +5,6 @@ import numpy as np
 import pytest
 from skimage.io import imread
 
-from napari.components import ViewerModel
-from napari._qt.qt_viewer import QtViewer
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
@@ -14,11 +12,9 @@ from napari._tests.utils import (
 )
 
 
-def test_qt_viewer(qtbot):
+def test_qt_viewer(viewermodel_factory):
     """Test instantiating viewer."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -29,26 +25,20 @@ def test_qt_viewer(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer(qtbot, layer_class, data, ndim):
-    viewer = ViewerModel(ndisplay=ndim)
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+def test_add_layer(viewermodel_factory, layer_class, data, ndim):
+    view, viewer = viewermodel_factory(ndisplay=ndim)
 
     add_layer_by_type(viewer, layer_class, data)
     check_viewer_functioning(viewer, view, data, ndim)
-    view.shutdown()
 
 
-def test_new_labels(qtbot):
+def test_new_labels(viewermodel_factory):
     """Test adding new labels layer."""
     # Add labels to empty viewer
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     viewer._new_labels()
     assert np.max(viewer.layers[0].data) == 0
@@ -60,9 +50,7 @@ def test_new_labels(qtbot):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add labels with image already present
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -75,15 +63,12 @@ def test_new_labels(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
 
 
-def test_new_points(qtbot):
+def test_new_points(viewermodel_factory):
     """Test adding new points layer."""
     # Add labels to empty viewer
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     viewer.add_points()
     assert len(viewer.layers[0].data) == 0
@@ -95,9 +80,7 @@ def test_new_points(qtbot):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -110,15 +93,12 @@ def test_new_points(qtbot):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
-    view.shutdown()
 
 
-def test_new_shapes(qtbot):
+def test_new_shapes_empty_viewer(viewermodel_factory):
     """Test adding new shapes layer."""
     # Add labels to empty viewer
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     viewer.add_shapes()
     assert len(viewer.layers[0].data) == 0
@@ -130,9 +110,7 @@ def test_new_shapes(qtbot):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -148,11 +126,9 @@ def test_new_shapes(qtbot):
     view.shutdown()
 
 
-def test_screenshot(qtbot):
+def test_screenshot(viewermodel_factory):
     "Test taking a screenshot"
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     np.random.seed(0)
     # Add image
@@ -226,7 +202,7 @@ def test_save_screenshot(qtbot, tmpdir):
 @pytest.mark.parametrize(
     "dtype", ['int8', 'uint8', 'int16', 'uint16', 'float32']
 )
-def test_qt_viewer_data_integrity(qtbot, dtype):
+def test_qt_viewer_data_integrity(viewermodel_factory, dtype):
     """Test that the viewer doesn't change the underlying array."""
 
     image = np.random.rand(10, 32, 32)
@@ -234,9 +210,7 @@ def test_qt_viewer_data_integrity(qtbot, dtype):
     image = image.astype(dtype)
     imean = image.mean()
 
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     viewer.add_image(image.copy())
     datamean = viewer.layers[0].data.mean()
@@ -249,4 +223,3 @@ def test_qt_viewer_data_integrity(qtbot, dtype):
     viewer.dims.ndisplay = 2
     datamean = viewer.layers[0].data.mean()
     assert datamean == imean
-    view.shutdown()

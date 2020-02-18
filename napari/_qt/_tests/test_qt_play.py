@@ -3,9 +3,6 @@ from contextlib import contextmanager
 import numpy as np
 import pytest
 
-from napari._qt.qt_viewer import QtViewer
-from napari.components import ViewerModel
-
 from ...components import Dims
 from ..qt_dims import QtDims
 from ..qt_dims_slider import AnimationWorker
@@ -99,19 +96,14 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture()
-def view(qtbot):
+def view(viewermodel_factory):
     """basic viewer with data that we will use a few times"""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
-    qtbot.addWidget(view)
+    view, viewer = viewermodel_factory()
 
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
 
-    yield view  # Adding teardown code for fixture
-    print("shutting down QtViewer")
-    view.shutdown()
     return view
 
 
