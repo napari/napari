@@ -28,13 +28,6 @@ class QtLayerList(QScrollArea):
     ----------
     centers : list
         List of layer widgets center coordinates.
-    drag_name : str
-        Name attribute of the dragged layer.
-    drag_start_position : array, shape (2,)
-        Mouse coordinates at the beginning of the mouse drag event.
-    dragTimer : QTimer
-        Timer for autoscrolling layers list up/down when dragging a layer
-        near the end of the displayed area.
     layers : napari.components.LayerList
         The layer list to track and display.
     vbox_layout : QVBoxLayout
@@ -58,10 +51,10 @@ class QtLayerList(QScrollArea):
 
         # Create a timer to be used for autoscrolling the layers list up and
         # down when dragging a layer near the end of the displayed area
-        self.dragTimer = QTimer()
-        self.dragTimer.setSingleShot(False)
-        self.dragTimer.setInterval(20)
-        self.dragTimer.timeout.connect(self._force_scroll)
+        self._drag_timer = QTimer()
+        self._drag_timer.setSingleShot(False)
+        self._drag_timer.setInterval(20)
+        self._drag_timer.timeout.connect(self._force_scroll)
         self._scroll_up = True
         self._min_scroll_region = 24
         self.setAcceptDrops(True)
@@ -72,8 +65,8 @@ class QtLayerList(QScrollArea):
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
 
-        self.drag_start_position = np.zeros(2)
-        self.drag_name = None
+        self._drag_start_position = np.zeros(2)
+        self._drag_name = None
 
     def _add(self, event):
         """Insert widget for layer `event.item` at index `event.index`.
@@ -233,12 +226,12 @@ class QtLayerList(QScrollArea):
         )
 
         if layer is not None:
-            self.drag_start_position = np.array(
+            self._drag_start_position = np.array(
                 [event.pos().x(), event.pos().y()]
             )
-            self.drag_name = layer.name
+            self._drag_name = layer.name
         else:
-            self.drag_name = None
+            self._drag_name = None
 
     def mouseReleaseEvent(self, event):
         """Select layer using mouse click.
@@ -254,13 +247,13 @@ class QtLayerList(QScrollArea):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if self.drag_name is None:
+        if self._drag_name is None:
             # Unselect all the layers if not dragging a layer
             self.layers.unselect_all()
             return
 
         modifiers = event.modifiers()
-        layer = self.layers[self.drag_name]
+        layer = self.layers[self._drag_name]
         if modifiers == Qt.ShiftModifier:
             # If shift select all layers in between currently selected one and
             # clicked one
@@ -290,20 +283,20 @@ class QtLayerList(QScrollArea):
             Event from the Qt context.
         """
         position = np.array([event.pos().x(), event.pos().y()])
-        distance = np.linalg.norm(position - self.drag_start_position)
+        distance = np.linalg.norm(position - self._drag_start_position)
         if (
             distance < QApplication.startDragDistance()
-            or self.drag_name is None
+            or self._drag_name is None
         ):
             return
         mimeData = QMimeData()
-        mimeData.setText(self.drag_name)
+        mimeData.setText(self._drag_name)
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
         drag.exec_()
-        if self.drag_name is not None:
-            index = self.layers.index(self.drag_name)
+        if self._drag_name is not None:
+            index = self.layers.index(self._drag_name)
             layer = self.layers[index]
             self._ensure_visible(layer)
 
@@ -316,7 +309,7 @@ class QtLayerList(QScrollArea):
             Event from the Qt context.
         """
         event.ignore()
-        self.dragTimer.stop()
+        self._drag_timer.stop()
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
 
@@ -354,22 +347,22 @@ class QtLayerList(QScrollArea):
         max_height = self.frameGeometry().height()
         if (
             event.pos().y() < self._min_scroll_region
-            and not self.dragTimer.isActive()
+            and not self._drag_timer.isActive()
         ):
             self._scroll_up = True
-            self.dragTimer.start()
+            self._drag_timer.start()
         elif (
             event.pos().y() > max_height - self._min_scroll_region
-            and not self.dragTimer.isActive()
+            and not self._drag_timer.isActive()
         ):
             self._scroll_up = False
-            self.dragTimer.start()
+            self._drag_timer.start()
         elif (
-            self.dragTimer.isActive()
+            self._drag_timer.isActive()
             and event.pos().y() >= self._min_scroll_region
             and event.pos().y() <= max_height - self._min_scroll_region
         ):
-            self.dragTimer.stop()
+            self._drag_timer.stop()
 
         # Determine which widget center is the mouse currently closed to
         cord = event.pos().y() + self.verticalScrollBar().value()
@@ -378,7 +371,7 @@ class QtLayerList(QScrollArea):
         # Determine the current location of the widget being dragged
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
-        index = self.layers.index(self.drag_name)
+        index = self.layers.index(self._drag_name)
         # If the widget being dragged hasn't moved above or below any other
         # widgets then don't highlight any dividers
         selected = not (insert == index) and not (insert - 1 == index)
@@ -397,8 +390,8 @@ class QtLayerList(QScrollArea):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if self.dragTimer.isActive():
-            self.dragTimer.stop()
+        if self._drag_timer.isActive():
+            self._drag_timer.stop()
 
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
@@ -407,7 +400,7 @@ class QtLayerList(QScrollArea):
         divider_index = next(center_list, len(self.centers))
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
-        index = self.layers.index(self.drag_name)
+        index = self.layers.index(self._drag_name)
         if index != insert and index + 1 != insert:
             if insert >= index:
                 insert -= 1
