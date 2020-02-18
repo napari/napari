@@ -32,7 +32,11 @@ class ListModel(MultiIndexList, TypedList):
             added=None,
             removed=None,
             reordered=None,
+            changed=None,
         )
+        self.events.added.connect(self.events.changed)
+        self.events.removed.connect(self.events.changed)
+        self.events.reordered.connect(self.events.changed)
 
     def __setitem__(self, query, values):
         indices = tuple(self.__prsitem__(query))
