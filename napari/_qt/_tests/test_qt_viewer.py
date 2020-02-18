@@ -157,10 +157,9 @@ def test_screenshot(viewermodel_factory):
     view.shutdown()
 
 
-def test_save_screenshot(qtbot, tmpdir):
+def test_save_screenshot(viewermodel_factory, qtbot, tmpdir):
     """Test save screenshot functionality."""
-    viewer = ViewerModel()
-    view = QtViewer(viewer)
+    view, viewer = viewermodel_factory()
     qtbot.addWidget(view)
 
     np.random.seed(0)
