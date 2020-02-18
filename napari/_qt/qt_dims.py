@@ -11,7 +11,7 @@ from ._constants import LoopMode
 
 
 class QtDims(QWidget):
-    """Qt View for Dims model.
+    """Qt view for the napari Dims model.
 
     Parameters
     ----------

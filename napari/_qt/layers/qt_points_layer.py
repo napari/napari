@@ -15,6 +15,48 @@ from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 
 
 class QtPointsControls(QtLayerControls):
+    """#TODO
+
+    Parameters
+    ----------
+    layer : #TODO
+        #TODO
+
+    Attributes
+    ----------
+    addition_button : QtModeRadioButton
+        Button to add points to layer.
+    button_group : QButtonGroup
+        Button group of points layer controls (add, select, delete).
+    delete_button : QtModePushButton
+        Button to delete points from layer.
+    edgeColorSwatch : QFrame
+    edgeComboBox : QComboBox
+    faceColorSwatch : QFrame
+    faceComboBox : QComboBox
+    grid_layout :
+        grid_layout created in QtLayerControls
+        addWidget(widget, row, column, [row_span, column_span])
+    layer : #TODO
+        #TODO
+    ndimCheckBox : QCheckBox
+        Checkbox to indicate whether layer is n-dimensional.
+    panzoom_button : QtModeRadioButton
+        Button for pan/zoom mode.
+    select_button : QtModeRadioButton
+        Button to select points from layer.
+    sizeSlider : QSlider
+        Slider controlling size of points.
+    symbolComboBox : QComboBox
+        Drop down list of symbol options for points markers.
+
+    Raises
+    ------
+    ValueError
+        Raise error if points mode is not recognized.
+        Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -126,9 +168,35 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
+        """On mouse move, update layer mode status.
+
+        Modes available for points layer: ADD, PAN_ZOOM, SELECT
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.layer.status = self.layer.mode
 
     def set_mode(self, event):
+        """"Update ticks in checkbox widgets when points layer mode is changed.
+
+        Available modes for points layer are:
+        * ADD
+        * SELECT
+        * PAN_ZOOM
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not ADD, PAN_ZOOM, or SELECT.
+        """
         mode = event.mode
         if mode == Mode.ADD:
             self.addition_button.setChecked(True)
@@ -140,28 +208,79 @@ class QtPointsControls(QtLayerControls):
             raise ValueError("Mode not recognized")
 
     def changeFaceColor(self, text):
+        """Change face color of the points.
+
+        Parameters
+        ----------
+        text : str
+            Face color for points, color name or hex string.
+            Eg: 'white', 'red', 'blue', '#00ff00', etc.
+        """
         self.layer.current_face_color = text
 
     def changeEdgeColor(self, text):
+        """Change edge color of the points.
+
+        Parameters
+        ----------
+        text : str
+            Edge color for points, color name or hex string.
+            Eg: 'white', 'red', 'blue', '#00ff00', etc.
+        """
         self.layer.current_edge_color = text
 
     def changeSymbol(self, text):
+        """Change marker symbol of the points.
+
+        Parameters
+        ----------
+        text : str
+            Marker symbol of points, eg: '+', '.', etc.
+        """
         self.layer.symbol = text
 
     def changeSize(self, value):
+        """Change size of points.
+
+        Parameters
+        ----------
+        value : float
+            Size of points.
+        """
         self.layer.current_size = value
 
     def change_ndim(self, state):
+        """Toggle n-dimensional state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if label layer is n-dimensional.
+        """
         if state == Qt.Checked:
             self.layer.n_dimensional = True
         else:
             self.layer.n_dimensional = False
 
     def _on_n_dim_change(self, event):
+        """Toggle n-dimensional state.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_symbol_change(self, event):
+        """Change marker symbol of points.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         with self.layer.events.symbol.blocker():
             index = self.symbolComboBox.findText(
                 self.layer.symbol, Qt.MatchFixedString
@@ -169,6 +288,13 @@ class QtPointsControls(QtLayerControls):
             self.symbolComboBox.setCurrentIndex(index)
 
     def _on_size_change(self, event=None):
+        """Change size of points.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         with self.layer.events.size.blocker():
             value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
@@ -182,6 +308,11 @@ class QtPointsControls(QtLayerControls):
         looked up in the color list of the layer and displayed in the
         combobox. If it's not in the combobox the method will add it and
         then display it, for future use.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
         """
         color = self.layer.current_edge_color
         with self.layer.events.edge_color.blocker():
@@ -201,6 +332,11 @@ class QtPointsControls(QtLayerControls):
         looked up in the color list of the layer and displayed in the
         combobox. If it's not in the combobox the method will add it and
         then display it, for future use.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
         """
         color = self.layer.current_face_color
         with self.layer.events.face_color.blocker():
@@ -212,6 +348,13 @@ class QtPointsControls(QtLayerControls):
         self.faceColorSwatch.setStyleSheet(f"background-color: {color}")
 
     def _on_editable_change(self, event=None):
+        """Toggle editable status of the points.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         self.select_button.setEnabled(self.layer.editable)
         self.addition_button.setEnabled(self.layer.editable)
         self.delete_button.setEnabled(self.layer.editable)

@@ -5,6 +5,23 @@ from ...layers.base._constants import Blending
 
 
 class QtLayerControls(QFrame):
+    """#TODO
+
+    Parameters
+    ----------
+    layer : #TODO
+        #TODO
+
+    Attributes
+    ----------
+    blendComboBox : QComboBox
+    grid_layout :
+    layer : #TODO
+        #TODO
+    opacitySlider : QSlider
+        Slider controlling opacity.
+    """
+
     def __init__(self, layer):
         super().__init__()
 
@@ -38,17 +55,46 @@ class QtLayerControls(QFrame):
         self.blendComboBox = blend_comboBox
 
     def changeOpacity(self, value):
+        """Change opacity value.
+
+        Parameters
+        ----------
+        value : float
+            Opacity value for shapes.
+            Input range 0 - 100 (transparent to fully opaque).
+        """
         with self.layer.events.blocker(self._on_opacity_change):
             self.layer.opacity = value / 100
 
     def changeBlending(self, text):
+        """Change blending mode for rendering.
+
+        Parameters
+        ----------
+        text : str
+            Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
+        """
         self.layer.blending = text
 
     def _on_opacity_change(self, event=None):
+        """Change opacity value.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.opacity * 100)
 
     def _on_blending_change(self, event=None):
+        """Change blending mode for rendering.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.blending.blocker():
             index = self.blendComboBox.findText(
                 self.layer.blending, Qt.MatchFixedString
