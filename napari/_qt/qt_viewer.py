@@ -312,6 +312,18 @@ class QtViewer(QSplitter):
             # jpg and jpeg not included as they don't support an alpha channel
         )
         if (filename != '') and (filename is not None):
+            # double check that an appropriate extension has been added as the filter
+            # filter option does not always add an extension on linux and windows
+            # see https://bugreports.qt.io/browse/QTBUG-27186
+            image_extensions = (
+                '.bmp',
+                '.gif',
+                '.png',
+                '.tif',
+                '.tiff',
+            )
+            if not filename.endswith(image_extensions):
+                filename = filename + '.png'
             self.screenshot(path=filename)
 
     def _open_images(self):
