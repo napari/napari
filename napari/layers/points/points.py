@@ -1597,13 +1597,10 @@ class Points(Layer):
 
         # Construct table of data
         n_dimensions = data.shape[1]
-        column_names = ['coord_id'] + [
-            'dim_' + str(n) for n in range(n_dimensions)
-        ]
+        column_names = ['dim_' + str(n) for n in range(n_dimensions)]
         table = []
-        for idx, row in enumerate(data):
-            row_data = [idx] + list(row)
-            table.append(row_data)
+        for row in data:
+            table.append(list(row))
         if path is not None:
             write_csv(path, table, column_names)
         return table, column_names

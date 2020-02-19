@@ -1124,12 +1124,11 @@ def test_points_to_table(tmpdir):
         csv.reader(output_csv, delimiter=',')
         for row_index, row in enumerate(output_csv):
             if row_index == 0:
-                assert row == "coord_id,dim_0,dim_1\n"
+                assert row == "dim_0,dim_1\n"
             else:
                 output_row_data = [float(i) for i in row.split(',')]
-                assert output_row_data[0] == row_index - 1  # coord_id index
                 assert np.allclose(
-                    np.array(output_row_data[1:]), expected_data[row_index - 1]
+                    np.array(output_row_data), expected_data[row_index - 1]
                 )
 
 
@@ -1148,12 +1147,11 @@ def test_points_to_table_selected_data(tmpdir):
         csv.reader(output_csv, delimiter=',')
         for row_index, row in enumerate(output_csv):
             if row_index == 0:
-                assert row == "coord_id,dim_0,dim_1\n"
+                assert row == "dim_0,dim_1\n"
             else:
                 output_row_data = [float(i) for i in row.split(',')]
-                assert output_row_data[0] == row_index - 1  # coord_id index
                 assert np.allclose(
-                    np.array(output_row_data[1:]), expected_data[row_index - 1]
+                    np.array(output_row_data), expected_data[row_index - 1]
                 )
 
 
