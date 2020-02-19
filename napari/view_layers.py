@@ -155,6 +155,7 @@ def view_path(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add an image layer.
 
@@ -179,6 +180,8 @@ def view_path(
         ndisplay is 2 or 3. by default None
     axis_labels : list of str, optional
         Dimension names. by default None
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -186,7 +189,11 @@ def view_path(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_path(path=path, stack=stack, use_dask=use_dask)
     return viewer
