@@ -1559,13 +1559,15 @@ class Points(Layer):
                 self.selected_data = []
             self._set_highlight(force=True)
 
-    def to_table(self, path=None):
+    def to_table(self, path=None, *, selected_only=False):
         """Constructs a table of point coordinate data.
 
         Parameters
         ----------
         path : str, optional
             If a filename is provided, the table will be saved as a csv file.
+        selected_only : bool, optional
+            Only include currently selected points from this layer.
 
         Returns
         -------
@@ -1581,14 +1583,28 @@ class Points(Layer):
         points_dataframe = pandas.DataFrame(table, columns=column_names)
         ```
         """
+        if selected_only is True:
+            if self.selected_data == []:
+                message = (
+                    "The `selected_only` keyword argument is True, "
+                    "but there is no data currently selected for this layer!"
+                )
+                warnings.warn(message)
+                return
+            else:
+                data = self.selected_data
+        else:
+            data = self.data
+
+        # Construct table of data
         n_dimensions = self.data.shape[1]
         column_names = ['coord_id'] + [
             'dim_' + str(n) for n in range(n_dimensions)
         ]
         table = []
-        for idx, row in enumerate(self.data):
-            data = [idx] + list(row)
-            table.append(data)
+        for idx, row in enumerate(data):
+            row_data = [idx] + list(row)
+            table.append(row_data)
         if path is not None:
             write_csv(path, table, column_names)
         return table, column_names
