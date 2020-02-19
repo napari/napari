@@ -232,7 +232,7 @@ entry_point_pattern = re.compile(
 def iter_plugin_modules(
     prefix: Optional[str] = None, group: Optional[str] = None
 ) -> Generator[Tuple[str, str], None, None]:
-    """Discover unique plugins using naming convention and/or entry points.
+    """Discover plugins using naming convention and/or entry points.
 
     This function makes sure that packages that *both* follow the naming
     convention (i.e. starting with `prefix`) *and* provide and an entry point
