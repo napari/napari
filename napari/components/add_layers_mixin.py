@@ -27,7 +27,7 @@ class AddLayersMixin:
 
         Parameters
         ----------
-        layer : Layer
+        layer : napari.layers.Layer
             Layer to add.
         """
         layer.events.select.connect(self._update_active_layer)

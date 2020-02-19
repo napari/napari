@@ -5,6 +5,8 @@ wrap.
 # set vispy to use same backend as qtpy
 import os
 
+from skimage.io import imsave
+
 from .qt_about import QtAbout
 from .qt_plugin_list import QtPluginSorter
 from .qt_viewer_dock_widget import QtViewerDockWidget
@@ -144,10 +146,18 @@ class Window:
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
+        screenshot = QAction('Screenshot', self._qt_window)
+        screenshot.setShortcut('Ctrl+Alt+S')
+        screenshot.setStatusTip(
+            'Save screenshot of current display, default .png'
+        )
+        screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
@@ -335,8 +345,13 @@ class Window:
         """
         self._help.setText(event.text)
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
 
         Returns
         -------
@@ -345,6 +360,8 @@ class Window:
             upper-left corner of the rendered region.
         """
         img = self._qt_window.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
     def closeEvent(self, event):
