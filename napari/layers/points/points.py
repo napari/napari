@@ -1596,7 +1596,7 @@ class Points(Layer):
             data = self.data
 
         # Construct table of data
-        n_dimensions = self.data.shape[1]
+        n_dimensions = data.shape[1]
         column_names = ['coord_id'] + [
             'dim_' + str(n) for n in range(n_dimensions)
         ]
