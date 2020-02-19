@@ -3,9 +3,10 @@ import os
 import pkgutil
 import re
 import sys
-from logging import getLogger
-from typing import DefaultDict, Dict, Generator, Optional, Tuple, Union, List
 from collections import defaultdict
+from logging import getLogger
+from traceback import format_exception
+from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
 
 import pluggy
 
@@ -32,7 +33,7 @@ class PluginImportError(PluginError, ImportError):
     """Raised when a plugin fails to import."""
 
     def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to import plugin: "{plugin_name}""'
+        msg = f'Failed to import plugin: "{plugin_name}"'
         super().__init__(msg, plugin_name, plugin_module)
 
 
@@ -40,7 +41,7 @@ class PluginRegistrationError(PluginError):
     """Raised when a plugin fails to register with pluggy."""
 
     def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to register plugin: "{plugin_name}""'
+        msg = f'Failed to register plugin: "{plugin_name}"'
         super().__init__(msg, plugin_name, plugin_module)
 
 
@@ -65,9 +66,11 @@ class NapariPluginManager(pluggy.PluginManager):
             will simply search the current sys.path.  by default True
         """
         super().__init__("napari")
-        # this dict is a mapping of plugin_name: raised_exception_objects
+        # this dict is a mapping of plugin_name: List[raised_exception_objects]
         # this will be used to retrieve traceback info on demand
-        self._errors: DefaultDict[str, List[PluginError]] = defaultdict(list)
+        self._exceptions: DefaultDict[str, List[PluginError]] = defaultdict(
+            list
+        )
 
         # define hook specifications and validators
         self.add_hookspecs(hook_specifications)
@@ -121,7 +124,7 @@ class NapariPluginManager(pluggy.PluginManager):
                 self._register_module(plugin_name, module_name)
                 count += 1
             except PluginError as exc:
-                self._errors[plugin_name].append(exc)
+                self._exceptions[plugin_name].append(exc)
                 log_plugin_error(exc)
                 self.unregister(name=plugin_name)
             except Exception as exc:
@@ -169,6 +172,55 @@ class NapariPluginManager(pluggy.PluginManager):
             self.register(mod, name=plugin_name)
         except Exception as exc:
             raise PluginRegistrationError(plugin_name, module_name) from exc
+
+    def format_exceptions(self, plugin_name: str) -> str:
+        """Return formatted tracebacks for all exceptions raised by plugin.
+
+        Parameters
+        ----------
+        plugin_name : str
+            The name of a plugin for which to retrieve tracebacks
+
+        Returns
+        -------
+        str
+            A formatted string with traceback information for every exception
+            raised by ``plugin_name`` during this session.
+        """
+        from napari import __version__
+
+        if not self._exceptions.get(plugin_name):
+            return ''
+
+        _linewidth = 80
+        _pad = (_linewidth - len(plugin_name) - 18) // 2
+        msg = [
+            f'{"=" * _pad} Errors for plugin "{plugin_name}" {"=" * _pad}',
+            '',
+            f'{"napari version": >16}: {__version__}',
+        ]
+        try:
+            err0 = self._exceptions.get(plugin_name)[0]
+            package_meta = fetch_module_metadata(err0.plugin_module)
+            msg.extend(
+                [
+                    f'{"plugin name": >16}: {package_meta["name"]}',
+                    f'{"version": >16}: {package_meta["version"]}',
+                    f'{"module": >16}: {err0.plugin_module}',
+                ]
+            )
+        except Exception:
+            pass
+        msg += ['']
+
+        for n, err in enumerate(self._exceptions.get(plugin_name, [])):
+            _pad = _linewidth - len(str(err)) - 10
+            msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
+            msg.extend(format_exception(err.__class__, err, err.__traceback__))
+
+        msg += ['=' * 80]
+
+        return "\n".join(msg)
 
 
 def entry_points_for(
@@ -300,7 +352,7 @@ def iter_plugin_modules(
                 yield name or module, module
 
 
-def fetch_contact_info(distname: str) -> Optional[Dict[str, str]]:
+def fetch_module_metadata(distname: str) -> Optional[Dict[str, str]]:
     """Attempt to retrieve name, version, contact email & url for a package.
 
     Parameters
@@ -341,7 +393,7 @@ def log_plugin_error(exc: PluginError) -> None:
     if exc.__cause__:
         cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
         msg += f'\n  Cause was: {cause}'
-    contact = fetch_contact_info(exc.plugin_module)
+    contact = fetch_module_metadata(exc.plugin_module)
     if contact:
         msg += "\n  Please notify the plugin developer:\n"
         extra = [f'{k: >11}: {v}' for k, v in contact.items()]

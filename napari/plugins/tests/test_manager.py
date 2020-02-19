@@ -100,3 +100,10 @@ def test_iter_plugins():
     )
 
     sys.path.remove(fixture_path)
+
+
+def test_format_exceptions(plugin_manager):
+    """Test that format_exceptions returns a string with traceback info."""
+
+    assert 'Traceback' in plugin_manager.format_exceptions('invalid')
+    assert not plugin_manager.format_exceptions('working')
