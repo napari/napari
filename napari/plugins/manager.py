@@ -3,13 +3,15 @@ import os
 import pkgutil
 import re
 import sys
+from collections import defaultdict
 from logging import getLogger
+from traceback import format_exception
 from types import ModuleType
-from typing import Dict, Generator, List, Optional, Tuple, Union
+from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
 
 import pluggy
 
-from . import _builtins, hookspecs
+from . import _builtins, hook_specifications
 
 logger = getLogger(__name__)
 
@@ -28,11 +30,11 @@ class PluginError(Exception):
         self.plugin_module = plugin_module
 
 
-class PluginImportError(PluginError):
+class PluginImportError(PluginError, ImportError):
     """Raised when a plugin fails to import."""
 
     def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to import plugin: "{plugin_name}""'
+        msg = f'Failed to import plugin: "{plugin_name}"'
         super().__init__(msg, plugin_name, plugin_module)
 
 
@@ -40,17 +42,13 @@ class PluginRegistrationError(PluginError):
     """Raised when a plugin fails to register with pluggy."""
 
     def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to register plugin: "{plugin_name}""'
+        msg = f'Failed to register plugin: "{plugin_name}"'
         super().__init__(msg, plugin_name, plugin_module)
 
 
 class NapariPluginManager(pluggy.PluginManager):
     PLUGIN_ENTRYPOINT = "napari.plugin"
     PLUGIN_PREFIX = "napari_"
-
-    # for easy availability in try/catch statements without having to import
-    # pluggy ... e.g.: except plugin_manager.PluginValidationError
-    PluginValidationError = pluggy.manager.PluginValidationError
 
     def __init__(
         self, autodiscover: Optional[Union[bool, str]] = True
@@ -69,9 +67,14 @@ class NapariPluginManager(pluggy.PluginManager):
             will simply search the current sys.path.  by default True
         """
         super().__init__("napari")
+        # this dict is a mapping of plugin_name: List[raised_exception_objects]
+        # this will be used to retrieve traceback info on demand
+        self._exceptions: DefaultDict[str, List[PluginError]] = defaultdict(
+            list
+        )
 
         # define hook specifications and validators
-        self.add_hookspecs(hookspecs)
+        self.add_hookspecs(hook_specifications)
 
         # register our own built plugins
         self.register(_builtins, name='builtins')
@@ -122,6 +125,7 @@ class NapariPluginManager(pluggy.PluginManager):
                 self._register_module(plugin_name, module_name)
                 count += 1
             except PluginError as exc:
+                self._exceptions[plugin_name].append(exc)
                 log_plugin_error(exc)
                 self.unregister(name=plugin_name)
             except Exception as exc:
@@ -170,11 +174,65 @@ class NapariPluginManager(pluggy.PluginManager):
         except Exception as exc:
             raise PluginRegistrationError(plugin_name, module_name) from exc
 
+    def format_exceptions(self, plugin_name: str) -> str:
+        """Return formatted tracebacks for all exceptions raised by plugin.
+
+        Parameters
+        ----------
+        plugin_name : str
+            The name of a plugin for which to retrieve tracebacks
+
+        Returns
+        -------
+        str
+            A formatted string with traceback information for every exception
+            raised by ``plugin_name`` during this session.
+        """
+        from napari import __version__
+
+        if not self._exceptions.get(plugin_name):
+            return ''
+
+        _linewidth = 80
+        _pad = (_linewidth - len(plugin_name) - 18) // 2
+        msg = [
+            f'{"=" * _pad} Errors for plugin "{plugin_name}" {"=" * _pad}',
+            '',
+            f'{"napari version": >16}: {__version__}',
+        ]
+        try:
+            err0 = self._exceptions.get(plugin_name)[0]
+            package_meta = fetch_module_metadata(err0.plugin_module)
+            msg.extend(
+                [
+                    f'{"plugin name": >16}: {package_meta["name"]}',
+                    f'{"version": >16}: {package_meta["version"]}',
+                    f'{"module": >16}: {err0.plugin_module}',
+                ]
+            )
+        except Exception:
+            pass
+        msg += ['']
+
+        for n, err in enumerate(self._exceptions.get(plugin_name, [])):
+            _pad = _linewidth - len(str(err)) - 10
+            msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
+            msg.extend(format_exception(err.__class__, err, err.__traceback__))
+
+        msg += ['=' * 80]
+
+        return "\n".join(msg)
+
 
 def entry_points_for(
     group: str,
 ) -> Generator[importlib_metadata.EntryPoint, None, None]:
-    """Yield all entry_points for dists that provide entry point `group`
+    """Yield all entry_points matching "group", from any distribution.
+
+    Distribution here refers more specifically to the information in the
+    dist-info folder that usually accompanies an installed package.  If a
+    package in the environment does *not* have a ``dist-info/entry_points.txt``
+    file, then in will not be discovered by this function.
 
     Note: a single package may provide multiple entrypoints for a given group.
 
@@ -187,6 +245,13 @@ def entry_points_for(
     -------
     Generator[importlib_metadata.EntryPoint, None, None]
         [description]
+
+    Example
+    -------
+    >>> list(entry_points_for('napari.plugin'))
+    [EntryPoint(name='napari-reg', value='napari_reg', group='napari.plugin'),
+     EntryPoint(name='myplug', value='another.module', group='napari.plugin')]
+
     """
     for dist in importlib_metadata.distributions():
         for ep in dist.entry_points:
@@ -195,7 +260,7 @@ def entry_points_for(
 
 
 def modules_starting_with(prefix: str) -> Generator[str, None, None]:
-    """Yields all module names in sys.path that begin with `prefix`.
+    """Yield all module names in sys.path that begin with `prefix`.
 
     Parameters
     ----------
@@ -315,7 +380,7 @@ def permute_hookimpls(
 def iter_plugin_modules(
     prefix: Optional[str] = None, group: Optional[str] = None
 ) -> Generator[Tuple[str, str], None, None]:
-    """Discovers unique plugin using naming convention and/or entry points.
+    """Discover plugins using naming convention and/or entry points.
 
     This function makes sure that packages that *both* follow the naming
     convention (i.e. starting with `prefix`) *and* provide and an entry point
@@ -378,7 +443,7 @@ def iter_plugin_modules(
                 yield name or module, module
 
 
-def fetch_contact_info(distname: str) -> Optional[Dict[str, str]]:
+def fetch_module_metadata(distname: str) -> Optional[Dict[str, str]]:
     """Attempt to retrieve name, version, contact email & url for a package.
 
     Parameters
@@ -419,7 +484,7 @@ def log_plugin_error(exc: PluginError) -> None:
     if exc.__cause__:
         cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
         msg += f'\n  Cause was: {cause}'
-    contact = fetch_contact_info(exc.plugin_module)
+    contact = fetch_module_metadata(exc.plugin_module)
     if contact:
         msg += "\n  Please notify the plugin developer:\n"
         extra = [f'{k: >11}: {v}' for k, v in contact.items()]
