@@ -4,7 +4,8 @@ import pkgutil
 import re
 import sys
 from logging import getLogger
-from typing import Dict, Generator, Optional, Tuple, Union
+from typing import DefaultDict, Dict, Generator, Optional, Tuple, Union, List
+from collections import defaultdict
 
 import pluggy
 
@@ -64,6 +65,9 @@ class NapariPluginManager(pluggy.PluginManager):
             will simply search the current sys.path.  by default True
         """
         super().__init__("napari")
+        # this dict is a mapping of plugin_name: raised_exception_objects
+        # this will be used to retrieve traceback info on demand
+        self._errors: DefaultDict[str, List[PluginError]] = defaultdict(list)
 
         # define hook specifications and validators
         self.add_hookspecs(hook_specifications)
@@ -117,6 +121,7 @@ class NapariPluginManager(pluggy.PluginManager):
                 self._register_module(plugin_name, module_name)
                 count += 1
             except PluginError as exc:
+                self._errors[plugin_name].append(exc)
                 log_plugin_error(exc)
                 self.unregister(name=plugin_name)
             except Exception as exc:
