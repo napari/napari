@@ -1592,7 +1592,7 @@ class Points(Layer):
                 warnings.warn(message)
                 return
             else:
-                data = self.selected_data
+                data = self.data[self.selected_data]
         else:
             data = self.data
 
