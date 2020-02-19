@@ -9,7 +9,7 @@ napari) will then be invoked in various places throughout the code base.
 NOTE: in pluggy documentation, hook specification marker instances are named
 "hookspec" by convention, and hook implementation marker instances are named
 "hookimpl".  The convention in napari is to name them more explicity:
-"napari_hook_spcification" and "napari_hook_implementation", respectively.
+"napari_hook_specification" and "napari_hook_implementation", respectively.
 
 hook specifications are a feature of pluggy:
 https://pluggy.readthedocs.io/en/latest/#specs
