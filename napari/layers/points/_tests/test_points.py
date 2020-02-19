@@ -1133,6 +1133,43 @@ def test_points_to_table(tmpdir):
                 )
 
 
+def test_points_to_table_selected_data(tmpdir):
+    """Test saving SELECTED point coordinates to a csv file."""
+    np.random.seed(0)
+    full_data = 20 * np.random.random((10, 2))  # 10 points, 2 dimensions
+    points = Points(full_data)
+    points.selected_data = [0, 3, 5, 8]  # subset of four points from data
+    expected_data = full_data[[0, 3, 5, 8]]  # subset of four points from data
+    # save only the selected point coordinates
+    output_filename = os.path.join(tmpdir, 'selected_points.csv')
+    points.to_table(output_filename, selected_only=True)
+    assert os.path.exists(output_filename)
+    with open(output_filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        for row_index, row in enumerate(output_csv):
+            if row_index == 0:
+                assert row == "coord_id,dim_0,dim_1\n"
+            else:
+                output_row_data = [float(i) for i in row.split(',')]
+                assert output_row_data[0] == row_index - 1  # coord_id index
+                assert np.allclose(
+                    np.array(output_row_data[1:]), expected_data[row_index - 1]
+                )
+
+
+def test_points_to_table_no_selected_data(tmpdir):
+    """Test ValueError is raised if no points are selected."""
+    np.random.seed(0)
+    full_data = 20 * np.random.random((10, 2))  # 10 points, 2 dimensions
+    points = Points(full_data)
+    points.selected_data = []  # make sure no points are currently selected
+    output_filename = os.path.join(tmpdir, 'no_selected_points.csv')
+    # Try to use 'selected_only=True' when there are NO selected points
+    with pytest.raises(ValueError):
+        points.to_table(output_filename, selected_only=True)
+    assert not os.path.exists(output_filename)
+
+
 def test_points_dataframe_equality(tmpdir):
     """Test dataframes from points tables and csv files behave identically."""
     # Create point coordinates and save to csv
