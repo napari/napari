@@ -1770,13 +1770,15 @@ class Shapes(Layer):
         else:
             raise ValueError("Mode not recognized")
 
-    def to_table(self, path=None):
+    def to_table(self, path=None, *, selected_only=False):
         """Constructs a table of shape coordinate data.
 
         Parameters
         ----------
         path : str, optional
             If a filename is provided, the table will be saved as a csv file.
+        selected_only : bool, optional
+            Only include currently selected points from this layer.
 
         Returns
         -------
@@ -1792,13 +1794,28 @@ class Shapes(Layer):
         points_dataframe = pandas.DataFrame(table, columns=column_names)
         ```
         """
-        n_dimensions = max([i.shape[1] for i in self.data])
+        if selected_only is True:
+            if self.selected_data == []:
+                message = (
+                    "The `selected_only` keyword argument is True, "
+                    "but there is no data currently selected for this layer!"
+                )
+                raise ValueError(message)
+            else:
+                data = np.array(self.data)[self.selected_data]
+                shape_types = np.array(self.shape_type)[self.selected_data]
+        else:
+            data = self.data
+            shape_types = self.shape_type
+
+        # Construct table of data
+        n_dimensions = max([i.shape[1] for i in data])
         column_names = ['shape_id', 'shape_type', 'coord_id'] + [
             'dim_' + str(n) for n in range(n_dimensions)
         ]
         table_data = []
-        for idx_shape, shape in enumerate(self.data):
-            shape_type = self.shape_type[idx_shape]
+        for idx_shape, shape in enumerate(data):
+            shape_type = shape_types[idx_shape]
             for idx, row in enumerate(shape):
                 data = [idx_shape, shape_type, idx] + list(row)
                 table_data.append(data)
