@@ -1114,9 +1114,8 @@ def test_xml_list():
 
 def test_points_to_table(tmpdir):
     """Test saving point coordinates to a csv file."""
-    shape = (10, 2)
     np.random.seed(0)
-    expected_data = 20 * np.random.random(shape)
+    expected_data = 20 * np.random.random((10, 2))  # 10 points, 2 dimensions
     points = Points(expected_data)
     output_filename = os.path.join(tmpdir, 'points.csv')
     points.to_table(output_filename)
@@ -1132,3 +1131,28 @@ def test_points_to_table(tmpdir):
                 assert np.allclose(
                     np.array(output_row_data[1:]), expected_data[row_index - 1]
                 )
+
+
+def test_points_dataframe_equality(tmpdir):
+    """Test dataframes from points tables and csv files behave identically."""
+    # Create point coordinates and save to csv
+    np.random.seed(0)
+    expected_data = 20 * np.random.random((10, 2))  # 10 points, 2 dimensions
+    points = Points(expected_data)
+    filename_from_table = os.path.join(tmpdir, 'myfile_1.csv')
+    table, column_names = points.to_table(filename_from_table)
+    # Create pandas dataframe from the same data and save to csv
+    expected_dataframe = pd.DataFrame(table, columns=column_names)
+    filename_from_dataframe = os.path.join(tmpdir, 'myfile_2.csv')
+    expected_dataframe.to_csv(filename_from_dataframe, index=None)
+    # Check the contents of both csv files are identical
+    with open(filename_from_table) as f:
+        content_points_table = f.read()
+    with open(filename_from_dataframe) as f:
+        content_points_dataframe = f.read()
+    assert content_points_table == content_points_dataframe
+    # Check round trip, can we read the csv files back into dataframes
+    dataframe_from_file1 = pd.read_csv(filename_from_table)
+    dataframe_from_file2 = pd.read_csv(filename_from_dataframe)
+    pd.testing.assert_frame_equal(dataframe_from_file1, expected_dataframe)
+    pd.testing.assert_frame_equal(dataframe_from_file2, expected_dataframe)

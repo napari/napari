@@ -2,6 +2,7 @@ import csv
 import os
 
 import numpy as np
+import pandas as pd
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
@@ -1000,3 +1001,29 @@ def test_shapes_to_table(tmpdir):
                         np.array(output_row_data[3:]),
                         expected_data[row_index - 5],
                     )
+
+
+def test_shapes_dataframe_equality(tmpdir):
+    """Test dataframes from shapes tables and csv files behave identically."""
+    # Create shape coordinates and save to csv
+    expected_data = [[0, 0], [0, 100], [100, 100], [100, 0]]
+    shapes_layer = Shapes(
+        [expected_data, expected_data], shape_type=['rectangle', 'ellipse']
+    )
+    filename_from_table = os.path.join(tmpdir, 'myfile1.csv')
+    table, column_names = shapes_layer.to_table(filename_from_table)
+    # Create pandas dataframe from the same data and save to csv
+    expected_dataframe = pd.DataFrame(table, columns=column_names)
+    filename_from_dataframe = os.path.join(tmpdir, 'myfile_2.csv')
+    expected_dataframe.to_csv(filename_from_dataframe, index=None)
+    # Check the contents of both csv files are identical
+    with open(filename_from_table) as f:
+        content_shapes_table = f.read()
+    with open(filename_from_dataframe) as f:
+        content_shapes_dataframe = f.read()
+    assert content_shapes_table == content_shapes_dataframe
+    # Check round trip, can we read the csv files back into dataframes
+    dataframe_from_file1 = pd.read_csv(filename_from_table)
+    dataframe_from_file2 = pd.read_csv(filename_from_dataframe)
+    pd.testing.assert_frame_equal(dataframe_from_file1, expected_dataframe)
+    pd.testing.assert_frame_equal(dataframe_from_file2, expected_dataframe)
