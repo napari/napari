@@ -1589,8 +1589,7 @@ class Points(Layer):
                     "The `selected_only` keyword argument is True, "
                     "but there is no data currently selected for this layer!"
                 )
-                warnings.warn(message)
-                return
+                raise ValueError(message)
             else:
                 data = self.data[self.selected_data]
         else:
