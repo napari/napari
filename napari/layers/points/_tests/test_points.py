@@ -1158,7 +1158,7 @@ def test_points_to_table_selected_data(tmpdir):
 
 
 def test_points_to_table_no_selected_data(tmpdir):
-    """Test ValueError is raised if no points are selected."""
+    """Test kwarg 'selected_onlyy=True' when NO points are selected."""
     np.random.seed(0)
     full_data = 20 * np.random.random((10, 2))  # 10 points, 2 dimensions
     points = Points(full_data)
