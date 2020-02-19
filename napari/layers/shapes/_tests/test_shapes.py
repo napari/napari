@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
@@ -1001,6 +1002,52 @@ def test_shapes_to_table(tmpdir):
                         np.array(output_row_data[3:]),
                         expected_data[row_index - 5],
                     )
+
+
+def test_points_to_table_selected_data(tmpdir):
+    """Test saving SELECTED shapes coordinates to a csv file."""
+    expected_data = [[0, 0], [0, 100], [100, 100], [100, 0]]
+    shapes_layer = Shapes(
+        [expected_data, expected_data], shape_type=['rectangle', 'ellipse']
+    )
+    shapes_layer.selected_data = [1]
+    output_filename = os.path.join(tmpdir, 'selected_shapes.csv')
+    shapes_layer.to_table(output_filename, selected_only=True)
+    assert os.path.exists(output_filename)
+    with open(output_filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        for row_index, row in enumerate(output_csv):
+            if row_index == 0:
+                assert row == "shape_id,shape_type,coord_id,dim_0,dim_1\n"
+            else:
+                output_row_data = []
+                for i in row.split(','):
+                    try:
+                        i = float(i)
+                    except ValueError:
+                        pass
+                    finally:
+                        output_row_data.append(i)
+                # Check results
+                assert output_row_data[0] == 0  # shape_id index
+                assert output_row_data[1] == 'ellipse'  # shape_type
+                assert output_row_data[2] == row_index - 1  # coord_id
+                assert np.allclose(
+                    np.array(output_row_data[3:]),
+                    expected_data[row_index - 1],
+                )
+
+
+def test_shapes_to_table_no_selected_data(tmpdir):
+    expected_data = [[0, 0], [0, 100], [100, 100], [100, 0]]
+    shapes_layer = Shapes(
+        [expected_data, expected_data], shape_type=['rectangle', 'ellipse']
+    )
+    shapes_layer.selected_data = []  # make sure no shapes are selected
+    output_filename = os.path.join(tmpdir, 'no_selected_shapes.csv')
+    with pytest.raises(ValueError):
+        shapes_layer.to_table(output_filename, selected_only=True)
+    assert not os.path.exists(output_filename)
 
 
 def test_shapes_dataframe_equality(tmpdir):
