@@ -1,7 +1,7 @@
 import pytest
 
 import pluggy
-from napari.plugins.manager import permute_hookimpls
+from napari.plugins.manager import permute_hook_implementations
 
 hookimpl = pluggy.HookimplMarker("dummy")
 
@@ -84,29 +84,31 @@ START_ORDER = ['p2', 'p3', 'p1']
         ([p3], ['p3', 'p2', 'p1']),
     ],
 )
-def test_permute_hookimpls(pm, order, expected):
+def test_permute_hook_implementations(pm, order, expected):
     assert pm.hook.myhook() == START_ORDER
-    permute_hookimpls(pm.hook.myhook, order)
+    permute_hook_implementations(pm.hook.myhook, order)
     assert pm.hook.myhook() == expected
 
 
-def test_permute_hookimpls_raises(pm):
+def test_permute_hook_implementations_raises(pm):
     with pytest.raises(ValueError):
         # this plugin instance is not in the list
-        permute_hookimpls(pm.hook.myhook, [Plugin_W2(), p1])
+        permute_hook_implementations(pm.hook.myhook, [Plugin_W2(), p1])
 
     with pytest.raises(TypeError):
         # this plugin instance is in the list, but cannot mix types.
-        permute_hookimpls(pm.hook.myhook, [p2, 'p1'])
+        permute_hook_implementations(pm.hook.myhook, [p2, 'p1'])
 
     with pytest.raises(ValueError):
         # 'p4' is not in the list
-        permute_hookimpls(pm.hook.myhook, ['p1', 'p4'])
+        permute_hook_implementations(pm.hook.myhook, ['p1', 'p4'])
 
     with pytest.raises(ValueError):
         # duplicate entries are not allowed
-        permute_hookimpls(pm.hook.myhook, ['p1', 'p1', 'p2'])
+        permute_hook_implementations(pm.hook.myhook, ['p1', 'p1', 'p2'])
 
     with pytest.raises(ValueError):
         # too many values
-        permute_hookimpls(pm.hook.myhook, ['p1', 'p1', 'p2', 'p4', 'p3', 'p1'])
+        permute_hook_implementations(
+            pm.hook.myhook, ['p1', 'p1', 'p2', 'p4', 'p3', 'p1']
+        )

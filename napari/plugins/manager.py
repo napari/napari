@@ -286,10 +286,11 @@ entry_point_pattern = re.compile(
     r'(?P<extras>\[.*\])?\s*$'
 )
 
+HookOrderType = Union[List[str], List[ModuleType], List[pluggy.hooks.HookImpl]]
 
-def permute_hookimpls(
-    hook_caller: pluggy.hooks._HookCaller,
-    order: Union[List[str], List[ModuleType], List[pluggy.hooks.HookImpl]],
+
+def permute_hook_implementations(
+    hook_caller: pluggy.hooks._HookCaller, order: HookOrderType
 ):
     """Change the call order of hookimplementations for a pluggy HookCaller.
 
