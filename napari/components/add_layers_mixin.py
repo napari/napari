@@ -7,6 +7,7 @@ from ..utils.misc import ensure_iterable, is_iterable
 from ..utils import io
 from typing import Union, List, Optional
 from napari.plugins import plugin_manager
+from napari.plugins.exceptions import PluginError
 
 
 class AddLayersMixin:
@@ -53,7 +54,9 @@ class AddLayersMixin:
         stack: bool = False,
         use_dask: Optional[bool] = None,
     ):
-        """[summary]
+        """Add a path to the viewer
+
+        Paths will be handed one-by-one to the napari_get_reader hook.
 
         Parameters
         ----------
@@ -78,9 +81,14 @@ class AddLayersMixin:
         else:
             for path in paths:
                 reader = plugin_manager.hook.napari_get_reader(path=path)
-                layer_data = reader(path)
+                try:
+                    layer_data = reader(path)
+                except Exception as exc:
+                    # FIXME: need to raise propper error, and block hookimpl.
+                    raise PluginError from exc
                 for data in layer_data:
                     self._add_layer_from_data(*data)
+        # TODO: return values
 
     def add_image(
         self,
@@ -104,7 +112,7 @@ class AddLayersMixin:
         blending=None,
         visible=True,
         path=None,
-    ):
+    ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layers list.
 
         Parameters
@@ -299,7 +307,7 @@ class AddLayersMixin:
         opacity=1,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Points:
         """Add a points layer to the layers list.
 
         Parameters
@@ -420,7 +428,7 @@ class AddLayersMixin:
         blending='translucent',
         visible=True,
         path=None,
-    ):
+    ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
         An image-like layer where every pixel contains an integer ID
@@ -504,7 +512,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Shapes:
         """Add a shapes layer to the layers list.
 
         Parameters
@@ -600,7 +608,7 @@ class AddLayersMixin:
         opacity=1,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Surface:
         """Add a surface layer to the layers list.
 
         Parameters
@@ -676,7 +684,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Vectors:
         """Add a vectors layer to the layers list.
 
         Parameters
@@ -733,7 +741,7 @@ class AddLayersMixin:
 
     def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: Optional[str] = None
-    ):
+    ) -> Union[layers.Layer, List[layers.Layer]]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -806,7 +814,7 @@ class AddLayersMixin:
             )
 
         try:
-            add_method(data, **(meta or {}))
+            layer = add_method(data, **(meta or {}))
         except TypeError as exc:
             if 'unexpected keyword argument' in str(exc):
                 bad_key = str(exc).split('keyword argument ')[-1]
@@ -814,3 +822,5 @@ class AddLayersMixin:
                     "_add_layer_from_data received an unexpected keyword "
                     f"argument ({bad_key}) for layer type {layer_type}"
                 ) from exc
+
+        return layer

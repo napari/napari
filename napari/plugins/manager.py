@@ -7,7 +7,18 @@ from collections import defaultdict
 from logging import getLogger
 from traceback import format_exception
 from types import ModuleType
-from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
+from typing import (
+    DefaultDict,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    Set,
+)
+from .exceptions import PluginError, PluginImportError, PluginRegistrationError
+
 
 import pluggy
 
@@ -19,31 +30,6 @@ if sys.version_info >= (3, 8):
     from importlib import metadata as importlib_metadata
 else:
     import importlib_metadata
-
-
-class PluginError(Exception):
-    def __init__(
-        self, message: str, plugin_name: str, plugin_module: str
-    ) -> None:
-        super().__init__(message)
-        self.plugin_name = plugin_name
-        self.plugin_module = plugin_module
-
-
-class PluginImportError(PluginError, ImportError):
-    """Raised when a plugin fails to import."""
-
-    def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to import plugin: "{plugin_name}"'
-        super().__init__(msg, plugin_name, plugin_module)
-
-
-class PluginRegistrationError(PluginError):
-    """Raised when a plugin fails to register with pluggy."""
-
-    def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to register plugin: "{plugin_name}"'
-        super().__init__(msg, plugin_name, plugin_module)
 
 
 class NapariPluginManager(pluggy.PluginManager):
@@ -201,7 +187,7 @@ class NapariPluginManager(pluggy.PluginManager):
             f'{"napari version": >16}: {__version__}',
         ]
         try:
-            err0 = self._exceptions.get(plugin_name)[0]
+            err0 = self._exceptions[plugin_name][0]
             package_meta = fetch_module_metadata(err0.plugin_module)
             msg.extend(
                 [
@@ -338,7 +324,7 @@ def permute_hook_implementations(
 
     # find the current position of items specified in `order`
     indices = []
-    seen = set()
+    seen: Set[HookOrderType] = set()
     for i in order:
         if i in seen:
             raise ValueError(

@@ -157,7 +157,7 @@ def view_path(
     axis_labels=None,
     show=True,
 ):
-    """Create a viewer and add an image layer.
+    """Create a viewer and add a layer whose type will be determined by path.
 
     Parameters
     ----------

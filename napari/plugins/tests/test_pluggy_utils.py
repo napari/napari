@@ -85,12 +85,14 @@ START_ORDER = ['p2', 'p3', 'p1']
     ],
 )
 def test_permute_hook_implementations(pm, order, expected):
+    """Test that the permute_hook_implementations function reorders hooks."""
     assert pm.hook.myhook() == START_ORDER
     permute_hook_implementations(pm.hook.myhook, order)
     assert pm.hook.myhook() == expected
 
 
 def test_permute_hook_implementations_raises(pm):
+    """Test that invalid calls to permute_hook_implementations raise errors."""
     with pytest.raises(ValueError):
         # this plugin instance is not in the list
         permute_hook_implementations(pm.hook.myhook, [Plugin_W2(), p1])
