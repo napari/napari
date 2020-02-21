@@ -6,14 +6,12 @@ import sys
 from collections import defaultdict
 from logging import getLogger
 from traceback import format_exception
-from types import ModuleType
 from typing import (
     DefaultDict,
     Dict,
     Generator,
     List,
     Optional,
-    Set,
     Tuple,
     Union,
 )
