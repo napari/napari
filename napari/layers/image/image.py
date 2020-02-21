@@ -6,6 +6,8 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from imageio import imwrite
 from scipy import ndimage as ndi
+from skimage.transform import estimate_transform
+from vispy.visuals.transforms import MatrixTransform
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
@@ -13,7 +15,7 @@ from ...utils.status_messages import format_float
 from ..base import Layer
 from ..layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
-from ._constants import Interpolation, Rendering
+from ._constants import Interpolation, Rendering, Mode
 from .image_utils import get_pyramid_and_rgb
 
 
@@ -138,7 +140,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def __init__(
         self,
         data,
-        *,
+        *,  # noqa: E999
         rgb=None,
         is_pyramid=None,
         colormap='gray',
@@ -175,6 +177,7 @@ class Image(IntensityVisualizationMixin, Layer):
         )
 
         self.events.add(
+            mode=Event,
             interpolation=Event,
             rendering=Event,
             iso_threshold=Event,
@@ -201,9 +204,14 @@ class Image(IntensityVisualizationMixin, Layer):
             self._data_view = np.zeros((1,) * self.dims.ndisplay)
         self._data_raw = self._data_view
         self._data_thumbnail = self._data_view
-
+        self._mode = Mode.PAN_ZOOM
         # Set contrast_limits and colormaps
         self._gamma = gamma
+        self._drag_start_canvas = None
+        self._drag_start_image = None
+        self._fix_pos_canvas = None
+        self._fix_pos_image = None
+        self._temp_transform = MatrixTransform()
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
         if contrast_limits is None:
@@ -247,6 +255,51 @@ class Image(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.events.data()
+
+    @property
+    def mode(self):
+        """str: Interactive mode
+
+        Interactive mode. The normal, default mode is PAN_ZOOM, which
+        allows for normal interactivity with the canvas.
+
+        In ADD mode clicks of the cursor add points at the clicked location.
+
+        In SELECT mode the cursor can select points by clicking on them or
+        by dragging a box around them. Once selected points can be moved,
+        have their properties edited, or be deleted.
+        """
+        return str(self._mode)
+
+    @mode.setter
+    def mode(self, mode):
+        if isinstance(mode, str):
+            mode = Mode(mode)
+
+        if not self.editable:
+            mode = Mode.PAN_ZOOM
+
+        if mode == self._mode:
+            return
+        old_mode = self._mode
+
+        if mode == Mode.TRANSFORM:
+            self.cursor = 'pointing'
+            self.interactive = False
+            self.help = 'drag to translate/ <shift> click to place fixed point'
+        elif mode == Mode.PAN_ZOOM:
+            self.cursor = 'standard'
+            self.interactive = True
+            self.help = ''
+            self._fix_pos_canvas = None
+            self._fix_pos_image = None
+        else:
+            raise ValueError("Mode not recognized")
+
+        self.status = str(mode)
+        self._mode = mode
+
+        self.events.mode(mode=mode)
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -393,6 +446,113 @@ class Image(IntensityVisualizationMixin, Layer):
             }
         )
         return state
+
+    def on_mouse_move(self, event):
+        """Called whenever mouse moves over canvas.
+        """
+        if self._mode == Mode.TRANSFORM:
+            if event.is_dragging:
+                if self._fix_pos_canvas is None:
+                    if self._drag_start_canvas is None:
+                        # Save original affine transformation
+                        self._temp_transform_matrix = np.copy(
+                            self.affine_transform
+                        )
+
+                        self._temp_transform.matrix = np.copy(
+                            self.affine_transform
+                        )
+                        self._drag_start_canvas = [
+                            self.coordinates[d] for d in self.dims.displayed
+                        ][::-1]
+                        # Save drag start point in "after affine transformation space"
+                        self._drag_start_canvas = self._temp_transform.map(
+                            np.array(
+                                [
+                                    self._drag_start_canvas[0],
+                                    self._drag_start_canvas[1],
+                                    0,
+                                ]
+                            )
+                        )
+
+                    self._temp_transform.matrix = np.copy(
+                        self.affine_transform
+                    )
+                    drag_now = [
+                        self.coordinates[d] for d in self.dims.displayed
+                    ][::-1]
+                    # Amount of translation is differents between point now and point when drag started
+                    drag_now = self._temp_transform.map(
+                        np.array([drag_now[0], drag_now[1], 0])
+                    )
+                    # Apply translation amount to existing affine transform
+                    self._temp_transform.matrix = self._temp_transform_matrix
+                    self._temp_transform.translate(
+                        np.array(
+                            [
+                                (drag_now[0] - self._drag_start_canvas[0]),
+                                (drag_now[1] - self._drag_start_canvas[1]),
+                                0,
+                            ]
+                        )
+                    )
+                    self.affine_transform = np.copy(
+                        self._temp_transform.matrix
+                    )
+                else:
+                    if self._drag_start is None:
+                        # Save point im image space where drag started
+                        self._drag_start = [
+                            self.coordinates[d] for d in self.dims.displayed
+                        ][::-1]
+                    drag_now = [
+                        self.coordinates[d] for d in self.dims.displayed
+                    ][::-1]
+                    self._temp_transform.matrix = np.copy(
+                        self.affine_transform
+                    )
+                    # Get current point in "after affine transformation space"
+                    drag_now = self._temp_transform.map(
+                        np.array([drag_now[0], drag_now[1], 0])
+                    )
+                    # Affine transformation is calculated by two control point pairs: The fixed one and drag_start in image space coupled to drag_now in "after affine transform space"
+                    estimate = estimate_transform(
+                        'similarity',
+                        np.array([self._fix_pos_image, self._drag_start]),
+                        np.array([self._fix_pos_canvas[:2], drag_now[:2]]),
+                    )
+                    # Converting skimage affine matrix to vispy matrix
+                    o = np.eye(4)
+                    o[0][0] = estimate.params[0][0]
+                    o[0][1] = estimate.params[1][0]
+                    o[1][0] = estimate.params[0][1]
+                    o[1][1] = estimate.params[1][1]
+                    o[3][0] = estimate.params[0][2]
+                    o[3][1] = estimate.params[1][2]
+                    self.affine_transform = o
+
+    def on_mouse_press(self, event):
+        """Called whenever mouse pressed in canvas.
+        """
+        shift = 'Shift' in event.modifiers
+
+        if self._mode == Mode.TRANSFORM and shift:
+            self._temp_transform.matrix = np.copy(self.affine_transform)
+            # Save point in image space and in "after affine transformation space"
+            self._fix_pos_image = [
+                self.coordinates[d] for d in self.dims.displayed
+            ][::-1]
+            self._fix_pos_canvas = self._temp_transform.map(
+                np.array([self._fix_pos_image[0], self._fix_pos_image[1], 0])
+            )
+            self.help = 'fixed point placed, drag to rotate/scale'
+
+    def on_mouse_release(self, event):
+        """Called whenever mouse released in canvas.
+         """
+        self._drag_start = None
+        self._drag_start_canvas = None
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.

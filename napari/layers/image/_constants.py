@@ -2,6 +2,18 @@ from enum import auto
 from ...utils.misc import StringEnum
 
 
+class Mode(StringEnum):
+    """
+    Mode: Interactive mode. The normal, default mode is PAN_ZOOM, which
+    allows for normal interactivity with the canvas.
+
+    TRANSFORM allows the user to transform the current layer
+    """
+
+    TRANSFORM = auto()
+    PAN_ZOOM = auto()
+
+
 class Interpolation(StringEnum):
     """INTERPOLATION: Vispy interpolation mode.
 
