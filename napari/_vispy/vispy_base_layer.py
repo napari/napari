@@ -1,6 +1,10 @@
 from vispy.gloo import gl
 from vispy.app import Canvas
-from vispy.visuals.transforms import STTransform
+from vispy.visuals.transforms import (
+    STTransform,
+    MatrixTransform,
+    ChainTransform,
+)
 from abc import ABC, abstractmethod
 
 
@@ -26,6 +30,8 @@ class VispyBaseLayer(ABC):
         Scale factors for the layer visual in the scenecanvas.
     translate : sequence of float
         Translation values for the layer visual in the scenecanvas.
+    affine_transform : 4x4 array
+        Affine Matrix to be applied before translate and scale
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
@@ -36,7 +42,7 @@ class VispyBaseLayer(ABC):
 
     Extended Summary
     ----------
-    _master_transform : vispy.visuals.transforms.STTransform
+    _master_transform : vispy.visuals.transforms.ChainTransform
         Transform positioning the layer visual inside the scenecanvas.
     """
 
@@ -60,16 +66,21 @@ class VispyBaseLayer(ABC):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.scale.connect(self._on_scale_change)
         self.layer.events.translate.connect(self._on_translate_change)
+        self.layer.events.affine_transform.connect(
+            self._on_affine_transform_change
+        )
 
     @property
     def _master_transform(self):
-        """vispy.visuals.transforms.STTransform:
+        """vispy.visuals.transforms.ChainTransform:
         Central node's firstmost transform.
         """
         # whenever a new parent is set, the transform is reset
         # to a NullTransform so we reset it here
-        if not isinstance(self.node.transform, STTransform):
-            self.node.transform = STTransform()
+        if not isinstance(self.node.transform, ChainTransform):
+            self.node.transform = ChainTransform()
+            self.node.transform.append(STTransform())
+            self.node.transform.append(MatrixTransform())
 
         return self.node.transform
 
@@ -88,20 +99,29 @@ class VispyBaseLayer(ABC):
     @property
     def scale(self):
         """sequence of float: Scale factors."""
-        return self._master_transform.scale
+        return self._master_transform.transforms[0].scale
 
     @scale.setter
     def scale(self, scale):
-        self._master_transform.scale = scale
+        self._master_transform.transforms[0].scale = scale
 
     @property
     def translate(self):
         """sequence of float: Translation values."""
-        return self._master_transform.translate
+        return self._master_transform.transforms[0].translate
 
     @translate.setter
     def translate(self, translate):
-        self._master_transform.translate = translate
+        self._master_transform.transforms[0].translate = translate
+
+    @property
+    def affine_transform(self):
+        """sequence of float: Translation values."""
+        return self._master_transform.transforms[1].matrix
+
+    @affine_transform.setter
+    def affine_transform(self, matrix):
+        self._master_transform.transforms[1].matrix = matrix
 
     @property
     def scale_factor(self):
@@ -137,6 +157,10 @@ class VispyBaseLayer(ABC):
             self.layer.translate[d] + self.layer.translate_grid[d]
             for d in self.layer.dims.displayed[::-1]
         ]
+        self.layer.position = self._transform_position(self._position)
+
+    def _on_affine_transform_change(self, event=None):
+        self.affine_transform = self.layer.affine_transform
         self.layer.position = self._transform_position(self._position)
 
     def _transform_position(self, position):

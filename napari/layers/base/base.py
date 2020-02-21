@@ -25,6 +25,8 @@ class Layer(KeymapMixin, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    affine_transform : 4x4 array
+        Affine Matrix to be applied before translate and scale
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -104,14 +106,16 @@ class Layer(KeymapMixin, ABC):
     def __init__(
         self,
         ndim,
-        *,
+        *,  # noqa: E999
         name=None,
         metadata=None,
         scale=None,
         translate=None,
+        affine_transform=None,
         opacity=1,
         blending='translucent',
         visible=True,
+        transforming=False,
     ):
         super().__init__()
 
@@ -119,6 +123,7 @@ class Layer(KeymapMixin, ABC):
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
+        self._transforming = transforming
         self._selected = True
         self._freeze = False
         self._status = 'Ready'
@@ -138,6 +143,10 @@ class Layer(KeymapMixin, ABC):
             self._translate = [0] * ndim
         else:  # covers list and array-like inputs
             self._translate = list(translate)
+        if affine_transform is None:
+            self._affine_transform = np.eye(4)
+        else:
+            self._affine_transform = affine_transform
         self._scale_view = np.ones(ndim)
         self._translate_view = np.zeros(ndim)
         self._translate_grid = np.zeros(ndim)
@@ -158,10 +167,12 @@ class Layer(KeymapMixin, ABC):
             blending=Event,
             opacity=Event,
             visible=Event,
+            transforming=Event,
             select=Event,
             deselect=Event,
             scale=Event,
             translate=Event,
+            affine_transform=Event,
             data=Event,
             name=Event,
             thumbnail=Event,
@@ -273,6 +284,17 @@ class Layer(KeymapMixin, ABC):
             self.editable = False
 
     @property
+    def transforming(self):
+        """bool: Whether the visual is currently being displayed."""
+        return self._transforming
+
+    @transforming.setter
+    def transforming(self, transforming):
+        self._transforming = transforming
+
+        self.events.transforming()
+
+    @property
     def editable(self):
         """bool: Whether the current layer data is editable from the viewer."""
         return self._editable
@@ -305,6 +327,16 @@ class Layer(KeymapMixin, ABC):
     def translate(self, translate):
         self._translate = translate
         self.events.translate()
+
+    @property
+    def affine_transform(self):
+        """list: Factors to shift the layer by."""
+        return self._affine_transform
+
+    @affine_transform.setter
+    def affine_transform(self, affine_transform):
+        self._affine_transform = affine_transform
+        self.events.affine_transform()
 
     @property
     def translate_grid(self):
@@ -425,9 +457,11 @@ class Layer(KeymapMixin, ABC):
             'metadata': self.metadata,
             'scale': list(self.scale),
             'translate': list(self.translate),
+            'affine_transform': self.affine_transform,
             'opacity': self.opacity,
             'blending': self.blending,
             'visible': self.visible,
+            'transforming': self.transforming,
         }
         return base_dict
 
