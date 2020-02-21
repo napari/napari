@@ -1,18 +1,16 @@
 """Modified _hookexec caller.
 
-TODO: TEMPORARY WORKAROUND!
+TODO: TEMPORARY WORKAROUND! remove if/when pluggy merges #253
+The code here was submitted to pluggy as a PR:
+https://github.com/pytest-dev/pluggy/pull/253
 
 This module is here as a patch because pluggy doesn't indicate WHICH hook
 implementation returned the result(s)... making it hard to provide useful
 tracebacks and feedback if one of them errors.
 
-The code here was submitted to pluggy as a PR:
-https://github.com/pytest-dev/pluggy/pull/253
-
-
 Example
 -------
-Instead of calling hooks the normal way:
+In addition to calling hooks the normal way:
 >>> plugin_manager.hook.my_hook(arg=arg)
 
 you can use _hookexec from this module as follows:
