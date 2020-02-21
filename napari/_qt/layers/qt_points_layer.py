@@ -19,35 +19,38 @@ class QtPointsControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : #TODO
-        #TODO
+    layer : napari.layers.Layer
+        An instance of a napari layer.
 
     Attributes
     ----------
-    addition_button : QtModeRadioButton
+    addition_button : qtpy.QtWidgets.QtModeRadioButton
         Button to add points to layer.
-    button_group : QButtonGroup
+    button_group : qtpy.QtWidgets.QButtonGroup
         Button group of points layer controls (add, select, delete).
-    delete_button : QtModePushButton
+    delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete points from layer.
-    edgeColorSwatch : QFrame
-    edgeComboBox : QComboBox
-    faceColorSwatch : QFrame
-    faceComboBox : QComboBox
-    grid_layout :
-        grid_layout created in QtLayerControls
-        addWidget(widget, row, column, [row_span, column_span])
-    layer : #TODO
+    edgeColorSwatch : qtpy.QtWidgets.QFrame
         #TODO
-    ndimCheckBox : QCheckBox
+    edgeComboBox : qtpy.QtWidgets.QComboBox
+        #TODO
+    faceColorSwatch : qtpy.QtWidgets.QFrame
+        #TODO
+    faceComboBox : qtpy.QtWidgets.QComboBox
+        #TODO
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    ndimCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether layer is n-dimensional.
-    panzoom_button : QtModeRadioButton
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
         Button for pan/zoom mode.
-    select_button : QtModeRadioButton
+    select_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select points from layer.
-    sizeSlider : QSlider
+    sizeSlider : qtpy.QtWidgets.QSlider
         Slider controlling size of points.
-    symbolComboBox : QComboBox
+    symbolComboBox : qtpy.QtWidgets.QComboBox
         Drop down list of symbol options for points markers.
 
     Raises

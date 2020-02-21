@@ -9,21 +9,23 @@ class QtVectorsControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : #TODO
-        #TODO
+    layer : napari.layers.Layer
+        An instance of a napari layer.
 
     Attributes
     ----------
-    edgeColorSwatch : QFrame
-    edgeComboBox : QComboBox
-    grid_layout :
-        grid_layout created in QtLayerControls
-        addWidget(widget, row, column, [row_span, column_span])
-    layer : #TODO
+    edgeColorSwatch : qtpy.QtWidgets.QFrame
         #TODO
-    lengthSpinBox : QDoubleSpinBox
-    widthSpinBox : QDoubleSpinBox
-
+    edgeComboBox : qtpy.QtWidgets.QComboBox
+        #TODO
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+        #TODO
+    widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
+        #TODO
     """
 
     def __init__(self, layer):

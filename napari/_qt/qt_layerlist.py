@@ -189,6 +189,10 @@ class QtLayerList(QScrollArea):
     def keyPressEvent(self, event):
         """Ignore a key press event.
 
+        Allows the event to pass through a parent widget to its child widget
+        without doing anything. If we did not use event.ignore() then the
+        parent widget would catch the event and not pass it on to the child.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
@@ -198,6 +202,10 @@ class QtLayerList(QScrollArea):
 
     def keyReleaseEvent(self, event):
         """Ignore key relase event.
+
+        Allows the event to pass through a parent widget to its child widget
+        without doing anything. If we did not use event.ignore() then the
+        parent widget would catch the event and not pass it on to the child.
 
         Parameters
         ----------
@@ -303,6 +311,10 @@ class QtLayerList(QScrollArea):
     def dragLeaveEvent(self, event):
         """Unselects layer dividers.
 
+        Allows the event to pass through a parent widget to its child widget
+        without doing anything. If we did not use event.ignore() then the
+        parent widget would catch the event and not pass it on to the child.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
@@ -315,6 +327,10 @@ class QtLayerList(QScrollArea):
 
     def dragEnterEvent(self, event):
         """Update divider position before dragging layer widget to new position
+
+        Allows the event to pass through a parent widget to its child widget
+        without doing anything. If we did not use event.ignore() then the
+        parent widget would catch the event and not pass it on to the child.
 
         Parameters
         ----------
@@ -546,6 +562,10 @@ class QtLayerWidget(QFrame):
     def mouseReleaseEvent(self, event):
         """Ignores mouse release event.
 
+        Allows the event to pass through a parent widget to its child widget
+        without doing anything. If we did not use event.ignore() then the
+        parent widget would catch the event and not pass it on to the child.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
@@ -556,6 +576,10 @@ class QtLayerWidget(QFrame):
     def mousePressEvent(self, event):
         """Ignores mouse press event.
 
+        Allows the event to pass through a parent widget to its child widget
+        without doing anything. If we did not use event.ignore() then the
+        parent widget would catch the event and not pass it on to the child.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
@@ -565,6 +589,10 @@ class QtLayerWidget(QFrame):
 
     def mouseMoveEvent(self, event):
         """Ignores mouse move event.
+
+        Allows the event to pass through a parent widget to its child widget
+        without doing anything. If we did not use event.ignore() then the
+        parent widget would catch the event and not pass it on to the child.
 
         Parameters
         ----------

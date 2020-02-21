@@ -9,17 +9,19 @@ class QtLayerControls(QFrame):
 
     Parameters
     ----------
-    layer : #TODO
-        #TODO
+    layer : napari.layers.Layer
+        An instance of a napari layer.
 
     Attributes
     ----------
-    blendComboBox : QComboBox
-    grid_layout :
-    layer : #TODO
+    blendComboBox : qtpy.QtWidgets.QComboBox
         #TODO
-    opacitySlider : QSlider
-        Slider controlling opacity.
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    opacitySlider : qtpy.QtWidgets.QSlider
+        Slider controlling opacity of the layer.
     """
 
     def __init__(self, layer):

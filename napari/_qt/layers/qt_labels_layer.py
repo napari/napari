@@ -18,35 +18,37 @@ from ..qt_mode_buttons import QtModeRadioButton
 
 
 class QtLabelsControls(QtLayerControls):
-    """$TODO
+    """#TODO
 
     Parameters
     ----------
-    layer : #TODO
-        #TODO
+    layer : napari.layers.Layer
+        An instance of a napari layer.
 
     Attributes
     ----------
-    button_group : QButtonGroup
+    button_group : qtpy.QtWidgets.QButtonGroup
         Button group of label layer controls: PAN_ZOOM, PICKER, PAINT, or FILL.
-    colormapUpdate : QPushButton
+    colormapUpdate : qtpy.QtWidgets.QPushButton
         Button to update colormap of label layer.
-    contigCheckBox : QCheckBox
+    contigCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is contiguous.
-    fill_button : QtModeRadioButton
-        PAN_ZOOM, PICKER, PAINT, or FILL
-    grid_layout : Layout of Qt widget controls of the label layer.
-    layer :
-    ndimCheckBox : QCheckBox
+    fill_button : qtpy.QtWidgets.QtModeRadioButton
+        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    ndimCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is n-dimensional.
-    paint_button : QtModeRadioButton
-        PAN_ZOOM, PICKER, PAINT, or FILL
-    panzoom_button : QtModeRadioButton
-        PAN_ZOOM, PICKER, PAINT, or FILL
-    pick_button : QtModeRadioButton
-        PAN_ZOOM, PICKER, PAINT, or FILL
-    selectionSpinBox : QSpinBox
-
+    paint_button : qtpy.QtWidgets.QtModeRadioButton
+        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+    pick_button : qtpy.QtWidgets.QtModeRadioButton
+        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+    selectionSpinBox : qtpy.QtWidgets.QSpinBox
+        #TODO
 
     Raises
     ------
@@ -301,8 +303,8 @@ class QtColorBox(QWidget):
 
     Parameters
     ----------
-    layer : #TODO
-        #TODO
+    layer : napari.layers.Layer
+        An instance of a napari layer.
     """
 
     def __init__(self, layer):

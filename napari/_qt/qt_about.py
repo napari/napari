@@ -13,6 +13,23 @@ from ..utils import sys_info, citation_text
 
 
 class QtAbout(QDialog):
+    """#TODO
+
+    Attributes
+    ----------
+    citation_layout : qtpy.QtWidgets.QHBoxLayout
+        #TODO
+    infoCopyButton : napari._qt.qt_about.QtCopyToClipboardButton
+        #TODO
+    info_layout : qtpy.QtWidgets.QHBoxLayout
+        #TODO
+    infoTextBox : qtpy.QtWidgets.QTextEdit
+        #TODO
+    layout : qtpy.QtWidgets.QVBoxLayout
+        #TODO
+
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -56,6 +73,13 @@ class QtAbout(QDialog):
 
     @staticmethod
     def showAbout(qt_viewer):
+        """#TODO
+
+        Paramters
+        ---------
+        qt_viewer : #TODO
+            #TODO
+        """
         d = QtAbout()
         d.setObjectName('QtAbout')
         d.setStyleSheet(qt_viewer.styleSheet())
@@ -65,6 +89,19 @@ class QtAbout(QDialog):
 
 
 class QtCopyToClipboardButton(QPushButton):
+    """#TODO
+
+    Parameters
+    ----------
+    text_edit : #TODO
+        #TODO
+
+    Attributes
+    ----------
+    text_edit : #TODO
+        #TODO
+    """
+
     def __init__(self, text_edit):
         super().__init__()
         self.text_edit = text_edit

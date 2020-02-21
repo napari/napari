@@ -15,17 +15,17 @@ class QtDims(QWidget):
 
     Parameters
     ----------
-    dims : Dims
-        Dims object to be passed to Qt object
+    dims : napari.components.dims.Dims
+        Dims object to be passed to Qt object.
     parent : QWidget, optional
-        QWidget that will be the parent of this widget
+        QWidget that will be the parent of this widget.
 
     Attributes
     ----------
-    dims : Dims
-        Dims object
+    dims : napari.components.dims.Dims
+        Dimensions object modeling slicing and displaying.
     slider_widgets : list[QtDimSliderWidget]
-        List of slider widgets
+        List of slider widgets.
     """
 
     def __init__(self, dims: Dims, parent=None):
@@ -64,23 +64,35 @@ class QtDims(QWidget):
 
     @property
     def nsliders(self):
-        """Returns the number of sliders displayed
+        """Returns the number of sliders displayed.
 
         Returns
         -------
         nsliders: int
-            Number of sliders displayed
+            Number of sliders displayed.
         """
         return len(self.slider_widgets)
 
     @property
     def last_used(self):
-        """int: Index of slider last used.
+        """Returns the integer index of the last used slider.
+
+        Returns
+        -------
+        int
+            Index of slider last used.
         """
         return self._last_used
 
     @last_used.setter
     def last_used(self, last_used: int):
+        """Sets the last used slider.
+
+        Parameters
+        ----------
+        last_used : int
+            Index of slider last used.
+        """
         if last_used == self.last_used:
             return
 
@@ -134,6 +146,11 @@ class QtDims(QWidget):
 
         The event parameter is there just to allow easy connection to signals,
         without using `lambda event:`
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context, by default None.
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
         for (axis, widget) in widgets:
@@ -155,6 +172,11 @@ class QtDims(QWidget):
 
         The event parameter is there just to allow easy connection to signals,
         without using `lambda event:`
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context, by default None.
         """
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
@@ -205,7 +227,7 @@ class QtDims(QWidget):
         Parameters
         ----------
         number_of_sliders : int
-            new number of sliders
+            New number of sliders.
         """
         # add extra sliders so that number_of_sliders are present
         # add to the beginning of the list
@@ -227,7 +249,7 @@ class QtDims(QWidget):
         Parameters
         ----------
         number_of_sliders : int
-            new number of sliders
+            New number of sliders.
         """
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list

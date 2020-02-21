@@ -8,14 +8,18 @@ class QtControls(QStackedWidget):
 
     Parameters
     ----------
-    viewer : #TODO
-        #TODO
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
 
     Attributes
     ----------
-    empty_widget :
-    viewer :
-    widgets :
+    empty_widget : qtpy.QtWidgets.QFrame
+        #TODO
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    widgets : dict
+        Dictionary #TODO
+        widgets[layer] = controls #TODO
     """
 
     def __init__(self, viewer):

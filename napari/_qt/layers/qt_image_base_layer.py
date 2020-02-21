@@ -13,6 +13,30 @@ from .qt_base_layer import QtLayerControls
 
 
 class QtBaseImageControls(QtLayerControls):
+    """#TODO
+
+    Parameters
+    ----------
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    Attributes
+    ----------
+    clim_pop : napari._qt.qt_range_slider_popup.QRangeSliderPopup
+        #TODO
+    colorbarLabel : qtpy.QtWidgets.QLabel
+        #TODO
+    colormapComboBox : qtpy.QtWidgets.QComboBox
+        #TODO
+    contrastLimitsSlider : qtpy.QtWidgets.QHRangeSlider
+        #TODO
+    gammaSlider : qtpy.QtWidgets.QSlider
+        #TODO
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 

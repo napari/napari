@@ -5,6 +5,37 @@ from ...layers.image._constants import Interpolation, Rendering
 
 
 class QtImageControls(QtBaseImageControls):
+    """#TODO
+
+    Parameters
+    ----------
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    Attributes
+    ----------
+    attenuationSlider : qtpy.QtWidgets.QSlider
+        #TODO
+    attenuationLabel : qtpy.QtWidgets.QLabel
+        #TODO
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    interpComboBox : QComboBox
+        #TODO
+    interpLabel : QLabel
+        #TODO
+    isoThresholdSlider : qtpy.QtWidgets.QSlider
+        #TODO
+    isoThresholdLabel : qtpy.QtWidgets.QLabel
+        #TODO
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    renderComboBox : qtpy.QtWidgets.QComboBox
+        #TODO
+    renderLabel : qtpy.QtWidgets.QLabel
+        #TODO
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -81,29 +112,78 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setVerticalSpacing(4)
 
     def changeInterpolation(self, text):
+        """#TODO
+
+        Parameters
+        ----------
+        text : str
+            #TODO
+        """
         self.layer.interpolation = text
 
     def changeRendering(self, text):
+        """#TODO
+
+        Parameters
+        ----------
+        text : str
+            #TODO
+        """
         self.layer.rendering = text
         self._toggle_rendering_parameter_visbility()
 
     def changeIsoThreshold(self, value):
+        """#TODO
+
+        Parameters
+        ----------
+        value : #TODO
+            #TODO
+        """
         with self.layer.events.blocker(self._on_iso_threshold_change):
             self.layer.iso_threshold = value / 100
 
     def _on_iso_threshold_change(self, event):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         with self.layer.events.iso_threshold.blocker():
             self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
 
     def changeAttenuation(self, value):
+        """#TODO
+
+        Parameters
+        ----------
+        value : #TODO
+            #TODO
+        """
         with self.layer.events.blocker(self._on_attenuation_change):
             self.layer.attenuation = value / 100
 
     def _on_attenuation_change(self, event):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(self.layer.attenuation * 100)
 
     def _on_interpolation_change(self, event):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         with self.layer.events.interpolation.blocker():
             index = self.interpComboBox.findText(
                 self.layer.interpolation, Qt.MatchFixedString
@@ -111,6 +191,13 @@ class QtImageControls(QtBaseImageControls):
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_rendering_change(self, event):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
                 self.layer.rendering, Qt.MatchFixedString
@@ -119,6 +206,7 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
 
     def _toggle_rendering_parameter_visbility(self):
+        """#TODO"""
         rendering = self.layer.rendering
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
@@ -136,6 +224,13 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationLabel.hide()
 
     def _on_ndisplay_change(self, event=None):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context, default is None.
+        """
         if self.layer.dims.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()

@@ -41,8 +41,18 @@ class Window:
 
     Attributes
     ----------
+    file_menu : #TODO
+        #TODO
+    help_menu : #TODO
+        #TODO
+    main_menu : #TODO
+        #TODO
     qt_viewer : QtViewer
         Contained viewer widget.
+    view_menu : #TODO
+        #TODO
+    window_menu : #TODO
+        #TODO
     """
 
     with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
@@ -97,6 +107,7 @@ class Window:
             self.show()
 
     def _add_menubar(self):
+        """#TODO"""
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
@@ -127,6 +138,7 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
+        """#TODO"""
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open image file(s)')
@@ -152,6 +164,7 @@ class Window:
         self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
+        """#TODO"""
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
@@ -165,6 +178,7 @@ class Window:
         self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
+        """#TODO"""
         exit_action = QAction("Close window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
         exit_action.setStatusTip('Close napari window')
@@ -173,6 +187,7 @@ class Window:
         self.window_menu.addAction(exit_action)
 
     def _add_help_menu(self):
+        """#TODO"""
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
@@ -297,6 +312,13 @@ class Window:
             self._qt_window.activateWindow()  # for Windows
 
     def _update_palette(self, palette):
+        """#TODO
+
+        Parameters
+        ----------
+        palette : #TODO
+            #TODO
+        """
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
         self._status_bar.setStyleSheet(
@@ -313,16 +335,31 @@ class Window:
 
     def _status_changed(self, event):
         """Update status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._status_bar.showMessage(event.text)
 
     def _title_changed(self, event):
         """Update window title.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._qt_window.setWindowTitle(event.text)
 
     def _help_changed(self, event):
         """Update help message on status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._help.setText(event.text)
 
@@ -346,6 +383,13 @@ class Window:
         return QImg2array(img)
 
     def closeEvent(self, event):
+        """Close the main window.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         # Forward close event to the console to trigger proper shutdown
         self.qt_viewer.console.shutdown()
         # if the viewer.QtDims object is playing an axis, we need to terminate the

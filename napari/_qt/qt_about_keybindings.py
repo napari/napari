@@ -12,6 +12,26 @@ from ..utils.interactions import get_keybindings_summary
 
 
 class QtAboutKeybindings(QDialog):
+    """#TODO
+
+    Parameters
+    ----------
+    viewer : #TODO
+        #TODO
+
+    Attributes
+    ----------
+    keybindings_strs : collections.OrderedDict
+        #TODO
+    layout : qtpy.QtWidgets.QVBoxLayout
+        #TODO
+    layerTypeComboBox : qtpy.QtWidgets.QComboBox
+        #TODO
+    textEditBox : qtpy.QtWidgets.QTextEdit
+        #TODO
+    viewer : #TODO
+        #TODO
+    """
 
     ALL_ACTIVE_KEYBINDINGS = 'All active keybindings'
 
@@ -67,9 +87,23 @@ class QtAboutKeybindings(QDialog):
         self.update_active_layer()
 
     def change_layer_type(self, text):
+        """#TODO
+
+        Parameters
+        ----------
+        text : str
+            #TODO
+        """
         self.textEditBox.setHtml(self.keybindings_strs[text])
 
     def update_active_layer(self, event=None):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         col = self.viewer.palette['secondary']
         text = ''
         # Add class and instance viewer keybindings
@@ -88,6 +122,13 @@ class QtAboutKeybindings(QDialog):
             self.textEditBox.setHtml(text)
 
     def toggle_visible(self, event):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         if self.isVisible():
             self.hide()
         else:

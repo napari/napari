@@ -169,11 +169,13 @@ class QtDimSliderWidget(QWidget):
             self.axis_label_changed.emit(self.axis, label)
 
     def _update_label(self):
+        """#TODO"""
         with self.dims.events.axis_labels.blocker():
             self.dims.set_axis_label(self.axis, self.axis_label.text())
         self.axis_label_changed.emit(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):
+        """#TODO"""
         self.axis_label.clearFocus()
         self.qt_dims.setFocus()
 
@@ -209,12 +211,14 @@ class QtDimSliderWidget(QWidget):
             self.hide()
 
     def _update_slider(self):
+        """#TODO"""
         mode = self.dims.mode[self.axis]
         if mode == DimsMode.POINT:
             self.slider.setValue(self.dims.point[self.axis])
             self._update_slice_labels()
 
     def _update_slice_labels(self):
+        """#TODO"""
         step = self.dims.range[self.axis][2]
         self.curslice_label.setText(
             str(int(self.dims.point[self.axis] // step))
@@ -223,10 +227,18 @@ class QtDimSliderWidget(QWidget):
 
     @property
     def fps(self):
+        """#TODO"""
         return self._fps
 
     @fps.setter
     def fps(self, value):
+        """#TODO
+
+        Paramters
+        ---------
+        value : #TODO
+            #TODO
+        """
         self._fps = value
         self.play_button.fpsspin.setValue(abs(value))
         self.play_button.reverse_check.setChecked(value < 0)
@@ -234,22 +246,38 @@ class QtDimSliderWidget(QWidget):
 
     @property
     def loop_mode(self):
+        """#TODO"""
         return self._loop_mode
 
     @loop_mode.setter
     def loop_mode(self, value):
+        """#TODO
+
+        Paramters
+        ---------
+        value : #TODO
+            #TODO
+        """
         self._loop_mode = value
         self.play_button.mode_combo.setCurrentText(str(value))
         self.mode_changed.emit(str(value))
 
     @property
     def frame_range(self):
+        """#TODO"""
         frame_range = (self._minframe, self._maxframe)
         frame_range = frame_range if any(frame_range) else None
         return frame_range
 
     @frame_range.setter
     def frame_range(self, value):
+        """#TODO
+
+        Paramters
+        ---------
+        value : #TODO
+            #TODO
+        """
         if not isinstance(value, (tuple, list, type(None))):
             raise TypeError('frame_range value must be a list or tuple')
         if value and not len(value) == 2:
@@ -260,6 +288,17 @@ class QtDimSliderWidget(QWidget):
         self.range_changed.emit(tuple(value))
 
     def _update_play_settings(self, fps, loop_mode, frame_range):
+        """#TODO
+
+        Parameters
+        ----------
+        fps : #TODO
+            #TODO
+        loop_mode : #TODO
+            #TODO
+        frame_range : #TODO
+            #TODO
+        """
         if fps is not None:
             self.fps = fps
         if loop_mode is not None:
@@ -278,6 +317,15 @@ class QtDimSliderWidget(QWidget):
         Putting the AnimationWorker logic here makes it easier to call
         QtDims.play(axis), or hit the keybinding, and have each axis remember
         it's own settings (fps, mode, etc...).
+
+        Parameters
+        ----------
+        fps : #TODO
+            #TODO
+        loop_mode : #TODO
+            #TODO
+        frame_range : #TODO
+            #TODO
         """
 
         # having this here makes sure that using the QtDims.play() API
@@ -312,6 +360,11 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     running).  However, the editingFinished event ignores mouse click events on
     the spin buttons.  This subclass class triggers an event both during
     editingFinished and when the user clicks on the spin buttons.
+
+    Attributes
+    ----------
+    ValueChanged : #TODO
+        #TODO
     """
 
     def __init__(self, *args, **kwargs):
@@ -319,16 +372,36 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         self.valueChanged.connect(self.custom_change_event)
 
     def custom_change_event(self, value):
+        """#TODO
+
+        Paramters
+        ---------
+        value : #TODO
+            #TODO
+        """
         if QApplication.mouseButtons() & Qt.LeftButton:
             self.editingFinished.emit()
 
     def textFromValue(self, value):
-        """This removes the decimal places if the float is an integer"""
+        """This removes the decimal places if the float is an integer.
+
+        Paramters
+        ---------
+        value : #TODO
+            #TODO
+        """
         if value.is_integer():
             value = int(value)
         return str(value)
 
     def keyPressEvent(self, event):
+        """#TODO
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         # this is here to intercept Return/Enter keys when editing the FPS
         # SpinBox.  We WANT the return key to close the popup normally,
         # but if the user is editing the FPS spinbox, we simply want to
