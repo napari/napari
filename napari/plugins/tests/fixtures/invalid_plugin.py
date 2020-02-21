@@ -14,5 +14,5 @@ def reader_function(path):
 def napari_get_reader(path, arg1, arg2, i_just_love_args):
     # this has too many arguments!
 
-    if path.endswith('true'):
+    if path.endswith('ext'):
         return reader_function

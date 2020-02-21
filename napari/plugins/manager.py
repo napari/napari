@@ -6,15 +6,7 @@ import sys
 from collections import defaultdict
 from logging import getLogger
 from traceback import format_exception
-from typing import (
-    DefaultDict,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
 
 import pluggy
 

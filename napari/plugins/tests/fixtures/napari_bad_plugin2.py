@@ -12,5 +12,5 @@ def reader_function(path):
 
 @napari_hook_implementation
 def napari_get_reader(path):
-    if path.endswith('true'):
+    if path.endswith('ext'):
         return reader_function

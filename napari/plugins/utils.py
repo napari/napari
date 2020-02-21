@@ -1,4 +1,5 @@
-from . import plugin_manager, PluginError, log_plugin_error
+from . import PluginError, log_plugin_error
+from . import plugin_manager as napari_plugin_manager
 from ._hookexec import _hookexec
 from typing import Union, List, Set
 from types import ModuleType
@@ -96,7 +97,7 @@ def permute_hook_implementations(
     hook_caller._nonwrappers = _nonwraps
 
 
-def get_layer_data_from_plugins(path: str):
+def get_layer_data_from_plugins(path: str, plugin_manager=None):
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -111,6 +112,9 @@ def get_layer_data_from_plugins(path: str):
     ----------
     path : str
         The path (file, directory, url) to open
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
 
     Returns
     -------
@@ -118,6 +122,7 @@ def get_layer_data_from_plugins(path: str):
         LayerData that can be *passed to _add_layer_from_data.  If no reader
         plugins are (or they all error), returns None
     """
+    plugin_manager = plugin_manager or napari_plugin_manager
     skip_imps = []
     while True:
         (reader, imp) = _hookexec(
