@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 from ..plugins import plugin_manager as napari_plugin_manager
-from ..plugins.manager import permute_hook_implementations, HookOrderType
+from ..plugins.utils import permute_hook_implementations, HookOrderType
 from pluggy.manager import PluginManager, _HookCaller
 from typing import Optional
 

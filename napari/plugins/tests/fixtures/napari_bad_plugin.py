@@ -7,8 +7,8 @@ import time
 napari_hook_implementation = pluggy.HookimplMarker("napari")
 
 
-def reader_function():
-    pass
+def reader_function(path):
+    return True
 
 
 @napari_hook_implementation

@@ -1,5 +1,5 @@
 """
-Test plugin that would fail to load.
+Test plugin that is technically correct, but would cause performance problems
 """
 import pluggy
 
@@ -7,12 +7,10 @@ napari_hook_implementation = pluggy.HookimplMarker("napari")
 
 
 def reader_function(path):
-    True
+    raise IOError("whoops")
 
 
 @napari_hook_implementation
-def napari_get_reader(path, arg1, arg2, i_just_love_args):
-    # this has too many arguments!
-
+def napari_get_reader(path):
     if path.endswith('true'):
         return reader_function

@@ -1,7 +1,7 @@
 import pytest
 
 import pluggy
-from napari.plugins.manager import permute_hook_implementations
+from napari.plugins.utils import permute_hook_implementations
 
 hookimpl = pluggy.HookimplMarker("dummy")
 

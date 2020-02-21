@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 import numpy as np
 
 from .. import layers
-from ..plugins import PluginError, _hookexec, log_plugin_error, plugin_manager
+from ..plugins.utils import get_layer_data_from_plugins
 from ..utils import colormaps, io
 from ..utils.misc import ensure_iterable, is_iterable
 
@@ -85,41 +85,7 @@ class AddLayersMixin:
 
         # iterate through each path provided, looking for a suitable reader
         for path in paths:
-            layer_data = None
-            skip_imps = []
-            # loop through the hook implementations looking for a reader
-            # exiting as soon as the path has been read successfully.
-            # and providing useful error messages upon exceptions.
-            while not layer_data:
-                (reader, imp) = _hookexec(
-                    plugin_manager.hook.napari_get_reader,
-                    path=path,
-                    with_impl=True,
-                    skip_imps=skip_imps,
-                )
-                if not reader:
-                    # we're all out of reader plugins
-                    break
-                try:
-                    layer_data = reader(path)  # try to read the data.
-                except Exception as exc:
-                    # If _hookexec did return a reader, but the reader then
-                    # failed while trying to read the path, we store the
-                    # traceback for later retrieval, warn the user, and
-                    # continue looking for readers (skipping this one)
-                    msg = (
-                        f"Error in plugin '{imp.plugin_name}', "
-                        "hook 'napari_get_reader'"
-                    )
-                    err = PluginError(
-                        msg, imp.plugin_name, imp.plugin.__name__
-                    )
-                    err.__cause__ = exc  # like `raise PluginError() from exc`
-                    # store the exception for later retrieval
-                    plugin_manager._exceptions[imp.plugin_name].append(err)
-                    log_plugin_error(err)  # let the user know
-                    skip_imps.append(imp)  # don't try this impl again
-
+            layer_data = get_layer_data_from_plugins(path)
             if layer_data:
                 for data in layer_data:
                     added = self._add_layer_from_data(*data)
