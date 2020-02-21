@@ -13,16 +13,15 @@ from typing import (
     Generator,
     List,
     Optional,
+    Set,
     Tuple,
     Union,
-    Set,
 )
-from .exceptions import PluginError, PluginImportError, PluginRegistrationError
-
 
 import pluggy
 
 from . import _builtins, hook_specifications
+from .exceptions import PluginError, PluginImportError, PluginRegistrationError
 
 logger = getLogger(__name__)
 
@@ -467,7 +466,7 @@ def log_plugin_error(exc: PluginError) -> None:
     """
     from napari import __version__
 
-    msg = f'\nPluginError: {exc}'
+    msg = f'\n\nPluginError: {exc}'
     if exc.__cause__:
         cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
         msg += f'\n  Cause was: {cause}'
@@ -477,4 +476,5 @@ def log_plugin_error(exc: PluginError) -> None:
         extra = [f'{k: >11}: {v}' for k, v in contact.items()]
         extra += [f'{"napari": >11}: v{__version__}']
         msg += "\n".join(extra)
+    msg += '\n'
     logger.error(msg)

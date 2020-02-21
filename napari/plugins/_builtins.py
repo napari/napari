@@ -23,4 +23,5 @@ def napari_get_reader(path: str):
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    return lambda path: [(None, {'path': path})]
+    if path.endswith(('tif', 'png', 'jpg')):
+        return lambda path: [(None, {'path': path})]

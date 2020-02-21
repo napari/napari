@@ -1,13 +1,12 @@
 import itertools
+from typing import List, Optional, Union
+
 import numpy as np
 
 from .. import layers
-from ..utils import colormaps
+from ..plugins import PluginError, _hookexec, log_plugin_error, plugin_manager
+from ..utils import colormaps, io
 from ..utils.misc import ensure_iterable, is_iterable
-from ..utils import io
-from typing import Union, List, Optional
-from napari.plugins import plugin_manager
-from napari.plugins.exceptions import PluginError
 
 
 class AddLayersMixin:
@@ -53,7 +52,7 @@ class AddLayersMixin:
         path: Union[str, List[str]],
         stack: bool = False,
         use_dask: Optional[bool] = None,
-    ):
+    ) -> List[layers.Layer]:
         """Add a path to the viewer
 
         Paths will be handed one-by-one to the napari_get_reader hook.
@@ -75,20 +74,61 @@ class AddLayersMixin:
             raise ValueError(
                 "'path' argument must be a string, list, or tuple"
             )
+
+        added_layers: List[layers.Layer] = []
         if stack:
             images = io.magic_imread(path, use_dask=use_dask, stack=stack)
-            self.add_image(images)
-        else:
-            for path in paths:
-                reader = plugin_manager.hook.napari_get_reader(path=path)
+            added = self.add_image(images)
+            added = added if isinstance(added, list) else [added]
+            added_layers.extend(added)
+            return added
+
+        # iterate through each path provided, looking for a suitable reader
+        for path in paths:
+            layer_data = None
+            skip_imps = []
+            # loop through the hook implementations looking for a reader
+            # exiting as soon as the path has been read successfully.
+            # and providing useful error messages upon exceptions.
+            while not layer_data:
+                (reader, imp) = _hookexec(
+                    plugin_manager.hook.napari_get_reader,
+                    path=path,
+                    with_impl=True,
+                    skip_imps=skip_imps,
+                )
+                if not reader:
+                    # we're all out of reader plugins
+                    break
                 try:
-                    layer_data = reader(path)
+                    layer_data = reader(path)  # try to read the data.
                 except Exception as exc:
-                    # FIXME: need to raise propper error, and block hookimpl.
-                    raise PluginError from exc
+                    # If _hookexec did return a reader, but the reader then
+                    # failed while trying to read the path, we store the
+                    # traceback for later retrieval, warn the user, and
+                    # continue looking for readers (skipping this one)
+                    msg = (
+                        f"Error in plugin '{imp.plugin_name}', "
+                        "hook 'napari_get_reader'"
+                    )
+                    err = PluginError(
+                        msg, imp.plugin_name, imp.plugin.__name__
+                    )
+                    err.__cause__ = exc  # like `raise PluginError() from exc`
+                    # store the exception for later retrieval
+                    plugin_manager._exceptions[imp.plugin_name].append(err)
+                    log_plugin_error(err)  # let the user know
+                    skip_imps.append(imp)  # don't try this impl again
+
+            if layer_data:
                 for data in layer_data:
-                    self._add_layer_from_data(*data)
-        # TODO: return values
+                    added = self._add_layer_from_data(*data)
+                    added = added if isinstance(added, list) else [added]
+                    added_layers.extend(added)
+            else:
+                print(f"No reader found for {path}")
+
+        return added_layers
 
     def add_image(
         self,
