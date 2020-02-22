@@ -5,6 +5,7 @@ import re
 import inspect
 import itertools
 import numpy as np
+from typing import Type
 
 
 def str_to_rgb(arg):
@@ -98,6 +99,9 @@ class StringEnumMeta(EnumMeta):
             start=start,
         )
 
+    def keys(self):
+        return list(map(str, self))
+
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
     def _generate_next_value_(name, start, count, last_values):
@@ -167,3 +171,21 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
+
+
+def all_subclasses(cls: Type) -> set:
+    """Recursively find all subclasses of class ``cls``.
+
+    Parameters
+    ----------
+    cls : class
+        A python class (or anything that implements a __subclasses__ method).
+
+    Returns
+    -------
+    set
+        the set of all classes that are subclassed from ``cls``
+    """
+    return set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)]
+    )

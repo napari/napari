@@ -17,11 +17,11 @@
 
 We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
 
-We're working on [in-depth tutorials](https://napari.github.io/napari-tutorials/), but you can also quickly get started by looking below.
+We're working on [tutorials](https://napari.org/tutorials/), but you can also quickly get started by looking below.
 
 ## installation
 
-**napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6 or 3.7 by calling
+**napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6, 3.7 and 3.8 by calling
 
 ```sh
 $ pip install napari
@@ -35,7 +35,7 @@ $ cd napari
 $ pip install -e .
 ```
 
-For more information or troubleshooting see our [installation tutorial](https://napari.github.io/napari-tutorials/tutorials/installation)
+For more information or troubleshooting see our [installation tutorial](https://napari.org/tutorials/fundamentals/installation)
 
 ## simple example
 
@@ -73,23 +73,23 @@ You can extend **napari** using custom shortcuts, key bindings, and mouse functi
 
 ## tutorials
 
-For more details on how to use `napari` checkout our [in-depth tutorials](https://napari.github.io/napari-tutorials/). These are still a work in progress, but we'll be updating them regularly.
+For more details on how to use `napari` checkout our [tutorials](https://napari.org/tutorials/). These are still a work in progress, but we'll be updating them regularly.
 
 ## mission and values
 
-For more information about our plans for `napari` you can read our [mission and values statement](./docs/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari.
+For more information about our plans for `napari` you can read our [mission and values statement](./docs/developers/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari.
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](./docs/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](./docs/developers/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## code of conduct
 
-`napari` has a [Code of Conduct](./docs/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](./docs/developers/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](./docs/GOVERNANCE.md), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](./docs/developers/GOVERNANCE.md), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
 
 ## citing napari
 

@@ -21,19 +21,15 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QComboBox()
-        for cmap in self.layer.colormaps:
-            comboBox.addItem(cmap)
+        comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
-        comboBox.activated[str].connect(
-            lambda text=comboBox: self.changeColor(text)
-        )
+        comboBox.activated[str].connect(self.changeColor)
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
             self.layer.contrast_limits, self.layer.contrast_limits_range
         )
-
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
         set_clim = partial(setattr, self.layer, 'contrast_limits')
         set_climrange = partial(setattr, self.layer, 'contrast_limits_range')
@@ -47,7 +43,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(200)
         sld.setSingleStep(2)
         sld.setValue(100)
-        sld.valueChanged[int].connect(self.gamma_slider_changed)
+        sld.valueChanged.connect(self.gamma_slider_changed)
         self.gammaSlider = sld
         self.gamma_slider_update()
 
@@ -55,7 +51,7 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip('Colorbar')
 
-        self._on_colormap_change(None)
+        self._on_colormap_change()
 
     def changeColor(self, text):
         self.layer.colormap = text
@@ -75,7 +71,7 @@ class QtBaseImageControls(QtLayerControls):
             self.clim_pop.layout.addWidget(reset)
             if fullrange is not None:
                 self.clim_pop.layout.addWidget(fullrange)
-            self.clim_pop.show_at('top')
+            self.clim_pop.show_at('top', min_length=650)
         else:
             return QHRangeSlider.mousePressEvent(
                 self.contrastLimitsSlider, event
@@ -98,7 +94,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.clim_pop.slider.setValues(clims)
                 self.clim_pop._on_values_change(clims)
 
-    def _on_colormap_change(self, event):
+    def _on_colormap_change(self, event=None):
         name = self.layer.colormap[0]
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)
@@ -133,7 +129,7 @@ def create_range_popup(layer, attr, parent=None):
 
     Parameters
     ----------
-    layer : napari.Layer
+    layer : napari.layers.Layer
         probably an instance of Image or Surface layer
     attr : str
         the attribute to control with the slider.
@@ -157,11 +153,21 @@ def create_range_popup(layer, attr, parent=None):
         )
     is_integer_type = np.issubdtype(layer.dtype, np.integer)
 
+    d_range = getattr(layer, range_attr)
     popup = QRangeSliderPopup(
         initial_values=getattr(layer, attr),
-        data_range=getattr(layer, range_attr),
+        data_range=d_range,
         collapsible=False,
-        precision=(0 if is_integer_type else 2),
+        precision=(
+            0
+            if is_integer_type
+            # scale precision with the log of the data range order of magnitude
+            # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+            #       0 - 10  (1 order of mag)  -> 2 decimals
+            #       0 - 100 (2 orders of mag) -> 1 decimal
+            #       ≥ 3 orders of mag -> no decimals
+            else int(max(3 - np.log10(max(d_range[1] - d_range[0], 0.01)), 0))
+        ),
         parent=parent,
     )
 
@@ -181,7 +187,8 @@ def create_clim_reset_buttons(layer):
 
     Parameters
     ----------
-    layer : Image or Surface Layer
+    layer : napari.layers.Layer
+        Image or Surface Layer
 
     Returns
     -------

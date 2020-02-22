@@ -220,6 +220,25 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         return [(min, max, 1) for min, max in zip(mins, maxs)]
 
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'colormap': self.colormap[0],
+                'contrast_limits': self.contrast_limits,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
+        return state
+
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         N, vertex_ndim = self.vertices.shape
