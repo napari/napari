@@ -466,6 +466,32 @@ def test_rendering():
     assert layer.rendering == 'additive'
 
 
+def test_complex_rendering():
+    """Test setting various complex_rendering modes."""
+    np.random.seed(0)
+    data = np.random.random((10, 10)) + np.random.random((10, 10)) * 1j
+    layer = Image(data)
+    assert layer.complex_rendering.name == 'MAGNITUDE'
+
+    # Change complex_rendering property
+    layer.complex_rendering = 'colormap'
+    assert layer.complex_rendering.name == 'COLORMAP'
+
+    # Change complex_rendering property
+    layer.complex_rendering = 'phase'
+    assert layer.complex_rendering.name == 'PHASE'
+
+    # Change complex_rendering to custom func
+    layer.complex_rendering = np.abs
+    assert isinstance(layer.complex_rendering, np.ufunc)
+
+    with pytest.raises(KeyError):
+        layer.complex_rendering = 'something'
+
+    with pytest.raises(ValueError):
+        layer.complex_rendering = lambda x: x
+
+
 def test_iso_threshold():
     """Test setting iso_threshold."""
     np.random.seed(0)

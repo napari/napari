@@ -409,7 +409,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         Raises
         ------
-        ValueError
+        KeyError
             If a str is provided that is not a valid ComplexRendering Enum.
         ValueError
             If a callable is provided that does not return a real numpy.array
@@ -420,7 +420,7 @@ class Image(IntensityVisualizationMixin, Layer):
                 value = getattr(ComplexRendering, value.upper())
             except AttributeError:
                 opt = ComplexRendering.lower_members()
-                raise ValueError(
+                raise KeyError(
                     f"string values for `complex_rendering` must be one of {opt}"
                 )
 
