@@ -17,18 +17,16 @@ class VispySurfaceLayer(VispyBaseLayer):
 
         super().__init__(layer, node)
 
-        self.layer.events.colormap.connect(
-            lambda e: self._on_colormap_change()
-        )
+        self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(
-            lambda e: self._on_contrast_limits_change()
+            self._on_contrast_limits_change
         )
-        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
+        self.layer.events.gamma.connect(self._on_gamma_change)
 
         self.reset()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = None
             faces = None
@@ -37,7 +35,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             # Offseting so pixels now centered
             vertices = self.layer._data_view[:, ::-1] + 0.5
             faces = self.layer._view_faces
-            vertex_values = self.layer.vertex_values
+            vertex_values = self.layer._view_vertex_values
 
         if (
             vertices is not None
@@ -50,7 +48,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.node.update()
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self, event=None):
         cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control
@@ -62,13 +60,13 @@ class VispySurfaceLayer(VispyBaseLayer):
             )
         self.node.cmap = cmap
 
-    def _on_contrast_limits_change(self):
+    def _on_contrast_limits_change(self, event=None):
         self.node.clim = self.layer.contrast_limits
 
-    def _on_gamma_change(self):
+    def _on_gamma_change(self, event=None):
         self._on_colormap_change()
 
-    def reset(self):
+    def reset(self, event=None):
         self._reset_base()
         self._on_colormap_change()
         self._on_contrast_limits_change()

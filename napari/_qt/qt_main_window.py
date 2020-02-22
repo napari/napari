@@ -5,15 +5,11 @@ wrap.
 # set vispy to use same backend as qtpy
 import os
 
-from qtpy import API_NAME
-from vispy import app
+from skimage.io import imsave
 
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
-
-app.use_app(API_NAME)
-del app
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
@@ -27,11 +23,12 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
+    QApplication,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
-from .util import QImg2array  # noqa: E402
-from ..util.theme import template  # noqa: E402
+from .utils import QImg2array  # noqa: E402
+from ..utils.theme import template  # noqa: E402
 
 
 class Window:
@@ -136,23 +133,36 @@ class Window:
         open_images.triggered.connect(self.qt_viewer._open_images)
 
         open_folder = QAction('Open Folder...', self._qt_window)
-        open_folder.setShortcut('Ctrl-Shift-O')
+        open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip(
             'Open a folder of image file(s) or a zarr file'
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
+        screenshot = QAction('Screenshot', self._qt_window)
+        screenshot.setShortcut('Ctrl+Alt+S')
+        screenshot.setStatusTip(
+            'Save screenshot of current display, default .png'
+        )
+        screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
+        toggle_theme = QAction('Toggle theme', self._qt_window)
+        toggle_theme.setShortcut('Ctrl+Shift+T')
+        toggle_theme.setStatusTip('Toggle theme')
+        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
+        self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
@@ -270,12 +280,21 @@ class Window:
         self._qt_window.resize(width, height)
 
     def show(self):
-        """Resize, show, and bring forward the window.
-        """
+        """Resize, show, and bring forward the window."""
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
-        # make sure window is not hidden, e.g. by browser window in Jupyter
-        self._qt_window.raise_()
+
+        # We want to call Window._qt_window.raise_() in every case *except*
+        # when instantiating a viewer within a gui_qt() context for the
+        # _first_ time within the Qt app's lifecycle.
+        #
+        # `app_name` will be "napari" iff the application was instantiated in
+        # gui_qt(). isActiveWindow() will be True if it is the second time a
+        # _qt_window has been created. See #732
+        app_name = QApplication.instance().applicationName()
+        if app_name != 'napari' or self._qt_window.isActiveWindow():
+            self._qt_window.raise_()  # for macOS
+            self._qt_window.activateWindow()  # for Windows
 
     def _update_palette(self, palette):
         # set window styles which don't use the primary stylesheet
@@ -307,8 +326,13 @@ class Window:
         """
         self._help.setText(event.text)
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
 
         Returns
         -------
@@ -317,6 +341,8 @@ class Window:
             upper-left corner of the rendered region.
         """
         img = self._qt_window.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
     def closeEvent(self, event):

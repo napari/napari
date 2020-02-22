@@ -7,9 +7,9 @@ from skimage import img_as_ubyte
 from ._constants import Blending
 
 from ...components import Dims
-from ...util.event import EmitterGroup, Event
-from ...util.keybindings import KeymapMixin
-from ...util.status_messages import status_format, format_float
+from ...utils.event import EmitterGroup, Event
+from ...utils.keybindings import KeymapMixin
+from ...utils.status_messages import status_format, format_float
 
 
 class Layer(KeymapMixin, ABC):
@@ -176,10 +176,10 @@ class Layer(KeymapMixin, ABC):
 
         self.events.data.connect(lambda e: self._set_editable())
         self.dims.events.ndisplay.connect(lambda e: self._set_editable())
-        self.dims.events.order.connect(lambda e: self.refresh())
-        self.dims.events.ndisplay.connect(lambda e: self._update_dims())
-        self.dims.events.order.connect(lambda e: self._update_dims())
-        self.dims.events.axis.connect(lambda e: self.refresh())
+        self.dims.events.order.connect(self.refresh)
+        self.dims.events.ndisplay.connect(self._update_dims)
+        self.dims.events.order.connect(self._update_dims)
+        self.dims.events.axis.connect(self.refresh)
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
@@ -330,7 +330,7 @@ class Layer(KeymapMixin, ABC):
         self._position = position
         self._update_coordinates()
 
-    def _update_dims(self):
+    def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
         ndisplay = self.dims.ndisplay
@@ -411,6 +411,29 @@ class Layer(KeymapMixin, ABC):
         return tuple(
             (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
         )
+
+    def _get_base_state(self):
+        """Get dictionary of attributes on base layer.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of attributes on base layer.
+        """
+        base_dict = {
+            'name': self.name,
+            'metadata': self.metadata,
+            'scale': list(self.scale),
+            'translate': list(self.translate),
+            'opacity': self.opacity,
+            'blending': self.blending,
+            'visible': self.visible,
+        }
+        return base_dict
+
+    @abstractmethod
+    def _get_state(self):
+        raise NotImplementedError()
 
     @property
     def thumbnail(self):
@@ -570,7 +593,7 @@ class Layer(KeymapMixin, ABC):
         """
         pass
 
-    def refresh(self):
+    def refresh(self, event=None):
         """Refresh all layer data based on current view slice.
         """
         if self.visible:
@@ -609,17 +632,15 @@ class Layer(KeymapMixin, ABC):
         msg = f'{self.name} {full_coord}'
 
         value = self._value
-
-        if value is not None and not np.all(value == (None, None)):
-            msg += ': '
-            if type(value) == tuple:
-                msg += status_format(value[0])
+        if value is not None:
+            if isinstance(value, tuple) and value != (None, None):
+                # it's a pyramid -> value = (data_level, value)
+                msg += f': {status_format(value[0])}'
                 if value[1] is not None:
-                    msg += ', '
-                    msg += status_format(value[1])
+                    msg += f', {status_format(value[1])}'
             else:
-                msg += status_format(value)
-
+                # it's either a grayscale or rgb image (scalar or list)
+                msg += f': {status_format(value)}'
         return msg
 
     def to_xml_list(self):

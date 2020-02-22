@@ -54,17 +54,12 @@ class VispyBaseLayer(ABC):
         self.camera = None
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
-        self.layer.events.set_data.connect(lambda e: self._on_data_change())
-
-        self.layer.events.visible.connect(lambda e: self._on_visible_change())
-        self.layer.events.opacity.connect(lambda e: self._on_opacity_change())
-        self.layer.events.blending.connect(
-            lambda e: self._on_blending_change()
-        )
-        self.layer.events.scale.connect(lambda e: self._on_scale_change())
-        self.layer.events.translate.connect(
-            lambda e: self._on_translate_change()
-        )
+        self.layer.events.set_data.connect(self._on_data_change)
+        self.layer.events.visible.connect(self._on_visible_change)
+        self.layer.events.opacity.connect(self._on_opacity_change)
+        self.layer.events.blending.connect(self._on_blending_change)
+        self.layer.events.scale.connect(self._on_scale_change)
+        self.layer.events.translate.connect(self._on_translate_change)
 
     @property
     def _master_transform(self):
@@ -118,26 +113,26 @@ class VispyBaseLayer(ABC):
         return scale_factor
 
     @abstractmethod
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         raise NotImplementedError()
 
-    def _on_visible_change(self):
+    def _on_visible_change(self, event=None):
         self.node.visible = self.layer.visible
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
 
-    def _on_blending_change(self):
+    def _on_blending_change(self, event=None):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
-    def _on_scale_change(self):
+    def _on_scale_change(self, event=None):
         self.scale = [
             self.layer.scale[d] for d in self.layer.dims.displayed[::-1]
         ]
         self.layer.position = self._transform_position(self._position)
 
-    def _on_translate_change(self):
+    def _on_translate_change(self, event=None):
         self.translate = [
             self.layer.translate[d] + self.layer.translate_grid[d]
             for d in self.layer.dims.displayed[::-1]
