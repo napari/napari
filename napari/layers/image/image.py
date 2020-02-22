@@ -413,7 +413,7 @@ class Image(IntensityVisualizationMixin, Layer):
                     " or a callable function that accepts a complex array and "
                     "returns a real array."
                 )
-        elif value == ComplexRendering.MAP_COLORMAP:
+        elif value == ComplexRendering.COLORMAP:
             self._previous_cmap = self._colormap_name
             self.colormap = 'twilight_shifted'
             self.events.contrast_limits.connect(self.refresh)
@@ -429,10 +429,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         self._complex_render = value
         if hasattr(self, '_data'):
-            if value in (
-                ComplexRendering.PHASE,
-                ComplexRendering.MAP_COLORMAP,
-            ):
+            if value in (ComplexRendering.PHASE, ComplexRendering.COLORMAP):
                 self.contrast_limits = [-np.pi, np.pi]
                 self.contrast_limits_range = [-np.pi, np.pi]
             else:
@@ -582,7 +579,7 @@ class Image(IntensityVisualizationMixin, Layer):
             else:
                 image = self.complex_rendering(image)
                 thumbnail = self.complex_rendering(thumbnail)
-            if 'map' in self.complex_rendering.name.lower():
+            if self.complex_rendering in ComplexRendering.rgb_members():
                 self.rgb = True
                 self._data_thumbnail = self._raw_to_displayed(
                     np.clip(thumbnail, 0, 1)

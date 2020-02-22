@@ -70,13 +70,13 @@ class ComplexRendering(Enum):
     PHASE = partial(np.angle)
     REAL = partial(np.real)
     IMAGINARY = partial(np.imag)
-    MAP_P2H_M2S = partial(complex2rgb, mapping=['p', 'm', None])
-    MAP_P2H_M2V = partial(complex2rgb, mapping=['p', None, 'm'])
-    MAP_P2H_M2SV = partial(complex2rgb, mapping=['p', 'm', 'v'])
-    MAP_M2H_P2S = partial(complex2rgb, mapping=['m', 'p', None])
-    MAP_M2H_P2V = partial(complex2rgb, mapping=['m', None, 'p'])
-    MAP_M2H_P2SV = partial(complex2rgb, mapping=['m', 'p', 'p'])
-    MAP_COLORMAP = partial(complex2colormap)
+    COLORMAP = partial(complex2colormap)
+    P2H_M2S = partial(complex2rgb, mapping=['p', 'm', None])
+    P2H_M2V = partial(complex2rgb, mapping=['p', None, 'm'])
+    P2H_M2SV = partial(complex2rgb, mapping=['p', 'm', 'v'])
+    M2H_P2S = partial(complex2rgb, mapping=['m', 'p', None])
+    M2H_P2V = partial(complex2rgb, mapping=['m', None, 'p'])
+    M2H_P2SV = partial(complex2rgb, mapping=['m', 'p', 'p'])
 
     def __call__(self, *args, **kwargs):
         return self.value(*args, **kwargs)
@@ -84,3 +84,11 @@ class ComplexRendering(Enum):
     @classmethod
     def lower_members(cls):
         return list(map(str.lower, cls.__members__.keys()))
+
+    @classmethod
+    def rgb_members(cls):
+        return [
+            item
+            for item in cls.__members__.values()
+            if '2H_' in item.name or item.name == 'COLORMAP'
+        ]
