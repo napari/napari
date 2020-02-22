@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
+    QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -53,20 +54,10 @@ class QtDimSliderWidget(QWidget):
         # editingFinished event (the user is expected to change the value)...
         # which is confusing to the user, so instead we use an IntValidator
         # that makes sure the user can only enter integers, but we do our own
-        # value validation in change_slice
+        # value validation in self.change_slice
         self.curslice_label.setValidator(QIntValidator(0, 999999))
 
-        def change_slice():
-            val = int(self.curslice_label.text())
-            max_allowed = self.dims.max_indices[self.axis]
-            if val > max_allowed:
-                val = max_allowed
-                self.curslice_label.setText(str(val))
-            self.curslice_label.clearFocus()
-            self.qt_dims.setFocus()
-            self.dims.set_point(self.axis, val)
-
-        self.curslice_label.editingFinished.connect(change_slice)
+        self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
         self.totslice_label.setToolTip(f'Total slices for axis {axis}')
         self.curslice_label.setObjectName('slice_label')
@@ -95,6 +86,17 @@ class QtDimSliderWidget(QWidget):
         layout.setSpacing(2)
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
+
+    def _set_slice_from_label(self):
+        """Update the dims point based on the curslice_label."""
+        val = int(self.curslice_label.text())
+        max_allowed = self.dims.max_indices[self.axis]
+        if val > max_allowed:
+            val = max_allowed
+            self.curslice_label.setText(str(val))
+        self.curslice_label.clearFocus()
+        self.qt_dims.setFocus()
+        self.dims.set_point(self.axis, val)
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -185,7 +187,7 @@ class QtDimSliderWidget(QWidget):
             if _range[1] == 0:
                 displayed_sliders[self.axis] = False
                 self.qt_dims.last_used = None
-                self.slider.hide()
+                self.hide()
             else:
                 if (
                     not displayed_sliders[self.axis]
@@ -193,7 +195,7 @@ class QtDimSliderWidget(QWidget):
                 ):
                     displayed_sliders[self.axis] = True
                     self.last_used = self.axis
-                    self.slider.show()
+                    self.show()
                 self.slider.setMinimum(_range[0])
                 self.slider.setMaximum(_range[1])
                 self.slider.setSingleStep(_range[2])
@@ -204,7 +206,7 @@ class QtDimSliderWidget(QWidget):
                 self._update_slice_labels()
         else:
             displayed_sliders[self.axis] = False
-            self.slider.hide()
+            self.hide()
 
     def _update_slider(self):
         mode = self.dims.mode[self.axis]
@@ -360,6 +362,9 @@ class QtPlayButton(QPushButton):
         # build popup modal form
 
         self.popup = QtPopup(self)
+        form_layout = QFormLayout()
+        self.popup.frame.setLayout(form_layout)
+
         fpsspin = QtCustomDoubleSpinBox(self.popup)
         fpsspin.setAlignment(Qt.AlignCenter)
         fpsspin.setValue(self.fps)
@@ -368,13 +373,13 @@ class QtPlayButton(QPushButton):
             fpsspin.setStepType(QDoubleSpinBox.AdaptiveDecimalStepType)
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
-        self.popup.form_layout.insertRow(
+        form_layout.insertRow(
             0, QLabel('frames per second:', parent=self.popup), fpsspin
         )
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
-        self.popup.form_layout.insertRow(
+        form_layout.insertRow(
             1, QLabel('play direction:', parent=self.popup), revcheck
         )
         self.reverse_check = revcheck
@@ -385,7 +390,7 @@ class QtPlayButton(QPushButton):
         # minspin.setAlignment(Qt.AlignCenter)
         # minspin.setValue(dimsrange[0])
         # minspin.valueChanged.connect(self.set_minframe)
-        # self.popup.form_layout.insertRow(
+        # form_layout.insertRow(
         #     1, QLabel('start frame:', parent=self.popup), minspin
         # )
 
@@ -393,13 +398,13 @@ class QtPlayButton(QPushButton):
         # maxspin.setAlignment(Qt.AlignCenter)
         # maxspin.setValue(dimsrange[1] * dimsrange[2])
         # maxspin.valueChanged.connect(self.set_maxframe)
-        # self.popup.form_layout.insertRow(
+        # form_layout.insertRow(
         #     2, QLabel('end frame:', parent=self.popup), maxspin
         # )
 
         mode_combo = QComboBox(self.popup)
         mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
-        self.popup.form_layout.insertRow(
+        form_layout.insertRow(
             2, QLabel('play mode:', parent=self.popup), mode_combo
         )
         mode_combo.setCurrentText(str(self.mode))

@@ -1,15 +1,50 @@
-from qtconsole.rich_jupyter_widget import RichJupyterWidget
-from qtconsole.inprocess import QtInProcessKernelManager
-from qtconsole.client import QtKernelClient
-from IPython import get_ipython
-from IPython.terminal.interactiveshell import TerminalInteractiveShell
+import sys
+
+from ipykernel.connect import get_connection_file
 from ipykernel.inprocess.ipkernel import InProcessInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
-from ipykernel.connect import get_connection_file
+from IPython import get_ipython
+from IPython.terminal.interactiveshell import TerminalInteractiveShell
+from qtconsole.client import QtKernelClient
+from qtconsole.inprocess import QtInProcessKernelManager
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+
+"""
+set default asyncio policy to be compatible with tornado
+
+Tornado 6 (at least) is not compatible with the default
+asyncio implementation on Windows
+
+Pick the older SelectorEventLoopPolicy on Windows
+if the known-incompatible default policy is in use.
+
+FIXME: if/when tornado supports the defaults in asyncio,
+remove and bump tornado requirement for py38
+borrowed from ipykernel:  https://github.com/ipython/ipykernel/pull/456
+"""
+if sys.platform.startswith("win") and sys.version_info >= (3, 8):
+    import asyncio
+
+    try:
+        from asyncio import (
+            WindowsProactorEventLoopPolicy,
+            WindowsSelectorEventLoopPolicy,
+        )
+    except ImportError:
+        pass
+        # not affected
+    else:
+        if (
+            type(asyncio.get_event_loop_policy())
+            is WindowsProactorEventLoopPolicy
+        ):
+            # WindowsProactorEventLoopPolicy is not compatible with tornado 6
+            # fallback to the pre-3.8 default of Selector
+            asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 
 
 class QtConsole(RichJupyterWidget):
-    """Qt view for console.
+    """Qt view for the console, an integrated iPython terminal in napari.
 
     Parameters
     ----------
@@ -96,5 +131,5 @@ class QtConsole(RichJupyterWidget):
     def shutdown(self):
         if self.kernel_client is not None:
             self.kernel_client.stop_channels()
-        if self.kernel_manager is not None:
+        if self.kernel_manager is not None and self.kernel_manager.has_kernel:
             self.kernel_manager.shutdown_kernel()
