@@ -512,7 +512,6 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
-        print('set_view')
         # some complex rendering modes set self.rgb to true (at the end of this
         # function)... so we reset it each time.
         self.rgb = False if self.is_complex else self.rgb
@@ -621,8 +620,7 @@ class Image(IntensityVisualizationMixin, Layer):
                 )
             else:
                 self.rgb = False
-        print(image.shape)
-        print(thumbnail.shape)
+
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
             self._data_view = self._raw_to_displayed(self._data_raw)
