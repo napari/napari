@@ -383,7 +383,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def complex_rendering(self) -> Union[ComplexRendering, Callable]:
-        """Mode for converting complex values to real values.ƒ"""
+        """Mode for converting complex values to real values."""
         return self._complex_render
 
     @complex_rendering.setter
