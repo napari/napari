@@ -1,3 +1,4 @@
+from typing import Optional, Tuple
 import numpy as np
 from skimage.color import hsv2rgb
 from ..utils.colormaps.colormaps import (
@@ -16,26 +17,33 @@ def complex_ramp(size=256, phase_range=(-np.pi, np.pi), mag_range=(0, 10)):
     return mag_ramp * np.exp(1j * phase_ramp)
 
 
+OptStr = Optional[str]
+OptInt = Optional[int]
+
+
 def complex2rgb(
-    arr,
-    mapping=['phase', 'mag', None],
-    scale=[1, 1, 1],
-    rmax=None,
-    phase_shift=np.pi,
-):
+    arr: np.ndarray,
+    mapping: Tuple[OptStr, OptStr, OptStr] = ('phase', 'mag', None),
+    scale: Tuple[OptInt, OptInt, OptInt] = (1, 1, 1),
+    rmax: Optional[float] = None,
+    phase_shift: float = np.pi,
+) -> np.ndarray:
     """Convert complex array to RGB array.
+
+    Mapping from phase or magnitude components to hue, saturation, or value is
+    controlled by the ``mapping`` parameter.  See details below.
 
     Parameters
     ----------
     arr : np.ndarray
         Array with type np.complex or np.complex64
-    mapping : list, optional
+    mapping : list of str, optional
         mapping from Hue, Saturation, and Value to the corresponding complex
         component.  Only the first letter actually matters where 'phase' or 'p'
         maps to the phase component, and anything else ('mag' or 'abs') maps to
         the magnitude value.
         by default ['phase', 'mag', None]
-    scale : list, optional
+    scale : list of int, optional
         Fraction of the HSV range occupied by the data range.
         by default [1, 1, 1]
     rmax : float, optional
@@ -72,22 +80,46 @@ def complex2rgb(
 
 
 def complex2colormap(
-    arr,
-    colormap='twilight_shifted',
-    rmax=None,
-    gamma=0.8,
-    phase_range=(-np.pi / 6, np.pi / 6),
-):
+    arr: np.ndarray,
+    colormap: str = 'twilight_shifted',
+    rmax: Optional[float] = None,
+    gamma: float = 0.8,
+    phase_range: Tuple[float, float] = (-np.pi / 6, np.pi / 6),
+) -> np.ndarray:
+    """Convert a complex array to RGB array.
+
+    Phase is mapped to color, while magnitude is mapped to brightness
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Array with type np.complex or np.complex64
+    colormap : str, optional
+        The colormap to use for phase info, by default 'twilight_shifted'
+    rmax : float, optional
+        The maximum magnitude to show, by default: ``np.abs(arr).max()``
+    gamma : float, optional
+        Controls the linearity of mapping between complex magnitue and
+        brightness, by default 0.8
+    phase_range : 2-tuple, optional
+        set min/max phase range, by default (-np.pi / 6, np.pi / 6)
+
+    Returns
+    -------
+    RGB : np.ndarray
+        3-channel RGB numpy array
+    """
     if colormap in AVAILABLE_COLORMAPS:
         cmap = AVAILABLE_COLORMAPS[colormap]
     else:
         cmap = vispy_or_mpl_colormap(colormap)
 
+    # create RGB image from phase information
     p0, p1 = phase_range
     phase = (np.angle(arr) - p0) / (p1 - p0)
-    # phase = (np.angle(arr) + phase_shift) / (2 * np.pi) % 1
-    RGB = cmap[phase.ravel()].RGBA.reshape(phase.shape + (4,))
+    RGB = cmap[phase.ravel()].RGB.reshape(phase.shape + (3,))
 
+    # scale intensity of RGB image by the magnitude component
     absmax = rmax or np.abs(arr).max()
     intensity = np.clip(np.abs(arr) / absmax, 0, 1) ** gamma
     RGB = (RGB * np.expand_dims(intensity, 2)).astype(np.uint8)

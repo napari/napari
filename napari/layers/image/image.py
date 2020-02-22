@@ -383,19 +383,38 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def complex_rendering(self) -> Union[ComplexRendering, Callable]:
-        """Mode for converting complex values to real values for visualization.
-
-        * magnitude: uses np.abs
-        * phase: uses np.angle
-        * real: uses np.real
-        * imaginary: uses np.imag
-        """
+        """Mode for converting complex values to real values.ƒ"""
         return self._complex_render
 
     @complex_rendering.setter
     def complex_rendering(
         self, value: Union[str, ComplexRendering, Callable]
     ) -> None:
+        """Set mode for rendering complex valued data.
+
+        For details on exactly how each mode turns complex valued data into
+        real data for display, see the layers.image._constants.ComplexRendering
+        Enum, where the values are functions that take a complex array and
+        return a real array.
+        Some modes return a RGB array, and the logic for those functions is
+        defined in napari.utils.complex.complex2rgb and .complex2colormap
+
+        Parameters
+        ----------
+        value : ComplexRendering or str or callable
+            Rendering mode for complex valued data.
+            If str, must be one of the members of the ComplexRendering enum.
+            If a callable, must be a function that accepts a complex array and
+            returns a real array.
+
+        Raises
+        ------
+        ValueError
+            If a str is provided that is not a valid ComplexRendering Enum.
+        ValueError
+            If a callable is provided that does not return a real numpy.array
+            when provided a complex numpy.array
+        """
         if isinstance(value, str):
             try:
                 value = getattr(ComplexRendering, value.upper())
@@ -414,6 +433,9 @@ class Image(IntensityVisualizationMixin, Layer):
                     "returns a real array."
                 )
         elif value == ComplexRendering.COLORMAP:
+            # the colormap mode hijacks the colormap, clims, and gamma sliders
+            # so we store the previous colormap for later retrieval and use
+            # the twilight_shifted colormap by default
             self._previous_cmap = self._colormap_name
             self.colormap = 'twilight_shifted'
             self.events.contrast_limits.connect(self.refresh)
@@ -429,9 +451,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
         self._complex_render = value
         if hasattr(self, '_data'):
+            # for PHASE and COLORMAP, the contrast limits sliders are used to
+            # control phase display, so set their min/max accordingly
             if value in (ComplexRendering.PHASE, ComplexRendering.COLORMAP):
                 self.contrast_limits = [-np.pi, np.pi]
                 self.contrast_limits_range = [-np.pi, np.pi]
+            # otherwise autoscale the image back to regular values
             else:
                 self.reset_contrast_limits()
                 self.contrast_limits_range = self.contrast_limits
@@ -484,7 +509,9 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
-
+        print('set_view')
+        # some complex rendering modes set self.rgb to true (at the end of this
+        # function)... so we reset it each time.
         self.rgb = False if self.is_complex else self.rgb
 
         if self.rgb:
@@ -563,13 +590,17 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail = image
 
         if self.is_complex:
-            if 'colormap' in self.complex_rendering.name.lower():
+            # ComplexRendering.COLORMAP mode uses the contrast limits sliders
+            # to control the range of phase information shown, and the gamma
+            # slider to change mag->intensity linearity.
+            if self.complex_rendering == ComplexRendering.COLORMAP:
                 image = self.complex_rendering(
                     image,
                     colormap=self._colormap_name,
                     gamma=self.gamma,
                     phase_range=self.contrast_limits,
                 )
+                # TODO: remove second expensive call if possible
                 thumbnail = self.complex_rendering(
                     thumbnail,
                     colormap=self._colormap_name,
@@ -579,6 +610,7 @@ class Image(IntensityVisualizationMixin, Layer):
             else:
                 image = self.complex_rendering(image)
                 thumbnail = self.complex_rendering(thumbnail)
+
             if self.complex_rendering in ComplexRendering.rgb_members():
                 self.rgb = True
                 self._data_thumbnail = self._raw_to_displayed(
@@ -586,7 +618,8 @@ class Image(IntensityVisualizationMixin, Layer):
                 )
             else:
                 self.rgb = False
-
+        print(image.shape)
+        print(thumbnail.shape)
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
             self._data_view = self._raw_to_displayed(self._data_raw)

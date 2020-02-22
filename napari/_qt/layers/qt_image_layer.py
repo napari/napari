@@ -15,13 +15,13 @@ class QtImageControls(QtBaseImageControls):
 
         self.layer.events.interpolation.connect(self._on_interpolation_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.complex_rendering.connect(
-            self._on_complex_rendering_change
-        )
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.data.connect(self._on_data_change)
+        self.layer.events.complex_rendering.connect(
+            self._on_complex_rendering_change
+        )
 
         interp_comboBox = QComboBox()
         interp_comboBox.addItems(Interpolation.keys())
@@ -113,8 +113,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.iso_threshold = value / 100
 
     def changeComplex(self, text):
-        # checking because it's possible that a custom function name has been
-        # set
+        # it's possible that a custom function name has beenset
         if text in ComplexRendering.lower_members():
             self.layer.complex_rendering = text
 
@@ -145,22 +144,26 @@ class QtImageControls(QtBaseImageControls):
             self.renderComboBox.setCurrentIndex(index)
             self._toggle_rendering_parameter_visbility()
 
-    def _on_complex_rendering_change(self, event):
-        # because self.layer.events.complex_rendering allows for custom
-        # functions there is extra logic here to update the combo box if an
-        # unidentified function has been set.  We remove them when deselected.
-        valid = ComplexRendering.lower_members()
-        for i in reversed(range(self.complexComboBox.count())):
-            if self.complexComboBox.itemText(i) not in valid:
-                self.complexComboBox.removeItem(i)
+    def _on_complex_rendering_change(self, event=None):
+        """Set the name of the complex_rendering mode upon change.
 
-        func = self.layer.complex_rendering
-        if isinstance(func, ComplexRendering):
+        Becuase Image.complex_rendering allows for the user to set custom
+        functions, there is extra logic here to update the combo box if an
+        unknown function has been set.  We remove them when deselected.
+        """
+        if isinstance(self.layer.complex_rendering, ComplexRendering):
             text = self.layer.complex_rendering.name.lower()
         else:
             text = self.layer.complex_rendering.__name__.lower()
-            if self.complexComboBox.findText(text) == -1:
-                self.complexComboBox.addItem(text)
+
+        # remove any names that may have been added and are no longer valid
+        valid = set(ComplexRendering.lower_members() + [text])
+        for i in reversed(range(self.complexComboBox.count())):
+            if self.complexComboBox.itemText(i) not in valid:
+                self.complexComboBox.removeItem(i)
+        # if the current option is not in the combo box, add it.
+        if self.complexComboBox.findText(text) == -1:
+            self.complexComboBox.addItem(text)
 
         with self.layer.events.complex_rendering.blocker():
             self.complexComboBox.setCurrentText(text)
