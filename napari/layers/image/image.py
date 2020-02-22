@@ -186,7 +186,7 @@ class Image(IntensityVisualizationMixin, Layer):
         # Set data
         self.is_pyramid = is_pyramid
         self.rgb = rgb
-        self.iscomplex = (
+        self.is_complex = (
             is_complex(data[0]) if is_pyramid else is_complex(data)
         )
         self.complex_func = 'magnitude'
@@ -230,7 +230,7 @@ class Image(IntensityVisualizationMixin, Layer):
             input_data = self._data_pyramid[-1]
         else:
             input_data = self.data
-        if self.iscomplex:
+        if self.is_complex:
             input_data = self.complex_func(input_data)
         return calc_data_range(input_data)
 
@@ -250,7 +250,7 @@ class Image(IntensityVisualizationMixin, Layer):
         )
         self.is_pyramid = is_pyramid
         self.rgb = rgb
-        self.iscomplex = (
+        self.is_complex = (
             is_complex(data[0]) if is_pyramid else is_complex(data)
         )
         self._data = data
@@ -485,7 +485,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
 
-        self.rgb = False if self.iscomplex else self.rgb
+        self.rgb = False if self.is_complex else self.rgb
 
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
@@ -562,7 +562,7 @@ class Image(IntensityVisualizationMixin, Layer):
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
             thumbnail = image
 
-        if self.iscomplex:
+        if self.is_complex:
             if 'colormap' in self.complex_func.name.lower():
                 image = self.complex_func(
                     image,
