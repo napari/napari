@@ -283,7 +283,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def level_shapes(self):
         """array: Shapes of each level of the pyramid or just of image."""
         if self.is_pyramid:
-            if self.rgb:
+            if (not self.is_complex) and self.rgb:
                 shapes = [im.shape[:-1] for im in self._data_pyramid]
             else:
                 shapes = [im.shape for im in self._data_pyramid]
@@ -438,9 +438,6 @@ class Image(IntensityVisualizationMixin, Layer):
             # the twilight_shifted colormap by default
             self._previous_cmap = self._colormap_name
             self.colormap = 'twilight_shifted'
-            self.events.contrast_limits.connect(self.refresh)
-            self.events.colormap.connect(self.refresh)
-            self.events.gamma.connect(self.refresh)
         else:
             if hasattr(self, '_previous_cmap'):
                 self.colormap = self._previous_cmap
@@ -462,6 +459,12 @@ class Image(IntensityVisualizationMixin, Layer):
                 self.contrast_limits_range = self.contrast_limits
             self.events.complex_rendering()
             self.refresh()
+
+        # connect these events AFTER self.refresh() to avoid excessive redraws
+        if value == ComplexRendering.COLORMAP:
+            self.events.contrast_limits.connect(self.refresh)
+            self.events.colormap.connect(self.refresh)
+            self.events.gamma.connect(self.refresh)
 
     def _get_state(self):
         """Get dictionary of layer state.
