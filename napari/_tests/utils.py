@@ -10,6 +10,7 @@ layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
     (Image, np.random.random((10, 15, 20)), 3),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
+    (Image, np.random.random((10, 10)) + np.random.random((10, 10)) * 1j, 2),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (Points, 20 * np.random.random((10, 2)), 2),
