@@ -15,7 +15,9 @@ class QtImageControls(QtBaseImageControls):
 
         self.layer.events.interpolation.connect(self._on_interpolation_change)
         self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.complex_func.connect(self._on_complex_func_change)
+        self.layer.events.complex_rendering.connect(
+            self._on_complex_rendering_change
+        )
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
@@ -114,7 +116,7 @@ class QtImageControls(QtBaseImageControls):
         # checking because it's possible that a custom function name has been
         # set
         if text in ComplexRendering.lower_members():
-            self.layer.complex_func = text
+            self.layer.complex_rendering = text
 
     def _on_iso_threshold_change(self, event):
         with self.layer.events.iso_threshold.blocker():
@@ -143,24 +145,24 @@ class QtImageControls(QtBaseImageControls):
             self.renderComboBox.setCurrentIndex(index)
             self._toggle_rendering_parameter_visbility()
 
-    def _on_complex_func_change(self, event):
-        # because self.layer.events.complex_func allows for custom functions
-        # there is extra logic here to update the combo box if an unidentified
-        # function has been set.  We remove them when deselected.
+    def _on_complex_rendering_change(self, event):
+        # because self.layer.events.complex_rendering allows for custom
+        # functions there is extra logic here to update the combo box if an
+        # unidentified function has been set.  We remove them when deselected.
         valid = ComplexRendering.lower_members()
         for i in reversed(range(self.complexComboBox.count())):
             if self.complexComboBox.itemText(i) not in valid:
                 self.complexComboBox.removeItem(i)
 
-        func = self.layer.complex_func
+        func = self.layer.complex_rendering
         if isinstance(func, ComplexRendering):
-            text = self.layer.complex_func.name.lower()
+            text = self.layer.complex_rendering.name.lower()
         else:
-            text = self.layer.complex_func.__name__.lower()
+            text = self.layer.complex_rendering.__name__.lower()
             if self.complexComboBox.findText(text) == -1:
                 self.complexComboBox.addItem(text)
 
-        with self.layer.events.complex_func.blocker():
+        with self.layer.events.complex_rendering.blocker():
             self.complexComboBox.setCurrentText(text)
 
     def _toggle_rendering_parameter_visbility(self):
@@ -198,7 +200,7 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
 
     def _on_data_change(self, event=None):
-        if self.layer.iscomplex:
+        if self.layer.is_complex:
             self.complexComboBox.show()
             self.complexLabel.show()
         else:

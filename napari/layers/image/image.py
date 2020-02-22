@@ -1,4 +1,5 @@
 import types
+from typing import Callable, Union
 import warnings
 from base64 import b64encode
 from xml.etree.ElementTree import Element
@@ -178,8 +179,8 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.add(
             interpolation=Event,
             rendering=Event,
+            complex_rendering=Event,
             iso_threshold=Event,
-            complex_func=Event,
             attenuation=Event,
         )
 
@@ -189,7 +190,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.is_complex = (
             is_complex(data[0]) if is_pyramid else is_complex(data)
         )
-        self.complex_func = 'magnitude'
+        self.complex_rendering = 'magnitude'
         self._data = data
         self._data_pyramid = data_pyramid
         self._top_left = np.zeros(ndim, dtype=int)
@@ -231,7 +232,7 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             input_data = self.data
         if self.is_complex:
-            input_data = self.complex_func(input_data)
+            input_data = self.complex_rendering(input_data)
         return calc_data_range(input_data)
 
     @property
@@ -381,7 +382,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.rendering()
 
     @property
-    def complex_func(self):
+    def complex_rendering(self) -> Union[ComplexRendering, Callable]:
         """Mode for converting complex values to real values for visualization.
 
         * magnitude: uses np.abs
@@ -389,25 +390,27 @@ class Image(IntensityVisualizationMixin, Layer):
         * real: uses np.real
         * imaginary: uses np.imag
         """
-        return self._complex_func
+        return self._complex_render
 
-    @complex_func.setter
-    def complex_func(self, value):
+    @complex_rendering.setter
+    def complex_rendering(
+        self, value: Union[str, ComplexRendering, Callable]
+    ) -> None:
         if isinstance(value, str):
             try:
                 value = getattr(ComplexRendering, value.upper())
             except AttributeError:
                 opt = ComplexRendering.lower_members()
                 raise ValueError(
-                    f"string values for `complex_func` must be one of {opt}"
+                    f"string values for `complex_rendering` must be one of {opt}"
                 )
 
         if not isinstance(value, ComplexRendering):
             test_arr = np.ones(1).astype(np.complex)
             if not (callable(value) and np.isrealobj(value(test_arr))):
                 raise ValueError(
-                    "The value for `complex_func` must be either a string or "
-                    "a callable function that accepts a complex array and "
+                    "The value for `complex_rendering` must be either a string"
+                    " or a callable function that accepts a complex array and "
                     "returns a real array."
                 )
         elif value == ComplexRendering.MAP_COLORMAP:
@@ -424,7 +427,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self.events.colormap.disconnect(self.refresh)
             self.events.gamma.disconnect(self.refresh)
 
-        self._complex_func = value
+        self._complex_render = value
         if hasattr(self, '_data'):
             if value in (
                 ComplexRendering.PHASE,
@@ -435,7 +438,7 @@ class Image(IntensityVisualizationMixin, Layer):
             else:
                 self.reset_contrast_limits()
                 self.contrast_limits_range = self.contrast_limits
-            self.events.complex_func()
+            self.events.complex_rendering()
             self.refresh()
 
     def _get_state(self):
@@ -563,23 +566,23 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail = image
 
         if self.is_complex:
-            if 'colormap' in self.complex_func.name.lower():
-                image = self.complex_func(
+            if 'colormap' in self.complex_rendering.name.lower():
+                image = self.complex_rendering(
                     image,
                     colormap=self._colormap_name,
                     gamma=self.gamma,
                     phase_range=self.contrast_limits,
                 )
-                thumbnail = self.complex_func(
+                thumbnail = self.complex_rendering(
                     thumbnail,
                     colormap=self._colormap_name,
                     gamma=self.gamma,
                     phase_range=self.contrast_limits,
                 )
             else:
-                image = self.complex_func(image)
-                thumbnail = self.complex_func(thumbnail)
-            if 'map' in self.complex_func.name.lower():
+                image = self.complex_rendering(image)
+                thumbnail = self.complex_rendering(thumbnail)
+            if 'map' in self.complex_rendering.name.lower():
                 self.rgb = True
                 self._data_thumbnail = self._raw_to_displayed(
                     np.clip(thumbnail, 0, 1)
