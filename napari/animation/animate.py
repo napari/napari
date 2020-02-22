@@ -1,5 +1,7 @@
 import imageio
 import copy
+import skimage.transform
+import numpy as np
 
 from . import util
 
@@ -250,7 +252,7 @@ class Animation:
         # update view
         self.viewer.window.qt_viewer.view.camera.view_changed()
 
-    def frame_generator(self, frame=None, with_viewer=False, max_shape=None):
+    def frame_generator(self, frame=None, with_viewer=False):
         """Generator of frames of the animation
 
         Parameters
@@ -260,9 +262,6 @@ class Animation:
         with_viewer : bool
             If True includes the napari viewer, otherwise just includes the
             canvas.
-        max_shape : int
-            Size to which to rescale the largest axis. Only used without
-            viewer (with_viewer = False).
 
         """
 
@@ -272,15 +271,12 @@ class Animation:
         # capture SceneCanvas size of frist frame to set size of next ones
         self.update_viewer_from_state(0)
         frame_size = self.viewer.window.qt_viewer.canvas.size
-        # if no max size provided, take current size as default
-        if max_shape is None:
-            max_shape = max(frame_size)
 
         # return specific frame
         if frame is not None:
             self.update_viewer_from_state(frame)
             image = self.viewer.screenshot(
-                max_shape=max_shape, with_viewer=with_viewer
+                with_viewer=with_viewer
             )
             while True:
                 yield image
@@ -291,7 +287,7 @@ class Animation:
                 if not with_viewer:
                     self.viewer.window.qt_viewer.canvas.size = frame_size
                 yield self.viewer.screenshot(
-                    max_shape=max_shape, with_viewer=with_viewer
+                    with_viewer=with_viewer
                 )
 
     def animate(
@@ -301,7 +297,7 @@ class Animation:
         quality=5,
         format=None,
         with_viewer=False,
-        max_shape=None,
+        scale_factor=None,
     ):
         """Create a movie based on key-frames
 
@@ -320,14 +316,14 @@ class Animation:
         with_viewer : bool
             If True includes the napari viewer, otherwise just includes the
             canvas.
-        max_shape : int
-            Size to which to rescale the largest axis. Only used without
+        scale_factor : float
+            Rescaling factor for the image size. Only used without
             viewer (with_viewer = False).
         """
 
         # create a frame generator
         frame_gen = self.frame_generator(
-            max_shape=max_shape, with_viewer=with_viewer
+            with_viewer=with_viewer
         )
 
         # create imageio writer and add all frames
@@ -340,5 +336,8 @@ class Animation:
 
         # save frames
         for frame in frame_gen:
+            if scale_factor is not None:
+                frame = skimage.transform.rescale(frame, scale_factor, multichannel=True, preserve_range=True)
+                frame = frame.astype(np.uint8)
             writer.append_data(frame)
         writer.close()
