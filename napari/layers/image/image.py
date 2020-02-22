@@ -11,7 +11,7 @@ from scipy import ndimage as ndi
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ...utils.misc import is_complex
+from ...utils.misc import guess_complex
 from ..base import Layer
 from ..layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
@@ -188,7 +188,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.is_pyramid = is_pyramid
         self.rgb = rgb
         self.is_complex = (
-            is_complex(data[0]) if is_pyramid else is_complex(data)
+            guess_complex(data[0]) if is_pyramid else guess_complex(data)
         )
         self.complex_rendering = 'magnitude'
         self._data = data
@@ -252,7 +252,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.is_pyramid = is_pyramid
         self.rgb = rgb
         self.is_complex = (
-            is_complex(data[0]) if is_pyramid else is_complex(data)
+            guess_complex(data[0]) if is_pyramid else guess_complex(data)
         )
         self._data = data
         self._data_pyramid = data_pyramid
