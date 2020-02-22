@@ -58,12 +58,23 @@ class Rendering(StringEnum):
 
 
 class ComplexRendering(Enum):
-    """Mode for visualizing complex values
+    """Options for visualizing complex-valued datasets.
 
-    * magnitude: uses np.abs
-    * phase: uses np.angle
-    * real: uses np.real
-    * imaginary: uses np.imag
+    The value of each member of this class should be a function that accepts a
+    complex numpy array and returns a real numpy array.
+
+    The primary members are as follows:
+      * magnitude: uses np.abs
+      * phase: uses np.angle
+      * real: uses np.real
+      * imaginary: uses np.imag
+
+    Additional members are used to convert complex values into RGB images.
+    see utils.complex.complex2rgb or utils.complex.complex2colormap for details
+
+    calling an instance of the Enum calls the corresponding function.
+    for example:
+    >>> ComplexRendering.MAGNITUDE()  # calls np.abs()
     """
 
     MAGNITUDE = partial(np.abs)
