@@ -74,13 +74,16 @@ class QtImageControls(QtBaseImageControls):
         self._on_ndisplay_change()
         self._on_data_change()
 
+        self.contrastLimitsLabel = QLabel('contrast limits:')
+        self.gammaLabel = QLabel('gamma:')
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
         self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel('contrast limits:'), 1, 0)
+        self.grid_layout.addWidget(self.contrastLimitsLabel, 1, 0)
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
+        self.grid_layout.addWidget(self.gammaLabel, 2, 0)
         self.grid_layout.addWidget(self.gammaSlider, 2, 1, 1, 2)
         self.grid_layout.addWidget(self.isoThresholdLabel, 3, 0)
         self.grid_layout.addWidget(self.isoThresholdSlider, 3, 1, 1, 2)
@@ -155,6 +158,13 @@ class QtImageControls(QtBaseImageControls):
             text = self.layer.complex_rendering.name.lower()
         else:
             text = self.layer.complex_rendering.__name__.lower()
+
+        if self.layer.complex_rendering == ComplexRendering.COLORMAP:
+            self.contrastLimitsLabel.setText('phase limits:')
+            self.gammaLabel.setText('mag gamma:')
+        else:
+            self.contrastLimitsLabel.setText('contrast limits:')
+            self.gammaLabel.setText('gamma:')
 
         # remove any names that may have been added and are no longer valid
         valid = set(ComplexRendering.lower_members() + [text])
