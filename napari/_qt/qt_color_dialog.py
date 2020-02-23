@@ -2,7 +2,7 @@ import re
 from typing import Optional
 
 import numpy as np
-from qtpy.QtCore import QEvent, Qt, Signal, Slot
+from qtpy.QtCore import Qt, Signal, Slot
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QColorDialog,
@@ -29,6 +29,10 @@ from vispy.color import get_color_dict
 rgba_regex = re.compile(
     r"\(?([\d.]+),\s*([\d.]+),\s*([\d.]+),?\s*([\d.]+)?\)?"
 )
+
+TRANSPARENT = np.array([0, 0, 0, 0], np.float32)
+UNKNOWN = -1  # a constant to indicate that the user entered an invalid string
+FALLBACK = TRANSPARENT  # what will be shown if a user entry is UNKNOWN
 
 
 class QColorSwatchEdit(QWidget):
@@ -96,7 +100,9 @@ class QColorSwatchEdit(QWidget):
     def _on_swatch_changed(self, color: np.ndarray):
         """Receive QColorSwatch change event, update the lineEdit, re-emit."""
         self.lineEdit.setText(color)
-        self.color_changed.emit(color)
+        self.color_changed.emit(
+            FALLBACK if np.all(color == UNKNOWN) else color
+        )
 
 
 class QColorSwatch(QFrame):
@@ -128,9 +134,10 @@ class QColorSwatch(QFrame):
         super().__init__(parent)
         self.setObjectName('colorSwatch')
         self.setToolTip(tooltip or 'click to set color')
+        self.setCursor(Qt.PointingHandCursor)
 
         self.color_changed.connect(self._update_swatch_style)
-        self._color: np.ndarray = np.array([0, 0, 0, 0], np.float32)
+        self._color: np.ndarray = TRANSPARENT
         if initial_color is not None:
             self.setColor(initial_color)
 
@@ -140,8 +147,9 @@ class QColorSwatch(QFrame):
 
     def _update_swatch_style(self) -> None:
         """Convert the current color to rgba() string and update appearance."""
-        col = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
-        self.setStyleSheet('#colorSwatch {background-color: ' + col + ';}')
+        color = FALLBACK if np.all(self._color == UNKNOWN) else self._color
+        color = f'rgba({",".join(map(lambda x: str(int(x*255)), color))})'
+        self.setStyleSheet('#colorSwatch {background-color: ' + color + ';}')
 
     def mouseReleaseEvent(self, event):
         """Show QColorPopup picker when the user clicks on the swatch."""
@@ -160,10 +168,13 @@ class QColorSwatch(QFrame):
             Can be any ColorType recognized by our
             utils.colormaps.standardize_color.transform_color function.
         """
-        _color = transform_color(color)[0]
+        try:
+            _color = transform_color(color)[0]
+        except ValueError:
+            _color = UNKNOWN
         emit = np.any(self._color != _color)
         self._color = _color
-        if emit:
+        if emit or np.all(_color == TRANSPARENT):
             self.color_changed.emit(_color)
 
 
@@ -173,6 +184,7 @@ class QColorLineEdit(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._compl = QCompleter(list(get_color_dict()))
+        self._compl.setCompletionMode(QCompleter.InlineCompletion)
         self.setCompleter(self._compl)
         self.setTextMargins(2, 2, 2, 2)
 
@@ -188,18 +200,13 @@ class QColorLineEdit(QLineEdit):
             Can be any ColorType recognized by our
             utils.colormaps.standardize_color.transform_color function.
         """
-        _rgb = transform_color(color)[0]
-        _hex = rgb_to_hex(_rgb)[0]
-        super().setText(hex_to_name.get(_hex, _hex))
-
-    def event(self, event):
-        """Pick the first name auto-completion upon pressing tab."""
-        if event.type() == QEvent.KeyPress:
-            if event.key() == Qt.Key_Tab:
-                self._compl.popup().setCurrentIndex(self._compl.currentIndex())
-                self.clearFocus()
-                return True
-        return super().event(event)
+        if isinstance(color, int) and color == UNKNOWN:
+            text = "⚠️ unknown"
+        else:
+            _rgb = transform_color(color)[0]
+            _hex = rgb_to_hex(_rgb)[0]
+            text = hex_to_name.get(_hex, _hex)
+        super().setText(text)
 
 
 class CustomColorDialog(QColorDialog):
