@@ -281,7 +281,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
         if mode == self._mode:
             return
-        old_mode = self._mode
 
         if mode == Mode.TRANSFORM:
             self.cursor = 'pointing'
