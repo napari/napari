@@ -114,7 +114,7 @@ class Labels(Image):
     def __init__(
         self,
         data,
-        *,
+        *,  # noqa: E999
         is_pyramid=None,
         num_colors=50,
         seed=0.5,
@@ -149,7 +149,6 @@ class Labels(Image):
         )
 
         self.events.add(
-            mode=Event,
             n_dimensional=Event,
             contiguous=Event,
             brush_size=Event,
