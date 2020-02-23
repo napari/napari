@@ -225,8 +225,7 @@ class QColorPopup(QtPopup):
         self.setObjectName('QtColorPopup')
         self.color_dialog = CustomColorDialog(self)
 
-        # TODO: ask everyone how they feel about native vs QtColorDialog look
-        # native dialog doesn't get added to the layout
+        # native dialog doesn't get added to the QtPopup frame
         # so more would need to be done to use it
         self.color_dialog.setOptions(
             QColorDialog.DontUseNativeDialog | QColorDialog.ShowAlphaChannel
