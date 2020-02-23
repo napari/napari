@@ -275,9 +275,7 @@ class Animation:
         # return specific frame
         if frame is not None:
             self.update_viewer_from_state(frame)
-            image = self.viewer.screenshot(
-                with_viewer=with_viewer
-            )
+            image = self.viewer.screenshot(with_viewer=with_viewer)
             while True:
                 yield image
         # return all frames as a generator
@@ -286,9 +284,7 @@ class Animation:
                 self.update_viewer_from_state(i)
                 if not with_viewer:
                     self.viewer.window.qt_viewer.canvas.size = frame_size
-                yield self.viewer.screenshot(
-                    with_viewer=with_viewer
-                )
+                yield self.viewer.screenshot(with_viewer=with_viewer)
 
     def animate(
         self,
@@ -322,9 +318,7 @@ class Animation:
         """
 
         # create a frame generator
-        frame_gen = self.frame_generator(
-            with_viewer=with_viewer
-        )
+        frame_gen = self.frame_generator(with_viewer=with_viewer)
 
         # create imageio writer and add all frames
         if quality is not None:
@@ -337,7 +331,9 @@ class Animation:
         # save frames
         for frame in frame_gen:
             if scale_factor is not None:
-                frame = skimage.transform.rescale(frame, scale_factor, multichannel=True, preserve_range=True)
+                frame = skimage.transform.rescale(
+                    frame, scale_factor, multichannel=True, preserve_range=True
+                )
                 frame = frame.astype(np.uint8)
             writer.append_data(frame)
         writer.close()
