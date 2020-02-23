@@ -31,8 +31,6 @@ rgba_regex = re.compile(
 )
 
 TRANSPARENT = np.array([0, 0, 0, 0], np.float32)
-UNKNOWN = -1  # a constant to indicate that the user entered an invalid string
-FALLBACK = TRANSPARENT  # what will be shown if a user entry is UNKNOWN
 
 
 class QColorSwatchEdit(QWidget):
@@ -100,9 +98,7 @@ class QColorSwatchEdit(QWidget):
     def _on_swatch_changed(self, color: np.ndarray):
         """Receive QColorSwatch change event, update the lineEdit, re-emit."""
         self.lineEdit.setText(color)
-        self.color_changed.emit(
-            FALLBACK if np.all(color == UNKNOWN) else color
-        )
+        self.color_changed.emit(color)
 
 
 class QColorSwatch(QFrame):
@@ -147,9 +143,8 @@ class QColorSwatch(QFrame):
 
     def _update_swatch_style(self) -> None:
         """Convert the current color to rgba() string and update appearance."""
-        color = FALLBACK if np.all(self._color == UNKNOWN) else self._color
-        color = f'rgba({",".join(map(lambda x: str(int(x*255)), color))})'
-        self.setStyleSheet('#colorSwatch {background-color: ' + color + ';}')
+        rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
+        self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
 
     def mouseReleaseEvent(self, event):
         """Show QColorPopup picker when the user clicks on the swatch."""
@@ -171,7 +166,7 @@ class QColorSwatch(QFrame):
         try:
             _color = transform_color(color)[0]
         except ValueError:
-            _color = UNKNOWN
+            return self.color_changed.emit(self._color)
         emit = np.any(self._color != _color)
         self._color = _color
         if emit or np.all(_color == TRANSPARENT):
@@ -200,13 +195,9 @@ class QColorLineEdit(QLineEdit):
             Can be any ColorType recognized by our
             utils.colormaps.standardize_color.transform_color function.
         """
-        if isinstance(color, int) and color == UNKNOWN:
-            text = "⚠️ unknown"
-        else:
-            _rgb = transform_color(color)[0]
-            _hex = rgb_to_hex(_rgb)[0]
-            text = hex_to_name.get(_hex, _hex)
-        super().setText(text)
+        _rgb = transform_color(color)[0]
+        _hex = rgb_to_hex(_rgb)[0]
+        super().setText(hex_to_name.get(_hex, _hex))
 
 
 class CustomColorDialog(QColorDialog):
