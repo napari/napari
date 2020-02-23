@@ -224,17 +224,19 @@ class QColorPopup(QtPopup):
 
     def __init__(self, parent=None, initial=None):
         super().__init__(parent)
+        self.setObjectName('QtColorPopup')
         self.color_dialog = CustomColorDialog(self)
 
         # TODO: ask everyone how they feel about native vs QtColorDialog look
         # native dialog doesn't get added to the layout
         # so more would need to be done to use it
-        self.color_dialog.setOptions(QColorDialog.DontUseNativeDialog)
+        self.color_dialog.setOptions(
+            QColorDialog.DontUseNativeDialog | QColorDialog.ShowAlphaChannel
+        )
         layout = QVBoxLayout()
         self.frame.setLayout(layout)
         layout.addWidget(self.color_dialog)
 
-        self.setObjectName('QtColorPopup')
         self.color_dialog.currentColorChanged.connect(
             self.currentColorChanged.emit
         )
