@@ -24,6 +24,7 @@ import functools
 import warnings
 
 import numpy as np
+from qtpy.QtGui import QColor
 from vispy.color import ColorArray, get_color_dict, get_color_names
 from vispy.color.color_array import _string_to_rgb
 
@@ -309,6 +310,22 @@ def _handle_none(color) -> np.ndarray:
     return np.zeros((1, 4), dtype=np.float32)
 
 
+def _handle_qcolor(color: QColor) -> np.ndarray:
+    """Convert QColor to numpy array.
+
+    Parameters
+    ----------
+    color : QColor
+        Qt color object
+
+    Returns
+    -------
+    np.ndarray
+        1x4, float32 color array with values in the range [0, 1]
+    """
+    return (np.array([color.getRgb()]) / 255).astype(np.float32)
+
+
 def _normalize_color_array(colors: np.ndarray) -> np.ndarray:
     """Normalize all array values to the range [0, 1].
 
@@ -343,6 +360,7 @@ _color_switch: Dict[Any, Callable] = {
     types.GeneratorType: _handle_generator,
     np.ndarray: _handle_array,
     type(None): _handle_none,
+    QColor: _handle_qcolor,
 }
 
 
