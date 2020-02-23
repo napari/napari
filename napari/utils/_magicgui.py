@@ -72,7 +72,7 @@ try:
         except AttributeError:
             return
 
-        result_name = gui.name() + " result"
+        result_name = gui.func.__name__ + " result"
         try:
             viewer.layers[result_name].data = result
         except KeyError:
