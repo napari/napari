@@ -13,10 +13,10 @@ https://github.com/napari/napari
 
 New Features
 ************
+- Add clickable color swatch with QColorDialog (#832)
 - Implement pluggy as plugin manager (#908)
 - Allow toggle theme from GUI (#943)
 - Add "Screenshot" option to File menu (#944)
-- Add clickable color swatch with QColorDialog (#832)
 
 Improvements
 ************
