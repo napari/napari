@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from qtpy.QtCore import Qt, Signal, Slot
@@ -31,6 +31,7 @@ rgba_regex = re.compile(
 )
 
 TRANSPARENT = np.array([0, 0, 0, 0], np.float32)
+AnyColorType = Union[ColorType, QColor]
 
 
 class QColorSwatchEdit(QWidget):
@@ -47,7 +48,7 @@ class QColorSwatchEdit(QWidget):
         self,
         parent: Optional[QWidget] = None,
         *,
-        initial_color: Optional[ColorType] = None,
+        initial_color: Optional[AnyColorType] = None,
         tooltip: Optional[str] = None,
     ):
         """Create a new ColorSwatchEdit widget.
@@ -141,7 +142,8 @@ class QColorSwatch(QFrame):
         """Return the current color"""
         return self._color
 
-    def _update_swatch_style(self) -> None:
+    @Slot(np.ndarray)
+    def _update_swatch_style(self, color: np.ndarray) -> None:
         """Convert the current color to rgba() string and update appearance."""
         rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
         self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
@@ -154,7 +156,7 @@ class QColorSwatch(QFrame):
             popup.colorSelected.connect(self.setColor)
             popup.show_right_of_mouse()
 
-    def setColor(self, color: ColorType) -> None:
+    def setColor(self, color: AnyColorType) -> None:
         """Set the color of the swatch.
 
         Parameters
@@ -163,10 +165,13 @@ class QColorSwatch(QFrame):
             Can be any ColorType recognized by our
             utils.colormaps.standardize_color.transform_color function.
         """
-        try:
-            _color = transform_color(color)[0]
-        except ValueError:
-            return self.color_changed.emit(self._color)
+        if isinstance(color, QColor):
+            _color = (np.array(color.getRgb()) / 255).astype(np.float32)
+        else:
+            try:
+                _color = transform_color(color)[0]
+            except ValueError:
+                return self.color_changed.emit(self._color)
         emit = np.any(self._color != _color)
         self._color = _color
         if emit or np.all(_color == TRANSPARENT):

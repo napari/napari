@@ -3,18 +3,18 @@ normalize and broadcast the color inputs they receive into a more standardized f
 a numpy array with N rows, N being the number of data points, and a dtype of np.float32.
 
 """
-import warnings
 from itertools import cycle
-from typing import AnyStr, List, Tuple, Union
+from typing import Union, List, Tuple, AnyStr
+import warnings
 
-import numpy as np
-from qtpy.QtGui import QColor
 from vispy.color import Color, ColorArray
+import numpy as np
 
 from ...utils.colormaps.standardize_color import transform_color
 
+
 # All parsable input datatypes that a user can provide
-ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray, QColor]
+ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
 
 
 def transform_color_with_defaults(
