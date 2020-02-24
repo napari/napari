@@ -2,8 +2,8 @@ import re
 from typing import Optional, Union
 
 import numpy as np
-from qtpy.QtCore import Qt, Signal, Slot
-from qtpy.QtGui import QColor
+from qtpy.QtCore import Qt, Signal, Slot, QEvent
+from qtpy.QtGui import QColor, QKeyEvent
 from qtpy.QtWidgets import (
     QColorDialog,
     QCompleter,
@@ -40,6 +40,33 @@ class QColorSwatchEdit(QWidget):
     emits a color_changed event with a 1x4 numpy array when the current color
     changes.  Note, the "model" for the current color is the ``_color``
     attribute on the QColorSwatch.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        parent widget, by default None
+    initial_color : AnyColorType, optional
+        Starting color, by default None
+    tooltip : str, optional
+        Tooltip when hovering on the swatch,
+        by default 'click to set color'
+
+    Attributes
+    ----------
+    line_edit : QColorLineEdit
+        An instance of QColorLineEdit, which takes hex, rgb, or autocompletes
+        common color names.  On invalid input, this field will return to the
+        previous color value.
+    color_swatch : QColorSwatch
+        The square that shows the current color, and can be clicked to show a
+        color dialog.
+    color : np.ndarray
+        The current color (just an alias for the colorSwatch.color)
+
+    Signals
+    -------
+    color_changed : np.ndarray
+        Emits the new color when the current color changes.
     """
 
     color_changed = Signal(np.ndarray)
@@ -51,18 +78,6 @@ class QColorSwatchEdit(QWidget):
         initial_color: Optional[AnyColorType] = None,
         tooltip: Optional[str] = None,
     ):
-        """Create a new ColorSwatchEdit widget.
-
-        Parameters
-        ----------
-        parent : QWidget, optional
-            parent widget, by default None
-        initial_color : ColorType, optional
-            Starting color, by default None
-        tooltip : str, optional
-            Tooltip when hovering on the swatch,
-            by default 'click to set color'
-        """
         super().__init__(parent=parent)
         self.setObjectName('QColorSwatchEdit')
 
@@ -71,41 +86,60 @@ class QColorSwatchEdit(QWidget):
         layout.setSpacing(6)
         self.setLayout(layout)
 
-        self.lineEdit = QColorLineEdit(self)
-        self.lineEdit.editingFinished.connect(self._on_lineedit_edited)
+        self.line_edit = QColorLineEdit(self)
+        self.line_edit.editingFinished.connect(self._on_line_edit_edited)
 
-        self.colorSwatch = QColorSwatch(self, tooltip=tooltip)
-        self.colorSwatch.color_changed.connect(self._on_swatch_changed)
-        self.setColor = self.colorSwatch.setColor
+        self.color_swatch = QColorSwatch(self, tooltip=tooltip)
+        self.color_swatch.color_changed.connect(self._on_swatch_changed)
+        self.setColor = self.color_swatch.setColor
         if initial_color is not None:
             self.setColor(initial_color)
 
-        layout.addWidget(self.colorSwatch)
-        layout.addWidget(self.lineEdit)
+        layout.addWidget(self.color_swatch)
+        layout.addWidget(self.line_edit)
 
+    @property
     def color(self):
         """Return the current color."""
-        return self.colorSwatch.color()
+        return self.color_swatch.color
 
-    def _on_lineedit_edited(self):
+    def _on_line_edit_edited(self):
         """When the user hits enter or loses focus on the LineEdit widget."""
-        text = self.lineEdit.text()
+        text = self.line_edit.text()
         rgb_match = rgba_regex.match(text)
         if rgb_match:
             text = [float(x) for x in rgb_match.groups() if x]
-        self.colorSwatch.setColor(text)
+        self.color_swatch.setColor(text)
 
     @Slot(np.ndarray)
     def _on_swatch_changed(self, color: np.ndarray):
         """Receive QColorSwatch change event, update the lineEdit, re-emit."""
-        self.lineEdit.setText(color)
+        self.line_edit.setText(color)
         self.color_changed.emit(color)
 
 
 class QColorSwatch(QFrame):
-    """A QFrame that displays a color.
+    """A QFrame that displays a color and can be clicked to show a QColorPopup.
 
-    The internal color representation (self._color) is always a 1x4 np.ndarray
+    Parameters
+    ----------
+    parent : QWidget, optional
+        parent widget, by default None
+    tooltip : Optional[str], optional
+        Tooltip when hovering on swatch,
+        by default 'click to set color'
+    initial_color : ColorType, optional
+        initial color, by default will be transparent
+
+    Attributes
+    ----------
+    color : np.ndarray
+        The current color
+
+    Signals
+    -------
+    color_changed : np.ndarray
+        Emits the new color when the current color changes.
     """
 
     color_changed = Signal(np.ndarray)
@@ -116,18 +150,6 @@ class QColorSwatch(QFrame):
         tooltip: Optional[str] = None,
         initial_color: Optional[ColorType] = None,
     ):
-        """Create a new ColorSwatch
-
-        Parameters
-        ----------
-        parent : QWidget, optional
-            parent widget, by default None
-        tooltip : Optional[str], optional
-            Tooltip when hovering on swatch,
-            by default 'click to set color'
-        initial_color : ColorType, optional
-            initial color, by default will be transparent
-        """
         super().__init__(parent)
         self.setObjectName('colorSwatch')
         self.setToolTip(tooltip or 'click to set color')
@@ -138,6 +160,7 @@ class QColorSwatch(QFrame):
         if initial_color is not None:
             self.setColor(initial_color)
 
+    @property
     def color(self):
         """Return the current color"""
         return self._color
@@ -148,7 +171,7 @@ class QColorSwatch(QFrame):
         rgba = f'rgba({",".join(map(lambda x: str(int(x*255)), self._color))})'
         self.setStyleSheet('#colorSwatch {background-color: ' + rgba + ';}')
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QEvent):
         """Show QColorPopup picker when the user clicks on the swatch."""
         if event.button() == Qt.LeftButton:
             initial = QColor(*(255 * self._color).astype('int'))
@@ -179,7 +202,13 @@ class QColorSwatch(QFrame):
 
 
 class QColorLineEdit(QLineEdit):
-    """A LineEdit that takes hex, rgb, or autocompletes common color names."""
+    """A LineEdit that takes hex, rgb, or autocompletes common color names.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        The parent widget, by default None
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -210,7 +239,7 @@ class CustomColorDialog(QColorDialog):
         super().__init__(parent=parent)
         self.setObjectName('CustomColorDialog')
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QEvent):
         event.ignore()
 
 
@@ -220,12 +249,26 @@ class QColorPopup(QtPopup):
     Allows all of the show methods of QtPopup (like show relative to mouse).
     Passes through signals from the ColorDialogm, and handles some keypress
     events.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        The parent widget. by default None
+    initial_color : AnyColorType, optional
+        The initial color set in the color dialog, by default None
+
+    Attributes
+    ----------
+    color_dialog : CustomColorDialog
+        The main color dialog in the popup
     """
 
     currentColorChanged = Signal(QColor)
     colorSelected = Signal(QColor)
 
-    def __init__(self, parent=None, initial=None):
+    def __init__(
+        self, parent: QWidget = None, initial_color: AnyColorType = None
+    ) -> None:
         super().__init__(parent)
         self.setObjectName('QtColorPopup')
         self.color_dialog = CustomColorDialog(self)
@@ -244,17 +287,24 @@ class QColorPopup(QtPopup):
         )
         self.color_dialog.colorSelected.connect(self._on_color_selected)
         self.color_dialog.rejected.connect(self._on_rejected)
-        self.color_dialog.setCurrentColor(QColor(initial))
+        self.color_dialog.setCurrentColor(QColor(initial_color))
 
-    def _on_color_selected(self, color):
+    def _on_color_selected(self, color: QColor):
+        """When a color has beeen selected and the OK button clicked."""
         self.colorSelected.emit(color)
         self.close()
 
     def _on_rejected(self):
         self.close()
 
-    def keyPressEvent(self, event):
-        """Accept current color on enter, cancel on escape."""
+    def keyPressEvent(self, event: QKeyEvent):
+        """Accept current color on enter, cancel on escape.
+
+        Parameters
+        ----------
+        event : QKeyEvent
+            The keypress event that triggered this method.
+        """
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             return self.color_dialog.accept()
         if event.key() == Qt.Key_Escape:
