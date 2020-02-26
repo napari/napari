@@ -10,9 +10,9 @@ class InteractionBox:
     points : list
         Nx2 array of points whose interaction box is to be found
     show : bool
-        Bool indicated whether the box sould be drawn
+        Bool indicating whether the box should be drawn
     show_handle : bool
-        Bool indicates whether the the full box with midpoints and rotation handle should be drawn.
+        Bool indicating whether the full box with midpoints and rotation handle should be drawn.
         If False only the corners are drawn.
 
     """
