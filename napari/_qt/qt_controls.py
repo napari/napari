@@ -14,7 +14,6 @@ class QtControls(QStackedWidget):
         self.addWidget(self.empty_widget)
         self._display(None)
 
-        self.viewer.layers.events.added.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         self.viewer.events.active_layer.connect(self._display)
 
@@ -49,6 +48,7 @@ class QtControls(QStackedWidget):
         controls = create_qt_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
+        return controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.

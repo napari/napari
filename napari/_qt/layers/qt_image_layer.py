@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QSlider
+from ...utils.event import Event
 from .qt_image_base_layer import QtBaseImageControls
 from ...layers.image._constants import Interpolation, Rendering
 
@@ -8,7 +9,8 @@ class QtImageControls(QtBaseImageControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.events.add(interpolation=Event)
+
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
@@ -20,7 +22,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.interpolation, Qt.MatchFixedString
         )
         interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(self.changeInterpolation)
+        interp_comboBox.activated[str].connect(self.emit_interpolation_event)
         self.interpComboBox = interp_comboBox
         self.interpLabel = QLabel('interpolation:')
 
@@ -80,8 +82,12 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setVerticalSpacing(4)
 
-    def changeInterpolation(self, text):
-        self.layer.interpolation = text
+    def emit_interpolation_event(self, text):
+        self.events.interpolation(interpolation=text)
+
+    def set_interpolation(self, text):
+        index = self.interpComboBox.findText(text, Qt.MatchFixedString)
+        self.interpComboBox.setCurrentIndex(index)
 
     def changeRendering(self, text):
         self.layer.rendering = text
@@ -102,13 +108,6 @@ class QtImageControls(QtBaseImageControls):
     def _on_attenuation_change(self, event):
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(self.layer.attenuation * 100)
-
-    def _on_interpolation_change(self, event):
-        with self.layer.events.interpolation.blocker():
-            index = self.interpComboBox.findText(
-                self.layer.interpolation, Qt.MatchFixedString
-            )
-            self.interpComboBox.setCurrentIndex(index)
 
     def _on_rendering_change(self, event):
         with self.layer.events.rendering.blocker():

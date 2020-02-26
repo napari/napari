@@ -32,6 +32,9 @@ from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
 
+from .._controllers import layer_to_controller
+from .layers import create_qt_controls
+
 
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
@@ -136,6 +139,9 @@ class QtViewer(QSplitter):
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
 
+        # This dict holds coresponding controllers for each layer
+        self.layer_controllers = {}
+
         if self.console.shell is not None:
             self.viewerButtons.consoleButton.clicked.connect(
                 lambda: self.toggle_console()
@@ -218,7 +224,6 @@ class QtViewer(QSplitter):
 
     def _add_layer(self, event):
         """When a layer is added, set its parent and order.
-
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
@@ -226,11 +231,24 @@ class QtViewer(QSplitter):
         """
         layers = event.source
         layer = event.item
+
+        # make vispy layer
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers)
         self.layer_to_visual[layer] = vispy_layer
+
+        # make qt_controls
+        controls = create_qt_controls(layer)
+        self.controls.addWidget(controls)
+        self.controls.widgets[layer] = controls
+
+        # make event controller
+        layer_controller = layer_to_controller[type(layer)](
+            layer=layer, qt_controls=controls, vispy_layer=vispy_layer
+        )
+        self.layer_controllers[layer] = layer_controller
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent.
@@ -244,7 +262,9 @@ class QtViewer(QSplitter):
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
+        # TODO evnetualy delete the layer to visual stuff. Should be in controller
         del self.layer_to_visual[layer]
+        del self.layer_controllers[layer]
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.

@@ -213,7 +213,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._contrast_limits = tuple(self.contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
-        self.interpolation = interpolation
+        self._set_interpolation(interpolation)
         self.rendering = rendering
 
         # Trigger generation of view slice and thumbnail
@@ -335,10 +335,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @interpolation.setter
     def interpolation(self, interpolation):
+        self.events.interpolation(interpolation=interpolation)
+
+    def _set_interpolation(self, interpolation):
         if isinstance(interpolation, str):
             interpolation = Interpolation(interpolation)
         self._interpolation = interpolation
-        self.events.interpolation()
 
     @property
     def rendering(self):

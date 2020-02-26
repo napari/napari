@@ -6,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QComboBox, QLabel, QSlider, QPushButton
 
+from ...utils.event import EmitterGroup
 from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
 from ..utils import qt_signals_blocked
@@ -15,6 +16,9 @@ from .qt_base_layer import QtLayerControls
 class QtBaseImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
+
+        # initialize qt events
+        self.events = EmitterGroup()
 
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.gamma.connect(self.gamma_slider_update)
