@@ -21,13 +21,11 @@ New Features
 Improvements
 ************
 - Allow 3D point selection via API (#907)
-- Abstract the construction of view/viewermodel (#957)
 - Add show param to Viewer (#961)
-- Remove duplicated imports in setup.py (#969)
 - Make mouse drag attributes private in qt_layerlist (#974)
-- Rename attribute on QtViewerDockWidget (#975)
+- Rename `viewer` attribute on QtViewerDockWidget to `qt_viewer`(#975)
 - Allow LayerList to be initialized by passing in a list of layers (#979)
-- Rename list input arguments (#980)
+- Rename `object` to `item` in list input arguments (#980)
 - Add layers.events.changed event (#982)
 
 Bugfixes
@@ -36,8 +34,8 @@ Bugfixes
 - Fix points thumbnail (#934)
 - Fix 4D ellipses (#950)
 - Fix Points highlight bug index (Points-data6-3 test) (#972)
-- Fix viewer view_* func signature parity (#976)
 - Fix labels colormap by updating computation of low discrepancy images (#985)
+- Pin jupyter-client<6.0.0 (#997)
 
 Support
 *******
@@ -46,11 +44,14 @@ Support
 - Remove 'in-depth' descriptor for tutorials (#949)
 - Flatten auto-generated docs repo (#954)
 - Fix bash codeblock in README.md (#956)
+- Abstract the construction of view/viewermodel (#957)
 - Add docstrings to qt_layerlist.py (#958)
 - Fix docs url (#960)
 - Fix docs script (#963)
 - Fix docs version tag (#964)
 - Disallow sphinx 2.4.0; bug fixed in 2.4.1 (#965)
+- Remove duplicated imports in setup.py (#969)
+- Fix viewer view_* func signature parity (#976)
 
 11 authors added to this release [alphabetical by first name or login]
 ----------------------------------------------------------------------
