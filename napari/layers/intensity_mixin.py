@@ -51,12 +51,14 @@ class IntensityVisualizationMixin:
 
     @colormap.setter
     def colormap(self, colormap):
+        self.events.colormap(value=colormap)
+
+    def _on_colormap_change(self, colormap):
         name, cmap = ensure_colormap_tuple(colormap)
         self._colormap_name = name
         self._cmap = cmap
         self._colorbar = make_colorbar(self._cmap)
         self._update_thumbnail()
-        self.events.colormap()
 
     @property
     def colormaps(self):
@@ -70,6 +72,9 @@ class IntensityVisualizationMixin:
 
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
+        self.events.contrast_limits(value=contrast_limits)
+
+    def _on_contrast_limits(self, contrast_limits):
         validate_2_tuple(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
@@ -84,7 +89,6 @@ class IntensityVisualizationMixin:
         newrange[1] = max(newrange[1], contrast_limits[1])
         self.contrast_limits_range = newrange
         self._update_thumbnail()
-        self.events.contrast_limits()
 
     @property
     def contrast_limits_range(self):
@@ -121,7 +125,9 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
+        self.events.gamma(value=value)
+
+    def _on_gamma(self, value):
         self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()
-        self.events.gamma()

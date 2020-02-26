@@ -5,8 +5,10 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
 
+from napari.layers.base._base_layer_interface import BaseLayerInterface
 
-class VispyBaseLayer(ABC):
+
+class VispyBaseLayer(ABC, BaseLayerInterface):
     """Base object for individual layer views
 
     Meant to be subclassed.
@@ -55,12 +57,6 @@ class VispyBaseLayer(ABC):
         self._position = (0,) * self.layer.dims.ndisplay
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
-        self.layer.events.set_data.connect(self._on_data_change)
-        self.layer.events.visible.connect(self._on_visible_change)
-        self.layer.events.opacity.connect(self._on_opacity_change)
-        self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.scale.connect(self._on_scale_change)
-        self.layer.events.translate.connect(self._on_translate_change)
 
     @property
     def _master_transform(self):

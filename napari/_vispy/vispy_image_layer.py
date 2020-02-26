@@ -1,3 +1,4 @@
+from napari.layers.image.image_interface import ImageLayerInterface
 import warnings
 from vispy.scene.visuals import Image as ImageNode
 from .volume import Volume as VolumeNode
@@ -16,20 +17,10 @@ texture_dtypes = [
 ]
 
 
-class VispyImageLayer(VispyBaseLayer):
+class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
-
-        self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
-        self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(
-            self._on_contrast_limits_change
-        )
-        self.layer.events.gamma.connect(self._on_gamma_change)
-        self.layer.events.iso_threshold.connect(self._on_threshold_change)
-        self.layer.events.attenuation.connect(self._on_threshold_change)
 
         self._on_display_change()
         self._on_data_change()
@@ -98,16 +89,16 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_translate_change()
         self.node.update()
 
-    def _on_interpolation_change(self, event=None):
-        self.node.interpolation = self.layer.interpolation
+    def _on_interpolation_change(self, interpolation):
+        self.node.interpolation = interpolation
 
-    def _on_rendering_change(self, event=None):
+    def _on_rendering_change(self, value):
         if self.layer.dims.ndisplay == 3:
-            self.node.method = self.layer.rendering
-            self._on_threshold_change()
+            self.node.method = value
+            self._on_iso_threshold_change(value=None)
 
-    def _on_colormap_change(self, event=None):
-        cmap = self.layer.colormap[1]
+    def _on_colormap_change(self, value=None):
+        cmap = value if value else self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap
             # with 256 control points from 0-1
@@ -120,31 +111,31 @@ class VispyImageLayer(VispyBaseLayer):
             )
         self.node.cmap = cmap
 
-    def _on_contrast_limits_change(self, event=None):
+    def _on_contrast_limits_change(self, contrast_limits):
         if self.layer.dims.ndisplay == 2:
-            self.node.clim = self.layer.contrast_limits
+            self.node.clim = contrast_limits
         else:
             self._on_data_change()
 
-    def _on_gamma_change(self, event=None):
-        self._on_colormap_change()
+    def _on_gamma_change(self, value):
+        self._on_colormap_change(value=None)
 
-    def _on_threshold_change(self, event=None):
+    def _on_iso_threshold_change(self, value):
+        value = value if value else self.layer.iso_threshold
         if self.layer.dims.ndisplay == 2:
             return
         rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
-            self.node.threshold = float(self.layer.iso_threshold)
+            self.node.threshold = float(value)
         elif rendering == Rendering.ATTENUATED_MIP:
             self.node.threshold = float(self.layer.attenuation)
 
     def reset(self, event=None):
         self._reset_base()
-        self._on_interpolation_change()
-        self._on_colormap_change()
-        self._on_rendering_change()
+        self._on_colormap_change(value=None)
+        self._on_rendering_change(value=None)
         if self.layer.dims.ndisplay == 2:
-            self._on_contrast_limits_change()
+            self._on_contrast_limits_change(self.layer.contrast_limits)
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

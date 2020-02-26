@@ -226,8 +226,10 @@ class EventEmitter(object):
         The class of events that this emitter will generate.
     """
 
-    def __init__(self, source=None, type=None, event_class=Event):
-        self._callbacks = []
+    def __init__(
+        self, source=None, type=None, event_class=Event, callback=None
+    ):
+        self._callbacks = [callback] if callback else []
         self._callback_refs = []
 
         # count number of times this emitter is blocked for each callback.
@@ -537,16 +539,23 @@ class EventEmitter(object):
             event = args[0]
             # Ensure that the given event matches what we want to emit
             assert isinstance(event, self.event_class)
-        elif not args:
-            args = self.default_args.copy()
-            args.update(kwargs)
-            event = self.event_class(**args)
-        else:
-            raise ValueError(
-                "Event emitters can be called with an Event "
-                "instance or with keyword arguments only."
-            )
-        return event
+            return event
+
+        if len(args) == 1:
+            if not kwargs:
+                # if an EventEmitter is called with a single argument (that is
+                # not an instance of self.event_class), assume that that
+                # argument is a value to be emitted.
+                kwargs['value'] = args[0]
+            else:
+                raise ValueError(
+                    "Event emitters may be called with an Event instance, "
+                    "a single argument, or with keyword arguments only."
+                    f"\ngot: args={args}, kwargs={kwargs} "
+                )
+        args = self.default_args.copy()
+        args.update(kwargs)
+        return self.event_class(**args)
 
     def blocked(self, callback=None):
         """Return boolean indicating whether the emitter is blocked for
@@ -665,10 +674,11 @@ class EmitterGroup(EventEmitter):
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
 
-    def __init__(self, source=None, auto_connect=True, **emitters):
+    def __init__(self, source=None, event_handler_callback=None, **emitters):
         EventEmitter.__init__(self, source)
+        # TODO CAN MAKE FIRST COMPONENT SOURCE
 
-        self.auto_connect = auto_connect
+        self.event_handler_callback = event_handler_callback
         self.auto_connect_format = "on_%s"
         self._emitters = OrderedDict()
         # whether the sub-emitters have been connected to the group:
@@ -705,8 +715,6 @@ class EmitterGroup(EventEmitter):
                       mouse_release=EventEmitter(group.source, 'mouse_press',
                                                  MouseEvent))
         """
-        if auto_connect is None:
-            auto_connect = self.auto_connect
 
         # check all names before adding anything
         for name in kwargs:
@@ -726,9 +734,18 @@ class EmitterGroup(EventEmitter):
                 emitter = Event
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):
-                emitter = EventEmitter(
-                    source=self.source, type=name, event_class=emitter
-                )
+                # TODO CAN GET RID OF THIS WHEN EVERYTHING WORKS
+                if self.event_handler_callback:
+                    emitter = EventEmitter(
+                        source=self.source,
+                        type=name,
+                        event_class=emitter,
+                        callback=self.event_handler_callback,
+                    )
+                else:
+                    emitter = EventEmitter(
+                        source=self.source, type=name, event_class=emitter,
+                    )
             elif not isinstance(emitter, EventEmitter):
                 raise Exception(
                     'Emitter must be specified as either an '
@@ -741,9 +758,6 @@ class EmitterGroup(EventEmitter):
 
             setattr(self, name, emitter)
             self._emitters[name] = emitter
-
-            if auto_connect and self.source is not None:
-                emitter.connect((self.source, self.auto_connect_format % name))
 
             # If emitters are connected to the group already, then this one
             # should be connected as well.

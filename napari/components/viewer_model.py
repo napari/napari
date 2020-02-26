@@ -5,7 +5,7 @@ import numpy as np
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
-from ..utils.event import EmitterGroup, Event
+from ..utils.event import Event, EmitterGroup
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 
@@ -439,7 +439,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
-        self.status = event.status
+        self.status = event.value
 
     def _update_help(self, event):
         """Set the viewer help with the `event.help` string."""
