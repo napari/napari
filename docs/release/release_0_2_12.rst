@@ -35,6 +35,7 @@ Bugfixes
 - Fix 4D ellipses (#950)
 - Fix Points highlight bug index (Points-data6-3 test) (#972)
 - Fix labels colormap by updating computation of low discrepancy images (#985)
+- Pin jupyter-client<6.0.0 (#997)
 
 Support
 *******
