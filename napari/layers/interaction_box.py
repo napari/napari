@@ -1,5 +1,5 @@
 import numpy as np
-from .shapes._constants import Box
+from ._constants import Box
 
 
 class InteractionBox:
@@ -77,7 +77,7 @@ class InteractionBox:
             if self._show_handle:
                 box = self._box[Box.WITH_HANDLE]
             else:
-                box = self._box[Box.LINE]
+                box = self._box[Box.WITHOUT_HANDLE]
 
             face_color = 'white'
 
@@ -86,9 +86,9 @@ class InteractionBox:
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
             if self._show_handle:
-                pos = box[Box.LINE_HANDLE][:, ::-1]
+                pos = self._box[Box.LINE_HANDLE][:, ::-1]
             else:
-                pos = box[Box.LINE][:, ::-1]
+                pos = self._box[Box.LINE][:, ::-1]
             width = self._highlight_width
         else:
             # Otherwise show nothing
@@ -126,7 +126,7 @@ class InteractionBox:
     def _create_box_from_points(self):
         """Creates the axis aligned interaction box from the list of points
         """
-        if self._points is None:
+        if self._points is None or len(self._points) < 1:
             self._box = None
             return
 
