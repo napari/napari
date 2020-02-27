@@ -71,7 +71,9 @@ linux_task:
     - pip install --retries 3 -r requirements.txt
     - python setup.py develop
 
-  check_script: python -c "import napari; print(napari.__version__)"
+  check_script:
+    - conda list
+    - python -c "import napari; print(napari.__version__)"
 
   test_pyside2_script: pytest -v
 
@@ -123,7 +125,9 @@ mac_task:
     - pip install --retries 3 -r requirements.txt
     - python setup.py develop
 
-  check_script: python -c "import napari; print(napari.__version__)"
+  check_script:
+    - conda list
+    - python -c "import napari; print(napari.__version__)"
 
   test_script: pytest -v
 
@@ -185,7 +189,9 @@ win_task:
     - pip install --retries 3 -r requirements.txt
     - python setup.py develop
 
-  check_script: python -c "import napari; print(napari.__version__)"
+  check_script:
+    - conda list
+    - python -c "import napari; print(napari.__version__)"
 
   test_script: pytest -v -o qt_no_exception_capture=1
 

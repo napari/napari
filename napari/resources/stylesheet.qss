@@ -41,6 +41,14 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
 
+QAbstractSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+}
+
+QAbstractSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+}
+
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 QtLayerList {
   border: 1px solid {{ background }};
@@ -399,18 +407,6 @@ QtLayerControls > QLabel#colorbar {
   min-width: 32px;
   max-width: 32px;
   qproperty-alignment: AlignCenter;
-}
-
-QtLayerControls > QFrame#swatch {
-   background-color: {{ foreground }};
-   border: none;
-   padding: 0px;
-   margin: 0px;
-   border-radius: 1px;
-   min-height: 18px;
-   max-height: 18px;
-   min-width: 18px;
-   max-width: 18px;
 }
 
 QtLayerControls > QHRangeSlider {
@@ -1200,6 +1196,34 @@ QtPlayButton[playing=True] {
    border-radius: 3px;
 }
 
+
+QFrame#colorSwatch {
+   background-color: {{ foreground }};
+   border: none;
+   padding: 0px;
+   margin: 0px;
+   border-radius: 1px;
+   min-height: 22px;
+   max-height: 22px;
+   min-width: 22px;
+   max-width: 22px;
+}
+
+
+#QtColorPopup{
+  background-color: transparent;
+}
+
+#CustomColorDialog QPushButton {
+  padding: 4px 10px;
+}
+
+#CustomColorDialog QLabel {
+  background-color: {{ background }};
+  color: {{ secondary }};
+}
+
+
 #slice_label {
   background-color: transparent;
   color: {{ secondary }};
@@ -1217,4 +1241,3 @@ QtPlayButton[playing=True] {
   background-color: {{ background }};
   border: 1px solid {{ primary }};
 }
-
