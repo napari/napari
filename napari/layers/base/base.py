@@ -9,6 +9,7 @@ from typing import List, Optional, Tuple, Union
 
 import magicgui as mgui
 import numpy as np
+from ..interaction_box import InteractionBox
 
 from ...utils._dask_utils import configure_dask
 from ...utils._magicgui import add_layer_to_viewer, get_layers
@@ -280,6 +281,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._interaction_box = InteractionBox()
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)

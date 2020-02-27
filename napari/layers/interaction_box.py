@@ -1,5 +1,7 @@
 import numpy as np
+
 from ._constants import Box
+from ..utils.event import EmitterGroup, Event
 
 
 class InteractionBox:
@@ -27,6 +29,15 @@ class InteractionBox:
         self._points = points
         self._show = show
         self._show_handle = show_handle
+
+        self.events = EmitterGroup(
+            source=self,
+            auto_connect=False,
+            points_changed=Event,
+            rotated=Event,
+            scaled=Event,
+            dragged=Event,
+        )
         self._create_box_from_points()
         self._add_rotation_handle()
 
@@ -39,6 +50,7 @@ class InteractionBox:
         self._points = points
         self._create_box_from_points()
         self._add_rotation_handle()
+        self.events.points_changed()
 
     @property
     def show(self):
@@ -47,6 +59,7 @@ class InteractionBox:
     @show.setter
     def show(self, show):
         self._show = show
+        self.events.points_changed()
 
     @property
     def show_handle(self):
@@ -55,6 +68,7 @@ class InteractionBox:
     @show_handle.setter
     def show_handle(self, show_handle):
         self._show_handle = show_handle
+        self.events.points_changed()
 
     def _compute_vertices_and_box(self):
         """Compute location of the box for rendering.

@@ -3,7 +3,7 @@ class Box:
     """
 
     WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
-    LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]
+    LINE_HANDLE = [7, 6, 4, 2, 0, 7, 9]
     WITHOUT_HANDLE = [0, 2, 4, 6]
     LINE = [0, 2, 4, 6, 0]
     TOP_LEFT = 0
