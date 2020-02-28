@@ -3,14 +3,8 @@ import numpy as np
 
 from .. import layers
 from ..utils import colormaps, io
-from ..utils.magic import magic_name
+from ..utils.naming import guess_name as _guess_name
 from ..utils.misc import ensure_iterable, is_iterable
-
-
-def _guess_name(name, data):
-    if name is None and data is not None:
-        return magic_name(data, level=2)
-    return name
 
 
 class AddLayersMixin:

@@ -1,11 +1,5 @@
 from .viewer import Viewer
-from .utils.magic import magic_name
-
-
-def _guess_name(name, data):
-    if name is None and data is not None:
-        return magic_name(data, level=2)
-    return name
+from .utils.naming import guess_name as _guess_name
 
 
 def view_image(
