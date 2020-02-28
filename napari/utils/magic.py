@@ -6,10 +6,7 @@ Set the ``MAGICNAME`` variable in the environment or this module to enable magic
 import inspect
 
 from collections import ChainMap
-from os import environ
-
-
-MAGICNAME = bool(environ.get('MAGICNAME'))
+import os
 
 
 def magic_name(value, *, level=1):
@@ -25,7 +22,7 @@ def magic_name(value, *, level=1):
     if level < 1:
         raise ValueError('cannot have a level lower than 1')
 
-    if not MAGICNAME:
+    if not os.getenv('MAGICNAME'):
         return
 
     level += 1

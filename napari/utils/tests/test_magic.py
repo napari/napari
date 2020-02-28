@@ -1,12 +1,11 @@
-from sys import version_info
+import os
+import sys
 
 from napari.utils.magic import magic_name
-from napari.utils import magic
-
-magic.MAGICNAME = 1
 
 
-walrus = version_info >= (3, 8)
+os.environ['MAGICNAME'] = '1'
+walrus = sys.version_info >= (3, 8)
 
 
 def test_basic():
