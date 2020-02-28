@@ -36,7 +36,7 @@ class VispyInteractionBox:
         """Called whenever the interaction box changed.
         """
         if self.layer is None:
-            self.marker_node.set_data(np.empty((0, 2)))
+            self.marker_node.set_data(np.zeros((1, 2)))
             self.line_node.set_data(np.zeros((1, 2)))
             return
 
