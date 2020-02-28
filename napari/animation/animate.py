@@ -363,7 +363,8 @@ class Animation:
                 writer.append_data(frame)
             else:
                 skimage.io.imsave(
-                    folder_path.joinpath(path.stem + '_' + str(ind) + '.png'), frame
+                    folder_path.joinpath(path.stem + '_' + str(ind) + '.png'),
+                    frame,
                 )
 
         if not save_as_folder:
