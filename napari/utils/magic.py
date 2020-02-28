@@ -1,6 +1,6 @@
 """Utilities that provide magic functionality.
 
-Set the ``MAGICNAME`` variable in the environment or this module to enable magic naming.
+Set the ``MAGICNAME`` environment variable to a none-null value to enable magic naming.
 """
 
 import inspect
