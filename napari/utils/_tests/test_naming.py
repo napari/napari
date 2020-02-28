@@ -98,10 +98,11 @@ def test_assignment():
 
     t = 3
     result = inner(t)
-    assert inner(t) == 't'
+    assert result == 't'
 
     if walrus:
-        result = eval('inner(d:=42)') == 'd'
+        result = eval('inner(d:=42)')
+        assert result == 'd'
 
 
 def test_nesting():
