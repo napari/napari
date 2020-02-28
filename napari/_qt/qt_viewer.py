@@ -56,6 +56,7 @@ if TYPE_CHECKING:
 
 from ..settings import get_settings
 from ..utils.io import imsave_extensions
+from .._vispy.vispy_interaction_box import VispyInteractionBox
 
 
 class QtViewer(QSplitter):
@@ -187,6 +188,10 @@ class QtViewer(QSplitter):
         self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
         self._canvas_overlay.set_welcome_visible(show_welcome_screen)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
+
+        self._interaction_box_visual = VispyInteractionBox(viewer)
+        self._interaction_box_visual.node.parent = self.view.scene
+        self._interaction_box_visual.node.order = len(self.viewer.layers) + 1
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -427,6 +432,7 @@ class QtViewer(QSplitter):
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(self.viewer.layers) - 1
         self.layer_to_visual[layer] = vispy_layer
+        self._interaction_box_visual.node.order = len(self.viewer.layers) + 1
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent.
