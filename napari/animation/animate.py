@@ -1,7 +1,9 @@
 import imageio
 import copy
 import skimage.transform
+import skimage.io
 import numpy as np
+from pathlib import Path
 
 from . import util
 
@@ -301,7 +303,8 @@ class Animation:
         -------
         name : str
             name to use for saving the movie (can also be a path)
-            should be either .mp4 or .gif
+            should be either .mp4 or .gif. If no extension is provided,
+            images are saved as a folder of PNGs
         fps : int
             frames per second
         quality: float
@@ -320,20 +323,48 @@ class Animation:
         # create a frame generator
         frame_gen = self.frame_generator(with_viewer=with_viewer)
 
-        # create imageio writer and add all frames
-        if quality is not None:
-            writer = imageio.get_writer(
-                name, fps=fps, quality=quality, format=format,
-            )
-        else:
-            writer = imageio.get_writer(name, fps=fps, format=format)
+        # create path object
+        path = Path(name)
+
+        # if path has no extension, save as fold of PNG
+        save_as_folder = False
+        if path.suffix == "":
+            save_as_folder = True
+
+        # try to create an ffmpeg writer. If not installed default to folder creation
+        if not save_as_folder:
+            try:
+                # create imageio writer and add all frames
+                if quality is not None:
+                    writer = imageio.get_writer(
+                        name, fps=fps, quality=quality, format=format,
+                    )
+                else:
+                    writer = imageio.get_writer(name, fps=fps, format=format)
+            except ImportError as err:
+                print(err)
+                print('Your movie will be saved as a series of PNG files.')
+                save_as_folder = True
+
+        # if movie is saved as series of PNG, create a folder
+        if save_as_folder:
+            folder_path = path.absolute()
+            folder_path = path.parent.joinpath(path.stem)
+            folder_path.mkdir(exist_ok=True)
 
         # save frames
-        for frame in frame_gen:
+        for ind, frame in enumerate(frame_gen):
             if scale_factor is not None:
                 frame = skimage.transform.rescale(
                     frame, scale_factor, multichannel=True, preserve_range=True
                 )
                 frame = frame.astype(np.uint8)
-            writer.append_data(frame)
-        writer.close()
+            if not save_as_folder:
+                writer.append_data(frame)
+            else:
+                skimage.io.imsave(
+                    folder_path.joinpath(path.stem + '_' + str(ind) + '.png'), frame
+                )
+
+        if not save_as_folder:
+            writer.close()
