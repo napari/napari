@@ -9,6 +9,7 @@ class VispyInteractionBox:
         self.node = Compound([Line(), Markers()])
         self.layer = None
         self._viewer.events.active_layer.connect(self._on_active_layer_change)
+        self._on_interaction_box_change()
 
     @property
     def marker_node(self):

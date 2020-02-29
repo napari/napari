@@ -175,6 +175,9 @@ class InteractionBox:
     def initialize_mouse_events(self, layer):
         @layer.mouse_move_callbacks.append
         def mouse_move(layer, event):
+            if not self.show or self._box is None:
+                return
+
             box = self._box[Box.WITH_HANDLE]
             coord = [layer.coordinates[i] for i in layer.dims.displayed]
             distances = abs(box - coord)
