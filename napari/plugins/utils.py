@@ -1,8 +1,9 @@
 from . import PluginError, log_plugin_error
 from . import plugin_manager as napari_plugin_manager
 from ._hookexec import _hookexec
-from typing import Union, List, Set
+from typing import Union, List, Set, Optional
 from types import ModuleType
+from ..types import LayerData
 from pluggy.hooks import HookImpl, _HookCaller
 
 HookOrderType = Union[List[str], List[ModuleType], List[HookImpl]]
@@ -97,7 +98,9 @@ def permute_hook_implementations(
     hook_caller._nonwrappers = _nonwraps
 
 
-def get_layer_data_from_plugins(path: str, plugin_manager=None):
+def get_layer_data_from_plugins(
+    path: str, plugin_manager=None
+) -> Optional[LayerData]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -149,5 +152,9 @@ def get_layer_data_from_plugins(path: str, plugin_manager=None):
             err.__cause__ = exc  # like `raise PluginError() from exc`
             # store the exception for later retrieval
             plugin_manager._exceptions[imp.plugin_name].append(err)
-            log_plugin_error(err)  # let the user know
             skip_imps.append(imp)  # don't try this impl again
+            if imp.plugin_name != 'builtins':
+                # If builtins doesn't work, they will get a "no reader" found
+                # error anyway, so it looks a bit weird to show them that the
+                # "builtin plugin" didn't work.
+                log_plugin_error(err)  # let the user know

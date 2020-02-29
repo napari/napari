@@ -20,14 +20,10 @@ imperative.
 """
 
 import pluggy
-from typing import Callable, Optional, List, Tuple, Union, Any, Dict
+from typing import Optional
+from ..types import ReaderFunction
 
 napari_hook_specification = pluggy.HookspecMarker("napari")
-
-# layer data may be: (data,) (data, meta), or (data, meta, layer_type)
-# using "Any" for the data type for now
-LayerData = Union[Tuple[Any], Tuple[Any, Dict], Tuple[Any, Dict, str]]
-ReaderFunction = Callable[[str], List[LayerData]]
 
 
 @napari_hook_specification(firstresult=True)

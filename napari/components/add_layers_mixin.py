@@ -1,5 +1,6 @@
 import itertools
-from typing import List, Optional, Union
+from logging import getLogger
+from typing import Sequence, List, Optional, Union
 
 import numpy as np
 
@@ -7,6 +8,8 @@ from .. import layers
 from ..plugins.utils import get_layer_data_from_plugins
 from ..utils import colormaps, io
 from ..utils.misc import ensure_iterable, is_iterable
+
+logger = getLogger(__name__)
 
 
 class AddLayersMixin:
@@ -49,7 +52,7 @@ class AddLayersMixin:
 
     def add_path(
         self,
-        path: Union[str, List[str]],
+        path: Union[str, Sequence[str]],
         stack: bool = False,
         use_dask: Optional[bool] = None,
     ) -> List[layers.Layer]:
@@ -70,29 +73,31 @@ class AddLayersMixin:
             one image, False otherwise.  by default None.
         """
         paths = [path] if isinstance(path, str) else path
-        if not isinstance(path, (tuple, list)):
+        if not isinstance(paths, (tuple, list)):
             raise ValueError(
                 "'path' argument must be a string, list, or tuple"
             )
 
         added_layers: List[layers.Layer] = []
         if stack:
-            images = io.magic_imread(path, use_dask=use_dask, stack=stack)
+            images = io.magic_imread(paths, use_dask=use_dask, stack=stack)
             added = self.add_image(images)
             added = added if isinstance(added, list) else [added]
             added_layers.extend(added)
             return added
 
         # iterate through each path provided, looking for a suitable reader
-        for path in paths:
-            layer_data = get_layer_data_from_plugins(path)
+        for _path in paths:
+            layer_data = get_layer_data_from_plugins(_path)
             if layer_data:
                 for data in layer_data:
                     added = self._add_layer_from_data(*data)
                     added = added if isinstance(added, list) else [added]
                     added_layers.extend(added)
             else:
-                print(f"No reader found for {path}")
+                logger.error(
+                    f'No plugin found capable of reading path: {_path}.'
+                )
 
         return added_layers
 
