@@ -3,13 +3,11 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 # set vispy to use same backend as qtpy
-import os
-
 from skimage.io import imsave
 
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import resources_dir
+from ..resources import combine_stylesheets
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
@@ -45,8 +43,7 @@ class Window:
         Contained viewer widget.
     """
 
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
+    raw_stylesheet = combine_stylesheets()
 
     def __init__(self, qt_viewer, *, show=True):
 

@@ -5,6 +5,8 @@
     <file>icons/light/2D.svg</file>
     <file>icons/light/3D.svg</file>
     <file>icons/light/add.svg</file>
+    <file>icons/light/check.svg</file>
+    <file>icons/light/circle.svg</file>
     <file>icons/light/copy_to_clipboard.svg</file>
     <file>icons/light/console.svg</file>
     <file>icons/light/delete.svg</file>
@@ -53,6 +55,8 @@
     <file>icons/dark/2D.svg</file>
     <file>icons/dark/3D.svg</file>
     <file>icons/dark/add.svg</file>
+    <file>icons/dark/check.svg</file>
+    <file>icons/dark/circle.svg</file>
     <file>icons/dark/copy_to_clipboard.svg</file>
     <file>icons/dark/console.svg</file>
     <file>icons/dark/delete.svg</file>

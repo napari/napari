@@ -53,7 +53,7 @@ class QRangeSlider(QWidget):
         """
         super().__init__(parent)
         self.handle_radius = 8
-        self.slider_width = 8
+        self.slider_width = 6
         self.moving = "none"
         self.collapsible = collapsible
         self.collapsed = collapsed
@@ -380,7 +380,7 @@ class QHRangeSlider(QRangeSlider):
         # Background
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
-        painter.drawRect(0, halfdiff, w, self.slider_width)
+        painter.drawRoundedRect(0, halfdiff, w, self.slider_width, 2, 2)
 
         # Range Bar
         painter.setPen(self.bar_color)
@@ -474,7 +474,7 @@ class QVRangeSlider(QRangeSlider):
         # Background
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
-        painter.drawRect(halfdiff, 0, self.slider_width, h)
+        painter.drawRoundedRect(halfdiff, 0, self.slider_width, h, 2, 2)
 
         # Range Bar
         painter.setPen(self.bar_color)

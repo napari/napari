@@ -20,6 +20,8 @@ icons = [
     '2D',
     '3D',
     'add',
+    'check',
+    'circle',
     'console',
     'copy_to_clipboard',
     'delete',
