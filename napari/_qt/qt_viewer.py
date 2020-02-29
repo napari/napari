@@ -460,7 +460,7 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
+            # Line bellow needed until layer mouse callbacks are refactored!
             self.layer_to_visual[layer].on_mouse_press(event)
             mouse_press_callbacks(layer, event)
 
@@ -479,7 +479,7 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
+            # Line bellow needed until layer mouse callbacks are refactored!
             self.layer_to_visual[layer].on_mouse_move(event)
             mouse_move_callbacks(layer, event)
 
@@ -495,7 +495,7 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
+            # Line bellow needed until layer mouse callbacks are refactored!
             self.layer_to_visual[layer].on_mouse_release(event)
             mouse_release_callbacks(layer, event)
 

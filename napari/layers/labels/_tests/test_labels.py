@@ -2,7 +2,6 @@ import numpy as np
 from xml.etree.ElementTree import Element
 from vispy.color import Colormap
 from napari.layers import Labels
-import collections
 
 
 def test_random_labels():
@@ -366,21 +365,3 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == 1
     assert type(xml[0]) == Element
-
-
-def test_mouse_move():
-    """Test painting labels with different brush sizes."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(20, 20))
-    layer = Labels(data)
-    layer.brush_size = 10
-    layer.mode = 'paint'
-    layer.selected_label = 3
-    layer._last_cursor_coord = (0, 0)
-    layer.coordinates = (19, 19)
-    Event = collections.namedtuple('Event', 'is_dragging')
-    event = Event(is_dragging=True)
-    layer.on_mouse_move(event)
-
-    assert np.unique(layer.data[:5, :5]) == 3
-    assert np.unique(layer.data[-5:, -5:]) == 3

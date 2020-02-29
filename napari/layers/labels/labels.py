@@ -1,5 +1,4 @@
 from collections import deque
-from copy import copy
 from typing import Union
 
 import numpy as np
@@ -8,7 +7,6 @@ from scipy import ndimage as ndi
 from ..image import Image
 from ...utils.colormaps import colormaps
 from ...utils.event import Event
-from .labels_utils import interpolate_coordinates
 from ...utils.status_messages import format_float
 from ._constants import Mode
 
@@ -526,59 +524,3 @@ class Labels(Image):
 
         if refresh is True:
             self.refresh()
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if self._mode == Mode.PAN_ZOOM:
-            # If in pan/zoom mode do nothing
-            pass
-        elif self._mode == Mode.PICKER:
-            self.selected_label = self._value or 0
-        elif self._mode == Mode.PAINT:
-            # Start painting with new label
-            self._save_history()
-            self._block_saving = True
-            self.paint(self.coordinates, self.selected_label)
-            self._last_cursor_coord = copy(self.coordinates)
-        elif self._mode == Mode.FILL:
-            # Fill clicked on region with new label
-            self.fill(self.coordinates, self._value, self.selected_label)
-        else:
-            raise ValueError("Mode not recognized")
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if self._mode == Mode.PAINT and event.is_dragging:
-            if self._last_cursor_coord is None:
-                interp_coord = [self.coordinates]
-            else:
-                interp_coord = interpolate_coordinates(
-                    self._last_cursor_coord, self.coordinates, self.brush_size
-                )
-            for c in interp_coord:
-                self.paint(c, self.selected_label, refresh=False)
-            self.refresh()
-            self._last_cursor_coord = copy(self.coordinates)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        self._last_cursor_coord = None
-        self._block_saving = False
