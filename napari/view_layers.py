@@ -27,6 +27,7 @@ def view_image(
     order=None,
     axis_labels=None,
     show=True,
+    headless=True,
 ):
     """Create a viewer and add an image layer.
 
@@ -108,7 +109,9 @@ def view_image(
     axis_labels : list of str
         Dimension names.
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation, by default True.
+    headless : bool, optional
+        In headless mode no graphical user interface is created.
 
     Returns
     -------
@@ -121,6 +124,7 @@ def view_image(
         order=order,
         axis_labels=axis_labels,
         show=show,
+        headless=headless,
     )
     viewer.add_image(
         data=data,
@@ -174,6 +178,7 @@ def view_points(
     order=None,
     axis_labels=None,
     show=True,
+    headless=True,
 ):
     """Create a viewer and add a points layer.
 
@@ -250,7 +255,9 @@ def view_points(
     axis_labels : list of str
         Dimension names.
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation, by default True.
+    headless : bool, optional
+        In headless mode no graphical user interface is created.
 
     Returns
     -------
@@ -268,6 +275,7 @@ def view_points(
         order=order,
         axis_labels=axis_labels,
         show=show,
+        headless=headless,
     )
     viewer.add_points(
         data=data,
@@ -314,6 +322,7 @@ def view_labels(
     order=None,
     axis_labels=None,
     show=True,
+    headless=True,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -364,7 +373,9 @@ def view_labels(
     axis_labels : list of str
         Dimension names.
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation, by default True.
+    headless : bool, optional
+        In headless mode no graphical user interface is created.
 
     Returns
     -------
@@ -377,6 +388,7 @@ def view_labels(
         order=order,
         axis_labels=axis_labels,
         show=show,
+        headless=headless,
     )
     viewer.add_labels(
         data=data,
@@ -415,6 +427,7 @@ def view_shapes(
     order=None,
     axis_labels=None,
     show=True,
+    headless=True,
 ):
     """Create a viewer and add a shapes layer.
 
@@ -480,7 +493,9 @@ def view_shapes(
     axis_labels : list of str
         Dimension names.
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation, by default True.
+    headless : bool, optional
+        In headless mode no graphical user interface is created.
 
     Returns
     -------
@@ -493,6 +508,7 @@ def view_shapes(
         order=order,
         axis_labels=axis_labels,
         show=show,
+        headless=headless,
     )
     viewer.add_shapes(
         data=data,
@@ -530,6 +546,7 @@ def view_surface(
     order=None,
     axis_labels=None,
     show=True,
+    headless=True,
 ):
     """Create a viewer and add a surface layer.
 
@@ -581,7 +598,9 @@ def view_surface(
     axis_labels : list of str
         Dimension names.
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation, by default True.
+    headless : bool, optional
+        In headless mode no graphical user interface is created.
 
     Returns
     -------
@@ -594,6 +613,7 @@ def view_surface(
         order=order,
         axis_labels=axis_labels,
         show=show,
+        headless=headless,
     )
     viewer.add_surface(
         data,
@@ -629,6 +649,7 @@ def view_vectors(
     order=None,
     axis_labels=None,
     show=True,
+    headless=True,
 ):
     """Create a viewer and add a vectors layer.
 
@@ -673,7 +694,9 @@ def view_vectors(
     axis_labels : list of str
         Dimension names.
     show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
+        Whether to show the viewer after instantiation, by default True.
+    headless : bool, optional
+        In headless mode no graphical user interface is created.
 
     Returns
     -------
@@ -686,6 +709,7 @@ def view_vectors(
         order=order,
         axis_labels=axis_labels,
         show=show,
+        headless=headless,
     )
     viewer.add_vectors(
         data,

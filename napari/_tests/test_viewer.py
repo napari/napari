@@ -158,3 +158,13 @@ def test_update(qtbot):
 
     # Close the viewer
     viewer.window.close()
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_add_layer_headless(qtbot, layer_class, data, ndim):
+    viewer = Viewer(headless=True)
+    assert viewer.window is None
+    assert viewer.screenshot() is None
+
+    _ = add_layer_by_type(viewer, layer_class, data, visible=True)
+    check_viewer_functioning(viewer, None, data, ndim)
