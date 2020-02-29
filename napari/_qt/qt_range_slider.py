@@ -374,7 +374,7 @@ class QHRangeSlider(QRangeSlider):
         """
         painter, w, h = QPainter(self), self.width(), self.height()
 
-        half_width = self.slider_width / 2
+        half_width = self.slider_width / 2 - 1
         halfdiff = h / 2 - half_width
 
         # Background
@@ -401,15 +401,15 @@ class QHRangeSlider(QRangeSlider):
         painter.setBrush(self.handle_color)
         painter.drawEllipse(
             self.display_min - self.handle_radius,
-            h / 2 - self.handle_radius,
-            self.handle_width,
-            self.handle_width,
+            h / 2 - self.handle_radius + 1,
+            self.handle_width - 1,
+            self.handle_width - 1,
         )  # left
         painter.drawEllipse(
             self.display_max - self.handle_radius,
-            h / 2 - self.handle_radius,
-            self.handle_width,
-            self.handle_width,
+            h / 2 - self.handle_radius + 1,
+            self.handle_width - 1,
+            self.handle_width - 1,
         )  # right
 
     def rangeSliderSize(self):

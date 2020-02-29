@@ -1,0 +1,86 @@
+QtViewer {
+   padding-top: 0px;
+}
+
+
+QtLayerButtons, QtViewerButtons, QtLayerList {
+  min-width: 242px;
+  max-width: 242px;
+}
+
+/* ------------- QMainWindow --------- */
+/* QDockWidgets will use the MainWindow styles
+as long as they are docked (though they use the
+style of QDockWidget when undocked) */
+
+
+QMainWindow::separator {
+    background: {{ foreground }};
+    width: 2px; /* when vertical */
+    height: 2px; /* when horizontal */
+}
+
+QMainWindow::separator:hover {
+    background: {{ highlight }};
+}
+
+/* ------------- DockWidgets --------- */
+
+#QtCustomTitleBar {
+  padding-top:3px;
+}
+
+#QtCustomTitleBar:hover {
+  background-color: {{ darken(background, 10) }};
+}
+
+#QtCustomTitleBarLine {
+  background-color: {{ foreground }};
+}
+
+#QtCustomTitleBar > QPushButton {
+  background-color: {{ background }};
+  max-width: 12px;
+  max-height: 12px;
+}
+
+#QtCustomTitleBar > QPushButton:hover {
+  background-color: {{ foreground }};
+}
+
+#QTitleBarCloseButton{
+    width: 10px;
+    height: 8px;
+    padding: 2 1 2 1;
+    image: url(":/icons/{{ folder }}/delete_shape.svg");
+}
+
+#QTitleBarFloatButton{
+    image: url(":/icons/{{ folder }}/pop_out.svg");
+    width: 10px;
+    height: 8px;
+    padding: 2 1 2 1;
+}
+
+/* ----------------- Console ------------------ */
+
+QtConsole {
+  min-height: 100px;
+}
+
+QtConsole > QPlainTextEdit, QTextEdit {
+                background-color: {{ console }};
+                background-clip: padding;
+                color: {{ text }};
+                selection-background-color: {{ highlight }};
+                margin: 10px;
+            }
+            .inverted {
+                background-color: {{ background }};
+                color: {{ foreground }};
+            }
+            .error { color: #b72121; }
+            .in-prompt-number { font-weight: bold; }
+            .out-prompt-number { font-weight: bold; }
+            .in-prompt { color: #6ab825; }
+            .out-prompt { color: #b72121; }

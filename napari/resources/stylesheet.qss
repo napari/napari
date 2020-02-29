@@ -1,5 +1,21 @@
 /* ----------------- General ------------------ */
 
+QRangeSlider {
+  qproperty-barColor: {{ highlight }};
+  qproperty-backgroundColor: {{ foreground }};
+  qproperty-handleColor: {{ highlight }};
+  qproperty-handleBorderColor: {{ highlight }};
+}
+
+QWidget {
+  background-color: {{ background }};
+  border: 0px;
+  padding: 0px;
+  color: {{ text }};
+  selection-background-color: {{ secondary }};
+  selection-color: {{ text }};
+}
+
 QtViewer {
    padding-top: 0px;
 }
@@ -25,16 +41,23 @@ QtConsole > QPlainTextEdit, QTextEdit {
             .in-prompt { color: #6ab825; }
             .out-prompt { color: #b72121; }
 
+QAbstractSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+}
+
+QAbstractSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+}
 
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 QtLayerList {
   border: 1px solid {{ background }};
-  min-width: 242px;
-  border-radius: 2px;
-  padding: 0px;
-  margin: 0px;
-  border: 0px;
-  margin-bottom: 4px;
+    min-width: 242px;
+    border-radius: 2px;
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+    margin-bottom: 4px;
 }
 
 QtLayerList {
@@ -44,8 +67,8 @@ QtLayerList {
 }
 
 QtLayerList QScrollBar:vertical {
-  max-width: 8px;
-  margin: 12px 0px;
+    max-width: 8px;
+    margin: 12px 0px;
 }
 
 QtLayerList QScrollBar::add-line:vertical {
@@ -63,6 +86,20 @@ QtLayerList QScrollBar:up-arrow, QtLayerList QScrollBar:down-arrow {
     width: 4px;
 }
 
+QLabel {
+   background-color: {{ foreground }};
+   qproperty-alignment: AlignLeft;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QStatusBar > QLabel { /* Help QLabel */
+  background-color: {{ background }};
+}
+
+QMenuBar::item:selected {
+   background-color: {{ secondary }};
+}
 
 QtAboutKeybindings {
   min-width: 600px;
@@ -78,6 +115,18 @@ QtAbout > QTextEdit{
 QtAbout > QLabel {
   background-color: {{ background }};
   qproperty-alignment: AlignLeft;
+}
+
+QTabBar::tab {
+  background-color: {{ foreground }};
+  border: 2px solid {{ background }};
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 4px;
+}
+
+QTabBar::tab:selected {
+  background-color: {{ highlight }};
 }
 
 QSplitter {

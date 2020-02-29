@@ -16,7 +16,6 @@ QWidget {
   color: {{ text }};
   selection-background-color: {{ secondary }};
   selection-color: {{ text }};
-  min-height: 18px;
 }
 
 /* ------------ QAbstractScrollArea ------------- */
@@ -28,6 +27,12 @@ QTextEdit {
   background-clip: padding;
   color: {{ text }};
   selection-background-color: {{ foreground }};
+  padding: 4px 2px 4px 4px;
+}
+
+/* the area behind the scrollbar */
+QTextEdit > QWidget {
+  background-color: {{ console }};
 }
 
 /* ----------------- QPushButton ------------------ */
@@ -36,6 +41,7 @@ QPushButton {
   background-color: {{ foreground }};
   border-radius: 2px;
   padding: 4px;
+  border: 0px;
 }
 
 QPushButton:hover {
@@ -44,6 +50,10 @@ QPushButton:hover {
 
 QPushButton:pressed {
   background-color: {{ highlight }};
+}
+
+QPushButton:disabled {
+  background-color: {{ background }};
 }
 
 /* ----------------- QComboBox ------------------ */
@@ -234,6 +244,7 @@ QRangeSlider {
   qproperty-backgroundColor: {{ foreground }};
   qproperty-handleColor: {{ secondary }};
   qproperty-handleBorderColor: {{ secondary }};
+  min-height: 18px;
 }
 
 /* ----------------- QScrollBar ------------------ */

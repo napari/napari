@@ -1,0 +1,231 @@
+
+/* ----------------- Buttons -------------------- */
+
+QtDeleteButton {
+   image: url(":/icons/{{ folder }}/delete.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   padding: 0px;
+}
+
+QtViewerPushButton{
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   padding: 0px;
+   
+}
+
+QtViewerPushButton[mode="new_points"] {
+  image: url(":/icons/{{ folder }}/new_points.svg");
+}
+
+QtViewerPushButton[mode="new_shapes"] {
+  image: url(":/icons/{{ folder }}/new_shapes.svg");
+}
+
+QtViewerPushButton[mode="new_labels"] {
+  image: url(":/icons/{{ folder }}/new_labels.svg");
+}
+
+QtViewerPushButton[mode="console"] {
+  image: url(":/icons/{{ folder }}/console.svg");
+}
+
+QtViewerPushButton[mode="roll"] {
+  image: url(":/icons/{{ folder }}/roll.svg");
+}
+
+QtViewerPushButton[mode="transpose"] {
+  image: url(":/icons/{{ folder }}/transpose.svg");
+}
+
+QtViewerPushButton[mode="home"] {
+  image: url(":/icons/{{ folder }}/home.svg");
+}
+
+QtNDisplayButton {
+    background-color: {{ foreground }};
+    min-width : 28px;
+    max-width : 28px;
+    min-height : 28px;
+    max-height : 28px;
+    border-radius: 3px;
+    border: 0px;
+    padding: 0px;
+}
+
+QtNDisplayButton::indicator {
+    min-width : 28px;
+    max-width : 28px;
+    min-height : 28px;
+    max-height : 28px;
+    border: 0px;
+    padding: 0px;
+}
+
+QtNDisplayButton::indicator:unchecked {
+  image: url(":/icons/{{ folder }}/3D.svg");
+}
+
+QtNDisplayButton::indicator:checked {
+  image: url(":/icons/{{ folder }}/2D.svg");
+}
+
+QtNDisplayButton::indicator:hover {
+  background-color: {{ primary }};
+}
+
+QtGridViewButton {
+    background-color: {{ foreground }};
+    min-width : 28px;
+    max-width : 28px;
+    min-height : 28px;
+    max-height : 28px;
+    border-radius: 3px;
+    border: 0px;
+    padding: 0px;
+}
+
+QtGridViewButton::indicator {
+    background-color: {{ foreground }};
+    min-width : 28px;
+    max-width : 28px;
+    min-height : 28px;
+    max-height : 28px;
+    border-radius: 3px;
+    border: 0px;
+    padding: 0px;
+}
+
+QtGridViewButton::indicator:unchecked {
+  image: url(":/icons/{{ folder }}/new_image.svg");
+}
+
+QtGridViewButton::indicator:checked {
+  image: url(":/icons/{{ folder }}/grid.svg");
+}
+
+QtGridViewButton::indicator:hover {
+  background-color: {{ primary }};
+}
+
+QtModeRadioButton {
+  background-color: {{ foreground }};
+  border-radius: 3px;
+}
+
+QtModeRadioButton:disabled {
+  background-color: {{ background }};
+}
+
+QtModeRadioButton::indicator {
+  subcontrol-position:
+  center center;
+  subcontrol-origin: content;
+  width: 28px; height: 28px;
+}
+
+QtModeRadioButton::indicator:checked {
+  background-color: {{ highlight }};
+  border-radius: 3px;
+}
+
+QtModeRadioButton::indicator:unchecked:hover {
+  background-color: {{ primary }};
+  border-radius: 3px;
+}
+
+QtModeRadioButton[mode="zoom"]::indicator {
+  image: url(":/icons/{{ folder }}/zoom.svg");
+}
+
+QtModeRadioButton[mode="select"]::indicator {
+  image: url(":/icons/{{ folder }}/select.svg");
+}
+
+QtModeRadioButton[mode="direct"]::indicator {
+  image: url(":/icons/{{ folder }}/direct.svg");
+}
+
+QtModeRadioButton[mode="rectangle"]::indicator {
+  image: url(":/icons/{{ folder }}/rectangle.svg");
+}
+
+QtModeRadioButton[mode="ellipse"]::indicator {
+  image: url(":/icons/{{ folder }}/ellipse.svg");
+  color: red;
+}
+
+QtModeRadioButton[mode="line"]::indicator {
+  image: url(":/icons/{{ folder }}/line.svg");
+}
+
+QtModeRadioButton[mode="path"]::indicator {
+  image: url(":/icons/{{ folder }}/path.svg");
+}
+
+QtModeRadioButton[mode="polygon"]::indicator {
+  image: url(":/icons/{{ folder }}/polygon.svg");
+}
+
+QtModeRadioButton[mode="vertex_insert"]::indicator {
+  image: url(":/icons/{{ folder }}/vertex_insert.svg");
+}
+
+QtModeRadioButton[mode="vertex_remove"]::indicator {
+  image: url(":/icons/{{ folder }}/vertex_remove.svg");
+}
+
+QtModeRadioButton[mode="paint"]::indicator {
+  image: url(":/icons/{{ folder }}/paint.svg");
+}
+
+QtModeRadioButton[mode="fill"]::indicator {
+  image: url(":/icons/{{ folder }}/fill.svg");
+}
+
+QtModeRadioButton[mode="picker"]::indicator {
+  image: url(":/icons/{{ folder }}/picker.svg");
+}
+
+QtModeRadioButton[mode="pan_zoom"]::indicator {
+    image: url(":/icons/{{ folder }}/zoom.svg");
+}
+
+QtModeRadioButton[mode="select_points"]::indicator {
+    image: url(":/icons/{{ folder }}/select.svg");
+}
+
+QtModeRadioButton[mode="add_points"]::indicator {
+    image: url(":/icons/{{ folder }}/add.svg");
+}
+
+QtModePushButton[mode="move_back"] {
+   image: url(":/icons/{{ folder }}/move_back.svg");
+}
+
+QtModePushButton[mode="move_front"] {
+   image: url(":/icons/{{ folder }}/move_front.svg");
+}
+
+QtModePushButton[mode="delete_shape"] {
+   image: url(":/icons/{{ folder }}/delete_shape.svg");
+}
+
+
+QtCopyToClipboardButton {
+   background-color: {{ background }};
+   margin: 0px;
+   padding: 1px 1px 3px 2px;
+   border: 0px;
+   min-width: 16px;
+   max-width: 16px;
+   min-height: 16px;
+   max-height: 16px;
+   border-radius: 3px;
+   image: url(":/icons/{{ folder }}/copy_to_clipboard.svg");
+}

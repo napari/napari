@@ -1,0 +1,540 @@
+/* ------------- Narrow scrollbar for qtlayer list --------- */
+
+QtLayerList QScrollBar:vertical {
+  max-width: 8px;
+  margin: 12px 0px;
+}
+
+QtLayerList QScrollBar::add-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar::sub-line:vertical {
+    height: 10px;
+    width: 8px;
+}
+
+QtLayerList QScrollBar:up-arrow, QtLayerList QScrollBar:down-arrow {
+    height: 4px;
+    width: 4px;
+}
+
+QtAboutKeybindings {
+  min-width: 600px;
+  min-height: 605px;
+}
+
+QtAbout > QTextEdit{
+  margin: 0px;
+  border: 0px;
+  padding: 2px;
+}
+
+
+/* controls the area around the canvas */
+QSplitter {
+  spacing: 0px;
+  padding: 0px;
+  margin: 0px;
+}
+
+QtDivider {
+  spacing: 0px;
+  padding: 0px;
+  border: 0px;
+  margin: 0px 3px 0px 3px;
+  min-width: 214px;
+  max-width: 214px;
+  min-height: 1px;
+  max-height: 1px;
+}
+
+QtDivider[selected=true] {
+  background-color: {{ text }};
+}
+
+QtDivider[selected=false] {
+  background-color: {{ background }};
+}
+
+
+/* ------------------------------------------------------ */
+
+QtLayerWidget {
+  border: 1px solid {{ background }};
+  background-color: {{ foreground }};
+  border-radius: 2px;
+  padding: 0px;
+  margin: 0px;
+  min-height: 32px;
+  max-height: 32px;
+  min-width: 228px;
+  max-width: 228px;
+}
+
+QtLayerWidget[selected="true"] {
+  border: 1px solid {{ secondary }};
+}
+
+QtLayerWidget > QLabel {
+  padding: 0px;
+  qproperty-alignment: AlignCenter;
+}
+
+QLabel[layer_type_label="true"] {
+  max-width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  margin-right: 4px;
+}
+
+QLabel#Shapes {
+  image: url(":/icons/{{ folder }}/new_shapes.svg");
+}
+
+QLabel#Points {
+  image: url(":/icons/{{ folder }}/new_points.svg");
+}
+
+QLabel#Labels {
+  image: url(":/icons/{{ folder }}/new_labels.svg");
+}
+
+QLabel#Image {
+  image: url(":/icons/{{ folder }}/new_image.svg");
+}
+
+QLabel#Pyramid {
+  image: url(":/icons/{{ folder }}/new_image.svg");
+}
+
+QLabel#Surface {
+  image: url(":/icons/{{ folder }}/new_surface.svg");
+}
+
+QLabel#Vectors {
+  image: url(":/icons/{{ folder }}/new_vectors.svg");
+}
+
+QtLayerWidget > QLineEdit {
+  background-color: {{ foreground }};
+  border: 2px solid {{ foreground }};
+  border-radius: 3px;
+  padding: 0px;
+  margin: 0px;
+  font-size: 16px;
+  qproperty-alignment: right;
+}
+
+QtLayerWidget > QLineEdit:focus {
+  border: 2px solid {{ secondary }};
+}
+
+QtLayerWidget > QLineEdit:disabled {
+  background-color: {{ foreground }};
+  border: 2px solid {{ foreground }};
+  border-radius: 3px;
+}
+
+QtLayerWidget > QCheckBox#visibility {
+  border: 0px;
+  background-color: {{ foreground }};
+  spacing: 0px;
+  margin-left: 4px;
+  margin-right: 0px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding: 0px;
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
+  width: 20px;
+  height: 20px;
+  image: url(":/icons/{{ folder }}/visibility_off.svg");
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator:checked {
+  width: 20px;
+  height: 20px;
+  image: url(":/icons/{{ folder }}/visibility.svg");
+}
+
+
+/* ------------------------------------------------------ */
+
+QtControls {
+    border-radius: 2px;
+    padding: 0px;
+    margin: 10px;
+    min-height: 200px;
+    max-height: 200px;
+    min-width: 240px;
+    max-width: 240px;
+    margin-left: 8px;
+    margin-right: 8px;
+    margin-bottom: 4px;
+}
+
+QtControls > QFrame {
+  border: 1px solid {{ foreground }};
+  padding: 5px;
+  padding-right: 8px;
+  border-radius: 2px;
+}
+
+QtColorBox {
+  padding: 0px;
+  border: 0px;
+  margin: 0px;
+  border-radius: 1px;
+  min-height: 24px;
+  max-height: 24px;
+  min-width: 24px;
+  max-width: 24px;
+}
+
+/* ----------------- QtLayerControls -------------------- */
+
+
+QtLayerControls > QPushButton#shuffle {
+  background-color: {{ primary }};
+  border: 3px solid {{ primary }};
+  margin: 0px;
+  padding: 0px;
+  text-align: center;
+}
+
+QtLayerControls > QLabel#shuffle-label {
+  margin-top: 4px;
+}
+
+QtLayerControls > QPushButton#shuffle:pressed {
+  background-color: {{ foreground }};
+  border: 3px solid {{ primary }};
+}
+
+
+
+
+
+
+/* ------------- QScrollBars --------- */
+
+
+QScrollBar {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+}
+
+QScrollBar:horizontal {
+    min-height: 14px;
+    max-height: 14px;
+    margin: 0px 16px;
+}
+
+QScrollBar:vertical {
+    /* min-width: 12px; */
+    max-width: 14px;
+    margin: 16px 0px;
+}
+
+QScrollBar::handle {
+    background: {{ highlight }};
+    border-radius: 3px;
+}
+
+QScrollBar::handle:horizontal {
+    min-width: 26px;
+}
+
+QScrollBar::handle:vertical {
+    min-height: 24px;
+}
+
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    border: none;
+    border-radius: 3px;
+    background: {{ foreground }};
+    subcontrol-origin: margin;
+}
+
+QScrollBar::add-line:horizontal {
+    width: 13px;
+    subcontrol-position: right;
+}
+
+QScrollBar::sub-line:horizontal {
+    width: 13px;
+    subcontrol-position: left;
+}
+
+QScrollBar::add-line:vertical {
+    height: 13px;
+    subcontrol-position: bottom;
+}
+
+QScrollBar::sub-line:vertical {
+    height: 13px;
+    subcontrol-position: top;
+}
+
+QScrollBar::add-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+QScrollBar::sub-line:horizontal:pressed {
+    background: {{ highlight }};
+}
+
+QScrollBar:left-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/left_arrow.svg");
+}
+
+QScrollBar::right-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/right_arrow.svg");
+}
+
+QScrollBar:up-arrow:vertical {
+    image: url(":/icons/{{ folder }}/up_arrow.svg");
+}
+
+QScrollBar::down-arrow:vertical {
+    image: url(":/icons/{{ folder }}/down_arrow.svg");
+}
+
+QScrollBar::left-arrow,
+QScrollBar::right-arrow,
+QScrollBar::up-arrow,
+QScrollBar::down-arrow {
+    height: 9px;
+    width: 9px;
+}
+
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background: none;
+}
+
+
+/* ------------- QComboBox --------- */
+
+QComboBox {
+   background-color: {{ primary }};
+   padding-left: 6px;
+   padding-right: 10px;
+   padding-top: 1px;
+   padding-bottom: 3px;
+}
+
+QComboBox::drop-down {
+   subcontrol-origin: padding;
+   subcontrol-position: top right;
+   width: 30px;
+   border-top-right-radius: 10px;
+   border-bottom-right-radius: 10px;
+}
+
+QComboBox::down-arrow {
+   image: url(":/icons/{{ folder }}/drop_down.svg");
+   width: 14px;
+   height: 14px;
+}
+
+
+/* ------------- DimsSliders --------- */
+
+QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
+    background: {{ highlight }};
+}
+
+QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
+    background: {{ secondary }};
+}
+
+QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_left.svg");
+}
+
+QtDimSliderWidget > QScrollBar::right-arrow:horizontal {
+    image: url(":/icons/{{ folder }}/step_right.svg");
+}
+
+
+QtPlayButton {
+    /* border: none; */
+    background: {{ foreground }};
+    border-radius: 3px;
+    min-height: 10px;
+    max-height: 10px;
+    min-width: 10px;
+    max-width: 10px;
+    margin: 0px 2px;
+    padding: 2px;
+}
+
+QtPlayButton[reverse=True] {
+    image: url(":/icons/{{ folder }}/left_arrow.svg");
+}
+
+QtPlayButton[reverse=False] {
+    image: url(":/icons/{{ folder }}/right_arrow.svg");
+}
+
+QtPlayButton[playing=True] {
+    image: url(":/icons/{{ folder }}/new_image.svg");
+    background-color: {{ warning }};
+}
+
+#QtModalPopup {
+  background: transparent;
+}
+
+#QtPopupFrame {
+  background: {{ background }};
+  border: 1px solid {{ secondary }};
+  border-radius: 5px;}
+
+#QtPopupFrame > QLabel {
+  background: {{ background }};
+  color: #aaaaaa;
+  font-size: 12px;
+}
+
+
+#QtPopupFrame > QDoubleSpinBox {
+  background-color: {{ foreground }};
+  border: none;
+  padding: 0px;
+  width: 115px;
+  font-size: 12px;
+  min-height: 20px;
+  border-radius: 4px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-button,
+#QtPopupFrame > QDoubleSpinBox::down-button {
+    background-color: {{ foreground }};
+    subcontrol-origin: margin;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-button:pressed,
+#QtPopupFrame > QDoubleSpinBox::down-button:pressed {
+      background-color: {{ highlight }};
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-button {
+    subcontrol-position: center right;
+    right: 0px;
+}
+
+
+#QtPopupFrame > QDoubleSpinBox::down-button {
+    subcontrol-position: center left;
+    left: 0px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-arrow,
+#QtPopupFrame > QDoubleSpinBox::down-arrow {
+   width: 10px;
+   height: 10px;
+}
+
+#QtPopupFrame > QDoubleSpinBox::up-arrow {
+   image: url(":/icons/{{ folder }}/plus.svg");
+}
+
+#QtPopupFrame > QDoubleSpinBox::down-arrow {
+   image: url(":/icons/{{ folder }}/minus.svg");
+}
+#QtPopupFrame > QCheckBox {
+  background-color: {{ foreground }};
+  border-radius: 3px;
+  min-height: 20px;
+  max-height: 20px;
+}
+
+
+#QtPopupFrame > QCheckBox::indicator {
+   image: url(":/icons/{{ folder }}/long_right_arrow.svg");
+   width: 20px;
+   height: 20px;
+   padding-right: 4px;
+   padding-left: 6px;
+}
+
+#QtPopupFrame > QCheckBox::indicator:checked {
+   image: url(":/icons/{{ folder }}/long_left_arrow.svg");
+}
+
+
+#QtPopupFrame > QCheckBox:pressed {
+   background: {{ secondary }};
+}
+
+#QtPopupFrame > QPushButton {
+  font-size: 11pt;
+  color: {{ secondary }};
+  min-height: 20px;
+}
+
+#QtPopupFrame > QPushButton::hover {
+  color: {{ text }};
+}
+
+#QtPopupFrame  > QComboBox {
+   background-color: {{ foreground }};
+   border-radius: 3px;
+}
+
+
+QFrame#colorSwatch {
+   background-color: {{ foreground }};
+   border: none;
+   padding: 0px;
+   margin: 0px;
+   border-radius: 1px;
+   min-height: 22px;
+   max-height: 22px;
+   min-width: 22px;
+   max-width: 22px;
+}
+
+
+#QtColorPopup{
+  background-color: transparent;
+}
+
+#CustomColorDialog QPushButton {
+  padding: 4px 10px;
+}
+
+#CustomColorDialog QLabel {
+  background-color: {{ background }};
+  color: {{ secondary }};
+}
+
+
+#slice_label {
+  background-color: transparent;
+  color: {{ secondary }};
+  padding: 0;
+  margin: 0;
+  margin-top: 0px;
+  font-size: 11pt;
+  max-height: 12px;
+  min-height: 12px;
+  border: 0px;
+  padding-left: 1px;
+}
+
+#slice_label_sep{
+  background-color: {{ background }};
+  border: 1px solid {{ primary }};
+}

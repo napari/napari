@@ -1,5 +1,3 @@
-import os
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QApplication,
@@ -28,11 +26,11 @@ from qtpy.QtWidgets import (
 )
 
 from napari._qt.qt_range_slider import QHRangeSlider
-from napari.resources import resources_dir
+from napari.resources import combine_stylesheets
 from napari.utils.theme import palettes, template
 
-with open(os.path.join(resources_dir, 'stylesheet2.qss'), 'r') as f:
-    raw_stylesheet = f.read()
+
+raw_stylesheet = combine_stylesheets()
 
 blurb = """
 <h3>Heading</h3>
