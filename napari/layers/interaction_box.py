@@ -30,6 +30,8 @@ class InteractionBox:
         self._show = show
         self._show_handle = show_handle
 
+        self._selected_vertex = None
+
         self.events = EmitterGroup(
             source=self,
             auto_connect=False,
@@ -93,7 +95,10 @@ class InteractionBox:
             else:
                 box = self._box[Box.WITHOUT_HANDLE]
 
-            face_color = 'white'
+            if self._selected_vertex is None:
+                face_color = 'white'
+            else:
+                face_color = self._highlight_color
 
             edge_color = self._highlight_color
             vertices = box[:, ::-1]
@@ -166,3 +171,21 @@ class InteractionBox:
             ]
         )
         self._box = box
+
+    def initialize_mouse_events(self, layer):
+        @layer.mouse_move_callbacks.append
+        def mouse_move(layer, event):
+            box = self._box[Box.WITH_HANDLE]
+            coord = [layer.coordinates[i] for i in layer.dims.displayed]
+            distances = abs(box - coord)
+
+            # Get the vertex sizes
+            sizes = self._vertex_size * layer.scale_factor / 2
+
+            # Check if any matching vertices
+            matches = np.all(distances <= sizes, axis=1).nonzero()
+            if len(matches[0]) > 0:
+                self._selected_vertex = matches[0][-1]
+            else:
+                self._selected_vertex = None
+            self.events.points_changed()

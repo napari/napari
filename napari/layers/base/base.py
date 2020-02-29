@@ -281,7 +281,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
-        self._interaction_box = InteractionBox()
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -329,6 +328,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ),
         )
         self.name = name
+
+
+        self._interaction_box = InteractionBox()
+        self._interaction_box.initialize_mouse_events(self)
 
     def __str__(self):
         """Return self.name."""
