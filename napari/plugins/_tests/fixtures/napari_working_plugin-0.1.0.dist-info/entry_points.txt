@@ -1,2 +1,0 @@
-[napari.plugin]
-working = napari_test_plugin
