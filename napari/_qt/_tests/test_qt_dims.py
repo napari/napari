@@ -68,7 +68,7 @@ def test_changing_ndim(qtbot):
     )
 
 
-def test_changing_focus(qtbot):
+def test_changing_focus(qapp):
     """Test changing focus updates the dims.last_used prop."""
     # too-few dims, should have no sliders to update
     ndim = 2
@@ -293,8 +293,8 @@ def test_play_button(qtbot):
     assert button.popup.isVisible()
 
 
-def test_slice_labels(viewermodel_factory):
-    view, viewer = viewermodel_factory()
+def test_slice_labels(viewer_factory):
+    view, viewer = viewer_factory()
     np.random.seed(0)
     data = np.random.random((20, 10, 10))
     viewer.add_image(data)

@@ -140,7 +140,7 @@ class QtViewer(QSplitter):
         else:
             self.viewerButtons.consoleButton.setEnabled(False)
 
-        self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -628,7 +628,7 @@ class QtViewer(QSplitter):
         self.dims.stop()
         if self.pool.activeThreadCount() > 0:
             self.pool.clear()
-        self.canvas.close()
+        # self.canvas.close()
         self.console.close()
         self.dockConsole.deleteLater()
         event.accept()

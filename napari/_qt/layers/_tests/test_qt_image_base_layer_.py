@@ -43,7 +43,7 @@ def test_clim_right_click_shows_popup(qtbot, layer):
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
-def test_changing_model_updates_view(qtbot, layer):
+def test_changing_model_updates_view(qapp, layer):
     """Changing the model attribute should update the view"""
     qtctrl = QtBaseImageControls(layer)
     new_clims = (20, 40)
@@ -78,7 +78,7 @@ def test_range_popup_clim_buttons(qtbot, layer):
 
 
 @pytest.mark.parametrize('mag', [-12, -9, -3, 0, 2, 4, 6])
-def test_clim_slider_step_size_and_precision(qtbot, mag):
+def test_clim_slider_step_size_and_precision(qapp, mag):
     """Make sure the slider has a reasonable step size and precision.
 
     ...across a broad range of orders of magnitude.
