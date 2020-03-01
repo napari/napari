@@ -50,6 +50,9 @@ from ._qt import gui_qt
 from ._version import get_versions
 from .utils import sys_info, _magicgui
 
+# register napari object types with magicgui
+_magicgui.register_types_with_magicgui()
+
 __version__ = get_versions()['version']
 del get_versions
 
