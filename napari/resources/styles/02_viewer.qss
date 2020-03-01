@@ -3,7 +3,12 @@ QtViewer {
 }
 
 
-QtLayerButtons, QtViewerButtons, QtLayerList {
+QtViewerButtons {
+  min-width: 238px;
+  max-width: 238px;
+}
+
+QtLayerButtons, QtLayerList {
   min-width: 242px;
   max-width: 242px;
 }

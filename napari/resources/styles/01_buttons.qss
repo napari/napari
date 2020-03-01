@@ -115,10 +115,9 @@ QtGridViewButton::indicator:hover {
 
 
 QtModeRadioButton {
-    min-height : 28px;
-    padding: 0px;
+  min-height : 28px;
+  padding: 0px;
 }
-
 
 QtModeRadioButton::indicator {
   border-radius: 3px;

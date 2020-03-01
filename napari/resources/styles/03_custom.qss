@@ -198,24 +198,6 @@ QtLayerControls > QLabel {
 }
 
 
-QtLayerControls > QPushButton#shuffle {
-  background-color: {{ primary }};
-  border: 3px solid {{ primary }};
-  margin: 0px;
-  padding: 0px;
-  text-align: center;
-}
-
-QtLayerControls > QLabel#shuffle-label {
-  margin-top: 4px;
-}
-
-QtLayerControls > QPushButton#shuffle:pressed {
-  background-color: {{ foreground }};
-  border: 3px solid {{ primary }};
-}
-
-
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
