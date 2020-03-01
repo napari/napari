@@ -148,6 +148,7 @@ def test_viewer_cleanup(qapp):
     viewer = Viewer()
     viewer.close()
     qapp.processEvents()
-    # unable to get the very last QMainWindow to clean up in pytest...
+
+    # somtimes unable to get the very last QMainWindow to clean up in pytest...
     # but all the other widgets should be gone
-    assert len(qapp.topLevelWidgets()) == initial
+    assert initial <= len(qapp.topLevelWidgets()) <= initial + 1
