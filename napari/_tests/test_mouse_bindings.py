@@ -1,15 +1,12 @@
 import numpy as np
 from unittest.mock import Mock
-from napari import Viewer
 
 
-def test_viewer_mouse_bindings(qtbot):
+def test_viewer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to the viewer
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     mock_press = Mock()
     mock_drag = Mock()
@@ -74,17 +71,12 @@ def test_viewer_mouse_bindings(qtbot):
     mock_release.method.assert_called_once()
     mock_move.method.assert_not_called()
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_layer_mouse_bindings(qtbot):
+def test_layer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to a layer that is selected
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True
@@ -151,17 +143,12 @@ def test_layer_mouse_bindings(qtbot):
     mock_release.method.assert_called_once()
     mock_move.method.assert_not_called()
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_unselected_layer_mouse_bindings(qtbot):
+def test_unselected_layer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to a layer that is not selected
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = False
@@ -224,6 +211,3 @@ def test_unselected_layer_mouse_bindings(qtbot):
     mock_drag.method.assert_not_called()
     mock_release.method.assert_not_called()
     mock_move.method.assert_not_called()
-
-    # Close the viewer
-    viewer.window.close()

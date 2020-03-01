@@ -14,11 +14,9 @@ from napari._tests.utils import (
 )
 
 
-def test_viewer(qtbot):
+def test_viewer(viewer_factory):
     """Test instantiating viewer."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -39,10 +37,11 @@ def test_viewer(qtbot):
     # Run all class keybindings
     for func in viewer.class_keymap.values():
         func(viewer)
-        # the `play` keybinding calls QtDims.play_dim(), which then creates a new QThread.
-        # we must then run the keybinding a second time, which will call QtDims.stop(),
-        # otherwise the thread will be killed at the end of the test without cleanup,
-        # causing a segmentation fault.  (though the tests still pass)
+        # the `play` keybinding calls QtDims.play_dim(), which then creates a
+        # new QThread. we must then run the keybinding a second time, which
+        # will call QtDims.stop(), otherwise the thread will be killed at the
+        # end of the test without cleanup, causing a segmentation fault.
+        # (though the tests still pass)
         if func.__name__ == 'play':
             func(viewer)
 
@@ -56,8 +55,6 @@ def test_viewer(qtbot):
             qapp.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 0)
 
         viewer.window._qt_window.showNormal()
-
-    viewer.window.close()
 
 
 @pytest.mark.first  # provided by pytest-ordering
@@ -76,10 +73,8 @@ def test_no_qt_loop():
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(qtbot, layer_class, data, ndim, visible):
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
+    view, viewer = viewer_factory()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, view, data, ndim)
 
@@ -87,15 +82,10 @@ def test_add_layer(qtbot, layer_class, data, ndim, visible):
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_screenshot(qtbot):
+def test_screenshot(viewer_factory):
     "Test taking a screenshot"
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     np.random.seed(0)
     # Add image
@@ -126,18 +116,12 @@ def test_screenshot(qtbot):
     screenshot = viewer.screenshot(with_viewer=True)
     assert screenshot.ndim == 3
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_update(qtbot):
+def test_update(viewer_factory):
     import time
 
     data = np.random.random((512, 512))
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
+    view, viewer = viewer_factory()
     layer = viewer.add_image(data)
 
     def layer_update(*, update_period, num_updates):
@@ -153,8 +137,17 @@ def test_update(qtbot):
 
     viewer.update(layer_update, update_period=0.01, num_updates=100)
 
-    # if we do not sleep, main thread closes before update thread finishes and many qt components get cleaned
+    # if we do not sleep, main thread closes before update
+    # thread finishes and many qt components get cleaned
     time.sleep(3)
 
-    # Close the viewer
-    viewer.window.close()
+
+def test_viewer_cleanup(qapp):
+    """Test that closing the viewer doesn't leave any orphaned widgets."""
+    initial = len(qapp.topLevelWidgets())
+    viewer = Viewer()
+    viewer.close()
+    qapp.processEvents()
+    # unable to get the very last QMainWindow to clean up in pytest...
+    # but all the other widgets should be gone
+    assert len(qapp.topLevelWidgets()) == initial
