@@ -379,6 +379,7 @@ class QtPlayButton(QPushButton):
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
+        revcheck.setObjectName("playDirectionCheckBox")
         form_layout.insertRow(
             1, QLabel('play direction:', parent=self.popup), revcheck
         )

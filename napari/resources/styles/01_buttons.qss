@@ -113,36 +113,32 @@ QtGridViewButton::indicator:hover {
   background-color: {{ primary }};
 }
 
+
 QtModeRadioButton {
-  background-color: {{ foreground }};
-  border-radius: 3px;
-  width: 28px;
-  height: 28px;
+    min-height : 28px;
+    padding: 0px;
 }
 
-QtModeRadioButton:disabled {
-  background-color: {{ background }};
-}
 
 QtModeRadioButton::indicator {
-  subcontrol-position:
-  center center;
-  subcontrol-origin: content;
+  border-radius: 3px;
   width: 28px;
   height: 28px;
-  border-radius: 3px;
+  padding: 0;
 }
 
 QtModeRadioButton::indicator:checked {
-  background-color: {{ highlight }};
-  border-radius: 3px;
-  width: 28px;
   height: 28px;
+  width: 28px;
+  padding: 0;
+}
+
+QtModeRadioButton::indicator:disabled {
+  background-color: {{ background }}
 }
 
 QtModeRadioButton::indicator:unchecked:hover {
   background-color: {{ primary }};
-  border-radius: 3px;
 }
 
 QtModeRadioButton[mode="zoom"]::indicator {
