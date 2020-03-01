@@ -188,7 +188,7 @@ class Window:
         about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
         about_keybindings.setStatusTip('keybindings')
         about_keybindings.triggered.connect(
-            self.qt_viewer.aboutKeybindings.toggle_visible
+            self.qt_viewer.show_keybindings_dialog
         )
         self.help_menu.addAction(about_keybindings)
 

@@ -15,8 +15,8 @@ class QtAboutKeybindings(QDialog):
 
     ALL_ACTIVE_KEYBINDINGS = 'All active keybindings'
 
-    def __init__(self, viewer):
-        super().__init__()
+    def __init__(self, viewer, parent=None):
+        super().__init__(parent=parent)
 
         self.viewer = viewer
         self.layout = QVBoxLayout()
@@ -86,10 +86,3 @@ class QtAboutKeybindings(QDialog):
         self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
         if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:
             self.textEditBox.setHtml(text)
-
-    def toggle_visible(self, event):
-        if self.isVisible():
-            self.hide()
-        else:
-            self.show()
-            self.raise_()

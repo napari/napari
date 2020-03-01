@@ -130,9 +130,6 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
-        self.aboutKeybindings = QtAboutKeybindings(self.viewer)
-        self.aboutKeybindings.hide()
-
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
 
@@ -423,7 +420,6 @@ class QtViewer(QSplitter):
         bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
         self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
-        self.aboutKeybindings.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
     def toggle_console(self):
@@ -443,6 +439,10 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+    def show_keybindings_dialog(self, event=None):
+        dialog = QtAboutKeybindings(self.viewer, parent=self)
+        dialog.show()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
