@@ -5,7 +5,7 @@ from .layers import create_qt_controls
 class QtControls(QStackedWidget):
     def __init__(self, viewer):
         super().__init__()
-
+        self.setProperty("emphasized", True)
         self.viewer = viewer
 
         self.setMouseTracking(True)

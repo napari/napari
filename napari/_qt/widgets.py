@@ -46,10 +46,13 @@ officia deserunt mollit anim id est laborum.</p>
 
 
 class TabDemo(QTabWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, emphasized=False):
         super().__init__(parent)
+        self.setProperty('emphasized', emphasized)
         self.tab1 = QWidget()
+        self.tab1.setProperty('emphasized', emphasized)
         self.tab2 = QWidget()
+        self.tab2.setProperty('emphasized', emphasized)
 
         self.addTab(self.tab1, "Tab 1")
         self.addTab(self.tab2, "Tab 2")
@@ -72,8 +75,9 @@ class TabDemo(QTabWidget):
 
 
 class Widget(QWidget):
-    def __init__(self, theme='dark'):
+    def __init__(self, theme='dark', emphasized=False):
         super().__init__(None)
+        self.setProperty('emphasized', emphasized)
         self.setStyleSheet(template(raw_stylesheet, **palettes[theme]))
         lay = QVBoxLayout()
         self.setLayout(lay)
@@ -86,7 +90,7 @@ class Widget(QWidget):
         chk.setToolTip('I am a tooltip')
         chk.setTristate(True)
         lay.addWidget(chk)
-        lay.addWidget(TabDemo())
+        lay.addWidget(TabDemo(emphasized=emphasized))
 
         sld = QSlider(Qt.Horizontal)
         sld.setValue(50)
@@ -137,7 +141,7 @@ if __name__ == "__main__":
     w1 = Widget('dark')
     w1.setGeometry(200, 0, 425, 800)
     w1.show()
-    w2 = Widget('light')
+    w2 = Widget('dark', True)
     w2.setGeometry(700, 0, 425, 800)
     w2.show()
     app.exec_()

@@ -116,6 +116,8 @@ QtGridViewButton::indicator:hover {
 QtModeRadioButton {
   background-color: {{ foreground }};
   border-radius: 3px;
+  width: 28px;
+  height: 28px;
 }
 
 QtModeRadioButton:disabled {
@@ -126,12 +128,16 @@ QtModeRadioButton::indicator {
   subcontrol-position:
   center center;
   subcontrol-origin: content;
-  width: 28px; height: 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
 }
 
 QtModeRadioButton::indicator:checked {
   background-color: {{ highlight }};
   border-radius: 3px;
+  width: 28px;
+  height: 28px;
 }
 
 QtModeRadioButton::indicator:unchecked:hover {

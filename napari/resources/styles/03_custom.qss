@@ -5,17 +5,15 @@ QtLayerList QScrollBar:vertical {
   margin: 12px 0px;
 }
 
-QtLayerList QScrollBar::add-line:vertical {
+QtLayerList QScrollBar::add-line:vertical,
+QtLayerList QScrollBar::sub-line:vertical  {
     height: 10px;
     width: 8px;
 }
 
-QtLayerList QScrollBar::sub-line:vertical {
-    height: 10px;
-    width: 8px;
-}
 
-QtLayerList QScrollBar:up-arrow, QtLayerList QScrollBar:down-arrow {
+QtLayerList QScrollBar:up-arrow,
+QtLayerList QScrollBar:down-arrow {
     height: 4px;
     width: 4px;
 }
@@ -120,44 +118,40 @@ QLabel#Vectors {
 
 QtLayerWidget > QLineEdit {
   background-color: {{ foreground }};
-  border: 2px solid {{ foreground }};
-  border-radius: 3px;
-  padding: 0px;
-  margin: 0px;
-  font-size: 16px;
+  border: 1px solid {{ foreground }};
+  border-radius: 2px;
+  padding: 2px;
+  font-size: 14px;
   qproperty-alignment: right;
 }
 
 QtLayerWidget > QLineEdit:focus {
-  border: 2px solid {{ secondary }};
+  border-color: {{ secondary }};
+  background-color: {{ darken(foreground, 20) }};
 }
 
 QtLayerWidget > QLineEdit:disabled {
   background-color: {{ foreground }};
-  border: 2px solid {{ foreground }};
+  border-color: {{ foreground }};
   border-radius: 3px;
 }
 
 QtLayerWidget > QCheckBox#visibility {
-  border: 0px;
-  background-color: {{ foreground }};
+  background-color: none;
   spacing: 0px;
-  margin-left: 4px;
-  margin-right: 0px;
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding: 0px;
+  margin: 0px 0px 0px 4px;
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator{
+  width: 18px;
+  height: 18px;
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  width: 20px;
-  height: 20px;
   image: url(":/icons/{{ folder }}/visibility_off.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {
-  width: 20px;
-  height: 20px;
   image: url(":/icons/{{ folder }}/visibility.svg");
 }
 
@@ -172,13 +166,12 @@ QtControls {
     max-height: 200px;
     min-width: 240px;
     max-width: 240px;
-    margin-left: 8px;
+    margin-left: 10px;
     margin-right: 8px;
     margin-bottom: 4px;
 }
 
 QtControls > QFrame {
-  border: 1px solid {{ foreground }};
   padding: 5px;
   padding-right: 8px;
   border-radius: 2px;
@@ -394,71 +387,16 @@ QtPlayButton[playing=True] {
 }
 
 #QtPopupFrame {
-  background: {{ background }};
   border: 1px solid {{ secondary }};
-  border-radius: 5px;}
+  border-radius: 5px;
+}
 
 #QtPopupFrame > QLabel {
-  background: {{ background }};
   color: #aaaaaa;
   font-size: 12px;
 }
 
 
-#QtPopupFrame > QDoubleSpinBox {
-  background-color: {{ foreground }};
-  border: none;
-  padding: 0px;
-  width: 115px;
-  font-size: 12px;
-  min-height: 20px;
-  border-radius: 4px;
-}
-
-#QtPopupFrame > QDoubleSpinBox::up-button,
-#QtPopupFrame > QDoubleSpinBox::down-button {
-    background-color: {{ foreground }};
-    subcontrol-origin: margin;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-}
-
-#QtPopupFrame > QDoubleSpinBox::up-button:pressed,
-#QtPopupFrame > QDoubleSpinBox::down-button:pressed {
-      background-color: {{ highlight }};
-}
-
-#QtPopupFrame > QDoubleSpinBox::up-button {
-    subcontrol-position: center right;
-    right: 0px;
-}
-
-
-#QtPopupFrame > QDoubleSpinBox::down-button {
-    subcontrol-position: center left;
-    left: 0px;
-}
-
-#QtPopupFrame > QDoubleSpinBox::up-arrow,
-#QtPopupFrame > QDoubleSpinBox::down-arrow {
-   width: 10px;
-   height: 10px;
-}
-
-#QtPopupFrame > QDoubleSpinBox::up-arrow {
-   image: url(":/icons/{{ folder }}/plus.svg");
-}
-
-#QtPopupFrame > QDoubleSpinBox::down-arrow {
-   image: url(":/icons/{{ folder }}/minus.svg");
-}
-#QtPopupFrame > QCheckBox {
-  background-color: {{ foreground }};
-  border-radius: 3px;
-  min-height: 20px;
-  max-height: 20px;
-}
 
 
 #QtPopupFrame > QCheckBox::indicator {
@@ -478,15 +416,6 @@ QtPlayButton[playing=True] {
    background: {{ secondary }};
 }
 
-#QtPopupFrame > QPushButton {
-  font-size: 11pt;
-  color: {{ secondary }};
-  min-height: 20px;
-}
-
-#QtPopupFrame > QPushButton::hover {
-  color: {{ text }};
-}
 
 #QtPopupFrame  > QComboBox {
    background-color: {{ foreground }};
