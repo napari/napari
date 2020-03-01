@@ -80,7 +80,7 @@ class QtViewer(QSplitter):
 
     def __init__(self, viewer):
         super().__init__()
-
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.pool = QThreadPool()
 
         QCoreApplication.setAttribute(

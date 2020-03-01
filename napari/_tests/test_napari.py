@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
-import napari
+from qtpy.QtWidgets import QApplication
 
+import napari
 from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
@@ -38,3 +39,16 @@ def test_view_multichannel(qtbot):
 
     # Close the viewer
     viewer.window.close()
+
+
+def test_widget_cleanup(qtbot):
+    """Test that closing the viewer doesn't leave any orphaned widgets."""
+    app = QApplication.instance()
+    assert len(app.topLevelWidgets()) == 0
+    viewer = napari.Viewer()
+    assert app.topLevelWidgets()
+    viewer.close()
+    app.processEvents()
+    # unable to get the very last QMainWindow to clean up in pytest...
+    # but all the other widgets should be gone
+    assert len(app.topLevelWidgets()) == 1

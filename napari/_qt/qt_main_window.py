@@ -347,5 +347,6 @@ class Window:
         return QImg2array(img)
 
     def closeEvent(self, event):
+        self.main_menu.deleteLater()
         self.qt_viewer.close()
         event.accept()
