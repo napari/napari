@@ -11,7 +11,8 @@ def viewer_factory(qapp):
     def actual_factory(*model_args, **model_kwargs):
         viewer = Viewer(*model_args, **model_kwargs)
         viewers.append(viewer)
-        return viewer.window.qt_viewer, viewer
+        view = viewer.window.qt_viewer
+        return view, viewer
 
     yield actual_factory
 
