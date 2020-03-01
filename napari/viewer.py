@@ -68,11 +68,13 @@ class Viewer(ViewerModel):
         self.window = Window(qt_viewer, show=show)
         self.update_console = self.window.qt_viewer.console.push
 
-    def screenshot(self, with_viewer=False):
+    def screenshot(self, path=None, *, with_viewer=False):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
+        path : str
+            Filename for saving screenshot image.
         with_viewer : bool
             If True includes the napari viewer, otherwise just includes the
             canvas.
@@ -84,9 +86,9 @@ class Viewer(ViewerModel):
             upper-left corner of the rendered region.
         """
         if with_viewer:
-            image = self.window.screenshot()
+            image = self.window.screenshot(path=path)
         else:
-            image = self.window.qt_viewer.screenshot()
+            image = self.window.qt_viewer.screenshot(path=path)
         return image
 
     def update(self, func, *args, **kwargs):
