@@ -621,21 +621,17 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        # if the viewer.QtDims object is playing an axis, we need to terminate
+        # the AnimationThread before close, otherwise it will cauyse a segFault
+        # or Abort trap. (calling stop() when no animation is occuring is also
+        # not a problem)
+        self.dims.stop()
         if self.pool.activeThreadCount() > 0:
             self.pool.clear()
-        event.accept()
-
-    def shutdown(self):
-        """Shutdown and close viewer.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.pool.clear()
         self.canvas.close()
-        self.console.shutdown()
+        self.console.close()
+        self.dockConsole.deleteLater()
+        event.accept()
 
 
 def viewbox_key_event(event):

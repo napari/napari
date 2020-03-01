@@ -53,6 +53,7 @@ class Window:
         self.qt_viewer = qt_viewer
 
         self._qt_window = QMainWindow()
+        self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget(self._qt_window)
 
@@ -346,10 +347,5 @@ class Window:
         return QImg2array(img)
 
     def closeEvent(self, event):
-        # Forward close event to the console to trigger proper shutdown
-        self.qt_viewer.console.shutdown()
-        # if the viewer.QtDims object is playing an axis, we need to terminate the
-        # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
-        # (calling stop() when no animation is occuring is also not a problem)
-        self.qt_viewer.dims.stop()
+        self.qt_viewer.close()
         event.accept()

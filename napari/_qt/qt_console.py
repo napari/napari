@@ -128,8 +128,13 @@ class QtConsole(RichJupyterWidget):
         # TODO: Try to get console from jupyter to run without a shift click
         # self.execute_on_complete_input = True
 
-    def shutdown(self):
+    def closeEvent(self, event):
         if self.kernel_client is not None:
             self.kernel_client.stop_channels()
         if self.kernel_manager is not None and self.kernel_manager.has_kernel:
             self.kernel_manager.shutdown_kernel()
+
+        # RichJupyterWidget doesn't clean these up
+        self._completion_widget.deleteLater()
+        self._call_tip_widget.deleteLater()
+        event.accept()
