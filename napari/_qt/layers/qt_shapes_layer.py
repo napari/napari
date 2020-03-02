@@ -16,7 +16,7 @@ from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 
 
 class QtShapesControls(QtLayerControls):
-    """#TODO
+    """Qt view and controls for the napari Shapes layer.
 
     Parameters
     ----------
