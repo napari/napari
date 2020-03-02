@@ -606,12 +606,10 @@ class Layer(KeymapMixin, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        full_scale = np.multiply(self.scale, self._transform_view.scale)
-        full_translate = np.add(self.translate, self._transform_view.translate)
-
-        full_coord = np.round(
-            np.multiply(self.coordinates, full_scale) + full_translate
-        ).astype(int)
+        coordinates = self._transform_view.compose(self._transform)(
+            self.coordinates
+        )
+        full_coord = np.round(coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'
 

@@ -4,7 +4,7 @@ import toolz as tz
 from typing import Sequence
 import numpy as np
 
-from ..utils.list import ListModel
+# from ..utils.list import ListModel
 
 
 class Transform:
@@ -46,22 +46,22 @@ class Transform:
             raise ValueError('Inverse function was not provided.')
 
 
-class TransformChain(ListModel, Transform):
-    def __init__(self, transforms=[]):
-        super().__init__(
-            basetype=Transform,
-            iterable=transforms,
-            lookup={str: lambda q, e: q == e.name},
-        )
-
-    def __call__(self, coords):
-        return tz.pipe(coords, *self)
-
-    def __newlike__(self, iterable):
-        return ListModel(self._basetype, iterable, self._lookup)
-
-    def set_slice(self, axes: Sequence[int]) -> TransformChain:
-        return TransformChain([tf.set_slice(axes) for tf in self])
+# class TransformChain(ListModel, Transform):
+#     def __init__(self, transforms=[]):
+#         super().__init__(
+#             basetype=Transform,
+#             iterable=transforms,
+#             lookup={str: lambda q, e: q == e.name},
+#         )
+#
+#     def __call__(self, coords):
+#         return tz.pipe(coords, *self)
+#
+#     def __newlike__(self, iterable):
+#         return ListModel(self._basetype, iterable, self._lookup)
+#
+#     def set_slice(self, axes: Sequence[int]) -> TransformChain:
+#         return TransformChain([tf.set_slice(axes) for tf in self])
 
 
 class STTransform(Transform):
@@ -94,7 +94,7 @@ class STTransform(Transform):
         translate = np.concatenate(
             ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
         )
-        return scale * coords + translate
+        return np.squeeze(scale * coords + translate)
 
     @property
     def inverse(self):
@@ -110,6 +110,11 @@ class STTransform(Transform):
         scale[not_axes] = self.scale
         translate = np.zeros(n)
         translate[not_axes] = self.translate
+        return STTransform(scale, translate)
+
+    def compose(self, transform: STTransform) -> STTransform:
+        scale = self.scale * transform.scale
+        translate = self.translate + self.scale * transform.translate
         return STTransform(scale, translate)
 
 

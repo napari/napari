@@ -459,9 +459,7 @@ class Image(IntensityVisualizationMixin, Layer):
                         1,
                     )
                 self._transform_view.translate = (
-                    self._top_left
-                    * self.scale
-                    * self.layer._transform_view.scale
+                    self._top_left * self.scale * self._transform_view.scale
                 )
             else:
                 self._transform_view.translate = [0] * self.ndim
