@@ -3,6 +3,8 @@ Styles in this file should only refer to built-in QtWidgets
 It will be imported first, and styles declared in other files
 may override these styles, but should only do so on
 custom subclasses, object names, or properties.
+
+might be possible to convert px to em by 1px = 0.0625em
 */
 
 
@@ -20,11 +22,11 @@ QWidget {
 }
 
 QWidget[emphasized="true"] {
-    background-color: {{ darken(foreground, 15) }};
+    background-color: {{ foreground }};
 }
 
 QWidget[emphasized="true"] > QFrame {
-    background-color: {{ darken(foreground, 15) }};
+    background-color: {{ foreground }};
 }
 
 

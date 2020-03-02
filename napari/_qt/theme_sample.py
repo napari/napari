@@ -3,13 +3,12 @@ from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
-    QDial,
     QDoubleSpinBox,
     QFontComboBox,
+    QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLCDNumber,
     QLineEdit,
     QProgressBar,
     QPushButton,
@@ -17,18 +16,19 @@ from qtpy.QtWidgets import (
     QScrollBar,
     QSlider,
     QSpinBox,
+    QTabWidget,
     QTextEdit,
     QTimeEdit,
     QVBoxLayout,
     QWidget,
-    QTabWidget,
-    QFormLayout,
 )
+from skimage.io import imsave
 
 from napari._qt.qt_range_slider import QHRangeSlider
 from napari.resources import combine_stylesheets
 from napari.utils.theme import palettes, template
 
+from napari._qt.utils import QImg2array
 
 raw_stylesheet = combine_stylesheets()
 
@@ -59,7 +59,7 @@ class TabDemo(QTabWidget):
         layout = QFormLayout()
         layout.addRow("Height", QSpinBox())
         layout.addRow("Weight", QDoubleSpinBox())
-        self.setTabText(0, "Contact Details")
+        self.setTabText(0, "Tab 1")
         self.tab1.setLayout(layout)
 
         layout2 = QFormLayout()
@@ -68,13 +68,13 @@ class TabDemo(QTabWidget):
         sex.addWidget(QRadioButton("Female"))
         layout2.addRow(QLabel("Sex"), sex)
         layout2.addRow("Date of Birth", QLineEdit())
-        self.setTabText(1, "Personal Details")
+        self.setTabText(1, "Tab 2")
         self.tab2.setLayout(layout2)
 
         self.setWindowTitle("tab demo")
 
 
-class Widget(QWidget):
+class SampleWidget(QWidget):
     def __init__(self, theme='dark', emphasized=False):
         super().__init__(None)
         self.setProperty('emphasized', emphasized)
@@ -86,10 +86,19 @@ class Widget(QWidget):
         box.addItems(['a', 'b', 'c', 'cd'])
         lay.addWidget(box)
         lay.addWidget(QFontComboBox())
-        chk = QCheckBox('check me (tristate)')
+
+        hbox = QHBoxLayout()
+        chk = QCheckBox('tristate')
         chk.setToolTip('I am a tooltip')
         chk.setTristate(True)
-        lay.addWidget(chk)
+        chk.setCheckState(Qt.PartiallyChecked)
+        chk3 = QCheckBox('checked')
+        chk3.setChecked(True)
+        hbox.addWidget(QCheckBox('unchecked'))
+        hbox.addWidget(chk)
+        hbox.addWidget(chk3)
+        lay.addLayout(hbox)
+
         lay.addWidget(TabDemo(emphasized=emphasized))
 
         sld = QSlider(Qt.Horizontal)
@@ -111,15 +120,11 @@ class Widget(QWidget):
         prog = QProgressBar()
         prog.setValue(50)
         lay.addWidget(prog)
-
         groupBox = QGroupBox("Exclusive Radio Buttons")
-
         radio1 = QRadioButton("&Radio button 1")
         radio2 = QRadioButton("R&adio button 2")
         radio3 = QRadioButton("Ra&dio button 3")
-
         radio1.setChecked(True)
-
         hbox = QHBoxLayout()
         hbox.addWidget(radio1)
         hbox.addWidget(radio2)
@@ -127,21 +132,22 @@ class Widget(QWidget):
         hbox.addStretch(1)
         groupBox.setLayout(hbox)
         lay.addWidget(groupBox)
-        dial = QDial()
-        dial.setMaximumHeight(50)
-        lay.addWidget(dial)
-        lcd_num = QLCDNumber()
-        lay.addWidget(lcd_num)
-        dial.valueChanged.connect(lcd_num.display)
+
+    def screenshot(self, path=None):
+        img = self.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
+        return QImg2array(img)
 
 
 if __name__ == "__main__":
 
     app = QApplication([])
-    w1 = Widget('dark')
-    w1.setGeometry(200, 0, 425, 800)
+    w1 = SampleWidget('dark')
+    w1.setGeometry(200, 0, 425, 600)
     w1.show()
-    w2 = Widget('dark', True)
-    w2.setGeometry(700, 0, 425, 800)
+    # w1.screenshot('~/Desktop/test.png')
+    w2 = SampleWidget('light', False)
+    w2.setGeometry(700, 0, 425, 600)
     w2.show()
     app.exec_()
