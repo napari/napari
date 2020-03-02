@@ -48,7 +48,10 @@ from .view_layers import (
 )
 from ._qt import gui_qt
 from ._version import get_versions
-from .utils import sys_info
+from .utils import sys_info, _magicgui
+
+# register napari object types with magicgui if it is installed
+_magicgui.register_types_with_magicgui()
 
 __version__ = get_versions()['version']
 del get_versions
@@ -59,4 +62,5 @@ del get_versions
 # see: https://github.com/napari/napari/issues/925
 from scipy import stats  # noqa: F401
 
+del _magicgui
 del stats
