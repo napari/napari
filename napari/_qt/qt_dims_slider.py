@@ -366,6 +366,7 @@ class QtPlayButton(QPushButton):
         self.popup.frame.setLayout(form_layout)
 
         fpsspin = QtCustomDoubleSpinBox(self.popup)
+        fpsspin.setObjectName("fpsSpinBox")
         fpsspin.setAlignment(Qt.AlignCenter)
         fpsspin.setValue(self.fps)
         if hasattr(fpsspin, 'setStepType'):

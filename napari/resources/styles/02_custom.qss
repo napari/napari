@@ -325,6 +325,10 @@ QtDimSliderWidget > QLineEdit {
    border: 0px;
 }
 
+#fpsSpinBox {
+  min-width: 60px;
+}
+
 #playDirectionCheckBox::indicator:checked {
    image: url(":/icons/{{ folder }}/long_left_arrow.svg");
 }
