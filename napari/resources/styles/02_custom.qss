@@ -100,8 +100,10 @@ QtLayerList QScrollBar::sub-line:vertical  {
 
 QtLayerList QScrollBar:up-arrow,
 QtLayerList QScrollBar:down-arrow {
-    height: 4px;
-    width: 4px;
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
 }
 
 
