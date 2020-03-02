@@ -45,7 +45,6 @@ Code will also be linted to enforce the stylistic and logistical rules specified
 
 If you wish to tell the linter to ignore a specific line use the `# noqa` comment along with the specific error code (e.g. `import sys  # noqa: E402`) but please do not ignore errors lightly.
 
-
 ## Building the icons
 
 Our icon build process starts with a base set of `svg` formatted icons stored in `napari/resources/icons/svg`. If you want to add a new icon to the app, make the icon in whatever program you like and add it to that folder.
@@ -67,6 +66,23 @@ QtDeleteButton {
    image: url(":/icons/{{ folder }}/delete.svg");
 }
 ```
+
+### Creating and testing themes
+
+A theme is a set of colors used throughout napari.  See, for example, the
+builtin themes in `napari/utils/theme.py`.  To make a new theme, create a new
+`dict` in `palettes` with the same keys as one of the existing themes, and
+replace the values with your new colors.  To test out the theme, use the
+`theme_sample.py` file from the command line as follows:
+
+```sh
+python -m napari._qt.theme_sample
+```
+*note*: you may specify a theme with one additional argument on the command line:
+```sh
+python -m napari._qt.theme_sample dark
+```
+(providing no arguments will show all themes in `theme.py`)
 
 ## Making changes
 
