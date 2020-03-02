@@ -159,13 +159,19 @@ class SampleWidget(QWidget):
 
 
 if __name__ == "__main__":
+    import sys
 
+    themes = [sys.argv[1]] if len(sys.argv) > 1 else palettes.keys()
     app = QApplication([])
-    w1 = SampleWidget('dark')
-    w1.setGeometry(200, 0, 425, 600)
-    w1.show()
-    # w1.screenshot('~/Desktop/test.png')
-    w2 = SampleWidget('light', False)
-    w2.setGeometry(700, 0, 425, 600)
-    w2.show()
-    app.exec_()
+    widgets = []
+    for n, theme in enumerate(themes):
+        try:
+            w = SampleWidget(theme)
+        except KeyError:
+            print(f"{theme} is not a recognized theme")
+            continue
+        w.setGeometry(10 + 430 * n, 0, 425, 600)
+        w.show()
+        widgets.append(w)
+    if widgets:
+        app.exec_()
