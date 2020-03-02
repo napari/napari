@@ -1,74 +1,70 @@
-task:
+# default container
+container:
+  image: python:3.8
+
+
+black_task:
   auto_cancellation: true
-
   name: Black Formatting
-  container:
-      image: python:3.6
-
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - pip install `cat requirements/development.txt | grep black`
-
   test_script:
     - black --check .
 
-nix_test_task:
+
+lint_task:
   auto_cancellation: true
-
   name: Flake8 Linting
-  container:
-      image: python:3.6
-
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - pip install `cat requirements/development.txt | grep flake8`
-
   test_script:
     - flake8 napari
 
 
-task:
+linux_task:
   auto_cancellation: true
 
   env:
     matrix:
       PY_VER: "3.6"
       PY_VER: "3.7"
+      PY_VER: "3.8"
 
-  matrix:
-    - name: linux
-      container:
-        image: gcc:latest
-      env:
-        PATH: $HOME/conda/bin:$PATH
-        DISPLAY: ":99"
-      system_script:
-        - apt-get update
-        - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
-      conda_script:
-        - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
-        - bash install.sh -b -p $HOME/conda
-        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
-        - conda update -yn base conda
-        - conda install -y python=$PY_VER
-        - rm install.sh
-      # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
-      xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
-      # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
-      herbstluftwm_start_background_script: herbstluftwm
+  name: linux ${PY_VER}
 
-    - name: osx
-      osx_instance:
-        image: mojave-xcode-10.2
-      env:
-        PATH: $HOME/conda/bin:$PATH
-      conda_script:
-        - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
-        - bash install.sh -b -p $HOME/conda
-        - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
-        - conda update -yn base conda
-        - conda install -y python=$PY_VER
-        - rm install.sh
+  container:
+    image: gcc:latest
+
+  env:
+    PATH: $HOME/conda/bin:$PATH
+    DISPLAY: ":99"
+
+  system_script:
+    - apt-get update
+    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
+
+  conda_script:
+    - curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
+    - bash install.sh -b -p $HOME/conda
+    # https://github.com/napari/napari/pull/594#issuecomment-542475164
+    - conda install --yes -c conda-forge setuptools
+    # conda 4.8.2 is breaking python 3.6 builds at the moment
+    - conda install -yn base conda=4.8.1
+    - conda install -y python=$PY_VER
+    - rm install.sh
+
+  # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
+  xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
+  # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
+  herbstluftwm_start_background_script: herbstluftwm
+
+  pip_cache:
+    folder: ~/.cache/pip
+    populate_script: 
+      - python -m pip install --retries 3 --upgrade pip
+      - pip install --retries 3 -r requirements.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
@@ -76,11 +72,10 @@ task:
     - python setup.py develop
 
   check_script:
-    - pip list
+    - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  test_pyside2_script:
-    - pytest -v
+  test_pyside2_script: pytest -v
 
   test_pyqt5_script:
     - pip uninstall -y pyside2
@@ -88,17 +83,76 @@ task:
     - pytest -v
 
 
-windows_task:
+mac_task:
   auto_cancellation: true
-  
+
+  matrix:
+    # not a pull request: run full suite
+    - only_if: $CIRRUS_PR == ""
+      env:
+        matrix:
+          PY_VER: "3.6"
+          PY_VER: "3.7"
+          PY_VER: "3.8"
+    # is a pull request, only run python 3.8
+    - only_if: $CIRRUS_PR != ""
+      env:
+        PY_VER: "3.8"
+
+  name: macos ${PY_VER}
+  osx_instance:
+    image: catalina-xcode
+  env:
+    PATH: $HOME/conda/bin:$PATH
+  conda_script:
+    - curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
+    - bash install.sh -b -p $HOME/conda
+    # https://github.com/napari/napari/pull/594#issuecomment-542475164
+    - conda install --yes -c conda-forge setuptools
+    - conda install -yn base conda=4.8.1
+    - conda install -y python=$PY_VER
+    - rm install.sh
+
+  pip_cache:
+    folder: $HOME/Library/Caches/pip
+    populate_script:
+      - export MACOSX_DEPLOYMENT_TARGET=10.10
+      - python -m pip install --retries 3 --upgrade pip
+      - pip install -r requirements.txt
+
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - pip install --retries 3 -r requirements.txt
+    - python setup.py develop
+
+  check_script:
+    - conda list
+    - python -c "import napari; print(napari.__version__)"
+
+  test_script: pytest -v
+
+
+win_task:
+  auto_cancellation: true
+
+  matrix:
+    # not a pull request: run full suite
+    - only_if: $CIRRUS_PR == ""
+      env:
+        matrix:
+          PY_VER: "3.6"
+          PY_VER: "3.7"
+          PY_VER: "3.8"
+    # is a pull request, only run python 3.8
+    - only_if: $CIRRUS_PR != ""
+      env:
+        PY_VER: "3.8"
+
+  name: windows ${PY_VER}
   windows_container:
     image: cirrusci/windowsservercore:cmake
     os_version: 2019
-    
   env:
-    matrix:
-      PY_VER: "3.6"
-      PY_VER: "3.7"
     ANACONDA_LOCATION: $USERPROFILE\anaconda
     PATH: $ANACONDA_LOCATION\Scripts;$ANACONDA_LOCATION;$PATH
     # must set this to its default since it doesn't work in env variables
@@ -107,7 +161,7 @@ windows_task:
     # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
     VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
     PYTHON_ARCH: 64
-
+  
   system_script:
     # install OpenSSL
     - choco install -y openssl.light
@@ -115,13 +169,20 @@ windows_task:
     - ps: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
     - powershell ./opengl.ps1
     - ps: rm opengl.ps1
-
+  
   conda_script:
     - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
-    - conda install --yes -c conda-forge setuptools  # https://github.com/napari/napari/pull/594#issuecomment-542475164
-    - conda update -yn base conda
+    # https://github.com/napari/napari/pull/594#issuecomment-542475164
+    - conda install --yes -c conda-forge setuptools
+    - conda install -yn base conda=4.8.1
     - conda install -y python=%PY_VER%
     - pip install setuptools-scm
+    
+  pip_cache:
+    folder: $LOCALAPPDATA\pip\Cache
+    populate_script: 
+      - python -m pip install --retries 3 --upgrade pip
+      - pip install -r requirements.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
@@ -129,50 +190,45 @@ windows_task:
     - python setup.py develop
 
   check_script:
-    - pip list
+    - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  test_script:
-    - pytest -v -o qt_no_exception_capture=1
+  test_script: pytest -v -o qt_no_exception_capture=1
+
 
 codecov_task:
   auto_cancellation: true
 
   depends_on:
-    - linux
-    - osx
-    - windows
-
-  container:
-    image: python:3.6
+    - linux 3.8
+    - macos 3.8
+    - windows 3.8
 
   env:
     CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
     DISPLAY: ":99"
 
-  system_script:
-    - apt-get update
-    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
+  system_script: |
+    apt-get update
+    apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
 
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
   xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
   # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
   herbstluftwm_start_background_script: herbstluftwm
 
-  install_script:
-    - python -m pip install --retries 3 --upgrade pip
-    - pip install -r requirements.txt
-    - pip install pytest-cov codecov
+  install_script: |
+    python -m pip install --retries 3 --upgrade pip
+    pip install -r requirements.txt
+    pip install pytest-cov codecov
 
-  coverage_script:
-    - pytest --cov=./napari
-    - codecov
+  coverage_script: |
+    pytest --cov=./napari
+    codecov
+
 
 push_docs_task:
   auto_cancellation: true
-
-  container:
-    image: python:3.6
 
   only_if: $CIRRUS_BRANCH == "master"
 
@@ -181,30 +237,29 @@ push_docs_task:
     GH_TOKEN: ENCRYPTED[bdbe1e34c8f2491f4c982798ed4bb5bfe61da8ecb1d7c5164bd97f6fccaa398818d2b788badd13651d8e1692cab10fec]
     CIRRUS_CLONE_DEPTH: 0  # unlimited depth allows versioneer to work properly
 
-  system_script:
-    - apt-get update
-    - apt-get install -y libgl1-mesa-glx libqt5x11extras5
+  system_script: |
+    apt-get update
+    apt-get install -y libgl1-mesa-glx libqt5x11extras5
 
-  install_script:
-    - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements/default.txt
-    - pip install --retries 3 -r requirements/docs.txt
-    - python setup.py develop
+  install_script: |
+    python -m pip install --retries 3 --upgrade pip
+    pip install --retries 3 -r requirements/default.txt
+    pip install --retries 3 -r requirements/docs.txt
+    python setup.py develop
 
-  build_script:
-    - make docs
+  build_script: make docs
 
   push_script:
     # adapted from https://github.com/scikit-image/scikit-image/blob/master/tools/travis/deploy_docs.sh
-    - git fetch --tags
     - VERSION=`python -c "from versioneer import get_version; print(get_version())"`
     - git clone --quiet https://${GH_REF} doc_repo
     - cd doc_repo
     - git config --global user.email "cirrus@cirrus-ci.org"
     - git config --global user.name "Cirrus Bot"
-    - if [ -d dev ]; then git rm -r dev; fi
-    - cp -r ../docs/build/html dev
-    - git add dev
+    - git rm -rq .
+    - cp -r ../docs/build/html/* .
+    - touch .nojekyll
+    - git add .
     - if [[ -z $(git status --untracked-files=no --porcelain) ]]; then exit 0; fi  # repo is clean 
     - git commit -m "dev docs v${VERSION}"
     - git push --quiet "https://${GH_TOKEN}@${GH_REF}" master > /dev/null 2>&1

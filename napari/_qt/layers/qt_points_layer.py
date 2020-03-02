@@ -1,17 +1,19 @@
-from qtpy.QtCore import Qt
+import numpy as np
+from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
-    QLabel,
-    QComboBox,
-    QSlider,
-    QCheckBox,
     QButtonGroup,
-    QFrame,
+    QCheckBox,
+    QComboBox,
     QHBoxLayout,
+    QLabel,
+    QSlider,
 )
 
-from .qt_base_layer import QtLayerControls
 from ...layers.points._constants import Mode, Symbol
-from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
+from ..qt_color_dialog import QColorSwatchEdit
+from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
+from ..utils import qt_signals_blocked
+from .qt_base_layer import QtLayerControls
 
 
 class QtPointsControls(QtLayerControls):
@@ -22,8 +24,12 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
-        self.layer.events.face_color.connect(self._on_face_color_change)
+        self.layer.events.current_edge_color.connect(
+            self._on_edge_color_change
+        )
+        self.layer.events.current_face_color.connect(
+            self._on_face_color_change
+        )
         self.layer.events.editable.connect(self._on_editable_change)
 
         sld = QSlider(Qt.Horizontal)
@@ -36,23 +42,16 @@ class QtPointsControls(QtLayerControls):
         sld.valueChanged.connect(self.changeSize)
         self.sizeSlider = sld
 
-        face_comboBox = QComboBox()
-        face_comboBox.addItems(self.layer._colors)
-        face_comboBox.activated[str].connect(self.changeFaceColor)
-        self.faceComboBox = face_comboBox
-        self.faceColorSwatch = QFrame()
-        self.faceColorSwatch.setObjectName('swatch')
-        self.faceColorSwatch.setToolTip('Face color swatch')
-        self._on_face_color_change()
-
-        edge_comboBox = QComboBox()
-        edge_comboBox.addItems(self.layer._colors)
-        edge_comboBox.activated[str].connect(self.changeEdgeColor)
-        self.edgeComboBox = edge_comboBox
-        self.edgeColorSwatch = QFrame()
-        self.edgeColorSwatch.setObjectName('swatch')
-        self.edgeColorSwatch.setToolTip('Edge color swatch')
-        self._on_edge_color_change()
+        self.faceColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.current_face_color,
+            tooltip='click to set current face color',
+        )
+        self.edgeColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.current_edge_color,
+            tooltip='click to set current edge color',
+        )
+        self.faceColorEdit.color_changed.connect(self.changeFaceColor)
+        self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
         symbol_comboBox = QComboBox()
         symbol_comboBox.addItems([str(s) for s in Symbol])
@@ -110,11 +109,9 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.addWidget(QLabel('symbol:'), 4, 0)
         self.grid_layout.addWidget(self.symbolComboBox, 4, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('face color:'), 5, 0)
-        self.grid_layout.addWidget(self.faceComboBox, 5, 2)
-        self.grid_layout.addWidget(self.faceColorSwatch, 5, 1)
+        self.grid_layout.addWidget(self.faceColorEdit, 5, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('edge color:'), 6, 0)
-        self.grid_layout.addWidget(self.edgeComboBox, 6, 2)
-        self.grid_layout.addWidget(self.edgeColorSwatch, 6, 1)
+        self.grid_layout.addWidget(self.edgeColorEdit, 6, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
         self.grid_layout.addWidget(self.ndimCheckBox, 7, 1)
         self.grid_layout.setRowStretch(8, 1)
@@ -134,12 +131,6 @@ class QtPointsControls(QtLayerControls):
             self.panzoom_button.setChecked(True)
         else:
             raise ValueError("Mode not recognized")
-
-    def changeFaceColor(self, text):
-        self.layer.current_face_color = text
-
-    def changeEdgeColor(self, text):
-        self.layer.current_edge_color = text
 
     def changeSymbol(self, text):
         self.layer.symbol = text
@@ -169,43 +160,27 @@ class QtPointsControls(QtLayerControls):
             value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
 
-    def _on_edge_color_change(self, event=None):
-        """Change element's edge color based on user-provided value.
+    @Slot(np.ndarray)
+    def changeFaceColor(self, color: np.ndarray):
+        """Update the layer model based on user input in the color picker."""
+        with self.layer.events.current_face_color.blocker():
+            self.layer.current_face_color = color
 
-        The new color (read from layer.current_edge_color) is a string -
-        either the color's name or its hex representation. This color has
-        already been verified by "transform_color". This value has to be
-        looked up in the color list of the layer and displayed in the
-        combobox. If it's not in the combobox the method will add it and
-        then display it, for future use.
-        """
-        color = self.layer.current_edge_color
-        with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
-            if index == -1:
-                self.edgeComboBox.addItem(color)
-                index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
-            self.edgeComboBox.setCurrentIndex(index)
-        self.edgeColorSwatch.setStyleSheet(f"background-color: {color}")
+    @Slot(np.ndarray)
+    def changeEdgeColor(self, color: np.ndarray):
+        """Update the layer model based on user input in the color picker."""
+        with self.layer.events.current_edge_color.blocker():
+            self.layer.current_edge_color = color
 
     def _on_face_color_change(self, event=None):
-        """Change element's face color based user-provided value.
+        """Receive layer.current_face_color() change event and update view."""
+        with qt_signals_blocked(self.faceColorEdit):
+            self.faceColorEdit.setColor(self.layer.current_face_color)
 
-        The new color (read from layer.current_face_color) is a string -
-        either the color's name or its hex representation. This color has
-        already been verified by "transform_color". This value has to be
-        looked up in the color list of the layer and displayed in the
-        combobox. If it's not in the combobox the method will add it and
-        then display it, for future use.
-        """
-        color = self.layer.current_face_color
-        with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(color, Qt.MatchFixedString)
-            if index == -1:
-                self.faceComboBox.addItem(color)
-                index = self.faceComboBox.findText(color, Qt.MatchFixedString)
-            self.faceComboBox.setCurrentIndex(index)
-        self.faceColorSwatch.setStyleSheet(f"background-color: {color}")
+    def _on_edge_color_change(self, event=None):
+        """Receive layer.current_edge_color() change event and update view."""
+        with qt_signals_blocked(self.edgeColorEdit):
+            self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_editable_change(self, event=None):
         self.select_button.setEnabled(self.layer.editable)

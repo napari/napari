@@ -52,3 +52,11 @@ from .utils import sys_info
 
 __version__ = get_versions()['version']
 del get_versions
+
+# this unused import is here to fix a very strange bug.
+# there is some mysterious magical goodness in scipy stats that needs
+# to be imported early.
+# see: https://github.com/napari/napari/issues/925
+from scipy import stats  # noqa: F401
+
+del stats

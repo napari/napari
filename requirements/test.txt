@@ -1,3 +1,4 @@
+pandas
 pytest
 pytest-faulthandler
 pytest-qt

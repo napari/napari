@@ -39,6 +39,13 @@ class QtPopup(QDialog):
         self.move(pos)
         self.show()
 
+    def show_right_of_mouse(self, *args):
+        pos = QCursor().pos()  # mouse position
+        szhint = self.sizeHint()
+        pos -= QPoint(-14, szhint.height() / 4)
+        self.move(pos)
+        self.show()
+
     def show_at(self, position='top', *, win_ratio=0.9, min_length=0):
         """Show popup at a position relative to the QMainWindow.
 

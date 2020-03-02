@@ -54,20 +54,10 @@ class QtDimSliderWidget(QWidget):
         # editingFinished event (the user is expected to change the value)...
         # which is confusing to the user, so instead we use an IntValidator
         # that makes sure the user can only enter integers, but we do our own
-        # value validation in change_slice
+        # value validation in self.change_slice
         self.curslice_label.setValidator(QIntValidator(0, 999999))
 
-        def change_slice():
-            val = int(self.curslice_label.text())
-            max_allowed = self.dims.max_indices[self.axis]
-            if val > max_allowed:
-                val = max_allowed
-                self.curslice_label.setText(str(val))
-            self.curslice_label.clearFocus()
-            self.qt_dims.setFocus()
-            self.dims.set_point(self.axis, val)
-
-        self.curslice_label.editingFinished.connect(change_slice)
+        self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
         self.totslice_label.setToolTip(f'Total slices for axis {axis}')
         self.curslice_label.setObjectName('slice_label')
@@ -96,6 +86,17 @@ class QtDimSliderWidget(QWidget):
         layout.setSpacing(2)
         self.setLayout(layout)
         self.dims.events.axis_labels.connect(self._pull_label)
+
+    def _set_slice_from_label(self):
+        """Update the dims point based on the curslice_label."""
+        val = int(self.curslice_label.text())
+        max_allowed = self.dims.max_indices[self.axis]
+        if val > max_allowed:
+            val = max_allowed
+            self.curslice_label.setText(str(val))
+        self.curslice_label.clearFocus()
+        self.qt_dims.setFocus()
+        self.dims.set_point(self.axis, val)
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -186,7 +187,7 @@ class QtDimSliderWidget(QWidget):
             if _range[1] == 0:
                 displayed_sliders[self.axis] = False
                 self.qt_dims.last_used = None
-                self.slider.hide()
+                self.hide()
             else:
                 if (
                     not displayed_sliders[self.axis]
@@ -194,7 +195,7 @@ class QtDimSliderWidget(QWidget):
                 ):
                     displayed_sliders[self.axis] = True
                     self.last_used = self.axis
-                    self.slider.show()
+                    self.show()
                 self.slider.setMinimum(_range[0])
                 self.slider.setMaximum(_range[1])
                 self.slider.setSingleStep(_range[2])
@@ -205,7 +206,7 @@ class QtDimSliderWidget(QWidget):
                 self._update_slice_labels()
         else:
             displayed_sliders[self.axis] = False
-            self.slider.hide()
+            self.hide()
 
     def _update_slider(self):
         mode = self.dims.mode[self.axis]

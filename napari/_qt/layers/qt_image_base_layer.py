@@ -129,7 +129,7 @@ def create_range_popup(layer, attr, parent=None):
 
     Parameters
     ----------
-    layer : napari.Layer
+    layer : napari.layers.Layer
         probably an instance of Image or Surface layer
     attr : str
         the attribute to control with the slider.
@@ -153,11 +153,21 @@ def create_range_popup(layer, attr, parent=None):
         )
     is_integer_type = np.issubdtype(layer.dtype, np.integer)
 
+    d_range = getattr(layer, range_attr)
     popup = QRangeSliderPopup(
         initial_values=getattr(layer, attr),
-        data_range=getattr(layer, range_attr),
+        data_range=d_range,
         collapsible=False,
-        precision=(0 if is_integer_type else 2),
+        precision=(
+            0
+            if is_integer_type
+            # scale precision with the log of the data range order of magnitude
+            # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+            #       0 - 10  (1 order of mag)  -> 2 decimals
+            #       0 - 100 (2 orders of mag) -> 1 decimal
+            #       ≥ 3 orders of mag -> no decimals
+            else int(max(3 - np.log10(max(d_range[1] - d_range[0], 0.01)), 0))
+        ),
         parent=parent,
     )
 
@@ -177,7 +187,8 @@ def create_clim_reset_buttons(layer):
 
     Parameters
     ----------
-    layer : Image or Surface Layer
+    layer : napari.layers.Layer
+        Image or Surface Layer
 
     Returns
     -------
