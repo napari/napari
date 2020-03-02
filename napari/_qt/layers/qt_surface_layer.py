@@ -3,7 +3,7 @@ from qtpy.QtWidgets import QLabel
 
 
 class QtSurfaceControls(QtBaseImageControls):
-    """#TODO
+    """Qt view and controls for the napari Surface layer.
 
     Parameters
     ----------
