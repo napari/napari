@@ -149,6 +149,7 @@ class QtDims(QWidget):
                 widget.show()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+        self._resize_slice_labels()
 
     def _update_nsliders(self, event=None):
         """Updates the number of sliders based on the number of dimensions.
