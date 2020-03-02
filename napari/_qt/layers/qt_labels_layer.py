@@ -156,7 +156,9 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
-        """#TODO
+        """On mouse move, set layer status equal to the current selected mode.
+
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
 
         Parameters
         ----------
@@ -279,7 +281,7 @@ class QtLabelsControls(QtLayerControls):
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_contig_change(self, event=None):
-        """#TODO
+        """Toggle whether labels are contiguous or not.
 
         Parameters
         ----------
@@ -290,7 +292,7 @@ class QtLabelsControls(QtLayerControls):
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
     def _on_editable_change(self, event=None):
-        """#TODO
+        """Toggle whether the labels are editable or not.
 
         Parameters
         ----------
