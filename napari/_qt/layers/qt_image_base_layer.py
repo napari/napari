@@ -13,7 +13,9 @@ from .qt_base_layer import QtLayerControls
 
 
 class QtBaseImageControls(QtLayerControls):
-    """#TODO
+    """Qt view and controls for base image layer types.
+
+    Subclassed by QtImageControls and QtSurfaceControls.
 
     Parameters
     ----------
@@ -23,15 +25,15 @@ class QtBaseImageControls(QtLayerControls):
     Attributes
     ----------
     clim_pop : napari._qt.qt_range_slider_popup.QRangeSliderPopup
-        #TODO
+        Popup widget launching the contrast range slider.
     colorbarLabel : qtpy.QtWidgets.QLabel
-        #TODO
+        Label text of colorbar widget.
     colormapComboBox : qtpy.QtWidgets.QComboBox
-        #TODO
+        Dropdown widget for selecting the layer colormap.
     contrastLimitsSlider : qtpy.QtWidgets.QHRangeSlider
-        #TODO
+        Contrast range slider widget.
     gammaSlider : qtpy.QtWidgets.QSlider
-        #TODO
+        Gamma adjustment slider widget.
     layer : napari.layers.Layer
         An instance of a napari layer.
 
