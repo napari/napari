@@ -10,6 +10,7 @@ from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.keybindings import KeymapMixin
 from ...utils.status_messages import status_format, format_float
+from ..transforms import STTransform
 
 
 class Layer(KeymapMixin, ABC):
@@ -130,17 +131,16 @@ class Layer(KeymapMixin, ABC):
         self.scale_factor = 1
 
         self.dims = Dims(ndim)
+
         if scale is None:
-            self._scale = [1] * ndim
-        else:  # covers list and array-like inputs
-            self._scale = list(scale)
+            scale = [1] * ndim
         if translate is None:
-            self._translate = [0] * ndim
-        else:  # covers list and array-like inputs
-            self._translate = list(translate)
-        self._scale_view = np.ones(ndim)
-        self._translate_view = np.zeros(ndim)
-        self._translate_grid = np.zeros(ndim)
+            translate = [0] * ndim
+
+        self._transform = STTransform(scale, translate)
+        self._transform_view = STTransform([1] * ndim, [0] * ndim)
+        self._transform_grid = STTransform([1] * ndim, [0] * ndim)
+
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
         self.is_pyramid = False
@@ -288,34 +288,35 @@ class Layer(KeymapMixin, ABC):
     @property
     def scale(self):
         """list: Anisotropy factors to scale the layer by."""
-        return self._scale
+        return self._transform.scale
 
     @scale.setter
     def scale(self, scale):
-        self._scale = scale
+        self._transform.scale = np.array(scale)
         self._update_dims()
         self.events.scale()
 
     @property
     def translate(self):
         """list: Factors to shift the layer by."""
-        return self._translate
+        return self._transform.translate
 
     @translate.setter
     def translate(self, translate):
-        self._translate = translate
+        self._transform.translate = np.array(translate)
+        self._update_dims()
         self.events.translate()
 
     @property
     def translate_grid(self):
         """list: Factors to shift the layer by."""
-        return self._translate_grid
+        return self._transform_grid.translate
 
     @translate_grid.setter
     def translate_grid(self, translate_grid):
-        if np.all(self._translate_grid == translate_grid):
+        if np.all(self.translate_grid == translate_grid):
             return
-        self._translate_grid = translate_grid
+        self._transform_grid.translate = np.array(translate_grid)
         self.events.translate()
 
     @property
@@ -344,35 +345,18 @@ class Layer(KeymapMixin, ABC):
             self._position = (0,) * (ndisplay - len(self.position)) + tuple(
                 self.position
             )
-        if len(self.scale) > ndim:
-            self._scale = self._scale[-ndim:]
-        elif len(self.scale) < ndim:
-            self._scale = (1,) * (ndim - len(self.scale)) + tuple(self.scale)
-        if len(self.translate) > ndim:
-            self._translate = self._translate[-ndim:]
-        elif len(self.translate) < ndim:
-            self._translate = (0,) * (ndim - len(self.translate)) + tuple(
-                self.translate
-            )
-        if len(self._scale_view) > ndim:
-            self._scale_view = self._scale_view[-ndim:]
-        elif len(self._scale_view) < ndim:
-            self._scale_view = (1,) * (ndim - len(self._scale_view)) + tuple(
-                self._scale_view
-            )
-        if len(self._translate_view) > ndim:
-            self._translate_view = self._translate_view[-ndim:]
-        elif len(self._translate_view) < ndim:
-            self._translate_view = (0,) * (
-                ndim - len(self._translate_view)
-            ) + tuple(self._translate_view)
 
-        if len(self._translate_grid) > ndim:
-            self._translate_grid = self._translate_grid[-ndim:]
-        elif len(self._translate_grid) < ndim:
-            self._translate_grid = (0,) * (
-                ndim - len(self._translate_grid)
-            ) + tuple(self._translate_grid)
+        old_ndim = self.dims.ndim
+        if old_ndim > ndim:
+            keep_axes = range(old_ndim - ndim, old_ndim)
+            self._transform = self._transform.set_slice(keep_axes)
+            self._transform_view = self._transform_view.set_slice(keep_axes)
+            self._transform_grid = self._transform_grid.set_slice(keep_axes)
+        elif old_ndim < ndim:
+            new_axes = range(ndim - old_ndim)
+            self._transform = self._transform.set_pad(new_axes)
+            self._transform_view = self._transform_view.set_pad(new_axes)
+            self._transform_grid = self._transform_grid.set_pad(new_axes)
 
         self.dims.ndim = ndim
 
@@ -622,8 +606,8 @@ class Layer(KeymapMixin, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        full_scale = np.multiply(self.scale, self._scale_view)
-        full_translate = np.add(self.translate, self._translate_view)
+        full_scale = np.multiply(self.scale, self._transform_view.scale)
+        full_translate = np.add(self.translate, self._transform_view.translate)
 
         full_coord = np.round(
             np.multiply(self.coordinates, full_scale) + full_translate
