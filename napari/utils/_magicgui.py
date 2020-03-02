@@ -96,8 +96,13 @@ def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
     except AttributeError:
         return
 
-    # if they have annotated the return type as layers.Layer,
-    # the function MUST return a list of LayerData tuples
+    # if they have annotated the return type as a base layer (layers.Layer),
+    # NOT a subclass of it, then the function MUST return a list of
+    # LayerData tuples where:
+    # LayerData = Union[Tuple[data], Tuple[data, Dict], Tuple[data, Dict, str]]
+    # where `data` is the data for a given layer
+    # and `Dict` is a dict of keywords args that could be passed to that layer
+    # type's add_* method
     if return_type == Layer:
         if (
             isinstance(result, list)
