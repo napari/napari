@@ -18,7 +18,7 @@ from ..qt_mode_buttons import QtModeRadioButton
 
 
 class QtLabelsControls(QtLayerControls):
-    """#TODO
+    """Qt view and controls for the napari Labels layer.
 
     Parameters
     ----------
@@ -34,7 +34,8 @@ class QtLabelsControls(QtLayerControls):
     contigCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is contiguous.
     fill_button : qtpy.QtWidgets.QtModeRadioButton
-        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+        Button to select FILL mode.
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Layer
@@ -42,13 +43,16 @@ class QtLabelsControls(QtLayerControls):
     ndimCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is n-dimensional.
     paint_button : qtpy.QtWidgets.QtModeRadioButton
-        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+        Button to select PAINT mode.
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton
-        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+        Button to select PAN_ZOOM mode.
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
     pick_button : qtpy.QtWidgets.QtModeRadioButton
-        #TODO PAN_ZOOM, PICKER, PAINT, or FILL
+        Button to select PICKER mode.
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
     selectionSpinBox : qtpy.QtWidgets.QSpinBox
-        #TODO
+        Widget to select a specfic label by its index.
 
     Raises
     ------
