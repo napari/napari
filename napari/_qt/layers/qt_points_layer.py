@@ -15,7 +15,7 @@ from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 
 
 class QtPointsControls(QtLayerControls):
-    """#TODO
+    """Qt view and controls for the napari Points layer.
 
     Parameters
     ----------
@@ -31,13 +31,13 @@ class QtPointsControls(QtLayerControls):
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete points from layer.
     edgeColorSwatch : qtpy.QtWidgets.QFrame
-        #TODO
+        Color swatch showing shapes edge display color.
     edgeComboBox : qtpy.QtWidgets.QComboBox
-        #TODO
+        Dropdown widget to select display color for shape edges.
     faceColorSwatch : qtpy.QtWidgets.QFrame
-        #TODO
+        Color swatch showing shapes face display color.
     faceComboBox : qtpy.QtWidgets.QComboBox
-        #TODO
+        Dropdown widget to select display color for shape faces.
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Layer
