@@ -13,21 +13,24 @@ from ..utils import sys_info, citation_text
 
 
 class QtAbout(QDialog):
-    """#TODO
+    """Qt dialog window for displaying 'About napari' information.
 
     Attributes
     ----------
+    citationCopyButton : napari._qt.qt_about.QtCopyToClipboardButton
+        Button to copy citation information to the clipboard.
+    citationTextBox : qtpy.QtWidgets.QTextEdit
+        Text box containing napari citation information.
     citation_layout : qtpy.QtWidgets.QHBoxLayout
-        #TODO
+        Layout widget for napari citation information.
     infoCopyButton : napari._qt.qt_about.QtCopyToClipboardButton
-        #TODO
+        Button to copy napari version information to the clipboard.
     info_layout : qtpy.QtWidgets.QHBoxLayout
-        #TODO
+        Layout widget for napari version information.
     infoTextBox : qtpy.QtWidgets.QTextEdit
-        #TODO
+        Text box containing napari version information.
     layout : qtpy.QtWidgets.QVBoxLayout
-        #TODO
-
+        Layout widget for the entire 'About napari' dialog.
     """
 
     def __init__(self):
@@ -73,12 +76,12 @@ class QtAbout(QDialog):
 
     @staticmethod
     def showAbout(qt_viewer):
-        """#TODO
+        """Display the 'About napari' dialog box.
 
         Paramters
         ---------
-        qt_viewer : #TODO
-            #TODO
+        qt_viewer : QtViewer
+            The QtViewer instance that the `About napari` dialog box belongs to.
         """
         d = QtAbout()
         d.setObjectName('QtAbout')
@@ -89,17 +92,17 @@ class QtAbout(QDialog):
 
 
 class QtCopyToClipboardButton(QPushButton):
-    """#TODO
+    """Button to copy text box information to the clipboard.
 
     Parameters
     ----------
-    text_edit : #TODO
-        #TODO
+    text_edit : qtpy.QtWidgets.QTextEdit
+        The text box contents linked to copy to clipboard button.
 
     Attributes
     ----------
-    text_edit : #TODO
-        #TODO
+    text_edit : qtpy.QtWidgets.QTextEdit
+        The text box contents linked to copy to clipboard button.
     """
 
     def __init__(self, text_edit):
@@ -109,5 +112,6 @@ class QtCopyToClipboardButton(QPushButton):
         self.clicked.connect(self.copyToClipboard)
 
     def copyToClipboard(self):
+        """Copy text to the clipboard."""
         cb = QtGui.QGuiApplication.clipboard()
         cb.setText(str(self.text_edit.toPlainText()))
