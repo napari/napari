@@ -15,6 +15,7 @@ import numpy as np
 from .qt_base_layer import QtLayerControls
 from ...layers.labels._constants import Mode
 from ..qt_mode_buttons import QtModeRadioButton
+from ..utils import disable_with_opacity
 
 
 class QtLabelsControls(QtLayerControls):
@@ -238,9 +239,11 @@ class QtLabelsControls(QtLayerControls):
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
     def _on_editable_change(self, event=None):
-        self.pick_button.setEnabled(self.layer.editable)
-        self.paint_button.setEnabled(self.layer.editable)
-        self.fill_button.setEnabled(self.layer.editable)
+        disable_with_opacity(
+            self,
+            ['pick_button', 'paint_button', 'fill_button'],
+            self.layer.editable,
+        )
 
 
 class QtColorBox(QWidget):

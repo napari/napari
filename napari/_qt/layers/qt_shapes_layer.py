@@ -14,6 +14,7 @@ from vispy.color import Color
 from .qt_base_layer import QtLayerControls
 from ...layers.shapes._constants import Mode
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
+from ..utils import disable_with_opacity
 
 
 class QtShapesControls(QtLayerControls):
@@ -226,15 +227,21 @@ class QtShapesControls(QtLayerControls):
             self.opacitySlider.setValue(self.layer.current_opacity * 100)
 
     def _on_editable_change(self, event=None):
-        self.select_button.setEnabled(self.layer.editable)
-        self.direct_button.setEnabled(self.layer.editable)
-        self.rectangle_button.setEnabled(self.layer.editable)
-        self.ellipse_button.setEnabled(self.layer.editable)
-        self.line_button.setEnabled(self.layer.editable)
-        self.path_button.setEnabled(self.layer.editable)
-        self.polygon_button.setEnabled(self.layer.editable)
-        self.vertex_remove_button.setEnabled(self.layer.editable)
-        self.vertex_insert_button.setEnabled(self.layer.editable)
-        self.delete_button.setEnabled(self.layer.editable)
-        self.move_back_button.setEnabled(self.layer.editable)
-        self.move_front_button.setEnabled(self.layer.editable)
+        disable_with_opacity(
+            self,
+            [
+                'select_button',
+                'direct_button',
+                'rectangle_button',
+                'ellipse_button',
+                'line_button',
+                'path_button',
+                'polygon_button',
+                'vertex_remove_button',
+                'vertex_insert_button',
+                'delete_button',
+                'move_back_button',
+                'move_front_button',
+            ],
+            self.layer.editable,
+        )

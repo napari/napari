@@ -73,7 +73,7 @@ QWidget[emphasized="true"] QPushButton {
 }
 
 QWidget[emphasized="true"] QPushButton:disabled {
-  background-color: {{ background }};
+  background-color: {{ darken(foreground, 20) }};
 }
 
 QWidget[emphasized="true"] QPushButton:hover {

@@ -113,31 +113,34 @@ QtGridViewButton::indicator:hover {
   background-color: {{ primary }};
 }
 
-
 QtModeRadioButton {
   min-height : 28px;
   padding: 0px;
 }
 
-QtModeRadioButton::indicator {
+QtModeRadioButton::indicator:unchecked {
   border-radius: 3px;
   width: 28px;
   height: 28px;
   padding: 0;
+  background-color: {{ primary }};
 }
 
 QtModeRadioButton::indicator:checked {
+  border-radius: 3px;
   height: 28px;
   width: 28px;
   padding: 0;
+  background-color: {{ current }};
 }
 
+
 QtModeRadioButton::indicator:disabled {
-  background-color: {{ background }}
+  background-color: {{ darken(foreground, 20) }}
 }
 
 QtModeRadioButton::indicator:unchecked:hover {
-  background-color: {{ primary }};
+  background-color: {{ highlight }};
 }
 
 QtModeRadioButton[mode="zoom"]::indicator {
@@ -216,6 +219,11 @@ QtModePushButton[mode="move_front"] {
 QtModePushButton[mode="delete_shape"] {
    image: url(":/icons/{{ folder }}/delete_shape.svg");
 }
+
+QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
+  background-color: {{ warning }};
+}
+
 
 QtCopyToClipboardButton {
    background-color: {{ background }};

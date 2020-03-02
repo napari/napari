@@ -14,6 +14,7 @@ from ..qt_color_dialog import QColorSwatchEdit
 from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
+from ..utils import disable_with_opacity
 
 
 class QtPointsControls(QtLayerControls):
@@ -184,6 +185,8 @@ class QtPointsControls(QtLayerControls):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_editable_change(self, event=None):
-        self.select_button.setEnabled(self.layer.editable)
-        self.addition_button.setEnabled(self.layer.editable)
-        self.delete_button.setEnabled(self.layer.editable)
+        disable_with_opacity(
+            self,
+            ['select_button', 'addition_button', 'delete_button'],
+            self.layer.editable,
+        )
