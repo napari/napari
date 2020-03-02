@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QSlider,
     QFrame,
     QGridLayout,
+    QHBoxLayout,
 )
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
@@ -44,7 +45,7 @@ class QtShapesControls(QtLayerControls):
         face_comboBox.activated[str].connect(self.changeFaceColor)
         self.faceComboBox = face_comboBox
         self.faceColorSwatch = QFrame()
-        self.faceColorSwatch.setObjectName('swatch')
+        self.faceColorSwatch.setObjectName('colorSwatch')
         self.faceColorSwatch.setToolTip('Face color swatch')
         self._on_face_color_change()
 
@@ -53,7 +54,7 @@ class QtShapesControls(QtLayerControls):
         edge_comboBox.activated[str].connect(self.changeEdgeColor)
         self.edgeComboBox = edge_comboBox
         self.edgeColorSwatch = QFrame()
-        self.edgeColorSwatch.setObjectName('swatch')
+        self.edgeColorSwatch.setObjectName('colorSwatch')
         self.edgeColorSwatch.setToolTip('Edge color swatch')
         self._on_edge_color_change()
 
@@ -120,37 +121,43 @@ class QtShapesControls(QtLayerControls):
         self.button_group.addButton(self.vertex_remove_button)
 
         button_grid = QGridLayout()
-        button_grid.addWidget(self.vertex_remove_button, 0, 1)
-        button_grid.addWidget(self.vertex_insert_button, 0, 2)
-        button_grid.addWidget(self.delete_button, 0, 3)
-        button_grid.addWidget(self.direct_button, 0, 4)
-        button_grid.addWidget(self.select_button, 0, 5)
-        button_grid.addWidget(self.panzoom_button, 0, 6)
-        button_grid.addWidget(self.move_back_button, 1, 0)
-        button_grid.addWidget(self.move_front_button, 1, 1)
-        button_grid.addWidget(self.ellipse_button, 1, 2)
-        button_grid.addWidget(self.rectangle_button, 1, 3)
-        button_grid.addWidget(self.polygon_button, 1, 4)
-        button_grid.addWidget(self.line_button, 1, 5)
-        button_grid.addWidget(self.path_button, 1, 6)
-        button_grid.setColumnStretch(2, 2)
+        button_grid.addWidget(self.vertex_remove_button, 0, 2)
+        button_grid.addWidget(self.vertex_insert_button, 0, 3)
+        button_grid.addWidget(self.delete_button, 0, 4)
+        button_grid.addWidget(self.direct_button, 0, 5)
+        button_grid.addWidget(self.select_button, 0, 6)
+        button_grid.addWidget(self.panzoom_button, 0, 7)
+        button_grid.addWidget(self.move_back_button, 1, 1)
+        button_grid.addWidget(self.move_front_button, 1, 2)
+        button_grid.addWidget(self.ellipse_button, 1, 3)
+        button_grid.addWidget(self.rectangle_button, 1, 4)
+        button_grid.addWidget(self.polygon_button, 1, 5)
+        button_grid.addWidget(self.line_button, 1, 6)
+        button_grid.addWidget(self.path_button, 1, 7)
+        button_grid.setContentsMargins(5, 0, 0, 5)
+        button_grid.setColumnStretch(0, 1)
         button_grid.setSpacing(4)
+
+        face_color_layout = QHBoxLayout()
+        face_color_layout.addWidget(self.faceColorSwatch)
+        face_color_layout.addWidget(self.faceComboBox)
+        edge_color_layout = QHBoxLayout()
+        edge_color_layout.addWidget(self.edgeColorSwatch)
+        edge_color_layout.addWidget(self.edgeComboBox)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_grid, 0, 0, 1, 3)
+        self.grid_layout.addLayout(button_grid, 0, 0, 1, 2)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1)
         self.grid_layout.addWidget(QLabel('edge width:'), 2, 0)
-        self.grid_layout.addWidget(self.widthSlider, 2, 1, 1, 2)
+        self.grid_layout.addWidget(self.widthSlider, 2, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
+        self.grid_layout.addWidget(self.blendComboBox, 3, 1)
         self.grid_layout.addWidget(QLabel('face color:'), 4, 0)
-        self.grid_layout.addWidget(self.faceComboBox, 4, 2)
-        self.grid_layout.addWidget(self.faceColorSwatch, 4, 1)
+        self.grid_layout.addLayout(face_color_layout, 4, 1)
         self.grid_layout.addWidget(QLabel('edge color:'), 5, 0)
-        self.grid_layout.addWidget(self.edgeComboBox, 5, 2)
-        self.grid_layout.addWidget(self.edgeColorSwatch, 5, 1)
+        self.grid_layout.addLayout(edge_color_layout, 5, 1)
         self.grid_layout.setRowStretch(6, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)

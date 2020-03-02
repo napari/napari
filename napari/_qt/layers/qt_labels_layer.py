@@ -30,9 +30,8 @@ class QtLabelsControls(QtLayerControls):
 
         # shuffle colormap button
         self.colormapUpdate = QPushButton('shuffle colors')
-        self.colormapUpdate.setObjectName('shuffle')
+        self.colormapUpdate.setObjectName('shuffleButton')
         self.colormapUpdate.clicked.connect(self.changeColor)
-        self.colormapUpdate.setFixedHeight(28)
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
@@ -41,6 +40,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.setMaximum(2147483647)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
+        self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selection_change()
 
         sld = QSlider(Qt.Horizontal)
@@ -85,26 +85,30 @@ class QtLabelsControls(QtLayerControls):
         self._on_editable_change()
 
         button_row = QHBoxLayout()
+        button_row.addStretch(1)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
         button_row.addWidget(self.panzoom_button)
-        button_row.addStretch(1)
         button_row.setSpacing(4)
+        button_row.setContentsMargins(0, 0, 0, 5)
+
+        color_layout = QHBoxLayout()
+        color_layout.addWidget(QtColorBox(layer))
+        color_layout.addWidget(self.selectionSpinBox)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
+        self.grid_layout.addLayout(button_row, 0, 1)
         self.grid_layout.addWidget(self.colormapUpdate, 0, 0)
         self.grid_layout.addWidget(QLabel('label:'), 1, 0)
-        self.grid_layout.addWidget(self.selectionSpinBox, 1, 2)
-        self.grid_layout.addWidget(QtColorBox(layer), 1, 1)
+        self.grid_layout.addLayout(color_layout, 1, 1)
         self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 2, 1)
         self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 2)
+        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 1, 1, 2)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
         self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0)
         self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
         self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)

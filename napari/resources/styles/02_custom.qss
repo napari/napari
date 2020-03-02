@@ -272,12 +272,9 @@ QtColorBox {
 /* ----------------- QtLayerControls -------------------- */
 
 QtLayerControls > QLabel {
-  min-height: 18px;
-  max-height: 18px;
-  min-width: 96px;
-  max-width: 96px;
+  font-size: 11pt;
+  font-color: {{ text}};
 }
-
 
 /* ------------- DimsSliders --------- */
 
@@ -391,4 +388,8 @@ QtAbout > QTextEdit{
   margin: 0px;
   border: 0px;
   padding: 2px;
+}
+
+#hithere QObject {
+  background: red;
 }

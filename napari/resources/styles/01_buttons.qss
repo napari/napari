@@ -264,3 +264,8 @@ QtPlayButton[playing=True] {
     width: 12px;
     padding: 2px;
 }
+
+#shuffleButton {
+  font-size: 11pt;
+  margin-bottom: 4px;
+}
