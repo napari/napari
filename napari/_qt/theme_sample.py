@@ -1,3 +1,21 @@
+"""SampleWidget that contains many types of QWidgets.
+
+This file and SampleWidget is useful for testing out themes from the command
+line or for generating screenshots of a sample widget to demonstrate a theme.
+
+Examples
+--------
+To use from the command line:
+
+$ python -m napari._qt.theme_sample
+
+To generate a screenshot within python:
+
+>>> from napari._qt.theme_sample import SampleWidget
+>>> widg = SampleWidget(theme='dark')
+>>> screenshot = widg.screenshot()
+"""
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QApplication,
@@ -24,11 +42,11 @@ from qtpy.QtWidgets import (
 )
 from skimage.io import imsave
 
-from napari._qt.qt_range_slider import QHRangeSlider
-from napari.resources import combine_stylesheets
-from napari.utils.theme import palettes, template
+from .qt_range_slider import QHRangeSlider
+from ..resources import combine_stylesheets
+from ..utils.theme import palettes, template
 
-from napari._qt.utils import QImg2array
+from .utils import QImg2array
 
 raw_stylesheet = combine_stylesheets()
 
@@ -136,7 +154,7 @@ class SampleWidget(QWidget):
     def screenshot(self, path=None):
         img = self.grab().toImage()
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
+            imsave(path, QImg2array(img))
         return QImg2array(img)
 
 
