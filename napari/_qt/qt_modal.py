@@ -21,15 +21,15 @@ class QtPopup(QDialog):
 
     Parameters
     ----------
-    parent : #TODO
-        #TODO
+    parent : qtpy.QtWidgets:QWidget
+        Parent widget of the popup dialog box.
 
     Attributes
     ----------
     frame : qtpy.QtWidgets.QFrame
-        #TODO
-    layout : #TODO
-        #TODO
+        Frame of the popup dialog box.
+    layout : qtpy.QtWidgets.QVBoxLayout
+        Layout of the popup dialog box.
     """
 
     def __init__(self, parent):
@@ -45,7 +45,7 @@ class QtPopup(QDialog):
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     def show_above_mouse(self, *args):
-        """#TODO"""
+        """Show popup dialog above the mouse cursor position."""
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
         pos -= QPoint(szhint.width() / 2, szhint.height() + 14)
@@ -123,7 +123,7 @@ class QtPopup(QDialog):
         self.show()
 
     def keyPressEvent(self, event):
-        """#TODO
+        """Pass key press event through to the QDialog super class.
 
         Parameters
         ----------
