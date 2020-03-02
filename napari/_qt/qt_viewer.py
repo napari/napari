@@ -32,7 +32,7 @@ from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_keybindings import QtAboutKeybindings
 from .._vispy import create_vispy_visual
 
-from .._controllers import layer_to_controller
+from ..layers.base import layer_to_controller
 from .layers import create_qt_controls
 
 
@@ -244,9 +244,11 @@ class QtViewer(QSplitter):
         self.controls.addWidget(controls)
         self.controls.widgets[layer] = controls
 
+        editable_components = [layer, vispy_layer, controls]
+
         # make event controller
         layer_controller = layer_to_controller[type(layer)](
-            layer=layer, qt_controls=controls, vispy_layer=vispy_layer
+            editable_components=editable_components
         )
         self.layer_controllers[layer] = layer_controller
 

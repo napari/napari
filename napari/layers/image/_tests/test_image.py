@@ -6,6 +6,7 @@ import xarray as xr
 import pytest
 from vispy.color import Colormap
 from napari.layers import Image
+from napari.layers.image import ImageEventHandler
 
 
 def test_random_image():
@@ -14,6 +15,8 @@ def test_random_image():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
+    # instantiate controller
+    ImageEventHandler(editable_components=[layer])
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape

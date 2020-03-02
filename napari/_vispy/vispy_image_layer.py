@@ -1,3 +1,4 @@
+from napari.layers.image.image_interface import ImageInterface
 import warnings
 from vispy.scene.visuals import Image as ImageNode
 from .volume import Volume as VolumeNode
@@ -17,16 +18,13 @@ texture_dtypes = [
 ]
 
 
-class VispyImageLayer(VispyBaseLayer):
+class VispyImageLayer(VispyBaseLayer, ImageInterface):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.contrast_limits.connect(
-            self._on_contrast_limits_change
-        )
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_threshold_change)
         self.layer.events.attenuation.connect(self._on_threshold_change)
@@ -94,7 +92,7 @@ class VispyImageLayer(VispyBaseLayer):
                 self.node.set_data(data, clim=self.layer.contrast_limits)
         self.node.update()
 
-    def set_interpolation(self, interpolation):
+    def _set_interpolation(self, interpolation):
         if self.layer.dims.ndisplay == 3 and isinstance(self.layer, Labels):
             self.node.interpolation = 'nearest'
         elif self.layer.dims.ndisplay == 3 and isinstance(self.layer, Image):
@@ -121,9 +119,9 @@ class VispyImageLayer(VispyBaseLayer):
             )
         self.node.cmap = cmap
 
-    def _on_contrast_limits_change(self, event=None):
+    def _set_contrast_limits(self, contrast_limits):
         if self.layer.dims.ndisplay == 2:
-            self.node.clim = self.layer.contrast_limits
+            self.node.clim = contrast_limits
         else:
             self._on_data_change()
 
@@ -245,7 +243,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_colormap_change()
         self._on_rendering_change()
         if self.layer.dims.ndisplay == 2:
-            self._on_contrast_limits_change()
+            self._set_contrast_limits(self.layer.contrast_limits)
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

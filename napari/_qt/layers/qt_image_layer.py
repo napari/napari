@@ -1,3 +1,4 @@
+from napari.layers.image.image_interface import ImageInterface
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QSlider
 from ...utils.event import Event
@@ -5,7 +6,7 @@ from .qt_image_base_layer import QtBaseImageControls
 from ...layers.image._constants import Interpolation, Rendering
 
 
-class QtImageControls(QtBaseImageControls):
+class QtImageControls(QtBaseImageControls, ImageInterface):
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -83,9 +84,9 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setVerticalSpacing(4)
 
     def emit_interpolation_event(self, text):
-        self.events.interpolation(interpolation=text)
+        self.events.interpolation(name="interpolation", value=text)
 
-    def set_interpolation(self, text):
+    def _set_interpolation(self, text):
         index = self.interpComboBox.findText(text, Qt.MatchFixedString)
         self.interpComboBox.setCurrentIndex(index)
 

@@ -91,6 +91,11 @@ class IntensityVisualizationMixin:
 
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
+        self.events.contrast_limits(
+            name="contrast_limits", value=contrast_limits
+        )
+
+    def _set_contrast_limits(self, contrast_limits):
         validate_2_tuple(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
@@ -105,7 +110,6 @@ class IntensityVisualizationMixin:
         newrange[1] = max(newrange[1], contrast_limits[1])
         self.contrast_limits_range = newrange
         self._update_thumbnail()
-        self.events.contrast_limits()
 
     @property
     def contrast_limits_range(self):
