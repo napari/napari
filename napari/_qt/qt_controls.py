@@ -3,8 +3,7 @@ from .layers import create_qt_controls
 
 
 class QtControls(QStackedWidget):
-    """QtControls class #TODO
-    #TODO
+    """Qt widget controls.
 
     Parameters
     ----------
@@ -14,12 +13,12 @@ class QtControls(QStackedWidget):
     Attributes
     ----------
     empty_widget : qtpy.QtWidgets.QFrame
-        #TODO
+        Frame to contain widgets.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     widgets : dict
-        Dictionary #TODO
-        widgets[layer] = controls #TODO
+        Dictionary of key value pairs matching layer with its widget controls.
+        widgets[layer] = controls
     """
 
     def __init__(self, viewer):
