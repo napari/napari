@@ -5,7 +5,7 @@ from vispy.color import Color
 
 
 class QtVectorsControls(QtLayerControls):
-    """#TODO
+    """Qt view and controls for the napari Vectors layer.
 
     Parameters
     ----------
@@ -15,17 +15,18 @@ class QtVectorsControls(QtLayerControls):
     Attributes
     ----------
     edgeColorSwatch : qtpy.QtWidgets.QFrame
-        #TODO
+        Color swatch showing display color of vectors.
     edgeComboBox : qtpy.QtWidgets.QComboBox
-        #TODO
+        Dropdown widget to select display color for vectors.
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Layer
         An instance of a napari layer.
     lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
-        #TODO
+        Spin box widget controlling line length of vectors.
+        Multiplicative factor on projections for length of all vectors.
     widthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
-        #TODO
+        Spin box widget controlling edge line width of vectors.
     """
 
     def __init__(self, layer):
@@ -103,6 +104,8 @@ class QtVectorsControls(QtLayerControls):
 
     def change_length(self, value):
         """Change length of vectors.
+
+        Multiplicative factor on projections for length of all vectors.
 
         Parameters
         ----------
