@@ -1,3 +1,89 @@
+QtViewer {
+   padding-top: 0px;
+}
+
+QtLayerButtons, QtViewerButtons, QtLayerList {
+  min-width: 242px;
+  max-width: 242px;
+}
+
+/* ------------- QMainWindow --------- */
+/* QDockWidgets will use the MainWindow styles
+as long as they are docked (though they use the
+style of QDockWidget when undocked) */
+
+
+QMainWindow::separator {
+    background: {{ foreground }};
+    width: 2px; /* when vertical */
+    height: 2px; /* when horizontal */
+}
+
+QMainWindow::separator:hover {
+    background: {{ highlight }};
+}
+
+/* ------------- DockWidgets --------- */
+
+#QtCustomTitleBar {
+  padding-top:3px;
+}
+
+#QtCustomTitleBar:hover {
+  background-color: {{ darken(background, 10) }};
+}
+
+#QtCustomTitleBarLine {
+  background-color: {{ foreground }};
+}
+
+#QtCustomTitleBar > QPushButton {
+  background-color: none;
+  max-width: 12px;
+  max-height: 12px;
+}
+
+#QtCustomTitleBar > QPushButton:hover {
+  background-color: {{ foreground }};
+}
+
+#QTitleBarCloseButton{
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    image: url(":/icons/{{ folder }}/delete_shape.svg");
+}
+
+#QTitleBarFloatButton{
+    image: url(":/icons/{{ folder }}/pop_out.svg");
+    width: 10px;
+    height: 8px;
+    padding: 2 1 2 1;
+}
+
+/* ----------------- Console ------------------ */
+
+QtConsole {
+  min-height: 100px;
+}
+
+QtConsole > QPlainTextEdit, QTextEdit {
+  background-color: {{ console }};
+  background-clip: padding;
+  color: {{ text }};
+  selection-background-color: {{ highlight }};
+  margin: 10px;
+}
+.inverted {
+  background-color: {{ background }};
+  color: {{ foreground }};
+}
+.error { color: #b72121; }
+.in-prompt-number { font-weight: bold; }
+.out-prompt-number { font-weight: bold; }
+.in-prompt { color: #6ab825; }
+.out-prompt { color: #b72121; }
+
 /* ------------- Narrow scrollbar for qtlayer list --------- */
 
 QtLayerList QScrollBar:vertical {
@@ -16,17 +102,6 @@ QtLayerList QScrollBar:up-arrow,
 QtLayerList QScrollBar:down-arrow {
     height: 4px;
     width: 4px;
-}
-
-QtAboutKeybindings {
-  min-width: 600px;
-  min-height: 605px;
-}
-
-QtAbout > QTextEdit{
-  margin: 0px;
-  border: 0px;
-  padding: 2px;
 }
 
 
@@ -63,8 +138,6 @@ QtLayerWidget {
   border: 1px solid {{ background }};
   background-color: {{ foreground }};
   border-radius: 2px;
-  padding: 0px;
-  margin: 0px;
   min-height: 32px;
   max-height: 32px;
   min-width: 228px;
@@ -116,6 +189,7 @@ QLabel#Vectors {
   image: url(":/icons/{{ folder }}/new_vectors.svg");
 }
 
+/* The name of the layer*/
 QtLayerWidget > QLineEdit {
   background-color: {{ foreground }};
   border: 1px solid {{ foreground }};
@@ -177,15 +251,16 @@ QtControls > QFrame {
   border-radius: 2px;
 }
 
+/* the box that shows the current Label color */
 QtColorBox {
   padding: 0px;
   border: 0px;
-  margin: 0px;
-  border-radius: 1px;
-  min-height: 24px;
-  max-height: 24px;
-  min-width: 24px;
-  max-width: 24px;
+  margin: -1px 0 0 -1px;
+  border-radius: 2px;
+  min-height: 20px;
+  max-height: 20px;
+  min-width: 20px;
+  max-width: 20px;
 }
 
 /* ----------------- QtLayerControls -------------------- */
@@ -193,8 +268,8 @@ QtColorBox {
 QtLayerControls > QLabel {
   min-height: 18px;
   max-height: 18px;
-  min-width: 92px;
-  max-width: 92px;
+  min-width: 96px;
+  max-width: 96px;
 }
 
 
@@ -283,7 +358,6 @@ QtPlayButton[playing=True] {
    max-width: 22px;
 }
 
-
 #QtColorPopup{
   background-color: transparent;
 }
@@ -315,4 +389,18 @@ QtPlayButton[playing=True] {
 #slice_label_sep{
   background-color: {{ background }};
   border: 1px solid {{ primary }};
+}
+
+
+/* ------------ Special Dialogs ------------ */
+
+QtAboutKeybindings {
+  min-width: 600px;
+  min-height: 605px;
+}
+
+QtAbout > QTextEdit{
+  margin: 0px;
+  border: 0px;
+  padding: 2px;
 }

@@ -137,7 +137,7 @@ QLineEdit {
 }
 
 QWidget[emphasized="true"] QLineEdit {
-  background-color: {{ darken(foreground, 20) }};
+  background-color: {{ background }};
 }
 
 /* ----------------- QAbstractSpinBox ------------------ */

@@ -264,8 +264,8 @@ class QtColorBox(QWidget):
         """
         painter = QPainter(self)
         if self.layer._selected_color is None:
-            for i in range(self._height // 6):
-                for j in range(self._height // 6):
+            for i in range(self._height // 4):
+                for j in range(self._height // 4):
                     if (i % 2 == 0 and j % 2 == 0) or (
                         i % 2 == 1 and j % 2 == 1
                     ):
@@ -274,7 +274,7 @@ class QtColorBox(QWidget):
                     else:
                         painter.setPen(QColor(25, 25, 25))
                         painter.setBrush(QColor(25, 25, 25))
-                    painter.drawRect(i * 6, j * 6, 5, 5)
+                    painter.drawRect(i * 4, j * 4, 5, 5)
         else:
             color = 255 * self.layer._selected_color
             color = color.astype(int)
