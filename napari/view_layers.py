@@ -1,5 +1,4 @@
 from .viewer import Viewer
-from .utils.naming import guess_name as _guess_name
 
 
 def view_image(
@@ -116,7 +115,6 @@ def view_image(
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    name = _guess_name(name, data)
     viewer = Viewer(
         title=title,
         ndisplay=ndisplay,
@@ -264,7 +262,6 @@ def view_points(
     See vispy's marker visual docs for more details:
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
-    name = _guess_name(name, data)
     viewer = Viewer(
         title=title,
         ndisplay=ndisplay,
@@ -374,7 +371,6 @@ def view_labels(
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    name = _guess_name(name, data)
     viewer = Viewer(
         title=title,
         ndisplay=ndisplay,
@@ -491,7 +487,6 @@ def view_shapes(
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    name = _guess_name(name, data)
     viewer = Viewer(
         title=title,
         ndisplay=ndisplay,
@@ -593,7 +588,6 @@ def view_surface(
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    name = _guess_name(name, data)
     viewer = Viewer(
         title=title,
         ndisplay=ndisplay,
@@ -686,7 +680,6 @@ def view_vectors(
     viewer : :class:`napari.Viewer`
         The newly-created viewer.
     """
-    name = _guess_name(name, data)
     viewer = Viewer(
         title=title,
         ndisplay=ndisplay,

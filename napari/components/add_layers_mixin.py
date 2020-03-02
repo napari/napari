@@ -3,7 +3,6 @@ import numpy as np
 
 from .. import layers
 from ..utils import colormaps, io
-from ..utils.naming import guess_name as _guess_name
 from ..utils.misc import ensure_iterable, is_iterable
 
 
@@ -143,7 +142,6 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Image` or list
             The newly-created image layer or list of image layers.
         """
-        name = _guess_name(name, data)
         if data is None and path is None:
             raise ValueError("One of either data or path must be provided")
         elif data is not None and path is not None:
@@ -339,7 +337,6 @@ class AddLayersMixin:
         See vispy's marker visual docs for more details:
         http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
-        name = _guess_name(name, data)
         if data is None:
             ndim = max(self.dims.ndim, 2)
             data = np.empty([0, ndim])
@@ -430,7 +427,6 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Labels`
             The newly-created labels layer.
         """
-        name = _guess_name(name, data)
         if data is None and path is None:
             raise ValueError("One of either data or path must be provided")
         elif data is not None and path is not None:
@@ -530,7 +526,6 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Shapes`
             The newly-created shapes layer.
         """
-        name = _guess_name(name, data)
         if data is None:
             ndim = max(self.dims.ndim, 2)
             data = np.empty((0, 0, ndim))
@@ -613,7 +608,6 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Surface`
             The newly-created surface layer.
         """
-        name = _guess_name(name, data)
         layer = layers.Surface(
             data,
             colormap=colormap,
@@ -683,7 +677,6 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Vectors`
             The newly-created vectors layer.
         """
-        name = _guess_name(name, data)
         layer = layers.Vectors(
             data,
             edge_width=edge_width,

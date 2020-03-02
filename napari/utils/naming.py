@@ -1,7 +1,6 @@
 """Automatically generate names.
 """
 import inspect
-import os
 import re
 from collections import ChainMap
 
@@ -48,34 +47,27 @@ def inc_name_count(name):
     return numbered_patt.sub(_inc_name_count_sub, name, count=1)
 
 
-def magic_name(value, *, level=1):
+def magic_name(value, *, path_prefix):
     """Fetch the name of the variable with the given value passed to the calling function.
 
     Parameters
     ----------
     value : any
         The value of the desired variable.
-    level : int, kwonly, optional
-        The level of nestedness to traverse.
+    path_prefix : absolute path-like, kwonly
+        The path prefixes to ignore.
 
     Returns
     -------
     name : str or None
         Name of the variable, if found.
     """
-    if level < 1:
-        raise ValueError('cannot have a level lower than 1')
-
-    if not os.getenv('MAGICNAME'):
-        return
-
-    level += 1
-    frame = inspect.currentframe()
-
-    for i in range(level):
-        frame = frame.f_back
-
+    frame = inspect.currentframe().f_back
     code = frame.f_code
+
+    while code.co_filename.startswith(path_prefix):
+        frame = frame.f_back
+        code = frame.f_code
 
     varmap = ChainMap(frame.f_locals, frame.f_globals)
     names = *code.co_varnames, *code.co_names
@@ -83,23 +75,3 @@ def magic_name(value, *, level=1):
     for name in names:
         if name.isidentifier() and name in varmap and varmap[name] is value:
             return name
-
-
-def guess_name(name, value):
-    """Guess the name of the variable with the given value if the name is not provided.
-
-    Parameters
-    ----------
-    name : str or None
-        Name of the variable. If not provided, will guess.
-    value : any but None
-        The value of the desired variable.
-
-    Returns
-    -------
-    name : str or None
-        Name of the variable, if found.
-    """
-    if name is None and value is not None:
-        return magic_name(value, level=2)
-    return name

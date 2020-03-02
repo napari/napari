@@ -235,6 +235,7 @@ class Points(Layer):
             data = np.atleast_2d(data)
         ndim = data.shape[1]
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,

@@ -1,4 +1,5 @@
-import os
+import functools
+import inspect
 import sys
 
 from napari.utils.naming import (
@@ -44,23 +45,27 @@ def test_inc_name_count():
     assert inc_name_count('[41]') == '[42]'
 
 
-os.environ['MAGICNAME'] = '1'
+def eval_with_filename(source, filename=__file__):
+    frame = inspect.currentframe().f_back
+    code = compile(source, filename, 'eval')
+    return eval(code, frame.f_globals, frame.f_locals)
+
+
 walrus = sys.version_info >= (3, 8)
+magic_name = functools.partial(
+    magic_name, path_prefix=magic_name.__code__.co_filename
+)
 
 
 def test_basic():
     """Check that name is guessed correctly."""
-
-    def inner(x):
-        return magic_name(x)
-
-    assert inner(42) is None
+    assert magic_name(42) is None
 
     z = 5
-    assert inner(z) == 'z'
+    assert magic_name(z) == 'z'
 
     if walrus:
-        assert eval("inner(y:='SPAM')") == 'y'
+        assert eval_with_filename("magic_name(y:='SPAM')") == 'y'
 
 
 globalval = 42
@@ -68,74 +73,46 @@ globalval = 42
 
 def test_global():
     """Check that it works with global variables."""
-
-    def inner(x):
-        return magic_name(x)
-
-    assert inner(globalval) == 'globalval'
+    assert magic_name(globalval) == 'globalval'
 
 
 def test_function_chains():
     """Check that nothing weird happens with function chains."""
 
-    def inner(x):
-        return magic_name(x)
-
     def foo():
         return 42
 
-    assert inner(foo()) is None
+    assert magic_name(foo()) is None
 
 
 def test_assignment():
     """Check that assignment expressions do not confuse it."""
-
-    def inner(x):
-        return magic_name(x)
-
-    result = inner(17)
+    result = magic_name(17)
     assert result is None
 
     t = 3
-    result = inner(t)
+    result = magic_name(t)
     assert result == 't'
 
     if walrus:
-        result = eval('inner(d:=42)')
+        result = eval_with_filename('magic_name(d:=42)')
         assert result == 'd'
 
 
-def test_nesting():
-    """Check that nesting works."""
+def test_path_prefix():
+    """Test that path prefixes work as expected."""
+    mname = functools.partial(magic_name, path_prefix=__file__)
 
-    def outer(x):
-        def inner(y):
-            return magic_name(y, level=2)
+    def foo(x):
+        def bar(y):
+            return mname(y)
 
-        return inner(x)
+        return bar(x)
 
-    assert outer('literal') is None
+    assert eval_with_filename('foo(42)', 'hi.py') is None
 
-    u = 2
-    assert outer(u) == 'u'
-
-    if walrus:
-        assert eval("outer(e:='aliiiens')") == 'e'
-
-
-def test_methods():
-    """Check that methods work as expected."""
-
-    class Foo:
-        def bar(self, z):
-            return magic_name(z)
-
-    foo = Foo()
-
-    assert foo.bar('bar') is None
-
-    r = 8
-    assert foo.bar(r) == 'r'
+    r = 8  # noqa
+    assert eval_with_filename('foo(r)', 'bye.py') == 'r'
 
     if walrus:
-        assert eval('foo.bar(i:=33)') == 'i'
+        assert eval_with_filename('foo(i:=33)', 'rye.py') == 'i'

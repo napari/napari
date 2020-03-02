@@ -1,11 +1,15 @@
 """Miscellaneous utility functions.
 """
+import os.path as osp
 from enum import Enum, EnumMeta
 import re
 import inspect
 import itertools
 import numpy as np
 from typing import Type
+
+
+ROOT_DIR = osp.dirname(osp.dirname(__file__))
 
 
 def str_to_rgb(arg):

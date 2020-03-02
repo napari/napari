@@ -221,6 +221,7 @@ class Shapes(Layer):
         # Don't pass on opacity value to base layer as it could be a list
         # and will get set bellow
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
