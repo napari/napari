@@ -135,6 +135,7 @@ QtDivider[selected=false] {
 /* --------------- QtLayerWidget -------------------- */
 
 QtLayerWidget {
+  padding: 0px;
   border: 1px solid {{ background }};
   background-color: {{ foreground }};
   border-radius: 2px;
@@ -142,6 +143,10 @@ QtLayerWidget {
   max-height: 32px;
   min-width: 228px;
   max-width: 228px;
+}
+
+QtLayerWidget QCheckBox::indicator:hover {
+  background-color: {{ foreground }};
 }
 
 QtLayerWidget[selected="true"] {
@@ -152,6 +157,7 @@ QtLayerWidget > QLabel {
   padding: 0px;
   qproperty-alignment: AlignCenter;
 }
+
 
 QLabel[layer_type_label="true"] {
   max-width: 20px;
@@ -295,28 +301,6 @@ QtDimSliderWidget > QLineEdit {
   background-color: {{ background }};
 }
 
-
-QtPlayButton {
-    background: {{ foreground }};
-    border-radius: 2px;
-    height: 12px;
-    width: 12px;
-    margin: 0px 2px;
-    padding: 2px;
-}
-
-QtPlayButton[reverse=True] {
-    image: url(":/icons/{{ folder }}/left_arrow.svg");
-}
-
-QtPlayButton[reverse=False] {
-    image: url(":/icons/{{ folder }}/right_arrow.svg");
-}
-
-QtPlayButton[playing=True] {
-    image: url(":/icons/{{ folder }}/new_image.svg");
-    background-color: {{ warning }};
-}
 
 #QtModalPopup {
   /* required for rounded corners to not have background color */

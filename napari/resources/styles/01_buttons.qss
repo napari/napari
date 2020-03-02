@@ -229,3 +229,38 @@ QtCopyToClipboardButton {
    border-radius: 3px;
    image: url(":/icons/{{ folder }}/copy_to_clipboard.svg");
 }
+
+
+QtPlayButton {
+  border-radius: 2px;
+  height: 11px;
+  width: 11px;
+  margin: 0px 2px;
+  padding: 2px;
+  border: 0px;
+}
+
+QtPlayButton[reverse=True] {
+    image: url(":/icons/{{ folder }}/left_arrow.svg");
+}
+
+QtPlayButton[reverse=False] {
+  background: {{ foreground }};
+  image: url(":/icons/{{ folder }}/right_arrow.svg");
+}
+
+QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
+  background: {{ primary }};
+}
+
+QtPlayButton[playing=True]:hover {
+  background-color: {{ lighten(warning, 10) }};
+}
+
+QtPlayButton[playing=True] {
+    image: url(":/icons/{{ folder }}/new_image.svg");
+    background-color: {{ warning }};
+    height: 12px;
+    width: 12px;
+    padding: 2px;
+}

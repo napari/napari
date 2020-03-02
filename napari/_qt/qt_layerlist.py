@@ -477,8 +477,8 @@ class QtLayerWidget(QFrame):
         self.setLayout(self.layout)
 
         tb = QLabel(self)
-        tb.setObjectName('thumbmnail')
-        tb.setToolTip('Layer thumbmnail')
+        tb.setObjectName('thumbnail')
+        tb.setToolTip('Layer thumbnail')
         self.thumbnailLabel = tb
         self._on_thumbnail_change()
         self.layout.addWidget(tb)

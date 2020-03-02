@@ -225,11 +225,12 @@ QCheckBox::indicator {
   width: 16px;
   height: 16px;
   background-color: {{ foreground }};
-  border: 1px solid {{ foreground }};
+  border: 0px;
+  padding: 1px;
   border-radius: 2px
 }
 
-QCheckBox::indicator:unchecked:hover {
+QCheckBox::indicator:hover {
   background-color: {{ lighten(foreground, 5) }};
 }
 
@@ -244,14 +245,17 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:indeterminate {
   image: url(":/icons/{{ folder }}/minus.svg");
   padding: 2px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
-
 
 QWidget[emphasized="true"] QCheckBox::indicator {
   background-color: {{ primary }};
   border-color: {{ primary }};
+}
+
+QWidget[emphasized="true"] QCheckBox::indicator:hover {
+  background-color: {{ lighten(primary, 5) }};
 }
 
 QWidget[emphasized="true"] QCheckBox::indicator:unchecked:hover {
@@ -322,18 +326,22 @@ QSlider {
 
 QSlider::groove:horizontal {
    border: 0px;
-   background: {{ foreground }};
+   background-color: {{ foreground }};
    height: 6px;
    border-radius: 2px;
 }
 
 QSlider::handle:horizontal {
-   background: {{ highlight }};
+   background-color: {{ highlight }};
    border: 0px;
    width: 16px;
    margin-top: -5px;
    margin-bottom: -5px;
    border-radius: 8px;
+}
+
+QSlider::handle:hover {
+   background-color: {{ secondary }};
 }
 
 QSlider::sub-page:horizontal {
@@ -355,6 +363,11 @@ QWidget[emphasized="true"] QSlider::sub-page:horizontal {
     background: {{ highlight }};
 }
 
+QWidget[emphasized="true"] QSlider::handle:hover {
+   background-color: {{ lighten(secondary, 5) }};
+}
+
+
 
 QRangeSlider {
   qproperty-barColor: {{ primary }};
@@ -364,7 +377,7 @@ QRangeSlider {
   min-height: 18px;
 }
 
-QWidget[emphasized="true"] QHRangeSlider {
+QWidget[emphasized="true"] QRangeSlider {
   qproperty-barColor: {{ highlight }};
   qproperty-backgroundColor: {{ primary }};
   qproperty-handleColor: {{ secondary }};
@@ -384,13 +397,13 @@ QWidget[emphasized="true"] QScrollBar {
 }
 
 QScrollBar:horizontal {
-    min-height: 14px;
-    max-height: 14px;
+    min-height: 13px;
+    max-height: 13px;
     margin: 0px 16px;
 }
 
 QScrollBar:vertical {
-    max-width: 14px;
+    max-width: 13px;
     margin: 16px 0px;
 }
 
@@ -408,7 +421,7 @@ QScrollBar::handle:horizontal {
 }
 
 QScrollBar::handle:vertical {
-    min-height: 24px;
+    min-height: 26px;
 }
 
 QScrollBar::add-line, QScrollBar::sub-line {
@@ -473,9 +486,31 @@ QScrollBar::left-arrow,
 QScrollBar::right-arrow,
 QScrollBar::up-arrow,
 QScrollBar::down-arrow {
-    height: 9px;
-    width: 9px;
+  min-height: 13px;
+  min-width: 13px;
+  max-height: 13px;
+  max-width: 13px;
+  padding: 1px 2px;
+  margin: 0;
+  border: 0;
+  border-radius: 2px;
+  background: {{ foreground }};
 }
+
+QScrollBar::left-arrow:hover,
+QScrollBar::right-arrow:hover,
+QScrollBar::up-arrow:hover,
+QScrollBar::down-arrow:hover {
+  background-color: {{ primary }};
+}
+
+QScrollBar::left-arrow:pressed,
+QScrollBar::right-arrow:pressed,
+QScrollBar::up-arrow:pressed,
+QScrollBar::down-arrow:pressed {
+  background-color: {{ highlight }};
+}
+
 
 QScrollBar::add-page,
 QScrollBar::sub-page {
@@ -489,6 +524,14 @@ QProgressBar {
     border-radius: 2px;
     text-align: center;
     padding: 0px;
+}
+
+QProgressBar::horizontal {
+  height: 18px;
+}
+
+QProgressBar::vertical {
+  width: 18px;
 }
 
 QProgressBar::chunk {
