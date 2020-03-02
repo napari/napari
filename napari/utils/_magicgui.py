@@ -133,9 +133,8 @@ def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
 
     # Otherwise they annotated it as a subclass of layers.Layer, and we allow
     # the simpler behavior where they only return the layer data.
-    result_name = gui.func.__name__ + " result"
     try:
-        viewer.layers[result_name].data = result
+        viewer.layers[gui.result_name()].data = result
     except KeyError:
         adder = getattr(viewer, f'add_{return_type.__name__.lower()}')
-        adder(data=result, name=result_name)
+        adder(data=result, name=gui.result_name())
