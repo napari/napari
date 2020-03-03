@@ -103,8 +103,8 @@ $ git commit -m "my message"
 ## Writing Tests
 
 Writing tests for new code is a critical part of keeping napari maintainable as
-it grows. Tests are written in files in one of the `_tests` directories that
-begin with `test_*`.
+it grows. Tests are written in files whose names
+begin with `test_*` and which are contained in one of the `_tests` directories.
 
 There are a few things to keep in mind when writing a test where a `Qt` event
 loop or a `napari.Viewer` is required.  The important thing is that any widgets
