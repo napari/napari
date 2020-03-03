@@ -169,13 +169,13 @@ class QtDimSliderWidget(QWidget):
             self.axis_label_changed.emit(self.axis, label)
 
     def _update_label(self):
-        """#TODO"""
+        """Update dimension slider label."""
         with self.dims.events.axis_labels.blocker():
             self.dims.set_axis_label(self.axis, self.axis_label.text())
         self.axis_label_changed.emit(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):
-        """#TODO"""
+        """Clear focus from dimension slider label."""
         self.axis_label.clearFocus()
         self.qt_dims.setFocus()
 
@@ -211,14 +211,14 @@ class QtDimSliderWidget(QWidget):
             self.hide()
 
     def _update_slider(self):
-        """#TODO"""
+        """Update dimension slider."""
         mode = self.dims.mode[self.axis]
         if mode == DimsMode.POINT:
             self.slider.setValue(self.dims.point[self.axis])
             self._update_slice_labels()
 
     def _update_slice_labels(self):
-        """#TODO"""
+        """Update slice labels to match current position of dimension slider."""
         step = self.dims.range[self.axis][2]
         self.curslice_label.setText(
             str(int(self.dims.point[self.axis] // step))
@@ -227,17 +227,17 @@ class QtDimSliderWidget(QWidget):
 
     @property
     def fps(self):
-        """#TODO"""
+        """Frames per second for animation."""
         return self._fps
 
     @fps.setter
     def fps(self, value):
-        """#TODO
+        """Frames per second for animation.
 
         Paramters
         ---------
-        value : #TODO
-            #TODO
+        value : float
+            Frames per second for animation.
         """
         self._fps = value
         self.play_button.fpsspin.setValue(abs(value))
@@ -246,17 +246,41 @@ class QtDimSliderWidget(QWidget):
 
     @property
     def loop_mode(self):
-        """#TODO"""
+        """Loop mode for animation.
+
+        Available options for the loop mode string enumeration are:
+        - LoopMode.ONCE
+            Animation will stop once movie reaches the max frame
+            (if fps > 0) or the first frame (if fps < 0).
+        - LoopMode.LOOP
+            Movie will return to the first frame after reaching
+            the last frame, looping continuously until stopped.
+        - LoopMode.BACK_AND_FORTH
+            Movie will loop continuously until stopped,
+            reversing direction when the maximum or minimum frame
+            has been reached.
+        """
         return self._loop_mode
 
     @loop_mode.setter
     def loop_mode(self, value):
-        """#TODO
+        """Loop mode for animation.
 
         Paramters
         ---------
-        value : #TODO
-            #TODO
+        value : napari._qt._constants.LoopMode
+            Loop mode for animation.
+            Available options for the loop mode string enumeration are:
+            - LoopMode.ONCE
+                Animation will stop once movie reaches the max frame
+                (if fps > 0) or the first frame (if fps < 0).
+            - LoopMode.LOOP
+                Movie will return to the first frame after reaching
+                the last frame, looping continuously until stopped.
+            - LoopMode.BACK_AND_FORTH
+                Movie will loop continuously until stopped,
+                reversing direction when the maximum or minimum frame
+                has been reached.
         """
         self._loop_mode = value
         self.play_button.mode_combo.setCurrentText(str(value))
@@ -264,19 +288,19 @@ class QtDimSliderWidget(QWidget):
 
     @property
     def frame_range(self):
-        """#TODO"""
+        """Frame range for animation, as (minimum_frame, maximum_frame)."""
         frame_range = (self._minframe, self._maxframe)
         frame_range = frame_range if any(frame_range) else None
         return frame_range
 
     @frame_range.setter
     def frame_range(self, value):
-        """#TODO
+        """Frame range for animation, as (minimum_frame, maximum_frame).
 
         Paramters
         ---------
-        value : #TODO
-            #TODO
+        value : tuple(int, int)
+            Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
         if not isinstance(value, (tuple, list, type(None))):
             raise TypeError('frame_range value must be a list or tuple')
@@ -288,16 +312,27 @@ class QtDimSliderWidget(QWidget):
         self.range_changed.emit(tuple(value))
 
     def _update_play_settings(self, fps, loop_mode, frame_range):
-        """#TODO
+        """Update settings for animation.
 
         Parameters
         ----------
-        fps : #TODO
-            #TODO
-        loop_mode : #TODO
-            #TODO
-        frame_range : #TODO
-            #TODO
+        fps : float
+            Frames per second to play the animation.
+        loop_mode : napari._qt._constants.LoopMode
+            Loop mode for animation.
+            Available options for the loop mode string enumeration are:
+            - LoopMode.ONCE
+                Animation will stop once movie reaches the max frame
+                (if fps > 0) or the first frame (if fps < 0).
+            - LoopMode.LOOP
+                Movie will return to the first frame after reaching
+                the last frame, looping continuously until stopped.
+            - LoopMode.BACK_AND_FORTH
+                Movie will loop continuously until stopped,
+                reversing direction when the maximum or minimum frame
+                has been reached.
+        frame_range : tuple(int, int)
+            Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
         if fps is not None:
             self.fps = fps
@@ -320,12 +355,23 @@ class QtDimSliderWidget(QWidget):
 
         Parameters
         ----------
-        fps : #TODO
-            #TODO
-        loop_mode : #TODO
-            #TODO
-        frame_range : #TODO
-            #TODO
+        fps : float
+            Frames per second for animation.
+        loop_mode : napari._qt._constants.LoopMode
+            Loop mode for animation.
+            Available options for the loop mode string enumeration are:
+            - LoopMode.ONCE
+                Animation will stop once movie reaches the max frame
+                (if fps > 0) or the first frame (if fps < 0).
+            - LoopMode.LOOP
+                Movie will return to the first frame after reaching
+                the last frame, looping continuously until stopped.
+            - LoopMode.BACK_AND_FORTH
+                Movie will loop continuously until stopped,
+                reversing direction when the maximum or minimum frame
+                has been reached.
+        frame_range : tuple(int, int)
+            Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
 
         # having this here makes sure that using the QtDims.play() API
@@ -360,11 +406,6 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     running).  However, the editingFinished event ignores mouse click events on
     the spin buttons.  This subclass class triggers an event both during
     editingFinished and when the user clicks on the spin buttons.
-
-    Attributes
-    ----------
-    ValueChanged : #TODO
-        #TODO
     """
 
     def __init__(self, *args, **kwargs):
@@ -372,12 +413,12 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
         self.valueChanged.connect(self.custom_change_event)
 
     def custom_change_event(self, value):
-        """#TODO
+        """Emits editingFinished if valueChanged AND left mouse button is down.
 
         Paramters
         ---------
-        value : #TODO
-            #TODO
+        value : float
+            The value of this custom double spin box.
         """
         if QApplication.mouseButtons() & Qt.LeftButton:
             self.editingFinished.emit()
@@ -387,15 +428,15 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
 
         Paramters
         ---------
-        value : #TODO
-            #TODO
+        value : float
+            The value of this custom double spin box.
         """
         if value.is_integer():
             value = int(value)
         return str(value)
 
     def keyPressEvent(self, event):
-        """#TODO
+        """Handle key press event for the dimension slider spinbox.
 
         Parameters
         ----------
@@ -484,6 +525,13 @@ class QtPlayButton(QPushButton):
         self.mode_combo = mode_combo
 
     def mouseReleaseEvent(self, event):
+        """Do action on mouse release.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the qt context.
+        """
         # using this instead of self.customContextMenuRequested.connect and
         # clicked.connect because the latter was not sending the
         # rightMouseButton release event.
@@ -493,16 +541,19 @@ class QtPlayButton(QPushButton):
             self._on_click()
 
     def _on_click(self):
+        """Toggle play/stop animation control."""
         if self.property('playing') == "True":
             return self.dims.stop()
         self.play_requested.emit(self.axis)
 
     def _handle_start(self):
+        """On animation start, set playing property to True and update style."""
         self.setProperty('playing', 'True')
         self.style().unpolish(self)
         self.style().polish(self)
 
     def _handle_stop(self):
+        """On animation stop, set playing property to False and update style."""
         self.setProperty('playing', 'False')
         self.style().unpolish(self)
         self.style().polish(self)
@@ -541,6 +592,7 @@ class AnimationWorker(QObject):
 
     @Slot()
     def work(self):
+        """Play the animation."""
         # if loop_mode is once and we are already on the last frame,
         # return to the first frame... (so the user can keep hitting once)
         if self.loop_mode == LoopMode.ONCE:
@@ -556,6 +608,13 @@ class AnimationWorker(QObject):
 
     @Slot(float)
     def set_fps(self, fps):
+        """Set the frames per second value for the animation.
+
+        Parameters
+        ----------
+        fps : float
+            Frames per second for the animation.
+        """
         if fps == 0:
             return self.finish()
         self.step = 1 if fps > 0 else -1  # negative fps plays in reverse
@@ -563,6 +622,13 @@ class AnimationWorker(QObject):
 
     @Slot(tuple)
     def set_frame_range(self, frame_range):
+        """Frame range for animation, as (minimum_frame, maximum_frame).
+
+        Parameters
+        ----------
+        frame_range : tuple(int, int)
+            Frame range as tuple/list with range (minimum_frame, maximum_frame)
+        """
         self.dimsrange = self.dims.range[self.axis]
 
         if frame_range is not None:
@@ -585,6 +651,24 @@ class AnimationWorker(QObject):
 
     @Slot(str)
     def set_loop_mode(self, mode):
+        """Set the loop mode for the animation.
+
+        Parameters
+        ----------
+        mode : str
+            Loop mode for animation.
+            Available options for the loop mode string enumeration are:
+            - LoopMode.ONCE
+                Animation will stop once movie reaches the max frame
+                (if fps > 0) or the first frame (if fps < 0).
+            - LoopMode.LOOP
+                Movie will return to the first frame after reaching
+                the last frame, looping continuously until stopped.
+            - LoopMode.BACK_AND_FORTH
+                Movie will loop continuously until stopped,
+                reversing direction when the maximum or minimum frame
+                has been reached.
+        """
         self.loop_mode = LoopMode(mode)
 
     def advance(self):
@@ -623,10 +707,12 @@ class AnimationWorker(QObject):
         self.timer.singleShot(self.interval, self.advance)
 
     def finish(self):
+        """Emit the finished event signal."""
         self.finished.emit()
 
     @Slot(Event)
     def _on_axis_changed(self, event):
+        """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
         if event.axis == self.axis and hasattr(event, 'value'):
             self.current = event.value
