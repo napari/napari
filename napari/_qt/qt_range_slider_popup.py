@@ -26,14 +26,12 @@ class LabelEdit(QLineEdit):
     ----------
     get_pos : callable or None
         Function that returns the position of the appropriate slider handle.
-    max_width : #TODO
-        #TODO
-    min_width : #TODO
-        #TODO
-    slider : #TODO
-        #TODO
-    textChanged : #TODO
-        #TODO
+    max_width : int
+        Minimum label width.
+    min_width : int
+        Maximum label width.
+    slider : qtpy.QtWidgets.QHRangeSlider
+        Slider widget.
     """
 
     def __init__(self, value='', parent=None, get_pos=None):
@@ -54,12 +52,12 @@ class LabelEdit(QLineEdit):
             self.setAlignment(Qt.AlignCenter)
 
     def _on_text_changed(self, text):
-        """#TODO
+        """Update label text displayed above the slider handle.
 
         Parameters
         ----------
         text : str
-            #TODO
+            Label text to display above the slider handle.
         """
         # with non mono-spaced fonts, an "n-digit" number isn't always the same
         # width... so we convert all numbers to "n 8s" before measuring width
@@ -72,13 +70,13 @@ class LabelEdit(QLineEdit):
         self.setFixedWidth(width)
 
     def update_position(self):
-        """#TODO"""
+        """Update slider position."""
         x = self.get_pos() - self.width() / 2
         y = self.slider.handle_radius + 6
         self.move(QPoint(x, -y) + self.slider.pos())
 
     def mouseDoubleClickEvent(self, event):
-        """#TODO
+        """Select all on mouse double click.
 
         Parameters
         ----------
@@ -107,23 +105,22 @@ class QRangeSliderPopup(QtPopup):
 
         Attributes
         ----------
-        curmax_label : #TODO
-            #TODO
-        curmin_label : #TODO
-            #TODO
-        frame : #TODO
-            #TODO
-        layout : #TODO
-            #TODO
+        curmax_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for the current maximum contrast limit.
+        curmin_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for the current minimum contrast limit.
+        frame : qtpy.QtWidgets.QFrame
+            Frame of the popup dialog box.
+        layout : qtpy.QtWidgets.QHBoxLayout
+            Layout of the popup dialog box.
         precision : int
-            Number of decimal values in the labels.
-        range_max_label : #TODO
-            #TODO
-        range_min_label : #TODO
-            #TODO
+            Number of decimal values in numeric labels.
+        range_max_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for maximum slider range value.
+        range_min_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for minimum slider range value.
         slider : qtpy.QtWidgets.QHRangeSlider
-            #TODO
-
+            Slider widget.
         """
         super().__init__(parent)
         self.precision = precision
@@ -170,12 +167,12 @@ class QRangeSliderPopup(QtPopup):
         self.layout.addWidget(self.range_max_label)
 
     def _numformat(self, number):
-        """#TODO
+        """Format float value to a specific number of decimal places.
 
         Paramters
         ---------
-        number : #TODO
-            #TODO
+        number : float
+            Number value formatted to a specific number of decimal places.
         """
         if round(number) == number:
             return "{:.{}f}".format(number, 0)
@@ -183,17 +180,17 @@ class QRangeSliderPopup(QtPopup):
             return "{:.{}f}".format(number, self.precision)
 
     def _update_cur_label_positions(self):
-        """#TODO"""
+        """Update label positions of current minimum/maximum contrast range."""
         self.curmin_label.update_position()
         self.curmax_label.update_position()
 
     def _on_values_change(self, values):
-        """#TODO
+        """Update labels of the current contrast range.
 
         Parameters
         ----------
-        values : #TODO
-            #TODO
+        values : tuple(float, float)
+            Minimum and maximum values of the current contrast range.
         """
         cmin_, cmax_ = values
         with qt_signals_blocked(self.slider):
@@ -202,12 +199,12 @@ class QRangeSliderPopup(QtPopup):
             self._update_cur_label_positions()
 
     def _on_range_change(self, values):
-        """#TODO
+        """Update values of current contrast range and display labels.
 
         Parameters
         ----------
-        values : #TODO
-            #TODO
+        values : tuple(float, float)
+            Minimum and maximum values of the current contrast range.
         """
         cmin_, cmax_ = values
         with qt_signals_blocked(self.slider):
@@ -219,7 +216,7 @@ class QRangeSliderPopup(QtPopup):
             self.curmax_label.setText(self._numformat(vmax_))
 
     def _curmin_label_changed(self):
-        """#TODO"""
+        """Update minimum value of current contrast range."""
         cmin = float(self.curmin_label.text())
         cmax = float(self.curmax_label.text())
         if cmin > cmax:
@@ -227,7 +224,7 @@ class QRangeSliderPopup(QtPopup):
         self.slider.setValues((cmin, cmax))
 
     def _curmax_label_changed(self):
-        """#TODO"""
+        """Update maximum value of current contrast range."""
         cmin = float(self.curmin_label.text())
         cmax = float(self.curmax_label.text())
         if cmax < cmin:
@@ -235,7 +232,7 @@ class QRangeSliderPopup(QtPopup):
         self.slider.setValues((cmin, cmax))
 
     def _range_label_changed(self):
-        """#TODO"""
+        """Update values for minimum & maximum slider range to match labels."""
         rmin = float(self.range_min_label.text())
         rmax = float(self.range_max_label.text())
         if rmin >= rmax:
@@ -243,7 +240,7 @@ class QRangeSliderPopup(QtPopup):
         self.slider.setRange((rmin, rmax))
 
     def keyPressEvent(self, event):
-        """#TODO
+        """On key press lose focus of the lineEdits.
 
         Parameters
         ----------
