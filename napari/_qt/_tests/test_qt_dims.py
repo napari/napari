@@ -68,11 +68,12 @@ def test_changing_ndim(qtbot):
     )
 
 
-def test_changing_focus(qapp):
+def test_changing_focus(qtbot):
     """Test changing focus updates the dims.last_used prop."""
     # too-few dims, should have no sliders to update
     ndim = 2
     view = QtDims(Dims(ndim))
+    qtbot.addWidget(view)
     assert view.last_used is None
     view.focus_down()
     view.focus_up()
@@ -96,7 +97,6 @@ def test_changing_display(qtbot):
     """
     ndim = 4
     view = QtDims(Dims(ndim))
-
     qtbot.addWidget(view)
     view.show()
 
@@ -127,7 +127,6 @@ def test_slider_values(qtbot):
     """
     ndim = 4
     view = QtDims(Dims(ndim))
-
     qtbot.addWidget(view)
 
     # Check that values of the dimension slider matches the values of the
@@ -152,7 +151,6 @@ def test_slider_range(qtbot):
     """
     ndim = 4
     view = QtDims(Dims(ndim))
-
     qtbot.addWidget(view)
 
     # Check the range of slider matches the values of the range of the dims
@@ -182,7 +180,6 @@ def test_singleton_dims(qtbot):
     dims = Dims(ndim)
     dims.set_range(0, (0, 1, 1))
     view = QtDims(dims)
-
     qtbot.addWidget(view)
     view.show()
 
@@ -206,7 +203,6 @@ def test_order_when_changing_ndim(qtbot):
     """
     ndim = 4
     view = QtDims(Dims(ndim))
-
     qtbot.addWidget(view)
 
     # Check that values of the dimension slider matches the values of the

@@ -100,6 +100,71 @@ $ git add my-file-or-directory
 $ git commit -m "my message"
 ```
 
+## Writing Tests
+
+Writing tests for new code is a critical part of keeping napari maintainable as
+it grows. Tests are written in files in one of the `_tests` directories that
+begin with `test_*`.
+
+There are a few things to keep in mind when writing a test where a `Qt` event
+loop or a `napari.Viewer` is required.  The important thing is that any widgets
+you create during testing are cleaned up at the end of each test:
+
+1. If you simply need a `QApplication` to be running for your test, you can use
+   the
+   [`qapp`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.plugin.qapp)
+   fixture from pytest-qt.  Note however, you *you* are required to perform any
+   and all cleanup of widgets at the end of the test.
+
+    > note: fixtures in pytest can be a little mysterious, since it's not always
+    > clear where they are coming from.  In this case, using a pytest-qt fixture
+    > looks like this:
+
+    ```python
+    # just by putting `qapp` in the list of arguments
+    # pytest-qt will start up an event loop for you
+    def test_something(qapp):
+        ...
+    ```
+
+2. Often however, you will be creating some widgets during testing, and these
+   need to be cleaned up at the end of the test.  The
+   [`qtbot`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.qtbot.QtBot)
+   fixture from `pytest-qt` provides a convenient
+   [`qtbot.addWidget`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.qtbot.QtBot.addWidget)
+   method that will ensure that the widget gets closed by the end of the test.
+   It *also* creates an event loop and provides a whole bunch of other
+   convenient methods for interacting with your GUI tests (clicking, waiting
+   signals, etc...).  See the docs linked above for details.
+
+    ```python
+    # the qtbot fixture starts an event loop and provides
+    # a number of convenience methods
+    def test_something_else(qtbot):
+        widget = QWidget()
+        qtbot.addWidget(widget)  # tell qtbot to clean this widget later
+        ...
+    ```
+
+3. When writing a test that requires a `napari.Viewer` object, there is a convenient
+   fixture available called `viewer_factory` that will take care of creating a viewer
+   and cleaning up at the end of the test.  When using this function, it is **not**
+   necessary to use a `qtbot` or `qapp` fixture, nor should you do any additional
+   cleanup (such as calling `viewer.close()`) at the end of the test.  Duplicate
+   cleanup may cause an error.  Use the factory as follows:
+
+    ```python
+    # the viewer_factory fixture is defined in napari/conftest.py
+    def test_something_with_a_viewer(viewer_factory):
+        # viewer factory takes any keyword arguments that napari.Viewer() takes
+        view, viewer = viewer_factory()
+        # note, `view` here is just a pointer to viewer.window.qt_viewer
+
+        # do stuff with the viewer, no qtbot or viewer.close() methods needed.
+        ...
+    ```
+
+
 ### Help us make sure it's you
 
 Each commit you make must have a [GitHub-registered email](https://github.com/settings/emails)

@@ -161,7 +161,7 @@ def test_play_api(qtbot, view):
     assert A == view.dims._frame
 
 
-def test_playing_hidden_slider_does_nothing(qapp, view):
+def test_playing_hidden_slider_does_nothing(view):
     """Make sure playing a dimension without a slider does nothing"""
 
     def increment(e):
