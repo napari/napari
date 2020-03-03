@@ -5,7 +5,7 @@ from ...layers.image._constants import Interpolation, Rendering
 
 
 class QtImageControls(QtBaseImageControls):
-    """#TODO
+    """Qt view and controls for the napari Image layer.
 
     Parameters
     ----------
@@ -15,25 +15,25 @@ class QtImageControls(QtBaseImageControls):
     Attributes
     ----------
     attenuationSlider : qtpy.QtWidgets.QSlider
-        #TODO
+        Slider controlling attenuation rate for maximum intensity projections.
     attenuationLabel : qtpy.QtWidgets.QLabel
-        #TODO
+        Label for the attenuation slider widget.
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    interpComboBox : QComboBox
-        #TODO
-    interpLabel : QLabel
-        #TODO
+    interpComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown menu to select the interpolation mode for image display.
+    interpLabel : qtpy.QtWidgets.QLabel
+        Label for the interpolation dropdown menu.
     isoThresholdSlider : qtpy.QtWidgets.QSlider
-        #TODO
+        Slider controlling the isosurface threshold value for rendering.
     isoThresholdLabel : qtpy.QtWidgets.QLabel
-        #TODO
+        Label for the isosurface threshold slider widget.
     layer : napari.layers.Layer
         An instance of a napari layer.
     renderComboBox : qtpy.QtWidgets.QComboBox
-        #TODO
+        Dropdown menu to select the rendering mode for image display.
     renderLabel : qtpy.QtWidgets.QLabel
-        #TODO
+        Label for the rendering mode dropdown menu.
     """
 
     def __init__(self, layer):
@@ -112,39 +112,58 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setVerticalSpacing(4)
 
     def changeInterpolation(self, text):
-        """#TODO
+        """Change interpolation mode for image display.
 
         Parameters
         ----------
         text : str
-            #TODO
+            Interpolation mode used by vispy. Must be one of our supported
+            modes:
+            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+            'nearest', 'spline16', 'spline36'
         """
         self.layer.interpolation = text
 
     def changeRendering(self, text):
-        """#TODO
+        """Change rendering mode for image display.
 
         Parameters
         ----------
         text : str
-            #TODO
+            Rendering mode used by vispy.
+            Selects a preset rendering mode in vispy that determines how
+            volume is displayed:
+            * translucent: voxel colors are blended along the view ray until
+              the result is opaque.
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * additive: voxel colors are added along the view ray until
+              the result is saturated.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.
+            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
+              ray and attenuate values based on integral of encountered values,
+              display the maximum value that was encountered after attenuation.
+              This will make nearer objects appear more prominent.
         """
         self.layer.rendering = text
         self._toggle_rendering_parameter_visbility()
 
     def changeIsoThreshold(self, value):
-        """#TODO
+        """Change threshold for isosurface.
 
         Parameters
         ----------
-        value : #TODO
-            #TODO
+        value : float
+            Threshold for isosurface.
         """
         with self.layer.events.blocker(self._on_iso_threshold_change):
             self.layer.iso_threshold = value / 100
 
     def _on_iso_threshold_change(self, event):
-        """#TODO
+        """Change threshold for isosurface.
 
         Parameters
         ----------
@@ -155,18 +174,18 @@ class QtImageControls(QtBaseImageControls):
             self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
 
     def changeAttenuation(self, value):
-        """#TODO
+        """Change attenuation rate for attenuated maximum intensity projection.
 
         Parameters
         ----------
-        value : #TODO
-            #TODO
+        value : Float
+            Attenuation rate for attenuated maximum intensity projection.
         """
         with self.layer.events.blocker(self._on_attenuation_change):
             self.layer.attenuation = value / 100
 
     def _on_attenuation_change(self, event):
-        """#TODO
+        """Change attenuation rate for attenuated maximum intensity projection.
 
         Parameters
         ----------
@@ -177,7 +196,7 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationSlider.setValue(self.layer.attenuation * 100)
 
     def _on_interpolation_change(self, event):
-        """#TODO
+        """Update widgets with change of image interpolation.
 
         Parameters
         ----------
@@ -191,7 +210,7 @@ class QtImageControls(QtBaseImageControls):
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_rendering_change(self, event):
-        """#TODO
+        """Update widgets with change of image rendering mode.
 
         Parameters
         ----------
@@ -206,7 +225,7 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
 
     def _toggle_rendering_parameter_visbility(self):
-        """#TODO"""
+        """Hide isosurface rendering parameters if they aren't needed."""
         rendering = self.layer.rendering
         if isinstance(rendering, str):
             rendering = Rendering(rendering)
@@ -224,7 +243,7 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationLabel.hide()
 
     def _on_ndisplay_change(self, event=None):
-        """#TODO
+        """Toggle between 2D and 3D visualization modes.
 
         Parameters
         ----------
