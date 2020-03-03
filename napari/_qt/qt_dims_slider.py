@@ -498,24 +498,6 @@ class QtPlayButton(QPushButton):
         )
         self.reverse_check = revcheck
 
-        # THIS IS HERE TEMPORARILY UNTIL I CAN ADD FRAME_RANGE TO THE POPUP
-        # dimsrange = dims.dims.range[axis]
-        # minspin = QDoubleSpinBox(self.popup)
-        # minspin.setAlignment(Qt.AlignCenter)
-        # minspin.setValue(dimsrange[0])
-        # minspin.valueChanged.connect(self.set_minframe)
-        # form_layout.insertRow(
-        #     1, QLabel('start frame:', parent=self.popup), minspin
-        # )
-
-        # maxspin = QDoubleSpinBox(self.popup)
-        # maxspin.setAlignment(Qt.AlignCenter)
-        # maxspin.setValue(dimsrange[1] * dimsrange[2])
-        # maxspin.valueChanged.connect(self.set_maxframe)
-        # form_layout.insertRow(
-        #     2, QLabel('end frame:', parent=self.popup), maxspin
-        # )
-
         mode_combo = QComboBox(self.popup)
         mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
         form_layout.insertRow(
