@@ -297,6 +297,7 @@ class Shapes(Layer):
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
+        self._data_len = len(data)
         self.edge_color = edge_color
         self.face_color = face_color
         self._current_edge_color = self.edge_color[-1]
@@ -337,6 +338,15 @@ class Shapes(Layer):
         return ndim
 
     def _get_extent(self):
+
+        if len(self.dims_order) != data.shape[1]:
+            self._dims_order = list(range(data.shape[1]))
+
+        if len(data) == 2 and data.shape[1] == 2:
+            data = find_corners(data)
+
+        if len(data) != 4:
+            print(data)
         """Determine ranges for slicing given by (min, max, step)."""
         if self.nshapes == 0:
             maxs = [1] * self.ndim

@@ -231,14 +231,14 @@ class Shape(ABC):
         means it's already an 1x4 numpy array.
         """
         transformed_color = transform_color_with_defaults(
-            num_entries=len(self.data),
+            num_entries=self._data_len,
             colors=edge_color,
             elem_name="edge_color",
             default="black",
         )
 
         self._edge_color = normalize_and_broadcast_colors(
-            len(self.data), transformed_color
+            self._data_len, transformed_color
         )
         hexval = rgb_to_hex(self._edge_color)
         self._edge_color_name = hex_to_name.get(hexval, hexval)
@@ -258,13 +258,13 @@ class Shape(ABC):
         means it's already an 1x4 numpy array.
         """
         transformed_color = transform_color_with_defaults(
-            num_entries=len(self.data),
+            num_entries=self._data_len,
             colors=face_color,
             elem_name="face_color",
             default="white",
         )
         self._face_color = normalize_and_broadcast_colors(
-            len(self.data), transformed_color
+            self._data_len, transformed_color
         )
         hexval = rgb_to_hex(self._face_color)
         self._face_color_name = hex_to_name.get(hexval, hexval)
