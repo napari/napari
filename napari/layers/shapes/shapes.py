@@ -297,25 +297,8 @@ class Shapes(Layer):
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
-        self._current_edge_color = transform_color_with_defaults(
-            num_entries=len(self.data),
-            colors=edge_color,
-            elem_name="edge_color",
-            default="black",
-        )
-        self._current_face_color = transform_color_with_defaults(
-            num_entries=len(self.data),
-            colors=face_color,
-            elem_name="face_color",
-            default="white",
-        )
-
-        self.edge_color = normalize_and_broadcast_colors(
-            len(self.data), self._current_edge_color
-        )
-        self.face_color = normalize_and_broadcast_colors(
-            len(self.data), self._current_face_color
-        )
+        self.edge_color = edge_color
+        self.face_color = face_color
         self._current_edge_color = self.edge_color[-1]
         self._current_face_color = self.face_color[-1]
 

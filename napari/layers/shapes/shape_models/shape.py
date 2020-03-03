@@ -14,6 +14,10 @@ from ....utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,
 )
+from ...utils.color_transformations import (
+    transform_color_with_defaults,
+    normalize_and_broadcast_colors,
+)
 
 
 class Shape(ABC):
@@ -226,7 +230,16 @@ class Shape(ABC):
         normalization (``normalize_and_broadcast_colors``) which
         means it's already an 1x4 numpy array.
         """
-        self._edge_color = edge_color
+        transformed_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=edge_color,
+            elem_name="edge_color",
+            default="black",
+        )
+
+        self._edge_color = normalize_and_broadcast_colors(
+            len(self.data), transformed_color
+        )
         hexval = rgb_to_hex(self._edge_color)
         self._edge_color_name = hex_to_name.get(hexval, hexval)
 
@@ -244,7 +257,15 @@ class Shape(ABC):
         normalization (``normalize_and_broadcast_colors``) which
         means it's already an 1x4 numpy array.
         """
-        self._face_color = face_color
+        transformed_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=face_color,
+            elem_name="face_color",
+            default="white",
+        )
+        self._face_color = normalize_and_broadcast_colors(
+            len(self.data), transformed_color
+        )
         hexval = rgb_to_hex(self._face_color)
         self._face_color_name = hex_to_name.get(hexval, hexval)
 
