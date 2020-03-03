@@ -361,14 +361,17 @@ QtDimSliderWidget > QLineEdit {
 
 /* editable slice label and axis name */
 QtDimSliderWidget > QLineEdit {
-  color: {{ secondary }};
   padding: 0 0 1px 2px;
-  font-size: 11pt;
   max-height: 12px;
   min-height: 12px;
   min-width: 16px;
+  color: {{ text }};
 }
 
+#slice_label {
+  font-size: 11pt;
+  color: {{ secondary }};
+}
 
 #slice_label_sep{
   background-color: {{ background }};
@@ -376,9 +379,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 QtDimSliderWidget > QLabel {
-  font-size: 11pt;
-  color: {{ secondary }};
-  padding: 2px 0 0 1px;
+  padding: 4px 0 0 1px;
 }
 
 
