@@ -5,7 +5,7 @@ from ...layers.base._constants import Blending
 
 
 class QtLayerControls(QFrame):
-    """#TODO
+    """Qt view and controls for the napari base Layer class.
 
     Parameters
     ----------
@@ -15,7 +15,7 @@ class QtLayerControls(QFrame):
     Attributes
     ----------
     blendComboBox : qtpy.QtWidgets.QComboBox
-        #TODO
+        Drowpdown widget to select blending mode of layer.
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Layer
