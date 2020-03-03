@@ -60,7 +60,7 @@ with open(osp.join('requirements', 'default.txt')) as f:
         splitted = line.split("#")
         stripped = splitted[0].strip()
         if len(stripped) > 0:
-            requirements.append(splitted)
+            requirements.append(stripped)
 
 setup(
     name=DISTNAME,

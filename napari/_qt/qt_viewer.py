@@ -315,13 +315,7 @@ class QtViewer(QSplitter):
             # double check that an appropriate extension has been added as the filter
             # filter option does not always add an extension on linux and windows
             # see https://bugreports.qt.io/browse/QTBUG-27186
-            image_extensions = (
-                '.bmp',
-                '.gif',
-                '.png',
-                '.tif',
-                '.tiff',
-            )
+            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
             if not filename.endswith(image_extensions):
                 filename = filename + '.png'
             self.screenshot(path=filename)
