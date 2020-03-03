@@ -4,3 +4,4 @@ include napari/_version.py
 recursive-include napari/resources *.png *.jpeg *.jpg *.svg stylesheet.qss res.qrc
 include napari/utils/colormaps/matplotlib_cmaps.txt
 include requirements/default.txt
+recursive-include napari/plugins/_tests/fixtures *

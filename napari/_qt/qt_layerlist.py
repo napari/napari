@@ -17,6 +17,23 @@ import numpy as np
 
 
 class QtLayerList(QScrollArea):
+    """Widget storing a list of all the layers present in the current window.
+
+    Parameters
+    ----------
+    layers : napari.components.LayerList
+        The layer list to track and display.
+
+    Attributes
+    ----------
+    centers : list
+        List of layer widgets center coordinates.
+    layers : napari.components.LayerList
+        The layer list to track and display.
+    vbox_layout : QVBoxLayout
+        The layout instance in which the layouts appear.
+    """
+
     def __init__(self, layers):
         super().__init__()
 
@@ -34,10 +51,10 @@ class QtLayerList(QScrollArea):
 
         # Create a timer to be used for autoscrolling the layers list up and
         # down when dragging a layer near the end of the displayed area
-        self.dragTimer = QTimer()
-        self.dragTimer.setSingleShot(False)
-        self.dragTimer.setInterval(20)
-        self.dragTimer.timeout.connect(self._force_scroll)
+        self._drag_timer = QTimer()
+        self._drag_timer.setSingleShot(False)
+        self._drag_timer.setInterval(20)
+        self._drag_timer.timeout.connect(self._force_scroll)
         self._scroll_up = True
         self._min_scroll_region = 24
         self.setAcceptDrops(True)
@@ -48,11 +65,17 @@ class QtLayerList(QScrollArea):
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
 
-        self.drag_start_position = np.zeros(2)
-        self.drag_name = None
+        self._drag_start_position = np.zeros(2)
+        self._drag_name = None
 
     def _add(self, event):
-        """Insert widget for layer `event.item` at index `event.index`."""
+        """Insert widget for layer `event.item` at index `event.index`.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         layer = event.item
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
@@ -62,7 +85,13 @@ class QtLayerList(QScrollArea):
         layer.events.select.connect(self._scroll_on_select)
 
     def _remove(self, event):
-        """Remove widget for layer at index `event.index`."""
+        """Remove widget for layer at index `event.index`.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         layer_index = event.index
         total = len(self.layers)
         # Find property widget and divider for layer to be removed
@@ -75,9 +104,15 @@ class QtLayerList(QScrollArea):
         divider.deleteLater()
 
     def _reorder(self, event=None):
-        """Reorders list of layer widgets by looping through all
-        widgets in list sequentially removing them and inserting
-        them into the correct place in final list.
+        """Reorder list of layer widgets.
+
+        Loops through all widgets in list, sequentially removing them
+        and inserting them into the correct place in the final list.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context.
         """
         total = len(self.layers)
 
@@ -125,12 +160,25 @@ class QtLayerList(QScrollArea):
             self.verticalScrollBar().setValue(new_value)
 
     def _scroll_on_select(self, event):
-        """Scroll to ensure that the currently selected layer is visible."""
+        """Scroll to ensure that the currently selected layer is visible.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         layer = event.source
         self._ensure_visible(layer)
 
     def _ensure_visible(self, layer):
-        """Ensure layer widget for at particular layer is visible."""
+        """Ensure layer widget for at particular layer is visible.
+
+        Parameters
+        ----------
+        layer : napari.layers.Layer
+            An instance of a napari layer.
+
+        """
         total = len(self.layers)
         layer_index = self.layers.index(layer)
         # Find property widget and divider for layer to be removed
@@ -139,15 +187,37 @@ class QtLayerList(QScrollArea):
         self.ensureWidgetVisible(widget)
 
     def keyPressEvent(self, event):
+        """Ignore a key press event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         event.ignore()
 
     def keyReleaseEvent(self, event):
+        """Ignore key relase event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         event.ignore()
 
     def mousePressEvent(self, event):
-        # Check if mouse press happens on a layer properties widget or
-        # a child of such a widget. If not, the press has happended on the
-        # Layers Widget itself and should be ignored.
+        """Register mouse click if it happens on a layer widget.
+
+        Checks if mouse press happens on a layer properties widget or
+        a child of such a widget. If not, the press has happended on the
+        Layers Widget itself and should be ignored.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         widget = self.childAt(event.pos())
         layer = (
             getattr(widget, 'layer', None)
@@ -156,21 +226,34 @@ class QtLayerList(QScrollArea):
         )
 
         if layer is not None:
-            self.drag_start_position = np.array(
+            self._drag_start_position = np.array(
                 [event.pos().x(), event.pos().y()]
             )
-            self.drag_name = layer.name
+            self._drag_name = layer.name
         else:
-            self.drag_name = None
+            self._drag_name = None
 
     def mouseReleaseEvent(self, event):
-        if self.drag_name is None:
+        """Select layer using mouse click.
+
+        Key modifiers:
+        Shift - If the Shift button is pressed, select all layers in between
+            currently selected one and the clicked one.
+        Control - If the Control button is pressed, mouse click will
+            toggle selected state of the layer.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        if self._drag_name is None:
             # Unselect all the layers if not dragging a layer
             self.layers.unselect_all()
             return
 
         modifiers = event.modifiers()
-        layer = self.layers[self.drag_name]
+        layer = self.layers[self._drag_name]
         if modifiers == Qt.ShiftModifier:
             # If shift select all layers in between currently selected one and
             # clicked one
@@ -192,32 +275,52 @@ class QtLayerList(QScrollArea):
             layer.selected = True
 
     def mouseMoveEvent(self, event):
+        """Drag and drop layer with mouse movement.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         position = np.array([event.pos().x(), event.pos().y()])
-        distance = np.linalg.norm(position - self.drag_start_position)
+        distance = np.linalg.norm(position - self._drag_start_position)
         if (
             distance < QApplication.startDragDistance()
-            or self.drag_name is None
+            or self._drag_name is None
         ):
             return
         mimeData = QMimeData()
-        mimeData.setText(self.drag_name)
+        mimeData.setText(self._drag_name)
         drag = QDrag(self)
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
         drag.exec_()
-        if self.drag_name is not None:
-            index = self.layers.index(self.drag_name)
+        if self._drag_name is not None:
+            index = self.layers.index(self._drag_name)
             layer = self.layers[index]
             self._ensure_visible(layer)
 
     def dragLeaveEvent(self, event):
-        """Unselects layer dividers."""
+        """Unselects layer dividers.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         event.ignore()
-        self.dragTimer.stop()
+        self._drag_timer.stop()
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dragEnterEvent(self, event):
+        """Update divider position before dragging layer widget to new position
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         if event.source() == self:
             event.accept()
             divs = []
@@ -231,28 +334,35 @@ class QtLayerList(QScrollArea):
             event.ignore()
 
     def dragMoveEvent(self, event):
-        """Set the appropriate layers list divider to be highlighted when
+        """Highlight appriate divider when dragging layer to new position.
+
+        Sets the appropriate layers list divider to be highlighted when
         dragging a layer to a new position in the layers list.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         max_height = self.frameGeometry().height()
         if (
             event.pos().y() < self._min_scroll_region
-            and not self.dragTimer.isActive()
+            and not self._drag_timer.isActive()
         ):
             self._scroll_up = True
-            self.dragTimer.start()
+            self._drag_timer.start()
         elif (
             event.pos().y() > max_height - self._min_scroll_region
-            and not self.dragTimer.isActive()
+            and not self._drag_timer.isActive()
         ):
             self._scroll_up = False
-            self.dragTimer.start()
+            self._drag_timer.start()
         elif (
-            self.dragTimer.isActive()
+            self._drag_timer.isActive()
             and event.pos().y() >= self._min_scroll_region
             and event.pos().y() <= max_height - self._min_scroll_region
         ):
-            self.dragTimer.stop()
+            self._drag_timer.stop()
 
         # Determine which widget center is the mouse currently closed to
         cord = event.pos().y() + self.verticalScrollBar().value()
@@ -261,7 +371,7 @@ class QtLayerList(QScrollArea):
         # Determine the current location of the widget being dragged
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
-        index = self.layers.index(self.drag_name)
+        index = self.layers.index(self._drag_name)
         # If the widget being dragged hasn't moved above or below any other
         # widgets then don't highlight any dividers
         selected = not (insert == index) and not (insert - 1 == index)
@@ -273,8 +383,15 @@ class QtLayerList(QScrollArea):
                 self.vbox_layout.itemAt(i).widget().setSelected(False)
 
     def dropEvent(self, event):
-        if self.dragTimer.isActive():
-            self.dragTimer.stop()
+        """Drop dragged layer widget into new position in the list of layers.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        if self._drag_timer.isActive():
+            self._drag_timer.stop()
 
         for i in range(0, self.vbox_layout.count(), 2):
             self.vbox_layout.itemAt(i).widget().setSelected(False)
@@ -283,7 +400,7 @@ class QtLayerList(QScrollArea):
         divider_index = next(center_list, len(self.centers))
         total = self.vbox_layout.count() // 2 - 1
         insert = total - divider_index
-        index = self.layers.index(self.drag_name)
+        index = self.layers.index(self._drag_name)
         if index != insert and index + 1 != insert:
             if insert >= index:
                 insert -= 1
@@ -292,6 +409,16 @@ class QtLayerList(QScrollArea):
 
 
 class QtDivider(QFrame):
+    """Qt divider used to separate Qt widgets visually.
+
+    Attributes
+    ----------
+    layout : QVBoxLayout
+        Layout of the widget.
+    selected : bool
+        Whether the QtDivider is currently selected.
+    """
+
     def __init__(self):
         super().__init__()
         self.setSelected(False)
@@ -300,6 +427,12 @@ class QtDivider(QFrame):
         self.setLayout(self.layout)
 
     def setSelected(self, selected):
+        """Toggle boolean 'selected' attribute of QTDivider instance.
+
+        Parameters
+        ----------
+        selected : bool
+        """
         if selected:
             self.setProperty('selected', True)
             self.style().polish(self)
@@ -309,6 +442,24 @@ class QtDivider(QFrame):
 
 
 class QtLayerWidget(QFrame):
+    """Qt view for Layer model.
+
+    Attributes
+    ----------
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    layout : QVBoxLayout
+        Layout of the widget.
+    nameTextBox : QLineEdit
+        Textbox for layer name.
+    thumbnailLabel : QLabel
+        Label of layer thumbnail.
+    typeLabel : QLabel
+        Label of layer type.
+    visibleCheckBox : QCheckBox
+        Checkbox to toggle layer visibility.
+    """
+
     def __init__(self, layer):
         super().__init__()
 
@@ -363,41 +514,96 @@ class QtLayerWidget(QFrame):
         self.setSelected(self.layer.selected)
 
     def setSelected(self, state):
+        """Select layer widget.
+
+        Parameters
+        ----------
+        state : bool
+        """
         self.setProperty('selected', state)
         self.nameTextBox.setEnabled(state)
         self.style().unpolish(self)
         self.style().polish(self)
 
     def changeVisible(self, state):
+        """Toggle visibility of the layer.
+
+        Parameters
+        ----------
+        state : bool
+        """
         if state == Qt.Checked:
             self.layer.visible = True
         else:
             self.layer.visible = False
 
     def changeText(self):
+        """Update layer name attribute using layer name textbox contents."""
         self.layer.name = self.nameTextBox.text()
         self.nameTextBox.clearFocus()
         self.setFocus()
 
     def mouseReleaseEvent(self, event):
+        """Ignores mouse release event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         event.ignore()
 
     def mousePressEvent(self, event):
+        """Ignores mouse press event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         event.ignore()
 
     def mouseMoveEvent(self, event):
+        """Ignores mouse move event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         event.ignore()
 
     def _on_layer_name_change(self, event=None):
+        """Update text displaying name of layer.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context.
+        """
         with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
             self.nameTextBox.home(False)
 
     def _on_visible_change(self, event=None):
+        """Toggle visibility of the layer.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context.
+        """
         with self.layer.events.visible.blocker():
             self.visibleCheckBox.setChecked(self.layer.visible)
 
     def _on_thumbnail_change(self, event=None):
+        """Update thumbnail image on the layer widget.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context.
+        """
         thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height
         image = QImage(

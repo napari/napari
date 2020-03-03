@@ -129,7 +129,7 @@ def create_range_popup(layer, attr, parent=None):
 
     Parameters
     ----------
-    layer : napari.Layer
+    layer : napari.layers.Layer
         probably an instance of Image or Surface layer
     attr : str
         the attribute to control with the slider.
@@ -187,7 +187,8 @@ def create_clim_reset_buttons(layer):
 
     Parameters
     ----------
-    layer : Image or Surface Layer
+    layer : napari.layers.Layer
+        Image or Surface Layer
 
     Returns
     -------

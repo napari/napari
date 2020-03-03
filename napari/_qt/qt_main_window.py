@@ -5,6 +5,8 @@ wrap.
 # set vispy to use same backend as qtpy
 import os
 
+from skimage.io import imsave
+
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import resources_dir
@@ -131,23 +133,36 @@ class Window:
         open_images.triggered.connect(self.qt_viewer._open_images)
 
         open_folder = QAction('Open Folder...', self._qt_window)
-        open_folder.setShortcut('Ctrl-Shift-O')
+        open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip(
             'Open a folder of image file(s) or a zarr file'
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
+        screenshot = QAction('Screenshot', self._qt_window)
+        screenshot.setShortcut('Ctrl+Alt+S')
+        screenshot.setStatusTip(
+            'Save screenshot of current display, default .png'
+        )
+        screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
+        toggle_theme = QAction('Toggle theme', self._qt_window)
+        toggle_theme.setShortcut('Ctrl+Shift+T')
+        toggle_theme.setStatusTip('Toggle theme')
+        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
+        self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
         exit_action = QAction("Close window", self._qt_window)
@@ -311,8 +326,13 @@ class Window:
         """
         self._help.setText(event.text)
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
 
         Returns
         -------
@@ -321,6 +341,8 @@ class Window:
             upper-left corner of the rendered region.
         """
         img = self._qt_window.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
     def closeEvent(self, event):

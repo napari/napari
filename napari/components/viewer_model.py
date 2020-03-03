@@ -86,14 +86,9 @@ class ViewerModel(AddLayersMixin, KeymapMixin):
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.axis.connect(self._update_layers)
-        self.layers.events.added.connect(self._on_layers_change)
-        self.layers.events.removed.connect(self._on_layers_change)
-        self.layers.events.added.connect(self._update_active_layer)
-        self.layers.events.removed.connect(self._update_active_layer)
-        self.layers.events.reordered.connect(self._update_active_layer)
-        self.layers.events.added.connect(self._update_grid)
-        self.layers.events.removed.connect(self._update_grid)
-        self.layers.events.reordered.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_layers_change)
+        self.layers.events.changed.connect(self._update_active_layer)
+        self.layers.events.changed.connect(self._update_grid)
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
@@ -404,6 +399,13 @@ class ViewerModel(AddLayersMixin, KeymapMixin):
             for axis in range(layer.dims.ndim):
                 point = self.dims.point[axis + offset]
                 layer.dims.set_point(axis, point)
+
+    def _toggle_theme(self):
+        """Switch to next theme in list of themes
+        """
+        theme_names = list(self.themes.keys())
+        cur_theme = theme_names.index(self.theme)
+        self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and
