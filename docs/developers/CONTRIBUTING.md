@@ -113,8 +113,9 @@ you create during testing are cleaned up at the end of each test:
 1. If you simply need a `QApplication` to be running for your test, you can use
    the
    [`qapp`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.plugin.qapp)
-   fixture from pytest-qt.  Note however, you *you* are required to perform any
-   and all cleanup of widgets at the end of the test.
+   fixture from [pytest-qt](https://pytest-qt.readthedocs.io/en/latest/).  Note
+   however, that *you* are required to perform any and all cleanup of widgets at
+   the end of the test.
 
     > note: fixtures in pytest can be a little mysterious, since it's not always
     > clear where they are coming from.  In this case, using a pytest-qt fixture
@@ -132,7 +133,7 @@ you create during testing are cleaned up at the end of each test:
    [`qtbot`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.qtbot.QtBot)
    fixture from `pytest-qt` provides a convenient
    [`qtbot.addWidget`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.qtbot.QtBot.addWidget)
-   method that will ensure that the widget gets closed by the end of the test.
+   method that will ensure that the widget gets closed at the end of the test.
    It *also* creates an event loop and provides a whole bunch of other
    convenient methods for interacting with your GUI tests (clicking, waiting
    signals, etc...).  See the docs linked above for details.
