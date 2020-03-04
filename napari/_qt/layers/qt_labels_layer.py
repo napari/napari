@@ -15,6 +15,7 @@ import numpy as np
 from .qt_base_layer import QtLayerControls
 from ...layers.labels._constants import Mode
 from ..qt_mode_buttons import QtModeRadioButton
+from ..utils import disable_with_opacity
 
 
 class QtLabelsControls(QtLayerControls):
@@ -30,9 +31,8 @@ class QtLabelsControls(QtLayerControls):
 
         # shuffle colormap button
         self.colormapUpdate = QPushButton('shuffle colors')
-        self.colormapUpdate.setObjectName('shuffle')
+        self.colormapUpdate.setObjectName('shuffleButton')
         self.colormapUpdate.clicked.connect(self.changeColor)
-        self.colormapUpdate.setFixedHeight(28)
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
@@ -41,6 +41,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.setMaximum(2147483647)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
+        self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selection_change()
 
         sld = QSlider(Qt.Horizontal)
@@ -85,26 +86,30 @@ class QtLabelsControls(QtLayerControls):
         self._on_editable_change()
 
         button_row = QHBoxLayout()
+        button_row.addStretch(1)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
         button_row.addWidget(self.panzoom_button)
-        button_row.addStretch(1)
         button_row.setSpacing(4)
+        button_row.setContentsMargins(0, 0, 0, 5)
+
+        color_layout = QHBoxLayout()
+        color_layout.addWidget(QtColorBox(layer))
+        color_layout.addWidget(self.selectionSpinBox)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
+        self.grid_layout.addLayout(button_row, 0, 1)
         self.grid_layout.addWidget(self.colormapUpdate, 0, 0)
         self.grid_layout.addWidget(QLabel('label:'), 1, 0)
-        self.grid_layout.addWidget(self.selectionSpinBox, 1, 2)
-        self.grid_layout.addWidget(QtColorBox(layer), 1, 1)
+        self.grid_layout.addLayout(color_layout, 1, 1)
         self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 2, 1)
         self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 2)
+        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 1, 1, 2)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
         self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0)
         self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
         self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
@@ -234,9 +239,11 @@ class QtLabelsControls(QtLayerControls):
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
     def _on_editable_change(self, event=None):
-        self.pick_button.setEnabled(self.layer.editable)
-        self.paint_button.setEnabled(self.layer.editable)
-        self.fill_button.setEnabled(self.layer.editable)
+        disable_with_opacity(
+            self,
+            ['pick_button', 'paint_button', 'fill_button'],
+            self.layer.editable,
+        )
 
 
 class QtColorBox(QWidget):
@@ -264,8 +271,8 @@ class QtColorBox(QWidget):
         """
         painter = QPainter(self)
         if self.layer._selected_color is None:
-            for i in range(self._height // 6):
-                for j in range(self._height // 6):
+            for i in range(self._height // 4):
+                for j in range(self._height // 4):
                     if (i % 2 == 0 and j % 2 == 0) or (
                         i % 2 == 1 and j % 2 == 1
                     ):
@@ -274,7 +281,7 @@ class QtColorBox(QWidget):
                     else:
                         painter.setPen(QColor(25, 25, 25))
                         painter.setBrush(QColor(25, 25, 25))
-                    painter.drawRect(i * 6, j * 6, 5, 5)
+                    painter.drawRect(i * 4, j * 4, 5, 5)
         else:
             color = 255 * self.layer._selected_color
             color = color.astype(int)
