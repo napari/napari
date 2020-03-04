@@ -10,7 +10,7 @@ from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.keybindings import KeymapMixin
 from ...utils.status_messages import status_format, format_float
-from ..transforms import STTransform
+from ..transforms import ScaleTranslate
 
 
 class Layer(KeymapMixin, ABC):
@@ -137,9 +137,13 @@ class Layer(KeymapMixin, ABC):
         if translate is None:
             translate = [0] * ndim
 
-        self._transform = STTransform(scale, translate)
-        self._transform_view = STTransform([1] * ndim, [0] * ndim)
-        self._transform_grid = STTransform([1] * ndim, [0] * ndim)
+        # Create main transform mapping data to a world-like coordinate
+        self._transform = ScaleTranslate(scale, translate)
+        # Create additional transform mapping viewed data to data coordinate
+        self._transform_view = ScaleTranslate(np.ones(ndim), np.zeros(ndim))
+        # Create additional transform mapping world-coordinates into a grid
+        # for looking at layers side-by-side
+        self._transform_grid = ScaleTranslate(np.ones(ndim), np.zeros(ndim))
 
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay

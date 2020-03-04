@@ -132,6 +132,7 @@ class VispyBaseLayer(ABC):
             .set_slice(self.layer.dims.displayed)
             .scale
         )
+        # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
         if self.layer.is_pyramid:
             self.layer.top_left = self.find_top_left()
@@ -145,6 +146,7 @@ class VispyBaseLayer(ABC):
             .set_slice(self.layer.dims.displayed)
             .translate
         )
+        # convert NumPy axis ordering to VisPy axis ordering
         self.translate = translate[::-1]
         self.layer.position = self._transform_position(self._position)
 
