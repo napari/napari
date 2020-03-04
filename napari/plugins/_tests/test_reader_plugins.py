@@ -5,6 +5,7 @@ from napari.plugins.utils import (
 from tempfile import NamedTemporaryFile
 import numpy as np
 from skimage import io
+from napari import Viewer
 
 
 def test_iter_reader_plugins(plugin_manager):
@@ -36,12 +37,8 @@ def test_iter_reader_plugins(plugin_manager):
     assert "napari_get_reader" in exception_string
 
 
-def test_builtin_reader_plugin(builtin_plugin_manager, viewermodel_factory):
-    layer_data = get_layer_data_from_plugins(
-        'image.png', builtin_plugin_manager
-    )
-    assert layer_data == [(None, {'path': 'image.png'})]
-
+def test_builtin_reader_plugin(qtbot, builtin_plugin_manager):
+    """Test the builtin reader plugin reads a temporary file."""
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
         data = np.random.rand(20, 20)
         io.imsave(tmp.name, data)
@@ -50,12 +47,18 @@ def test_builtin_reader_plugin(builtin_plugin_manager, viewermodel_factory):
         layer_data = get_layer_data_from_plugins(
             tmp.name, builtin_plugin_manager
         )
-        assert layer_data == [(None, {'path': tmp.name})]
 
-        view, viewer = viewermodel_factory()
-        viewer._add_layer_from_data(*layer_data[0])
+        assert isinstance(layer_data, list)
+        assert len(layer_data) == 1
+        assert isinstance(layer_data[0], tuple)
+        assert np.allclose(data, layer_data[0][0])
+
+        viewer = Viewer()
+        qtbot.addWidget(viewer.window.qt_viewer)
+        viewer.add_path(tmp.name)
 
         assert np.allclose(viewer.layers[0].data, data)
+        viewer.window.close()
 
 
 def test_nonsense_path_is_ok(plugin_manager):
