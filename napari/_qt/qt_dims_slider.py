@@ -414,7 +414,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
 
     def custom_change_event(self, value):
         """Emits editingFinished if valueChanged AND left mouse button is down.
-
+        (i.e. when the user clicks on the spin buttons)
         Paramters
         ---------
         value : float
