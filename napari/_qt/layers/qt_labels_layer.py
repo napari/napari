@@ -28,7 +28,7 @@ class QtLabelsControls(QtLayerControls):
     Attributes
     ----------
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group of label layer controls: PAN_ZOOM, PICKER, PAINT, or FILL.
+        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, or FILL.
     colormapUpdate : qtpy.QtWidgets.QPushButton
         Button to update colormap of label layer.
     contigCheckBox : qtpy.QtWidgets.QCheckBox
