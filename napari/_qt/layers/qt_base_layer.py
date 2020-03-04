@@ -59,7 +59,7 @@ class QtLayerControls(QFrame):
         self.blendComboBox = blend_comboBox
 
     def changeOpacity(self, value):
-        """Change opacity value.
+        """Change opacity value on the layer model.
 
         Parameters
         ----------
@@ -71,7 +71,7 @@ class QtLayerControls(QFrame):
             self.layer.opacity = value / 100
 
     def changeBlending(self, text):
-        """Change blending mode for rendering.
+        """Change blending mode on the layer model.
 
         Parameters
         ----------
@@ -81,7 +81,7 @@ class QtLayerControls(QFrame):
         self.layer.blending = text
 
     def _on_opacity_change(self, event=None):
-        """Change opacity value.
+        """Receive layer model opacity change event and update opacity slider.
 
         Parameters
         ----------
@@ -92,7 +92,7 @@ class QtLayerControls(QFrame):
             self.opacitySlider.setValue(self.layer.opacity * 100)
 
     def _on_blending_change(self, event=None):
-        """Change blending mode for rendering.
+        """Receive layer model blending mode change event and update blending slider.
 
         Parameters
         ----------
