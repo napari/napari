@@ -23,7 +23,7 @@ def test_random_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer.view_data.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
     assert len(layer.selected_data) == 0
 
@@ -36,7 +36,7 @@ def test_integer_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer.view_data.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -48,7 +48,7 @@ def test_negative_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer.view_data.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -59,7 +59,7 @@ def test_empty_points_array():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer.view_data.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 0
 
 
@@ -71,7 +71,7 @@ def test_3D_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer.view_data.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -83,7 +83,7 @@ def test_4D_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer.view_data.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -98,7 +98,7 @@ def test_changing_points():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == shape_b[1]
-    assert layer.view_data.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 20
 
 
@@ -1116,14 +1116,16 @@ def test_view_data():
 
     layer.dims.set_point(0, 0)
     assert np.all(
-        layer.view_data == coords[np.ix_([0, 1], layer.dims.displayed)]
+        layer._view_data == coords[np.ix_([0, 1], layer.dims.displayed)]
     )
 
     layer.dims.set_point(0, 1)
-    assert np.all(layer.view_data == coords[np.ix_([2], layer.dims.displayed)])
+    assert np.all(
+        layer._view_data == coords[np.ix_([2], layer.dims.displayed)]
+    )
 
     layer.dims.ndisplay = 3
-    assert np.all(layer.view_data == coords)
+    assert np.all(layer._view_data == coords)
 
 
 def test_view_size():
@@ -1133,14 +1135,14 @@ def test_view_size():
 
     layer.dims.set_point(0, 0)
     assert np.all(
-        layer.view_size == sizes[np.ix_([0, 1], layer.dims.displayed)]
+        layer._view_size == sizes[np.ix_([0, 1], layer.dims.displayed)]
     )
 
     layer.dims.set_point(0, 1)
-    assert np.all(layer.view_size == sizes[np.ix_([2], layer.dims.displayed)])
+    assert np.all(layer._view_size == sizes[np.ix_([2], layer.dims.displayed)])
 
     layer.n_dimensional = True
-    assert len(layer.view_size) == 3
+    assert len(layer._view_size) == 3
 
 
 def test_view_colors():
@@ -1155,15 +1157,15 @@ def test_view_colors():
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
     layer.dims.set_point(0, 0)
     print(layer.face_color)
-    print(layer.view_face_color)
-    assert np.all(layer.view_face_color == face_color[[0, 1]])
-    assert np.all(layer.view_edge_color == edge_color[[0, 1]])
+    print(layer._view_face_color)
+    assert np.all(layer._view_face_color == face_color[[0, 1]])
+    assert np.all(layer._view_edge_color == edge_color[[0, 1]])
 
     layer.dims.set_point(0, 1)
-    assert np.all(layer.view_face_color == face_color[[2]])
-    assert np.all(layer.view_edge_color == edge_color[[2]])
+    assert np.all(layer._view_face_color == face_color[[2]])
+    assert np.all(layer._view_edge_color == edge_color[[2]])
 
     # view colors should return empty array if there are no points
     layer.dims.set_point(0, 2)
-    assert len(layer.view_face_color) == 0
-    assert len(layer.view_edge_color) == 0
+    assert len(layer._view_face_color) == 0
+    assert len(layer._view_edge_color) == 0

@@ -51,8 +51,8 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_highlight_change()
 
         if len(self.layer._indices_view) > 0:
-            edge_color = self.layer.view_edge_color
-            face_color = self.layer.view_face_color
+            edge_color = self.layer._view_edge_color
+            face_color = self.layer._view_face_color
         else:
             edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
@@ -64,8 +64,8 @@ class VispyPointsLayer(VispyBaseLayer):
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = [0]
         else:
-            data = self.layer.view_data
-            size = self.layer.view_size
+            data = self.layer._view_data
+            size = self.layer._view_size
 
         set_data = self.node._subvisuals[0].set_data
 
@@ -83,10 +83,10 @@ class VispyPointsLayer(VispyBaseLayer):
     def _on_highlight_change(self, event=None):
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
-            data = self.layer.view_data[self.layer._highlight_index]
+            data = self.layer._view_data[self.layer._highlight_index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer.view_size[self.layer._highlight_index]
+            size = self.layer._view_size[self.layer._highlight_index]
         else:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = 0
